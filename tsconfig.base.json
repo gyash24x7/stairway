@@ -8,7 +8,10 @@
 	"importHelpers": true,
 	"target": "es2015",
 	"module": "esnext",
-	"lib": [ "es2017", "dom" ],
+	"lib": [
+	  "es2017",
+	  "dom"
+	],
 	"skipDefaultLibCheck": true,
 	"baseUrl": ".",
 	"strict": true,
@@ -27,7 +30,14 @@
 	"noUnusedParameters": true,
 	"importsNotUsedAsValues": "error",
 	"checkJs": true,
-	"paths": { }
+	"paths": {
+	  "@s2h/prisma": [
+		"libs/prisma/src/index.ts"
+	  ]
+	}
   },
-  "exclude": [ "node_modules", "tmp" ]
+  "exclude": [
+	"node_modules",
+	"tmp"
+  ]
 }

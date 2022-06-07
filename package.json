@@ -1,18 +1,31 @@
 {
-  "name": "s2h",
-  "version": "0.0.0",
-  "license": "MIT",
-  "scripts": {
-	"start": "nx serve",
-	"build": "nx build",
-	"test": "nx test"
-  },
-  "private": true,
-  "dependencies": { },
-  "devDependencies": {
-	"nx": "14.1.9",
-	"@nrwl/cli": "14.1.9",
-	"@nrwl/workspace": "14.1.9",
-	"typescript": "4.7.3"
-  }
+	"name": "s2h",
+	"version": "0.0.0",
+	"license": "MIT",
+	"scripts": {
+		"start": "nx serve",
+		"build": "nx build",
+		"test": "nx test"
+	},
+	"prisma": {
+		"schema": "libs/prisma/src/schema.prisma",
+		"seed": "ts-node libs/prisma/src/seed.ts"
+	},
+	"private": true,
+	"devDependencies": {
+		"@nrwl/cli": "14.1.9",
+		"@nrwl/js": "14.1.9",
+		"@nrwl/workspace": "14.1.9",
+		"@types/node": "17.0.40",
+		"nx": "14.1.9",
+		"prisma": "3.14.0",
+		"ts-node": "10.8.1",
+		"typescript": "4.7.3"
+	},
+	"dependencies": {
+		"@prisma/client": "3.14.0",
+		"change-case": "4.1.2",
+		"class-transformer": "0.5.1",
+		"tslib": "2.4.0"
+	}
 }

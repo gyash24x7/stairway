@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+    id                  String          @id @default(cuid())
+    name                String
+    email               String          @unique
+    avatar              String
+    salt                String          @unique
+
+    litGamesCreated     LitGame[]       @relation("OneToMany_UserToLitGame")
+    playerAliases       LitPlayer[]     @relation("OneToMany_UserToLitPlayer")
+}
+
+enum LitGameStatus {
+    NOT_STARTED
+    PLAYERS_READY
+    TEAMS_CREATED
+    IN_PROGRESS
+    COMPLETED
+}
+
+enum LitMoveType {
+    ASK
+    DECLINED
+    GIVEN
+    TURN
+    CALL
+    CALL_SUCCESS
+    CALL_FAIL
+}
+
+model LitTeam {
+    id          String          @id @default(cuid())
+    name        String
+    score       Int             @default(0)
+
+    players     LitPlayer[]     @relation("OneToMany_LitTeamToLitPlayer")
+
+    game        LitGame         @relation("OneToMany_LitGameToLitTeam", fields: [gameId], references: [id])
+    gameId      String
+}
+
+model LitPlayer {
+    id                  String      @id @default(cuid())
+    name                String
+    hand                Json
+    avatar              String
+
+    user                User        @relation("OneToMany_UserToLitPlayer", fields: [userId], references: [id])
+    userId              String
+
+    team                LitTeam?    @relation("OneToMany_LitTeamToLitPlayer", fields: [teamId], references: [id])
+    teamId              String?
+
+    game                LitGame     @relation("OneToMany_LitGameToLitPlayer", fields: [gameId], references: [id])
+    gameId              String
+
+    turnMoves           LitMove[]   @relation("ManyToOne_LitMoveToLitPlayer_Turn")
+    askedFromMoves      LitMove[]   @relation("ManyToOne_LitMoveToLitPlayer_AskedFrom")
+    askedByMoves        LitMove[]   @relation("ManyToOne_LitMoveToLitPlayer_AskedBy")
+}
+
+model LitMove {
+    id                String            @id @default(cuid())
+    type              LitMoveType
+    description       String
+    askedFor          Json?
+    callingSet        String?
+
+    turn              LitPlayer?        @relation("ManyToOne_LitMoveToLitPlayer_Turn", fields: [turnId], references: [id])
+    turnId            String?
+
+    askedFrom         LitPlayer?        @relation("ManyToOne_LitMoveToLitPlayer_AskedFrom", fields: [askedFromId], references: [id])
+    askedFromId       String?
+
+    askedBy           LitPlayer?        @relation("ManyToOne_LitMoveToLitPlayer_AskedBy", fields: [askedById], references: [id])
+    askedById         String?
+
+    game              LitGame           @relation("OneToMany_LitGameToLitMove", fields: [gameId], references: [id])
+    gameId            String
+
+    createdAt         DateTime          @default(now())
+}
+
+model LitGame {
+    id            String          @id @default(cuid())
+    code          String          @unique
+    status        LitGameStatus   @default(NOT_STARTED)
+    playerCount   Int             @default(2)
+
+    createdBy     User            @relation("OneToMany_UserToLitGame", fields:[createdById], references:[id])
+    createdById   String
+
+    createdAt     DateTime        @default(now())
+    updatedAt     DateTime        @updatedAt
+
+    players       LitPlayer[]     @relation("OneToMany_LitGameToLitPlayer")
+    teams         LitTeam[]       @relation("OneToMany_LitGameToLitTeam")
+    moves         LitMove[]       @relation("OneToMany_LitGameToLitMove")
+}
