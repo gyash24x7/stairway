@@ -1,0 +1,33 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+	"rootDir": ".",
+	"sourceMap": true,
+	"declaration": false,
+	"moduleResolution": "node",
+	"importHelpers": true,
+	"target": "es2015",
+	"module": "esnext",
+	"lib": [ "es2017", "dom" ],
+	"skipDefaultLibCheck": true,
+	"baseUrl": ".",
+	"strict": true,
+	"esModuleInterop": true,
+	"skipLibCheck": true,
+	"forceConsistentCasingInFileNames": true,
+	"experimentalDecorators": true,
+	"emitDecoratorMetadata": true,
+	"alwaysStrict": true,
+	"allowUnusedLabels": false,
+	"allowUnreachableCode": false,
+	"noFallthroughCasesInSwitch": true,
+	"noImplicitOverride": true,
+	"noImplicitReturns": true,
+	"noUnusedLocals": true,
+	"noUnusedParameters": true,
+	"importsNotUsedAsValues": "error",
+	"checkJs": true,
+	"paths": { }
+  },
+  "exclude": [ "node_modules", "tmp" ]
+}
