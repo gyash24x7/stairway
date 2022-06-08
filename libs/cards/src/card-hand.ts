@@ -1,7 +1,7 @@
 import { PlayingCard } from "./playing-card";
 import type { CardSet, CardSuit } from "./card-const";
 import { SORTED_DECK } from "./card-const";
-import { Expose, instanceToPlain, plainToClass, Type } from "class-transformer";
+import { Expose, instanceToPlain, plainToInstance, Type } from "class-transformer";
 import "reflect-metadata";
 
 export class CardHand {
@@ -29,7 +29,7 @@ export class CardHand {
 	}
 
 	static from( hand: Record<string, any> ) {
-		return plainToClass( CardHand, hand );
+		return plainToInstance( CardHand, hand );
 	}
 
 	contains( card: PlayingCard ) {

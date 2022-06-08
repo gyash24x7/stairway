@@ -9,7 +9,7 @@
 		"target": "es2015",
 		"module": "esnext",
 		"lib": [
-			"es2017",
+			"es2019",
 			"dom"
 		],
 		"skipDefaultLibCheck": true,
@@ -30,6 +30,7 @@
 		"noUnusedParameters": true,
 		"importsNotUsedAsValues": "error",
 		"checkJs": true,
+		"resolveJsonModule": true,
 		"paths": {
 			"@s2h/cards": [
 				"libs/cards/src/index.ts"
@@ -37,8 +38,14 @@
 			"@s2h/dtos": [
 				"libs/dtos/src/index.ts"
 			],
+			"@s2h/literature/utils": [
+				"libs/literature/utils/src/index.ts"
+			],
 			"@s2h/prisma": [
 				"libs/prisma/src/index.ts"
+			],
+			"@s2h/utils": [
+				"libs/utils/src/index.ts"
 			]
 		}
 	},

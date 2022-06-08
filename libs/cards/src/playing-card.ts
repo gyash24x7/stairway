@@ -1,6 +1,6 @@
 import type { CardRank } from "./card-const";
 import { BIG_CARD_RANKS, CardSet, CardSuit } from "./card-const";
-import { Expose, instanceToPlain, plainToClass } from "class-transformer";
+import { Expose, instanceToPlain, plainToInstance } from "class-transformer";
 
 export class PlayingCard {
 	@Expose() readonly rank: CardRank;
@@ -33,7 +33,7 @@ export class PlayingCard {
 	}
 
 	static from( card: Record<string, any> ) {
-		return plainToClass( PlayingCard, card );
+		return plainToInstance( PlayingCard, card );
 	}
 
 	serialize() {
