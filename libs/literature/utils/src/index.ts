@@ -1,1 +1,4 @@
-export * from './lib/literature-utils';
+export * from "./lit-game";
+export * from "./lit-player";
+export * from "./lit-move";
+export * from "./lit-team";

@@ -1,17 +1,17 @@
 import type { LitGame, LitMove, LitPlayer, LitTeam, Prisma, PrismaClient } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
-import type { Namespace } from "socket.io";
 import type { MiddlewareFunction } from "@trpc/server/dist/declarations/src/internals/middlewares";
-import type { EnhancedLitGame } from "./literature";
+import type { Namespace } from "socket.io";
+import type { EnhancedLitGame } from "@s2h/literature/utils";
 
-export class LitGamePublisher {
+export class Publisher<T extends { id: string }> {
 	private readonly namespace: Namespace;
 
 	constructor( namespace: Namespace ) {
 		this.namespace = namespace;
 	}
 
-	publish( gameData: EnhancedLitGame ) {
+	publish( gameData: T ) {
 		this.namespace.emit( gameData.id, gameData );
 	}
 }
@@ -20,7 +20,7 @@ export type TrpcContext = {
 	req?: Request;
 	res?: Response;
 	prisma: PrismaClient;
-	litGamePublisher: LitGamePublisher;
+	litGamePublisher: Publisher<EnhancedLitGame>;
 }
 
 export type TrpcMiddleware = MiddlewareFunction<TrpcContext, TrpcContext, any>

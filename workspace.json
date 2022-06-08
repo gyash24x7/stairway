@@ -3,7 +3,7 @@
 	"version": 2,
 	"projects": {
 		"cards": "libs/cards",
-		"dtos": "libs/dtos",
+		"literature-dtos": "libs/literature/dtos",
 		"literature-utils": "libs/literature/utils",
 		"prisma": "libs/prisma",
 		"utils": "libs/utils"
