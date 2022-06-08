@@ -1,10 +1,12 @@
 import { PlayingCard } from "./playing-card";
 import type { CardSet, CardSuit } from "./card-const";
 import { SORTED_DECK } from "./card-const";
-import type { Prisma } from "@prisma/client";
+import { Expose, instanceToPlain, plainToClass, Type } from "class-transformer";
+import "reflect-metadata";
 
 export class CardHand {
-	private cards: PlayingCard[] = [];
+	@Type( () => PlayingCard )
+	@Expose() private cards: PlayingCard[] = [];
 
 	constructor( cards: PlayingCard[] ) {
 		this.cards = cards;
@@ -26,8 +28,8 @@ export class CardHand {
 		return Array.from( cardSuitSet );
 	}
 
-	static from( cards: Prisma.JsonArray ) {
-		return new CardHand( cards.map( card => PlayingCard.from( card as Prisma.JsonObject ) ) );
+	static from( hand: Record<string, any> ) {
+		return plainToClass( CardHand, hand );
 	}
 
 	contains( card: PlayingCard ) {
@@ -89,6 +91,6 @@ export class CardHand {
 	}
 
 	serialize() {
-		return this.cards.map( card => card.serialize() );
+		return instanceToPlain( this );
 	}
 }

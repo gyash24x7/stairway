@@ -1,6 +1,5 @@
 import type { CardRank } from "./card-const";
 import { BIG_CARD_RANKS, CardSet, CardSuit } from "./card-const";
-import type { Prisma } from "@prisma/client";
 import { Expose, instanceToPlain, plainToClass } from "class-transformer";
 
 export class PlayingCard {
@@ -33,7 +32,7 @@ export class PlayingCard {
 		return `${ this.rank }Of${ this.suit }`;
 	}
 
-	static from( card: Prisma.JsonObject ) {
+	static from( card: Record<string, any> ) {
 		return plainToClass( PlayingCard, card );
 	}
 
