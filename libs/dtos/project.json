@@ -1,0 +1,22 @@
+{
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/dtos/src",
+	"projectType": "library",
+	"targets": {
+		"build": {
+			"executor": "@nrwl/js:tsc",
+			"outputs": [
+				"{options.outputPath}"
+			],
+			"options": {
+				"outputPath": "dist/libs/dtos",
+				"main": "libs/dtos/src/index.ts",
+				"tsConfig": "libs/dtos/tsconfig.lib.json",
+				"assets": [
+					"libs/dtos/*.md"
+				]
+			}
+		}
+	},
+	"tags": [ ]
+}

@@ -34,6 +34,9 @@
 			"@s2h/cards": [
 				"libs/cards/src/index.ts"
 			],
+			"@s2h/dtos": [
+				"libs/dtos/src/index.ts"
+			],
 			"@s2h/prisma": [
 				"libs/prisma/src/index.ts"
 			]

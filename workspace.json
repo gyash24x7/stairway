@@ -3,6 +3,7 @@
 	"version": 2,
 	"projects": {
 		"cards": "libs/cards",
+		"dtos": "libs/dtos",
 		"prisma": "libs/prisma"
 	}
 }
