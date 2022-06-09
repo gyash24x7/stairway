@@ -1,12 +1,16 @@
 import type { CardRank } from "./card-const";
 import { BIG_CARD_RANKS, CardSet, CardSuit } from "./card-const";
-import { Expose, instanceToPlain, plainToInstance } from "class-transformer";
 
-export class PlayingCard {
-	@Expose() readonly rank: CardRank;
-	@Expose() readonly suit: CardSuit;
+export interface IPlayingCard {
+	rank: CardRank;
+	suit: CardSuit;
+}
 
-	constructor( rank: CardRank, suit: CardSuit ) {
+export class PlayingCard implements IPlayingCard {
+	readonly rank: CardRank;
+	readonly suit: CardSuit;
+
+	private constructor( rank: CardRank, suit: CardSuit ) {
 		this.rank = rank;
 		this.suit = suit;
 	}
@@ -32,11 +36,7 @@ export class PlayingCard {
 		return `${ this.rank }Of${ this.suit }`;
 	}
 
-	static from( card: Record<string, any> ) {
-		return plainToInstance( PlayingCard, card );
-	}
-
-	serialize() {
-		return instanceToPlain( this );
+	static from( card: IPlayingCard ) {
+		return new PlayingCard( card.rank, card.suit )
 	}
 }

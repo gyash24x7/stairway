@@ -1,15 +1,17 @@
-import { PlayingCard } from "./playing-card";
+import { IPlayingCard, PlayingCard } from "./playing-card";
 import type { CardSet, CardSuit } from "./card-const";
 import { SORTED_DECK } from "./card-const";
-import { Expose, instanceToPlain, plainToInstance, Type } from "class-transformer";
 import "reflect-metadata";
 
-export class CardHand {
-	@Type( () => PlayingCard )
-	@Expose() private cards: PlayingCard[] = [];
+export interface ICardHand {
+	cards: IPlayingCard[]
+}
 
-	constructor( cards: PlayingCard[] ) {
-		this.cards = cards;
+export class CardHand implements ICardHand {
+	cards: PlayingCard[] = [];
+
+	private constructor( { cards }: ICardHand ) {
+		this.cards = cards.map( PlayingCard.from )
 	}
 
 	get length() {
@@ -28,8 +30,8 @@ export class CardHand {
 		return Array.from( cardSuitSet );
 	}
 
-	static from( hand: Record<string, any> ) {
-		return plainToInstance( CardHand, hand );
+	static from( hand: ICardHand ) {
+		return new CardHand( hand );
 	}
 
 	contains( card: PlayingCard ) {
@@ -78,8 +80,8 @@ export class CardHand {
 		this.cards = this.cards.filter( card => card.set !== cardSet );
 	}
 
-	addCard( ...card: PlayingCard[] ) {
-		this.cards = [ ...this.cards, ...card ];
+	addCard( ...cards: PlayingCard[] ) {
+		this.cards.push( ...cards )
 	}
 
 	getCardsOfSet( set: CardSet ) {
@@ -88,9 +90,5 @@ export class CardHand {
 
 	get( index: number ) {
 		return this.cards[ index ];
-	}
-
-	serialize() {
-		return instanceToPlain( this );
 	}
 }

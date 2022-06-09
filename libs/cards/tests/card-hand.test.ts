@@ -1,63 +1,52 @@
-import { CardHand, CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
+import { CardHand, CardRank, CardSet, CardSuit, IPlayingCard, PlayingCard } from "@s2h/cards";
 
 describe( "Card Hand", function () {
 
-	it( "should serialize to plain json", function () {
-		const card1 = new PlayingCard( CardRank.KING, CardSuit.DIAMONDS );
-		const card2 = new PlayingCard( CardRank.ACE, CardSuit.HEARTS );
-		const card3 = new PlayingCard( CardRank.QUEEN, CardSuit.CLUBS );
-		const card4 = new PlayingCard( CardRank.TWO, CardSuit.SPADES );
+	it( "should serialize and deserialize correctly", function () {
+		const card1 = PlayingCard.from( { rank: CardRank.KING, suit: CardSuit.DIAMONDS } );
+		const card2 = PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.HEARTS } );
+		const card3 = PlayingCard.from( { rank: CardRank.QUEEN, suit: CardSuit.CLUBS } );
+		const card4 = PlayingCard.from( { rank: CardRank.TWO, suit: CardSuit.SPADES } );
 
-		const hand = new CardHand( [ card1, card2, card3, card4 ] );
-		const { cards } = hand.serialize();
+		const hand = CardHand.from( { cards: [ card1, card2, card3, card4 ] } );
+		const serializedHand = JSON.parse( JSON.stringify( hand ) );
 
-		expect( cards[ 0 ][ "rank" ] ).toBe( "King" );
-		expect( cards[ 0 ][ "suit" ] ).toBe( "Diamonds" );
-		expect( cards[ 1 ][ "rank" ] ).toBe( "Ace" );
-		expect( cards[ 1 ][ "suit" ] ).toBe( "Hearts" );
-		expect( cards[ 2 ][ "rank" ] ).toBe( "Queen" );
-		expect( cards[ 2 ][ "suit" ] ).toBe( "Clubs" );
-		expect( cards[ 3 ][ "rank" ] ).toBe( "Two" );
-		expect( cards[ 3 ][ "suit" ] ).toBe( "Spades" );
-	} );
+		expect( serializedHand.cards[ 0 ][ "rank" ] ).toBe( "King" );
+		expect( serializedHand.cards[ 0 ][ "suit" ] ).toBe( "Diamonds" );
+		expect( serializedHand.cards[ 1 ][ "rank" ] ).toBe( "Ace" );
+		expect( serializedHand.cards[ 1 ][ "suit" ] ).toBe( "Hearts" );
+		expect( serializedHand.cards[ 2 ][ "rank" ] ).toBe( "Queen" );
+		expect( serializedHand.cards[ 2 ][ "suit" ] ).toBe( "Clubs" );
+		expect( serializedHand.cards[ 3 ][ "rank" ] ).toBe( "Two" );
+		expect( serializedHand.cards[ 3 ][ "suit" ] ).toBe( "Spades" );
 
-	it( "should create from plain json", function () {
-		const cards = [
-			{ rank: "Ace", suit: "Diamonds" },
-			{ rank: "Jack", suit: "Clubs" },
-			{ rank: "Four", suit: "Spades" },
-			{ rank: "Two", suit: "Hearts" },
-			{ rank: "Ten", suit: "Hearts" },
-		];
+		const deserializedHand = CardHand.from( serializedHand );
 
-		const hand = CardHand.from( { cards } );
-
-		expect( hand.length ).toBe( cards.length );
-		expect( hand.cardSuitsInHand )
-			.toEqual( [ CardSuit.DIAMONDS, CardSuit.CLUBS, CardSuit.SPADES, CardSuit.HEARTS ] );
-		expect( hand.cardSetsInHand ).toEqual( [
-			CardSet.SMALL_DIAMONDS,
-			CardSet.BIG_CLUBS,
-			CardSet.SMALL_SPADES,
+		expect( deserializedHand.length ).toBe( serializedHand.cards.length );
+		expect( deserializedHand.cardSuitsInHand )
+			.toEqual( [ CardSuit.DIAMONDS, CardSuit.HEARTS, CardSuit.CLUBS, CardSuit.SPADES ] );
+		expect( deserializedHand.cardSetsInHand ).toEqual( [
+			CardSet.BIG_DIAMONDS,
 			CardSet.SMALL_HEARTS,
-			CardSet.BIG_HEARTS
+			CardSet.BIG_CLUBS,
+			CardSet.SMALL_SPADES
 		] );
 	} );
 
 	it( "should return correct cards when checking if card present in hand", function () {
-		const cards = [
+		const cards: IPlayingCard[] = JSON.parse( JSON.stringify( [
 			{ rank: "Ace", suit: "Diamonds" },
 			{ rank: "Jack", suit: "Clubs" },
 			{ rank: "Four", suit: "Spades" },
 			{ rank: "Two", suit: "Hearts" },
 			{ rank: "Ten", suit: "Hearts" },
-		];
+		] ) );
 
 		const hand = CardHand.from( { cards } );
 
 		const cardsToCheck = cards.map( PlayingCard.from );
 		const cardPresent = cardsToCheck[ 0 ];
-		const cardNotPresent = new PlayingCard( CardRank.ACE, CardSuit.CLUBS );
+		const cardNotPresent = PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.CLUBS } );
 
 		expect( hand.contains( cardPresent ) ).toBeTruthy();
 		expect( hand.contains( cardNotPresent ) ).toBeFalsy();
@@ -68,37 +57,31 @@ describe( "Card Hand", function () {
 	} );
 
 	it( "should return sorted cards when asked for sorted cards", function () {
-		const cards = [
+		const cards: IPlayingCard[] = JSON.parse( JSON.stringify( [
 			{ rank: "Ace", suit: "Diamonds" },
 			{ rank: "Jack", suit: "Clubs" },
 			{ rank: "Four", suit: "Spades" },
 			{ rank: "Two", suit: "Hearts" },
 			{ rank: "Ten", suit: "Hearts" },
-		];
+		] ) );
 
 		const hand = CardHand.from( { cards } );
 
 		const sortedHand = hand.sorted();
 
-		expect( sortedHand.get( 0 ) ).toEqual( new PlayingCard( CardRank.TWO, CardSuit.HEARTS ) );
-		expect( sortedHand.get( 1 ) ).toEqual( new PlayingCard( CardRank.TEN, CardSuit.HEARTS ) );
-		expect( sortedHand.get( 2 ) ).toEqual( new PlayingCard( CardRank.JACK, CardSuit.CLUBS ) );
-		expect( sortedHand.get( 3 ) ).toEqual( new PlayingCard( CardRank.ACE, CardSuit.DIAMONDS ) );
-		expect( sortedHand.get( 4 ) ).toEqual( new PlayingCard( CardRank.FOUR, CardSuit.SPADES ) );
+		expect( sortedHand.get( 0 ) ).toEqual( PlayingCard.from( { rank: CardRank.TWO, suit: CardSuit.HEARTS } ) );
+		expect( sortedHand.get( 1 ) ).toEqual( PlayingCard.from( { rank: CardRank.TEN, suit: CardSuit.HEARTS } ) );
+		expect( sortedHand.get( 2 ) ).toEqual( PlayingCard.from( { rank: CardRank.JACK, suit: CardSuit.CLUBS } ) );
+		expect( sortedHand.get( 3 ) ).toEqual( PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.DIAMONDS } ) );
+		expect( sortedHand.get( 4 ) ).toEqual( PlayingCard.from( { rank: CardRank.FOUR, suit: CardSuit.SPADES } ) );
 	} );
 
 	it( "should be able to remove cards based on cardSet", function () {
-		const cards = [
-			{ rank: "Two", suit: "Hearts" },
-			{ rank: "Ten", suit: "Hearts" },
-			{ rank: "Four", suit: "Hearts" }
-		];
+		const fourOfHearts = PlayingCard.from( { rank: CardRank.FOUR, suit: CardSuit.HEARTS } );
+		const twoOfHearts = PlayingCard.from( { rank: CardRank.TWO, suit: CardSuit.HEARTS } );
+		const tenOfHearts = PlayingCard.from( { rank: CardRank.TEN, suit: CardSuit.HEARTS } );
 
-		const hand = CardHand.from( { cards } );
-
-		const fourOfHearts = new PlayingCard( CardRank.FOUR, CardSuit.HEARTS );
-		const twoOfHearts = new PlayingCard( CardRank.TWO, CardSuit.HEARTS );
-		const tenOfHearts = new PlayingCard( CardRank.TEN, CardSuit.HEARTS );
+		const hand = CardHand.from( { cards: [ twoOfHearts, fourOfHearts, tenOfHearts ] } );
 
 		const smallHeartsInHand = hand.getCardsOfSet( CardSet.SMALL_HEARTS );
 		expect( smallHeartsInHand ).toContainEqual( twoOfHearts );
@@ -112,10 +95,10 @@ describe( "Card Hand", function () {
 	} );
 
 	it( "should be able to add or remove individual cards", function () {
-		const fourOfClubs = new PlayingCard( CardRank.FOUR, CardSuit.CLUBS );
-		const twoOfHearts = new PlayingCard( CardRank.TWO, CardSuit.HEARTS );
+		const fourOfClubs = PlayingCard.from( { rank: CardRank.FOUR, suit: CardSuit.CLUBS } );
+		const twoOfHearts = PlayingCard.from( { rank: CardRank.TWO, suit: CardSuit.HEARTS } );
 
-		const hand = new CardHand( [ twoOfHearts ] );
+		const hand = CardHand.from( { cards: [ twoOfHearts ] } );
 
 		expect( hand.contains( twoOfHearts ) ).toBeTruthy();
 

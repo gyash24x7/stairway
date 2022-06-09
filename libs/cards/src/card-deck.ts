@@ -1,10 +1,14 @@
-import type { PlayingCard } from "./playing-card";
+import type { IPlayingCard, PlayingCard } from "./playing-card";
 import { CardHand } from "./card-hand";
 import type { CardRank } from "./card-const";
 import { SORTED_DECK } from "./card-const";
 
-export class CardDeck {
-	private cards: PlayingCard[] = [];
+export interface ICardDeck {
+	cards: IPlayingCard[];
+}
+
+export class CardDeck implements ICardDeck {
+	cards: PlayingCard[] = [];
 
 	constructor() {
 		let deck = [ ...SORTED_DECK ];
@@ -28,6 +32,6 @@ export class CardDeck {
 		const handSize = this.cards.length / handCount;
 		return [ ...Array( handCount ) ]
 			.map( ( _, i ) => this.cards.slice( handSize * i, handSize * i + handSize ) )
-			.map( cards => CardHand.from( cards.map( card => card.serialize() ) ) );
+			.map( cards => CardHand.from( { cards } ) );
 	}
 }
