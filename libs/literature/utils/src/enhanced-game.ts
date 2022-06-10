@@ -1,80 +1,83 @@
-import { Exclude, Expose, instanceToPlain, plainToInstance, Type } from "class-transformer";
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam, Prisma } from "@prisma/client";
-import { CardDeck, CardHand, CardRank, CardSet, PlayingCard } from "@s2h/cards";
-import { EnhancedLitPlayer } from "./lit-player";
-import { EnhancedLitTeam } from "./lit-team";
-import { EnhancedLitMove } from "./lit-move";
+import { LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam } from "@prisma/client";
+import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, IPlayingCard, PlayingCard } from "@s2h/cards";
+import { EnhancedLitPlayer, IEnhancedLitPlayer } from "./enhanced-player";
+import { EnhancedLitTeam, IEnhancedLitTeam } from "./enhanced-team";
+import { EnhancedLitMove, IEnhancedLitMove } from "./enhanced-move";
 import type { LitGameData, LitMoveDataWithoutDescription } from "@s2h/utils";
 
-export class EnhancedLitGame {
-	@Expose() readonly id: string;
-	@Expose() readonly code: string;
-	@Expose() readonly playerCount: number;
-	@Expose() readonly createdById: string;
-	@Expose() readonly createdAt: Date;
-	@Expose() readonly updatedAt: Date;
+export interface IEnhancedLitGame {
+	id: string;
+	code: string;
+	playerCount: number;
+	createdById: string;
+	createdAt: Date;
+	updatedAt: Date;
+	status: LitGameStatus;
+	players: IEnhancedLitPlayer[];
+	teams: IEnhancedLitTeam[];
+	moves: IEnhancedLitMove[];
+}
 
-	@Expose() status: LitGameStatus;
+export class EnhancedLitGame implements IEnhancedLitGame {
+	readonly id: string;
+	readonly code: string;
+	readonly playerCount: number;
+	readonly createdById: string;
+	readonly createdAt: Date;
+	readonly updatedAt: Date;
 
-	@Type( () => EnhancedLitPlayer )
-	@Expose() players: EnhancedLitPlayer[];
+	status: LitGameStatus;
 
-	@Type( () => EnhancedLitTeam )
-	@Expose() teams: EnhancedLitTeam[];
+	players: EnhancedLitPlayer[];
+	teams: EnhancedLitTeam[];
+	moves: EnhancedLitMove[];
 
-	@Type( () => EnhancedLitMove )
-	@Expose() moves: EnhancedLitMove[];
+	readonly creator: EnhancedLitPlayer;
 
-	@Expose() readonly creator: EnhancedLitPlayer;
+	playerData: Record<string, EnhancedLitPlayer>;
+	teamData: Record<string, EnhancedLitTeam>;
+	loggedInUserId?: string;
 
-	@Exclude() playerData: Record<string, EnhancedLitPlayer>;
-	@Exclude() teamData: Record<string, EnhancedLitTeam>;
-	@Exclude() loggedInUserId?: string;
-
-	constructor( game: LitGameData ) {
+	constructor( game: IEnhancedLitGame ) {
 		this.id = game.id;
 		this.code = game.code;
-		this.status = game.status;
 		this.playerCount = game.playerCount;
-		this.createdAt = game.createdAt;
 		this.createdById = game.createdById;
+		this.createdAt = game.createdAt;
 		this.updatedAt = game.updatedAt;
-
+		this.status = game.status;
 		this.players = game.players.map( player => new EnhancedLitPlayer( player ) );
-		this.teams = game.teams.map( team => new EnhancedLitTeam( team, this.players ) );
-		this.moves = game.moves.sort( EnhancedLitMove.compareFn ).map( move => new EnhancedLitMove( move ) );
+		this.teams = game.teams.map( team => new EnhancedLitTeam( team ) );
+		this.moves = game.moves.map( move => new EnhancedLitMove( move ) );
+
+		this.creator = this.players.find( player => player.userId === this.createdById )!
 
 		this.playerData = {};
 		this.players.forEach( player => {
 			this.playerData[ player.id ] = player;
-		} );
+		} )
 
 		this.teamData = {};
 		this.teams.forEach( team => {
 			this.teamData[ team.id ] = team;
 		} );
-
-		this.creator = this.players.find( player => player.userId === this.createdById )!;
 	}
 
-	@Exclude()
+
 	get loggedInPlayer() {
 		return this.players.find( player => player.userId === this.loggedInUserId );
 	}
 
-	@Exclude()
 	get askableCardSets() {
-		const hand = this.loggedInPlayer?.hand || new CardHand( [] );
+		const hand = this.loggedInPlayer?.hand || CardHand.from( { cards: [] } );
 		return hand.cardSetsInHand.filter( cardSet => hand.getCardsOfSet( cardSet ).length < 6 );
 	}
 
-	@Exclude()
 	get callableCardSets() {
-		const hand = this.loggedInPlayer?.hand || new CardHand( [] );
+		const hand = this.loggedInPlayer?.hand || CardHand.from( { cards: [] } );
 		return hand.cardSetsInHand.filter( cardSet => hand.getCardsOfSet( cardSet ).length < 6 );
 	}
 
-	@Exclude()
 	get myTeam() {
 		if ( !this.loggedInPlayer?.teamId ) {
 			return null;
@@ -82,7 +85,6 @@ export class EnhancedLitGame {
 		return this.teamData[ this.loggedInPlayer.teamId ];
 	}
 
-	@Exclude()
 	get oppositeTeam() {
 		if ( !this.loggedInPlayer?.teamId ) {
 			return null;
@@ -90,12 +92,12 @@ export class EnhancedLitGame {
 		return this.teams[ 0 ]?.id !== this.loggedInPlayer.teamId ? this.teams[ 0 ] : this.teams[ 1 ];
 	}
 
-	static from( enhancedLitGame: Record<string, any> ) {
-		return plainToInstance( EnhancedLitGame, enhancedLitGame );
-	}
+	static from( gameData: LitGameData ) {
+		const players = gameData.players.map( EnhancedLitPlayer.from );
+		const teams = gameData.teams.map( team => EnhancedLitTeam.from( team, players ) );
+		const moves = gameData.moves.sort( EnhancedLitMove.compareFn ).map( EnhancedLitMove.from );
 
-	serialize() {
-		return instanceToPlain( this );
+		return new EnhancedLitGame( { ...gameData, players, teams, moves } );
 	}
 
 	addTeams( teams: LitTeam[], playerGroups: EnhancedLitPlayer[][] ) {
@@ -107,7 +109,7 @@ export class EnhancedLitGame {
 
 		this.players = Object.values( this.playerData );
 
-		this.teams = teams.map( team => new EnhancedLitTeam( team, this.players ) );
+		this.teams = teams.map( team => EnhancedLitTeam.from( team, this.players ) );
 		this.teams.forEach( team => {
 			this.teamData[ team.id ] = team;
 		} );
@@ -127,7 +129,7 @@ export class EnhancedLitGame {
 	}
 
 	addMove( move: LitMove ) {
-		this.moves = [ new EnhancedLitMove( move ), ...this.moves ];
+		this.moves = [ EnhancedLitMove.from( move ), ...this.moves ];
 	}
 
 	getNewMoveDescription( newMoveData: LitMoveDataWithoutDescription ) {
@@ -143,7 +145,9 @@ export class EnhancedLitGame {
 			case LitMoveType.ASK:
 				askingPlayer = !!newMoveData.askedById ? this.playerData[ newMoveData.askedById ] : null;
 				askedFromPlayer = !!newMoveData.askedFromId ? this.playerData[ newMoveData.askedFromId ] : null;
-				card = !!newMoveData.askedFor ? PlayingCard.from( newMoveData.askedFor as Prisma.JsonObject ) : null;
+				card = !!newMoveData.askedFor
+					? PlayingCard.from( newMoveData.askedFor as unknown as IPlayingCard )
+					: null;
 				return `${ askingPlayer?.name } asked for ${ card?.cardString } from ${ askedFromPlayer?.name }`;
 
 			case LitMoveType.TURN:
@@ -179,15 +183,16 @@ export class EnhancedLitGame {
 
 	handlePlayerUpdate( ...players: LitPlayer[] ) {
 		players.forEach( player => {
-			this.playerData[ player.id ] = new EnhancedLitPlayer( player );
+			this.playerData[ player.id ] = EnhancedLitPlayer.from( player );
 		} );
 
 		this.players = Object.values( this.playerData );
 		this.updateTeams();
 	}
 
-	removeCalledCardsFromGameAndGetUpdatedHands( cardSet: CardSet, cardsCalled: PlayingCard[] ) {
+	removeCardsOfSetFromGameAndGetUpdatedHands( cardSet: CardSet ) {
 		const handData: Record<string, CardHand> = {};
+		const cardsCalled = cardSetMap[ cardSet ];
 
 		this.players.forEach( player => {
 			if ( player.hand.containsSome( cardsCalled ) ) {
@@ -201,7 +206,7 @@ export class EnhancedLitGame {
 
 	handleTeamUpdate( ...teams: LitTeam[] ) {
 		teams.forEach( team => {
-			this.teamData[ team.id ] = new EnhancedLitTeam( team, this.players );
+			this.teamData[ team.id ] = EnhancedLitTeam.from( team, this.players );
 		} );
 
 		this.teams = Object.values( this.teamData );
@@ -209,7 +214,7 @@ export class EnhancedLitGame {
 
 	private updateTeams() {
 		Object.keys( this.teamData ).map( teamId => {
-			this.teamData[ teamId ]!.members = this.players.filter( player => player.teamId === teamId );
+			this.teamData[ teamId ].members = this.players.filter( player => player.teamId === teamId );
 		} );
 
 		this.teams = Object.values( this.teamData );
