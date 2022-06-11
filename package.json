@@ -17,6 +17,7 @@
 		"@nrwl/jest": "14.2.4",
 		"@nrwl/js": "14.2.4",
 		"@nrwl/node": "14.2.4",
+		"@nrwl/react": "14.2.4",
 		"@nrwl/workspace": "14.2.4",
 		"@nxext/react": "14.0.0",
 		"@types/bcryptjs": "2.4.2",
@@ -42,6 +43,8 @@
 		"vite": "2.9.12"
 	},
 	"dependencies": {
+		"@headlessui/react": "1.6.4",
+		"@heroicons/react": "1.0.6",
 		"@prisma/client": "3.15.1",
 		"@trpc/server": "9.24.0",
 		"autoprefixer": "10.4.7",
@@ -59,6 +62,7 @@
 		"react": "18.1.0",
 		"react-dom": "18.1.0",
 		"react-router-dom": "6.3.0",
+		"react-use": "17.4.0",
 		"socket.io": "4.5.1",
 		"superstruct": "0.16.0",
 		"tailwindcss": "3.1.2",
