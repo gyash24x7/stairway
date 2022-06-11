@@ -4,6 +4,7 @@
 	"projects": {
 		"backend": "apps/backend",
 		"cards": "libs/cards",
+		"literature": "apps/literature",
 		"literature-dtos": "libs/literature/dtos",
 		"literature-router": "libs/literature/router",
 		"literature-utils": "libs/literature/utils",
