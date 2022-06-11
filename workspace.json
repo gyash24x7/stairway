@@ -8,6 +8,7 @@
 		"literature-dtos": "libs/literature/dtos",
 		"literature-router": "libs/literature/router",
 		"literature-utils": "libs/literature/utils",
+		"ui": "libs/ui",
 		"utils": "libs/utils"
 	}
 }
