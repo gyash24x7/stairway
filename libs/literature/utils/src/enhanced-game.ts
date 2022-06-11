@@ -63,7 +63,6 @@ export class EnhancedLitGame implements IEnhancedLitGame {
 		} );
 	}
 
-
 	get loggedInPlayer() {
 		return this.players.find( player => player.userId === this.loggedInUserId );
 	}

@@ -4,6 +4,7 @@
 	"projects": {
 		"cards": "libs/cards",
 		"literature-dtos": "libs/literature/dtos",
+		"literature-router": "libs/literature/router",
 		"literature-utils": "libs/literature/utils",
 		"prisma": "libs/prisma",
 		"utils": "libs/utils"

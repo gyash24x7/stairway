@@ -41,6 +41,9 @@
 			"@s2h/literature/dtos": [
 				"libs/literature/dtos/src/index.ts"
 			],
+			"@s2h/literature/router": [
+				"libs/literature/router/src/index.ts"
+			],
 			"@s2h/literature/utils": [
 				"libs/literature/utils/src/index.ts"
 			],

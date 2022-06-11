@@ -39,4 +39,8 @@ export class PlayingCard implements IPlayingCard {
 	static from( card: IPlayingCard ) {
 		return new PlayingCard( card.rank, card.suit )
 	}
+
+	serialize() {
+		return JSON.parse( JSON.stringify( this ) );
+	}
 }

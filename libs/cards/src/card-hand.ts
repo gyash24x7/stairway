@@ -91,4 +91,8 @@ export class CardHand implements ICardHand {
 	get( index: number ) {
 		return this.cards[ index ];
 	}
+
+	serialize() {
+		return JSON.parse( JSON.stringify( this ) );
+	}
 }

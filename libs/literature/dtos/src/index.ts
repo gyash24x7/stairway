@@ -1,8 +1,8 @@
-import type { Infer } from "superstruct";
+import type { Describe, Infer } from "superstruct";
 import * as s from "superstruct";
-import { CARD_RANKS, CARD_SUITS } from "@s2h/cards";
+import { CARD_RANKS, CARD_SUITS, IPlayingCard } from "@s2h/cards";
 
-export const playingCardStruct = s.object( {
+export const playingCardStruct: Describe<IPlayingCard> = s.object( {
 	rank: s.enums( CARD_RANKS ),
 	suit: s.enums( CARD_SUITS )
 } );
