@@ -1,7 +1,6 @@
 import { IPlayingCard, PlayingCard } from "./playing-card";
 import type { CardSet, CardSuit } from "./card-const";
 import { SORTED_DECK } from "./card-const";
-import "reflect-metadata";
 
 export interface ICardHand {
 	cards: IPlayingCard[]

@@ -2,11 +2,11 @@
 	"$schema": "./node_modules/nx/schemas/workspace-schema.json",
 	"version": 2,
 	"projects": {
+		"backend": "apps/backend",
 		"cards": "libs/cards",
 		"literature-dtos": "libs/literature/dtos",
 		"literature-router": "libs/literature/router",
 		"literature-utils": "libs/literature/utils",
-		"prisma": "libs/prisma",
 		"utils": "libs/utils"
 	}
 }
