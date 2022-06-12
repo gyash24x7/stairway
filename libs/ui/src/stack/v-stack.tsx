@@ -1,5 +1,5 @@
 import type { Size } from "../utils/types";
-import { Children, isValidElement, ReactNode } from "react";
+import React, { Children, isValidElement, ReactNode } from "react";
 import { VariantSchema } from "../utils/variant";
 
 export interface VStackProps {

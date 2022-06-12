@@ -1,5 +1,6 @@
 import type { Size } from "../utils/types";
 import { VariantSchema } from "../utils/variant";
+import React from "react";
 
 export interface AvatarProps {
 	size?: Size;

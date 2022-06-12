@@ -1,5 +1,5 @@
 import type { IconType } from "../utils/types";
-import { Fragment } from "react";
+import React, { Fragment } from "react";
 import { InputMessage } from "./input-message";
 import { VariantSchema } from "../utils/variant";
 

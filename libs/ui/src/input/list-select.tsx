@@ -1,5 +1,5 @@
 import { Combobox, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import React, { Fragment, useState } from "react";
 import { CheckCircleIcon, SelectorIcon } from "@heroicons/react/solid";
 import { InputMessage } from "./input-message";
 import { VariantSchema } from "../utils/variant";

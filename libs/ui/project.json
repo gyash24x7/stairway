@@ -4,15 +4,37 @@
 	"projectType": "library",
 	"tags": [ ],
 	"targets": {
-		"lint": {
-			"executor": "@nrwl/linter:eslint",
+		"storybook": {
+			"executor": "@nrwl/storybook:storybook",
+			"options": {
+				"uiFramework": "@storybook/react",
+				"port": 4400,
+				"config": {
+					"configFolder": "libs/ui/.storybook"
+				}
+			},
+			"configurations": {
+				"ci": {
+					"quiet": true
+				}
+			}
+		},
+		"build-storybook": {
+			"executor": "@nrwl/storybook:build",
 			"outputs": [
-				"{options.outputFile}"
+				"{options.outputPath}"
 			],
 			"options": {
-				"lintFilePatterns": [
-					"libs/ui/**/*.{ts,tsx,js,jsx}"
-				]
+				"uiFramework": "@storybook/react",
+				"outputPath": "dist/storybook/ui",
+				"config": {
+					"configFolder": "libs/ui/.storybook"
+				}
+			},
+			"configurations": {
+				"ci": {
+					"quiet": true
+				}
 			}
 		}
 	}

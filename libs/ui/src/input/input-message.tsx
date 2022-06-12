@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import React, { Fragment } from "react";
 import { VariantSchema } from "../utils/variant";
 import { HStack } from "../stack/h-stack";
 import { CheckCircleIcon, ExclamationCircleIcon } from "@heroicons/react/solid";

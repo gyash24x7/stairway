@@ -2,6 +2,7 @@ import type { Appearance, IconType } from "../utils/types";
 import { Spinner } from "../spinner/spinner";
 import { HStack } from "../stack/h-stack";
 import { VariantSchema } from "../utils/variant";
+import React from "react";
 
 export interface BannerProps {
 	className?: string;

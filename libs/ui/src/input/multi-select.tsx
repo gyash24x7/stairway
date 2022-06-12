@@ -1,5 +1,6 @@
 import type { SelectOption } from "./list-select";
 import type { ReactNode } from "react";
+import React from "react";
 import { HStack } from "../stack/h-stack";
 import { VariantSchema } from "../utils/variant";
 
