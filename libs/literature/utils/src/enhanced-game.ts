@@ -74,7 +74,7 @@ export class EnhancedLitGame implements IEnhancedLitGame {
 
 	get callableCardSets() {
 		const hand = this.loggedInPlayer?.hand || CardHand.from( { cards: [] } );
-		return hand.cardSetsInHand.filter( cardSet => hand.getCardsOfSet( cardSet ).length < 6 );
+		return hand.cardSetsInHand.filter( cardSet => hand.getCardsOfSet( cardSet ).length <= 6 );
 	}
 
 	get myTeam() {
@@ -163,7 +163,7 @@ export class EnhancedLitGame implements IEnhancedLitGame {
 				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
 				askingPlayer = !!lastMove?.askedById ? this.playerData[ lastMove.askedById ] : null;
 				card = lastMove?.askedFor;
-				return `${ turnPlayer?.name } declined ${ askingPlayer?.name }"s ask for ${ card?.cardString }`;
+				return `${ turnPlayer?.name } declined ${ askingPlayer?.name }'s ask for ${ card?.cardString }`;
 
 			case LitMoveType.CALL:
 				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;

@@ -41,7 +41,7 @@ async function seed() {
 			playerCount: 6,
 			players: {
 				create: users.map( user => (
-					{ name: user.name, avatar: user.avatar, userId: user.id, hand: [] }
+					{ name: user.name, avatar: user.avatar, userId: user.id, hand: { cards: [] } }
 				) )
 			}
 		}

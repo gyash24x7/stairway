@@ -1,0 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Fjalla+One&family=Montserrat:wght@200;400;600;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind screens;
+
+.king-yna-bg {
+	background: #1a2a6c;
+	background: -webkit-linear-gradient(135deg, #fdbb2d00, #b21f1f40, #1a2a6c);
+	background: linear-gradient(135deg, #fdbb2d00, #b21f1f40, #1a2a6c);
+}
+
+.literature-bg {
+	background-image: url("../assets/literature-bg.jpeg");
+	background-size: cover;
+}

@@ -13,7 +13,7 @@ const createGameResolver: LitResolver<CreateGameInput> = async ( { ctx, input } 
 			createdById: id,
 			code: cuid.slug().toUpperCase(),
 			players: {
-				create: { name, avatar, hand: [], userId: id }
+				create: { name, avatar, hand: { cards: [] }, userId: id }
 			},
 			playerCount: input.playerCount
 		}

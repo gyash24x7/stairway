@@ -34,7 +34,7 @@ const joinGameResolver: LitResolver<JoinGameInput> = async ( { ctx, input } ) =>
 				? LitGameStatus.PLAYERS_READY
 				: LitGameStatus.NOT_STARTED,
 			players: {
-				create: { name: user.name, avatar: user.avatar, userId: user.id, hand: [] }
+				create: { name: user.name, avatar: user.avatar, userId: user.id, hand: { cards: [] } }
 			}
 		}
 	} );

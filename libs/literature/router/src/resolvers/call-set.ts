@@ -83,7 +83,7 @@ const callSetResolver: LitResolver<CallSetInput> = async ( { input, ctx } ) => {
 		game.handleTeamUpdate( oppositeTeam );
 
 		const callFailMoveData: LitMoveDataWithoutDescription = {
-			type: LitMoveType.CALL_FAIL, turnId: game.oppositeTeam!.members[ 0 ].id, gameId: input.gameId
+			type: LitMoveType.CALL_FAIL, turnId: game.oppositeTeam!.membersWithCards[ 0 ].id, gameId: input.gameId
 		};
 
 		const callFailMove = await ctx.prisma.litMove.create( {
@@ -99,7 +99,7 @@ const callSetResolver: LitResolver<CallSetInput> = async ( { input, ctx } ) => {
 		Object.keys( handData ).map( playerId =>
 			ctx.prisma.litPlayer.update( {
 				where: { id: playerId },
-				data: { hand: { set: handData[ playerId ].serialize() } }
+				data: { hand: handData[ playerId ].serialize() }
 			} )
 		)
 	);

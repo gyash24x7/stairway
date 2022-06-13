@@ -2,7 +2,7 @@ import type { LitGame, LitMove, LitPlayer, LitTeam, Prisma, PrismaClient } from 
 import type { NextFunction, Request, Response } from "express";
 import type { MiddlewareFunction } from "@trpc/server/dist/declarations/src/internals/middlewares";
 import type { Namespace } from "socket.io";
-import type { EnhancedLitGame } from "@s2h/literature/utils";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 export class Publisher<T extends { id: string }> {
 	private readonly namespace: Namespace;
@@ -20,7 +20,7 @@ export type TrpcContext = {
 	req?: Request;
 	res?: Response;
 	prisma: PrismaClient;
-	litGamePublisher: Publisher<EnhancedLitGame>;
+	litGamePublisher: Publisher<IEnhancedLitGame>;
 }
 
 export type TrpcMiddleware = MiddlewareFunction<TrpcContext, TrpcContext, any>
@@ -32,7 +32,7 @@ export type TrpcResolverOptions<I = any> = {
 
 export type TrpcResolver<I = any, R = any> = ( options: TrpcResolverOptions<I> ) => R | Promise<R>
 
-export type LitResolver<I = unknown> = TrpcResolver<I, EnhancedLitGame>;
+export type LitResolver<I = unknown> = TrpcResolver<I, IEnhancedLitGame>;
 
 export type ExpressMiddleware = ( req: Request, res: Response, next: NextFunction ) => any | Promise<any>
 
