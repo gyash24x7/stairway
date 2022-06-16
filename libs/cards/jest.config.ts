@@ -7,6 +7,7 @@ export default {
 		}
 	},
 	testEnvironment: "node",
+	collectCoverage: true,
 	transform: {
 		"^.+\\.[tj]s$": "ts-jest"
 	},
