@@ -1,8 +1,7 @@
-import type { LitGame, LitMove, LitPlayer, LitTeam, Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import type { MiddlewareFunction } from "@trpc/server/dist/declarations/src/internals/middlewares";
 import type { Namespace } from "socket.io";
-import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 export class Publisher<T extends { id: string }> {
 	private readonly namespace: Namespace;
@@ -20,19 +19,13 @@ export type TrpcContext = {
 	req?: Request;
 	res?: Response;
 	prisma: PrismaClient;
-	litGamePublisher: Publisher<IEnhancedLitGame>;
 }
 
 export type TrpcMiddleware = MiddlewareFunction<TrpcContext, TrpcContext, any>
 
-export type TrpcResolverOptions<I = any> = {
-	input: I;
-	ctx: TrpcContext;
-}
+export type TrpcResolverOptions<I = any, C = TrpcContext> = { input: I; ctx: C; }
 
-export type TrpcResolver<I = any, R = any> = ( options: TrpcResolverOptions<I> ) => R | Promise<R>
-
-export type LitResolver<I = unknown> = TrpcResolver<I, IEnhancedLitGame>;
+export type TrpcResolver<I = any, R = any, C = TrpcContext> = ( options: TrpcResolverOptions<I, C> ) => R | Promise<R>
 
 export type ExpressMiddleware = ( req: Request, res: Response, next: NextFunction ) => any | Promise<any>
 
@@ -56,7 +49,3 @@ export type GoogleUserResult = {
 	picture: string;
 	locale: string;
 }
-
-export type LitMoveDataWithoutDescription = Omit<Prisma.LitMoveUncheckedCreateInput, "description">;
-
-export type LitGameData = LitGame & { players: LitPlayer[] } & { moves: LitMove[] } & { teams: LitTeam[] }

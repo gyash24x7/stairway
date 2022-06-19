@@ -1,8 +1,8 @@
 import { LitMoveType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { PlayingCard } from "@s2h/cards";
-import type { LitMoveDataWithoutDescription, LitResolver } from "@s2h/utils";
-import { Messages } from "@s2h/utils";
+import type { LitMoveDataWithoutDescription, LitResolver } from "../types";
+import { Messages } from "../constants"
 import type { CallSetInput } from "@s2h/literature/dtos";
 import type { EnhancedLitGame } from "@s2h/literature/utils";
 

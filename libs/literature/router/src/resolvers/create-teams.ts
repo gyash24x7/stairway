@@ -1,5 +1,5 @@
-import type { LitResolver } from "@s2h/utils";
-import { Messages } from "@s2h/utils";
+import type { LitResolver } from "../types";
+import { Messages } from "../constants"
 import type { CreateTeamsInput } from "@s2h/literature/dtos";
 import type { EnhancedLitGame } from "@s2h/literature/utils";
 import { LitGameStatus } from "@prisma/client";

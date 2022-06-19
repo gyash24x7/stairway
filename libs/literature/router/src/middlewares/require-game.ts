@@ -1,19 +1,20 @@
 import { TRPCError } from "@trpc/server";
-import type { LitGameData, TrpcMiddleware } from "@s2h/utils";
-import { Messages } from "@s2h/utils";
+import type { TrpcMiddleware } from "@s2h/utils";
 import { getGameInputStruct } from "@s2h/literature/dtos";
 import { EnhancedLitGame } from "@s2h/literature/utils";
+import type { LitGameData } from "../types";
+import { Messages } from "../constants";
 
 const requireGame: TrpcMiddleware = async function ( { ctx, rawInput, next } ) {
-	const [ error, input ] = getGameInputStruct.validate( rawInput );
+	const result = getGameInputStruct.safeParse( rawInput );
 
-	if ( !!error || !input ) {
-		console.error( error );
+	if ( !result.success ) {
+		console.error( result.error );
 		throw new TRPCError( { code: "BAD_REQUEST", message: "Invalid Game ID!" } );
 	}
 
 	const game: LitGameData | null = await ctx.prisma.litGame.findUnique( {
-		where: { id: input.gameId },
+		where: { id: result.data.gameId },
 		include: { players: true, moves: true, teams: true }
 	} );
 

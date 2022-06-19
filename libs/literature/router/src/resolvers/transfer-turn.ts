@@ -1,5 +1,5 @@
-import type { LitMoveDataWithoutDescription, LitResolver } from "@s2h/utils";
-import { Messages } from "@s2h/utils";
+import type { LitMoveDataWithoutDescription, LitResolver } from "../types";
+import { Messages } from "../constants"
 import type { TransferTurnInput } from "@s2h/literature/dtos";
 import type { EnhancedLitGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";

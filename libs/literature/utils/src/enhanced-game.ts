@@ -1,9 +1,11 @@
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam } from "@prisma/client";
+import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam, Prisma } from "@prisma/client";
 import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, IPlayingCard, PlayingCard } from "@s2h/cards";
 import { EnhancedLitPlayer, IEnhancedLitPlayer } from "./enhanced-player";
 import { EnhancedLitTeam, IEnhancedLitTeam } from "./enhanced-team";
 import { EnhancedLitMove, IEnhancedLitMove } from "./enhanced-move";
-import type { LitGameData, LitMoveDataWithoutDescription } from "@s2h/utils";
+
+type LitGameData = LitGame & { players: LitPlayer[], moves: LitMove[], teams: LitTeam[] }
+type LitMoveDataWithoutDescription = Omit<Prisma.LitMoveUncheckedCreateInput, "description">;
 
 export interface IEnhancedLitGame {
 	id: string;

@@ -1,4 +1,4 @@
-import type { LitResolver } from "@s2h/utils";
+import type { LitResolver } from "../types";
 import type { GetGameInput } from "@s2h/literature/dtos";
 import type { EnhancedLitGame } from "@s2h/literature/utils";
 

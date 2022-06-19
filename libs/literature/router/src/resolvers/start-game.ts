@@ -1,4 +1,4 @@
-import type { LitMoveDataWithoutDescription, LitResolver } from "@s2h/utils";
+import type { LitMoveDataWithoutDescription, LitResolver } from "../types";
 import type { StartGameInput } from "@s2h/literature/dtos";
 import type { EnhancedLitGame } from "@s2h/literature/utils";
 import { LitGameStatus, LitMoveType } from "@prisma/client";

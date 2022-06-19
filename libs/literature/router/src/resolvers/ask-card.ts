@@ -1,7 +1,7 @@
 import { LitMoveType } from "@prisma/client";
-import type { LitMoveDataWithoutDescription, LitResolver } from "@s2h/utils";
 import type { AskCardInput } from "@s2h/literature/dtos";
 import type { EnhancedLitGame } from "@s2h/literature/utils";
+import type { LitMoveDataWithoutDescription, LitResolver } from "../types";
 
 const askCardResolver: LitResolver<AskCardInput> = async ( { input, ctx } ) => {
 	const game: EnhancedLitGame = ctx.res?.locals[ "currentGame" ];

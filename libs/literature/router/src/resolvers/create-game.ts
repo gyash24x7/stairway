@@ -1,5 +1,5 @@
 import cuid from "cuid";
-import type { LitResolver } from "@s2h/utils";
+import type { LitResolver } from "../types";
 import type { CreateGameInput } from "@s2h/literature/dtos";
 import type { User } from "@prisma/client";
 import { EnhancedLitGame } from "@s2h/literature/utils";

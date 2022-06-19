@@ -1,5 +1,5 @@
-import type { LitResolver } from "@s2h/utils";
-import { Messages } from "@s2h/utils";
+import type { LitResolver } from "../types";
+import { Messages } from "../constants"
 import type { JoinGameInput } from "@s2h/literature/dtos";
 import { LitGameStatus, User } from "@prisma/client";
 import { TRPCError } from "@trpc/server";

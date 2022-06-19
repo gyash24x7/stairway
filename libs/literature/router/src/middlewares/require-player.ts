@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import type { TrpcMiddleware } from "@s2h/utils";
-import { Messages } from "@s2h/utils";
+import { Messages } from "../constants"
 import type { EnhancedLitGame } from "@s2h/literature/utils";
 
 const requirePlayer: TrpcMiddleware = async function ( { ctx, next } ) {

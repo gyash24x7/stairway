@@ -1,9 +1,10 @@
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam } from "@prisma/client";
+import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam } from "@prisma/client";
 import cuid from "cuid";
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
-import type { LitGameData } from "@s2h/utils";
 import { EnhancedLitGame } from "../src/enhanced-game";
 import { EnhancedLitPlayer, EnhancedLitTeam } from "@s2h/literature/utils";
+
+type LitGameData = LitGame & { players: LitPlayer[], moves: LitMove[], teams: LitTeam[] }
 
 describe( "Enhanced Lit Game", function () {
 	const gameId = cuid();
