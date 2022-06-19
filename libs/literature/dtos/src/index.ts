@@ -1,71 +1,70 @@
-import type { Describe, Infer } from "superstruct";
-import * as s from "superstruct";
-import { CARD_RANKS, CARD_SUITS, IPlayingCard } from "@s2h/cards";
+import { CardRank, CardSuit } from "@s2h/cards";
+import * as z from "zod";
 
-export const playingCardStruct: Describe<IPlayingCard> = s.object( {
-	rank: s.enums( CARD_RANKS ),
-	suit: s.enums( CARD_SUITS )
+export const playingCardStruct = z.object( {
+	rank: z.nativeEnum( CardRank ),
+	suit: z.nativeEnum( CardSuit )
 } );
 
-export const askCardInputStruct = s.object( {
-	gameId: s.nonempty( s.string() ),
+export const askCardInputStruct = z.object( {
+	gameId: z.string().cuid(),
 	askedFor: playingCardStruct,
-	askedFrom: s.nonempty( s.string() )
+	askedFrom: z.string().cuid()
 } );
 
-export type AskCardInput = Infer<typeof askCardInputStruct>;
+export type AskCardInput = z.infer<typeof askCardInputStruct>;
 
-export const callSetInputStruct = s.object( {
-	gameId: s.nonempty( s.string() ),
-	data: s.record( s.string(), s.array( playingCardStruct ) )
+export const callSetInputStruct = z.object( {
+	gameId: z.string().cuid(),
+	data: z.record( z.string(), z.array( playingCardStruct ) )
 } );
 
-export type CallSetInput = Infer<typeof callSetInputStruct>;
+export type CallSetInput = z.infer<typeof callSetInputStruct>;
 
-export const createGameInputStruct = s.object( {
-	playerCount: s.integer()
+export const createGameInputStruct = z.object( {
+	playerCount: z.number().int()
 } );
 
-export type CreateGameInput = Infer<typeof createGameInputStruct>;
+export type CreateGameInput = z.infer<typeof createGameInputStruct>;
 
-export const createTeamsInputStruct = s.object( {
-	teams: s.size( s.array( s.nonempty( s.string() ) ), 2 ),
-	gameId: s.nonempty( s.string() )
+export const createTeamsInputStruct = z.object( {
+	teams: z.string().array().length( 2 ),
+	gameId: z.string().cuid()
 } );
 
-export type CreateTeamsInput = Infer<typeof createTeamsInputStruct>;
+export type CreateTeamsInput = z.infer<typeof createTeamsInputStruct>;
 
-export const declineCardInputStruct = s.object( {
-	gameId: s.nonempty( s.string() ),
+export const declineCardInputStruct = z.object( {
+	gameId: z.string().cuid(),
 	cardDeclined: playingCardStruct
 } );
 
-export type DeclineCardInput = Infer<typeof declineCardInputStruct>;
+export type DeclineCardInput = z.infer<typeof declineCardInputStruct>;
 
-export const getGameInputStruct = s.type( {
-	gameId: s.nonempty( s.string() )
+export const getGameInputStruct = z.object( {
+	gameId: z.string().cuid()
 } );
 
-export type GetGameInput = Infer<typeof getGameInputStruct>;
+export type GetGameInput = z.infer<typeof getGameInputStruct>;
 
-export const giveCardInputStruct = s.object( {
-	gameId: s.nonempty( s.string() ),
+export const giveCardInputStruct = z.object( {
+	gameId: z.string().cuid(),
 	cardToGive: playingCardStruct,
-	giveTo: s.nonempty( s.string() )
+	giveTo: z.string().cuid()
 } );
 
-export type GiveCardInput = Infer<typeof giveCardInputStruct>;
+export type GiveCardInput = z.infer<typeof giveCardInputStruct>;
 
-export const joinGameInputStruct = s.object( {
-	code: s.size( s.nonempty( s.string() ), 7 )
+export const joinGameInputStruct = z.object( {
+	code: z.string().length( 7 )
 } );
 
-export type JoinGameInput = Infer<typeof joinGameInputStruct>;
+export type JoinGameInput = z.infer<typeof joinGameInputStruct>;
 
 export const startGameInputStruct = getGameInputStruct;
 
-export type StartGameInput = Infer<typeof startGameInputStruct>;
+export type StartGameInput = z.infer<typeof startGameInputStruct>;
 
 export const transferTurnInputStruct = getGameInputStruct;
 
-export type TransferTurnInput = Infer<typeof transferTurnInputStruct>;
+export type TransferTurnInput = z.infer<typeof transferTurnInputStruct>;
