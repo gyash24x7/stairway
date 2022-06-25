@@ -26,4 +26,10 @@ describe( "Card Deck", function () {
 		expect( hands[ 0 ].length ).toBe( 13 );
 	} );
 
+	it( "should return no hands if same hand size is not possible", function () {
+		const deck = new CardDeck();
+		const hands = deck.generateHands( 5 );
+		expect( hands.length ).toBe( 0 );
+	} )
+
 } );

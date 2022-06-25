@@ -1,6 +1,7 @@
 import { IPlayingCard, PlayingCard } from "./playing-card";
-import type { CardSet, CardSuit } from "./card-const";
+import type { CardSet } from "./card-const";
 import { SORTED_DECK } from "./card-const";
+import { filter, includes, intersection, pull, remove, uniq } from "lodash";
 
 export interface ICardHand {
 	cards: IPlayingCard[]
@@ -9,7 +10,7 @@ export interface ICardHand {
 export class CardHand implements ICardHand {
 	cards: PlayingCard[] = [];
 
-	private constructor( { cards }: ICardHand ) {
+	private constructor( cards: IPlayingCard[] ) {
 		this.cards = cards.map( PlayingCard.from )
 	}
 
@@ -18,53 +19,35 @@ export class CardHand implements ICardHand {
 	}
 
 	get cardSetsInHand() {
-		const setOfCardSet = new Set<CardSet>();
-		this.cards.forEach( card => setOfCardSet.add( card.set ) );
-		return Array.from( setOfCardSet );
+		return uniq( this.cards.map( card => card.set ) );
 	}
 
 	get cardSuitsInHand() {
-		const cardSuitSet = new Set<CardSuit>();
-		this.cards.forEach( card => cardSuitSet.add( card.suit ) );
-		return Array.from( cardSuitSet );
+		return uniq( this.cards.map( card => card.suit ) );
+	}
+
+	private get ids() {
+		return this.cards.map( c => c.id );
 	}
 
 	static from( hand: ICardHand ) {
-		return new CardHand( hand );
+		return new CardHand( hand.cards );
 	}
 
 	contains( card: PlayingCard ) {
-		return !!this.cards.find( ( { rank, suit } ) => card.rank === rank && card.suit === suit );
+		return includes( this.ids, card.id );
 	}
 
 	containsAll( cards: PlayingCard[] ) {
-		for ( const card of cards ) {
-			if ( !this.contains( card ) ) {
-				return false;
-			}
-		}
-		return true;
+		return intersection( cards.map( c => c.id ), this.ids ).length === cards.length;
 	}
 
 	containsSome( cards: PlayingCard[] ) {
-		for ( const card of cards ) {
-			if ( this.contains( card ) ) {
-				return true;
-			}
-		}
-		return false;
+		return intersection( cards.map( c => c.id ), this.ids ).length > 0;
 	}
 
 	sorted() {
-		let gameCards: PlayingCard[] = [];
-		SORTED_DECK.forEach( ( card ) => {
-			if ( this.contains( card ) ) {
-				gameCards.push( card );
-			}
-		} );
-
-		this.cards = gameCards;
-		return this;
+		return new CardHand( intersection( SORTED_DECK.map( c => c.id ), this.ids ).map( PlayingCard.fromId ) );
 	}
 
 	map<T>( fn: ( card: PlayingCard ) => T ): T[] {
@@ -72,11 +55,13 @@ export class CardHand implements ICardHand {
 	}
 
 	removeCard( card: PlayingCard ) {
-		this.cards = this.cards.filter( ( { rank, suit } ) => card.rank !== rank || card.suit !== suit );
+		const ids = this.ids;
+		pull( ids, card.id );
+		this.cards = ids.map( PlayingCard.fromId );
 	}
 
 	removeCardsOfSet( cardSet: CardSet ) {
-		this.cards = this.cards.filter( card => card.set !== cardSet );
+		remove( this.cards, [ "set", cardSet ] );
 	}
 
 	addCard( ...cards: PlayingCard[] ) {
@@ -84,7 +69,7 @@ export class CardHand implements ICardHand {
 	}
 
 	getCardsOfSet( set: CardSet ) {
-		return this.cards.filter( card => card.set === set );
+		return filter( this.cards, [ "set", set ] );
 	}
 
 	get( index: number ) {

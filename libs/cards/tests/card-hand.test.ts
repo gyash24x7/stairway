@@ -9,7 +9,9 @@ describe( "Card Hand", function () {
 		const card4 = PlayingCard.from( { rank: CardRank.TWO, suit: CardSuit.SPADES } );
 
 		const hand = CardHand.from( { cards: [ card1, card2, card3, card4 ] } );
-		const serializedHand = JSON.parse( JSON.stringify( hand ) );
+		const serializedHand = hand.serialize();
+
+		expect( hand.map( c => c.id ) ).toEqual( [ card1.id, card2.id, card3.id, card4.id ] );
 
 		expect( serializedHand.cards[ 0 ][ "rank" ] ).toBe( "King" );
 		expect( serializedHand.cards[ 0 ][ "suit" ] ).toBe( "Diamonds" );

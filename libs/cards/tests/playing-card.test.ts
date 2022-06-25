@@ -4,7 +4,7 @@ describe( "Playing Card", function () {
 
 	it( "should serialize and deserialize correctly", function () {
 		const card = PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.DIAMONDS } );
-		const serializedCard = JSON.parse( JSON.stringify( card ) );
+		const serializedCard = card.serialize();
 
 		expect( serializedCard[ "rank" ] ).toBe( "Ace" );
 		expect( serializedCard[ "suit" ] ).toBe( "Diamonds" );
