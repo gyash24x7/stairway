@@ -7,12 +7,18 @@ import cookieParser from "cookie-parser";
 import deserializeUser from "./middlewares/deserialize-user";
 import { getLoggedInUser, handleAuthCallback, handleLogout } from "./handlers/auth";
 import requireUser from "./middlewares/require-user";
-import handleTrpc from "./middlewares/trpc";
 import { Server } from "socket.io";
+import { PrismaClient } from "@prisma/client";
+import handleTrpc from "./middlewares/trpc";
+import { literatureRouter } from "@s2h/literature/router";
+import { Publisher } from "@s2h/utils";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
+import type { LitTrpcContext } from "../../../libs/literature/router/src/types";
 
 dotenv.config();
 
 const port = process.env.PORT || 8000;
+const prisma = new PrismaClient();
 
 const app = express();
 const server = http.createServer( app );
@@ -48,13 +54,23 @@ app.get( "/api/health", async ( _req, res ) => {
 	return res.send( { healthy: true } );
 } );
 
-app.get( "/api/me", requireUser, getLoggedInUser );
+app.get( "/api/me", requireUser( prisma ), getLoggedInUser() );
 
-app.delete( "/api/auth/logout", requireUser, handleLogout );
+app.delete( "/api/auth/logout", requireUser( prisma ), handleLogout() );
 
-app.get( "/api/auth/callback/google", handleAuthCallback );
+app.get( "/api/auth/callback/google", handleAuthCallback( prisma ) );
 
-app.use( "/api/literature", [ requireUser, handleTrpc( literatureNameSpace ) ] );
+
+app.use(
+	"/api/literature",
+	[
+		requireUser( prisma ),
+		handleTrpc<LitTrpcContext>(
+			literatureRouter,
+			{ prisma, litGamePublisher: new Publisher<IEnhancedLitGame>( literatureNameSpace ) },
+		)
+	]
+);
 
 server.listen( port, () => {
 	console.log( `Server started on port ${ port }` );

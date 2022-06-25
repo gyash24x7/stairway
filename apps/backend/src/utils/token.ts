@@ -1,6 +1,6 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
-import prisma from "./prisma";
 import type { CookieOptions } from "express";
+import type { PrismaClient } from "@prisma/client";
 
 export function signJwt( subject: string, tokenType: "access" | "refresh" ) {
 	const expiresIn = tokenType === "access" ? "15m" : "1y";
@@ -17,7 +17,7 @@ export function verifyJwt( token: string ): { valid: boolean, expired: boolean, 
 	}
 }
 
-export async function reIssueAccessToken( refreshToken: string ) {
+export async function reIssueAccessToken( refreshToken: string, prisma: PrismaClient ) {
 	const { subject } = verifyJwt( refreshToken );
 
 	if ( !subject ) {
