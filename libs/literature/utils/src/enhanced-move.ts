@@ -1,5 +1,5 @@
 import type { LitMove, LitMoveType } from "@prisma/client";
-import { CardSet, IPlayingCard, PlayingCard } from "@s2h/cards";
+import { IPlayingCard, PlayingCard } from "@s2h/cards";
 
 export interface IEnhancedLitMove {
 	id: string;
@@ -10,7 +10,6 @@ export interface IEnhancedLitMove {
 	askedById: string | null;
 	gameId: string;
 	createdAt: Date;
-	callingSet: CardSet | null;
 	askedFor: PlayingCard | null;
 }
 
@@ -24,8 +23,6 @@ export class EnhancedLitMove implements IEnhancedLitMove {
 	readonly gameId: string;
 	readonly createdAt: Date;
 
-	readonly callingSet: CardSet | null;
-
 	readonly askedFor: PlayingCard | null;
 
 	constructor( move: IEnhancedLitMove ) {
@@ -37,7 +34,6 @@ export class EnhancedLitMove implements IEnhancedLitMove {
 		this.askedById = move.askedById;
 		this.gameId = move.gameId;
 		this.createdAt = move.createdAt;
-		this.callingSet = move.callingSet;
 		this.askedFor = move.askedFor;
 	}
 
@@ -48,7 +44,6 @@ export class EnhancedLitMove implements IEnhancedLitMove {
 	static from( move: LitMove ) {
 		return new EnhancedLitMove( {
 			...move,
-			callingSet: move.callingSet as CardSet | null,
 			askedFor: !!move.askedFor ? PlayingCard.from( move.askedFor as unknown as IPlayingCard ) : null
 		} );
 	}

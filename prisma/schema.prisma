@@ -31,7 +31,6 @@ enum LitMoveType {
     DECLINED
     GIVEN
     TURN
-    CALL
     CALL_SUCCESS
     CALL_FAIL
 }
@@ -72,7 +71,6 @@ model LitMove {
     type              LitMoveType
     description       String
     askedFor          Json?
-    callingSet        String?
 
     turn              LitPlayer?        @relation("ManyToOne_LitMoveToLitPlayer_Turn", fields: [turnId], references: [id])
     turnId            String?

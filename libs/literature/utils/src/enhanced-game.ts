@@ -167,18 +167,14 @@ export class EnhancedLitGame implements IEnhancedLitGame {
 				card = lastMove?.askedFor;
 				return `${ turnPlayer?.name } declined ${ askingPlayer?.name }'s ask for ${ card?.cardString }`;
 
-			case LitMoveType.CALL:
-				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
-				return `${ turnPlayer?.name } is calling ${ newMoveData?.callingSet }`;
-
 			case LitMoveType.CALL_SUCCESS:
 				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
-				return `${ turnPlayer?.name } called ${ lastMove?.callingSet } correctly`;
+				return `${ turnPlayer?.name } called ${ CardSet.SMALL_HEARTS } correctly`;
 
 			case LitMoveType.CALL_FAIL:
 				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
 				callingPlayer = !!lastMove?.turnId ? this.playerData[ lastMove.turnId ] : null;
-				return `${ callingPlayer?.name } called ${ lastMove?.callingSet } incorrectly. ${ turnPlayer?.name }"s turn`;
+				return `${ callingPlayer?.name } called ${ CardSet.SMALL_HEARTS } incorrectly. ${ turnPlayer?.name }"s turn`;
 		}
 	}
 
