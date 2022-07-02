@@ -32,7 +32,8 @@ describe( "Enhanced Lit Team", function () {
 
 	it( "should serialize and deserialize correctly", function () {
 		const enhancedPlayers = players.map( EnhancedLitPlayer.from );
-		const enhancedTeam = EnhancedLitTeam.from( litTeam, enhancedPlayers );
+		const enhancedTeam = EnhancedLitTeam.from( litTeam );
+		enhancedTeam.addMembers( enhancedPlayers );
 		const serializedTeam = JSON.parse( JSON.stringify( enhancedTeam ) );
 
 		expect( serializedTeam[ "id" ] ).toBe( litTeam.id );

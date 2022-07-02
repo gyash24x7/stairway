@@ -37,10 +37,6 @@ export class EnhancedLitMove implements IEnhancedLitMove {
 		this.askedFor = move.askedFor;
 	}
 
-	static compareFn( a: LitMove, b: LitMove ) {
-		return b.createdAt.getTime() - a.createdAt.getTime();
-	}
-
 	static from( move: LitMove ) {
 		return new EnhancedLitMove( {
 			...move,

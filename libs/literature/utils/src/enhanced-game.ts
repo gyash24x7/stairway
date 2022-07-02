@@ -1,11 +1,25 @@
-import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam, Prisma } from "@prisma/client";
-import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, IPlayingCard, PlayingCard } from "@s2h/cards";
+import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam, Prisma, User } from "@prisma/client";
+import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, PlayingCard } from "@s2h/cards";
 import { EnhancedLitPlayer, IEnhancedLitPlayer } from "./enhanced-player";
 import { EnhancedLitTeam, IEnhancedLitTeam } from "./enhanced-team";
 import { EnhancedLitMove, IEnhancedLitMove } from "./enhanced-move";
 
 type LitGameData = LitGame & { players: LitPlayer[], moves: LitMove[], teams: LitTeam[] }
-type LitMoveDataWithoutDescription = Omit<Prisma.LitMoveUncheckedCreateInput, "description">;
+
+type LitAskMoveParams = { askedFrom: EnhancedLitPlayer, askedBy: EnhancedLitPlayer, askedFor: PlayingCard };
+type LitGiveMoveParams = { givingPlayer: EnhancedLitPlayer, takingPlayer: EnhancedLitPlayer, card: PlayingCard };
+type LitTurnMoveParams = { turnPlayer: EnhancedLitPlayer };
+type LitDeclinedMoveParams = { askingPlayer: EnhancedLitPlayer, declinedPlayer: EnhancedLitPlayer, card: PlayingCard };
+type LitCallMoveParams = { turnPlayer: EnhancedLitPlayer, cardSet: CardSet, callingPlayer: EnhancedLitPlayer };
+
+type LitMoveParams = { type: LitMoveType } & (
+	LitGiveMoveParams
+	| LitAskMoveParams
+	| LitTurnMoveParams
+	| LitDeclinedMoveParams
+	| LitCallMoveParams );
+
+type LitCreateGameParams = { playerCount?: number, createdBy: User };
 
 export interface IEnhancedLitGame {
 	id: string;
@@ -90,30 +104,54 @@ export class EnhancedLitGame implements IEnhancedLitGame {
 		if ( !this.loggedInPlayer?.teamId ) {
 			return null;
 		}
-		return this.teams[ 0 ]?.id !== this.loggedInPlayer.teamId ? this.teams[ 0 ] : this.teams[ 1 ];
+		return this.teams[ 0 ].id !== this.loggedInPlayer.teamId ? this.teams[ 0 ] : this.teams[ 1 ];
 	}
 
 	static from( gameData: LitGameData ) {
 		const players = gameData.players.map( EnhancedLitPlayer.from );
-		const teams = gameData.teams.map( team => EnhancedLitTeam.from( team, players ) );
-		const moves = gameData.moves.sort( EnhancedLitMove.compareFn ).map( EnhancedLitMove.from );
+		const teams = gameData.teams.map( team => {
+			const enhancedTeam = EnhancedLitTeam.from( team );
+			enhancedTeam.addMembers( players );
+			return enhancedTeam;
+		} );
+		const moves = gameData.moves.map( EnhancedLitMove.from )
+			.sort( ( a, b ) => b.createdAt.getTime() - a.createdAt.getTime() );
 
 		return new EnhancedLitGame( { ...gameData, players, teams, moves } );
 	}
 
-	addTeams( teams: LitTeam[], playerGroups: EnhancedLitPlayer[][] ) {
-		playerGroups.forEach( ( playerGroup, i ) => {
-			playerGroup.forEach( player => {
-				this.playerData[ player.id ].teamId = teams[ i ].id;
-			} );
-		} );
+	static generateGameCode() {
+		const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		let result = "";
+		for ( let i = 0; i < 6; i++ ) {
+			result += chars[ Math.floor( Math.random() * 36 ) ];
+		}
+		return result;
+	}
 
+	static generateNewGameData( { playerCount, createdBy }: LitCreateGameParams ) {
+		return { createdById: createdBy.id, playerCount, code: EnhancedLitGame.generateGameCode() };
+	}
+
+	generateNewPlayerData( { name, avatar, id }: User ): Prisma.LitPlayerUncheckedCreateInput {
+		return { name, avatar, userId: id, hand: { cards: [] }, gameId: this.id };
+	}
+
+	addPlayer( player: LitPlayer ) {
+		this.playerData[ player.id ] = EnhancedLitPlayer.from( player );
 		this.players = Object.values( this.playerData );
+	}
 
-		this.teams = teams.map( team => EnhancedLitTeam.from( team, this.players ) );
-		this.teams.forEach( team => {
-			this.teamData[ team.id ] = team;
+	isUserAlreadyInGame( { id }: User ) {
+		return !!this.players.find( player => player.userId === id );
+	}
+
+	addTeams( teams: LitTeam[] ) {
+		teams.forEach( team => {
+			this.teamData[ team.id ] = EnhancedLitTeam.from( team );
 		} );
+
+		this.teams = Object.values( this.teamData );
 	}
 
 	dealCardsAndGetHands() {
@@ -133,48 +171,68 @@ export class EnhancedLitGame implements IEnhancedLitGame {
 		this.moves = [ EnhancedLitMove.from( move ), ...this.moves ];
 	}
 
-	getNewMoveDescription( newMoveData: LitMoveDataWithoutDescription ) {
-		let turnPlayer: EnhancedLitPlayer | null;
-		let askedFromPlayer: EnhancedLitPlayer | null;
-		let callingPlayer: EnhancedLitPlayer | null;
-		let askingPlayer: EnhancedLitPlayer | null;
-		let card: PlayingCard | null;
-
-		const lastMove = this.moves[ 0 ];
-
-		switch ( newMoveData.type ) {
+	getNewMoveData( data: LitMoveParams ) {
+		switch ( data.type ) {
 			case LitMoveType.ASK:
-				askingPlayer = !!newMoveData.askedById ? this.playerData[ newMoveData.askedById ] : null;
-				askedFromPlayer = !!newMoveData.askedFromId ? this.playerData[ newMoveData.askedFromId ] : null;
-				card = !!newMoveData.askedFor
-					? PlayingCard.from( newMoveData.askedFor as unknown as IPlayingCard )
-					: null;
-				return `${ askingPlayer?.name } asked for ${ card?.cardString } from ${ askedFromPlayer?.name }`;
+				const { askedFrom, askedBy, askedFor } = data as LitAskMoveParams;
+				return {
+					gameId: this.id,
+					type: LitMoveType.ASK,
+					description: `${ askedBy.name } asked for ${ askedFor.cardString } from ${ askedFrom.name }`,
+					askedFor: askedFor.serialize(),
+					askedFromId: askedFrom.id,
+					askedById: askedBy.id
+				};
 
-			case LitMoveType.TURN:
-				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
-				return `Waiting for ${ turnPlayer?.name } to Ask or Call`;
+			case LitMoveType.GIVEN: {
+				const { givingPlayer, takingPlayer, card } = data as LitGiveMoveParams;
+				return {
+					gameId: this.id,
+					type: LitMoveType.GIVEN,
+					turnId: takingPlayer.id,
+					description: `${ givingPlayer.name } gave ${ card.cardString } to ${ takingPlayer.name }`
+				};
+			}
 
-			case LitMoveType.GIVEN:
-				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
-				askedFromPlayer = !!lastMove?.askedFromId ? this.playerData[ lastMove.askedFromId ] : null;
-				card = lastMove?.askedFor;
-				return `${ askedFromPlayer?.name } gave ${ card?.cardString } to ${ turnPlayer?.name }`;
+			case LitMoveType.TURN: {
+				const { turnPlayer } = data as LitTurnMoveParams;
+				return {
+					gameId: this.id,
+					type: LitMoveType.TURN,
+					turnId: turnPlayer.id,
+					description: `Waiting for ${ turnPlayer.name } to Ask or Call`
+				};
+			}
 
-			case LitMoveType.DECLINED:
-				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
-				askingPlayer = !!lastMove?.askedById ? this.playerData[ lastMove.askedById ] : null;
-				card = lastMove?.askedFor;
-				return `${ turnPlayer?.name } declined ${ askingPlayer?.name }'s ask for ${ card?.cardString }`;
+			case LitMoveType.DECLINED: {
+				const { askingPlayer, declinedPlayer, card } = data as LitDeclinedMoveParams;
+				return {
+					gameId: this.id,
+					type: LitMoveType.DECLINED,
+					turnId: declinedPlayer.id,
+					description: `${ declinedPlayer.name } declined ${ askingPlayer.name }'s ask for ${ card.cardString }`
+				};
+			}
 
-			case LitMoveType.CALL_SUCCESS:
-				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
-				return `${ turnPlayer?.name } called ${ CardSet.SMALL_HEARTS } correctly`;
+			case LitMoveType.CALL_SUCCESS: {
+				const { turnPlayer, cardSet } = data as LitCallMoveParams;
+				return {
+					gameId: this.id,
+					type: LitMoveType.CALL_SUCCESS,
+					turnId: turnPlayer.id,
+					description: `${ turnPlayer.name } called ${ cardSet } correctly`
+				};
+			}
 
-			case LitMoveType.CALL_FAIL:
-				turnPlayer = !!newMoveData.turnId ? this.playerData[ newMoveData.turnId ] : null;
-				callingPlayer = !!lastMove?.turnId ? this.playerData[ lastMove.turnId ] : null;
-				return `${ callingPlayer?.name } called ${ CardSet.SMALL_HEARTS } incorrectly. ${ turnPlayer?.name }"s turn`;
+			case LitMoveType.CALL_FAIL: {
+				const { turnPlayer, cardSet, callingPlayer } = data as LitCallMoveParams;
+				return {
+					gameId: this.id,
+					type: LitMoveType.CALL_FAIL,
+					turnId: turnPlayer.id,
+					description: `${ callingPlayer.name } called ${ cardSet } incorrectly. ${ turnPlayer.name }'s turn`
+				};
+			}
 		}
 	}
 
@@ -203,7 +261,8 @@ export class EnhancedLitGame implements IEnhancedLitGame {
 
 	handleTeamUpdate( ...teams: LitTeam[] ) {
 		teams.forEach( team => {
-			this.teamData[ team.id ] = EnhancedLitTeam.from( team, this.players );
+			this.teamData[ team.id ] = EnhancedLitTeam.from( team );
+			this.teamData[ team.id ].addMembers( this.players );
 		} );
 
 		this.teams = Object.values( this.teamData );

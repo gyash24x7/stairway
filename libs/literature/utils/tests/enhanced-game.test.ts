@@ -1,4 +1,4 @@
-import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam } from "@prisma/client";
+import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam, User } from "@prisma/client";
 import cuid from "cuid";
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
 import { EnhancedLitGame } from "../src/enhanced-game";
@@ -34,6 +34,14 @@ describe( "Enhanced Lit Game", function () {
 		teamId: team2.id
 	};
 
+	const user: User = {
+		id: player1.userId,
+		name: player1.name,
+		avatar: player1.avatar,
+		salt: "",
+		email: ""
+	};
+
 	const gameData: LitGameData = {
 		players: [ player1, player2 ],
 		teams: [ team1, team2 ],
@@ -46,6 +54,26 @@ describe( "Enhanced Lit Game", function () {
 		createdAt: new Date(),
 		updatedAt: new Date()
 	};
+
+	const baseLitMove = {
+		id: cuid(),
+		type: LitMoveType.TURN,
+		askedFor: null,
+		turnId: null,
+		askedFromId: null,
+		askedById: null,
+		createdAt: new Date()
+	};
+
+	const move1: LitMove = {
+		...baseLitMove,
+		type: LitMoveType.TURN,
+		description: "",
+		gameId: gameData.id,
+		createdAt: new Date( 12324 )
+	};
+
+	gameData.moves = [ move1 ];
 
 	it( "should serialize and deserialize correctly", function () {
 		const enhancedLitGame = EnhancedLitGame.from( gameData );
@@ -73,25 +101,61 @@ describe( "Enhanced Lit Game", function () {
 		expect( deserializedGame.loggedInUserId ).toBe( player1.userId );
 		expect( deserializedGame.askableCardSets.length ).toBeGreaterThan( 0 );
 		expect( deserializedGame.callableCardSets.length ).toBeGreaterThan( 0 );
-		expect( deserializedGame.myTeam ).toEqual( EnhancedLitTeam.from( team1, deserializedGame.players ) );
-		expect( deserializedGame.oppositeTeam ).toEqual( EnhancedLitTeam.from( team2, deserializedGame.players ) );
+
+		const enhancedMyTeam = EnhancedLitTeam.from( team1 );
+		enhancedMyTeam.addMembers( deserializedGame.players );
+		expect( deserializedGame.myTeam ).toEqual( enhancedMyTeam );
+
+		const enhancedOppositeTeam = EnhancedLitTeam.from( team2 );
+		enhancedOppositeTeam.addMembers( deserializedGame.players );
+		expect( deserializedGame.oppositeTeam ).toEqual( enhancedOppositeTeam );
+	} );
+
+	it( "should be able to generate game code", function () {
+		const gameCode = EnhancedLitGame.generateGameCode();
+		expect( gameCode.length ).toBe( 6 );
+	} );
+
+	it( "should be able to generate new game data", function () {
+		const gameData = EnhancedLitGame.generateNewGameData( { playerCount: 4, createdBy: user } );
+		expect( gameData.code.length ).toBe( 6 );
+		expect( gameData.createdById ).toBe( user.id );
+		expect( gameData.playerCount ).toBe( 4 );
+	} );
+
+	it( "should be able to check if user already in game", function () {
+		const enhancedLitGame = EnhancedLitGame.from( gameData );
+		const isUserInGame = enhancedLitGame.isUserAlreadyInGame( user );
+		expect( isUserInGame ).toBeTruthy();
+	} );
+
+	it( "should be able to add player to game", function () {
+		const enhancedLitGame = EnhancedLitGame.from( { ...gameData, players: [] } );
+		enhancedLitGame.addPlayer( player1 );
+		expect( enhancedLitGame.players.length ).toBe( 1 );
+		expect( enhancedLitGame.players[ 0 ] ).toEqual( player1 );
 	} );
 
 	it( "should add teams when teams get created", function () {
 		const enhancedLitGame = EnhancedLitGame.from( { ...gameData, teams: [] } );
 
 		expect( enhancedLitGame.teams.length ).toBe( 0 );
-
-		const playerGroups = [ [ EnhancedLitPlayer.from( player1 ) ], [ EnhancedLitPlayer.from( player2 ) ] ];
-		enhancedLitGame.addTeams( [ team1, team2 ], playerGroups );
+		enhancedLitGame.addTeams( [ team1, team2 ] );
 
 		expect( enhancedLitGame.teams.length ).toBe( 2 );
-		expect( enhancedLitGame.teams[ 0 ].members ).toEqual( playerGroups[ 0 ] );
-		expect( enhancedLitGame.teams[ 1 ].members ).toEqual( playerGroups[ 1 ] );
+		expect( enhancedLitGame.teams ).toEqual( [ team1, team2 ].map( EnhancedLitTeam.from ) );
+	} );
+
+	it( "should be able to generate data for new player", function () {
+		const enhancedLitGame = EnhancedLitGame.from( gameData );
+		const playerData = enhancedLitGame.generateNewPlayerData( user );
+
+		expect( playerData.gameId ).toBe( enhancedLitGame.id );
+		expect( playerData.name ).toBe( user.name );
 	} );
 
 	it( "should deal cards and get hands", function () {
-		const enhancedLitGame = EnhancedLitGame.from( gameData );
+		const enhancedLitGame = EnhancedLitGame.from( { ...gameData, teams: [ team2, team1 ] } );
 
 		const handData = enhancedLitGame.dealCardsAndGetHands();
 
@@ -102,41 +166,76 @@ describe( "Enhanced Lit Game", function () {
 	it( "should add moves to the game when new move gets created", function () {
 		const enhancedLitGame = EnhancedLitGame.from( gameData );
 
-		expect( enhancedLitGame.moves.length ).toBe( 0 );
-
-		const move1: LitMove = {
-			id: cuid(),
-			description: "Move 1",
-			gameId: enhancedLitGame.id,
-			type: LitMoveType.TURN,
-			askedFor: null,
-			callingSet: null,
-			turnId: player1.id,
-			askedFromId: null,
-			askedById: null,
-			createdAt: new Date()
-		};
+		expect( enhancedLitGame.moves.length ).toBe( 1 );
 
 		const move2: LitMove = {
-			id: cuid(),
-			description: "Move 2",
-			gameId: enhancedLitGame.id,
-			type: LitMoveType.TURN,
-			askedFor: null,
-			callingSet: null,
-			turnId: player1.id,
-			askedFromId: null,
-			askedById: null,
-			createdAt: new Date()
+			...baseLitMove,
+			...enhancedLitGame.getNewMoveData( {
+				type: LitMoveType.ASK,
+				askedBy: EnhancedLitPlayer.from( player1 ),
+				askedFor: twoOfClubs,
+				askedFrom: EnhancedLitPlayer.from( player2 )
+			} )
 		};
 
-		enhancedLitGame.addMove( move1 );
-		expect( enhancedLitGame.moves.length ).toBe( 1 );
-		expect( enhancedLitGame.moves[ 0 ].id ).toBe( move1.id );
+		const move3: LitMove = {
+			...baseLitMove,
+			...enhancedLitGame.getNewMoveData( {
+				type: LitMoveType.GIVEN,
+				givingPlayer: EnhancedLitPlayer.from( player1 ),
+				card: twoOfClubs,
+				takingPlayer: EnhancedLitPlayer.from( player2 )
+			} )
+		};
+
+		const move4: LitMove = {
+			...baseLitMove,
+			...enhancedLitGame.getNewMoveData( {
+				type: LitMoveType.DECLINED,
+				askingPlayer: EnhancedLitPlayer.from( player1 ),
+				card: twoOfClubs,
+				declinedPlayer: EnhancedLitPlayer.from( player2 )
+			} )
+		};
+
+		const move5: LitMove = {
+			...baseLitMove,
+			...enhancedLitGame.getNewMoveData( {
+				type: LitMoveType.CALL_FAIL,
+				turnPlayer: EnhancedLitPlayer.from( player1 ),
+				cardSet: CardSet.SMALL_HEARTS,
+				callingPlayer: EnhancedLitPlayer.from( player2 )
+			} )
+		};
+
+		const move6: LitMove = {
+			...baseLitMove,
+			...enhancedLitGame.getNewMoveData( {
+				type: LitMoveType.CALL_SUCCESS,
+				turnPlayer: EnhancedLitPlayer.from( player1 ),
+				cardSet: CardSet.SMALL_HEARTS
+			} )
+		};
 
 		enhancedLitGame.addMove( move2 );
 		expect( enhancedLitGame.moves.length ).toBe( 2 );
 		expect( enhancedLitGame.moves[ 0 ].id ).toBe( move2.id );
+
+		enhancedLitGame.addMove( move3 );
+		expect( enhancedLitGame.moves.length ).toBe( 3 );
+		expect( enhancedLitGame.moves[ 0 ].id ).toBe( move3.id );
+
+		enhancedLitGame.addMove( move4 );
+		expect( enhancedLitGame.moves.length ).toBe( 4 );
+		expect( enhancedLitGame.moves[ 0 ].id ).toBe( move4.id );
+
+		enhancedLitGame.addMove( move5 );
+		expect( enhancedLitGame.moves.length ).toBe( 5 );
+		expect( enhancedLitGame.moves[ 0 ].id ).toBe( move5.id );
+
+		enhancedLitGame.addMove( move6 );
+		expect( enhancedLitGame.moves.length ).toBe( 6 );
+		expect( enhancedLitGame.moves[ 0 ].id ).toBe( move6.id );
 	} );
 
 	it( "should handle player update and also update team members", function () {

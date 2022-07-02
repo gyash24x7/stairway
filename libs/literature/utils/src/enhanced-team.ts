@@ -30,7 +30,11 @@ export class EnhancedLitTeam implements IEnhancedLitTeam {
 		return this.members.filter( member => member.hand.length > 0 );
 	}
 
-	static from( litTeam: LitTeam, players: EnhancedLitPlayer[] ) {
-		return new EnhancedLitTeam( { ...litTeam, members: players.filter( player => player.teamId === litTeam.id ) } );
+	static from( litTeam: LitTeam ) {
+		return new EnhancedLitTeam( { ...litTeam, members: [] } );
+	}
+
+	addMembers( players: EnhancedLitPlayer[] ) {
+		this.members = players.filter( player => player.teamId === this.id );
 	}
 }
