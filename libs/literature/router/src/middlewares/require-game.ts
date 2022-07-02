@@ -1,16 +1,15 @@
 import { TRPCError } from "@trpc/server";
-import type { TrpcMiddleware } from "@s2h/utils";
 import { getGameInputStruct } from "@s2h/literature/dtos";
 import { EnhancedLitGame } from "@s2h/literature/utils";
-import type { LitGameData } from "../types";
+import type { LitGameData, LitTrpcMiddlewareOptions } from "../types";
 import { Messages } from "../constants";
 
-const requireGame: TrpcMiddleware = async function ( { ctx, rawInput, next } ) {
+export default async function ( { ctx, rawInput, next }: LitTrpcMiddlewareOptions ) {
 	const result = getGameInputStruct.safeParse( rawInput );
 
 	if ( !result.success ) {
 		console.error( result.error );
-		throw new TRPCError( { code: "BAD_REQUEST", message: "Invalid Game ID!" } );
+		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_ID } );
 	}
 
 	const game: LitGameData | null = await ctx.prisma.litGame.findUnique( {
@@ -22,8 +21,6 @@ const requireGame: TrpcMiddleware = async function ( { ctx, rawInput, next } ) {
 		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
 	}
 
-	ctx.res!.locals[ "currentGame" ] = EnhancedLitGame.from( game );
-	return next();
+	const currentGame = EnhancedLitGame.from( game );
+	return next( { ctx: { ...ctx, currentGame } } );
 };
-
-export default requireGame;

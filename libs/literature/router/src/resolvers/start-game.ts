@@ -1,11 +1,19 @@
-import type { LitMoveDataWithoutDescription, LitResolver } from "../types";
+import type { LitResolverOptions, LitTrpcContext } from "../types";
 import type { StartGameInput } from "@s2h/literature/dtos";
-import type { EnhancedLitGame } from "@s2h/literature/utils";
 import { LitGameStatus, LitMoveType } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { Messages } from "../constants";
 
-const startGameResolver: LitResolver<StartGameInput> = async ( { input, ctx } ) => {
-	const game: EnhancedLitGame = ctx.res?.locals[ "currentGame" ];
+function validate( ctx: LitTrpcContext ) {
+	if ( ctx.currentGame!.status !== LitGameStatus.TEAMS_CREATED ) {
+		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_STATUS } );
+	}
 
+	return [ ctx.currentGame! ] as const;
+}
+
+export default async function ( { input, ctx }: LitResolverOptions<StartGameInput> ) {
+	const [ game ] = validate( ctx );
 	const handData = game.dealCardsAndGetHands();
 
 	const updatedPlayers = await Promise.all(
@@ -17,12 +25,11 @@ const startGameResolver: LitResolver<StartGameInput> = async ( { input, ctx } ) 
 
 	game.handlePlayerUpdate( ...updatedPlayers );
 
-	const firstMoveData: LitMoveDataWithoutDescription = {
-		type: LitMoveType.TURN, turnId: game.loggedInPlayer?.id, gameId: input.gameId
-	};
-
 	const firstMove = await ctx.prisma.litMove.create( {
-		data: { ...firstMoveData, description: game.getNewMoveDescription( firstMoveData ) }
+		data: game.getNewMoveData( {
+			type: LitMoveType.TURN,
+			turnPlayer: game.loggedInPlayer!
+		} )
 	} );
 
 	game.addMove( firstMove );
@@ -34,8 +41,6 @@ const startGameResolver: LitResolver<StartGameInput> = async ( { input, ctx } ) 
 
 	game.status = LitGameStatus.IN_PROGRESS;
 
-	ctx.litGamePublisher?.publish( game );
+	ctx.litGamePublisher.publish( game );
 	return game;
 };
-
-export default startGameResolver;

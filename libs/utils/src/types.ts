@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient, User } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
-import type { MiddlewareFunction } from "@trpc/server/dist/declarations/src/internals/middlewares";
 import type { Namespace } from "socket.io";
+import type { MiddlewareResult } from "@trpc/server/src/internals/middlewares";
 
 export class Publisher<T extends { id: string }> {
 	private readonly namespace: Namespace;
@@ -16,16 +16,20 @@ export class Publisher<T extends { id: string }> {
 }
 
 export type TrpcContext = {
-	req?: Request;
-	res?: Response;
+	loggedInUser?: User;
 	prisma: PrismaClient;
 }
 
-export type TrpcMiddleware = MiddlewareFunction<TrpcContext, TrpcContext, any>
+export type TrpcMiddlewareOptions<C = TrpcContext> = {
+	rawInput: unknown,
+	ctx: C,
+	next: {
+		(): Promise<MiddlewareResult<C>>;
+		<T>( opts: { ctx: T } ): Promise<MiddlewareResult<T>>;
+	}
+}
 
 export type TrpcResolverOptions<I = any, C = TrpcContext> = { input: I; ctx: C; }
-
-export type TrpcResolver<I = any, R = any, C = TrpcContext> = ( options: TrpcResolverOptions<I, C> ) => R | Promise<R>
 
 export type ExpressMiddleware = ( req: Request, res: Response, next: NextFunction ) => any | Promise<any>
 

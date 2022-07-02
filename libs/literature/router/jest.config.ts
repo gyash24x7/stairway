@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
 	displayName: "literature-router",
 	preset: "../../../jest.preset.js",
@@ -7,6 +6,7 @@ export default {
 			tsconfig: "<rootDir>/tsconfig.spec.json",
 		}
 	},
+	collectCoverage: true,
 	testEnvironment: "node",
 	transform: {
 		"^.+\\.[tj]s$": "ts-jest"

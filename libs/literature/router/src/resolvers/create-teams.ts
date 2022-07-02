@@ -1,35 +1,41 @@
-import type { LitResolver } from "../types";
+import type { LitResolverOptions, LitTrpcContext } from "../types";
 import { Messages } from "../constants"
 import type { CreateTeamsInput } from "@s2h/literature/dtos";
-import type { EnhancedLitGame } from "@s2h/literature/utils";
 import { LitGameStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { shuffle } from "lodash";
 
-function shuffle<T>( array: T[] ) {
-	let arr = [ ...array ];
-	for ( let i = arr.length; i > 1; i-- ) {
-		let j = Math.floor( Math.random() * i );
-		[ arr[ i - 1 ], arr[ j ] ] = [ arr[ j ], arr[ i - 1 ] ];
-	}
-	return arr;
-}
-
-function splitArray<T>( arr: T[] ) {
-	return [ arr.slice( 0, arr.length / 2 ), arr.slice( arr.length / 2 ) ];
-}
-
-const createTeamsResolver: LitResolver<CreateTeamsInput> = async ( { input, ctx } ) => {
-	const game: EnhancedLitGame = ctx.res?.locals[ "currentGame" ];
-
-	if ( game.status !== LitGameStatus.PLAYERS_READY ) {
+function validate( ctx: LitTrpcContext ) {
+	if ( ctx.currentGame!.status !== LitGameStatus.PLAYERS_READY ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_STATUS } );
 	}
 
-	if ( game.players.length !== game.playerCount ) {
+	if ( ctx.currentGame!.players.length !== ctx.currentGame!.playerCount ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.NOT_ENOUGH_PLAYERS } );
 	}
 
-	const playerGroups = splitArray( shuffle( game.players ) );
+	return [ ctx.currentGame! ] as const;
+}
+
+export default async function ( { input, ctx }: LitResolverOptions<CreateTeamsInput> ) {
+	const [ game ] = validate( ctx );
+
+	const teams = await Promise.all( input.teams.map( name =>
+		ctx.prisma.litTeam.create( { data: { name, gameId: game.id } } )
+	) );
+
+	game.addTeams( teams );
+
+	const players = await Promise.all(
+		shuffle( game.players ).map( ( player, i ) =>
+			ctx.prisma.litPlayer.update( {
+				where: { id: player.id },
+				data: { teamId: teams[ i % 2 ].id }
+			} )
+		)
+	);
+
+	game.handlePlayerUpdate( ...players );
 
 	await ctx.prisma.litGame.update( {
 		where: { id: game.id },
@@ -38,24 +44,6 @@ const createTeamsResolver: LitResolver<CreateTeamsInput> = async ( { input, ctx 
 
 	game.status = LitGameStatus.TEAMS_CREATED;
 
-	const teams = await Promise.all( input.teams.map( ( teamName, i ) =>
-		ctx.prisma.litTeam.create( {
-			data: {
-				name: teamName,
-				gameId: input.gameId,
-				players: {
-					connect: playerGroups[ i ].map( player => (
-						{ id: player.id }
-					) )
-				}
-			}
-		} ) )
-	);
-
-	game.addTeams( teams, playerGroups );
-
-	ctx.litGamePublisher?.publish( game );
+	ctx.litGamePublisher.publish( game );
 	return game;
 };
-
-export default createTeamsResolver;

@@ -21,23 +21,24 @@ import {
 	startGameInputStruct,
 	transferTurnInputStruct
 } from "@s2h/literature/dtos";
+import type { LitTrpcContext } from "./types";
 import requireGame from "./middlewares/require-game";
 import requirePlayer from "./middlewares/require-player";
-import type { TrpcContext } from "@s2h/utils";
+import requireGameInProgress from "./middlewares/require-game-in-progress";
 
-
-export const literatureRouter = trpc.router<TrpcContext>()
+export const literatureRouter = trpc.router<LitTrpcContext>()
 	.mutation( "create-game", { input: createGameInputStruct, resolve: createGameResolver } )
 	.mutation( "join-game", { input: joinGameInputStruct, resolve: joinGameResolver } )
 	.middleware( requireGame )
 	.middleware( requirePlayer )
 	.query( "get-game", { input: getGameInputStruct, resolve: getGameResolver } )
-	.mutation( "transfer-turn", { input: transferTurnInputStruct, resolve: transferTurnResolver } )
-	.mutation( "call-set", { input: callSetInputStruct, resolve: callSetResolver } )
+	.mutation( "create-teams", { input: createTeamsInputStruct, resolve: createTeamsResolver } )
+	.mutation( "start-game", { input: startGameInputStruct, resolve: startGameResolver } )
+	.middleware( requireGameInProgress )
+	.mutation( "ask-card", { input: askCardInputStruct, resolve: askCardResolver } )
 	.mutation( "decline-card", { input: declineCardInputStruct, resolve: declineCardResolver } )
 	.mutation( "give-card", { input: giveCardInputStruct, resolve: giveCardResolver } )
-	.mutation( "ask-card", { input: askCardInputStruct, resolve: askCardResolver } )
-	.mutation( "start-game", { input: startGameInputStruct, resolve: startGameResolver } )
-	.mutation( "create-teams", { input: createTeamsInputStruct, resolve: createTeamsResolver } );
+	.mutation( "call-set", { input: callSetInputStruct, resolve: callSetResolver } )
+	.mutation( "transfer-turn", { input: transferTurnInputStruct, resolve: transferTurnResolver } );
 
 export type LiteratureRouter = typeof literatureRouter;

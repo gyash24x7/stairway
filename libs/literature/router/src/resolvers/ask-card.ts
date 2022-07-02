@@ -1,26 +1,40 @@
 import { LitMoveType } from "@prisma/client";
 import type { AskCardInput } from "@s2h/literature/dtos";
-import type { EnhancedLitGame } from "@s2h/literature/utils";
-import type { LitMoveDataWithoutDescription, LitResolver } from "../types";
+import type { LitResolverOptions, LitTrpcContext } from "../types";
+import { TRPCError } from "@trpc/server";
+import { Messages } from "../constants";
+import { PlayingCard } from "@s2h/cards";
 
-const askCardResolver: LitResolver<AskCardInput> = async ( { input, ctx } ) => {
-	const game: EnhancedLitGame = ctx.res?.locals[ "currentGame" ];
+function validate( ctx: LitTrpcContext, input: AskCardInput ) {
+	if ( !ctx.currentGame!.playerData[ input.askedFrom ] ) {
+		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.PLAYER_NOT_FOUND } );
+	}
 
-	const newMoveData: LitMoveDataWithoutDescription = {
-		askedFromId: input.askedFrom,
-		askedById: game.loggedInPlayer?.id,
-		askedFor: { ...input.askedFor },
-		type: LitMoveType.ASK,
-		gameId: input.gameId
-	};
+	if ( ctx.currentGame!.myTeam!.id === ctx.currentGame!.playerData[ input.askedFrom ].teamId ) {
+		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_ASK_FROM_YOUR_TEAM } );
+	}
 
-	const newMove = await ctx.prisma.litMove.create( {
-		data: { ...newMoveData, description: game.getNewMoveDescription( newMoveData ) }
+	const askedCard = PlayingCard.from( input.askedFor );
+	if ( ctx.currentGame!.loggedInPlayer!.hand.contains( askedCard ) ) {
+		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_ASK_CARD_THAT_YOU_HAVE } );
+	}
+
+	return [ ctx.currentGame!, askedCard ] as const;
+}
+
+export default async function ( { input, ctx }: LitResolverOptions<AskCardInput> ) {
+	const [ game, askedCard ] = validate( ctx, input );
+
+	const askMove = await ctx.prisma.litMove.create( {
+		data: game.getNewMoveData( {
+			type: LitMoveType.ASK,
+			askedFor: askedCard,
+			askedFrom: game.playerData[ input.askedFrom ],
+			askedBy: game.loggedInPlayer!
+		} )
 	} );
 
-	game.addMove( newMove );
-	ctx.litGamePublisher?.publish( game );
+	game.addMove( askMove );
+	ctx.litGamePublisher.publish( game );
 	return game;
 };
-
-export default askCardResolver;

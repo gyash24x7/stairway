@@ -1,4 +1,12 @@
 export const Messages = {
+	DUPLICATES_IN_CALL: "You cannot call same card to be with multiple players!",
+	INVALID_CALL: "You need to declare your cards in the call!",
+	CANNOT_CALL_SET_THAT_YOU_DONT_HAVE: "You can only call sets that you have!",
+	CANNOT_ASK_CARD_THAT_YOU_HAVE: "You cannot ask a card that you already have!",
+	CANNOT_GIVE_CARD_WITHIN_YOUR_TEAM: "You cannot give card to your own team member!",
+	CANNOT_ASK_FROM_YOUR_TEAM: "You cannot ask from your team members!",
+	INVALID_GAME_ID: "Invalid Game ID!",
+	USER_NOT_LOGGED_IN: "User not logged in!",
 	INVALID_GAME_STATUS: "Game is in Invalid State!",
 	GAME_NOT_FOUND: "Game Not Found!",
 	NOT_PART_OF_GAME: "You are not part of the game. Cannot perform action!",

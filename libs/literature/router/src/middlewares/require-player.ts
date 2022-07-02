@@ -1,19 +1,21 @@
 import { TRPCError } from "@trpc/server";
-import type { TrpcMiddleware } from "@s2h/utils";
 import { Messages } from "../constants"
-import type { EnhancedLitGame } from "@s2h/literature/utils";
+import type { LitTrpcMiddlewareOptions } from "../types";
 
-const requirePlayer: TrpcMiddleware = async function ( { ctx, next } ) {
-	const userId = ctx.res?.locals[ "userId" ] as string;
-	const game: EnhancedLitGame = ctx.res?.locals[ "currentGame" ];
+export default async function ( { ctx, next }: LitTrpcMiddlewareOptions ) {
+	if ( !ctx.loggedInUser ) {
+		throw new TRPCError( { code: "UNAUTHORIZED", message: Messages.USER_NOT_LOGGED_IN } );
+	}
 
-	game.loggedInUserId = userId;
+	if ( !ctx.currentGame ) {
+		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
+	}
 
-	if ( !game.loggedInPlayer ) {
+	ctx.currentGame.loggedInUserId = ctx.loggedInUser.id;
+
+	if ( !ctx.currentGame.loggedInPlayer ) {
 		throw new TRPCError( { code: "FORBIDDEN", message: Messages.NOT_PART_OF_GAME } );
 	}
 
-	return next();
+	return next( { ctx } );
 };
-
-export default requirePlayer;

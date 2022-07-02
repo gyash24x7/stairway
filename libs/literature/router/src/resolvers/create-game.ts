@@ -1,25 +1,20 @@
-import cuid from "cuid";
-import type { LitResolver } from "../types";
-import type { CreateGameInput } from "@s2h/literature/dtos";
-import type { User } from "@prisma/client";
 import { EnhancedLitGame } from "@s2h/literature/utils";
+import type { LitResolverOptions } from "../types";
+import type { CreateGameInput } from "@s2h/literature/dtos";
 
-const createGameResolver: LitResolver<CreateGameInput> = async ( { ctx, input } ) => {
-	const { name, avatar, id } = ctx.res?.locals[ "user" ] as User;
-
+export default async function ( { ctx, input }: LitResolverOptions<CreateGameInput> ) {
 	const game = await ctx.prisma.litGame.create( {
-		include: { players: true },
-		data: {
-			createdById: id,
-			code: cuid.slug().toUpperCase(),
-			players: {
-				create: { name, avatar, hand: { cards: [] }, userId: id }
-			},
-			playerCount: input.playerCount
-		}
+		data: EnhancedLitGame.generateNewGameData( {
+			playerCount: input.playerCount,
+			createdBy: ctx.loggedInUser!
+		} )
 	} );
 
-	return EnhancedLitGame.from( { ...game, moves: [], teams: [] } );
-};
+	const enhancedGame = EnhancedLitGame.from( { ...game, moves: [], teams: [], players: [] } );
+	const player = await ctx.prisma.litPlayer.create( {
+		data: enhancedGame.generateNewPlayerData( ctx.loggedInUser! )
+	} );
 
-export default createGameResolver;
+	enhancedGame.addPlayer( player );
+	return enhancedGame;
+};

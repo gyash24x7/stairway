@@ -1,31 +1,33 @@
-import type { LitMoveDataWithoutDescription, LitResolver } from "../types";
+import type { LitResolverOptions, LitTrpcContext } from "../types";
 import { Messages } from "../constants"
 import type { DeclineCardInput } from "@s2h/literature/dtos";
-import type { EnhancedLitGame } from "@s2h/literature/utils";
 import { PlayingCard } from "@s2h/cards";
 import { TRPCError } from "@trpc/server";
 import { LitMoveType } from "@prisma/client";
 
-const declineCardResolver: LitResolver<DeclineCardInput> = async ( { ctx, input } ) => {
-	const game: EnhancedLitGame = ctx.res?.locals[ "currentGame" ];
-
+function validate( ctx: LitTrpcContext, input: DeclineCardInput ) {
 	const cardDeclined = PlayingCard.from( input.cardDeclined );
 
-	if ( game.loggedInPlayer?.hand.contains( cardDeclined ) ) {
+	if ( ctx.currentGame!.loggedInPlayer!.hand.contains( cardDeclined ) ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_DECLINE_CARD } );
 	}
 
-	const declineMoveData: LitMoveDataWithoutDescription = {
-		type: LitMoveType.DECLINED, turnId: game.loggedInPlayer?.id, gameId: input.gameId
-	};
+	return [ ctx.currentGame!, cardDeclined ] as const;
+}
+
+export default async function ( { ctx, input }: LitResolverOptions<DeclineCardInput> ) {
+	const [ game, cardDeclined ] = validate( ctx, input );
 
 	const declineMove = await ctx.prisma.litMove.create( {
-		data: { ...declineMoveData, description: game.getNewMoveDescription( declineMoveData ) }
+		data: game.getNewMoveData( {
+			type: LitMoveType.DECLINED,
+			declinedPlayer: game.loggedInPlayer!,
+			askingPlayer: game.playerData[ game.moves[ 0 ].askedById! ],
+			card: cardDeclined
+		} )
 	} );
 
 	game.addMove( declineMove );
-	ctx.litGamePublisher?.publish( game );
+	ctx.litGamePublisher.publish( game );
 	return game;
 };
-
-export default declineCardResolver;
