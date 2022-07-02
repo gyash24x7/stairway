@@ -22,7 +22,7 @@ export const callSetInputStruct = z.object( {
 export type CallSetInput = z.infer<typeof callSetInputStruct>;
 
 export const createGameInputStruct = z.object( {
-	playerCount: z.number().int()
+	playerCount: z.number().int().optional()
 } );
 
 export type CreateGameInput = z.infer<typeof createGameInputStruct>;
@@ -56,7 +56,7 @@ export const giveCardInputStruct = z.object( {
 export type GiveCardInput = z.infer<typeof giveCardInputStruct>;
 
 export const joinGameInputStruct = z.object( {
-	code: z.string().length( 7 )
+	code: z.string().length( 6 )
 } );
 
 export type JoinGameInput = z.infer<typeof joinGameInputStruct>;

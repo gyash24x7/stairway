@@ -27,4 +27,8 @@ export class CardDeck implements ICardDeck {
 		const handSize = this.cards.length / handCount;
 		return chunk( this.cards, handSize ).map( cards => CardHand.from( { cards } ) );
 	}
+
+	sort() {
+		this.cards = SORTED_DECK;
+	}
 }

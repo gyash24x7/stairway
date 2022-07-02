@@ -1,4 +1,4 @@
-import { CardDeck, CardRank } from "@s2h/cards";
+import { CardDeck, CardRank, SORTED_DECK } from "@s2h/cards";
 
 describe( "Card Deck", function () {
 
@@ -30,6 +30,12 @@ describe( "Card Deck", function () {
 		const deck = new CardDeck();
 		const hands = deck.generateHands( 5 );
 		expect( hands.length ).toBe( 0 );
-	} )
+	} );
+
+	it( "should be able to return sorted deck", function () {
+		const deck = new CardDeck();
+		deck.sort()
+		expect( deck.cards ).toEqual( SORTED_DECK );
+	} );
 
 } );
