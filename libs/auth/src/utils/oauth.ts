@@ -4,8 +4,8 @@ import { GOOGLE_GET_USER_URL, GOOGLE_TOKEN_URL, GoogleTokenResult, GoogleUserRes
 export async function getGoogleToken( code: string ) {
 	const url = new URL( GOOGLE_TOKEN_URL );
 	url.searchParams.append( "code", code );
-	url.searchParams.append( "client_id", process.env.GOOGLE_CLIENT_ID! );
-	url.searchParams.append( "client_secret", process.env.GOOGLE_CLIENT_SECRET! );
+	url.searchParams.append( "client_id", process.env[ "GOOGLE_CLIENT_ID" ]! );
+	url.searchParams.append( "client_secret", process.env[ "GOOGLE_CLIENT_SECRET" ]! );
 	url.searchParams.append( "redirect_uri", "http://localhost:8000/api/auth/callback/google" );
 	url.searchParams.append( "grant_type", "authorization_code" );
 

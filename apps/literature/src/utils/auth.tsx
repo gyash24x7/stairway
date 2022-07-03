@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "react-query";
 import { Flex, Spinner } from "@s2h/ui";
 
 const SERVER_URL = "http://localhost:8000";
-const GOOGLE_CLIENT_ID = "920568500477-5jjt1bhogad9lh4qmj8h8p7ja7d2s2fn.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "920568500477-5rrmek91r0pskp7b23emvvt3nqdnp8ls.apps.googleusercontent.com";
 const GOOGLE_REDIRECT_URL = "http://localhost:8000/api/auth/callback/google";
 
 export interface IAuthContext {

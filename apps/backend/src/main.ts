@@ -4,16 +4,12 @@ import http from "http";
 import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
-import deserializeUser from "./middlewares/deserialize-user";
-import { getLoggedInUser, handleAuthCallback, handleLogout } from "./handlers/auth";
-import requireUser from "./middlewares/require-user";
 import { Server } from "socket.io";
 import { PrismaClient } from "@prisma/client";
-import handleTrpc from "./middlewares/trpc";
-import { literatureRouter } from "@s2h/literature/router";
+import { literatureExpressHandler } from "@s2h/literature/router";
 import { Publisher } from "@s2h/utils";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
-import type { LitTrpcContext } from "../../../libs/literature/router/src/types";
+import { deserializeUser, handleAuthCallback, handleGetLoggedInUser, handleLogout, requireUser } from "@s2h/auth";
 
 dotenv.config();
 
@@ -34,7 +30,7 @@ app.use( morgan( "tiny" ) );
 app.use( cookieParser() );
 app.use( express.json() );
 app.use( cors( { credentials: true, origin: "http://localhost:3000" } ) );
-app.use( deserializeUser );
+app.use( deserializeUser( prisma ) );
 
 const literatureNameSpace = io.of( "/literature" );
 
@@ -50,27 +46,19 @@ literatureNameSpace.on( "connection", socket => {
 	} );
 } );
 
+const litGamePublisher = new Publisher<IEnhancedLitGame>( literatureNameSpace );
+
 app.get( "/api/health", async ( _req, res ) => {
 	return res.send( { healthy: true } );
 } );
 
-app.get( "/api/me", requireUser( prisma ), getLoggedInUser() );
+app.get( "/api/me", requireUser( prisma ), handleGetLoggedInUser() );
 
 app.delete( "/api/auth/logout", requireUser( prisma ), handleLogout() );
 
 app.get( "/api/auth/callback/google", handleAuthCallback( prisma ) );
 
-
-app.use(
-	"/api/literature",
-	[
-		requireUser( prisma ),
-		handleTrpc<LitTrpcContext>(
-			literatureRouter,
-			{ prisma, litGamePublisher: new Publisher<IEnhancedLitGame>( literatureNameSpace ) },
-		)
-	]
-);
+app.use( "/api/literature", [ requireUser( prisma ), literatureExpressHandler( { prisma, litGamePublisher } ) ] );
 
 server.listen( port, () => {
 	console.log( `Server started on port ${ port }` );

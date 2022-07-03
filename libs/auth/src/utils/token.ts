@@ -4,12 +4,12 @@ import type { PrismaClient } from "@prisma/client";
 
 export function signJwt( subject: string, tokenType: "access" | "refresh" ) {
 	const expiresIn = tokenType === "access" ? "15m" : "1y";
-	return jwt.sign( {}, process.env.JWT_SECRET!, { expiresIn, subject } );
+	return jwt.sign( {}, process.env[ "JWT_SECRET" ]!, { expiresIn, subject } );
 }
 
 export function verifyJwt( token: string ): { valid: boolean, expired: boolean, subject?: string } {
 	try {
-		const payload = jwt.verify( token, process.env.JWT_SECRET! ) as JwtPayload;
+		const payload = jwt.verify( token, process.env[ "JWT_SECRET" ]! ) as JwtPayload;
 		return { valid: true, expired: false, subject: payload.sub };
 	} catch ( e: any ) {
 		console.error( e );

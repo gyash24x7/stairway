@@ -25,6 +25,7 @@ import type { LitTrpcContext } from "./types";
 import requireGame from "./middlewares/require-game";
 import requirePlayer from "./middlewares/require-player";
 import requireGameInProgress from "./middlewares/require-game-in-progress";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
 export const literatureRouter = trpc.router<LitTrpcContext>()
 	.mutation( "create-game", { input: createGameInputStruct, resolve: createGameResolver } )
@@ -42,3 +43,10 @@ export const literatureRouter = trpc.router<LitTrpcContext>()
 	.mutation( "transfer-turn", { input: transferTurnInputStruct, resolve: transferTurnResolver } );
 
 export type LiteratureRouter = typeof literatureRouter;
+
+export function literatureExpressHandler( ctx: LitTrpcContext ) {
+	return createExpressMiddleware( {
+		router: literatureRouter,
+		createContext: ( { res } ): LitTrpcContext => ( { ...ctx, loggedInUser: res.locals[ "user" ] } )
+	} );
+}

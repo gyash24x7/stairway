@@ -1,28 +1,12 @@
-import type { ExpressHandler } from "@s2h/utils";
-import { AVATAR_BASE_URL } from "@s2h/utils";
-import { getGoogleToken, getGoogleUser } from "../utils/oauth";
-import { accessTokenCookieOptions, refreshTokenCookieOptions, signJwt } from "../utils/token";
+import type { PrismaClient } from "@prisma/client";
+import { AVATAR_BASE_URL, ExpressHandler } from "@s2h/utils";
 import * as bcrypt from "bcryptjs";
-import type { PrismaClient, User } from "@prisma/client";
+import { accessTokenCookieOptions, refreshTokenCookieOptions, signJwt } from "../utils/token";
+import { getGoogleToken, getGoogleUser } from "../utils/oauth";
 
-export function getLoggedInUser(): ExpressHandler {
-	return async function ( _req, res ) {
-		const user = res.locals.user as User;
-		return res.send( user );
-	};
-}
-
-export function handleLogout(): ExpressHandler {
-	return async function ( _req, res ) {
-		res.clearCookie( "accessToken", accessTokenCookieOptions );
-		res.clearCookie( "refreshToken", refreshTokenCookieOptions );
-		return res.send( {} );
-	};
-}
-
-export function handleAuthCallback( prisma: PrismaClient ): ExpressHandler {
+export default function handleAuthCallback( prisma: PrismaClient ): ExpressHandler {
 	return async function ( req, res ) {
-		const code = req.query.code as string;
+		const code = req.query[ "code" ] as string;
 		const { access_token, id_token } = await getGoogleToken( code );
 		const { verified_email, email, name, id } = await getGoogleUser( access_token, id_token );
 

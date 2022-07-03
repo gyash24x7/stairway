@@ -2,7 +2,7 @@ import { accessTokenCookieOptions, reIssueAccessToken, verifyJwt } from "../util
 import type { ExpressMiddleware } from "@s2h/utils";
 import type { PrismaClient } from "@prisma/client";
 
-function deserializeUser( prisma: PrismaClient ): ExpressMiddleware {
+export default function ( prisma: PrismaClient ): ExpressMiddleware {
 	return async function ( req, res, next ) {
 		const authHeader = req.headers.authorization || "";
 		const refreshHeader = req.headers[ "x-refresh" ] || "";
@@ -17,7 +17,7 @@ function deserializeUser( prisma: PrismaClient ): ExpressMiddleware {
 		const { subject, expired } = verifyJwt( accessToken );
 
 		if ( subject ) {
-			res.locals.userId = subject;
+			res.locals[ "userId" ] = subject;
 			return next();
 		}
 
@@ -27,7 +27,7 @@ function deserializeUser( prisma: PrismaClient ): ExpressMiddleware {
 			if ( !!newAccessToken ) {
 				res.cookie( "accessToken", newAccessToken, accessTokenCookieOptions );
 				const { subject } = verifyJwt( newAccessToken );
-				res.locals.userId = subject;
+				res.locals[ "userId" ] = subject;
 			}
 
 			return next();
@@ -36,5 +36,3 @@ function deserializeUser( prisma: PrismaClient ): ExpressMiddleware {
 		return next();
 	};
 }
-
-export default deserializeUser;

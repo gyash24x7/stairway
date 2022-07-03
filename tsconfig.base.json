@@ -32,6 +32,9 @@
 		"checkJs": true,
 		"resolveJsonModule": true,
 		"paths": {
+			"@s2h/auth": [
+				"libs/auth/src/index.ts"
+			],
 			"@s2h/cards": [
 				"libs/cards/src/index.ts"
 			],
