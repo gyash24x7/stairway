@@ -3,7 +3,7 @@ import type { CookieOptions } from "express";
 import type { PrismaClient } from "@prisma/client";
 
 export function signJwt( subject: string, tokenType: "access" | "refresh" ) {
-	const expiresIn = tokenType === "access" ? "15m" : "1y";
+	const expiresIn = tokenType === "access" ? 15 * 60 : 365 * 24 * 60 * 60;
 	return jwt.sign( {}, process.env[ "JWT_SECRET" ]!, { expiresIn, subject } );
 }
 
