@@ -1,7 +1,7 @@
 import type { PrismaClient, User } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import type { Namespace } from "socket.io";
-import type { MiddlewareResult } from "@trpc/server/src/internals/middlewares";
+import type { MiddlewareResult } from "@trpc/server/dist/declarations/src/internals/middlewares";
 
 export class Publisher<T extends { id: string }> {
 	private readonly namespace: Namespace;
