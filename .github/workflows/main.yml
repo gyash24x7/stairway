@@ -35,7 +35,7 @@ jobs:
         with:
           path: node_modules
           key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-      - run: pnpm nx affected --target=test --all --parallel
+      - run: pnpm nx affected --target=test --parallel
 
   build:
     runs-on: ubuntu-latest
@@ -50,4 +50,4 @@ jobs:
         with:
           path: node_modules
           key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-      - run: pnpm nx affected --target=build --all --prod --parallel
+      - run: pnpm nx affected --target=build --prod --parallel
