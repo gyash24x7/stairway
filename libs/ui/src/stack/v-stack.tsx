@@ -28,8 +28,8 @@ export const VStack = function ( { children, ...props }: VStackProps ) {
 
 	return (
 		<div className = { props.className }>
-			{ validChildren.map( ( child ) => (
-				<div className = { `${ stackItemClassname } ${ props.stackItemClassName }` }>
+			{ validChildren.map( ( child, index ) => (
+				<div className = { `${ stackItemClassname } ${ props.stackItemClassName }` } key = { index }>
 					{ child }
 				</div>
 			) ) }

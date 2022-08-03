@@ -3,6 +3,7 @@ import type { StartGameInput } from "@s2h/literature/dtos";
 import { LitGameStatus, LitMoveType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext ) {
 	if ( ctx.currentGame!.status !== LitGameStatus.TEAMS_CREATED ) {
@@ -12,7 +13,7 @@ function validate( ctx: LitTrpcContext ) {
 	return [ ctx.currentGame! ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<StartGameInput> ) {
+export default async function ( { input, ctx }: LitResolverOptions<StartGameInput> ): Promise<IEnhancedLitGame> {
 	const [ game ] = validate( ctx );
 	const handData = game.dealCardsAndGetHands();
 

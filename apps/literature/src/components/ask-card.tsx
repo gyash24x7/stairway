@@ -27,12 +27,12 @@ export function AskCard() {
 
 	const handleConfirm = async () => {
 		const input: AskCardInput = { gameId, askedFor: selectedCard!, askedFrom: selectedPlayer!.id };
-		const [ error ] = askCardInputStruct.validate( input );
+		const inputValidation = await askCardInputStruct.safeParseAsync( input );
 
-		if ( !error ) {
+		if ( inputValidation.success ) {
 			await mutateAsync( input );
 		} else {
-			console.log( error );
+			console.log( inputValidation.error );
 		}
 	};
 

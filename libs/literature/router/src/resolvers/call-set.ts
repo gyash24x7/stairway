@@ -4,6 +4,7 @@ import { PlayingCard } from "@s2h/cards";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
 import { Messages } from "../constants"
 import type { CallSetInput } from "@s2h/literature/dtos";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext, input: CallSetInput ) {
 	const calledCards = Object.values( input.data ).flat().map( PlayingCard.from );
@@ -49,7 +50,7 @@ function validate( ctx: LitTrpcContext, input: CallSetInput ) {
 	return [ ctx.currentGame!, callingSet ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<CallSetInput> ) {
+export default async function ( { input, ctx }: LitResolverOptions<CallSetInput> ): Promise<IEnhancedLitGame> {
 	const [ game, callingSet ] = validate( ctx, input );
 
 	let cardsCalledCorrect = 0;

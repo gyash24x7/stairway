@@ -33,6 +33,9 @@ export function GameStatus() {
 		}
 	};
 
+	console.log( moves[ 0 ] );
+	console.log( loggedInPlayer );
+
 	return (
 		<VStack className = { "w-full py-4 lg:py-0" } spacing = { "2xl" }>
 			<Banner message = { moves[ 0 ].description }/>

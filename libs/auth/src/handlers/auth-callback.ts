@@ -30,6 +30,6 @@ export default function handleAuthCallback( prisma: PrismaClient ): ExpressHandl
 		res.cookie( "accessToken", accessToken, accessTokenCookieOptions );
 		res.cookie( "refreshToken", refreshToken, refreshTokenCookieOptions );
 
-		return res.redirect( "http://localhost:3000" );
+		return res.redirect( "http://localhost:5173" );
 	};
 }

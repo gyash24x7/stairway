@@ -8,8 +8,10 @@ export function DisplayTeams() {
 		<VStack className = { "divide-light-700 divide-dashed divide-y" }>
 			{ teams.map( team => (
 				<div className = { "min-w-full my-2" } key = { team?.id }>
-					<Flex className = { "border-b border-dashed border-light-700 w-full" }
-						  justify = { "space-between" }>
+					<Flex
+						className = { "border-b border-dashed border-light-700 w-full" }
+						justify = { "space-between" }
+					>
 						<h2 className = { "font-semibold text-xl text-left pb-2 pr-2" }>Team { team.name }</h2>
 						<h2 className = { "font-semibold text-xl text-right pb-2 pr-2" }>{ team.score }</h2>
 					</Flex>

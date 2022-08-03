@@ -3,7 +3,7 @@ import { Messages } from "../constants"
 import type { JoinGameInput } from "@s2h/literature/dtos";
 import { LitGameStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
-import { EnhancedLitGame } from "@s2h/literature/utils";
+import { EnhancedLitGame, IEnhancedLitGame } from "@s2h/literature/utils";
 
 async function validate( ctx: LitTrpcContext, input: JoinGameInput ) {
 	const game = await ctx.prisma.litGame.findFirst( {
@@ -24,7 +24,7 @@ async function validate( ctx: LitTrpcContext, input: JoinGameInput ) {
 	return enhancedGame;
 }
 
-export default async function ( { ctx, input }: LitResolverOptions<JoinGameInput> ) {
+export default async function ( { ctx, input }: LitResolverOptions<JoinGameInput> ): Promise<IEnhancedLitGame> {
 	const game = await validate( ctx, input );
 
 	if ( game.isUserAlreadyInGame( ctx.loggedInUser! ) ) {

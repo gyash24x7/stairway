@@ -4,6 +4,7 @@ import type { DeclineCardInput } from "@s2h/literature/dtos";
 import { PlayingCard } from "@s2h/cards";
 import { TRPCError } from "@trpc/server";
 import { LitMoveType } from "@prisma/client";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext, input: DeclineCardInput ) {
 	const cardDeclined = PlayingCard.from( input.cardDeclined );
@@ -15,7 +16,7 @@ function validate( ctx: LitTrpcContext, input: DeclineCardInput ) {
 	return [ ctx.currentGame!, cardDeclined ] as const;
 }
 
-export default async function ( { ctx, input }: LitResolverOptions<DeclineCardInput> ) {
+export default async function ( { ctx, input }: LitResolverOptions<DeclineCardInput> ): Promise<IEnhancedLitGame> {
 	const [ game, cardDeclined ] = validate( ctx, input );
 
 	const declineMove = await ctx.prisma.litMove.create( {

@@ -43,8 +43,8 @@ export const HStack = function ( { children, ...props }: HStackProps ) {
 			className = { `${ hStackFlexVS.getClassname( { spacing: props.spacing } ) } ${ props.className }` }
 			wrap = { props.wrap }
 		>
-			{ validChildren.map( ( child ) => (
-				<div className = { `${ stackItemClassname } ${ props.stackItemClassName }` }>
+			{ validChildren.map( ( child, index ) => (
+				<div className = { `${ stackItemClassname } ${ props.stackItemClassName }` } key = { index }>
 					{ child }
 				</div>
 			) ) }

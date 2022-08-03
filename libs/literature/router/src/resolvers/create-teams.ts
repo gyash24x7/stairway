@@ -4,6 +4,7 @@ import type { CreateTeamsInput } from "@s2h/literature/dtos";
 import { LitGameStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { shuffle } from "lodash";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext ) {
 	if ( ctx.currentGame!.status !== LitGameStatus.PLAYERS_READY ) {
@@ -17,7 +18,7 @@ function validate( ctx: LitTrpcContext ) {
 	return [ ctx.currentGame! ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<CreateTeamsInput> ) {
+export default async function ( { input, ctx }: LitResolverOptions<CreateTeamsInput> ): Promise<IEnhancedLitGame> {
 	const [ game ] = validate( ctx );
 
 	const teams = await Promise.all( input.teams.map( name =>

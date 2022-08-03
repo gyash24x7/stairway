@@ -52,13 +52,12 @@ export function CallSet() {
 		} );
 
 		const input: CallSetInput = { gameId, data: finalCardMap };
-		const [ error ] = callSetInputStruct.validate( input );
+		const inputValidation = await callSetInputStruct.safeParseAsync( input );
 
-		if ( !error ) {
-			console.log( input );
+		if ( inputValidation.success ) {
 			await mutateAsync( input );
 		} else {
-			console.error( error );
+			console.error( inputValidation.error );
 		}
 	};
 

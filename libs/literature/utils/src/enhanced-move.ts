@@ -10,7 +10,7 @@ export interface IEnhancedLitMove {
 	askedById: string | null;
 	gameId: string;
 	createdAt: Date;
-	askedFor: PlayingCard | null;
+	askedFor: IPlayingCard | null;
 }
 
 export class EnhancedLitMove implements IEnhancedLitMove {
@@ -34,7 +34,7 @@ export class EnhancedLitMove implements IEnhancedLitMove {
 		this.askedById = move.askedById;
 		this.gameId = move.gameId;
 		this.createdAt = move.createdAt;
-		this.askedFor = move.askedFor;
+		this.askedFor = !!move.askedFor ? PlayingCard.from( move.askedFor ) : null;
 	}
 
 	static from( move: LitMove ) {

@@ -3,6 +3,7 @@ import { Messages } from "../constants"
 import type { TransferTurnInput } from "@s2h/literature/dtos";
 import { TRPCError } from "@trpc/server";
 import { LitGameStatus, LitMoveType } from "@prisma/client";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext ) {
 	if ( ctx.currentGame!.loggedInPlayer!.hand.length !== 0 ) {
@@ -12,7 +13,7 @@ function validate( ctx: LitTrpcContext ) {
 	return [ ctx.currentGame! ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<TransferTurnInput> ) {
+export default async function ( { input, ctx }: LitResolverOptions<TransferTurnInput> ): Promise<IEnhancedLitGame> {
 	const [ game ] = validate( ctx );
 
 	if ( game.myTeam!.membersWithCards.length === 0 && game.oppositeTeam!.membersWithCards.length === 0 ) {

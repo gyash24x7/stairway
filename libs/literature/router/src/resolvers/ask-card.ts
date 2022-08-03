@@ -4,6 +4,7 @@ import type { LitResolverOptions, LitTrpcContext } from "../types";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import { PlayingCard } from "@s2h/cards";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext, input: AskCardInput ) {
 	if ( !ctx.currentGame!.playerData[ input.askedFrom ] ) {
@@ -22,7 +23,7 @@ function validate( ctx: LitTrpcContext, input: AskCardInput ) {
 	return [ ctx.currentGame!, askedCard ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<AskCardInput> ) {
+export default async function ( { input, ctx }: LitResolverOptions<AskCardInput> ): Promise<IEnhancedLitGame> {
 	const [ game, askedCard ] = validate( ctx, input );
 
 	const askMove = await ctx.prisma.litMove.create( {

@@ -4,6 +4,7 @@ import type { GiveCardInput } from "@s2h/literature/dtos";
 import { PlayingCard } from "@s2h/cards";
 import { TRPCError } from "@trpc/server";
 import { LitMoveType } from "@prisma/client";
+import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext, input: GiveCardInput ) {
 	const cardToGive = PlayingCard.from( input.cardToGive );
@@ -25,7 +26,7 @@ function validate( ctx: LitTrpcContext, input: GiveCardInput ) {
 	return [ ctx.currentGame!, givingPlayer, takingPlayer, cardToGive ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<GiveCardInput> ) {
+export default async function ( { input, ctx }: LitResolverOptions<GiveCardInput> ): Promise<IEnhancedLitGame> {
 	const [ game, givingPlayer, takingPlayer, cardToGive ] = validate( ctx, input );
 
 	givingPlayer.hand.removeCard( cardToGive );

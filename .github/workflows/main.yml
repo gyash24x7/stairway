@@ -5,19 +5,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - uses: pnpm/action-setup@v2.2.2
         with:
           version: 7.8.0
+
       - name: Cache Node Modules
         id: cache
         uses: actions/cache@v2
         with:
           path: node_modules
           key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
       - uses: actions/setup-node@v1
         if: steps.cache.outputs.cache-hit != 'true'
         with:
           node-version: 16.x
+
       - name: Pnpm Install
         if: steps.cache.outputs.cache-hit != 'true'
         run: pnpm install
@@ -27,14 +31,17 @@ jobs:
     needs: install
     steps:
       - uses: actions/checkout@v2
+
       - uses: pnpm/action-setup@v2.2.2
         with:
           version: 7.8.0
+
       - name: Cache Node Modules
         uses: actions/cache@v2
         with:
           path: node_modules
           key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
       - run: pnpm nx affected --target=test --parallel
 
   build:
@@ -42,12 +49,15 @@ jobs:
     needs: install
     steps:
       - uses: actions/checkout@v2
+
       - uses: pnpm/action-setup@v2.2.2
         with:
           version: 7.8.0
+
       - name: Cache Node Modules
         uses: actions/cache@v2
         with:
           path: node_modules
           key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+          
       - run: pnpm nx affected --target=build --prod --parallel

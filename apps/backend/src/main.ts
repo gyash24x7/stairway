@@ -20,7 +20,7 @@ const app = express();
 const server = http.createServer( app );
 const io = new Server( server, {
 	cors: {
-		origin: [ "http://localhost:3000" ],
+		origin: [ "http://localhost:5173" ],
 		allowedHeaders: [ "Authorization" ],
 		credentials: true
 	}
@@ -29,7 +29,7 @@ const io = new Server( server, {
 app.use( morgan( "tiny" ) );
 app.use( cookieParser() );
 app.use( express.json() );
-app.use( cors( { credentials: true, origin: "http://localhost:3000" } ) );
+app.use( cors( { credentials: true, origin: "http://localhost:5173" } ) );
 app.use( deserializeUser( prisma ) );
 
 const literatureNameSpace = io.of( "/literature" );
