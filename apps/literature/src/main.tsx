@@ -1,16 +1,13 @@
-import { AuthProvider } from "./utils/auth";
-import { TrpcProvider } from "./utils/trpc";
-import { AppRoutes } from "./routes";
-import "./styles/globals.css";
+import "./styles.css";
 import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import LiteratureApp from "@s2h/literature/ui";
 
 function App() {
 	return (
-		<TrpcProvider>
-			<AuthProvider>
-				<AppRoutes/>
-			</AuthProvider>
-		</TrpcProvider>
+		<BrowserRouter>
+			<LiteratureApp/>
+		</BrowserRouter>
 	);
 }
 

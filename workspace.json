@@ -1,15 +1,16 @@
 {
-	"$schema": "./node_modules/nx/schemas/workspace-schema.json",
-	"version": 2,
-	"projects": {
-		"auth": "libs/auth",
-		"backend": "apps/backend",
-		"cards": "libs/cards",
-		"literature": "apps/literature",
-		"literature-dtos": "libs/literature/dtos",
-		"literature-router": "libs/literature/router",
-		"literature-utils": "libs/literature/utils",
-		"ui": "libs/ui",
-		"utils": "libs/utils"
-	}
+  "$schema": "./node_modules/nx/schemas/workspace-schema.json",
+  "version": 2,
+  "projects": {
+    "auth": "libs/auth",
+    "backend": "apps/backend",
+    "cards": "libs/cards",
+    "literature": "apps/literature",
+    "literature-dtos": "libs/literature/dtos",
+    "literature-router": "libs/literature/router",
+    "literature-ui": "libs/literature/ui",
+    "literature-utils": "libs/literature/utils",
+    "ui": "libs/ui",
+    "utils": "libs/utils"
+  }
 }
