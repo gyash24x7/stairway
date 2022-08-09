@@ -13,22 +13,25 @@ const randomChar = () => {
 	return possible.charAt( Math.floor( Math.random() * 26 ) );
 };
 
-const initialsFromName = ( name: string ) => {
-	const words = name.trim().split( " " );
-	if ( words.length > 1 ) {
-		const initials = words[ 0 ].charAt( 0 ) + words[ 1 ].charAt( 0 );
-		return initials.toUpperCase();
-	} else if ( words.length === 1 ) {
-		if ( words[ 0 ].length > 1 ) {
-			const initials = words[ 0 ].charAt( 0 ) + words[ 0 ].charAt( 1 );
-			return initials.toUpperCase();
-		} else {
-			const initials = words[ 0 ].charAt( 0 ) + randomChar();
-			return initials.toUpperCase();
-		}
-	} else {
+const initialsFromName = ( name: string | null | undefined ) => {
+	if ( !name || name.trim().length === 0 ) {
 		const initials = randomChar() + randomChar();
 		return initials.toUpperCase();
+	} else {
+		const words = name.trim().split( " " );
+
+		if ( words.length === 1 ) {
+			if ( words[ 0 ].length > 1 ) {
+				const initials = words[ 0 ].charAt( 0 ) + words[ 0 ].charAt( 1 );
+				return initials.toUpperCase();
+			} else {
+				const initials = words[ 0 ].charAt( 0 ) + randomChar();
+				return initials.toUpperCase();
+			}
+		} else {
+			const initials = words[ 0 ].charAt( 0 ) + words[ 1 ].charAt( 0 );
+			return initials.toUpperCase();
+		}
 	}
 };
 
@@ -49,10 +52,19 @@ const avatarDivVariantSchema = new VariantSchema(
 export function Avatar( { size, src, name }: AvatarProps ) {
 	return (
 		<div className = { avatarRootVariantSchema.getClassname( { size } ) }>
-			{ !!src && <img src = { src } alt = { "avatar" } className = { avatarImageVariantSchema.getClassname() }/> }
+			{ !!src && (
+				<img
+					src = { src }
+					alt = { "avatar-img" }
+					className = { avatarImageVariantSchema.getClassname() }
+				/>
+			) }
 			{ !src && (
-				<div className = { avatarDivVariantSchema.getClassname( { size } ) }>
-					{ initialsFromName( name || "" ) }
+				<div
+					className = { avatarDivVariantSchema.getClassname( { size } ) }
+					data-testid = { "avatar-initials" }
+				>
+					{ initialsFromName( name ) }
 				</div>
 			) }
 		</div>

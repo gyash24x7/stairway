@@ -36,12 +36,13 @@ export function Banner( props: BannerProps ) {
 			<HStack centered = { centered }>
 				{ isLoading && (
 					<Spinner
+						data-testid = { "banner-spinner" }
 						size = { "sm" }
 						appearance = { appearance === "warning" || appearance === "default" ? "dark" : "default" }
 					/>
 				) }
-				{ !!Icon && !isLoading && <Icon width = { 20 } height = { 20 }/> }
-				<h2>{ message }</h2>
+				{ !!Icon && !isLoading && <Icon width = { 20 } height = { 20 } data-testid = { "banner-icon" }/> }
+				<h2 data-testid = { "banner-message" }>{ message }</h2>
 			</HStack>
 		</div>
 	);

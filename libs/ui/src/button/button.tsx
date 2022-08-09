@@ -68,7 +68,7 @@ export function Button( props: ButtonProps ) {
 	const spinnerAppearance = [ "warning", "default" ].includes( props.appearance || "" ) ? "dark" : "default";
 	return (
 		<button
-			disabled = { props.disabled }
+			disabled = { props.disabled || props.isLoading }
 			onClick = { props.onClick }
 			type = { props.type }
 			className = { buttonVariantSchema.getClassname( {
@@ -77,12 +77,13 @@ export function Button( props: ButtonProps ) {
 				fullWidth: props.fullWidth ? "true" : "false",
 				disabled: props.disabled || props.isLoading ? "true" : "false"
 			} ) }
+			data-testid = { "button-main" }
 		>
 			{ !!props.isLoading && <Spinner size = { props.size } appearance = { spinnerAppearance }/> }
 			{ !props.isLoading && (
 				<HStack spacing = { "sm" }>
 					{ props.iconBefore && renderButtonIcon( props.iconBefore, props.size ) }
-					{ props.buttonText && <span>{ props.buttonText }</span> }
+					{ props.buttonText && <span data-testid = { "button-text" }>{ props.buttonText }</span> }
 					{ props.iconAfter && renderButtonIcon( props.iconAfter, props.size ) }
 				</HStack>
 			) }
