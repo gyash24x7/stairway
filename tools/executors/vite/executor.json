@@ -1,0 +1,19 @@
+{
+  "executors": {
+	"dev": {
+	  "implementation": "./dev",
+	  "schema": "./schema.json",
+	  "description": "Runs Vite Dev Server"
+	},
+	"build": {
+	  "implementation": "./build",
+	  "schema": "./schema.json",
+	  "description": "Bundles React App"
+	},
+	"serve": {
+	  "implementation": "./serve",
+	  "schema": "./schema.json",
+	  "description": "Serves build React App"
+	}
+  }
+}
