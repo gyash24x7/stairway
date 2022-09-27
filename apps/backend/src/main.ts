@@ -9,7 +9,13 @@ import { PrismaClient } from "@prisma/client";
 import { literatureExpressHandler } from "@s2h/literature/router";
 import { Publisher } from "@s2h/utils";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
-import { deserializeUser, handleAuthCallback, handleGetLoggedInUser, handleLogout, requireUser } from "@s2h/auth";
+import {
+    deserializeUser,
+    handleAuthCallback,
+    handleGetLoggedInUser,
+    handleLogout,
+    requireUser
+} from "@s2h/auth";
 
 dotenv.config();
 
@@ -19,11 +25,11 @@ const prisma = new PrismaClient();
 const app = express();
 const server = http.createServer( app );
 const io = new Server( server, {
-	cors: {
-		origin: [ "http://localhost:5173" ],
-		allowedHeaders: [ "Authorization" ],
-		credentials: true
-	}
+    cors: {
+        origin: [ "http://localhost:5173" ],
+        allowedHeaders: [ "Authorization" ],
+        credentials: true
+    }
 } );
 
 app.use( morgan( "tiny" ) );
@@ -35,21 +41,21 @@ app.use( deserializeUser( prisma ) );
 const literatureNameSpace = io.of( "/literature" );
 
 literatureNameSpace.on( "connection", socket => {
-	console.log( "New Client Connected!" );
-	console.log( `Socket: ${ socket.id }` );
+    console.log( "New Client Connected!" );
+    console.log( `Socket: ${ socket.id }` );
 
-	socket.emit( "welcome", { message: "Welcome to Literature!" } );
+    socket.emit( "welcome", { message: "Welcome to Literature!" } );
 
-	socket.on( "disconnect", () => {
-		console.log( "Client Disconnected!" );
-		console.log( `Socket: ${ socket.id }` );
-	} );
+    socket.on( "disconnect", () => {
+        console.log( "Client Disconnected!" );
+        console.log( `Socket: ${ socket.id }` );
+    } );
 } );
 
 const litGamePublisher = new Publisher<IEnhancedLitGame>( literatureNameSpace );
 
 app.get( "/api/health", async ( _req, res ) => {
-	return res.send( { healthy: true } );
+    return res.send( { healthy: true } );
 } );
 
 app.get( "/api/me", requireUser( prisma ), handleGetLoggedInUser() );
@@ -58,8 +64,11 @@ app.delete( "/api/auth/logout", requireUser( prisma ), handleLogout() );
 
 app.get( "/api/auth/callback/google", handleAuthCallback( prisma ) );
 
-app.use( "/api/literature", [ requireUser( prisma ), literatureExpressHandler( { prisma, litGamePublisher } ) ] );
+app.use(
+    "/api/literature",
+    [ requireUser( prisma ), literatureExpressHandler( { prisma, litGamePublisher } ) ]
+);
 
 server.listen( port, () => {
-	console.log( `Server started on port ${ port }` );
+    console.log( `Server started on port ${ port }` );
 } );

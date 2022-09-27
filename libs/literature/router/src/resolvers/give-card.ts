@@ -7,52 +7,55 @@ import { LitMoveType } from "@prisma/client";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
 
 function validate( ctx: LitTrpcContext, input: GiveCardInput ) {
-	const cardToGive = PlayingCard.from( input.cardToGive );
-	const givingPlayer = ctx.currentGame!.loggedInPlayer!;
-	const takingPlayer = ctx.currentGame!.playerData[ input.giveTo ];
+    const cardToGive = PlayingCard.from( input.cardToGive );
+    const givingPlayer = ctx.currentGame!.loggedInPlayer!;
+    const takingPlayer = ctx.currentGame!.playerData[ input.giveTo ];
 
-	if ( !takingPlayer ) {
-		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.PLAYER_NOT_FOUND } );
-	}
+    if ( !takingPlayer ) {
+        throw new TRPCError( { code: "BAD_REQUEST", message: Messages.PLAYER_NOT_FOUND } );
+    }
 
-	if ( takingPlayer.teamId === givingPlayer.teamId ) {
-		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_GIVE_CARD_WITHIN_YOUR_TEAM } );
-	}
+    if ( takingPlayer.teamId === givingPlayer.teamId ) {
+        throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_GIVE_CARD_WITHIN_YOUR_TEAM } );
+    }
 
-	if ( !givingPlayer.hand.contains( cardToGive ) ) {
-		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GIVE_CARD } );
-	}
+    if ( !givingPlayer.hand.contains( cardToGive ) ) {
+        throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GIVE_CARD } );
+    }
 
-	return [ ctx.currentGame!, givingPlayer, takingPlayer, cardToGive ] as const;
+    return [ ctx.currentGame!, givingPlayer, takingPlayer, cardToGive ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<GiveCardInput> ): Promise<IEnhancedLitGame> {
-	const [ game, givingPlayer, takingPlayer, cardToGive ] = validate( ctx, input );
+export default async function ( {
+    input,
+    ctx
+}: LitResolverOptions<GiveCardInput> ): Promise<IEnhancedLitGame> {
+    const [ game, givingPlayer, takingPlayer, cardToGive ] = validate( ctx, input );
 
-	givingPlayer.hand.removeCard( cardToGive );
-	takingPlayer.hand.addCard( cardToGive );
+    givingPlayer.hand.removeCard( cardToGive );
+    takingPlayer.hand.addCard( cardToGive );
 
-	const updatedPlayers = await Promise.all(
-		[
-			ctx.prisma.litPlayer.update( {
-				where: { id: givingPlayer.id },
-				data: { hand: givingPlayer.hand.serialize() }
-			} ),
-			ctx.prisma.litPlayer.update( {
-				where: { id: takingPlayer.id },
-				data: { hand: takingPlayer.hand.serialize() }
-			} )
-		]
-	);
+    const updatedPlayers = await Promise.all(
+        [
+            ctx.prisma.litPlayer.update( {
+                where: { id: givingPlayer.id },
+                data: { hand: givingPlayer.hand.serialize() }
+            } ),
+            ctx.prisma.litPlayer.update( {
+                where: { id: takingPlayer.id },
+                data: { hand: takingPlayer.hand.serialize() }
+            } )
+        ]
+    );
 
-	game.handlePlayerUpdate( ...updatedPlayers );
+    game.handlePlayerUpdate( ...updatedPlayers );
 
-	const giveCardMove = await ctx.prisma.litMove.create( {
-		data: game.getNewMoveData( { type: LitMoveType.GIVEN, takingPlayer, givingPlayer, card: cardToGive } )
-	} );
+    const giveCardMove = await ctx.prisma.litMove.create( {
+        data: game.getNewMoveData( { type: LitMoveType.GIVEN, takingPlayer, givingPlayer, card: cardToGive } )
+    } );
 
-	game.addMove( giveCardMove );
+    game.addMove( giveCardMove );
 
-	ctx.litGamePublisher.publish( game );
-	return game;
+    ctx.litGamePublisher.publish( game );
+    return game;
 };

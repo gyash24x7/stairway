@@ -2,39 +2,27 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "npmScope": "s2h",
   "affected": {
-    "defaultBase": "main"
+	"defaultBase": "main"
   },
   "cli": {
-    "defaultCollection": "@nrwl/workspace"
+	"defaultCollection": "@nrwl/workspace"
   },
   "implicitDependencies": {
-    "package.json": {
-      "dependencies": "*",
-      "devDependencies": "*"
-    },
-    ".eslintrc.json": "*"
+	"package.json": {
+	  "dependencies": "*",
+	  "devDependencies": "*"
+	}
   },
   "tasksRunnerOptions": {
-    "default": {
-      "runner": "nx/tasks-runners/default",
-      "options": {
-        "cacheableOperations": [
-          "build",
-          "lint",
-          "test",
-          "e2e",
-          "build-storybook"
-        ]
-      }
-    }
+	"default": {
+	  "runner": "nx/tasks-runners/default",
+	  "options": {
+		"cacheableOperations": [ "build", "lint", "test", "e2e", "build-storybook" ]
+	  }
+	}
   },
   "targetDependencies": {
-    "build": [
-      {
-        "target": "build",
-        "projects": "dependencies"
-      }
-    ]
+	"build": [ { "target": "build", "projects": "dependencies" } ]
   },
   "defaultProject": "backend"
 }

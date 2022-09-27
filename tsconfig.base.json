@@ -1,68 +1,25 @@
 {
-	"compileOnSave": false,
-	"compilerOptions": {
-		"rootDir": ".",
-		"sourceMap": true,
-		"declaration": false,
-		"moduleResolution": "node",
-		"importHelpers": true,
-		"target": "es2015",
-		"module": "esnext",
-		"lib": [
-			"es2019",
-			"dom"
-		],
-		"skipDefaultLibCheck": true,
-		"baseUrl": ".",
-		"strict": true,
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
-		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
-		"alwaysStrict": true,
-		"allowUnusedLabels": false,
-		"allowUnreachableCode": false,
-		"noFallthroughCasesInSwitch": true,
-		"noImplicitOverride": true,
-		"noImplicitReturns": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"importsNotUsedAsValues": "error",
-		"checkJs": true,
-		"resolveJsonModule": true,
-		"paths": {
-			"@s2h/auth": [
-				"libs/auth/src/index.ts"
-			],
-			"@s2h/cards": [
-				"libs/cards/src/index.ts"
-			],
-			"@s2h/dtos": [
-				"libs/dtos/src/index.ts"
-			],
-			"@s2h/literature/dtos": [
-				"libs/literature/dtos/src/index.ts"
-			],
-			"@s2h/literature/router": [
-				"libs/literature/router/src/index.ts"
-			],
-			"@s2h/literature/ui": [
-				"libs/literature/ui/src/index.tsx"
-			],
-			"@s2h/literature/utils": [
-				"libs/literature/utils/src/index.ts"
-			],
-			"@s2h/ui": [
-				"libs/ui/src/index.ts"
-			],
-			"@s2h/utils": [
-				"libs/utils/src/index.ts"
-			]
-		}
-	},
-	"exclude": [
-		"node_modules",
-		"tmp"
-	]
+  "compileOnSave": false,
+  "extends": "@tsconfig/node16-strictest",
+  "compilerOptions": {
+	"rootDir": ".",
+	"exactOptionalPropertyTypes": false,
+	"strictPropertyInitialization": false,
+	"emitDecoratorMetadata": true,
+	"experimentalDecorators": true,
+	"importHelpers": true,
+	"baseUrl": ".",
+	"paths": {
+	  "@s2h/auth": [ "libs/auth/src/index.ts" ],
+	  "@s2h/cards": [ "libs/cards/src/index.ts" ],
+	  "@s2h/dtos": [ "libs/dtos/src/index.ts" ],
+	  "@s2h/literature/dtos": [ "libs/literature/dtos/src/index.ts" ],
+	  "@s2h/literature/router": [ "libs/literature/router/src/index.ts" ],
+	  "@s2h/literature/ui": [ "libs/literature/ui/src/index.ts" ],
+	  "@s2h/literature/utils": [ "libs/literature/utils/src/index.ts" ],
+	  "@s2h/ui": [ "libs/ui/src/index.ts" ],
+	  "@s2h/utils": [ "libs/utils/src/index.ts" ]
+	}
+  },
+  "exclude": [ "node_modules", "tmp" ]
 }

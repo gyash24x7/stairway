@@ -11,150 +11,150 @@ jest.mock( "axios" );
 const mockedAxios = axios as jest.Mocked<typeof axios>
 
 describe( "Auth Callback Handler", function () {
-	const accessToken = "MOCK_ACCESS_TOKEN";
-	const idToken = "MOCK_ID_TOKEN";
-	const googleUserResult: GoogleUserResult = {
-		id: "id",
-		email: "email",
-		verified_email: true,
-		name: "name",
-		given_name: "givenName",
-		family_name: "familyName",
-		picture: "picture",
-		locale: "locale"
-	};
+    const accessToken = "MOCK_ACCESS_TOKEN";
+    const idToken = "MOCK_ID_TOKEN";
+    const googleUserResult: GoogleUserResult = {
+        id: "id",
+        email: "email",
+        verified_email: true,
+        name: "name",
+        given_name: "givenName",
+        family_name: "familyName",
+        picture: "picture",
+        locale: "locale"
+    };
 
-	const user: User = {
-		id: cuid(),
-		name: "name",
-		email: "email",
-		salt: "salt",
-		avatar: ""
-	};
+    const user: User = {
+        id: cuid(),
+        name: "name",
+        email: "email",
+        salt: "salt",
+        avatar: ""
+    };
 
-	const prismaMock: DeepMockProxy<PrismaClient> = mockDeep();
-	const reqMock: DeepMockProxy<Request> = mockDeep();
-	const resMock: DeepMockProxy<Response<any, Record<string, any>>> = mockDeep();
+    const prismaMock: DeepMockProxy<PrismaClient> = mockDeep();
+    const reqMock: DeepMockProxy<Request> = mockDeep();
+    const resMock: DeepMockProxy<Response<any, Record<string, any>>> = mockDeep();
 
-	process.env[ "JWT_SECRET" ] = "jwt_secret"
+    process.env[ "JWT_SECRET" ] = "jwt_secret"
 
-	beforeEach( function () {
-		mockedAxios.post.mockResolvedValue( { data: { access_token: accessToken, id_token: idToken } } );
-		mockedAxios.get.mockResolvedValue( { data: googleUserResult } );
+    beforeEach( function () {
+        mockedAxios.post.mockResolvedValue( { data: { access_token: accessToken, id_token: idToken } } );
+        mockedAxios.get.mockResolvedValue( { data: googleUserResult } );
 
-		prismaMock.user.findUnique.mockResolvedValue( user );
-		prismaMock.user.create.mockResolvedValue( user );
+        prismaMock.user.findUnique.mockResolvedValue( user );
+        prismaMock.user.create.mockResolvedValue( user );
 
-		reqMock.query[ "code" ] = "MOCK_AUTH_CODE";
+        reqMock.query[ "code" ] = "MOCK_AUTH_CODE";
 
-		resMock.status.mockReturnValue( resMock );
-		resMock.cookie.mockReturnValue( resMock );
-	} );
+        resMock.status.mockReturnValue( resMock );
+        resMock.cookie.mockReturnValue( resMock );
+    } );
 
-	afterEach( function () {
-		mockReset( mockedAxios );
-		mockReset( prismaMock );
-		mockReset( resMock );
-		mockReset( resMock );
-	} );
+    afterEach( function () {
+        mockReset( mockedAxios );
+        mockReset( prismaMock );
+        mockReset( resMock );
+        mockReset( resMock );
+    } );
 
-	it( "should return 403 is email not verified", async function () {
-		mockedAxios.get.mockResolvedValue( { data: { ...googleUserResult, verified_email: false } } );
-		const handler = handleAuthCallback( prismaMock );
+    it( "should return 403 is email not verified", async function () {
+        mockedAxios.get.mockResolvedValue( { data: { ...googleUserResult, verified_email: false } } );
+        const handler = handleAuthCallback( prismaMock );
 
-		await handler( reqMock, resMock );
-		expect( mockedAxios.post ).toHaveBeenCalledWith(
-			expect.stringMatching( /MOCK_AUTH_CODE/ ),
-			expect.objectContaining( { headers: expect.anything() } )
-		);
-		expect( mockedAxios.get ).toHaveBeenCalledWith(
-			expect.stringMatching( /MOCK_ACCESS_TOKEN/ ),
-			expect.objectContaining( {
-				headers: expect.objectContaining( {
-					Authorization: `Bearer ${ idToken }`
-				} )
-			} )
-		);
-		expect( resMock.status ).toHaveBeenCalledWith( 403 );
-	} );
+        await handler( reqMock, resMock );
+        expect( mockedAxios.post ).toHaveBeenCalledWith(
+            expect.stringMatching( /MOCK_AUTH_CODE/ ),
+            expect.objectContaining( { headers: expect.anything() } )
+        );
+        expect( mockedAxios.get ).toHaveBeenCalledWith(
+            expect.stringMatching( /MOCK_ACCESS_TOKEN/ ),
+            expect.objectContaining( {
+                headers: expect.objectContaining( {
+                    Authorization: `Bearer ${ idToken }`
+                } )
+            } )
+        );
+        expect( resMock.status ).toHaveBeenCalledWith( 403 );
+    } );
 
-	it( "should create new user if user not found and set cookies", async function () {
-		prismaMock.user.findUnique.mockResolvedValue( null );
-		const handler = handleAuthCallback( prismaMock );
+    it( "should create new user if user not found and set cookies", async function () {
+        prismaMock.user.findUnique.mockResolvedValue( null );
+        const handler = handleAuthCallback( prismaMock );
 
-		await handler( reqMock, resMock );
-		expect( mockedAxios.post ).toHaveBeenCalledWith(
-			expect.stringMatching( /MOCK_AUTH_CODE/ ),
-			expect.objectContaining( { headers: expect.anything() } )
-		);
+        await handler( reqMock, resMock );
+        expect( mockedAxios.post ).toHaveBeenCalledWith(
+            expect.stringMatching( /MOCK_AUTH_CODE/ ),
+            expect.objectContaining( { headers: expect.anything() } )
+        );
 
-		expect( mockedAxios.get ).toHaveBeenCalledWith(
-			expect.stringMatching( /MOCK_ACCESS_TOKEN/ ),
-			expect.objectContaining( {
-				headers: expect.objectContaining( {
-					Authorization: `Bearer ${ idToken }`
-				} )
-			} )
-		);
+        expect( mockedAxios.get ).toHaveBeenCalledWith(
+            expect.stringMatching( /MOCK_ACCESS_TOKEN/ ),
+            expect.objectContaining( {
+                headers: expect.objectContaining( {
+                    Authorization: `Bearer ${ idToken }`
+                } )
+            } )
+        );
 
-		expect( prismaMock.user.findUnique ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { email: "email" } )
-			} )
-		);
+        expect( prismaMock.user.findUnique ).toHaveBeenCalledWith(
+            expect.objectContaining( {
+                where: expect.objectContaining( { email: "email" } )
+            } )
+        );
 
-		expect( prismaMock.user.create ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				data: expect.objectContaining( { email: "email", name: "name" } )
-			} )
-		);
+        expect( prismaMock.user.create ).toHaveBeenCalledWith(
+            expect.objectContaining( {
+                data: expect.objectContaining( { email: "email", name: "name" } )
+            } )
+        );
 
-		expect( resMock.cookie ).toHaveBeenCalledTimes( 2 );
-		expect( resMock.cookie ).toHaveBeenCalledWith(
-			"accessToken",
-			expect.any( String ),
-			accessTokenCookieOptions
-		);
-		expect( resMock.cookie ).toHaveBeenCalledWith(
-			"refreshToken",
-			expect.any( String ),
-			refreshTokenCookieOptions
-		);
-	} );
+        expect( resMock.cookie ).toHaveBeenCalledTimes( 2 );
+        expect( resMock.cookie ).toHaveBeenCalledWith(
+            "accessToken",
+            expect.any( String ),
+            accessTokenCookieOptions
+        );
+        expect( resMock.cookie ).toHaveBeenCalledWith(
+            "refreshToken",
+            expect.any( String ),
+            refreshTokenCookieOptions
+        );
+    } );
 
-	it( "should set cookies when user is found", async function () {
-		const handler = handleAuthCallback( prismaMock );
+    it( "should set cookies when user is found", async function () {
+        const handler = handleAuthCallback( prismaMock );
 
-		await handler( reqMock, resMock );
-		expect( mockedAxios.post ).toHaveBeenCalledWith(
-			expect.stringMatching( /MOCK_AUTH_CODE/ ),
-			expect.objectContaining( { headers: expect.anything() } )
-		);
-		expect( mockedAxios.get ).toHaveBeenCalledWith(
-			expect.stringMatching( /MOCK_ACCESS_TOKEN/ ),
-			expect.objectContaining( {
-				headers: expect.objectContaining( {
-					Authorization: `Bearer ${ idToken }`
-				} )
-			} )
-		);
+        await handler( reqMock, resMock );
+        expect( mockedAxios.post ).toHaveBeenCalledWith(
+            expect.stringMatching( /MOCK_AUTH_CODE/ ),
+            expect.objectContaining( { headers: expect.anything() } )
+        );
+        expect( mockedAxios.get ).toHaveBeenCalledWith(
+            expect.stringMatching( /MOCK_ACCESS_TOKEN/ ),
+            expect.objectContaining( {
+                headers: expect.objectContaining( {
+                    Authorization: `Bearer ${ idToken }`
+                } )
+            } )
+        );
 
-		expect( prismaMock.user.findUnique ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { email: "email" } )
-			} )
-		);
+        expect( prismaMock.user.findUnique ).toHaveBeenCalledWith(
+            expect.objectContaining( {
+                where: expect.objectContaining( { email: "email" } )
+            } )
+        );
 
-		expect( resMock.cookie ).toHaveBeenCalledTimes( 2 );
-		expect( resMock.cookie ).toHaveBeenCalledWith(
-			"accessToken",
-			expect.any( String ),
-			accessTokenCookieOptions
-		);
-		expect( resMock.cookie ).toHaveBeenCalledWith(
-			"refreshToken",
-			expect.any( String ),
-			refreshTokenCookieOptions
-		);
-	} );
+        expect( resMock.cookie ).toHaveBeenCalledTimes( 2 );
+        expect( resMock.cookie ).toHaveBeenCalledWith(
+            "accessToken",
+            expect.any( String ),
+            accessTokenCookieOptions
+        );
+        expect( resMock.cookie ).toHaveBeenCalledWith(
+            "refreshToken",
+            expect.any( String ),
+            refreshTokenCookieOptions
+        );
+    } );
 } );

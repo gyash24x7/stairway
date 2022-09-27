@@ -7,8 +7,8 @@ import type { inferProcedureInput } from "@trpc/server";
 export type LitTrpcMiddlewareOptions = TrpcMiddlewareOptions<LitTrpcContext>;
 
 export type LitTrpcContext = TrpcContext & {
-	litGamePublisher: Publisher<IEnhancedLitGame>,
-	currentGame?: EnhancedLitGame
+    litGamePublisher: Publisher<IEnhancedLitGame>,
+    currentGame?: EnhancedLitGame
 }
 
 export type LitResolverOptions<I = unknown> = TrpcResolverOptions<I, LitTrpcContext>
@@ -16,7 +16,7 @@ export type LitResolverOptions<I = unknown> = TrpcResolverOptions<I, LitTrpcCont
 export type LitGameData = LitGame & { players: LitPlayer[] } & { moves: LitMove[] } & { teams: LitTeam[] };
 
 export type InferQueryInput<TRouteKey extends keyof LiteratureRouter["_def"]["queries"],
-	> = inferProcedureInput<LiteratureRouter["_def"]["queries"][TRouteKey]>;
+    > = inferProcedureInput<LiteratureRouter["_def"]["queries"][TRouteKey]>;
 
 export type InferMutationInput<TRouteKey extends keyof LiteratureRouter["_def"]["mutations"],
-	> = inferProcedureInput<LiteratureRouter["_def"]["mutations"][TRouteKey]>;
+    > = inferProcedureInput<LiteratureRouter["_def"]["mutations"][TRouteKey]>;

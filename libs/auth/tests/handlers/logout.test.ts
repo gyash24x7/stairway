@@ -6,17 +6,17 @@ import { accessTokenCookieOptions, refreshTokenCookieOptions } from "../../src/u
 
 describe( "Logout Handler", function () {
 
-	it( "should clear all the token cookies", function () {
-		const handler = handleLogout();
-		const reqMock: DeepMockProxy<Request> = mockDeep();
+    it( "should clear all the token cookies", function () {
+        const handler = handleLogout();
+        const reqMock: DeepMockProxy<Request> = mockDeep();
 
-		const resMock: DeepMockProxy<Response> = mockDeep();
-		resMock.send.mockReturnValue( resMock );
+        const resMock: DeepMockProxy<Response> = mockDeep();
+        resMock.send.mockReturnValue( resMock );
 
-		handler( reqMock, resMock );
+        handler( reqMock, resMock );
 
-		expect( resMock.send ).toHaveBeenCalledWith( {} );
-		expect( resMock.clearCookie ).toHaveBeenCalledWith( "accessToken", accessTokenCookieOptions );
-		expect( resMock.clearCookie ).toHaveBeenCalledWith( "refreshToken", refreshTokenCookieOptions );
-	} );
+        expect( resMock.send ).toHaveBeenCalledWith( {} );
+        expect( resMock.clearCookie ).toHaveBeenCalledWith( "accessToken", accessTokenCookieOptions );
+        expect( resMock.clearCookie ).toHaveBeenCalledWith( "refreshToken", refreshTokenCookieOptions );
+    } );
 } );

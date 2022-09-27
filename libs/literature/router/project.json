@@ -1,32 +1,32 @@
 {
-	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "libs/literature/router/src",
-	"projectType": "library",
-	"targets": {
-		"build": {
-			"executor": "@nrwl/js:tsc",
-			"outputs": [
-				"{options.outputPath}"
-			],
-			"options": {
-				"outputPath": "dist/libs/literature/router",
-				"main": "libs/literature/router/src/index.ts",
-				"tsConfig": "libs/literature/router/tsconfig.lib.json",
-				"assets": [
-					"libs/literature/router/*.md"
-				]
-			}
-		},
-		"test": {
-			"executor": "@nrwl/jest:jest",
-			"outputs": [
-				"coverage/libs/literature/router"
-			],
-			"options": {
-				"jestConfig": "libs/literature/router/jest.config.ts",
-				"passWithNoTests": true
-			}
-		}
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/literature/router/src",
+  "projectType": "library",
+  "targets": {
+	"build": {
+	  "executor": "@nrwl/js:tsc",
+	  "outputs": [
+		"{options.outputPath}"
+	  ],
+	  "options": {
+		"outputPath": "dist/libs/literature/router",
+		"main": "libs/literature/router/src/index.ts",
+		"tsConfig": "libs/literature/router/tsconfig.lib.json",
+		"assets": [
+		  "libs/literature/router/*.md"
+		]
+	  }
 	},
-	"tags": [ ]
+	"test": {
+	  "executor": "@nrwl/jest:jest",
+	  "outputs": [
+		"coverage/libs/literature/router"
+	  ],
+	  "options": {
+		"jestConfig": "libs/literature/router/jest.config.ts",
+		"passWithNoTests": true
+	  }
+	}
+  },
+  "tags": [ ]
 }
