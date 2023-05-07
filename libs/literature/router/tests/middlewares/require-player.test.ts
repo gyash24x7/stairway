@@ -3,7 +3,7 @@ import { EnhancedLitGame } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 import { Messages } from "../../src/constants";
-import requirePlayer from "../../src/middlewares/require-player";
+import { requirePlayerMiddlewareFn } from "../../src/middlewares/require-player";
 import type { LitTrpcContext } from "../../src/types";
 import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";
 
@@ -30,7 +30,7 @@ describe( "Require Player Middleware", function () {
 		ctx = mockCtx as unknown as LitTrpcContext;
 
 		expect.assertions( 2 );
-		return requirePlayer( { ctx, rawInput: {}, next: mockNextFn } )
+		return requirePlayerMiddlewareFn( { ctx, rawInput: {}, next: mockNextFn } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "UNAUTHORIZED" );
 				expect( e.message ).toBe( Messages.USER_NOT_LOGGED_IN );
@@ -39,7 +39,7 @@ describe( "Require Player Middleware", function () {
 
 	it( "should throw error when game not present", function () {
 		expect.assertions( 2 );
-		return requirePlayer( { ctx, rawInput: {}, next: mockNextFn } )
+		return requirePlayerMiddlewareFn( { ctx, rawInput: {}, next: mockNextFn } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "NOT_FOUND" );
 				expect( e.message ).toBe( Messages.GAME_NOT_FOUND );
@@ -51,7 +51,7 @@ describe( "Require Player Middleware", function () {
 		ctx.currentGame = EnhancedLitGame.from( gameData );
 
 		expect.assertions( 2 );
-		return requirePlayer( { ctx, rawInput: {}, next: mockNextFn } )
+		return requirePlayerMiddlewareFn( { ctx, rawInput: {}, next: mockNextFn } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "FORBIDDEN" );
 				expect( e.message ).toBe( Messages.NOT_PART_OF_GAME );
@@ -62,7 +62,7 @@ describe( "Require Player Middleware", function () {
 		ctx.currentGame = EnhancedLitGame.from( gameData );
 
 		expect.assertions( 2 );
-		return requirePlayer( { ctx, rawInput: {}, next: mockNextFn } )
+		return requirePlayerMiddlewareFn( { ctx, rawInput: {}, next: mockNextFn } )
 			.then( () => {
 				ctx.currentGame!.loggedInUserId = gameData.players[ 0 ].userId;
 

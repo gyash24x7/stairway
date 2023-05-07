@@ -1,8 +1,9 @@
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitTrpcMiddlewareOptions } from "../types";
+import { LitTrpcMiddleware } from "../types";
+import { middleware } from "../utils";
 
-export default async function ( { ctx, next }: LitTrpcMiddlewareOptions ) {
+export const requirePlayerMiddlewareFn: LitTrpcMiddleware = async ( { ctx, next } ) => {
 	if ( !ctx.loggedInUser ) {
 		throw new TRPCError( { code: "UNAUTHORIZED", message: Messages.USER_NOT_LOGGED_IN } );
 	}
@@ -19,3 +20,5 @@ export default async function ( { ctx, next }: LitTrpcMiddlewareOptions ) {
 
 	return next( { ctx } );
 };
+
+export default middleware( requirePlayerMiddlewareFn );

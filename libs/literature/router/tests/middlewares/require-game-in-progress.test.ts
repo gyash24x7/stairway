@@ -3,7 +3,7 @@ import { EnhancedLitGame } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 import { Messages } from "../../src/constants";
-import requireGameInProgress from "../../src/middlewares/require-game-in-progress";
+import { requireGameInProgressMiddlewareFn } from "../../src/middlewares/require-game-in-progress";
 import type { LitTrpcContext } from "../../src/types";
 import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";
 
@@ -27,7 +27,7 @@ describe( "Require Game in Progress Middleware", function () {
 
 	it( "should throw error when game not present", function () {
 		expect.assertions( 2 );
-		return requireGameInProgress( { ctx, rawInput: {}, next: mockNextFn } )
+		return requireGameInProgressMiddlewareFn( { ctx, rawInput: {}, next: mockNextFn } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "NOT_FOUND" );
 				expect( e.message ).toBe( Messages.GAME_NOT_FOUND );
@@ -39,7 +39,7 @@ describe( "Require Game in Progress Middleware", function () {
 		ctx.currentGame = EnhancedLitGame.from( gameData );
 
 		expect.assertions( 2 );
-		return requireGameInProgress( { ctx, rawInput: {}, next: mockNextFn } )
+		return requireGameInProgressMiddlewareFn( { ctx, rawInput: {}, next: mockNextFn } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_GAME_STATUS );
@@ -50,7 +50,7 @@ describe( "Require Game in Progress Middleware", function () {
 		ctx.currentGame = EnhancedLitGame.from( gameData );
 
 		expect.assertions( 2 );
-		return requireGameInProgress( { ctx, rawInput: {}, next: mockNextFn } )
+		return requireGameInProgressMiddlewareFn( { ctx, rawInput: {}, next: mockNextFn } )
 			.then( () => {
 				expect( mockNextFn.mock.calls.length ).toBe( 1 );
 				expect( mockNextFn.mock.calls[ 0 ][ 0 ] ).toEqual( { ctx } );

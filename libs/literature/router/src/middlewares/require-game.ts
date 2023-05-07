@@ -2,9 +2,10 @@ import { getGameInput } from "@s2h/literature/dtos";
 import { EnhancedLitGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitGameData, LitTrpcMiddlewareOptions } from "../types";
+import type { LitGameData, LitTrpcMiddleware } from "../types";
+import { middleware } from "../utils";
 
-export default async function ( { ctx, rawInput, next }: LitTrpcMiddlewareOptions ) {
+export const requireGameMiddlewareFn: LitTrpcMiddleware = async function ( { ctx, rawInput, next } ) {
 	const result = getGameInput.safeParse( rawInput );
 
 	if ( !result.success ) {
@@ -24,3 +25,5 @@ export default async function ( { ctx, rawInput, next }: LitTrpcMiddlewareOption
 	const currentGame = EnhancedLitGame.from( game );
 	return next( { ctx: { ...ctx, currentGame } } );
 };
+
+export default middleware( requireGameMiddlewareFn );

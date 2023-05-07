@@ -1,9 +1,10 @@
 import { LitGameStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitTrpcMiddlewareOptions } from "../types";
+import { LitTrpcMiddleware } from "../types";
+import { middleware } from "../utils";
 
-export default async function ( { ctx, next }: LitTrpcMiddlewareOptions ) {
+export const requireGameInProgressMiddlewareFn: LitTrpcMiddleware = async ( { ctx, next } ) => {
 	if ( !ctx.currentGame ) {
 		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
 	}
@@ -14,3 +15,5 @@ export default async function ( { ctx, next }: LitTrpcMiddlewareOptions ) {
 
 	return next( { ctx } );
 };
+
+export default middleware( requireGameInProgressMiddlewareFn );

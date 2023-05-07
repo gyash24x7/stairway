@@ -10,12 +10,8 @@ import {
 	startGameInput,
 	transferTurnInput
 } from "@s2h/literature/dtos";
-import * as trpc from "@trpc/server";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { renderTrpcPanel } from "trpc-panel";
-import requireGame from "./middlewares/require-game";
-import requireGameInProgress from "./middlewares/require-game-in-progress";
-import requirePlayer from "./middlewares/require-player";
 import askCardResolver from "./resolvers/ask-card";
 import callSetResolver from "./resolvers/call-set";
 import createGameResolver from "./resolvers/create-game";
@@ -27,13 +23,9 @@ import joinGameResolver from "./resolvers/join-game";
 import startGameResolver from "./resolvers/start-game";
 import transferTurnResolver from "./resolvers/transfer-turn";
 import type { LitTrpcContext } from "./types";
+import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
 
-const t = trpc.initTRPC.context<LitTrpcContext>().create();
-const procedure = t.procedure;
-const procedureWithGame = t.procedure.use( requireGame ).use( requirePlayer );
-const procedureWithGameInProgress = procedureWithGame.use( requireGameInProgress );
-
-export const literatureRouter = t.router( {
+export const literatureRouter = router( {
 	createGame: procedure.input( createGameInput ).mutation( createGameResolver ),
 	joinGame: procedure.input( joinGameInput ).mutation( joinGameResolver ),
 	createTeams: procedureWithGame.input( createTeamsInput ).mutation( createTeamsResolver ),
