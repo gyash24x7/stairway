@@ -1,28 +1,37 @@
 {
-  "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "npmScope": "s2h",
-  "affected": {
-	"defaultBase": "main"
-  },
-  "cli": {
-	"defaultCollection": "@nrwl/workspace"
-  },
-  "implicitDependencies": {
-	"package.json": {
-	  "dependencies": "*",
-	  "devDependencies": "*"
+	"$schema": "./node_modules/nx/schemas/nx-schema.json",
+	"npmScope": "s2h",
+	"tasksRunnerOptions": {
+		"default": {
+			"runner": "nx/tasks-runners/default",
+			"options": {
+				"cacheableOperations": [ "build", "lint", "test", "e2e", "db:generate" ],
+				"accessToken": "YjgwZjAyOTYtNDQ1Ni00Y2Y5LThjODctNjRjNWYwMzBiY2RhfHJlYWQtd3JpdGU="
+			}
+		}
+	},
+	"targetDefaults": {
+		"build": {
+			"dependsOn": [ "db:generate", "generate", "^generate", "^build" ],
+			"inputs": [ "production", "^production" ]
+		},
+		"test": {
+			"dependsOn": [ "generate", "db:generate" ],
+			"inputs": [ "default", "^production" ]
+		},
+		"build-storybook": {
+			"inputs": [ "default", "^production", "!{projectRoot}/.storybook/**/*" ]
+		}
+	},
+	"namedInputs": {
+		"default": [ "{projectRoot}/**/*", "sharedGlobals" ],
+		"production": [
+			"default",
+			"!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+			"!{projectRoot}/.storybook/**/*",
+			"!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
+			"!{projectRoot}/tsconfig.spec.json"
+		],
+		"sharedGlobals": [ ]
 	}
-  },
-  "tasksRunnerOptions": {
-	"default": {
-	  "runner": "nx/tasks-runners/default",
-	  "options": {
-		"cacheableOperations": [ "build", "lint", "test", "e2e", "build-storybook" ]
-	  }
-	}
-  },
-  "targetDependencies": {
-	"build": [ { "target": "build", "projects": "dependencies" } ]
-  },
-  "defaultProject": "backend"
 }

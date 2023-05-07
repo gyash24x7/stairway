@@ -1,25 +1,24 @@
 {
-  "compileOnSave": false,
-  "extends": "@tsconfig/node16-strictest",
-  "compilerOptions": {
-	"rootDir": ".",
-	"exactOptionalPropertyTypes": false,
-	"strictPropertyInitialization": false,
-	"emitDecoratorMetadata": true,
-	"experimentalDecorators": true,
-	"importHelpers": true,
-	"baseUrl": ".",
-	"paths": {
-	  "@s2h/auth": [ "libs/auth/src/index.ts" ],
-	  "@s2h/cards": [ "libs/cards/src/index.ts" ],
-	  "@s2h/dtos": [ "libs/dtos/src/index.ts" ],
-	  "@s2h/literature/dtos": [ "libs/literature/dtos/src/index.ts" ],
-	  "@s2h/literature/router": [ "libs/literature/router/src/index.ts" ],
-	  "@s2h/literature/ui": [ "libs/literature/ui/src/index.ts" ],
-	  "@s2h/literature/utils": [ "libs/literature/utils/src/index.ts" ],
-	  "@s2h/ui": [ "libs/ui/src/index.ts" ],
-	  "@s2h/utils": [ "libs/utils/src/index.ts" ]
-	}
-  },
-  "exclude": [ "node_modules", "tmp" ]
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"display": "Default",
+	"compileOnSave": false,
+	"extends": [ "@tsconfig/node18", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"verbatimModuleSyntax": false,
+		"exactOptionalPropertyTypes": false,
+		"strictPropertyInitialization": false,
+		"noUncheckedIndexedAccess": false,
+		"ignoreDeprecations": "5.0",
+		"importHelpers": true,
+		"esModuleInterop": true,
+		"rootDir": ".",
+		"baseUrl": ".",
+		"paths": {
+			"@api/client": [ "packages/api/client/src/index.ts" ],
+			"@api/common": [ "packages/api/common/src/index.ts" ],
+			"@api/domain": [ "packages/api/domain/src/index.ts" ],
+			"@prime/ui": [ "packages/prime/ui/src/index.ts" ]
+		}
+	},
+	"exclude": [ "node_modules", "tmp", "dist", "coverage" ]
 }
