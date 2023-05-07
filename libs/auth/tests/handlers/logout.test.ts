@@ -1,22 +1,23 @@
-import type { DeepMockProxy } from "jest-mock-extended";
-import { mockDeep } from "jest-mock-extended";
-import type { Request, Response } from "express";
 import { handleLogout } from "@s2h/auth";
+import type { Request, Response } from "express";
+import { describe, expect, it } from "vitest";
+import type { DeepMockProxy } from "vitest-mock-extended";
+import { mockDeep } from "vitest-mock-extended";
 import { accessTokenCookieOptions, refreshTokenCookieOptions } from "../../src/utils/token";
 
 describe( "Logout Handler", function () {
 
-    it( "should clear all the token cookies", function () {
-        const handler = handleLogout();
-        const reqMock: DeepMockProxy<Request> = mockDeep();
+	it( "should clear all the token cookies", function () {
+		const handler = handleLogout();
+		const reqMock: DeepMockProxy<Request> = mockDeep();
 
-        const resMock: DeepMockProxy<Response> = mockDeep();
-        resMock.send.mockReturnValue( resMock );
+		const resMock: DeepMockProxy<Response> = mockDeep();
+		resMock.send.mockReturnValue( resMock );
 
-        handler( reqMock, resMock );
+		handler( reqMock, resMock );
 
-        expect( resMock.send ).toHaveBeenCalledWith( {} );
-        expect( resMock.clearCookie ).toHaveBeenCalledWith( "accessToken", accessTokenCookieOptions );
-        expect( resMock.clearCookie ).toHaveBeenCalledWith( "refreshToken", refreshTokenCookieOptions );
-    } );
+		expect( resMock.send ).toHaveBeenCalledWith( {} );
+		expect( resMock.clearCookie ).toHaveBeenCalledWith( "accessToken", accessTokenCookieOptions );
+		expect( resMock.clearCookie ).toHaveBeenCalledWith( "refreshToken", refreshTokenCookieOptions );
+	} );
 } );
