@@ -1,54 +1,62 @@
+import {
+	askCardInput,
+	callSetInput,
+	createGameInput,
+	createTeamsInput,
+	declineCardInput,
+	getGameInput,
+	giveCardInput,
+	joinGameInput,
+	startGameInput,
+	transferTurnInput
+} from "@s2h/literature/dtos";
 import * as trpc from "@trpc/server";
-import createGameResolver from "./resolvers/create-game";
-import joinGameResolver from "./resolvers/join-game";
-import createTeamsResolver from "./resolvers/create-teams";
-import startGameResolver from "./resolvers/start-game";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { renderTrpcPanel } from "trpc-panel";
+import requireGame from "./middlewares/require-game";
+import requireGameInProgress from "./middlewares/require-game-in-progress";
+import requirePlayer from "./middlewares/require-player";
 import askCardResolver from "./resolvers/ask-card";
-import giveCardResolver from "./resolvers/give-card";
+import callSetResolver from "./resolvers/call-set";
+import createGameResolver from "./resolvers/create-game";
+import createTeamsResolver from "./resolvers/create-teams";
 import declineCardResolver from "./resolvers/decline-card";
 import getGameResolver from "./resolvers/get-game";
-import callSetResolver from "./resolvers/call-set";
+import giveCardResolver from "./resolvers/give-card";
+import joinGameResolver from "./resolvers/join-game";
+import startGameResolver from "./resolvers/start-game";
 import transferTurnResolver from "./resolvers/transfer-turn";
-import {
-    askCardInputStruct,
-    callSetInputStruct,
-    createGameInputStruct,
-    createTeamsInputStruct,
-    declineCardInputStruct,
-    getGameInputStruct,
-    giveCardInputStruct,
-    joinGameInputStruct,
-    startGameInputStruct,
-    transferTurnInputStruct
-} from "@s2h/literature/dtos";
 import type { LitTrpcContext } from "./types";
-import requireGame from "./middlewares/require-game";
-import requirePlayer from "./middlewares/require-player";
-import requireGameInProgress from "./middlewares/require-game-in-progress";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
-export const literatureRouter = trpc.router<LitTrpcContext>()
-    .mutation( "create-game", { input: createGameInputStruct, resolve: createGameResolver } )
-    .mutation( "join-game", { input: joinGameInputStruct, resolve: joinGameResolver } )
-    .middleware( requireGame )
-    .middleware( requirePlayer )
-    .query( "get-game", { input: getGameInputStruct, resolve: getGameResolver } )
-    .mutation( "create-teams", { input: createTeamsInputStruct, resolve: createTeamsResolver } )
-    .mutation( "start-game", { input: startGameInputStruct, resolve: startGameResolver } )
-    .middleware( requireGameInProgress )
-    .mutation( "ask-card", { input: askCardInputStruct, resolve: askCardResolver } )
-    .mutation( "decline-card", { input: declineCardInputStruct, resolve: declineCardResolver } )
-    .mutation( "give-card", { input: giveCardInputStruct, resolve: giveCardResolver } )
-    .mutation( "call-set", { input: callSetInputStruct, resolve: callSetResolver } )
-    .mutation( "transfer-turn", { input: transferTurnInputStruct, resolve: transferTurnResolver } );
+const t = trpc.initTRPC.context<LitTrpcContext>().create();
+const procedure = t.procedure;
+const procedureWithGame = t.procedure.use( requireGame ).use( requirePlayer );
+const procedureWithGameInProgress = procedureWithGame.use( requireGameInProgress );
+
+export const literatureRouter = t.router( {
+	createGame: procedure.input( createGameInput ).mutation( createGameResolver ),
+	joinGame: procedure.input( joinGameInput ).mutation( joinGameResolver ),
+	createTeams: procedureWithGame.input( createTeamsInput ).mutation( createTeamsResolver ),
+	getGame: procedureWithGame.input( getGameInput ).query( getGameResolver ),
+	startGame: procedureWithGame.input( startGameInput ).mutation( startGameResolver ),
+	askCard: procedureWithGameInProgress.input( askCardInput ).mutation( askCardResolver ),
+	declineCard: procedureWithGameInProgress.input( declineCardInput ).mutation( declineCardResolver ),
+	giveCard: procedureWithGameInProgress.input( giveCardInput ).mutation( giveCardResolver ),
+	transferTurn: procedureWithGameInProgress.input( transferTurnInput ).mutation( transferTurnResolver ),
+	callSet: procedureWithGameInProgress.input( callSetInput ).mutation( callSetResolver )
+} );
 
 export type LiteratureRouter = typeof literatureRouter;
 
 export function literatureExpressHandler( ctx: LitTrpcContext ) {
-    return createExpressMiddleware( {
-        router: literatureRouter,
-        createContext: ( { res } ): LitTrpcContext => (
-            { ...ctx, loggedInUser: res.locals[ "user" ] }
-        )
-    } );
+	return createExpressMiddleware( {
+		router: literatureRouter,
+		createContext: ( { res } ): LitTrpcContext => (
+			{ ...ctx, loggedInUser: res.locals[ "user" ] }
+		)
+	} );
+}
+
+export function literatureTrpcPanelHandler( url: string ) {
+	return renderTrpcPanel( literatureRouter, { url } );
 }

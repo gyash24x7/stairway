@@ -1,32 +1,19 @@
 {
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/literature/utils/src",
-  "projectType": "library",
-  "targets": {
-	"build": {
-	  "executor": "@nrwl/js:tsc",
-	  "outputs": [
-		"{options.outputPath}"
-	  ],
-	  "options": {
-		"outputPath": "dist/libs/literature/utils",
-		"main": "libs/literature/utils/src/index.ts",
-		"tsConfig": "libs/literature/utils/tsconfig.lib.json",
-		"assets": [
-		  "libs/literature/utils/*.md"
-		]
-	  }
+	"name": "literature-utils",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/literature/utils/src",
+	"projectType": "library",
+	"targets": {
+		"test": {
+			"executor": "@nrwl/vite:test",
+			"outputs": [ "<projectRoot>/coverage/**" ],
+			"options": {
+				"coverageProvider": "istanbul",
+				"passWithNoTests": true,
+				"reportsDirectory": "coverage",
+				"config": "vitest.config.ts"
+			}
+		}
 	},
-	"test": {
-	  "executor": "@nrwl/jest:jest",
-	  "outputs": [
-		"coverage/libs/literature/utils"
-	  ],
-	  "options": {
-		"jestConfig": "libs/literature/utils/jest.config.ts",
-		"passWithNoTests": true
-	  }
-	}
-  },
-  "tags": [ ]
+	"tags": [ ]
 }

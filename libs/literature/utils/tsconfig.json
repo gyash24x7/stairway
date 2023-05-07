@@ -1,12 +1,14 @@
 {
-  "extends": "../../../tsconfig.base.json",
-  "compilerOptions": {
-	"module": "commonjs"
-  },
-  "files": [ ],
-  "include": [ ],
-  "references": [
-	{ "path": "./tsconfig.lib.json" },
-	{ "path": "./tsconfig.spec.json" }
-  ]
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "../../../tsconfig.base.json" ],
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "ES2022",
+		"esModuleInterop": true,
+		"sourceMap": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"types": [ "node" ]
+	},
+	"include": [ "src", "tests", "vitest.config.ts" ]
 }

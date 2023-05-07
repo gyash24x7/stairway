@@ -1,22 +1,8 @@
 {
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/literature/dtos/src",
-  "projectType": "library",
-  "targets": {
-	"build": {
-	  "executor": "@nrwl/js:tsc",
-	  "outputs": [
-		"{options.outputPath}"
-	  ],
-	  "options": {
-		"outputPath": "dist/libs/literature/dtos",
-		"main": "libs/literature/dtos/src/index.ts",
-		"tsConfig": "libs/literature/dtos/tsconfig.lib.json",
-		"assets": [
-		  "libs/literature/dtos/*.md"
-		]
-	  }
-	}
-  },
-  "tags": [ ]
+	"name": "literature-dtos",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/literature/dtos/src",
+	"projectType": "library",
+	"targets": { },
+	"tags": [ ]
 }
