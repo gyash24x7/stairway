@@ -1,16 +1,18 @@
-import type { Meta, Story } from "@storybook/react";
-import { Card, CardProps } from "./card";
+import type { Meta, StoryObj } from "@storybook/react";
 import React from "react";
+import { Card, CardProps } from "./card";
 
-export default {
-    component: Card,
-    title: "Card"
-} as Meta<CardProps>;
+const meta: Meta<CardProps> = {
+	component: Card,
+	title: "Card"
+};
 
-const Template: Story<CardProps> = args => <Card { ...args } />;
+export default meta;
 
-export const Playground = Template.bind( {} );
-Playground.args = {
-    title: "Card Title",
-    content: "This is Card Content"
-} as CardProps;
+export const Playground: StoryObj<CardProps> ={
+	render: args => <Card { ...args } />,
+	args : {
+		title: "Card Title",
+		content: "This is Card Content"
+	}
+};

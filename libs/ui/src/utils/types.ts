@@ -1,6 +1,6 @@
-import type { ComponentProps } from "react";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
-export type IconType = ( props: ComponentProps<"svg"> ) => JSX.Element;
+export type IconType = typeof CheckCircleIcon
 
 export type Appearance = "primary" | "default" | "warning" | "danger" | "success" | "info" | "alt"
 

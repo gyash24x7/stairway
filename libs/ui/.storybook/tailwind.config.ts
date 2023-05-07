@@ -1,5 +1,5 @@
 import path from "path";
-import type {Config} from "tailwindcss";
+import type { Config } from "tailwindcss";
 
 const config: Config = {
 	content: [
@@ -8,10 +8,10 @@ const config: Config = {
 	darkMode: "class",
 	theme: {
 		fontWeight: {
-			light: 200,
-			normal: 400,
-			semibold: 600,
-			bold: 800
+			light: "300",
+			normal: "500",
+			semibold: "600",
+			bold: "800"
 		},
 		fontSize: {
 			base: [ "14px", "20px" ],
@@ -141,4 +141,6 @@ const config: Config = {
 		}
 	},
 	plugins: []
-}
+};
+
+export default config;

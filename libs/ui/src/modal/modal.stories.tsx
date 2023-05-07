@@ -1,32 +1,16 @@
-import type { Meta, Story } from "@storybook/react";
-import { Modal, ModalProps } from "./modal";
+import type { Meta, StoryObj } from "@storybook/react";
 import React from "react";
+import { Modal, ModalProps } from "./modal";
 
-export default {
-    component: Modal,
-    title: "Modal",
-    argTypes: {
-        size: {
-            description: "Sets the size of the modal",
-            options: [ "xs", "sm", "md", "lg", "xl", "2xl" ],
-            control: { type: "inline-radio" },
-            defaultValue: "medium"
-        }
-    }
-} as Meta<ModalProps>;
+const meta: Meta<ModalProps> = { component: Modal, title: "Modal" };
+export default meta;
 
-const Template: Story<ModalProps> = args => <Modal { ...args } />;
-
-export const Playground = Template.bind( {} );
-Playground.args = {
-    title: "Modal Story",
-    onClose: () => console.log( "Modal Closed!" ),
-    isOpen: true,
-    children: (
-        <div>Hello from modal child</div>
-    ),
-    actions: [
-        { appearance: "primary", buttonText: "Action Button" },
-        { buttonText: "Cancel", appearance: "default" }
-    ]
-} as ModalProps;
+export const Playground: StoryObj<ModalProps> = {
+	render:args => <Modal { ...args } />,
+	args : {
+		title: "Modal StoryObj",
+		onClose: () => console.log( "Modal Closed!" ),
+		isOpen: true,
+		children: <div>Hello from modal child</div>
+	}
+};

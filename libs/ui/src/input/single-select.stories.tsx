@@ -1,24 +1,18 @@
-import type { Meta, Story } from "@storybook/react";
-import { SingleSelect, SingleSelectProps } from "./single-select";
-import { Avatar } from "../avatar/avatar";
+import type { Meta, StoryObj } from "@storybook/react";
 import React, { useState } from "react";
+import { Avatar } from "../avatar/avatar";
+import { SingleSelect, SingleSelectProps } from "./single-select";
 
-export default {
-    component: SingleSelect,
-    title: "Single Select"
-} as Meta<SingleSelectProps<string>>;
+const meta: Meta<SingleSelectProps<string>> = { component: SingleSelect, title: "Single Select" };
+export default meta;
 
-const SingleSelectStateful = ( props: { options: string[], renderOption: SingleSelectProps<string>["renderOption"] } ) => {
-    const [ value, setValue ] = useState( props.options[ 0 ] );
-    return <SingleSelect { ...props } value = { value } onChange = { setValue } />;
-};
-
-const Template: Story<SingleSelectProps<string>> = ( args ) => {
-    return <SingleSelectStateful { ...args } />;
-};
-
-export const Playground = Template.bind( {} );
-Playground.args = {
-    options: [ "Option A", "Option B", "Option C" ],
-    renderOption: ( option, _checked ) => <Avatar name = { option } />
-} as SingleSelectProps<string>;
+export const Playground: StoryObj<SingleSelectProps<string>> = {
+	render: (args) => {
+		const [ value, setValue ] = useState( args.options[ 0 ] );
+		return <SingleSelect { ...args } value={ value } onChange={ setValue }/>;
+	},
+	args: {
+		options: [ "Option A", "Option B", "Option C" ],
+		renderOption: ( option, _checked ) => <Avatar name={ option }/>
+	}
+}

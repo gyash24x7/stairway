@@ -1,28 +1,29 @@
-import type { Meta, Story } from "@storybook/react";
-import { Spinner, SpinnerProps } from "./spinner";
-import type { Appearance, Size } from "../utils/types";
+import type { Meta, StoryObj } from "@storybook/react";
 import React from "react";
+import type { Appearance, Size } from "../utils/types";
+import { Spinner, SpinnerProps } from "./spinner";
 
-export default {
-    component: Spinner,
-    title: "Spinner",
-    argTypes: {
-        appearance: {
-            options: [ "primary", "default", "danger", "info", "alt", "warning", "success" ] as Appearance[],
-            control: { type: "inline-radio" },
-            defaultValue: "default",
-            description: "Sets the appearance of the spinner"
-        },
-        size: {
-            options: [ "xs", "sm", "md", "lg", "xl", "2xl" ] as Size[],
-            control: { type: "inline-radio" },
-            description: "Sets the size of the spinner",
-            defaultValue: "medium"
-        }
-    }
-} as Meta<SpinnerProps>;
+const meta: Meta<SpinnerProps> = {
+	component: Spinner,
+	title: "Spinner",
+	argTypes: {
+		appearance: {
+			options: [ "primary", "default", "danger", "info", "alt", "warning", "success" ] as Appearance[],
+			control: { type: "inline-radio" },
+			defaultValue: "default",
+			description: "Sets the appearance of the spinner"
+		},
+		size: {
+			options: [ "xs", "sm", "md", "lg", "xl", "2xl" ] as Size[],
+			control: { type: "inline-radio" },
+			description: "Sets the size of the spinner",
+			defaultValue: "medium"
+		}
+	}
+};
+export default meta;
 
-const Template: Story<SpinnerProps> = ( args ) => <Spinner { ...args } />;
-
-export const Playground = Template.bind( {} );
-Playground.args = { size: "md" };
+export const Playground: StoryObj<SpinnerProps> = {
+	render: args  => <Spinner { ...args } />,
+	args: { size: "md" }
+};
