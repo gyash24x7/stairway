@@ -1,6 +1,7 @@
-const path = require( "path" );
+import path from "path";
+import type {Config} from "tailwindcss";
 
-module.exports = {
+const config: Config = {
 	content: [
 		path.join( __dirname, "./src/**/*.{js,ts,jsx,tsx}" )
 	],
