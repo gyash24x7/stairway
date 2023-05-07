@@ -1,32 +1,19 @@
 {
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/cards/src",
-  "projectType": "library",
-  "targets": {
-	"build": {
-	  "executor": "@nrwl/js:tsc",
-	  "outputs": [
-		"{options.outputPath}"
-	  ],
-	  "options": {
-		"outputPath": "dist/libs/cards",
-		"main": "libs/cards/src/index.ts",
-		"tsConfig": "libs/cards/tsconfig.lib.json",
-		"assets": [
-		  "libs/cards/*.md"
-		]
-	  }
+	"name": "cards",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/cards/src",
+	"projectType": "library",
+	"targets": {
+		"test": {
+			"executor": "@nrwl/vite:test",
+			"outputs": [ "<projectRoot>/coverage/**" ],
+			"options": {
+				"coverageProvider": "istanbul",
+				"passWithNoTests": true,
+				"reportsDirectory": "coverage",
+				"config": "vitest.config.ts"
+			}
+		}
 	},
-	"test": {
-	  "executor": "@nrwl/jest:jest",
-	  "outputs": [
-		"coverage/libs/cards"
-	  ],
-	  "options": {
-		"jestConfig": "libs/cards/jest.config.ts",
-		"passWithNoTests": true
-	  }
-	}
-  },
-  "tags": [ ]
+	"tags": [ ]
 }
