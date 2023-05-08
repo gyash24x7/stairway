@@ -3,9 +3,10 @@
 	"npmScope": "s2h",
 	"tasksRunnerOptions": {
 		"default": {
-			"runner": "nx/tasks-runners/default",
+			"runner": "nx-cloud",
 			"options": {
-				"cacheableOperations": [ "build", "lint", "test", "e2e", "db:generate" ]
+				"cacheableOperations": [ "build", "lint", "test", "e2e", "db:generate" ],
+				"accessToken": "ZTM5MjE3ZjYtNDA3Zi00ZWI2LWI5YzEtYmQ3MzM0NmY1OTIxfHJlYWQtd3JpdGU="
 			}
 		}
 	},

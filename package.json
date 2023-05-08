@@ -49,6 +49,7 @@
 		"jsdom": "22.0.0",
 		"lorem-ipsum": "2.0.8",
 		"nx": "16.1.1",
+		"nx-cloud": "^16.0.5",
 		"prisma": "4.13.0",
 		"react-test-renderer": "18.2.0",
 		"ts-node": "10.9.1",
