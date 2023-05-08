@@ -18,7 +18,7 @@ export function AskCard() {
 	const [ selectedCard, setSelectedCard ] = useState<PlayingCard>();
 	const [ selectedPlayer, setSelectedPlayer ] = useState<EnhancedLitPlayer>();
 
-	const { mutateAsync, isLoading } = trpc.askCard.useMutation({
+	const { mutateAsync, isLoading } = trpc.askCard.useMutation( {
 		onError( error ) {
 			console.log( error );
 			alert( error.message );

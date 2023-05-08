@@ -1,13 +1,13 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "files": [ ],
-  "include": [ ],
-  "references": [
-	{
-	  "path": "./tsconfig.app.json"
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "../../tsconfig.base.json" ],
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "ES2022",
+		"esModuleInterop": true,
+		"sourceMap": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true
 	},
-	{
-	  "path": "./tsconfig.spec.json"
-	}
-  ]
+	"include": [ "src", "prisma", "test", "vitest.config.ts" ]
 }

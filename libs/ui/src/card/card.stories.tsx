@@ -9,9 +9,9 @@ const meta: Meta<CardProps> = {
 
 export default meta;
 
-export const Playground: StoryObj<CardProps> ={
+export const Playground: StoryObj<CardProps> = {
 	render: args => <Card { ...args } />,
-	args : {
+	args: {
 		title: "Card Title",
 		content: "This is Card Content"
 	}

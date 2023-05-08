@@ -1,20 +1,42 @@
 {
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/literature/src",
-  "projectType": "application",
-  "targets": {
-	"dev": {
-	  "executor": "./tools/executors/vite:dev",
-	  "options": { }
+	"name": "literature",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "apps/literature/src",
+	"projectType": "application",
+	"targets": {
+		"build": {
+			"executor": "@nx/vite:build",
+			"outputs": [ "{options.outputPath}" ],
+			"defaultConfiguration": "development",
+			"options": {
+				"outputPath": "apps/literature/dist"
+			},
+			"configurations": {
+				"development": {
+					"mode": "development"
+				},
+				"production": {
+					"mode": "production"
+				}
+			}
+		},
+		"serve": {
+			"executor": "@nx/vite:dev-server",
+			"defaultConfiguration": "development",
+			"options": {
+				"buildTarget": "literature:build"
+			},
+			"configurations": {
+				"development": {
+					"buildTarget": "literature:build:development",
+					"hmr": true
+				},
+				"production": {
+					"buildTarget": "literature:build:production",
+					"hmr": false
+				}
+			}
+		}
 	},
-	"build": {
-	  "executor": "./tools/executors/vite:build",
-	  "options": { }
-	},
-	"serve": {
-	  "executor": "./tools/executors/vite:serve",
-	  "options": { }
-	}
-  },
-  "tags": [ ]
+	"tags": [ ]
 }

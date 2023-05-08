@@ -38,5 +38,5 @@ export const Playground: StoryObj<FlexProps> = {
 			<div style={ { background: "#808080", padding: 20 } }>Flex Child 3</div>
 		</Flex>
 	),
-	args : { direction: "row", align: "start", justify: "start" } as FlexProps
+	args: { direction: "row", align: "start", justify: "start" } as FlexProps
 };

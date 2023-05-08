@@ -7,8 +7,7 @@
 		"esModuleInterop": true,
 		"sourceMap": true,
 		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
-		"types": [ "node" ]
+		"emitDecoratorMetadata": true
 	},
-	"include": [ "src", "test", "vitest.config.ts" ]
+	"include": [ "src", "tests", "vitest.config.ts" ]
 }

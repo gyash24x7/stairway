@@ -5,8 +5,7 @@
 		"default": {
 			"runner": "nx/tasks-runners/default",
 			"options": {
-				"cacheableOperations": [ "build", "lint", "test", "e2e", "db:generate" ],
-				"accessToken": "YjgwZjAyOTYtNDQ1Ni00Y2Y5LThjODctNjRjNWYwMzBiY2RhfHJlYWQtd3JpdGU="
+				"cacheableOperations": [ "build", "lint", "test", "e2e", "db:generate" ]
 			}
 		}
 	},
@@ -29,8 +28,7 @@
 			"default",
 			"!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
 			"!{projectRoot}/.storybook/**/*",
-			"!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)",
-			"!{projectRoot}/tsconfig.spec.json"
+			"!{projectRoot}/**/*.stories.@(js|jsx|ts|tsx|mdx)"
 		],
 		"sharedGlobals": [ ]
 	}

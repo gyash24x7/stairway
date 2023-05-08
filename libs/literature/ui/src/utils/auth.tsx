@@ -24,7 +24,7 @@ export function AuthProvider( props: { children: ReactNode } ) {
 
 	const { mutateAsync } = useMutation( {
 		onSuccess: () => setUser( undefined ),
-		mutationFn:() => fetch( `${ SERVER_URL }/api/auth/logout`, { method: "delete", credentials: "include" } )
+		mutationFn: () => fetch( `${ SERVER_URL }/api/auth/logout`, { method: "delete", credentials: "include" } )
 			.then( res => res.json() )
 	} );
 
@@ -32,7 +32,7 @@ export function AuthProvider( props: { children: ReactNode } ) {
 
 	const { isLoading } = useQuery( {
 		onSuccess: ( data: User ) => setUser( data ),
-		queryFn:() => fetch( `${ SERVER_URL }/api/me`, { credentials: "include" } ).then( res => res.json() ).catch()
+		queryFn: () => fetch( `${ SERVER_URL }/api/me`, { credentials: "include" } ).then( res => res.json() ).catch()
 	} );
 
 	if ( isLoading ) {

@@ -10,4 +10,3 @@ export const router = t.router;
 export const procedure = t.procedure;
 export const procedureWithGame = t.procedure.use( requireGameMiddlewareFn ).use( requirePlayerMiddlewareFn );
 export const procedureWithGameInProgress = procedureWithGame.use( requireGameInProgressMiddlewareFn );
-export const middleware = t.middleware;

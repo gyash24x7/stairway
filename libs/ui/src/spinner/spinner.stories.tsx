@@ -24,6 +24,6 @@ const meta: Meta<SpinnerProps> = {
 export default meta;
 
 export const Playground: StoryObj<SpinnerProps> = {
-	render: args  => <Spinner { ...args } />,
+	render: args => <Spinner { ...args } />,
 	args: { size: "md" }
 };

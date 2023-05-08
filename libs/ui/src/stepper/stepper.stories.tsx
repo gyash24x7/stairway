@@ -5,8 +5,8 @@ import { Stepper, StepperProps } from "./stepper";
 const meta: Meta<StepperProps> = { component: Stepper, title: "Stepper" };
 export default meta;
 
-export const Playground: StoryObj<StepperProps> ={
-	render:args => <Stepper { ...args } />,
+export const Playground: StoryObj<StepperProps> = {
+	render: args => <Stepper { ...args } />,
 	args: {
 		steps: [
 			{ name: "Step 1", content: <h1>Step 1</h1> },

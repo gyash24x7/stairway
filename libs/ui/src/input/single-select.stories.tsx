@@ -7,7 +7,7 @@ const meta: Meta<SingleSelectProps<string>> = { component: SingleSelect, title: 
 export default meta;
 
 export const Playground: StoryObj<SingleSelectProps<string>> = {
-	render: (args) => {
+	render: ( args ) => {
 		const [ value, setValue ] = useState( args.options[ 0 ] );
 		return <SingleSelect { ...args } value={ value } onChange={ setValue }/>;
 	},
@@ -15,4 +15,4 @@ export const Playground: StoryObj<SingleSelectProps<string>> = {
 		options: [ "Option A", "Option B", "Option C" ],
 		renderOption: ( option, _checked ) => <Avatar name={ option }/>
 	}
-}
+};

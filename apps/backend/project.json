@@ -1,44 +1,39 @@
 {
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/backend/src",
-  "projectType": "application",
-  "targets": {
-	"build": {
-	  "executor": "@nrwl/node:webpack",
-	  "outputs": [
-		"{options.outputPath}"
-	  ],
-	  "options": {
-		"outputPath": "dist/apps/backend",
-		"main": "apps/backend/src/main.ts",
-		"tsConfig": "apps/backend/tsconfig.app.json",
-		"assets": [ ]
-	  },
-	  "configurations": {
-		"production": {
-		  "optimization": true,
-		  "extractLicenses": true,
-		  "inspect": false,
-		  "fileReplacements": [ ]
+	"name": "backend",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "apps/backend/src",
+	"projectType": "application",
+	"targets": {
+		"build": {
+			"executor": "@nx/webpack:webpack",
+			"outputs": [ "{options.outputPath}" ],
+			"options": {
+				"target": "node",
+				"compiler": "tsc",
+				"outputPath": "apps/backend/dist",
+				"main": "apps/backend/src/main.ts",
+				"tsConfig": "apps/backend/tsconfig.build.json"
+			},
+			"configurations": {
+				"production": {
+					"optimization": true,
+					"extractLicenses": true,
+					"inspect": false
+				}
+			}
+		},
+		"serve": {
+			"executor": "@nx/js:node",
+			"options": {
+				"buildTarget": "api:build",
+				"inspect": false
+			},
+			"configurations": {
+				"production": {
+					"buildTarget": "api:build:production"
+				}
+			}
 		}
-	  }
 	},
-	"serve": {
-	  "executor": "@nrwl/node:node",
-	  "options": {
-		"buildTarget": "backend:build"
-	  }
-	},
-	"test": {
-	  "executor": "@nrwl/jest:jest",
-	  "outputs": [
-		"coverage/apps/backend"
-	  ],
-	  "options": {
-		"jestConfig": "apps/backend/jest.config.ts",
-		"passWithNoTests": true
-	  }
-	}
-  },
-  "tags": [ ]
+	"tags": [ ]
 }

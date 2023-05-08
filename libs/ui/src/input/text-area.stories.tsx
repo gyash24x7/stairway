@@ -18,11 +18,11 @@ const meta: Meta<TextAreaProps> = {
 export default meta;
 
 export const Playground: StoryObj<TextAreaProps> = {
-	render:args => <TextArea { ...args } />,
+	render: args => <TextArea { ...args } />,
 	args: {
 		name: "message",
 		label: "Message",
 		placeholder: "Enter your message",
 		message: "Write a beautiful message here..."
 	}
-}
+};

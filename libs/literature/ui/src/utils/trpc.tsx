@@ -8,11 +8,11 @@ import superjson from "superjson";
 export const trpc = createTRPCReact<LiteratureRouter>();
 export const trpcClient = trpc.createClient( {
 	transformer: superjson,
-	links:[
-		httpBatchLink({
+	links: [
+		httpBatchLink( {
 			url: "http://localhost:8000/api/literature",
 			fetch: ( input, init ) => fetch( input, { ...init, credentials: "include" } )
-		})
+		} )
 	]
 } );
 

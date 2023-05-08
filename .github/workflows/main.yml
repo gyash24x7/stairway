@@ -1,63 +1,35 @@
 name: Nx Monorepo CI Action
-on: push
+
+on:
+    push:
+        branches: [ "main" ]
+
 jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+    build:
+        name: Build and Test
+        timeout-minutes: 15
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Check out code
+                uses: actions/checkout@v3
+                with:
+                    fetch-depth: 2
 
-      - uses: pnpm/action-setup@v2.2.2
-        with:
-          version: 7.8.0
+            -   uses: pnpm/action-setup@v2.0.1
+                with:
+                    version: 7.26.0
 
-      - name: Cache Node Modules
-        id: cache
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+            -   name: Setup Node.js environment
+                uses: actions/setup-node@v3
+                with:
+                    node-version: 18
+                    cache: "pnpm"
 
-      - uses: actions/setup-node@v1
-        if: steps.cache.outputs.cache-hit != 'true'
-        with:
-          node-version: 16.x
+            -   name: Install dependencies
+                run: pnpm i -r
 
-      - name: Pnpm Install
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: pnpm install
+            -   name: Build
+                run: pnpm run build
 
-  test:
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: pnpm/action-setup@v2.2.2
-        with:
-          version: 7.8.0
-
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - run: pnpm nx affected --target=test --parallel
-
-  build:
-    runs-on: ubuntu-latest
-    needs: install
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: pnpm/action-setup@v2.2.2
-        with:
-          version: 7.8.0
-
-      - name: Cache Node Modules
-        uses: actions/cache@v2
-        with:
-          path: node_modules
-          key: cache-node-modules-${{ hashFiles('pnpm-lock.yaml') }}
-
-      - run: pnpm nx affected --target=build --prod --parallel
+            -   name: Test
+                run: pnpm run test

@@ -1,18 +1,19 @@
-const path = require( "path" );
-const { createGlobPatternsForDependencies } = require( "@nrwl/react/tailwind" )
+import { join } from "path";
+import type { Config } from "tailwindcss";
 
-module.exports = {
+const config: Config = {
 	content: [
-		path.join( __dirname, "src/**/*.{js,ts,jsx,tsx}" ),
-		...createGlobPatternsForDependencies( __dirname )
+		join( __dirname, "./src/**/*.tsx" ),
+		join( __dirname, "../../libs/literature/ui/**/*.tsx" ),
+		join( __dirname, "../../libs/ui/**/*.tsx" )
 	],
 	darkMode: "class",
 	theme: {
 		fontWeight: {
-			light: 200,
-			normal: 400,
-			semibold: 600,
-			bold: 800
+			light: "300",
+			normal: "500",
+			semibold: "600",
+			bold: "800"
 		},
 		fontSize: {
 			base: [ "14px", "20px" ],
@@ -142,4 +143,6 @@ module.exports = {
 		}
 	},
 	plugins: []
-}
+};
+
+export default config;

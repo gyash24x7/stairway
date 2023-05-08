@@ -3,7 +3,7 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
 	content: [
-		path.join( __dirname, "./src/**/*.{js,ts,jsx,tsx}" )
+		path.join( __dirname, "../src/**/*.{js,ts,jsx,tsx}" )
 	],
 	darkMode: "class",
 	theme: {

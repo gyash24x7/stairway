@@ -5,13 +5,10 @@
 	"tags": [ ],
 	"targets": {
 		"storybook": {
-			"executor": "@nrwl/storybook:storybook",
+			"executor": "@nx/storybook:storybook",
 			"options": {
-				"uiFramework": "@storybook/react",
 				"port": 4400,
-				"config": {
-					"configFolder": "libs/ui/.storybook"
-				}
+				"configDir": "libs/ui/.storybook"
 			},
 			"configurations": {
 				"ci": {
@@ -19,17 +16,12 @@
 				}
 			}
 		},
-		"build-storybook": {
-			"executor": "@nrwl/storybook:build",
-			"outputs": [
-				"{options.outputPath}"
-			],
+		"storybook:build": {
+			"executor": "@nx/storybook:build",
+			"outputs": [ "{options.outputDir}" ],
 			"options": {
-				"uiFramework": "@storybook/react",
-				"outputPath": "dist/storybook/ui",
-				"config": {
-					"configFolder": "libs/ui/.storybook"
-				}
+				"outputDir": "libs/ui/dist/storybook",
+				"configDir": "libs/ui/.storybook"
 			},
 			"configurations": {
 				"ci": {
@@ -38,13 +30,12 @@
 			}
 		},
 		"test": {
-			"executor": "@nrwl/jest:jest",
-			"outputs": [
-				"coverage/libs/ui"
-			],
+			"executor": "@nx/vite:test",
+			"outputs": [ "<projectRoot>/coverage/**" ],
 			"options": {
-				"jestConfig": "libs/ui/jest.config.ts",
-				"passWithNoTests": true
+				"coverageProvider": "istanbul",
+				"passWithNoTests": true,
+				"reportsDirectory": "coverage"
 			}
 		}
 	}

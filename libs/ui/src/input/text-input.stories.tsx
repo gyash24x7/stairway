@@ -19,7 +19,7 @@ const meta: Meta<TextInputProps> = {
 export default meta;
 
 export const Playground: StoryObj<TextInputProps> = {
-	render:args => <TextInput { ...args } />,
+	render: args => <TextInput { ...args } />,
 	args: {
 		name: "firstName",
 		message: "Helper Text",
@@ -27,11 +27,11 @@ export const Playground: StoryObj<TextInputProps> = {
 		placeholder: "Enter your Name",
 		appearance: "default"
 	}
-}
+};
 
-export const TextInputWithIconBefore: StoryObj<TextInputProps> ={
+export const TextInputWithIconBefore: StoryObj<TextInputProps> = {
 	render: args => <TextInput { ...args } />,
-	args : {
+	args: {
 		name: "email",
 		label: "Email",
 		type: "email",
@@ -41,7 +41,7 @@ export const TextInputWithIconBefore: StoryObj<TextInputProps> ={
 	}
 };
 
-export const TextInputWithIconAfter: StoryObj<TextInputProps> ={
+export const TextInputWithIconAfter: StoryObj<TextInputProps> = {
 	render: args => <TextInput { ...args } />,
 	args: {
 		name: "password",

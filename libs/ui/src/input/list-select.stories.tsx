@@ -5,9 +5,9 @@ import { ListSelect, ListSelectProps } from "./list-select";
 const meta: Meta<ListSelectProps> = { component: ListSelect, title: "ListSelect" };
 export default meta;
 
-export const Playground: StoryObj<ListSelectProps> ={
-	render:args => <ListSelect { ...args } />,
-	args : {
+export const Playground: StoryObj<ListSelectProps> = {
+	render: args => <ListSelect { ...args } />,
+	args: {
 		options: [
 			{ label: "Person 1", value: "AB" },
 			{ label: "Person 2", value: "CD" },

@@ -6,7 +6,7 @@ export default defineConfig( {
 	test: {
 		cache: false,
 		environment: "node",
-		include: [ "test/**/*.test.ts" ],
+		include: [ "tests/**/*.test.ts" ],
 		coverage: {
 			reporter: [ "text", "json", "html" ],
 			provider: "istanbul",

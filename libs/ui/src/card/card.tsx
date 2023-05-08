@@ -18,7 +18,7 @@ export function Card( { centered, title, content }: CardProps ) {
 	return (
 		<div className={ "rounded-md p-4 flex-1 bg-light-100" }>
 			{ !!title && (
-				<h2 className={ cardTitleVariantSchema.getClassname( { centered: centered ? "true": "false" } ) }>
+				<h2 className={ cardTitleVariantSchema.getClassname( { centered: centered ? "true" : "false" } ) }>
 					{ title }
 				</h2>
 			) }

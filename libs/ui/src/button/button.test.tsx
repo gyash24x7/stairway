@@ -1,8 +1,8 @@
 import { CheckIcon } from "@heroicons/react/24/solid";
 import { Button } from "@s2h/ui";
-import { render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import React from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 describe( "Button Component", function () {
 
@@ -45,5 +45,9 @@ describe( "Button Component", function () {
 			expect( mainButton.children.length ).toBe( 1 );
 		}
 	);
+
+	afterEach( () => {
+		cleanup();
+	} );
 
 } );

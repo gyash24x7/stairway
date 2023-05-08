@@ -3,9 +3,8 @@ import { EnhancedLitGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitGameData, LitTrpcMiddleware } from "../types";
-import { middleware } from "../utils";
 
-export const requireGameMiddlewareFn: LitTrpcMiddleware = async function ( { ctx, rawInput, next } ) {
+export const requireGame: LitTrpcMiddleware = async function ( { ctx, rawInput, next } ) {
 	const result = getGameInput.safeParse( rawInput );
 
 	if ( !result.success ) {
@@ -26,4 +25,4 @@ export const requireGameMiddlewareFn: LitTrpcMiddleware = async function ( { ctx
 	return next( { ctx: { ...ctx, currentGame } } );
 };
 
-export default middleware( requireGameMiddlewareFn );
+export default requireGame;

@@ -6,8 +6,8 @@ const meta: Meta<ModalProps> = { component: Modal, title: "Modal" };
 export default meta;
 
 export const Playground: StoryObj<ModalProps> = {
-	render:args => <Modal { ...args } />,
-	args : {
+	render: args => <Modal { ...args } />,
+	args: {
 		title: "Modal StoryObj",
 		onClose: () => console.log( "Modal Closed!" ),
 		isOpen: true,

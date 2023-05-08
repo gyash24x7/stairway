@@ -5,13 +5,12 @@
 	"projectType": "library",
 	"targets": {
 		"test": {
-			"executor": "@nrwl/vite:test",
+			"executor": "@nx/vite:test",
 			"outputs": [ "<projectRoot>/coverage/**" ],
 			"options": {
 				"coverageProvider": "istanbul",
 				"passWithNoTests": true,
-				"reportsDirectory": "coverage",
-				"config": "vitest.config.ts"
+				"reportsDirectory": "coverage"
 			}
 		}
 	},

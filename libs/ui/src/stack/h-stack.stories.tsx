@@ -37,4 +37,4 @@ export const Playground: StoryObj<HStackProps> = {
 		</HStack>
 	),
 	args: {}
-}
+};
