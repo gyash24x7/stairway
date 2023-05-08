@@ -4,7 +4,7 @@ import { CardHand, CardRank, CardSet, cardSetMap, CardSuit, IPlayingCard } from 
 import { literatureRouter as router } from "@s2h/literature/router";
 import { EnhancedLitGame } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
-import cuid from "cuid";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
 import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";

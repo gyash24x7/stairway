@@ -2,7 +2,7 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig( {
-	plugins: [ viteTsConfigPaths( { root: "../../../" } ) ],
+	plugins: [ viteTsConfigPaths( { root: "../../" } ) ],
 	test: {
 		cache: false,
 		environment: "jsdom",

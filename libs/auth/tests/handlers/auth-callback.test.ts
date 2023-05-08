@@ -2,7 +2,7 @@ import type { PrismaClient, User } from "@prisma/client";
 import { handleAuthCallback } from "@s2h/auth";
 import type { GoogleUserResult } from "@s2h/utils";
 import axios from "axios";
-import cuid from "cuid";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from "vitest";
 import { DeepMockProxy, mockDeep, mockReset } from "vitest-mock-extended";

@@ -1,5 +1,5 @@
 import type { PrismaClient, User } from "@prisma/client";
-import cuid from "cuid";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { describe, expect, it } from "vitest";
 import { mockDeep } from "vitest-mock-extended";

@@ -1,6 +1,6 @@
 import { EnhancedLitGame } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
-import cuid from "cuid";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 import { Messages } from "../../src/constants";
 import requireGame from "../../src/middlewares/require-game";
@@ -23,16 +23,6 @@ describe( "Require Game Middleware", function () {
 
 	it( "should throw error when gameId not present in raw input", function () {
 		const rawInput = { gameId: undefined };
-
-		return requireGame( { ctx, rawInput, next: mockNextFn } )
-			.catch( ( e: TRPCError ) => {
-				expect( e.code ).toBe( "BAD_REQUEST" );
-				expect( e.message ).toBe( Messages.INVALID_GAME_ID );
-			} );
-	} );
-
-	it( "should throw error when gameId is not a proper cuid", function () {
-		const rawInput = { gameId: "randomId" };
 
 		return requireGame( { ctx, rawInput, next: mockNextFn } )
 			.catch( ( e: TRPCError ) => {

@@ -7,15 +7,15 @@ export const playingCard = z.object( {
 } );
 
 export const askCardInput = z.object( {
-	gameId: z.string().cuid(),
+	gameId: z.string(),
 	askedFor: playingCard,
-	askedFrom: z.string().cuid()
+	askedFrom: z.string()
 } );
 
 export type AskCardInput = z.infer<typeof askCardInput>;
 
 export const callSetInput = z.object( {
-	gameId: z.string().cuid(),
+	gameId: z.string(),
 	data: z.record( z.string(), z.array( playingCard ) )
 } );
 
@@ -29,28 +29,28 @@ export type CreateGameInput = z.infer<typeof createGameInput>;
 
 export const createTeamsInput = z.object( {
 	teams: z.string().array().length( 2 ),
-	gameId: z.string().cuid()
+	gameId: z.string()
 } );
 
 export type CreateTeamsInput = z.infer<typeof createTeamsInput>;
 
 export const declineCardInput = z.object( {
-	gameId: z.string().cuid(),
+	gameId: z.string(),
 	cardDeclined: playingCard
 } );
 
 export type DeclineCardInput = z.infer<typeof declineCardInput>;
 
 export const getGameInput = z.object( {
-	gameId: z.string().cuid()
+	gameId: z.string()
 } );
 
 export type GetGameInput = z.infer<typeof getGameInput>;
 
 export const giveCardInput = z.object( {
-	gameId: z.string().cuid(),
+	gameId: z.string(),
 	cardToGive: playingCard,
-	giveTo: z.string().cuid()
+	giveTo: z.string()
 } );
 
 export type GiveCardInput = z.infer<typeof giveCardInput>;

@@ -2,7 +2,7 @@ import { LitGameStatus, LitMove, LitMoveType, LitPlayer, User } from "@prisma/cl
 import { CardRank, CardSuit, PlayingCard } from "@s2h/cards";
 import { literatureRouter } from "@s2h/literature/router";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
-import cuid from "cuid";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
 import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";

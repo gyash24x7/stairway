@@ -1,7 +1,7 @@
 import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam, User } from "@prisma/client";
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
 import { EnhancedLitPlayer, EnhancedLitTeam } from "@s2h/literature/utils";
-import cuid from "cuid";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { describe, expect, it } from "vitest";
 import { EnhancedLitGame } from "../src/enhanced-game";
 
