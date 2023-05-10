@@ -24,8 +24,8 @@ export default function handleAuthCallback( prisma: PrismaClient ): ExpressHandl
 			} );
 		}
 
-		const accessToken = signJwt( user.id, "access" );
-		const refreshToken = signJwt( user.salt, "refresh" );
+		const accessToken = await signJwt( user.id, "15m" );
+		const refreshToken = await signJwt( user.salt, "1y" );
 
 		res.cookie( "accessToken", accessToken, accessTokenCookieOptions );
 		res.cookie( "refreshToken", refreshToken, refreshTokenCookieOptions );

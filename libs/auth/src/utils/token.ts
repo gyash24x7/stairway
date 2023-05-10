@@ -1,24 +1,31 @@
 import type { PrismaClient } from "@prisma/client";
 import type { CookieOptions } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import * as process from "process";
+import { jwtVerify, SignJWT } from "jose";
 
-export function signJwt( subject: string, tokenType: "access" | "refresh" ) {
-	const expiresIn = tokenType === "access" ? 15 * 60 : 365 * 24 * 60 * 60;
-	return jwt.sign( {}, process.env[ "JWT_SECRET" ]!, { expiresIn, subject } );
+export async function signJwt( subject: string, expiresIn: string ): Promise<string> {
+	const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] || "" );
+	return new SignJWT( {} )
+		.setProtectedHeader( { alg: "HS256" } )
+		.setIssuedAt()
+		.setAudience( "stairway:api" )
+		.setExpirationTime( expiresIn )
+		.setSubject( subject )
+		.sign( secret );
 }
 
-export function verifyJwt( token: string ): { valid: boolean, expired: boolean, subject?: string } {
+export async function verifyJwt( token: string ): Promise<{ valid: boolean, expired: boolean, subject?: string }> {
 	try {
-		const payload = jwt.verify( token, process.env[ "JWT_SECRET" ]! ) as JwtPayload;
+		const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] || "" );
+		const { payload } = await jwtVerify( token, secret );
 		return { valid: true, expired: false, subject: payload.sub };
 	} catch ( e: any ) {
-		console.error( e );
-		return { valid: false, expired: e.message === "jwt expired" };
+		return { valid: false, expired: e.code === "ERR_JWT_EXPIRED" };
 	}
 }
 
 export async function reIssueAccessToken( refreshToken: string, prisma: PrismaClient ) {
-	const { subject } = verifyJwt( refreshToken );
+	const { subject } = await verifyJwt( refreshToken );
 
 	if ( !subject ) {
 		return;
@@ -30,7 +37,7 @@ export async function reIssueAccessToken( refreshToken: string, prisma: PrismaCl
 		return;
 	}
 
-	return signJwt( user.id, "access" );
+	return signJwt( user.id, "15m" );
 }
 
 export const accessTokenCookieOptions: CookieOptions = {

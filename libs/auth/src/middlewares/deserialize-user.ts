@@ -14,7 +14,7 @@ export default function ( prisma: PrismaClient ): ExpressMiddleware {
 			return next();
 		}
 
-		const { subject, expired } = verifyJwt( accessToken );
+		const { subject, expired } = await verifyJwt( accessToken );
 
 		if ( subject ) {
 			res.locals[ "userId" ] = subject;
@@ -26,7 +26,7 @@ export default function ( prisma: PrismaClient ): ExpressMiddleware {
 
 			if ( !!newAccessToken ) {
 				res.cookie( "accessToken", newAccessToken, accessTokenCookieOptions );
-				const { subject } = verifyJwt( newAccessToken );
+				const { subject } = await verifyJwt( newAccessToken );
 				res.locals[ "userId" ] = subject;
 			}
 

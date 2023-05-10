@@ -47,8 +47,8 @@ describe( "Deserialize User Middleware", function () {
 	} );
 
 	it( "should read access token and call next with the user id set in locals", async function () {
-		const accessToken = signJwt( "subject", "access" );
-		const refreshToken = signJwt( "subject", "refresh" );
+		const accessToken = await signJwt( "subject", "15m" );
+		const refreshToken = await signJwt( "subject", "1y" );
 		mockReq.headers.authorization = `Bearer ${ accessToken }`;
 		mockReq.headers[ "x-refresh" ] = refreshToken;
 		mockReq.cookies[ "accessToken" ] = undefined;
@@ -83,7 +83,7 @@ describe( "Deserialize User Middleware", function () {
 			process.env[ "JWT_SECRET" ]!,
 			{ expiresIn: 0, subject: "subject" }
 		);
-		const refreshToken = signJwt( "subject", "refresh" );
+		const refreshToken = await signJwt( "subject", "1y" );
 		mockReq.headers.authorization = `Bearer ${ accessToken }`;
 		mockReq.headers[ "x-refresh" ] = refreshToken;
 		mockReq.cookies[ "accessToken" ] = undefined;

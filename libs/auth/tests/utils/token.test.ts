@@ -1,66 +1,60 @@
 import type { PrismaClient, User } from "@prisma/client";
 import { createId as cuid } from "@paralleldrive/cuid2";
-import jwt, { JwtPayload } from "jsonwebtoken";
 import { describe, expect, it } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
 import { reIssueAccessToken, signJwt, verifyJwt } from "../../src/utils/token";
+import * as process from "process";
+import { jwtVerify } from "jose";
 
 describe( "Sign JWT", function () {
 
-	it( "should throw error if secret not present", function () {
-		expect.assertions( 1 );
-		try {
-			signJwt( "subject", "access" );
-		} catch ( e ) {
-			expect( e ).toBeTruthy();
-		}
-	} );
-
-	it( "should generate access token with 15m expiration", function () {
+	it( "should generate access token with 15m expiration", async function () {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
-		const token = signJwt( "subject", "access" );
-		const payload = jwt.verify( token, "jwtSecret" ) as JwtPayload;
+		const token = await signJwt( "subject", "15m" );
+		const { payload } = await jwtVerify( token, new TextEncoder().encode( "jwtSecret" ) );
 
 		expect( payload.sub ).toBe( "subject" );
 		expect( payload.exp! - payload.iat! ).toBe( 15 * 60 );
 	} );
 
-	it( "should generate refresh token with 1y expiration", function () {
+	it( "should generate refresh token with 1y expiration", async function () {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
-		const token = signJwt( "subject", "refresh" );
-		const payload = jwt.verify( token, "jwtSecret" ) as JwtPayload;
+		const token = await signJwt( "subject", "1y" );
+		const { payload } = await jwtVerify( token, new TextEncoder().encode( "jwtSecret" ) );
 
 		expect( payload.sub ).toBe( "subject" );
-		expect( payload.exp! - payload.iat! ).toBe( 365 * 24 * 60 * 60 );
+		expect( payload.exp! - payload.iat! ).toBe( 365.25 * 24 * 60 * 60 );
 	} );
 } );
 
 describe( "Verify JWT", function () {
 
-	it( "should throw error if token expired", function () {
+	it( "should throw error if token expired", async function () {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 
-		const token = jwt.sign( {}, "jwtSecret", { expiresIn: 0 } );
-		const { valid, expired } = verifyJwt( token );
+		const token = await signJwt( "subject", "0s" );
+		const { valid, expired } = await verifyJwt( token );
 
 		expect( valid ).toBeFalsy();
 		expect( expired ).toBeTruthy();
 	} );
 
-	it( "should throw error if other error", function () {
-		process.env[ "JWT_SECRET" ] = undefined;
-		const token = jwt.sign( {}, "jwtSecret", { expiresIn: 200000 } );
-		const { valid, expired } = verifyJwt( token );
+	it( "should throw error if other error", async function () {
+		process.env[ "JWT_SECRET" ] = "jwtSecret1";
+		const token = await signJwt( "subject", "15m" );
+
+		process.env[ "JWT_SECRET" ] = "jwtSecret2";
+		const { valid, expired } = await verifyJwt( token );
 
 		expect( valid ).toBeFalsy();
 		expect( expired ).toBeFalsy();
 	} );
 
-	it( "should verify token successfully", function () {
+	it( "should verify token successfully", async function () {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 
-		const token = jwt.sign( {}, "jwtSecret", { expiresIn: 20000, subject: "subject" } );
-		const { valid, expired, subject } = verifyJwt( token );
+		const token = await signJwt( "subject", "15m" );
+		const { valid, expired, subject } = await verifyJwt( token );
 
 		expect( valid ).toBeTruthy();
 		expect( expired ).toBeFalsy();
@@ -68,7 +62,7 @@ describe( "Verify JWT", function () {
 	} );
 } );
 
-describe( "ReIssue Access Token", function () {
+describe( "ReIssue Access Token", async function () {
 
 	const user: User = {
 		id: cuid(),
@@ -82,7 +76,7 @@ describe( "ReIssue Access Token", function () {
 
 	it( "should return undefined if subject not present", async function () {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
-		const refreshToken = signJwt( "", "refresh" );
+		const refreshToken = await signJwt( "", "1y" );
 		const newToken = await reIssueAccessToken( refreshToken, prismaMock );
 
 		expect( newToken ).toBeUndefined();
@@ -91,7 +85,7 @@ describe( "ReIssue Access Token", function () {
 
 	it( "should return undefined if user does not exist", async function () {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
-		const refreshToken = signJwt( "saltAsSubject", "refresh" );
+		const refreshToken = await signJwt( "saltAsSubject", "1y" );
 		prismaMock.user.findUnique.mockResolvedValue( null );
 		const newToken = await reIssueAccessToken( refreshToken, prismaMock );
 
@@ -107,7 +101,7 @@ describe( "ReIssue Access Token", function () {
 
 	it( "should return new token if user is present", async function () {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
-		const refreshToken = signJwt( "saltAsSubject", "refresh" );
+		const refreshToken = await signJwt( "saltAsSubject", "1y" );
 		prismaMock.user.findUnique.mockResolvedValue( user );
 		const newToken = await reIssueAccessToken( refreshToken, prismaMock );
 

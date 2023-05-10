@@ -1,5 +1,5 @@
 import { Combobox, Transition } from "@headlessui/react";
-import { CheckCircleIcon, SelectorIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon, CursorArrowRippleIcon } from "@heroicons/react/24/solid";
 import React, { Fragment, useState } from "react";
 import { VariantSchema } from "../utils/variant";
 import { InputMessage } from "./input-message";
@@ -68,7 +68,7 @@ export function ListSelect( props: ListSelectProps ) {
 						className={ "w-full border-none focus:outline-none text-base leading-5 text-dark" }
 					/>
 					<Combobox.Button className={ "w-5 h-5 text-light-700" }>
-						<SelectorIcon aria-hidden="true"/>
+						<CursorArrowRippleIcon aria-hidden="true"/>
 					</Combobox.Button>
 				</div>
 				<Transition
