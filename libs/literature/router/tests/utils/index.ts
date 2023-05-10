@@ -1,10 +1,9 @@
 import type { PrismaClient, User } from "@prisma/client";
 import { LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam } from "@prisma/client";
-import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, ICardHand, PlayingCard } from "@s2h/cards";
+import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, chunk, ICardHand, PlayingCard } from "@s2h/cards";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
 import type { Publisher } from "@s2h/utils";
 import { createId as cuid } from "@paralleldrive/cuid2";
-import { chunk } from "lodash";
 import { LoremIpsum } from "lorem-ipsum";
 import { DeepMockProxy, mockDeep } from "vitest-mock-extended";
 import type { LitGameData } from "../../src/types";

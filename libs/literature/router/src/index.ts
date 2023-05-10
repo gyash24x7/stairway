@@ -24,6 +24,7 @@ import startGameResolver from "./resolvers/start-game";
 import transferTurnResolver from "./resolvers/transfer-turn";
 import type { LitTrpcContext } from "./types";
 import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
+import { ExpressHandler } from "@s2h/utils";
 
 export const literatureRouter = router( {
 	createGame: procedure.input( createGameInput ).mutation( createGameResolver ),
@@ -49,6 +50,8 @@ export function literatureExpressHandler( ctx: LitTrpcContext ) {
 	} );
 }
 
-export function literatureTrpcPanelHandler( url: string ) {
-	return renderTrpcPanel( literatureRouter, { url } );
+export function literatureTrpcPanelHandler( url: string ): ExpressHandler {
+	return ( _req, res ) => {
+		res.send( renderTrpcPanel( literatureRouter, { url, transformer: "superjson" } ) );
+	};
 }

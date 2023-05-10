@@ -31,6 +31,7 @@ export function AuthProvider( props: { children: ReactNode } ) {
 	const logout = () => mutateAsync();
 
 	const { isLoading } = useQuery( {
+		queryKey: [ "me" ],
 		onSuccess: ( data: User ) => setUser( data ),
 		queryFn: () => fetch( `${ SERVER_URL }/api/me`, { credentials: "include" } ).then( res => res.json() ).catch()
 	} );

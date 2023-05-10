@@ -2,9 +2,9 @@ import { LitGameStatus } from "@prisma/client";
 import type { CreateTeamsInput } from "@s2h/literature/dtos";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
-import { shuffle } from "lodash";
 import { Messages } from "../constants";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
+import { shuffle } from "@s2h/cards";
 
 function validate( ctx: LitTrpcContext ) {
 	if ( ctx.currentGame!.status !== LitGameStatus.PLAYERS_READY ) {

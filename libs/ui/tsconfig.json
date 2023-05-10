@@ -11,7 +11,7 @@
 		"jsx": "react"
 	},
 	"files": [ ],
-	"include": [ "src", "vitest.config.ts" ],
+	"include": [ "src", "vite.config.ts" ],
 	"exclude": [
 		"src/**/*.stories.tsx",
 		"**/*.stories.ts",

@@ -1,4 +1,4 @@
-import { DuplicateIcon } from "@heroicons/react/outline";
+import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { Flex } from "@s2h/ui";
 import React from "react";
 import { useCopyToClipboard } from "react-use";
@@ -13,7 +13,7 @@ export const GameDescription = function () {
 			<p>Game Code</p>
 			<Flex justify={ "space-between" } align={ "center" } className={ "w-full" }>
 				<h1 className={ "text-6xl font-fjalla" }>{ code }</h1>
-				<DuplicateIcon
+				<DocumentDuplicateIcon
 					width={ 40 }
 					height={ 40 }
 					className={ "cursor-pointer" }
