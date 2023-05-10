@@ -1,12 +1,17 @@
-import viteTsConfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
+import viteTsConfigPaths from "vite-tsconfig-paths";
+
 export default defineConfig( {
+	cacheDir: "../../node_modules/.vite/auth",
 	plugins: [ viteTsConfigPaths( { root: "../../" } ) ],
 	test: {
-		cache: false,
+		globals: true,
+		cache: {
+			dir: "../../node_modules/.vitest/auth"
+		},
 		environment: "node",
-		include: [ "tests/**/*.test.ts" ],
+		include: [ "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}" ],
 		coverage: {
 			reporter: [ "text", "json", "html" ],
 			provider: "istanbul",
