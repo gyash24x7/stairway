@@ -9,5 +9,5 @@
 		"experimentalDecorators": true,
 		"emitDecoratorMetadata": true
 	},
-	"include": [ "src", "prisma", "test", "vitest.config.ts" ]
+	"include": [ "src", "prisma", "test", "vite.config.ts" ]
 }

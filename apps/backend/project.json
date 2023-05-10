@@ -25,13 +25,22 @@
 		"serve": {
 			"executor": "@nx/js:node",
 			"options": {
-				"buildTarget": "api:build",
+				"buildTarget": "backend:build",
 				"inspect": false
 			},
 			"configurations": {
 				"production": {
-					"buildTarget": "api:build:production"
+					"buildTarget": "backend:build:production"
 				}
+			}
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": [ "<projectRoot>/coverage/**" ],
+			"options": {
+				"coverageProvider": "istanbul",
+				"passWithNoTests": true,
+				"reportsDirectory": "coverage"
 			}
 		}
 	},
