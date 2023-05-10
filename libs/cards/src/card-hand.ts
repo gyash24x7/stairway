@@ -1,7 +1,7 @@
-import { filter, includes, intersection, pull, remove, uniq } from "lodash";
 import type { CardSet } from "./card-const";
 import { SORTED_DECK } from "./card-const";
 import { IPlayingCard, PlayingCard } from "./playing-card";
+import { intersection } from "./card-utils";
 
 export interface ICardHand {
 	cards: IPlayingCard[];
@@ -19,11 +19,11 @@ export class CardHand implements ICardHand {
 	}
 
 	get cardSetsInHand() {
-		return uniq( this.cards.map( card => card.set ) );
+		return Array.from( new Set( this.cards.map( card => card.set ) ) );
 	}
 
 	get cardSuitsInHand() {
-		return uniq( this.cards.map( card => card.suit ) );
+		return Array.from( new Set( this.cards.map( card => card.suit ) ) );
 	}
 
 	private get ids() {
@@ -35,7 +35,7 @@ export class CardHand implements ICardHand {
 	}
 
 	contains( card: PlayingCard ) {
-		return includes( this.ids, card.id );
+		return this.ids.includes( card.id );
 	}
 
 	containsAll( cards: PlayingCard[] ) {
@@ -56,21 +56,19 @@ export class CardHand implements ICardHand {
 	}
 
 	removeCard( card: PlayingCard ) {
-		const ids = this.ids;
-		pull( ids, card.id );
-		this.cards = ids.map( PlayingCard.fromId );
+		this.cards = this.cards.filter( c => c.rank !== card.rank || c.suit !== card.suit );
 	}
 
 	removeCardsOfSet( cardSet: CardSet ) {
-		remove( this.cards, [ "set", cardSet ] );
+		this.cards = this.cards.filter( card => card.set !== cardSet );
 	}
 
 	addCard( ...cards: PlayingCard[] ) {
 		this.cards.push( ...cards );
 	}
 
-	getCardsOfSet( set: CardSet ) {
-		return filter( this.cards, [ "set", set ] );
+	getCardsOfSet( cardSet: CardSet ) {
+		return this.cards.filter( card => card.set === cardSet );
 	}
 
 	get( index: number ) {
