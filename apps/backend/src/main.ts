@@ -60,10 +60,7 @@ app.get( "/api/auth/callback/google", handleAuthCallback( prisma ) );
 
 app.get( "/api/literature/docs", literatureTrpcPanelHandler( "http://localhost:8000/api/literature" ) );
 
-app.use(
-	"/api/literature",
-	[ requireUser( prisma ), literatureExpressHandler( { prisma, litGamePublisher } ) ]
-);
+app.use( "/api/literature", requireUser( prisma ), literatureExpressHandler( { prisma, litGamePublisher } ) );
 
 server.listen( port, () => {
 	console.log( `Server started on port ${ port }` );

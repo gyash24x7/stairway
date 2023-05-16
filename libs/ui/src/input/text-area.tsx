@@ -31,7 +31,7 @@ export function TextArea( props: TextAreaProps ) {
 	return (
 		<Fragment>
 			{ props.label &&
-                <label className={ "label-root" } htmlFor={ props.name }>{ props.label }</label> }
+				<label className={ "label-root" } htmlFor={ props.name }>{ props.label }</label> }
 			<div className={ inputRootClassname }>
 				<textarea
 					name={ props.name }

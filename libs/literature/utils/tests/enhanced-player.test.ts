@@ -1,6 +1,6 @@
 import type { LitPlayer } from "@prisma/client";
 import { CardRank, CardSuit, PlayingCard } from "@s2h/cards";
-import { EnhancedLitPlayer, IEnhancedLitPlayer } from "@s2h/literature/utils";
+import { EnhancedLitPlayer, LiteraturePlayer } from "@s2h/literature/utils";
 import { createId as cuid } from "@paralleldrive/cuid2";
 import { describe, expect, it } from "vitest";
 
@@ -18,7 +18,7 @@ describe( "Enhanced Lit Player", function () {
 
 	it( "should serialize and deserialize correctly", function () {
 		const enhancedPlayer = EnhancedLitPlayer.from( litPlayer );
-		const serializedPlayer: IEnhancedLitPlayer = JSON.parse( JSON.stringify( enhancedPlayer ) );
+		const serializedPlayer: LiteraturePlayer = JSON.parse( JSON.stringify( enhancedPlayer ) );
 
 		expect( serializedPlayer.id ).toBe( litPlayer.id );
 		expect( serializedPlayer.hand ).toEqual( litPlayer.hand );

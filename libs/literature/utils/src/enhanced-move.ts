@@ -1,46 +1,62 @@
-import type { LitMove, LitMoveType } from "@prisma/client";
-import { IPlayingCard, PlayingCard } from "@s2h/cards";
+import { CardSet, IPlayingCard, PlayingCard } from "@s2h/cards";
 
-export interface IEnhancedLitMove {
-	id: string;
-	type: LitMoveType;
-	description: string;
-	turnId: string | null;
-	askedFromId: string | null;
-	askedById: string | null;
-	gameId: string;
-	createdAt: Date;
-	askedFor: IPlayingCard | null;
+export type LiteratureMoveAction = "ASK" | "CALL" | "CHANCE_TRANSFER";
+
+export type AskActionData = {
+	from: string;
+	by: string;
+	card: IPlayingCard
 }
 
-export class EnhancedLitMove implements IEnhancedLitMove {
-	readonly id: string;
-	readonly type: LitMoveType;
-	readonly description: string;
-	readonly turnId: string | null;
-	readonly askedFromId: string | null;
-	readonly askedById: string | null;
-	readonly gameId: string;
-	readonly createdAt: Date;
+export type CallActionData = {
+	set: CardSet
+}
 
-	readonly askedFor: PlayingCard | null;
+export type ChanceTransferData = {
+	playerId: string;
+}
 
-	constructor( move: IEnhancedLitMove ) {
-		this.id = move.id;
-		this.type = move.type;
-		this.description = move.description;
-		this.turnId = move.turnId;
-		this.askedFromId = move.askedFromId;
-		this.askedById = move.askedById;
-		this.gameId = move.gameId;
-		this.createdAt = move.createdAt;
-		this.askedFor = !!move.askedFor ? PlayingCard.from( move.askedFor ) : null;
-	}
+export type LiteratureMoveActionData = {
+	action: LiteratureMoveAction;
+	askData?: AskActionData;
+	callData?: CallActionData;
+	transferData?: ChanceTransferData;
+}
 
-	static from( move: LitMove ) {
-		return new EnhancedLitMove( {
-			...move,
-			askedFor: !!move.askedFor ? PlayingCard.from( move.askedFor as unknown as IPlayingCard ) : null
-		} );
-	}
+export type LiteratureMoveResult = "CARD_TRANSFER" | "CALL_SET";
+
+export type CardTransferResultData = {
+	success: boolean;
+	by: string;
+	to: string;
+	card: PlayingCard;
+};
+
+export type CallSetResultData = {
+	success: boolean;
+	set: CardSet;
+}
+
+export type LiteratureMoveResultData = {
+	result: LiteratureMoveResult;
+	cardTransferData?: CardTransferResultData;
+	callSetData?: CallSetResultData;
+}
+
+export interface ILiteratureMove {
+	id: string;
+	description: string;
+	gameId: string;
+	timestamp: string;
+	action: LiteratureMoveActionData;
+	result: LiteratureMoveResultData;
+}
+
+export class LiteratureMove implements ILiteratureMove {
+	id: string;
+	description: string;
+	action: LiteratureMoveActionData;
+	gameId: string;
+	result: LiteratureMoveResultData;
+	timestamp: string;
 }

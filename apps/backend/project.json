@@ -4,6 +4,12 @@
 	"sourceRoot": "apps/backend/src",
 	"projectType": "application",
 	"targets": {
+		"db:push": {
+			"command": "node apps/backend/scripts/ddl.mjs"
+		},
+		"db:seed": {
+			"command": "node apps/backend/scripts/seed.mjs"
+		},
 		"build": {
 			"executor": "@nx/webpack:webpack",
 			"outputs": [ "{options.outputPath}" ],

@@ -1,39 +1,47 @@
-import type { LitPlayer } from "@prisma/client";
 import { CardHand, ICardHand } from "@s2h/cards";
 
-export interface IEnhancedLitPlayer {
+export interface ILiteraturePlayer {
 	id: string;
 	name: string;
 	avatar: string;
-	userId: string;
 	gameId: string;
-	teamId?: string | null;
-	hand: ICardHand;
+	team?: string;
+	hand?: ICardHand;
 }
 
-export class EnhancedLitPlayer implements IEnhancedLitPlayer {
-	readonly id: string;
-	readonly name: string;
-	readonly avatar: string;
-	readonly userId: string;
-	readonly gameId: string;
-	teamId?: string | null;
-	hand: CardHand;
+export class LiteraturePlayer implements ILiteraturePlayer {
+	id: string;
+	name: string;
+	avatar: string;
+	gameId: string;
+	team?: string;
+	hand?: CardHand;
 
-	constructor( player: IEnhancedLitPlayer ) {
-		this.id = player.id;
-		this.name = player.name;
-		this.avatar = player.avatar;
-		this.userId = player.userId;
-		this.gameId = player.gameId;
-		this.teamId = player.teamId;
-		this.hand = CardHand.from( player.hand );
+	private constructor( playerData: ILiteraturePlayer ) {
+		this.id = playerData.id;
+		this.name = playerData.name;
+		this.avatar = playerData.avatar;
+		this.gameId = playerData.gameId;
+		this.team = playerData.team;
+
+		if ( !!playerData.hand ) {
+			this.hand = CardHand.from( playerData.hand );
+		}
 	}
 
-	static from( player: LitPlayer ) {
-		return new EnhancedLitPlayer( {
-			...player,
-			hand: CardHand.from( player.hand as unknown as ICardHand )
-		} );
+	get callableCardSets() {
+		return !!this.hand
+			? this.hand.cardSetsInHand.filter( cardSet => this.hand!.getCardsOfSet( cardSet ).length <= 6 )
+			: [];
+	}
+
+	get askableCardSets() {
+		return !!this.hand
+			? this.hand.cardSetsInHand.filter( cardSet => this.hand!.getCardsOfSet( cardSet ).length < 6 )
+			: [];
+	}
+
+	static from( playerData: ILiteraturePlayer ) {
+		return new LiteraturePlayer( playerData );
 	}
 }

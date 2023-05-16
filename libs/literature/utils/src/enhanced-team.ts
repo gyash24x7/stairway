@@ -1,39 +1,33 @@
-import type { LitTeam } from "@prisma/client";
-import { EnhancedLitPlayer, IEnhancedLitPlayer } from "./enhanced-player";
+// addMembers( players: EnhancedLitPlayer[] ) {
+// 	this.members = players.filter( player => player.teamId === this.id );
+// }
 
-export interface IEnhancedLitTeam {
-	id: string;
+
+export type ILiteratureTeam = {
 	name: string;
 	score: number;
 	gameId: string;
-	members: IEnhancedLitPlayer[];
+	members: string[];
 }
 
-export class EnhancedLitTeam implements IEnhancedLitTeam {
-	readonly id: string;
-	readonly name: string;
-	readonly score: number;
-	readonly gameId: string;
+export class LiteratureTeam implements ILiteratureTeam {
+	name: string;
+	gameId: string;
+	members: string[];
+	score: number;
 
-	members: EnhancedLitPlayer[];
-
-	constructor( team: IEnhancedLitTeam ) {
-		this.id = team.id;
-		this.name = team.name;
-		this.score = team.score;
-		this.gameId = team.gameId;
-		this.members = team.members.map( member => new EnhancedLitPlayer( member ) );
+	private constructor( teamData: ILiteratureTeam ) {
+		this.gameId = teamData.gameId;
+		this.name = teamData.name;
+		this.members = teamData.members;
+		this.score = teamData.score;
 	}
 
-	get membersWithCards() {
-		return this.members.filter( member => member.hand.length > 0 );
+	static from( teamData: ILiteratureTeam ) {
+		return new LiteratureTeam( teamData );
 	}
 
-	static from( litTeam: LitTeam ) {
-		return new EnhancedLitTeam( { ...litTeam, members: [] } );
-	}
-
-	addMembers( players: EnhancedLitPlayer[] ) {
-		this.members = players.filter( player => player.teamId === this.id );
+	increaseScore() {
+		this.score++;
 	}
 }

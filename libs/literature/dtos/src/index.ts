@@ -28,7 +28,7 @@ export const createGameInput = z.object( {
 export type CreateGameInput = z.infer<typeof createGameInput>;
 
 export const createTeamsInput = z.object( {
-	teams: z.string().array().length( 2 ),
+	teams: z.object( { name: z.string(), members: z.string().array() } ).array().length( 2 ),
 	gameId: z.string()
 } );
 
