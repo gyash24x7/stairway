@@ -1,4 +1,3 @@
-import type { User } from "@prisma/client";
 import type { Request, Response } from "express";
 import { describe, expect, it } from "vitest";
 import type { DeepMockProxy } from "vitest-mock-extended";

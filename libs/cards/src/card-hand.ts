@@ -1,7 +1,7 @@
 import type { CardSet } from "./card-const";
 import { SORTED_DECK } from "./card-const";
-import { IPlayingCard, PlayingCard } from "./playing-card";
 import { intersection } from "./card-utils";
+import { IPlayingCard, PlayingCard } from "./playing-card";
 
 export interface ICardHand {
 	cards: IPlayingCard[];

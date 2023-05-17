@@ -1,4 +1,3 @@
-import type { User } from "@prisma/client";
 import { Flex, Spinner } from "@s2h/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import React, { createContext, ReactNode, useContext, useState } from "react";

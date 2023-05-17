@@ -1,13 +1,13 @@
-import { LitGameStatus } from "@prisma/client";
+import { shuffle } from "@s2h/cards";
 import type { CreateTeamsInput } from "@s2h/literature/dtos";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
-import { shuffle } from "@s2h/cards";
 
 function validate( ctx: LitTrpcContext ) {
-	if ( ctx.currentGame!.status !== LitGameStatus.PLAYERS_READY ) {
+	if ( ctx.currentGame!.status !== LiteratureGameStatus.PLAYERS_READY ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_STATUS } );
 	}
 
@@ -40,10 +40,10 @@ export default async function ( { input, ctx }: LitResolverOptions<CreateTeamsIn
 
 	await ctx.prisma.litGame.update( {
 		where: { id: game.id },
-		data: { status: LitGameStatus.TEAMS_CREATED }
+		data: { status: LiteratureGameStatus.TEAMS_CREATED }
 	} );
 
-	game.status = LitGameStatus.TEAMS_CREATED;
+	game.status = LiteratureGameStatus.TEAMS_CREATED;
 
 	ctx.litGamePublisher.publish( game );
 	return game;

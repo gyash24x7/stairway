@@ -1,4 +1,4 @@
-import { LitGameStatus } from "@prisma/client";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import { Avatar, Banner, Flex, VStack } from "@s2h/ui";
 import React, { Fragment } from "react";
 import { useWindowSize } from "react-use";
@@ -21,12 +21,12 @@ export default function () {
 
 	const renderBasedOnStatus = () => {
 		switch ( status ) {
-			case LitGameStatus.NOT_STARTED:
+			case LiteratureGameStatus.NOT_STARTED:
 				return [
 					<PlayerLobby/>,
 					<Banner message={ "Waiting For Players to Join" } isLoading className={ "mt-4" }/>
 				];
-			case LitGameStatus.PLAYERS_READY:
+			case LiteratureGameStatus.PLAYERS_READY:
 				return [
 					<PlayerLobby/>,
 					<Fragment>
@@ -40,7 +40,7 @@ export default function () {
 						}
 					</Fragment>
 				];
-			case LitGameStatus.TEAMS_CREATED:
+			case LiteratureGameStatus.TEAMS_CREATED:
 				return [
 					<DisplayTeams/>,
 					<Fragment>
@@ -54,7 +54,7 @@ export default function () {
 						}
 					</Fragment>
 				];
-			case LitGameStatus.IN_PROGRESS:
+			case LiteratureGameStatus.IN_PROGRESS:
 				return [
 					<DisplayTeams/>,
 					<Fragment>
@@ -62,7 +62,7 @@ export default function () {
 						{ width < 1024 && <GameStatus/> }
 					</Fragment>
 				];
-			case LitGameStatus.COMPLETED:
+			case LiteratureGameStatus.COMPLETED:
 				return [
 					<DisplayTeams/>,
 					<Fragment>
@@ -93,13 +93,13 @@ export default function () {
 			</VStack>
 			{ width > 1024 && (
 				<Flex className={ "h-full p-5 flex-1" } direction={ "col" } justify={ "space-between" }>
-					{ status === LitGameStatus.IN_PROGRESS && (
+					{ status === LiteratureGameStatus.IN_PROGRESS && (
 						<Fragment>
 							<DisplayHand/>
 							<GameStatus/>
 						</Fragment>
 					) }
-					{ status === LitGameStatus.COMPLETED && <GameCompleted/> }
+					{ status === LiteratureGameStatus.COMPLETED && <GameCompleted/> }
 				</Flex>
 			) }
 		</Flex>

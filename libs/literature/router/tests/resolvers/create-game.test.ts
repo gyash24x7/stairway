@@ -1,4 +1,3 @@
-import type { LitPlayer, User } from "@prisma/client";
 import { LiteratureRouter, literatureRouter as router } from "@s2h/literature/router";
 import { inferProcedureInput } from "@trpc/server";
 import { beforeEach, describe, expect, it } from "vitest";

@@ -1,7 +1,6 @@
-import type { LitPlayer } from "@prisma/client";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { CardRank, CardSuit, PlayingCard } from "@s2h/cards";
 import { EnhancedLitPlayer, LiteraturePlayer } from "@s2h/literature/utils";
-import { createId as cuid } from "@paralleldrive/cuid2";
 import { describe, expect, it } from "vitest";
 
 describe( "Enhanced Lit Player", function () {

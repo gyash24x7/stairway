@@ -1,4 +1,3 @@
-import type { PrismaClient, User } from "@prisma/client";
 import { deserializeUser } from "@s2h/auth";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";

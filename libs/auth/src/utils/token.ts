@@ -1,7 +1,6 @@
-import type { PrismaClient } from "@prisma/client";
 import type { CookieOptions } from "express";
-import * as process from "process";
 import { jwtVerify, SignJWT } from "jose";
+import * as process from "process";
 
 export async function signJwt( subject: string, expiresIn: string ): Promise<string> {
 	const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] || "" );

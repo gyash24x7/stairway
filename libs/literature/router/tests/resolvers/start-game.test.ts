@@ -1,6 +1,6 @@
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, User } from "@prisma/client";
 import type { IPlayingCard } from "@s2h/cards";
 import { literatureRouter as router } from "@s2h/literature/router";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
@@ -17,7 +17,7 @@ describe( "Start Game Mutation", function () {
 	let firstMove: LitMove;
 
 	beforeEach( function () {
-		gameData = new MockLitGameData( { status: LitGameStatus.TEAMS_CREATED } );
+		gameData = new MockLitGameData( { status: LiteratureGameStatus.TEAMS_CREATED } );
 		player1 = gameData.generatePlayer();
 		player2 = gameData.generatePlayer();
 		mockLoggedInUser = createMockUser( player1.userId, player1.name );
@@ -34,7 +34,7 @@ describe( "Start Game Mutation", function () {
 	} );
 
 	it( "should throw error if game status not TEAMS_CREATED", function () {
-		gameData.status = LitGameStatus.PLAYERS_READY;
+		gameData.status = LiteratureGameStatus.PLAYERS_READY;
 		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
 
 		expect.assertions( 2 );
@@ -91,14 +91,14 @@ describe( "Start Game Mutation", function () {
 		expect( mockCtx.prisma.litGame.update ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				where: expect.objectContaining( { id: gameData.id } ),
-				data: expect.objectContaining( { status: LitGameStatus.IN_PROGRESS } )
+				data: expect.objectContaining( { status: LiteratureGameStatus.IN_PROGRESS } )
 			} )
 		);
 
 		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				id: gameData.id,
-				status: LitGameStatus.IN_PROGRESS
+				status: LiteratureGameStatus.IN_PROGRESS
 			} )
 		);
 	} );

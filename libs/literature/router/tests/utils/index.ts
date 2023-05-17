@@ -1,9 +1,8 @@
-import type { PrismaClient, User } from "@prisma/client";
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam } from "@prisma/client";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, chunk, ICardHand, PlayingCard } from "@s2h/cards";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import type { Publisher } from "@s2h/utils";
-import { createId as cuid } from "@paralleldrive/cuid2";
 import { LoremIpsum } from "lorem-ipsum";
 import { DeepMockProxy, mockDeep } from "vitest-mock-extended";
 import type { LitGameData } from "../../src/types";
@@ -61,7 +60,7 @@ export class MockLitGameData implements LitGameData {
 
 	constructor( { code, createdById, playerCount, status }: MockLitGameDataParams = {} ) {
 		this.code = code || "ABC123";
-		this.status = status || LitGameStatus.IN_PROGRESS;
+		this.status = status || LiteratureGameStatus.IN_PROGRESS;
 		this.playerCount = playerCount || 2;
 		this.id = cuid();
 		this.createdById = createdById || cuid();

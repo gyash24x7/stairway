@@ -1,4 +1,3 @@
-import type { LitGame, LitMove, LitPlayer, LitTeam } from "@prisma/client";
 import type { EnhancedLitGame, IEnhancedLitGame } from "@s2h/literature/utils";
 import type { Publisher, TrpcContext, TrpcMiddleware, TrpcResolverOptions } from "@s2h/utils";
 

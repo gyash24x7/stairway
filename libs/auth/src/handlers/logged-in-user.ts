@@ -1,4 +1,3 @@
-import type { User } from "@prisma/client";
 import type { ExpressHandler } from "@s2h/utils";
 
 export default function getLoggedInUser(): ExpressHandler {

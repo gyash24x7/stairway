@@ -1,4 +1,3 @@
-import { LitMoveType } from "@prisma/client";
 import { PlayingCard } from "@s2h/cards";
 import type { GiveCardInput } from "@s2h/literature/dtos";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";

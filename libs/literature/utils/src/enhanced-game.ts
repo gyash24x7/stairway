@@ -1,6 +1,5 @@
-import { LitGameStatus } from "@prisma/client";
-import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, ICardHand } from "@s2h/cards";
-import { ILiteratureMove, LiteratureMove } from "./enhanced-move";
+import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, ICardHand, PlayingCard } from "@s2h/cards";
+import { ILiteratureMove, LiteratureMove, LiteratureMoveActionData, LiteratureMoveResultData } from "./enhanced-move";
 import { ILiteraturePlayer, LiteraturePlayer } from "./enhanced-player";
 import { ILiteratureTeam, LiteratureTeam } from "./enhanced-team";
 
@@ -10,11 +9,20 @@ export interface ILiteratureGame {
 	playerCount: number;
 	createdBy: string;
 	createdTimestamp: string;
-	status: LitGameStatus;
+	status: LiteratureGameStatus;
 	players: Record<string, ILiteraturePlayer>;
 	teams: Record<string, ILiteratureTeam>;
 	hands: Record<string, ICardHand>;
 	moves: ILiteratureMove[];
+	currentTurn: string;
+}
+
+export enum LiteratureGameStatus {
+	CREATED = "CREATED",
+	PLAYERS_READY = "PLAYERS_READY",
+	TEAMS_CREATED = "TEAMS_CREATED",
+	IN_PROGRESS = "IN_PROGRESS",
+	COMPLETED = "COMPLETED"
 }
 
 export class LiteratureGame implements ILiteratureGame {
@@ -23,11 +31,12 @@ export class LiteratureGame implements ILiteratureGame {
 	playerCount: number;
 	createdBy: string;
 	createdTimestamp: string;
-	status: LitGameStatus;
+	status: LiteratureGameStatus;
 	players: Record<string, LiteraturePlayer>;
 	hands: Record<string, CardHand>;
 	teams: Record<string, LiteratureTeam>;
 	moves: Array<LiteratureMove>;
+	currentTurn: string;
 
 	private constructor( gameData: ILiteratureGame ) {
 		this.id = gameData.id;
@@ -54,6 +63,7 @@ export class LiteratureGame implements ILiteratureGame {
 		} );
 
 		this.moves = gameData.moves;
+		this.currentTurn = gameData.currentTurn;
 	}
 
 	static from( gameData: ILiteratureGame ) {
@@ -128,6 +138,30 @@ export class LiteratureGame implements ILiteratureGame {
 			}
 		} );
 	}
+
+	getMoveResult( { action, askData, callData, transferData }: LiteratureMoveActionData ): LiteratureMoveResultData {
+
+		switch ( action ) {
+			case "ASK" :
+				if ( !askData ) {
+					throw new Error();
+				}
+
+				const card = PlayingCard.from( askData.card );
+				const hasCard = this.hands[ askData.from ].contains( card );
+				if ( hasCard ) {
+					this.hands[ askData.by ].removeCard( card );
+					this.hands[ askData.from ].addCard( card );
+				}
+				return { result: "CARD_TRANSFER", success: hasCard };
+
+			case "CALL":
+				return { result: "CALL_SET", success: true };
+
+			case "CHANCE_TRANSFER" :
+				return { result: "CHANCE_TRANSFER", success: true };
+		}
+	}
 }
 
 // export class EnhancedLitGame implements IEnhancedLitGame {
@@ -193,56 +227,15 @@ export class LiteratureGame implements ILiteratureGame {
 // 					gameId: this.id,
 // 					type: LitMoveType.DECLINED,
 // 					turnId: declinedPlayer.id,
-// 					description: `${ declinedPlayer.name } declined ${ askingPlayer.name }'s ask for ${ card.cardString }`
-// 				};
-// 			}
-//
-// 			case LitMoveType.CALL_SUCCESS: {
-// 				const { turnPlayer, cardSet } = data as LitCallMoveParams;
-// 				return {
-// 					gameId: this.id,
-// 					type: LitMoveType.CALL_SUCCESS,
-// 					turnId: turnPlayer.id,
-// 					description: `${ turnPlayer.name } called ${ cardSet } correctly`
-// 				};
-// 			}
-//
-// 			case LitMoveType.CALL_FAIL: {
-// 				const { turnPlayer, cardSet, callingPlayer } = data as LitCallMoveParams;
-// 				return {
-// 					gameId: this.id,
-// 					type: LitMoveType.CALL_FAIL,
-// 					turnId: turnPlayer.id,
-// 					description: `${ callingPlayer.name } called ${ cardSet } incorrectly. ${ turnPlayer.name }'s turn`
-// 				};
-// 			}
-// 		}
-// 	}
-//
-// 	handlePlayerUpdate( ...players: LitPlayer[] ) {
-// 		players.forEach( player => {
-// 			this.playerData[ player.id ] = EnhancedLitPlayer.from( player );
-// 		} );
-//
-// 		this.players = Object.values( this.playerData );
-// 		this.updateTeams();
-// 	}
-//
-//
-// 	handleTeamUpdate( ...teams: LitTeam[] ) {
-// 		teams.forEach( team => {
-// 			this.teamData[ team.id ] = EnhancedLitTeam.from( team );
-// 			this.teamData[ team.id ].addMembers( this.players );
-// 		} );
-//
-// 		this.teams = Object.values( this.teamData );
-// 	}
-//
-// 	private updateTeams() {
-// 		Object.keys( this.teamData ).map( teamId => {
-// 			this.teamData[ teamId ].members = this.players.filter( player => player.teamId === teamId );
-// 		} );
-//
-// 		this.teams = Object.values( this.teamData );
-// 	}
-// }
+// 					description: `${ declinedPlayer.name } declined ${ askingPlayer.name }'s ask for ${
+// card.cardString }` }; }  case LitMoveType.CALL_SUCCESS: { const { turnPlayer, cardSet } = data as LitCallMoveParams;
+// return { gameId: this.id, type: LitMoveType.CALL_SUCCESS, turnId: turnPlayer.id, description: `${ turnPlayer.name }
+// called ${ cardSet } correctly` }; }  case LitMoveType.CALL_FAIL: { const { turnPlayer, cardSet, callingPlayer } =
+// data as LitCallMoveParams; return { gameId: this.id, type: LitMoveType.CALL_FAIL, turnId: turnPlayer.id,
+// description: `${ callingPlayer.name } called ${ cardSet } incorrectly. ${ turnPlayer.name }'s turn` }; } } }
+// handlePlayerUpdate( ...players: LitPlayer[] ) { players.forEach( player => { this.playerData[ player.id ] =
+// EnhancedLitPlayer.from( player ); } );  this.players = Object.values( this.playerData ); this.updateTeams(); }
+// handleTeamUpdate( ...teams: LitTeam[] ) { teams.forEach( team => { this.teamData[ team.id ] = EnhancedLitTeam.from(
+// team ); this.teamData[ team.id ].addMembers( this.players ); } );  this.teams = Object.values( this.teamData ); }
+// private updateTeams() { Object.keys( this.teamData ).map( teamId => { this.teamData[ teamId ].members =
+// this.players.filter( player => player.teamId === teamId ); } );  this.teams = Object.values( this.teamData ); } }

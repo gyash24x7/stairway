@@ -1,4 +1,3 @@
-import type { PrismaClient, User } from "@prisma/client";
 import { requireUser } from "@s2h/auth";
 import type { Request, Response } from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";

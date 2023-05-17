@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { deserializeUser, handleAuthCallback, handleGetLoggedInUser, handleLogout, requireUser } from "@s2h/auth";
 import { literatureExpressHandler, literatureTrpcPanelHandler } from "@s2h/literature/router";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";

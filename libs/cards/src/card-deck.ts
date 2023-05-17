@@ -1,8 +1,8 @@
 import type { CardRank } from "./card-const";
 import { SORTED_DECK } from "./card-const";
 import { CardHand } from "./card-hand";
-import type { IPlayingCard } from "./playing-card";
 import { chunk, shuffle } from "./card-utils";
+import type { IPlayingCard } from "./playing-card";
 
 export interface ICardDeck {
 	cards: IPlayingCard[];

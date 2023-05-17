@@ -1,6 +1,5 @@
-import { LitGameStatus } from "@prisma/client";
 import type { JoinGameInput } from "@s2h/literature/dtos";
-import { EnhancedLitGame, IEnhancedLitGame } from "@s2h/literature/utils";
+import { EnhancedLitGame, IEnhancedLitGame, LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
@@ -38,8 +37,8 @@ export default async function ( { ctx, input }: LitResolverOptions<JoinGameInput
 	game.addPlayer( player );
 
 	game.status = game.players.length === game.playerCount
-		? LitGameStatus.PLAYERS_READY
-		: LitGameStatus.NOT_STARTED;
+		? LiteratureGameStatus.PLAYERS_READY
+		: LiteratureGameStatus.NOT_STARTED;
 
 	await ctx.prisma.litGame.update( {
 		where: { id: game.id },

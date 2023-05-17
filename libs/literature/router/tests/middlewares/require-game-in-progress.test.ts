@@ -1,5 +1,4 @@
-import { LitGameStatus, LitPlayer, User } from "@prisma/client";
-import { EnhancedLitGame } from "@s2h/literature/utils";
+import { EnhancedLitGame, LiteratureGameStatus } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 import { Messages } from "../../src/constants";
@@ -35,7 +34,7 @@ describe( "Require Game in Progress Middleware", function () {
 	} );
 
 	it( "should throw error when game not in progress", function () {
-		gameData.status = LitGameStatus.NOT_STARTED;
+		gameData.status = LiteratureGameStatus.NOT_STARTED;
 		ctx.currentGame = EnhancedLitGame.from( gameData );
 
 		expect.assertions( 2 );

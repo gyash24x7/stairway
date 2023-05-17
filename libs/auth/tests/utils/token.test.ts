@@ -1,10 +1,9 @@
-import type { PrismaClient, User } from "@prisma/client";
 import { createId as cuid } from "@paralleldrive/cuid2";
+import { jwtVerify } from "jose";
+import * as process from "process";
 import { describe, expect, it } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
 import { reIssueAccessToken, signJwt, verifyJwt } from "../../src/utils/token";
-import * as process from "process";
-import { jwtVerify } from "jose";
 
 describe( "Sign JWT", function () {
 

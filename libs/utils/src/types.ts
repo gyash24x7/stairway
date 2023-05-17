@@ -1,4 +1,3 @@
-import type { PrismaClient, User } from "@prisma/client";
 import type { NextFunction, Request, Response } from "express";
 import type { Namespace } from "socket.io";
 

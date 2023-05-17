@@ -1,4 +1,4 @@
-import { CardSet, IPlayingCard, PlayingCard } from "@s2h/cards";
+import { CardSet, IPlayingCard } from "@s2h/cards";
 
 export type LiteratureMoveAction = "ASK" | "CALL" | "CHANCE_TRANSFER";
 
@@ -23,24 +23,11 @@ export type LiteratureMoveActionData = {
 	transferData?: ChanceTransferData;
 }
 
-export type LiteratureMoveResult = "CARD_TRANSFER" | "CALL_SET";
-
-export type CardTransferResultData = {
-	success: boolean;
-	by: string;
-	to: string;
-	card: PlayingCard;
-};
-
-export type CallSetResultData = {
-	success: boolean;
-	set: CardSet;
-}
+export type LiteratureMoveResult = "CARD_TRANSFER" | "CALL_SET" | "CHANCE_TRANSFER";
 
 export type LiteratureMoveResultData = {
 	result: LiteratureMoveResult;
-	cardTransferData?: CardTransferResultData;
-	callSetData?: CallSetResultData;
+	success: boolean;
 }
 
 export interface ILiteratureMove {

@@ -1,12 +1,12 @@
-import { LitGameStatus, LitMoveType } from "@prisma/client";
 import type { StartGameInput } from "@s2h/literature/dtos";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
 
 function validate( ctx: LitTrpcContext ) {
-	if ( ctx.currentGame!.status !== LitGameStatus.TEAMS_CREATED ) {
+	if ( ctx.currentGame!.status !== LiteratureGameStatus.TEAMS_CREATED ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_STATUS } );
 	}
 
@@ -37,10 +37,10 @@ export default async function ( { input, ctx }: LitResolverOptions<StartGameInpu
 
 	await ctx.prisma.litGame.update( {
 		where: { id: input.gameId },
-		data: { status: LitGameStatus.IN_PROGRESS }
+		data: { status: LiteratureGameStatus.IN_PROGRESS }
 	} );
 
-	game.status = LitGameStatus.IN_PROGRESS;
+	game.status = LiteratureGameStatus.IN_PROGRESS;
 
 	ctx.litGamePublisher.publish( game );
 	return game;

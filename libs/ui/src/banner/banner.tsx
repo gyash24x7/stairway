@@ -45,7 +45,7 @@ export function Banner( props: BannerProps ) {
 				) }
 				{ !!Icon &&
 					!isLoading &&
-					<Icon width={ 20 } height={ 20 } data-testid={ "banner-icon" }/> }
+                    <Icon width={ 20 } height={ 20 } data-testid={ "banner-icon" }/> }
 				<h2 data-testid={ "banner-message" }>{ message }</h2>
 			</HStack>
 		</div>

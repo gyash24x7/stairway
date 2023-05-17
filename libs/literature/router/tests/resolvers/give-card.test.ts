@@ -1,9 +1,8 @@
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, User } from "@prisma/client";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { CardRank, CardSuit, IPlayingCard, PlayingCard } from "@s2h/cards";
 import { literatureRouter as router } from "@s2h/literature/router";
-import { EnhancedLitGame, EnhancedLitPlayer } from "@s2h/literature/utils";
+import { EnhancedLitGame, EnhancedLitPlayer, LiteratureGameStatus } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
-import { createId as cuid } from "@paralleldrive/cuid2";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
 import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";
@@ -142,7 +141,7 @@ describe( "Give Card Mutation", function () {
 		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				id: gameData.id,
-				status: LitGameStatus.IN_PROGRESS
+				status: LiteratureGameStatus.IN_PROGRESS
 			} )
 		);
 	} );

@@ -1,4 +1,3 @@
-import { LitMoveType } from "@prisma/client";
 import { Banner, HStack, VStack } from "@s2h/ui";
 import React, { Fragment } from "react";
 import { useGame } from "../utils/game-context";

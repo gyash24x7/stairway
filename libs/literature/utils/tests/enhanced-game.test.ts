@@ -1,7 +1,6 @@
-import { LitGame, LitGameStatus, LitMove, LitMoveType, LitPlayer, LitTeam, User } from "@prisma/client";
-import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
-import { EnhancedLitPlayer, EnhancedLitTeam } from "@s2h/literature/utils";
 import { createId as cuid } from "@paralleldrive/cuid2";
+import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
+import { EnhancedLitPlayer, EnhancedLitTeam, LiteratureGameStatus } from "@s2h/literature/utils";
 import { describe, expect, it } from "vitest";
 import { EnhancedLitGame } from "../src/enhanced-game";
 
@@ -49,7 +48,7 @@ describe( "Enhanced Lit Game", function () {
 		moves: [],
 		id: gameId,
 		code: "BCDEDIT",
-		status: LitGameStatus.IN_PROGRESS,
+		status: LiteratureGameStatus.IN_PROGRESS,
 		playerCount: 2,
 		createdById: player1.userId,
 		createdAt: new Date(),

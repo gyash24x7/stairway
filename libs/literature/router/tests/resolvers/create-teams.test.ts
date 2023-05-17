@@ -1,5 +1,5 @@
-import { LitGameStatus, LitPlayer, LitTeam, User } from "@prisma/client";
 import { literatureRouter as router } from "@s2h/literature/router";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
@@ -17,7 +17,7 @@ describe( "Create Teams Mutation", function () {
 	let input: inferProcedureInput<typeof router["createTeams"]>;
 
 	beforeEach( function () {
-		gameData = new MockLitGameData( { status: LitGameStatus.PLAYERS_READY } );
+		gameData = new MockLitGameData( { status: LiteratureGameStatus.PLAYERS_READY } );
 		player1 = gameData.generatePlayer();
 		[ team1, team2 ] = gameData.generateTeams( { addToList: false } );
 		mockLoggedInUser = createMockUser( player1.userId, player1.name );
@@ -28,7 +28,7 @@ describe( "Create Teams Mutation", function () {
 	} );
 
 	it( "should throw error if game status not PLAYERS_READY", function () {
-		gameData.status = LitGameStatus.NOT_STARTED;
+		gameData.status = LiteratureGameStatus.NOT_STARTED;
 
 		expect.assertions( 2 );
 		return router.createCaller( mockCtx ).createTeams( input )
@@ -65,7 +65,7 @@ describe( "Create Teams Mutation", function () {
 		expect( mockCtx.prisma.litGame.update ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				where: expect.objectContaining( { id: gameData.id } ),
-				data: expect.objectContaining( { status: LitGameStatus.TEAMS_CREATED } )
+				data: expect.objectContaining( { status: LiteratureGameStatus.TEAMS_CREATED } )
 			} )
 		);
 
@@ -106,7 +106,7 @@ describe( "Create Teams Mutation", function () {
 		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				id: gameData.id,
-				status: LitGameStatus.TEAMS_CREATED
+				status: LiteratureGameStatus.TEAMS_CREATED
 			} )
 		);
 	} );

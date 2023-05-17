@@ -10,6 +10,7 @@ import {
 	startGameInput,
 	transferTurnInput
 } from "@s2h/literature/dtos";
+import { ExpressHandler } from "@s2h/utils";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { renderTrpcPanel } from "trpc-panel";
 import askCardResolver from "./resolvers/ask-card";
@@ -24,7 +25,6 @@ import startGameResolver from "./resolvers/start-game";
 import transferTurnResolver from "./resolvers/transfer-turn";
 import type { LitTrpcContext } from "./types";
 import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
-import { ExpressHandler } from "@s2h/utils";
 
 export const literatureRouter = router( {
 	createGame: procedure.input( createGameInput ).mutation( createGameResolver ),

@@ -1,4 +1,3 @@
-import type { LitPlayer, User } from "@prisma/client";
 import { EnhancedLitGame } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it, Mock, vi } from "vitest";

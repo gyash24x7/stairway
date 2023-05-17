@@ -1,6 +1,6 @@
-import { LitGameStatus, LitMoveType } from "@prisma/client";
 import type { TransferTurnInput } from "@s2h/literature/dtos";
 import type { IEnhancedLitGame } from "@s2h/literature/utils";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
@@ -19,10 +19,10 @@ export default async function ( { input, ctx }: LitResolverOptions<TransferTurnI
 	if ( game.myTeam!.membersWithCards.length === 0 && game.oppositeTeam!.membersWithCards.length === 0 ) {
 		await ctx.prisma.litGame.update( {
 			where: { id: input.gameId },
-			data: { status: LitGameStatus.COMPLETED }
+			data: { status: LiteratureGameStatus.COMPLETED }
 		} );
 
-		game.status = LitGameStatus.COMPLETED;
+		game.status = LiteratureGameStatus.COMPLETED;
 
 		ctx.litGamePublisher.publish( game );
 		return game;

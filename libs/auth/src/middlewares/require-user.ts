@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 import type { ExpressMiddleware } from "@s2h/utils";
 
 export default function ( prisma: PrismaClient ): ExpressMiddleware {

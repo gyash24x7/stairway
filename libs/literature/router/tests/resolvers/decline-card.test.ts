@@ -1,6 +1,6 @@
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, User } from "@prisma/client";
 import { CardRank, CardSuit, PlayingCard } from "@s2h/cards";
 import { literatureRouter as router } from "@s2h/literature/router";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
@@ -77,7 +77,7 @@ describe( "Decline Card Mutation", function () {
 		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				id: gameData.id,
-				status: LitGameStatus.IN_PROGRESS
+				status: LiteratureGameStatus.IN_PROGRESS
 			} )
 		);
 	} );

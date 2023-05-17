@@ -1,6 +1,5 @@
-import { LitGameStatus, LitPlayer, User } from "@prisma/client";
 import { literatureRouter as router } from "@s2h/literature/router";
-import { EnhancedLitPlayer } from "@s2h/literature/utils";
+import { EnhancedLitPlayer, LiteratureGameStatus } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
@@ -89,14 +88,14 @@ describe( "Join Game Mutation", function () {
 			mockCtx.prisma.litGame.update.mockResolvedValue( {
 				...gameData,
 				players: [ ...gameData.players, player2 ],
-				status: LitGameStatus.NOT_STARTED
+				status: LiteratureGameStatus.NOT_STARTED
 			} as any );
 
 			const game = await router.createCaller( mockCtx ).joinGame( input );
 
 			expect( game.id ).toBe( gameData.id );
 			expect( game.players.length ).toBe( gameData.players.length + 1 );
-			expect( game.status ).toEqual( LitGameStatus.NOT_STARTED );
+			expect( game.status ).toEqual( LiteratureGameStatus.NOT_STARTED );
 
 			expect( mockCtx.prisma.litGame.findFirst ).toHaveBeenCalledWith(
 				expect.objectContaining( {
@@ -108,7 +107,7 @@ describe( "Join Game Mutation", function () {
 				expect.objectContaining( {
 					where: { id: gameData.id },
 					data: expect.objectContaining( {
-						status: LitGameStatus.NOT_STARTED
+						status: LiteratureGameStatus.NOT_STARTED
 					} )
 				} )
 			);
@@ -125,7 +124,7 @@ describe( "Join Game Mutation", function () {
 					playerData: expect.objectContaining( {
 						[ player2.id ]: expect.any( EnhancedLitPlayer )
 					} ),
-					status: LitGameStatus.NOT_STARTED
+					status: LiteratureGameStatus.NOT_STARTED
 				} )
 			);
 
@@ -138,14 +137,14 @@ describe( "Join Game Mutation", function () {
 		mockCtx.prisma.litGame.update.mockResolvedValue( {
 			...gameData,
 			players: [ ...gameData.players, player2 ],
-			status: LitGameStatus.PLAYERS_READY
+			status: LiteratureGameStatus.PLAYERS_READY
 		} as any );
 
 		const game = await router.createCaller( mockCtx ).joinGame( input );
 
 		expect( game.id ).toBe( gameData.id );
 		expect( game.players.length ).toBe( gameData.players.length + 1 );
-		expect( game.status ).toEqual( LitGameStatus.PLAYERS_READY );
+		expect( game.status ).toEqual( LiteratureGameStatus.PLAYERS_READY );
 
 		expect( mockCtx.prisma.litGame.findFirst ).toHaveBeenCalledWith(
 			expect.objectContaining( {
@@ -157,7 +156,7 @@ describe( "Join Game Mutation", function () {
 			expect.objectContaining( {
 				where: { id: gameData.id },
 				data: expect.objectContaining( {
-					status: LitGameStatus.PLAYERS_READY
+					status: LiteratureGameStatus.PLAYERS_READY
 				} )
 			} )
 		);
@@ -174,7 +173,7 @@ describe( "Join Game Mutation", function () {
 				playerData: expect.objectContaining( {
 					[ player2.id ]: expect.any( EnhancedLitPlayer )
 				} ),
-				status: LitGameStatus.PLAYERS_READY
+				status: LiteratureGameStatus.PLAYERS_READY
 			} )
 		);
 	} );

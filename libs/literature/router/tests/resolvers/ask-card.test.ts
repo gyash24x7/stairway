@@ -1,8 +1,8 @@
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, User } from "@prisma/client";
+import { createId as cuid } from "@paralleldrive/cuid2";
 import { CardRank, CardSuit, PlayingCard } from "@s2h/cards";
 import { literatureRouter } from "@s2h/literature/router";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
-import { createId as cuid } from "@paralleldrive/cuid2";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
 import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";
@@ -18,7 +18,7 @@ describe( "Ask Card Mutation", function () {
 	let askMove: LitMove;
 
 	beforeEach( function () {
-		gameData = new MockLitGameData( { status: LitGameStatus.IN_PROGRESS } );
+		gameData = new MockLitGameData( { status: LiteratureGameStatus.IN_PROGRESS } );
 		gameData.generatePlayer();
 		gameData.generatePlayer();
 		gameData.generateTeams();
@@ -99,7 +99,7 @@ describe( "Ask Card Mutation", function () {
 		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				id: gameData.id,
-				status: LitGameStatus.IN_PROGRESS
+				status: LiteratureGameStatus.IN_PROGRESS
 			} )
 		);
 	} );

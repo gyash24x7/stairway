@@ -1,5 +1,5 @@
-import { LitGameStatus, LitMove, LitMoveType, LitPlayer, User } from "@prisma/client";
 import { literatureRouter as router } from "@s2h/literature/router";
+import { LiteratureGameStatus } from "@s2h/literature/utils";
 import type { inferProcedureInput, TRPCError } from "@trpc/server";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
@@ -56,10 +56,10 @@ describe( "Transfer Turn Mutation", function () {
 		player4.hand = { cards: [] };
 		gameData.players = [ player1, player2, player3, player4 ];
 		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
-		mockCtx.prisma.litGame.update.mockResolvedValue( { ...gameData, status: LitGameStatus.COMPLETED } );
+		mockCtx.prisma.litGame.update.mockResolvedValue( { ...gameData, status: LiteratureGameStatus.COMPLETED } );
 
 		const game = await router.createCaller( mockCtx ).transferTurn( input );
-		expect( game.status ).toBe( LitGameStatus.COMPLETED );
+		expect( game.status ).toBe( LiteratureGameStatus.COMPLETED );
 
 		expect( mockCtx.prisma.litGame.findUnique ).toHaveBeenCalledWith(
 			expect.objectContaining( {
@@ -70,7 +70,7 @@ describe( "Transfer Turn Mutation", function () {
 		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
 			expect.objectContaining( {
 				id: gameData.id,
-				status: LitGameStatus.COMPLETED
+				status: LiteratureGameStatus.COMPLETED
 			} )
 		);
 	} );

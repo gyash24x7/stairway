@@ -1,4 +1,3 @@
-import type { PrismaClient } from "@prisma/client";
 import { AVATAR_BASE_URL, ExpressHandler } from "@s2h/utils";
 import * as bcrypt from "bcryptjs";
 import { getGoogleToken, getGoogleUser } from "../utils/oauth";
