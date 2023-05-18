@@ -1,40 +1,39 @@
-import { PlayingCard } from "@s2h/cards";
+import { CardHand, PlayingCard } from "@s2h/cards";
 import type { AskCardInput } from "@s2h/literature/dtos";
-import type { IEnhancedLitGame } from "@s2h/literature/utils";
+import type { ILiteratureGame } from "@s2h/literature/utils";
+import { LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
 
 function validate( ctx: LitTrpcContext, input: AskCardInput ) {
-	if ( !ctx.currentGame!.playerData[ input.askedFrom ] ) {
+	const askingPlayer = ctx.currentGame!.players[ ctx.loggedInUser!.id ];
+	const askedPlayer = ctx.currentGame!.players[ input.askedFrom ];
+
+	if ( !askedPlayer ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.PLAYER_NOT_FOUND } );
 	}
 
-	if ( ctx.currentGame!.myTeam!.id === ctx.currentGame!.playerData[ input.askedFrom ].teamId ) {
+	if ( askingPlayer.team! === askedPlayer.team! ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_ASK_FROM_YOUR_TEAM } );
 	}
 
 	const askedCard = PlayingCard.from( input.askedFor );
-	if ( ctx.currentGame!.loggedInPlayer!.hand.contains( askedCard ) ) {
+	if ( CardHand.from( askingPlayer.hand! ).contains( askedCard ) ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_ASK_CARD_THAT_YOU_HAVE } );
 	}
 
-	return [ ctx.currentGame!, askedCard ] as const;
+	return [ LiteratureGame.from( ctx.currentGame! ) ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<AskCardInput> ): Promise<IEnhancedLitGame> {
-	const [ game, askedCard ] = validate( ctx, input );
-
-	const askMove = await ctx.prisma.litMove.create( {
-		data: game.getNewMoveData( {
-			type: LitMoveType.ASK,
-			askedFor: askedCard,
-			askedFrom: game.playerData[ input.askedFrom ],
-			askedBy: game.loggedInPlayer!
-		} )
+export async function askCard( { input, ctx }: LitResolverOptions<AskCardInput> ): Promise<ILiteratureGame> {
+	const [ game ] = validate( ctx, input );
+	game.executeMoveAction( {
+		action: "ASK",
+		askData: { by: ctx.loggedInUser!.id, from: input.askedFrom, card: input.askedFor }
 	} );
 
-	game.addMove( askMove );
+	await ctx.literatureTable.get( input.gameId ).update( game.serialize() ).run( ctx.connection );
 	ctx.litGamePublisher.publish( game );
 	return game;
-};
+}

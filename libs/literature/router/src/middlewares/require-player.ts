@@ -11,9 +11,7 @@ const requirePlayer: LitTrpcMiddleware = async ( { ctx, next } ) => {
 		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
 	}
 
-	ctx.currentGame.loggedInUserId = ctx.loggedInUser.id;
-
-	if ( !ctx.currentGame.loggedInPlayer ) {
+	if ( !ctx.currentGame.players[ ctx.loggedInUser.id ] ) {
 		throw new TRPCError( { code: "FORBIDDEN", message: Messages.NOT_PART_OF_GAME } );
 	}
 

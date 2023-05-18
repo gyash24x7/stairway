@@ -1,7 +1,18 @@
 import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, ICardHand, PlayingCard } from "@s2h/cards";
-import { ILiteratureMove, LiteratureMove, LiteratureMoveActionData, LiteratureMoveResultData } from "./enhanced-move";
+import {
+	AskActionData,
+	CallActionData,
+	ILiteratureMove,
+	LiteratureMove,
+	LiteratureMoveActionData,
+	LiteratureMoveResultData
+} from "./enhanced-move";
 import { ILiteraturePlayer, LiteraturePlayer } from "./enhanced-player";
 import { ILiteratureTeam, LiteratureTeam } from "./enhanced-team";
+import { set } from "zod";
+import { createId } from "@paralleldrive/cuid2";
+import { IUser } from "@s2h/utils";
+import dayjs from "dayjs";
 
 export interface ILiteratureGame {
 	id: string;
@@ -66,6 +77,22 @@ export class LiteratureGame implements ILiteratureGame {
 		this.currentTurn = gameData.currentTurn;
 	}
 
+	static create( playerCount: number, loggedInUser: IUser ) {
+		return new LiteratureGame( {
+			id: createId(),
+			createdBy: loggedInUser.id,
+			players: { [ loggedInUser.id ]: { ...loggedInUser } },
+			teams: {},
+			hands: {},
+			code: LiteratureGame.generateGameCode(),
+			playerCount,
+			moves: [],
+			createdTimestamp: dayjs().toISOString(),
+			status: LiteratureGameStatus.CREATED,
+			currentTurn: loggedInUser.id
+		} );
+	}
+
 	static from( gameData: ILiteratureGame ) {
 		return new LiteratureGame( gameData );
 	}
@@ -110,10 +137,10 @@ export class LiteratureGame implements ILiteratureGame {
 		return;
 	}
 
-	getOppositeTeam( playerId: string ) {
+	getOppositeTeamId( playerId: string ) {
 		const teamName = this.players[ playerId ].team;
 		if ( !!teamName ) {
-			return Object.values( this.teams ).filter( ( { name } ) => name !== teamName )[ 0 ];
+			return Object.values( this.teams ).filter( ( { name } ) => name !== teamName )[ 0 ].name;
 		}
 		return;
 	}
@@ -139,27 +166,101 @@ export class LiteratureGame implements ILiteratureGame {
 		} );
 	}
 
-	getMoveResult( { action, askData, callData, transferData }: LiteratureMoveActionData ): LiteratureMoveResultData {
+	executeMoveAction( actionData: Omit<LiteratureMoveActionData, "description"> ) {
+		let resultData: LiteratureMoveResultData;
+		let actionDescription: string;
+		const { action, askData, callData, transferData } = actionData;
 
 		switch ( action ) {
 			case "ASK" :
-				if ( !askData ) {
-					throw new Error();
-				}
+				const askingPlayer = this.players[ askData!.by ];
+				const askedPlayer = this.players[ askData!.from ];
+				const card = PlayingCard.from( askData!.card );
 
-				const card = PlayingCard.from( askData.card );
-				const hasCard = this.hands[ askData.from ].contains( card );
-				if ( hasCard ) {
-					this.hands[ askData.by ].removeCard( card );
-					this.hands[ askData.from ].addCard( card );
-				}
-				return { result: "CARD_TRANSFER", success: hasCard };
+				actionDescription = `${ askingPlayer.name } asked ${ askedPlayer.name } for ${ card.cardString }`;
+				resultData = this.executeAskMove( askData! );
+				break;
 
-			case "CALL":
-				return { result: "CALL_SET", success: true };
+			case "CALL_SET":
+				const callingPlayer = this.players[ callData!.playerId ];
+				actionDescription = `${ callingPlayer.name } is calling ${ set }!`;
+				resultData = this.executeCallMove( callData! );
+				break;
 
 			case "CHANCE_TRANSFER" :
-				return { result: "CHANCE_TRANSFER", success: true };
+				const currentPlayer = this.players[ this.currentTurn ];
+				const nextPlayer = this.players[ transferData!.playerId ];
+				actionDescription = `${ currentPlayer.name } is transferring chance to ${ nextPlayer.name }`;
+				this.currentTurn = transferData!.playerId;
+
+				resultData = {
+					result: "CHANCE_TRANSFER",
+					success: true,
+					description: `${ currentPlayer.name } transferred chance to ${ nextPlayer.name }`
+				};
+		}
+
+		const move = new LiteratureMove( { ...actionData, description: actionDescription }, resultData );
+		this.moves = [ move, ...this.moves ];
+	}
+
+	private executeCallMove( { set, data, playerId }: CallActionData ): LiteratureMoveResultData {
+		const callingPlayer = this.players[ playerId ];
+		const teamMembers = this.teams[ callingPlayer.team! ].members.map( memberId => this.players[ memberId ] );
+
+		let cardsCalledCorrect = 0;
+		teamMembers.forEach( member => {
+			const cardsCalledForPlayer = data[ member.id ]?.map( PlayingCard.from );
+			if ( !!cardsCalledForPlayer ) {
+				if ( member.hand?.containsAll( cardsCalledForPlayer ) ) {
+					cardsCalledCorrect += cardsCalledForPlayer.length;
+				}
+			}
+		} );
+
+		this.removeCardsOfSet( set );
+
+		if ( cardsCalledCorrect === 6 ) {
+			this.teams[ callingPlayer.team! ].score++;
+			return {
+				success: true,
+				description: `${ callingPlayer.name } called ${ set } correctly!`,
+				result: "CALL_SET"
+			};
+		} else {
+			this.teams[ this.getOppositeTeamId( callingPlayer.id )! ].score++;
+			return {
+				success: false,
+				description: `${ callingPlayer.name } called ${ set } incorrectly!`,
+				result: "CALL_SET"
+			};
+		}
+	}
+
+	private executeAskMove( { by, from, card: c }: AskActionData ): LiteratureMoveResultData {
+		const askingPlayer = this.players[ by ];
+		const askedPlayer = this.players[ from ];
+		const card = PlayingCard.from( c );
+		const hasCard = this.hands[ from ].contains( card );
+
+		if ( hasCard ) {
+			this.hands[ by ].removeCard( card );
+			this.hands[ from ].addCard( card );
+			askingPlayer.hand = this.hands[ by ];
+			askedPlayer.hand = this.hands[ from ];
+
+			return {
+				result: "CARD_TRANSFER",
+				success: true,
+				description: `${ askedPlayer.name } gave ${ card.cardString } to ${ askingPlayer.name }`
+			};
+		} else {
+			this.currentTurn = askedPlayer.id;
+			return {
+				result: "CARD_TRANSFER",
+				success: false,
+				description: `${ askedPlayer.name } declined ${ card.cardString } to ${ askingPlayer.name }`
+			};
 		}
 	}
 }

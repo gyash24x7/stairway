@@ -68,3 +68,10 @@ export type StartGameInput = z.infer<typeof startGameInput>;
 export const transferTurnInput = getGameInput;
 
 export type TransferTurnInput = z.infer<typeof transferTurnInput>;
+
+export const chanceTransferInput = z.object( {
+	gameId: z.string(),
+	transferTo: z.string()
+} );
+
+export type ChanceTransferInput = z.infer<typeof chanceTransferInput>;

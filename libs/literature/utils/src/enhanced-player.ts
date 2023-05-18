@@ -4,7 +4,6 @@ export interface ILiteraturePlayer {
 	id: string;
 	name: string;
 	avatar: string;
-	gameId: string;
 	team?: string;
 	hand?: ICardHand;
 }
@@ -13,7 +12,6 @@ export class LiteraturePlayer implements ILiteraturePlayer {
 	id: string;
 	name: string;
 	avatar: string;
-	gameId: string;
 	team?: string;
 	hand?: CardHand;
 
@@ -21,7 +19,6 @@ export class LiteraturePlayer implements ILiteraturePlayer {
 		this.id = playerData.id;
 		this.name = playerData.name;
 		this.avatar = playerData.avatar;
-		this.gameId = playerData.gameId;
 		this.team = playerData.team;
 
 		if ( !!playerData.hand ) {

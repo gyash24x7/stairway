@@ -1,5 +1,5 @@
-import type { TransferTurnInput } from "@s2h/literature/dtos";
-import type { IEnhancedLitGame } from "@s2h/literature/utils";
+import type { ChanceTransferInput } from "@s2h/literature/dtos";
+import type { ILiteratureGame } from "@s2h/literature/utils";
 import { LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
@@ -13,7 +13,10 @@ function validate( ctx: LitTrpcContext ) {
 	return [ ctx.currentGame! ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<TransferTurnInput> ): Promise<IEnhancedLitGame> {
+export async function chanceTransfer( {
+										  input,
+										  ctx
+									  }: LitResolverOptions<ChanceTransferInput> ): Promise<ILiteratureGame> {
 	const [ game ] = validate( ctx );
 
 	if ( game.myTeam!.membersWithCards.length === 0 && game.oppositeTeam!.membersWithCards.length === 0 ) {
@@ -40,4 +43,4 @@ export default async function ( { input, ctx }: LitResolverOptions<TransferTurnI
 
 	ctx.litGamePublisher.publish( game );
 	return game;
-};
+}

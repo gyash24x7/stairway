@@ -1,8 +1,7 @@
 import { getGameInput } from "@s2h/literature/dtos";
-import { EnhancedLitGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitGameData, LitTrpcMiddleware } from "../types";
+import type { LitTrpcMiddleware } from "../types";
 
 export const requireGame: LitTrpcMiddleware = async function ( { ctx, rawInput, next } ) {
 	const result = getGameInput.safeParse( rawInput );
@@ -12,16 +11,11 @@ export const requireGame: LitTrpcMiddleware = async function ( { ctx, rawInput, 
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_ID } );
 	}
 
-	const game: LitGameData | null = await ctx.prisma.litGame.findUnique( {
-		where: { id: result.data.gameId },
-		include: { players: true, moves: true, teams: true }
-	} );
-
-	if ( !game ) {
+	const currentGame = await ctx.literatureTable.get( result.data.gameId ).run( ctx.connection );
+	if ( !currentGame ) {
 		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
 	}
 
-	const currentGame = EnhancedLitGame.from( game );
 	return next( { ctx: { ...ctx, currentGame } } );
 };
 

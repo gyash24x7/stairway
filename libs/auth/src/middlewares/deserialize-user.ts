@@ -1,7 +1,8 @@
-import type { ExpressMiddleware } from "@s2h/utils";
+import type { ExpressMiddleware, IUser } from "@s2h/utils";
 import { accessTokenCookieOptions, reIssueAccessToken, verifyJwt } from "../utils/token";
+import { Connection, RTable } from "rethinkdb-ts";
 
-export default function ( prisma: PrismaClient ): ExpressMiddleware {
+export function deserializeUser( usersTable: RTable<IUser>, connection: Connection ): ExpressMiddleware {
 	return async function ( req, res, next ) {
 		const authHeader = req.headers.authorization || "";
 		const refreshHeader = req.headers[ "x-refresh" ] || "";
@@ -21,7 +22,7 @@ export default function ( prisma: PrismaClient ): ExpressMiddleware {
 		}
 
 		if ( expired && !!refreshToken ) {
-			const newAccessToken = await reIssueAccessToken( refreshToken, prisma );
+			const newAccessToken = await reIssueAccessToken( refreshToken, usersTable, connection );
 
 			if ( !!newAccessToken ) {
 				res.cookie( "accessToken", newAccessToken, accessTokenCookieOptions );

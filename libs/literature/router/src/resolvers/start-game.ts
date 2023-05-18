@@ -1,6 +1,6 @@
 import type { StartGameInput } from "@s2h/literature/dtos";
-import type { IEnhancedLitGame } from "@s2h/literature/utils";
-import { LiteratureGameStatus } from "@s2h/literature/utils";
+import type { ILiteratureGame } from "@s2h/literature/utils";
+import { LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolverOptions, LitTrpcContext } from "../types";
@@ -10,38 +10,15 @@ function validate( ctx: LitTrpcContext ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_STATUS } );
 	}
 
-	return [ ctx.currentGame! ] as const;
+	return [ LiteratureGame.from( ctx.currentGame! ) ] as const;
 }
 
-export default async function ( { input, ctx }: LitResolverOptions<StartGameInput> ): Promise<IEnhancedLitGame> {
+export async function startGame( { input, ctx }: LitResolverOptions<StartGameInput> ): Promise<ILiteratureGame> {
 	const [ game ] = validate( ctx );
-	const handData = game.dealCardsAndGetHands();
-
-	const updatedPlayers = await Promise.all(
-		game.players.map( player => ctx.prisma.litPlayer.update( {
-			where: { id: player.id },
-			data: { hand: handData[ player.id ].serialize() }
-		} ) )
-	);
-
-	game.handlePlayerUpdate( ...updatedPlayers );
-
-	const firstMove = await ctx.prisma.litMove.create( {
-		data: game.getNewMoveData( {
-			type: LitMoveType.TURN,
-			turnPlayer: game.loggedInPlayer!
-		} )
-	} );
-
-	game.addMove( firstMove );
-
-	await ctx.prisma.litGame.update( {
-		where: { id: input.gameId },
-		data: { status: LiteratureGameStatus.IN_PROGRESS }
-	} );
-
+	game.dealCards();
 	game.status = LiteratureGameStatus.IN_PROGRESS;
 
+	await ctx.literatureTable.get( input.gameId ).update( game.serialize() ).run( ctx.connection );
 	ctx.litGamePublisher.publish( game );
 	return game;
-};
+}

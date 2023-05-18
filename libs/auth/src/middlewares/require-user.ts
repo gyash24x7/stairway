@@ -1,11 +1,12 @@
-import type { ExpressMiddleware } from "@s2h/utils";
+import type { ExpressMiddleware, IUser } from "@s2h/utils";
+import { Connection, RDatabase } from "rethinkdb-ts";
 
-export default function ( prisma: PrismaClient ): ExpressMiddleware {
+export function requireUser( db: RDatabase, connection: Connection ): ExpressMiddleware {
 	return async function ( _req, res, next ) {
 		if ( !res.locals[ "userId" ] ) {
 			return res.sendStatus( 403 );
 		} else {
-			const user = await prisma.user.findUnique( { where: { id: res.locals[ "userId" ] } } );
+			const user = await db.table<IUser>( "users" ).get( res.locals[ "userId" ] ).run( connection );
 			if ( !user ) {
 				return res.sendStatus( 403 );
 			}

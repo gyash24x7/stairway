@@ -1,5 +1,14 @@
 import type { NextFunction, Request, Response } from "express";
 import type { Namespace } from "socket.io";
+import { Connection, RTable } from "rethinkdb-ts";
+
+export interface IUser {
+	id: string;
+	name: string;
+	email: string;
+	salt: string;
+	avatar: string;
+}
 
 export class Publisher<T extends { id: string }> {
 	private readonly namespace: Namespace;
@@ -14,8 +23,9 @@ export class Publisher<T extends { id: string }> {
 }
 
 export type TrpcContext = {
-	loggedInUser?: User;
-	prisma: PrismaClient;
+	loggedInUser?: IUser;
+	usersTable: RTable<IUser>;
+	connection: Connection;
 }
 
 export type TrpcMiddleware<C = TrpcContext, R = any> = ( opts: {
