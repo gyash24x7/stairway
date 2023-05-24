@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import type { Namespace } from "socket.io";
-import { Connection, RTable } from "rethinkdb-ts";
+import type { Connection, R, RTable } from "rethinkdb-ts";
 
 export interface IUser {
 	id: string;
@@ -24,9 +24,13 @@ export class Publisher<T extends { id: string }> {
 
 export type TrpcContext = {
 	loggedInUser?: IUser;
-	usersTable: RTable<IUser>;
 	connection: Connection;
+	db: R & UsersR
 }
+
+export type UsersR = {
+	users: () => RTable<IUser>
+};
 
 export type TrpcMiddleware<C = TrpcContext, R = any> = ( opts: {
 	rawInput: unknown,

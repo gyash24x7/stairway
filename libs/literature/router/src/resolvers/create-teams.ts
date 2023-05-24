@@ -3,7 +3,8 @@ import type { ILiteratureGame } from "@s2h/literature/utils";
 import { LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolverOptions, LitTrpcContext } from "../types";
+import type { LitResolver, LitTrpcContext } from "../types";
+import { r } from "../db";
 
 function validate( ctx: LitTrpcContext ) {
 	if ( ctx.currentGame!.status !== LiteratureGameStatus.PLAYERS_READY ) {
@@ -17,12 +18,13 @@ function validate( ctx: LitTrpcContext ) {
 	return [ LiteratureGame.from( ctx.currentGame! ) ] as const;
 }
 
-export async function createTeams( { input, ctx }: LitResolverOptions<CreateTeamsInput> ): Promise<ILiteratureGame> {
-	const [ game ] = validate( ctx );
-	game.createTeams( input.teams );
-	game.status = LiteratureGameStatus.TEAMS_CREATED;
+export function createTeams(): LitResolver<CreateTeamsInput, ILiteratureGame> {
+	return async ( { input, ctx } ) => {
+		const [ game ] = validate( ctx );
+		game.createTeams( input.teams );
+		game.status = LiteratureGameStatus.TEAMS_CREATED;
 
-	await ctx.literatureTable.get( input.gameId ).update( game.serialize() ).run( ctx.connection );
-	ctx.litGamePublisher.publish( game );
-	return game;
+		await r.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
+		return game;
+	};
 }

@@ -1,9 +1,12 @@
 import type { CreateGameInput } from "@s2h/literature/dtos";
 import { ILiteratureGame, LiteratureGame } from "@s2h/literature/utils";
-import type { LitResolverOptions } from "../types";
+import type { LitResolver } from "../types";
+import { r } from "../db";
 
-export async function createGame( { ctx, input }: LitResolverOptions<CreateGameInput> ): Promise<ILiteratureGame> {
-	const game = LiteratureGame.create( input.playerCount || 2, ctx.loggedInUser! );
-	await ctx.literatureTable.insert( game.serialize() ).run( ctx.connection );
-	return game;
+export function createGame(): LitResolver<CreateGameInput, ILiteratureGame> {
+	return async ( { ctx, input } ) => {
+		const game = LiteratureGame.create( input.playerCount || 2, ctx.loggedInUser! );
+		await r.literature().insert( game.serialize() ).run( ctx.connection );
+		return game;
+	};
 }

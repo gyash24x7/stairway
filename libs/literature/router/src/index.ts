@@ -1,25 +1,21 @@
 import {
 	askCardInput,
 	callSetInput,
+	chanceTransferInput,
 	createGameInput,
 	createTeamsInput,
 	getGameInput,
 	joinGameInput,
-	startGameInput,
-	transferTurnInput
+	startGameInput
 } from "@s2h/literature/dtos";
-import { ExpressHandler } from "@s2h/utils";
+import { ExpressHandler, ExpressMiddleware } from "@s2h/utils";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { renderTrpcPanel } from "trpc-panel";
-import { createGame } from "./resolvers/create-game";
-import { createTeams } from "./resolvers/create-teams";
-import { joinGame } from "./resolvers/join-game";
-import type { LitTrpcContext } from "./types";
+import { askCard, callSet, chanceTransfer, createGame, createTeams, getGame, joinGame, startGame } from "./resolvers";
+import type { LiteratureR, LitTrpcContext } from "./types";
 import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
-import { getGame } from "./resolvers/get-game";
-import { startGame } from "./resolvers/start-game";
-import { askCard } from "./resolvers/ask-card";
-import { callSet } from "./resolvers/call-set";
+import { subscribeGame } from "./resolvers/subscribe-game";
+import { Connection } from "rethinkdb-ts";
 
 export const literatureRouter = router( {
 	createGame: procedure.input( createGameInput ).mutation( createGame ),
@@ -27,19 +23,20 @@ export const literatureRouter = router( {
 	createTeams: procedureWithGame.input( createTeamsInput ).mutation( createTeams ),
 	getGame: procedureWithGame.input( getGameInput ).query( getGame ),
 	startGame: procedureWithGame.input( startGameInput ).mutation( startGame ),
+	subscribeToGame: procedureWithGame.input( getGameInput ).subscription( subscribeGame() ),
 	askCard: procedureWithGameInProgress.input( askCardInput ).mutation( askCard ),
-	transferTurn: procedureWithGameInProgress.input( transferTurnInput ).mutation( transferTurn ),
+	chanceTransfer: procedureWithGameInProgress.input( chanceTransferInput ).mutation( chanceTransfer ),
 	callSet: procedureWithGameInProgress.input( callSetInput ).mutation( callSet )
 } );
 
 export type LiteratureRouter = typeof literatureRouter;
 
-export function literatureExpressHandler( ctx: LitTrpcContext ) {
+export function literatureExpressHandler( db: LiteratureR, connection: Connection ): ExpressMiddleware {
 	return createExpressMiddleware( {
 		router: literatureRouter,
-		createContext: ( { res } ): LitTrpcContext => (
-			{ ...ctx, loggedInUser: res.locals[ "user" ] }
-		)
+		createContext( { res } ): LitTrpcContext {
+			return { connection, loggedInUser: res.locals[ "user" ], db };
+		}
 	} );
 }
 
@@ -48,3 +45,5 @@ export function literatureTrpcPanelHandler( url: string ): ExpressHandler {
 		res.send( renderTrpcPanel( literatureRouter, { url, transformer: "superjson" } ) );
 	};
 }
+
+export * from "./types";

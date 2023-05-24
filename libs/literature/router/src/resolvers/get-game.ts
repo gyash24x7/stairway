@@ -1,7 +1,7 @@
 import type { GetGameInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
-import type { LitResolverOptions } from "../types";
+import type { LitResolver } from "../types";
 
-export async function getGame( { ctx }: LitResolverOptions<GetGameInput> ): Promise<ILiteratureGame> {
-	return ctx.currentGame!;
+export function getGame(): LitResolver<GetGameInput, ILiteratureGame> {
+	return async ( { ctx } ) => ctx.currentGame!;
 }

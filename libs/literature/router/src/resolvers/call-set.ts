@@ -4,7 +4,8 @@ import type { ILiteratureGame } from "@s2h/literature/utils";
 import { LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolverOptions, LitTrpcContext } from "../types";
+import type { LitResolver, LitTrpcContext } from "../types";
+import { r } from "../db";
 
 function validate( ctx: LitTrpcContext, input: CallSetInput ) {
 	const calledCards = Object.values( input.data ).flat().map( PlayingCard.from );
@@ -51,18 +52,19 @@ function validate( ctx: LitTrpcContext, input: CallSetInput ) {
 	return [ LiteratureGame.from( ctx.currentGame! ), callingSet ] as const;
 }
 
-export async function callSet( { input, ctx }: LitResolverOptions<CallSetInput> ): Promise<ILiteratureGame> {
-	const [ game, callingSet ] = validate( ctx, input );
-	game.executeMoveAction( {
-		action: "CALL_SET",
-		callData: {
-			playerId: ctx.loggedInUser!.id,
-			set: callingSet,
-			data: input.data
-		}
-	} );
+export function callSet(): LitResolver<CallSetInput, ILiteratureGame> {
+	return async ( { ctx, input } ) => {
+		const [ game, callingSet ] = validate( ctx, input );
+		game.executeMoveAction( {
+			action: "CALL_SET",
+			callData: {
+				playerId: ctx.loggedInUser!.id,
+				set: callingSet,
+				data: input.data
+			}
+		} );
 
-	await ctx.literatureTable.get( game.id ).update( game.serialize() ).run( ctx.connection );
-	ctx.litGamePublisher.publish( game );
-	return game;
+		await r.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
+		return game;
+	};
 }

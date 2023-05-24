@@ -4,7 +4,8 @@ import type { ILiteratureGame } from "@s2h/literature/utils";
 import { LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolverOptions, LitTrpcContext } from "../types";
+import type { LitResolver, LitTrpcContext } from "../types";
+import { r } from "../db";
 
 function validate( ctx: LitTrpcContext, input: AskCardInput ) {
 	const askingPlayer = ctx.currentGame!.players[ ctx.loggedInUser!.id ];
@@ -26,14 +27,15 @@ function validate( ctx: LitTrpcContext, input: AskCardInput ) {
 	return [ LiteratureGame.from( ctx.currentGame! ) ] as const;
 }
 
-export async function askCard( { input, ctx }: LitResolverOptions<AskCardInput> ): Promise<ILiteratureGame> {
-	const [ game ] = validate( ctx, input );
-	game.executeMoveAction( {
-		action: "ASK",
-		askData: { by: ctx.loggedInUser!.id, from: input.askedFrom, card: input.askedFor }
-	} );
+export function askCard(): LitResolver<AskCardInput, ILiteratureGame> {
+	return async ( { input, ctx } ) => {
+		const [ game ] = validate( ctx, input );
+		game.executeMoveAction( {
+			action: "ASK",
+			askData: { by: ctx.loggedInUser!.id, from: input.askedFrom, card: input.askedFor }
+		} );
 
-	await ctx.literatureTable.get( input.gameId ).update( game.serialize() ).run( ctx.connection );
-	ctx.litGamePublisher.publish( game );
-	return game;
+		await r.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
+		return game;
+	};
 }

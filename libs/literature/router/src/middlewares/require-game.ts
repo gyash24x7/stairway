@@ -2,21 +2,23 @@ import { getGameInput } from "@s2h/literature/dtos";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitTrpcMiddleware } from "../types";
+import { r } from "../db";
 
-export const requireGame: LitTrpcMiddleware = async function ( { ctx, rawInput, next } ) {
-	const result = getGameInput.safeParse( rawInput );
+export function requireGame(): LitTrpcMiddleware {
+	return async ( { ctx, rawInput, next } ) => {
 
-	if ( !result.success ) {
-		console.error( result.error );
-		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_ID } );
-	}
+		const result = getGameInput.safeParse( rawInput );
 
-	const currentGame = await ctx.literatureTable.get( result.data.gameId ).run( ctx.connection );
-	if ( !currentGame ) {
-		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
-	}
+		if ( !result.success ) {
+			console.error( result.error );
+			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_ID } );
+		}
 
-	return next( { ctx: { ...ctx, currentGame } } );
-};
+		const currentGame = await r.literature().get( result.data.gameId ).run( ctx.connection );
+		if ( !currentGame ) {
+			throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
+		}
 
-export default requireGame;
+		return next( { ctx: { ...ctx, currentGame } } );
+	};
+}

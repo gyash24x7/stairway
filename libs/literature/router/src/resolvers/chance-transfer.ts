@@ -1,46 +1,34 @@
 import type { ChanceTransferInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
-import { LiteratureGameStatus } from "@s2h/literature/utils";
+import { LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolverOptions, LitTrpcContext } from "../types";
+import type { LitResolver, LitTrpcContext } from "../types";
+import { r } from "../db";
 
 function validate( ctx: LitTrpcContext ) {
-	if ( ctx.currentGame!.loggedInPlayer!.hand.length !== 0 ) {
-		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_TRANSFER } );
+	const game = LiteratureGame.from( ctx.currentGame! );
+	const lastMove = game.moves[ 0 ];
+
+	if ( lastMove.resultData.result !== "CALL_SET" || !lastMove.resultData.success ) {
+		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_CHANCE_TRANSFER } );
 	}
 
-	return [ ctx.currentGame! ] as const;
+	return [ game ] as const;
 }
 
-export async function chanceTransfer( {
-										  input,
-										  ctx
-									  }: LitResolverOptions<ChanceTransferInput> ): Promise<ILiteratureGame> {
-	const [ game ] = validate( ctx );
+export function chanceTransfer(): LitResolver<ChanceTransferInput, ILiteratureGame> {
+	return async ( { input, ctx } ) => {
+		const [ game ] = validate( ctx );
 
-	if ( game.myTeam!.membersWithCards.length === 0 && game.oppositeTeam!.membersWithCards.length === 0 ) {
-		await ctx.prisma.litGame.update( {
-			where: { id: input.gameId },
-			data: { status: LiteratureGameStatus.COMPLETED }
+		game.executeMoveAction( {
+			action: "CHANCE_TRANSFER",
+			transferData: {
+				playerId: input.transferTo
+			}
 		} );
 
-		game.status = LiteratureGameStatus.COMPLETED;
-
-		ctx.litGamePublisher.publish( game );
+		await r.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
 		return game;
-	}
-
-	const nextPlayer = game.myTeam!.membersWithCards.length === 0
-		? game.oppositeTeam!.membersWithCards[ 0 ]
-		: game.myTeam!.membersWithCards[ 0 ];
-
-	const transferTurnMove = await ctx.prisma.litMove.create( {
-		data: game.getNewMoveData( { type: LitMoveType.TURN, turnPlayer: nextPlayer } )
-	} );
-
-	game.addMove( transferTurnMove );
-
-	ctx.litGamePublisher.publish( game );
-	return game;
+	};
 }

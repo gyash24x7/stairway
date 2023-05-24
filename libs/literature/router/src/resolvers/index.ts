@@ -5,3 +5,4 @@ export * from "./create-teams";
 export * from "./create-game";
 export * from "./join-game";
 export * from "./start-game";
+export * from "./chance-transfer";
