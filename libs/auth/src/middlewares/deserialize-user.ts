@@ -1,8 +1,8 @@
-import type { ExpressMiddleware, UsersR } from "@s2h/utils";
-import { accessTokenCookieOptions, reIssueAccessToken, verifyJwt } from "../utils";
+import type { ExpressMiddleware } from "@s2h/utils";
 import { Connection } from "rethinkdb-ts";
+import { accessTokenCookieOptions, reIssueAccessToken, verifyJwt } from "../utils";
 
-export function deserializeUser( r: UsersR, connection: Connection ): ExpressMiddleware {
+export function deserializeUser( connection: Connection ): ExpressMiddleware {
 	return async function ( req, res, next ) {
 		const authHeader = req.headers.authorization || "";
 		const refreshHeader = req.headers[ "x-refresh" ] || "";
@@ -22,7 +22,7 @@ export function deserializeUser( r: UsersR, connection: Connection ): ExpressMid
 		}
 
 		if ( expired && !!refreshToken ) {
-			const newAccessToken = await reIssueAccessToken( refreshToken, r, connection );
+			const newAccessToken = await reIssueAccessToken( refreshToken, connection );
 
 			if ( !!newAccessToken ) {
 				res.cookie( "accessToken", newAccessToken, accessTokenCookieOptions );

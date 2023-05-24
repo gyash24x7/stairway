@@ -1,10 +1,10 @@
 import type { ChanceTransferInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
 import { LiteratureGame } from "@s2h/literature/utils";
+import { db } from "@s2h/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../types";
-import { r } from "../db";
+import type { LitResolver, LitTrpcContext } from "../utils";
 
 function validate( ctx: LitTrpcContext ) {
 	const game = LiteratureGame.from( ctx.currentGame! );
@@ -28,7 +28,7 @@ export function chanceTransfer(): LitResolver<ChanceTransferInput, ILiteratureGa
 			}
 		} );
 
-		await r.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
+		await db.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

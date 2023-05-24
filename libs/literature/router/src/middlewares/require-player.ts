@@ -1,6 +1,6 @@
+import { LitTrpcMiddleware } from "@s2h/literature/router";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import { LitTrpcMiddleware } from "../types";
 
 export function requirePlayer(): LitTrpcMiddleware {
 	return async ( { ctx, next } ) => {

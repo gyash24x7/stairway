@@ -1,11 +1,10 @@
-import { AVATAR_BASE_URL, ExpressHandler, UsersR } from "@s2h/utils";
-import * as bcrypt from "bcryptjs";
-import { getGoogleToken, getGoogleUser } from "../utils/oauth";
-import { accessTokenCookieOptions, refreshTokenCookieOptions, signJwt } from "../utils/token";
-import { Connection } from "rethinkdb-ts";
 import { createId } from "@paralleldrive/cuid2";
+import { AVATAR_BASE_URL, db, ExpressHandler } from "@s2h/utils";
+import * as bcrypt from "bcryptjs";
+import { Connection } from "rethinkdb-ts";
+import { accessTokenCookieOptions, getGoogleToken, getGoogleUser, refreshTokenCookieOptions, signJwt } from "../utils";
 
-export function handleAuthCallback( r: UsersR, connection: Connection ): ExpressHandler {
+export function handleAuthCallback( connection: Connection ): ExpressHandler {
 	return async function ( req, res ) {
 		const code = req.query[ "code" ] as string;
 		const { access_token, id_token } = await getGoogleToken( code );
@@ -15,7 +14,7 @@ export function handleAuthCallback( r: UsersR, connection: Connection ): Express
 			return res.status( 403 ).send( "Google account is not verified" );
 		}
 
-		let users = await r.users().filter( { email } ).run( connection );
+		let users = await db.users().filter( { email } ).run( connection );
 		let salt: string;
 		let id: string;
 
@@ -23,7 +22,7 @@ export function handleAuthCallback( r: UsersR, connection: Connection ): Express
 			salt = await bcrypt.genSalt( 10 );
 			id = createId();
 			const avatar = `${ AVATAR_BASE_URL }/${ id }.svg?r=50`;
-			await r.users().insert( { email, name, avatar, salt, id } ).run( connection );
+			await db.users().insert( { email, name, avatar, salt, id } ).run( connection );
 		} else {
 			salt = users[ 0 ].salt;
 			id = users[ 0 ].id;

@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import type { Namespace } from "socket.io";
-import type { Connection, R, RTable } from "rethinkdb-ts";
+import type { Connection, RTable } from "rethinkdb-ts";
 
 export interface IUser {
 	id: string;
@@ -10,22 +9,9 @@ export interface IUser {
 	avatar: string;
 }
 
-export class Publisher<T extends { id: string }> {
-	private readonly namespace: Namespace;
-
-	constructor( namespace: Namespace ) {
-		this.namespace = namespace;
-	}
-
-	publish( gameData: T ) {
-		this.namespace.emit( gameData.id, gameData );
-	}
-}
-
 export type TrpcContext = {
 	loggedInUser?: IUser;
 	connection: Connection;
-	db: R & UsersR
 }
 
 export type UsersR = {

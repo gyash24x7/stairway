@@ -1,10 +1,10 @@
 import type { StartGameInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
 import { LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
+import { db } from "@s2h/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../types";
-import { r } from "../db";
+import type { LitResolver, LitTrpcContext } from "../utils";
 
 function validate( ctx: LitTrpcContext ) {
 	if ( ctx.currentGame!.status !== LiteratureGameStatus.TEAMS_CREATED ) {
@@ -20,7 +20,7 @@ export function startGame(): LitResolver<StartGameInput, ILiteratureGame> {
 		game.dealCards();
 		game.status = LiteratureGameStatus.IN_PROGRESS;
 
-		await r.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
+		await db.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

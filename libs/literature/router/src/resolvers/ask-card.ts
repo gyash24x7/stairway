@@ -2,10 +2,10 @@ import { CardHand, PlayingCard } from "@s2h/cards";
 import type { AskCardInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
 import { LiteratureGame } from "@s2h/literature/utils";
+import { db } from "@s2h/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../types";
-import { r } from "../db";
+import type { LitResolver, LitTrpcContext } from "../utils";
 
 function validate( ctx: LitTrpcContext, input: AskCardInput ) {
 	const askingPlayer = ctx.currentGame!.players[ ctx.loggedInUser!.id ];
@@ -35,7 +35,7 @@ export function askCard(): LitResolver<AskCardInput, ILiteratureGame> {
 			askData: { by: ctx.loggedInUser!.id, from: input.askedFrom, card: input.askedFor }
 		} );
 
-		await r.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
+		await db.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

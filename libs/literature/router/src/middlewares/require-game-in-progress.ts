@@ -1,7 +1,7 @@
+import { LitTrpcMiddleware } from "@s2h/literature/router";
 import { LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import { LitTrpcMiddleware } from "../types";
 
 export function requireGameInProgress(): LitTrpcMiddleware {
 	return async ( { ctx, next } ) => {

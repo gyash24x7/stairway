@@ -10,12 +10,12 @@ import {
 } from "@s2h/literature/dtos";
 import { ExpressHandler, ExpressMiddleware } from "@s2h/utils";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { Connection } from "rethinkdb-ts";
 import { renderTrpcPanel } from "trpc-panel";
 import { askCard, callSet, chanceTransfer, createGame, createTeams, getGame, joinGame, startGame } from "./resolvers";
-import type { LiteratureR, LitTrpcContext } from "./types";
-import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
 import { subscribeGame } from "./resolvers/subscribe-game";
-import { Connection } from "rethinkdb-ts";
+import type { LitTrpcContext } from "./utils";
+import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
 
 export const literatureRouter = router( {
 	createGame: procedure.input( createGameInput ).mutation( createGame ),
@@ -31,11 +31,11 @@ export const literatureRouter = router( {
 
 export type LiteratureRouter = typeof literatureRouter;
 
-export function literatureExpressHandler( db: LiteratureR, connection: Connection ): ExpressMiddleware {
+export function literatureExpressHandler( connection: Connection ): ExpressMiddleware {
 	return createExpressMiddleware( {
 		router: literatureRouter,
 		createContext( { res } ): LitTrpcContext {
-			return { connection, loggedInUser: res.locals[ "user" ], db };
+			return { connection, loggedInUser: res.locals[ "user" ] };
 		}
 	} );
 }
@@ -46,4 +46,4 @@ export function literatureTrpcPanelHandler( url: string ): ExpressHandler {
 	};
 }
 
-export * from "./types";
+export * from "./utils";

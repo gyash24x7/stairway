@@ -1,12 +1,12 @@
 import type { JoinGameInput } from "@s2h/literature/dtos";
 import { ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
+import { db } from "@s2h/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../types";
-import { r } from "../db";
+import type { LitResolver, LitTrpcContext } from "../utils";
 
 async function validate( ctx: LitTrpcContext, input: JoinGameInput ) {
-	const [ game ] = await r.literature().filter( { code: input.code } ).run( ctx.connection );
+	const [ game ] = await db.literature().filter( { code: input.code } ).run( ctx.connection );
 
 	if ( !game ) {
 		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
@@ -34,7 +34,7 @@ export function joinGame(): LitResolver<JoinGameInput, ILiteratureGame> {
 			? LiteratureGameStatus.PLAYERS_READY
 			: LiteratureGameStatus.CREATED;
 
-		await r.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
+		await db.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

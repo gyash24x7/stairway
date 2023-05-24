@@ -1,8 +1,8 @@
+import { db } from "@s2h/utils";
 import type { CookieOptions } from "express";
 import { jwtVerify, SignJWT } from "jose";
 import * as process from "process";
 import { Connection } from "rethinkdb-ts";
-import { UsersR } from "@s2h/utils";
 
 export async function signJwt( subject: string, expiresIn: string ): Promise<string> {
 	const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] || "" );
@@ -25,14 +25,14 @@ export async function verifyJwt( token: string ): Promise<{ valid: boolean, expi
 	}
 }
 
-export async function reIssueAccessToken( refreshToken: string, r: UsersR, connection: Connection ) {
+export async function reIssueAccessToken( refreshToken: string, connection: Connection ) {
 	const { subject } = await verifyJwt( refreshToken );
 
 	if ( !subject ) {
 		return;
 	}
 
-	const users = await r.users().filter( { salt: subject } ).run( connection );
+	const users = await db.users().filter( { salt: subject } ).run( connection );
 	if ( users.length === 0 ) {
 		return;
 	}
