@@ -1,6 +1,5 @@
 import { GOOGLE_GET_USER_URL, GOOGLE_TOKEN_URL, GoogleTokenResult, GoogleUserResult } from "@s2h/utils";
 import axios from "axios";
-import * as console from "console";
 
 export async function getGoogleToken( code: string ) {
 	const url = new URL( GOOGLE_TOKEN_URL );
@@ -12,10 +11,6 @@ export async function getGoogleToken( code: string ) {
 
 	const res = await axios.post<GoogleTokenResult>( url.toString(), {
 		headers: { "Content-Type": "application/x-www-form-urlencoded" }
-	} ).catch( err => {
-		console.log( "Some Error Getting Google Token" );
-		console.log( err );
-		throw new Error();
 	} );
 
 	return res.data;

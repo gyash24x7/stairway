@@ -2,17 +2,18 @@ import type { Request, Response } from "express";
 import { describe, expect, it } from "vitest";
 import type { DeepMockProxy } from "vitest-mock-extended";
 import { mockDeep } from "vitest-mock-extended";
-import getLoggedInUser from "../../src/handlers/logged-in-user";
+import { handleGetLoggedInUser } from "@s2h/auth";
+import { IUser } from "@s2h/utils";
 
-describe( "Logged In User Handler", function () {
+describe( "Logged In User Handler", () => {
 
-	it( "should return logged in user", function () {
-		const handler = getLoggedInUser();
+	it( "should return logged in user", () => {
+		const handler = handleGetLoggedInUser();
 		const reqMock: DeepMockProxy<Request> = mockDeep();
 
-		const user: User = { name: "name", email: "email", id: "id", avatar: "", salt: "" };
+		const user: IUser = { name: "name", email: "email", id: "id", avatar: "", salt: "" };
 
-		const resMock: DeepMockProxy<Response> = mockDeep();
+		const resMock = mockDeep<Response>();
 		resMock.locals[ "user" ] = user;
 		resMock.send.mockReturnValue( resMock );
 

@@ -3,7 +3,7 @@ import { Connection } from "rethinkdb-ts";
 import { accessTokenCookieOptions, reIssueAccessToken, verifyJwt } from "../utils";
 
 export function deserializeUser( connection: Connection ): ExpressMiddleware {
-	return async function ( req, res, next ) {
+	return async ( req, res, next ) => {
 		const authHeader = req.headers.authorization || "";
 		const refreshHeader = req.headers[ "x-refresh" ] || "";
 

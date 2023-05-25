@@ -5,7 +5,7 @@ import { Connection } from "rethinkdb-ts";
 import { accessTokenCookieOptions, getGoogleToken, getGoogleUser, refreshTokenCookieOptions, signJwt } from "../utils";
 
 export function handleAuthCallback( connection: Connection ): ExpressHandler {
-	return async function ( req, res ) {
+	return async ( req, res ) => {
 		const code = req.query[ "code" ] as string;
 		const { access_token, id_token } = await getGoogleToken( code );
 		const { verified_email, email, name } = await getGoogleUser( access_token, id_token );

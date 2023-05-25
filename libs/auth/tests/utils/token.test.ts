@@ -1,13 +1,15 @@
 import { createId as cuid } from "@paralleldrive/cuid2";
 import { jwtVerify } from "jose";
 import * as process from "process";
-import { describe, expect, it } from "vitest";
-import { mockDeep } from "vitest-mock-extended";
-import { reIssueAccessToken, signJwt, verifyJwt } from "../../src/utils/token";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DeepMockProxy, mockDeep, mockReset } from "vitest-mock-extended";
+import { reIssueAccessToken, signJwt, verifyJwt } from "@s2h/auth";
+import { db, IUser } from "@s2h/utils";
+import { Connection, RTable } from "rethinkdb-ts";
 
-describe( "Sign JWT", function () {
+describe( "Sign JWT", () => {
 
-	it( "should generate access token with 15m expiration", async function () {
+	it( "should generate access token with 15m expiration", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const token = await signJwt( "subject", "15m" );
 		const { payload } = await jwtVerify( token, new TextEncoder().encode( "jwtSecret" ) );
@@ -16,7 +18,7 @@ describe( "Sign JWT", function () {
 		expect( payload.exp! - payload.iat! ).toBe( 15 * 60 );
 	} );
 
-	it( "should generate refresh token with 1y expiration", async function () {
+	it( "should generate refresh token with 1y expiration", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const token = await signJwt( "subject", "1y" );
 		const { payload } = await jwtVerify( token, new TextEncoder().encode( "jwtSecret" ) );
@@ -26,9 +28,9 @@ describe( "Sign JWT", function () {
 	} );
 } );
 
-describe( "Verify JWT", function () {
+describe( "Verify JWT", () => {
 
-	it( "should throw error if token expired", async function () {
+	it( "should throw error if token expired", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 
 		const token = await signJwt( "subject", "0s" );
@@ -38,7 +40,7 @@ describe( "Verify JWT", function () {
 		expect( expired ).toBeTruthy();
 	} );
 
-	it( "should throw error if other error", async function () {
+	it( "should throw error if other error", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret1";
 		const token = await signJwt( "subject", "15m" );
 
@@ -49,7 +51,7 @@ describe( "Verify JWT", function () {
 		expect( expired ).toBeFalsy();
 	} );
 
-	it( "should verify token successfully", async function () {
+	it( "should verify token successfully", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 
 		const token = await signJwt( "subject", "15m" );
@@ -61,9 +63,15 @@ describe( "Verify JWT", function () {
 	} );
 } );
 
-describe( "ReIssue Access Token", async function () {
+vi.mock( "@s2h/utils", async ( importOriginal ) => {
+	const originalImport = await importOriginal<any>();
+	const { mockDeep } = await import("vitest-mock-extended");
+	return { ...originalImport, db: mockDeep<typeof db>() };
+} );
 
-	const user: User = {
+describe( "ReIssue Access Token", async () => {
+
+	const mockUser: IUser = {
 		id: cuid(),
 		name: "name",
 		email: "email",
@@ -71,47 +79,56 @@ describe( "ReIssue Access Token", async function () {
 		avatar: ""
 	};
 
-	const prismaMock = mockDeep<PrismaClient>();
+	const mockConnection = mockDeep<Connection>();
+	const mockedDb = db as DeepMockProxy<typeof db>;
+	const mockUsersTable = mockDeep<RTable<IUser>>();
 
-	it( "should return undefined if subject not present", async function () {
+	beforeEach( () => {
+		mockUsersTable.filter.mockReturnValue( mockUsersTable );
+		mockUsersTable.run.mockResolvedValue( [ mockUser ] );
+		mockedDb.users.mockReturnValue( mockUsersTable );
+	} );
+
+	it( "should return undefined if subject not present", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const refreshToken = await signJwt( "", "1y" );
-		const newToken = await reIssueAccessToken( refreshToken, prismaMock );
+		const newToken = await reIssueAccessToken( refreshToken, mockConnection );
 
 		expect( newToken ).toBeUndefined();
-		expect( prismaMock.user.findUnique ).toHaveBeenCalledTimes( 0 );
+		expect( mockUsersTable.filter ).toHaveBeenCalledTimes( 0 );
 	} );
 
-	it( "should return undefined if user does not exist", async function () {
+	it( "should return undefined if user does not exist", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const refreshToken = await signJwt( "saltAsSubject", "1y" );
-		prismaMock.user.findUnique.mockResolvedValue( null );
-		const newToken = await reIssueAccessToken( refreshToken, prismaMock );
+
+		mockUsersTable.run.mockResolvedValue( [] );
+		const newToken = await reIssueAccessToken( refreshToken, mockConnection );
 
 		expect( newToken ).toBeUndefined();
-		expect( prismaMock.user.findUnique ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( {
-					salt: "saltAsSubject"
-				} )
-			} )
+		expect( mockUsersTable.run ).toHaveBeenCalledWith( mockConnection );
+		expect( mockUsersTable.filter ).toHaveBeenCalledWith(
+			expect.objectContaining( { salt: "saltAsSubject" } )
 		);
 	} );
 
-	it( "should return new token if user is present", async function () {
+	it( "should return new token if user is present", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const refreshToken = await signJwt( "saltAsSubject", "1y" );
-		prismaMock.user.findUnique.mockResolvedValue( user );
-		const newToken = await reIssueAccessToken( refreshToken, prismaMock );
+
+		const newToken = await reIssueAccessToken( refreshToken, mockConnection );
 
 		expect( newToken ).toBeTruthy();
-		expect( prismaMock.user.findUnique ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( {
-					salt: "saltAsSubject"
-				} )
-			} )
+		expect( mockUsersTable.run ).toHaveBeenCalledWith( mockConnection );
+		expect( mockUsersTable.filter ).toHaveBeenCalledWith(
+			expect.objectContaining( { salt: "saltAsSubject" } )
 		);
 	} );
 
+	afterEach( () => {
+		mockReset( mockConnection );
+		mockReset( mockedDb );
+		mockReset( mockUsersTable );
+		vi.clearAllMocks();
+	} );
 } );

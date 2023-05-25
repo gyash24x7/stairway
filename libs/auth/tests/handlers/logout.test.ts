@@ -1,13 +1,12 @@
-import { handleLogout } from "@s2h/auth";
+import { accessTokenCookieOptions, handleLogout, refreshTokenCookieOptions } from "@s2h/auth";
 import type { Request, Response } from "express";
 import { describe, expect, it } from "vitest";
 import type { DeepMockProxy } from "vitest-mock-extended";
 import { mockDeep } from "vitest-mock-extended";
-import { accessTokenCookieOptions, refreshTokenCookieOptions } from "../../src/utils/token";
 
-describe( "Logout Handler", function () {
+describe( "Logout Handler", () => {
 
-	it( "should clear all the token cookies", function () {
+	it( "should clear all the token cookies", () => {
 		const handler = handleLogout();
 		const reqMock: DeepMockProxy<Request> = mockDeep();
 

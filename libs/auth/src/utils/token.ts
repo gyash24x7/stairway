@@ -5,7 +5,7 @@ import * as process from "process";
 import { Connection } from "rethinkdb-ts";
 
 export async function signJwt( subject: string, expiresIn: string ): Promise<string> {
-	const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] || "" );
+	const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] );
 	return new SignJWT( {} )
 		.setProtectedHeader( { alg: "HS256" } )
 		.setIssuedAt()
@@ -17,7 +17,7 @@ export async function signJwt( subject: string, expiresIn: string ): Promise<str
 
 export async function verifyJwt( token: string ): Promise<{ valid: boolean, expired: boolean, subject?: string }> {
 	try {
-		const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] || "" );
+		const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] );
 		const { payload } = await jwtVerify( token, secret );
 		return { valid: true, expired: false, subject: payload.sub };
 	} catch ( e: any ) {
