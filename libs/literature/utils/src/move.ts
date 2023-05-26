@@ -51,11 +51,29 @@ export class LiteratureMove implements ILiteratureMove {
 	resultData: LiteratureMoveResultData;
 	timestamp: string;
 
-	constructor( actionData: LiteratureMoveActionData, resultData: LiteratureMoveResultData ) {
-		this.id = createId();
-		this.actionData = actionData;
-		this.resultData = resultData;
-		this.timestamp = dayjs().toISOString();
-		this.description = `${ actionData.description } -> ${ resultData.description }`;
+	private constructor( move: ILiteratureMove ) {
+		this.id = move.id;
+		this.actionData = move.actionData;
+		this.resultData = move.resultData;
+		this.timestamp = move.timestamp;
+		this.description = move.description;
+	}
+
+	static from( move: ILiteratureMove ) {
+		return new LiteratureMove( move );
+	}
+
+	static create( actionData: LiteratureMoveActionData, resultData: LiteratureMoveResultData ) {
+		return this.from( {
+			actionData,
+			resultData,
+			id: createId(),
+			timestamp: dayjs().toISOString(),
+			description: `${ actionData.description } -> ${ resultData.description }`
+		} );
+	}
+
+	serialize(): ILiteratureMove {
+		return JSON.parse( JSON.stringify( this ) );
 	}
 }

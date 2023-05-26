@@ -1,9 +1,9 @@
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
 import { describe, expect, it } from "vitest";
 
-describe( "Playing Card", function () {
+describe( "Playing Card", () => {
 
-	it( "should serialize and deserialize correctly", function () {
+	it( "should serialize and deserialize correctly", () => {
 		const card = PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.DIAMONDS } );
 		const serializedCard = card.serialize();
 
@@ -20,14 +20,14 @@ describe( "Playing Card", function () {
 		expect( deserializedCard.set ).toBe( CardSet.SMALL_DIAMONDS );
 	} );
 
-	it( "should have correct cardString and id", function () {
+	it( "should have correct cardString and id", () => {
 		const card = PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.DIAMONDS } );
 
 		expect( card.cardString ).toBe( "Ace of Diamonds" );
 		expect( card.id ).toBe( "AceOfDiamonds" );
 	} );
 
-	it( "should compute correct card set", function () {
+	it( "should compute correct card set", () => {
 		const card1 = PlayingCard.from( { rank: CardRank.KING, suit: CardSuit.DIAMONDS } );
 		const card2 = PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.DIAMONDS } );
 		const card3 = PlayingCard.from( { rank: CardRank.QUEEN, suit: CardSuit.CLUBS } );

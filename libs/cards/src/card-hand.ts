@@ -34,6 +34,10 @@ export class CardHand implements ICardHand {
 		return new CardHand( hand.cards );
 	}
 
+	static empty() {
+		return new CardHand( [] );
+	}
+
 	contains( card: PlayingCard ) {
 		return this.ids.includes( card.id );
 	}

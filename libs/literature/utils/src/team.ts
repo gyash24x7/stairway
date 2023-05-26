@@ -1,8 +1,3 @@
-// addMembers( players: EnhancedLitPlayer[] ) {
-// 	this.members = players.filter( player => player.teamId === this.id );
-// }
-
-
 export type ILiteratureTeam = {
 	name: string;
 	score: number;
@@ -27,7 +22,7 @@ export class LiteratureTeam implements ILiteratureTeam {
 		return new LiteratureTeam( teamData );
 	}
 
-	increaseScore() {
-		this.score++;
+	serialize(): ILiteratureTeam {
+		return JSON.parse( JSON.stringify( this ) );
 	}
 }

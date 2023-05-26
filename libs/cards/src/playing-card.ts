@@ -46,7 +46,7 @@ export class PlayingCard implements IPlayingCard {
 		return new PlayingCard( rank, suit );
 	}
 
-	serialize() {
+	serialize(): IPlayingCard {
 		return JSON.parse( JSON.stringify( this ) );
 	}
 }

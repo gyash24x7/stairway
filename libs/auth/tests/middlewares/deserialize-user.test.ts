@@ -34,7 +34,7 @@ describe( "Deserialize User Middleware", () => {
 	process.env[ "JWT_SECRET" ] = "mock-jwt-secret";
 	mockRes.locals[ "userId" ] = undefined;
 
-	beforeEach( function () {
+	beforeEach( () => {
 		mockRes.locals[ "userId" ] = undefined;
 	} );
 

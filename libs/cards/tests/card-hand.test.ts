@@ -1,9 +1,9 @@
 import { CardHand, CardRank, CardSet, CardSuit, IPlayingCard, PlayingCard } from "@s2h/cards";
 import { describe, expect, it } from "vitest";
 
-describe( "Card Hand", function () {
+describe( "Card Hand", () => {
 
-	it( "should serialize and deserialize correctly", function () {
+	it( "should serialize and deserialize correctly", () => {
 		const card1 = PlayingCard.from( { rank: CardRank.KING, suit: CardSuit.DIAMONDS } );
 		const card2 = PlayingCard.from( { rank: CardRank.ACE, suit: CardSuit.HEARTS } );
 		const card3 = PlayingCard.from( { rank: CardRank.QUEEN, suit: CardSuit.CLUBS } );
@@ -36,7 +36,7 @@ describe( "Card Hand", function () {
 		] );
 	} );
 
-	it( "should return correct cards when checking if card present in hand", function () {
+	it( "should return correct cards when checking if card present in hand", () => {
 		const cards: IPlayingCard[] = JSON.parse( JSON.stringify( [
 			{ rank: "Ace", suit: "Diamonds" },
 			{ rank: "Jack", suit: "Clubs" },
@@ -59,7 +59,7 @@ describe( "Card Hand", function () {
 		expect( hand.containsSome( [ cardPresent, cardNotPresent ] ) ).toBeTruthy();
 	} );
 
-	it( "should return sorted cards when asked for sorted cards", function () {
+	it( "should return sorted cards when asked for sorted cards", () => {
 		const cards: IPlayingCard[] = JSON.parse( JSON.stringify( [
 			{ rank: "Ace", suit: "Diamonds" },
 			{ rank: "Jack", suit: "Clubs" },
@@ -94,7 +94,7 @@ describe( "Card Hand", function () {
 		} ) );
 	} );
 
-	it( "should be able to remove cards based on cardSet", function () {
+	it( "should be able to remove cards based on cardSet", () => {
 		const fourOfHearts = PlayingCard.from( { rank: CardRank.FOUR, suit: CardSuit.HEARTS } );
 		const twoOfHearts = PlayingCard.from( { rank: CardRank.TWO, suit: CardSuit.HEARTS } );
 		const tenOfHearts = PlayingCard.from( { rank: CardRank.TEN, suit: CardSuit.HEARTS } );
@@ -112,7 +112,7 @@ describe( "Card Hand", function () {
 		expect( hand.contains( tenOfHearts ) ).toBeTruthy();
 	} );
 
-	it( "should be able to add or remove individual cards", function () {
+	it( "should be able to add or remove individual cards", () => {
 		const fourOfClubs = PlayingCard.from( { rank: CardRank.FOUR, suit: CardSuit.CLUBS } );
 		const twoOfHearts = PlayingCard.from( { rank: CardRank.TWO, suit: CardSuit.HEARTS } );
 
