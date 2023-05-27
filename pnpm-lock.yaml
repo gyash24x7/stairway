@@ -13,6 +13,9 @@ dependencies:
   '@heroicons/react':
     specifier: 2.0.18
     version: 2.0.18(react@18.2.0)
+  '@ogma/logger':
+    specifier: 2.5.2
+    version: 2.5.2
   '@paralleldrive/cuid2':
     specifier: 2.2.0
     version: 2.2.0
@@ -40,6 +43,9 @@ dependencies:
   change-case:
     specifier: 4.1.2
     version: 4.1.2
+  colorette:
+    specifier: 2.0.20
+    version: 2.0.20
   cookie-parser:
     specifier: 1.4.6
     version: 1.4.6
@@ -58,9 +64,6 @@ dependencies:
   jose:
     specifier: 4.14.4
     version: 4.14.4
-  morgan:
-    specifier: 1.10.0
-    version: 1.10.0
   postcss:
     specifier: 8.4.23
     version: 8.4.23
@@ -2804,6 +2807,24 @@ packages:
       - debug
     dev: true
 
+  /@ogma/common@1.1.1:
+    resolution: {integrity: sha512-qDS1xn54Rz9A6UA3H0RVChO/6uNKuqAyHUE5DmPXR8TnTGEy2tDUjL78gc9/3KbM7xs8JtgtZffXiYOKlVIPAg==}
+    dev: false
+
+  /@ogma/logger@2.5.2:
+    resolution: {integrity: sha512-bhu+XNoGpekzPas560zlho2Ce3khhr/EBuSkcfaAouDLgJkxs9t3+ynj843c9P6t/KFNh0zOC8n88Y+LErbGjg==}
+    engines: {node: '>=10'}
+    dependencies:
+      '@ogma/common': 1.1.1
+      '@ogma/styler': 1.0.1
+    dev: false
+
+  /@ogma/styler@1.0.1:
+    resolution: {integrity: sha512-j0FtygVjWf5/AFW7Q8jdc5n1WjL4zBjwmonb0PbpbvDLhohTTxP6/mENNDgID0C8VcqiKQ9JL539UaDFF8wYfg==}
+    dependencies:
+      '@ogma/common': 1.1.1
+    dev: false
+
   /@paralleldrive/cuid2@2.2.0:
     resolution: {integrity: sha512-CVQDpPIUHrUGGLdrMGz1NmqZvqmsB2j2rCIQEu1EvxWjlFh4fhvEGmgR409cY20/67/WlJsggenq0no3p3kYsw==}
     dependencies:
@@ -5307,6 +5328,7 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       safe-buffer: 5.1.2
+    dev: true
 
   /batch@0.6.1:
     resolution: {integrity: sha512-x+VAiMRL6UPkx+kudNvxTl6hB2XNNCG2r+7wixVfIYwu/2HKRXimwQyaumLjMveWvT2Hkd/cAJw+QBMfJ/EKVw==}
@@ -5713,7 +5735,6 @@ packages:
 
   /colorette@2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
-    dev: true
 
   /combined-stream@1.0.8:
     resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
@@ -8847,19 +8868,6 @@ packages:
       ufo: 1.1.2
     dev: true
 
-  /morgan@1.10.0:
-    resolution: {integrity: sha512-AbegBVI4sh6El+1gNwvD5YIck7nSA36weD7xvIxG4in80j/UoK8AEGaWnnz8v1GxonMCltmlNs5ZKbGvl9b1XQ==}
-    engines: {node: '>= 0.8.0'}
-    dependencies:
-      basic-auth: 2.0.1
-      debug: 2.6.9
-      depd: 2.0.0
-      on-finished: 2.3.0
-      on-headers: 1.0.2
-    transitivePeerDependencies:
-      - supports-color
-    dev: false
-
   /mrmime@1.0.1:
     resolution: {integrity: sha512-hzzEagAgDyoU1Q6yg5uI+AorQgdvMCur3FcKf7NhMKWsaYg+RnbTyHRa/9IlLF9rf455MOCtcqqrQQ83pPP7Uw==}
     engines: {node: '>=10'}
@@ -9163,13 +9171,6 @@ packages:
     resolution: {integrity: sha512-PX1wu0AmAdPqOL1mWhqmlOd8kOIZQwGZw6rh7uby9fTc5lhaOWFLX3I6R1hrF9k3zUY40e6igsLGkDXK92LJNg==}
     dev: true
 
-  /on-finished@2.3.0:
-    resolution: {integrity: sha512-ikqdkGAAyf/X/gPhXGvfgAytDZtDbr+bkNUJ0N9h5MI/dmdgCs3l6hoHrcUv41sRKew3jIwrp4qQDXiK99Utww==}
-    engines: {node: '>= 0.8'}
-    dependencies:
-      ee-first: 1.1.1
-    dev: false
-
   /on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
     engines: {node: '>= 0.8'}
@@ -9179,6 +9180,7 @@ packages:
   /on-headers@1.0.2:
     resolution: {integrity: sha512-pZAE+FJLoyITytdqK0U5s+FIpjN0JP3OzFi/u8Rx+EV5/W+JTWGXG8xFzevE7AjBfDqHv/8vL8qQsIhHnqRkrA==}
     engines: {node: '>= 0.8'}
+    dev: true
 
   /once@1.4.0:
     resolution: {integrity: sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w==}
@@ -10452,6 +10454,7 @@ packages:
 
   /safe-buffer@5.1.2:
     resolution: {integrity: sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==}
+    dev: true
 
   /safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}

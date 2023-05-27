@@ -1,8 +1,12 @@
 import console from "console";
 import * as http from "node:http";
 import { Namespace, Server } from "socket.io";
+import { logger } from "./logger";
 
 export async function initializeSocketServer( server: http.Server, ...namespaces: string[] ) {
+	logger.debug( ">> initializeSocketServer()" );
+	logger.debug( "Applications: %o", namespaces );
+
 	const io = new Server( server, {
 		cors: {
 			origin: [ "http://localhost:3000" ],
@@ -24,6 +28,8 @@ export async function initializeSocketServer( server: http.Server, ...namespaces
 			} );
 		} );
 	} );
+
+	logger.debug( "Socket Server Initialized!" );
 }
 
 export class Publisher<T extends { id: string }> {
@@ -34,6 +40,7 @@ export class Publisher<T extends { id: string }> {
 	}
 
 	publish( gameData: T ) {
+		logger.debug( "Publishing GameData..." );
 		this.namespace.emit( gameData.id, gameData );
 	}
 }
