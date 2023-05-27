@@ -1,13 +1,11 @@
 import { deserializeUser, handleAuthCallback, handleGetLoggedInUser, handleLogout, requireUser } from "@s2h/auth";
 import { literatureExpressHandler, literatureTrpcPanelHandler } from "@s2h/literature/router";
-import { db, initializeSocketServer } from "@s2h/utils";
-import * as console from "console";
+import { db, initializeSocketServer, logger, loggerMiddleware } from "@s2h/utils";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import http from "http";
-import morgan from "morgan";
 
 dotenv.config();
 
@@ -17,10 +15,10 @@ async function bootstrap() {
 	const server = http.createServer( app );
 	const port = process.env[ "PORT" ] || 8000;
 
-	app.use( morgan( "tiny" ) );
 	app.use( cookieParser() );
 	app.use( express.json() );
 	app.use( cors( { credentials: true, origin: "http://localhost:3000" } ) );
+	app.use( loggerMiddleware() );
 	app.use( deserializeUser( connection ) );
 
 	await initializeSocketServer( server, "literature" );
@@ -40,7 +38,7 @@ async function bootstrap() {
 	app.use( "/api/literature", requireUser( connection ), literatureExpressHandler( connection ) );
 
 	server.listen( port, () => {
-		console.log( `Server started on port ${ port }` );
+		logger.info( `Server started on port ${ port }` );
 	} );
 }
 

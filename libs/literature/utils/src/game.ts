@@ -9,7 +9,6 @@ import {
 } from "./move";
 import { ILiteraturePlayer, LiteraturePlayer } from "./player";
 import { ILiteratureTeam, LiteratureTeam } from "./team";
-import { set } from "zod";
 import { createId } from "@paralleldrive/cuid2";
 import { IUser } from "@s2h/utils";
 import dayjs from "dayjs";
@@ -80,7 +79,7 @@ export class LiteratureGame implements ILiteratureGame {
 		return new LiteratureGame( {
 			id: createId(),
 			createdBy: loggedInUser.id,
-			players: { [ loggedInUser.id ]: { ...loggedInUser, hand: CardHand.empty() } },
+			players: {},
 			teams: {},
 			hands: {},
 			code: LiteratureGame.generateGameCode(),
@@ -121,8 +120,10 @@ export class LiteratureGame implements ILiteratureGame {
 		} );
 	}
 
-	addPlayer( player: ILiteraturePlayer ) {
-		this.players[ player.id ] = LiteraturePlayer.from( player );
+	addPlayers( ...players: ILiteraturePlayer[] ) {
+		players.forEach( ( player ) => {
+			this.players[ player.id ] = LiteraturePlayer.from( player );
+		} );
 	}
 
 	serialize(): ILiteratureGame {
@@ -170,8 +171,9 @@ export class LiteratureGame implements ILiteratureGame {
 				break;
 
 			case "CALL_SET":
+				const callingSet = callData!.set;
 				const callingPlayer = this.players[ callData!.playerId ];
-				actionDescription = `${ callingPlayer.name } is calling ${ set }!`;
+				actionDescription = `${ callingPlayer.name } is calling ${ callingSet }!`;
 				resultData = this.executeCallMove( callData! );
 				break;
 
@@ -231,10 +233,10 @@ export class LiteratureGame implements ILiteratureGame {
 		const hasCard = this.hands[ from ].contains( card );
 
 		if ( hasCard ) {
-			this.hands[ by ].removeCard( card );
-			this.hands[ from ].addCard( card );
-			askingPlayer.hand = this.hands[ by ];
-			askedPlayer.hand = this.hands[ from ];
+			this.hands[ from ].removeCard( card );
+			this.hands[ by ].addCard( card );
+			this.players[ by ].hand = this.hands[ by ];
+			this.players[ from ].hand = this.hands[ from ];
 
 			return {
 				result: "CARD_TRANSFER",

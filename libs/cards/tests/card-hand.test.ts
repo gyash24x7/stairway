@@ -36,6 +36,11 @@ describe( "Card Hand", () => {
 		] );
 	} );
 
+	it( "should return empty hand when empty is called", () => {
+		const hand = CardHand.empty();
+		expect( hand.cards.length ).toBe( 0 );
+	} );
+
 	it( "should return correct cards when checking if card present in hand", () => {
 		const cards: IPlayingCard[] = JSON.parse( JSON.stringify( [
 			{ rank: "Ace", suit: "Diamonds" },

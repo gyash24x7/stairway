@@ -8,25 +8,23 @@ import {
 	joinGameInput,
 	startGameInput
 } from "@s2h/literature/dtos";
-import { ExpressHandler, ExpressMiddleware } from "@s2h/utils";
+import { ExpressHandler, ExpressMiddleware, logger } from "@s2h/utils";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { Connection } from "rethinkdb-ts";
 import { renderTrpcPanel } from "trpc-panel";
 import { askCard, callSet, chanceTransfer, createGame, createTeams, getGame, joinGame, startGame } from "./resolvers";
-import { subscribeGame } from "./resolvers/subscribe-game";
 import type { LitTrpcContext } from "./utils";
 import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
 
 export const literatureRouter = router( {
-	createGame: procedure.input( createGameInput ).mutation( createGame ),
-	joinGame: procedure.input( joinGameInput ).mutation( joinGame ),
-	createTeams: procedureWithGame.input( createTeamsInput ).mutation( createTeams ),
-	getGame: procedureWithGame.input( getGameInput ).query( getGame ),
-	startGame: procedureWithGame.input( startGameInput ).mutation( startGame ),
-	subscribeToGame: procedureWithGame.input( getGameInput ).subscription( subscribeGame() ),
-	askCard: procedureWithGameInProgress.input( askCardInput ).mutation( askCard ),
-	chanceTransfer: procedureWithGameInProgress.input( chanceTransferInput ).mutation( chanceTransfer ),
-	callSet: procedureWithGameInProgress.input( callSetInput ).mutation( callSet )
+	createGame: procedure.input( createGameInput ).mutation( createGame() ),
+	joinGame: procedure.input( joinGameInput ).mutation( joinGame() ),
+	createTeams: procedureWithGame.input( createTeamsInput ).mutation( createTeams() ),
+	getGame: procedureWithGame.input( getGameInput ).query( getGame() ),
+	startGame: procedureWithGame.input( startGameInput ).mutation( startGame() ),
+	askCard: procedureWithGameInProgress.input( askCardInput ).mutation( askCard() ),
+	chanceTransfer: procedureWithGameInProgress.input( chanceTransferInput ).mutation( chanceTransfer() ),
+	callSet: procedureWithGameInProgress.input( callSetInput ).mutation( callSet() )
 } );
 
 export type LiteratureRouter = typeof literatureRouter;
@@ -42,6 +40,7 @@ export function literatureExpressHandler( connection: Connection ): ExpressMiddl
 
 export function literatureTrpcPanelHandler( url: string ): ExpressHandler {
 	return ( _req, res ) => {
+		logger.debug( ">> literatureTrpcPanelHandler()" );
 		res.send( renderTrpcPanel( literatureRouter, { url, transformer: "superjson" } ) );
 	};
 }

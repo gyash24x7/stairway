@@ -117,7 +117,7 @@ describe( "Literature Game", () => {
 
 	it( "should be able to add player to game", () => {
 		const literatureGame = LiteratureGame.from( { ...gameData, players: {} } );
-		literatureGame.addPlayer( player1 );
+		literatureGame.addPlayers( player1 );
 		expect( Object.keys( literatureGame.players ).length ).toBe( 1 );
 		expect( literatureGame.players[ player1.id ] ).toEqual( player1 );
 	} );

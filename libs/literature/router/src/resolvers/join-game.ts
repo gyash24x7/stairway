@@ -1,9 +1,9 @@
 import type { JoinGameInput } from "@s2h/literature/dtos";
-import { ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
-import { db } from "@s2h/utils";
+import { db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolver, LitTrpcContext } from "../utils";
+import { CardHand } from "@s2h/cards";
 
 async function validate( ctx: LitTrpcContext, input: JoinGameInput ) {
 	const [ game ] = await db.literature().filter( { code: input.code } ).run( ctx.connection );
@@ -28,7 +28,7 @@ export function joinGame(): LitResolver<JoinGameInput, ILiteratureGame> {
 			return game;
 		}
 
-		game.addPlayer( LiteraturePlayer.from( { id, name, avatar } ) );
+		game.addPlayers( LiteraturePlayer.from( { id, name, avatar, hand: CardHand.empty() } ) );
 
 		game.status = Object.keys( game.players ).length === game.playerCount
 			? LiteratureGameStatus.PLAYERS_READY

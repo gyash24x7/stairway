@@ -20,5 +20,7 @@ export const Messages = {
 	CALL_CARDS_OF_MENTIONED_SET: "Cards and Set don't match!",
 	CALL_WITHIN_YOUR_TEAM: "You can only call set from within your team!",
 	INVALID_TRANSFER: "You can transfer chance only when you don't have cards!",
-	INVALID_CHANCE_TRANSFER: "You can transfer chance only when you have called a set correctly!"
+	INVALID_CHANCE_TRANSFER: "You can transfer chance only when you have called a set correctly!",
+	CHANCE_TRANSFER_TO_PLAYER_WITH_CARDS: "You can transfer chance to a player with cards only!",
+	CHANCE_TRANSFER_TO_SAME_TEAM_PLAYER: "You can transfer chance to a player of your team only!"
 };

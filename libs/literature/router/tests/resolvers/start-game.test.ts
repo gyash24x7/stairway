@@ -1,105 +1,104 @@
-import type { IPlayingCard } from "@s2h/cards";
-import { literatureRouter as router } from "@s2h/literature/router";
-import { LiteratureGameStatus } from "@s2h/literature/utils";
-import type { inferProcedureInput, TRPCError } from "@trpc/server";
-import { beforeEach, describe, expect, it } from "vitest";
+import { literatureRouter as router, LitTrpcContext } from "@s2h/literature/router";
+import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
+import type { TRPCError } from "@trpc/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Messages } from "../../src/constants";
-import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";
+import { IUser } from "@s2h/utils";
+import { createId } from "@paralleldrive/cuid2";
+import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
+import { RDatum, RSingleSelection, RTable, WriteResult } from "rethinkdb-ts";
+import { LoremIpsum } from "lorem-ipsum";
 
-describe( "Start Game Mutation", function () {
+vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
+	const originalImport = await importOriginal<any>();
+	const { mockDeep } = await import("vitest-mock-extended");
+	return { ...originalImport, db: mockDeep<Db>() };
+} );
 
-	let gameData: MockLitGameData;
-	let player1: LitPlayer;
-	let player2: LitPlayer;
-	let mockLoggedInUser: User;
-	let mockCtx: LitMockContext;
-	let input: inferProcedureInput<typeof router["startGame"]>;
-	let firstMove: LitMove;
+const lorem = new LoremIpsum();
 
-	beforeEach( function () {
-		gameData = new MockLitGameData( { status: LiteratureGameStatus.TEAMS_CREATED } );
-		player1 = gameData.generatePlayer();
-		player2 = gameData.generatePlayer();
-		mockLoggedInUser = createMockUser( player1.userId, player1.name );
-		mockCtx = createMockContext( mockLoggedInUser );
+describe( "Start Game Mutation", () => {
 
-		firstMove = gameData.generateMove( LitMoveType.TURN, { turnPlayer: player1 }, false );
+	const mockUser: IUser = {
+		id: createId(),
+		name: lorem.generateWords( 2 ),
+		avatar: "",
+		salt: lorem.generateWords( 1 ),
+		email: ""
+	};
 
-		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
-		mockCtx.prisma.litPlayer.update.mockResolvedValueOnce( player1 ).mockResolvedValueOnce( player2 );
-		mockCtx.prisma.litMove.create.mockResolvedValue( firstMove );
-		mockCtx.prisma.litGame.update.mockResolvedValue( { ...gameData, moves: [ firstMove ] } as any );
+	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
+	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
+	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
+	const mockedDb = db as DeepMockProxy<Db>;
 
-		input = { gameId: gameData.id };
+	beforeEach( () => {
+		mockCtx.loggedInUser = mockUser;
+		mockWriteResult.run.mockResolvedValue( mockDeep() );
+		mockRSingleSelection.update.mockReturnValue( mockWriteResult );
 	} );
 
-	it( "should throw error if game status not TEAMS_CREATED", function () {
-		gameData.status = LiteratureGameStatus.PLAYERS_READY;
-		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
+	it( "should throw error if game status not TEAMS_CREATED", () => {
+		const mockGame = LiteratureGame.create( 2, mockUser );
+		mockGame.addPlayers( LiteraturePlayer.create( mockUser ) );
+		mockGame.status = LiteratureGameStatus.PLAYERS_READY;
 
-		expect.assertions( 2 );
-		return router.createCaller( mockCtx ).startGame( input )
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		expect.assertions( 5 );
+		return router.createCaller( mockCtx ).startGame( { gameId: mockGame.id } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_GAME_STATUS );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should deal cards and return updated game", async function () {
-		const game = await router.createCaller( mockCtx ).startGame( input );
+	it( "should deal cards and return updated game", async () => {
+		const mockGame = LiteratureGame.create( 2, mockUser );
 
-		expect( game.id ).toBe( gameData.id );
-		expect( game.moves ).toEqual( [ firstMove ] );
+		const mockPlayer1 = LiteraturePlayer.create( mockUser );
+		mockGame.addPlayers( mockPlayer1 );
 
-		expect( mockCtx.prisma.litGame.findUnique ).toHaveBeenCalledWith(
+		const mockPlayer2 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
+		mockGame.addPlayers( mockPlayer2 );
+
+		mockGame.status = LiteratureGameStatus.TEAMS_CREATED;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const game = await router.createCaller( mockCtx ).startGame( { gameId: mockGame.id } );
+
+		expect( game.id ).toBe( mockGame.id );
+		expect( game.status ).toBe( LiteratureGameStatus.IN_PROGRESS );
+		expect( game.currentTurn ).toEqual( mockUser.id );
+
+		expect( mockedDb.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockLiteratureTable.get ).toHaveBeenCalledTimes( 2 );
+		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
+		expect( mockWriteResult.run ).toHaveBeenCalledWith( mockCtx.connection );
+		expect( mockRSingleSelection.update ).toHaveBeenCalledWith(
 			expect.objectContaining( {
-				where: expect.objectContaining( { id: gameData.id } )
+				status: LiteratureGameStatus.IN_PROGRESS,
+				id: mockGame.id
 			} )
 		);
+	} );
 
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledTimes( 2 );
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player1.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player2.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litMove.create ).toHaveBeenCalledWith( {
-			data: expect.objectContaining( {
-				type: LitMoveType.TURN,
-				turnId: player1.id,
-				description: firstMove.description
-			} )
-		} );
-
-		expect( mockCtx.prisma.litGame.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: gameData.id } ),
-				data: expect.objectContaining( { status: LiteratureGameStatus.IN_PROGRESS } )
-			} )
-		);
-
-		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				id: gameData.id,
-				status: LiteratureGameStatus.IN_PROGRESS
-			} )
-		);
+	afterEach( () => {
+		mockClear( mockedDb );
+		mockClear( mockLiteratureTable );
+		mockClear( mockRSingleSelection );
+		mockClear( mockWriteResult );
+		mockClear( mockCtx );
 	} );
 } );

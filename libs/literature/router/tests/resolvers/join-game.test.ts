@@ -1,180 +1,166 @@
-import { literatureRouter as router } from "@s2h/literature/router";
-import { EnhancedLitPlayer, LiteratureGameStatus } from "@s2h/literature/utils";
-import type { inferProcedureInput, TRPCError } from "@trpc/server";
-import { beforeEach, describe, expect, it } from "vitest";
+import { literatureRouter as router, LitTrpcContext } from "@s2h/literature/router";
+import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
+import type { TRPCError } from "@trpc/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Messages } from "../../src/constants";
-import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";
+import { IUser } from "@s2h/utils";
+import { createId } from "@paralleldrive/cuid2";
+import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
+import { RDatum, RSingleSelection, RTable, WriteResult } from "rethinkdb-ts";
+import { LoremIpsum } from "lorem-ipsum";
 
-describe( "Join Game Mutation", function () {
+vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
+	const originalImport = await importOriginal<any>();
+	const { mockDeep } = await import("vitest-mock-extended");
+	return { ...originalImport, db: mockDeep<Db>() };
+} );
 
-	let gameData: MockLitGameData;
-	let player1: LitPlayer;
-	let player2: LitPlayer;
-	let mockLoggedInUser: User;
-	let mockCtx: LitMockContext;
-	let input: inferProcedureInput<typeof router["joinGame"]>;
+const lorem = new LoremIpsum();
 
-	beforeEach( function () {
-		gameData = new MockLitGameData();
-		player1 = gameData.generatePlayer();
-		player2 = gameData.generatePlayer( { addToList: false } );
-		mockLoggedInUser = createMockUser( player2.userId, player2.name );
-		mockCtx = createMockContext( mockLoggedInUser );
-		input = { code: gameData.code };
-		mockCtx.prisma.litGame.findFirst.mockResolvedValue( gameData );
-		mockCtx.prisma.litPlayer.create.mockResolvedValue( player2 );
+describe( "Join Game Mutation", () => {
+
+	const mockUser: IUser = {
+		id: createId(),
+		name: lorem.generateWords( 2 ),
+		avatar: "",
+		salt: lorem.generateWords( 1 ),
+		email: ""
+	};
+
+	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
+	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
+	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
+
+	let mockGame: LiteratureGame;
+	let mockedDb: DeepMockProxy<Db>;
+
+	beforeEach( () => {
+		mockCtx.loggedInUser = mockUser;
+		mockGame = LiteratureGame.create( 2, mockUser );
+		mockedDb = db as DeepMockProxy<Db>;
 	} );
 
-	it( "should throw error when game not found", async function () {
-		mockLoggedInUser = createMockUser();
-		mockCtx = createMockContext( mockLoggedInUser );
-		mockCtx.prisma.litGame.findFirst.mockResolvedValue( null );
+	it( "should throw error when game not found", async () => {
+		mockLiteratureTable.run.mockResolvedValue( [] );
+		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
 
-		expect.assertions( 3 );
-		return router.createCaller( mockCtx ).joinGame( input )
+		expect.assertions( 5 );
+		return router.createCaller( mockCtx ).joinGame( { code: mockGame.code } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "NOT_FOUND" );
 				expect( e.message ).toBe( Messages.GAME_NOT_FOUND );
-				expect( mockCtx.prisma.litGame.findFirst ).toHaveBeenCalledWith(
-					expect.objectContaining( {
-						where: expect.objectContaining( { code: gameData.code } )
-					} )
-				);
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
+				expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should return the game if user already part of game", async function () {
-		mockLoggedInUser = createMockUser( player1.userId, player1.name );
-		mockCtx = createMockContext( mockLoggedInUser );
-		mockCtx.prisma.litGame.findFirst.mockResolvedValue( gameData );
+	it( "should return the game if user already part of game", async () => {
+		const mockPlayer = LiteraturePlayer.create( mockUser );
+		mockGame.addPlayers( mockPlayer );
 
-		const game = await router.createCaller( mockCtx ).joinGame( input );
+		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
+		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
 
-		expect( game.id ).toBe( gameData.id );
-		expect( game.players.length ).toBe( gameData.players.length );
-		expect( mockCtx.prisma.litGame.findFirst ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { code: gameData.code } )
-			} )
-		);
-		expect( mockCtx.prisma.litGame.update ).toHaveBeenCalledTimes( 0 );
+		const game = await router.createCaller( mockCtx ).joinGame( { code: mockGame.code } );
+
+		expect( game.id ).toBe( mockGame.id );
+		expect( Object.keys( game.players ).length ).toBe( Object.keys( mockGame.players ).length );
+
+		expect( mockedDb.literature ).toHaveBeenCalled();
+		expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
+		expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 	} );
 
-	it( "should throw error if player capacity is full", async function () {
-		gameData.generatePlayer();
-		mockCtx.prisma.litGame.findFirst.mockResolvedValue( gameData );
+	it( "should throw error if player capacity is full", async () => {
+		const mockPlayer1 = LiteraturePlayer.create( mockUser );
+		mockGame.addPlayers( mockPlayer1 );
 
-		expect.assertions( 4 );
-		return router.createCaller( mockCtx ).joinGame( input )
+		const mockPlayer2 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
+		mockGame.addPlayers( mockPlayer2 );
+
+		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
+		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		expect.assertions( 5 );
+		return router.createCaller( mockCtx ).joinGame( { code: mockGame.code } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.PLAYER_CAPACITY_FULL );
-				expect( mockCtx.prisma.litGame.findFirst ).toHaveBeenCalledWith(
-					expect.objectContaining( {
-						where: expect.objectContaining( { code: gameData.code } )
-					} )
-				);
-				expect( mockCtx.prisma.litGame.update ).toHaveBeenCalledTimes( 0 );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
+				expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it(
-		"should add user to the game, keep status to NOT_STARTED when player capacity not reached",
-		async function () {
-			gameData.playerCount = 4;
-			mockCtx.prisma.litGame.findFirst.mockResolvedValue( gameData );
-			const { name, avatar, id: userId } = mockLoggedInUser;
+	it( "should add user to the game, keep status to CREATED when player capacity not reached", async () => {
+		mockGame.players = {};
+		mockWriteResult.run.mockResolvedValue( mockDeep() );
+		mockRSingleSelection.update.mockReturnValue( mockWriteResult );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
+		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
 
-			mockCtx.prisma.litGame.update.mockResolvedValue( {
-				...gameData,
-				players: [ ...gameData.players, player2 ],
-				status: LiteratureGameStatus.NOT_STARTED
-			} as any );
+		const game = await router.createCaller( mockCtx ).joinGame( { code: mockGame.code } );
 
-			const game = await router.createCaller( mockCtx ).joinGame( input );
+		expect( game.id ).toBe( mockGame.id );
+		expect( Object.keys( game.players ).length ).toBe( Object.keys( mockGame.players ).length + 1 );
+		expect( game.status ).toBe( LiteratureGameStatus.CREATED );
 
-			expect( game.id ).toBe( gameData.id );
-			expect( game.players.length ).toBe( gameData.players.length + 1 );
-			expect( game.status ).toEqual( LiteratureGameStatus.NOT_STARTED );
-
-			expect( mockCtx.prisma.litGame.findFirst ).toHaveBeenCalledWith(
-				expect.objectContaining( {
-					where: expect.objectContaining( { code: gameData.code } )
-				} )
-			);
-
-			expect( mockCtx.prisma.litGame.update ).toHaveBeenCalledWith(
-				expect.objectContaining( {
-					where: { id: gameData.id },
-					data: expect.objectContaining( {
-						status: LiteratureGameStatus.NOT_STARTED
-					} )
-				} )
-			);
-
-			expect( mockCtx.prisma.litPlayer.create ).toHaveBeenCalledWith(
-				expect.objectContaining( {
-					data: expect.objectContaining( { name, avatar, userId, hand: { cards: [] } } )
-				} )
-			);
-
-			expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
-				expect.objectContaining( {
-					id: gameData.id,
-					playerData: expect.objectContaining( {
-						[ player2.id ]: expect.any( EnhancedLitPlayer )
-					} ),
-					status: LiteratureGameStatus.NOT_STARTED
-				} )
-			);
-
-		}
-	);
-
-	it( "should add user to the game, update status to PLAYERS_READY when player capacity reached", async function () {
-		const { name, avatar, id: userId } = mockLoggedInUser;
-
-		mockCtx.prisma.litGame.update.mockResolvedValue( {
-			...gameData,
-			players: [ ...gameData.players, player2 ],
-			status: LiteratureGameStatus.PLAYERS_READY
-		} as any );
-
-		const game = await router.createCaller( mockCtx ).joinGame( input );
-
-		expect( game.id ).toBe( gameData.id );
-		expect( game.players.length ).toBe( gameData.players.length + 1 );
-		expect( game.status ).toEqual( LiteratureGameStatus.PLAYERS_READY );
-
-		expect( mockCtx.prisma.litGame.findFirst ).toHaveBeenCalledWith(
+		expect( mockedDb.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
+		expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
+		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+		expect( mockWriteResult.run ).toHaveBeenCalledWith( mockCtx.connection );
+		expect( mockRSingleSelection.update ).toHaveBeenCalledWith(
 			expect.objectContaining( {
-				where: expect.objectContaining( { code: gameData.code } )
+				id: mockGame.id,
+				status: LiteratureGameStatus.CREATED
 			} )
 		);
+	} );
 
-		expect( mockCtx.prisma.litGame.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: { id: gameData.id },
-				data: expect.objectContaining( {
-					status: LiteratureGameStatus.PLAYERS_READY
-				} )
-			} )
-		);
+	it( "should add user to the game, update status to PLAYERS_READY when player capacity reached", async () => {
+		mockGame.players = {};
+		const mockPlayer = LiteraturePlayer.create( { ...mockUser, id: createId() } );
+		mockGame.addPlayers( mockPlayer );
 
-		expect( mockCtx.prisma.litPlayer.create ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				data: expect.objectContaining( { name, avatar, userId, hand: { cards: [] } } )
-			} )
-		);
+		mockWriteResult.run.mockResolvedValue( mockDeep() );
+		mockRSingleSelection.update.mockReturnValue( mockWriteResult );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
+		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
 
-		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
+		const game = await router.createCaller( mockCtx ).joinGame( { code: mockGame.code } );
+
+		expect( game.id ).toBe( mockGame.id );
+		expect( Object.keys( game.players ).length ).toBe( Object.keys( mockGame.players ).length + 1 );
+		expect( game.status ).toBe( LiteratureGameStatus.PLAYERS_READY );
+
+		expect( mockedDb.literature ).toHaveBeenCalled();
+		expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
+		expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
+		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+		expect( mockWriteResult.run ).toHaveBeenCalledWith( mockCtx.connection );
+		expect( mockRSingleSelection.update ).toHaveBeenCalledWith(
 			expect.objectContaining( {
-				id: gameData.id,
-				playerData: expect.objectContaining( {
-					[ player2.id ]: expect.any( EnhancedLitPlayer )
-				} ),
+				id: mockGame.id,
 				status: LiteratureGameStatus.PLAYERS_READY
 			} )
 		);
+	} );
+
+	afterEach( () => {
+		mockClear( mockedDb );
+		mockClear( mockWriteResult );
+		mockClear( mockRSingleSelection );
+		mockClear( mockLiteratureTable );
+		mockClear( mockCtx );
 	} );
 } );

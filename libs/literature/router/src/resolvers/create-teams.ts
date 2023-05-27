@@ -1,7 +1,6 @@
 import type { CreateTeamsInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
-import { LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
-import { db } from "@s2h/utils";
+import { db, LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LitResolver, LitTrpcContext } from "../utils";

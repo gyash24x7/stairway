@@ -1,142 +1,252 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
-import { CardHand, CardRank, CardSet, cardSetMap, CardSuit, IPlayingCard } from "@s2h/cards";
-import { literatureRouter as router } from "@s2h/literature/router";
-import { EnhancedLitGame, LiteratureGameStatus } from "@s2h/literature/utils";
-import type { inferProcedureInput, TRPCError } from "@trpc/server";
-import { beforeEach, describe, expect, it } from "vitest";
+import { createId, createId as cuid } from "@paralleldrive/cuid2";
+import { CardRank, CardSet, cardSetMap, CardSuit } from "@s2h/cards";
+import { literatureRouter as router, LitTrpcContext } from "@s2h/literature/router";
+import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
+import type { TRPCError } from "@trpc/server";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Messages } from "../../src/constants";
-import { createMockContext, createMockUser, LitMockContext, MockLitGameData } from "../utils";
+import { IUser, logger } from "@s2h/utils";
+import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
+import { RDatum, RSingleSelection, RTable, WriteResult } from "rethinkdb-ts";
+import { LoremIpsum } from "lorem-ipsum";
+import { CallSetInput } from "@s2h/literature/dtos";
 
-describe( "Call Set Mutation", function () {
+vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
+	const originalImport = await importOriginal<any>();
+	const { mockDeep } = await import("vitest-mock-extended");
+	return { ...originalImport, db: mockDeep<Db>() };
+} );
 
-	let input: inferProcedureInput<LiteratureRouter["callSet"]>;
-	let gameData: MockLitGameData;
-	let player1: LitPlayer;
-	let player2: LitPlayer;
-	let player3: LitPlayer;
-	let player4: LitPlayer;
-	let player5: LitPlayer;
-	let player6: LitPlayer;
-	let team1: LitTeam;
-	let team2: LitTeam;
-	let mockLoggedInUser: User;
-	let mockCtx: LitMockContext;
+const lorem = new LoremIpsum();
 
-	beforeEach( function () {
-		gameData = new MockLitGameData( { playerCount: 6 } );
-		gameData.generatePlayer();
-		gameData.generatePlayer();
-		gameData.generatePlayer();
-		gameData.generatePlayer();
-		gameData.generatePlayer();
-		gameData.generatePlayer();
-		[ team1, team2 ] = gameData.generateTeams();
-		[ player1, player2, player3, player4, player5, player6 ] = gameData.dealCards();
-		mockLoggedInUser = createMockUser( player1.userId, player1.name );
-		mockCtx = createMockContext( mockLoggedInUser );
-		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
+describe( "Call Set Mutation", () => {
+
+	const mockUser: IUser = {
+		id: createId(),
+		name: lorem.generateWords( 2 ),
+		avatar: "",
+		salt: lorem.generateWords( 1 ),
+		email: ""
+	};
+
+	const team1 = lorem.generateWords( 2 );
+	const team2 = lorem.generateWords( 2 );
+
+	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
+	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
+	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
+	const mockedDb = db as DeepMockProxy<Db>;
+
+	const mockPlayer1 = LiteraturePlayer.create( mockUser );
+	mockPlayer1.team = team1;
+	const mockPlayer2 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
+	mockPlayer2.team = team1;
+	const mockPlayer3 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
+	mockPlayer3.team = team2;
+	const mockPlayer4 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
+	mockPlayer4.team = team2;
+
+	beforeEach( () => {
+		mockCtx.loggedInUser = mockUser;
+		mockWriteResult.run.mockResolvedValue( mockDeep() );
+		mockRSingleSelection.update.mockReturnValue( mockWriteResult );
 	} );
 
-	it( "should throw error if any called player not part of game", function () {
-		input = {
-			gameId: gameData.id,
+	it( "should throw error if any called player not part of game", () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
 				[ cuid() ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
-				[ player1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.SPADES } ]
+				[ mockPlayer1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.SPADES } ]
 			}
 		};
 
-		expect.assertions( 2 );
+		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).callSet( input )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.PLAYER_NOT_FOUND );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should throw error if user's cards not called out", function () {
-		input = {
-			gameId: gameData.id,
+	it( "should throw error if user's cards not called out", () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player4.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ]
+				[ mockPlayer2.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ]
 			}
 		};
 
-		expect.assertions( 2 );
+		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).callSet( input )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_CALL );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should throw error if duplicate cards are called", function () {
-		input = {
-			gameId: gameData.id,
+	it( "should throw error if duplicate cards are called", () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player4.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
-				[ player1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ]
+				[ mockPlayer1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
+				[ mockPlayer2.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ]
 			}
 		};
 
-		expect.assertions( 2 );
+		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).callSet( input )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.DUPLICATES_IN_CALL );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should throw error if more than one set called", function () {
-		input = {
-			gameId: gameData.id,
+	it( "should throw error if more than one set called", () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
-				[ player4.id ]: [ { rank: CardRank.TWO, suit: CardSuit.SPADES } ]
+				[ mockPlayer1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
+				[ mockPlayer2.id ]: [ { rank: CardRank.TWO, suit: CardSuit.SPADES } ]
 			}
 		};
 
-		expect.assertions( 2 );
+		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).callSet( input )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_CARDS_OF_SAME_SET );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should throw error if user doesn't have cards of calling set", function () {
-		gameData.setHand(
-			player1.id,
-			CardHand.from( { cards: [ { rank: CardRank.TWO, suit: CardSuit.SPADES } ] } )
-		);
-		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
+	it( "should throw error if user doesn't have cards of calling set", () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
+		mockGame.removeCardsOfSet( CardSet.SMALL_HEARTS );
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
 
-		input = {
-			gameId: gameData.id,
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
-				[ player2.id ]: [ { rank: CardRank.ACE, suit: CardSuit.HEARTS } ],
-				[ player3.id ]: [ { rank: CardRank.THREE, suit: CardSuit.HEARTS } ],
-				[ player4.id ]: [ { rank: CardRank.FOUR, suit: CardSuit.HEARTS } ],
-				[ player5.id ]: [ { rank: CardRank.FIVE, suit: CardSuit.HEARTS } ],
-				[ player6.id ]: [ { rank: CardRank.SIX, suit: CardSuit.HEARTS } ]
+				[ mockPlayer1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
+				[ mockPlayer2.id ]: [ { rank: CardRank.ACE, suit: CardSuit.HEARTS } ],
+				[ mockPlayer3.id ]: [ { rank: CardRank.THREE, suit: CardSuit.HEARTS } ],
+				[ mockPlayer4.id ]: [ { rank: CardRank.FOUR, suit: CardSuit.HEARTS } ]
 			}
 		};
 
-		expect.assertions( 2 );
+		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).callSet( input )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CANNOT_CALL_SET_THAT_YOU_DONT_HAVE );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should throw error if cards called outside the team", function () {
-		input = {
-			gameId: gameData.id,
+	it( "should throw error if cards called outside the team", () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
+		mockGame.removeCardsOfSet( CardSet.SMALL_HEARTS );
+		mockGame.addCardsToPlayer( mockPlayer1.id, ...cardSetMap[ CardSet.SMALL_HEARTS ] );
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
-				[ player4.id ]: [
+				[ mockPlayer1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
+				[ mockPlayer4.id ]: [
 					{ rank: CardRank.THREE, suit: CardSuit.HEARTS },
 					{ rank: CardRank.FIVE, suit: CardSuit.HEARTS },
 					{ rank: CardRank.FOUR, suit: CardSuit.HEARTS },
@@ -146,233 +256,140 @@ describe( "Call Set Mutation", function () {
 			}
 		};
 
-		expect.assertions( 2 );
+		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).callSet( input )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_WITHIN_YOUR_TEAM );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should throw error if 6 cards not called", function () {
-		input = {
-			gameId: gameData.id,
+	it( "should throw error if 6 cards not called", () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
+		mockGame.removeCardsOfSet( CardSet.SMALL_HEARTS );
+		mockGame.addCardsToPlayer( mockPlayer1.id, ...cardSetMap[ CardSet.SMALL_HEARTS ] );
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ]
+				[ mockPlayer1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ]
 			}
 		};
 
-		expect.assertions( 2 );
+		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).callSet( input )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_ALL_CARDS );
+				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
+				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
 	} );
 
-	it( "should increase score for team if called correct and return updated game", async function () {
-		[ player1, player2, player3, player4, player5, player6 ] = gameData.dealCardsForSuccessfulCall();
-		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
+	it( "should increase score for team if called correct", async () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
 
 		const smallHearts = cardSetMap[ CardSet.SMALL_HEARTS ];
+		mockGame.removeCardsOfSet( CardSet.SMALL_HEARTS );
+		mockGame.addCardsToPlayer( mockPlayer1.id, ...smallHearts.slice( 0, 3 ) );
+		mockGame.addCardsToPlayer( mockPlayer2.id, ...smallHearts.slice( 3 ) );
 
-		input = {
-			gameId: gameData.id,
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player1.id ]: [ smallHearts[ 0 ], smallHearts[ 1 ] ],
-				[ player2.id ]: [ smallHearts[ 2 ], smallHearts[ 3 ] ],
-				[ player3.id ]: [ smallHearts[ 4 ], smallHearts[ 5 ] ]
+				[ mockPlayer1.id ]: smallHearts.slice( 0, 3 ),
+				[ mockPlayer2.id ]: smallHearts.slice( 3 )
 			}
 		};
 
-		mockCtx.prisma.litTeam.update.mockResolvedValue( { ...team1, score: 1 } );
+		const response = await router.createCaller( mockCtx ).callSet( input );
+		const game = LiteratureGame.from( response );
 
-		const callSuccessMove = gameData.generateMove(
-			LitMoveType.CALL_SUCCESS,
-			{ turnPlayer: player1, cardSet: CardSet.SMALL_HEARTS, callingPlayer: player1 }
-		);
-
-		mockCtx.prisma.litMove.create.mockResolvedValue( callSuccessMove );
-
-		mockCtx.prisma.litPlayer.update
-			.mockResolvedValueOnce( { ...player1, hand: gameData.removeCardsOfSetFromHand( player1.id ) } )
-			.mockResolvedValueOnce( { ...player2, hand: gameData.removeCardsOfSetFromHand( player2.id ) } )
-			.mockResolvedValueOnce( { ...player3, hand: gameData.removeCardsOfSetFromHand( player3.id ) } );
-
-		const game = await router.createCaller( mockCtx ).callSet( input );
-		const enhancedGame = new EnhancedLitGame( game );
-
-		expect( enhancedGame.id ).toBe( gameData.id );
-		expect( enhancedGame.playerData[ player1.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
-		expect( enhancedGame.playerData[ player2.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
-		expect( enhancedGame.playerData[ player3.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
-		expect( enhancedGame.teamData[ player1.teamId! ].score ).toBe( 1 );
-
-		expect( mockCtx.prisma.litGame.findUnique ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: gameData.id } )
-			} )
-		);
-
-		expect( mockCtx.prisma.litTeam.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player1.teamId } ),
-				data: expect.objectContaining( {
-					score: expect.objectContaining( { increment: 1 } )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litMove.create ).toHaveBeenCalledWith( {
-			data: expect.objectContaining( {
-				type: LitMoveType.CALL_SUCCESS,
-				turnId: player1.id,
-				description: callSuccessMove.description
-			} )
-		} );
-
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledTimes( 3 );
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player1.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player2.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player3.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				id: gameData.id,
-				status: LiteratureGameStatus.IN_PROGRESS
-			} )
-		);
+		expect( game.id ).toBe( mockGame.id );
+		expect( game.players[ mockPlayer1.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		expect( game.players[ mockPlayer2.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		expect( game.players[ mockPlayer3.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		expect( game.players[ mockPlayer4.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		logger.debug( "Game: %o", game.serialize() );
+		expect( game.teams[ mockPlayer1.team! ].score ).toBe( 1 );
 	} );
 
-	it( "should increase score for other team if called wrong and return updated game", async function () {
-		[ player1, player2, player3, player4, player5, player6 ] = gameData.dealCardsForSuccessfulCall();
-		mockCtx.prisma.litGame.findUnique.mockResolvedValue( gameData );
+	it( "should increase score for other team if called wrong", async () => {
+		const mockGame = LiteratureGame.create( 4, mockUser );
+		mockGame.addPlayers( mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 );
+		mockGame.createTeams( [
+			{ name: team1, members: [ mockPlayer1.id, mockPlayer2.id ] },
+			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
+		] );
+		mockGame.dealCards();
 
 		const smallHearts = cardSetMap[ CardSet.SMALL_HEARTS ];
+		mockGame.removeCardsOfSet( CardSet.SMALL_HEARTS );
+		mockGame.addCardsToPlayer( mockPlayer1.id, ...smallHearts.slice( 0, 3 ) );
+		mockGame.addCardsToPlayer( mockPlayer2.id, ...smallHearts.slice( 3 ) );
 
-		input = {
-			gameId: gameData.id,
+		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
+		mockCtx.currentGame = mockGame;
+
+		mockRSingleSelection.run.mockResolvedValue( mockGame );
+		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
+		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+
+		const input: CallSetInput = {
+			gameId: mockGame.id,
 			data: {
-				[ player1.id ]: [ smallHearts[ 2 ], smallHearts[ 1 ], smallHearts[ 4 ] ],
-				[ player2.id ]: [ smallHearts[ 0 ], smallHearts[ 3 ], smallHearts[ 5 ] ]
+				[ mockPlayer1.id ]: [ smallHearts[ 2 ], smallHearts[ 1 ], smallHearts[ 4 ] ],
+				[ mockPlayer2.id ]: [ smallHearts[ 0 ], smallHearts[ 3 ], smallHearts[ 5 ] ]
 			}
 		};
 
-		mockCtx.prisma.litTeam.update.mockResolvedValue( { ...team2, score: 1 } );
+		const response = await router.createCaller( mockCtx ).callSet( input );
+		const game = LiteratureGame.from( response );
 
-		const callFailMove = gameData.generateMove(
-			LitMoveType.CALL_FAIL,
-			{ turnPlayer: player4, cardSet: CardSet.SMALL_HEARTS, callingPlayer: player1 }
-		);
+		expect( game.id ).toBe( mockGame.id );
+		expect( game.players[ mockPlayer1.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		expect( game.players[ mockPlayer2.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		expect( game.players[ mockPlayer3.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		expect( game.players[ mockPlayer4.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
+		expect( game.teams[ mockPlayer3.team! ].score ).toBe( 1 );
+	} );
 
-		mockCtx.prisma.litMove.create.mockResolvedValue( callFailMove );
-
-		mockCtx.prisma.litPlayer.update
-			.mockResolvedValueOnce( { ...player1, hand: gameData.removeCardsOfSetFromHand( player1.id ) } )
-			.mockResolvedValueOnce( { ...player2, hand: gameData.removeCardsOfSetFromHand( player2.id ) } )
-			.mockResolvedValueOnce( { ...player3, hand: gameData.removeCardsOfSetFromHand( player3.id ) } );
-
-		const game = await router.createCaller( mockCtx ).callSet( input );
-		const enhancedGame = new EnhancedLitGame( game );
-
-		expect( enhancedGame.id ).toBe( gameData.id );
-		expect( enhancedGame.playerData[ player1.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
-		expect( enhancedGame.playerData[ player2.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
-		expect( enhancedGame.playerData[ player3.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
-		expect( enhancedGame.teamData[ player4.teamId! ].score ).toBe( 1 );
-
-		expect( mockCtx.prisma.litGame.findUnique ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: gameData.id } )
-			} )
-		);
-
-		expect( mockCtx.prisma.litTeam.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player4.teamId } ),
-				data: expect.objectContaining( {
-					score: expect.objectContaining( { increment: 1 } )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litMove.create ).toHaveBeenCalledWith( {
-			data: expect.objectContaining( {
-				type: LitMoveType.CALL_FAIL,
-				turnId: player4.id,
-				description: callFailMove.description
-			} )
-		} );
-
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledTimes( 3 );
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player1.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player2.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.prisma.litPlayer.update ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				where: expect.objectContaining( { id: player3.id } ),
-				data: expect.objectContaining( {
-					hand: expect.objectContaining( {
-						cards: expect.any( Array<IPlayingCard> )
-					} )
-				} )
-			} )
-		);
-
-		expect( mockCtx.litGamePublisher.publish ).toHaveBeenCalledWith(
-			expect.objectContaining( {
-				id: gameData.id,
-				status: LiteratureGameStatus.IN_PROGRESS
-			} )
-		);
+	afterEach( () => {
+		mockClear( mockedDb );
+		mockClear( mockLiteratureTable );
+		mockClear( mockRSingleSelection );
+		mockClear( mockWriteResult );
+		mockClear( mockCtx );
 	} );
 
 } );
