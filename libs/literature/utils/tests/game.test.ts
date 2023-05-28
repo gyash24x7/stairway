@@ -1,4 +1,3 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
 import {
 	CallActionData,
 	ILiteratureGame,
@@ -12,15 +11,16 @@ import { LiteratureGame } from "../src/game";
 import { IUser } from "@s2h/utils";
 import dayjs from "dayjs";
 import { CardSet, cardSetMap } from "@s2h/cards";
+import { createId } from "@paralleldrive/cuid2";
 
 
 describe( "Literature Game", () => {
-	const gameId = cuid();
+	const gameId = createId();
 	const team1: ILiteratureTeam = { name: "Stairway", score: 0, gameId, members: [] };
 	const team2: ILiteratureTeam = { name: "Highway", score: 0, gameId, members: [] };
 
 	const player1: ILiteraturePlayer = {
-		id: cuid(),
+		id: createId(),
 		name: "Yash Gupta",
 		hand: { cards: [] },
 		avatar: "",
@@ -29,7 +29,7 @@ describe( "Literature Game", () => {
 	team1.members.push( player1.id );
 
 	const player2: ILiteraturePlayer = {
-		id: cuid(),
+		id: createId(),
 		name: "Gupta Yash",
 		hand: { cards: [] },
 		avatar: "",
@@ -38,7 +38,7 @@ describe( "Literature Game", () => {
 	team2.members.push( player2.id );
 
 	const player3: ILiteraturePlayer = {
-		id: cuid(),
+		id: createId(),
 		name: "Yash Gupta 2",
 		hand: { cards: [] },
 		avatar: "",
@@ -47,7 +47,7 @@ describe( "Literature Game", () => {
 	team1.members.push( player3.id );
 
 	const player4: ILiteraturePlayer = {
-		id: cuid(),
+		id: createId(),
 		name: "Gupta Yash 2",
 		hand: { cards: [] },
 		avatar: "",

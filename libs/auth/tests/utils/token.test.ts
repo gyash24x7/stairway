@@ -1,4 +1,4 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
+import { createId } from "@paralleldrive/cuid2";
 import { jwtVerify } from "jose";
 import * as process from "process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -72,7 +72,7 @@ vi.mock( "@s2h/utils", async ( importOriginal ) => {
 describe( "ReIssue Access Token", async () => {
 
 	const mockUser: IUser = {
-		id: cuid(),
+		id: createId(),
 		name: "name",
 		email: "email",
 		salt: "saltAsSubject",

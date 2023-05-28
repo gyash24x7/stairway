@@ -1,11 +1,16 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
+import { createId } from "@paralleldrive/cuid2";
 import { ILiteratureTeam, LiteratureTeam } from "@s2h/literature/utils";
 import { describe, expect, it } from "vitest";
 
 describe( "Literature Team", () => {
 
-	const gameId = cuid();
-	const literatureTeam: ILiteratureTeam = { name: "Team Name", score: 0, gameId, members: [ cuid(), cuid() ] };
+	const gameId = createId();
+	const literatureTeam: ILiteratureTeam = {
+		name: "Team Name",
+		score: 0,
+		gameId,
+		members: [ createId(), createId() ]
+	};
 
 	it( "should serialize and deserialize correctly", () => {
 		const team = LiteratureTeam.from( literatureTeam );

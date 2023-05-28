@@ -1,21 +1,21 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
 import { CardRank, CardSuit, PlayingCard } from "@s2h/cards";
 import { ILiteratureMove, LiteratureMove } from "@s2h/literature/utils";
 import { describe, expect, it } from "vitest";
 import dayjs from "dayjs";
+import { createId } from "@paralleldrive/cuid2";
 
 describe( "Literature Move", () => {
 
 	const literatureMove: ILiteratureMove = {
-		id: cuid(),
+		id: createId(),
 		description: "Move Description",
 		timestamp: dayjs().toISOString(),
 		actionData: {
 			action: "ASK",
 			description: "Action Description",
 			askData: {
-				by: cuid(),
-				from: cuid(),
+				by: createId(),
+				from: createId(),
 				card: { rank: CardRank.FOUR, suit: CardSuit.SPADES }
 			}
 		},

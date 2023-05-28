@@ -1,13 +1,13 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
 import { ILiteraturePlayer, LiteraturePlayer } from "@s2h/literature/utils";
 import { describe, expect, it } from "vitest";
 import { IUser } from "@s2h/utils";
+import { createId } from "@paralleldrive/cuid2";
 
 describe( "Literature Player", () => {
 
 	const literaturePlayer: ILiteraturePlayer = {
-		id: cuid(),
+		id: createId(),
 		name: "Player Name",
 		hand: {
 			cards: [

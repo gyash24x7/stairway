@@ -1,4 +1,3 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
 import { Db, db, ILiteratureGame, LiteratureGame } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +9,7 @@ import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
 import { RSingleSelection, RTable } from "rethinkdb-ts";
 import { LoremIpsum } from "lorem-ipsum";
 import console from "node:console";
+import { createId } from "@paralleldrive/cuid2";
 
 vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
 	const originalImport = await importOriginal<any>();
@@ -22,7 +22,7 @@ const lorem = new LoremIpsum();
 describe( "Require Game Middleware", () => {
 
 	const mockUser: IUser = {
-		id: cuid(),
+		id: createId(),
 		name: lorem.generateWords( 2 ),
 		avatar: "",
 		salt: lorem.generateWords( 1 ),
@@ -56,7 +56,7 @@ describe( "Require Game Middleware", () => {
 	} );
 
 	it( "should throw error when game not present with that gameId", () => {
-		const rawInput = { gameId: cuid() };
+		const rawInput = { gameId: createId() };
 		mockRSingleSelection.run.calledWith( mockCtx.connection ).mockResolvedValue( null );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
 		mockedDb.literature.mockReturnValue( mockLiteratureTable );

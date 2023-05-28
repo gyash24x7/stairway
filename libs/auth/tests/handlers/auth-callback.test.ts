@@ -1,4 +1,4 @@
-import { createId as cuid } from "@paralleldrive/cuid2";
+import { createId } from "@paralleldrive/cuid2";
 import { accessTokenCookieOptions, handleAuthCallback, refreshTokenCookieOptions } from "@s2h/auth";
 import type { GoogleUserResult, IUser } from "@s2h/utils";
 import { db } from "@s2h/utils";
@@ -30,7 +30,7 @@ describe( "Auth Callback Handler", () => {
 	};
 
 	const user: IUser = {
-		id: cuid(),
+		id: createId(),
 		name: "name",
 		email: "email",
 		salt: "salt",

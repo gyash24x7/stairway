@@ -1,4 +1,4 @@
-import { createId, createId as cuid } from "@paralleldrive/cuid2";
+import { createId } from "@paralleldrive/cuid2";
 import { CardRank, CardSet, cardSetMap, CardSuit } from "@s2h/cards";
 import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
 import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
@@ -71,7 +71,7 @@ describe( "Call Set Mutation", () => {
 		const input: CallSetInput = {
 			gameId: mockGame.id,
 			data: {
-				[ cuid() ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
+				[ createId() ]: [ { rank: CardRank.TWO, suit: CardSuit.HEARTS } ],
 				[ mockPlayer1.id ]: [ { rank: CardRank.TWO, suit: CardSuit.SPADES } ]
 			}
 		};
