@@ -4,9 +4,9 @@ import type { ILiteratureGame } from "@s2h/literature/utils";
 import { db, LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 
-function validate( ctx: LitTrpcContext, input: AskCardInput ) {
+function validate( ctx: LiteratureTrpcContext, input: AskCardInput ) {
 	const askingPlayer = ctx.currentGame!.players[ ctx.loggedInUser!.id ];
 	const askedPlayer = ctx.currentGame!.players[ input.askedFrom ];
 
@@ -26,7 +26,7 @@ function validate( ctx: LitTrpcContext, input: AskCardInput ) {
 	return [ LiteratureGame.from( ctx.currentGame! ) ] as const;
 }
 
-export function askCard(): LitResolver<AskCardInput, ILiteratureGame> {
+export function askCard(): LiteratureResolver<AskCardInput, ILiteratureGame> {
 	return async ( { input, ctx } ) => {
 		const [ game ] = validate( ctx, input );
 		game.executeMoveAction( {

@@ -3,9 +3,9 @@ import type { ILiteratureGame } from "@s2h/literature/utils";
 import { db, LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 
-function validate( ctx: LitTrpcContext ) {
+function validate( ctx: LiteratureTrpcContext ) {
 	if ( ctx.currentGame!.status !== LiteratureGameStatus.PLAYERS_READY ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_STATUS } );
 	}
@@ -17,7 +17,7 @@ function validate( ctx: LitTrpcContext ) {
 	return [ LiteratureGame.from( ctx.currentGame! ) ] as const;
 }
 
-export function createTeams(): LitResolver<CreateTeamsInput, ILiteratureGame> {
+export function createTeams(): LiteratureResolver<CreateTeamsInput, ILiteratureGame> {
 	return async ( { input, ctx } ) => {
 		const [ game ] = validate( ctx );
 		game.createTeams( input.teams );

@@ -3,10 +3,10 @@ import type { ILiteratureGame } from "@s2h/literature/utils";
 import { db, LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 import { logger } from "@s2h/utils";
 
-function validate( ctx: LitTrpcContext, input: ChanceTransferInput ) {
+function validate( ctx: LiteratureTrpcContext, input: ChanceTransferInput ) {
 	const game = LiteratureGame.from( ctx.currentGame! );
 	const lastMove = game.moves[ 0 ];
 
@@ -36,7 +36,7 @@ function validate( ctx: LitTrpcContext, input: ChanceTransferInput ) {
 	return [ game ] as const;
 }
 
-export function chanceTransfer(): LitResolver<ChanceTransferInput, ILiteratureGame> {
+export function chanceTransfer(): LiteratureResolver<ChanceTransferInput, ILiteratureGame> {
 	return async ( { input, ctx } ) => {
 		logger.debug( ">> chanceTransfer()" );
 		logger.debug( "Input: %o", input );

@@ -4,10 +4,10 @@ import type { ILiteratureGame } from "@s2h/literature/utils";
 import { db, LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 import { logger } from "@s2h/utils";
 
-function validate( ctx: LitTrpcContext, input: CallSetInput ) {
+function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
 	const calledCards = Object.values( input.data ).flat().map( PlayingCard.from );
 	const calledCardIds = new Set( calledCards.map( card => card.id ) );
 	const cardSets = new Set( calledCards.map( card => card.set ) );
@@ -76,7 +76,7 @@ function validate( ctx: LitTrpcContext, input: CallSetInput ) {
 	return [ game, callingSet ] as const;
 }
 
-export function callSet(): LitResolver<CallSetInput, ILiteratureGame> {
+export function callSet(): LiteratureResolver<CallSetInput, ILiteratureGame> {
 	return async ( { ctx, input } ) => {
 		const [ game, callingSet ] = validate( ctx, input );
 		game.executeMoveAction( {

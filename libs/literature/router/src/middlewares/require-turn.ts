@@ -1,9 +1,9 @@
-import { LitTrpcMiddleware } from "@s2h/literature/router";
+import { LiteratureTrpcMiddleware } from "@s2h/literature/router";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import { logger } from "@s2h/utils";
 
-export function requireTurn(): LitTrpcMiddleware {
+export function requireTurn(): LiteratureTrpcMiddleware {
 	return async ( { ctx, next } ) => {
 		logger.debug( ">> requireTurn()" );
 

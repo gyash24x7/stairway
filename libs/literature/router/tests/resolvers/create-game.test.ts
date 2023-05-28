@@ -1,4 +1,4 @@
-import { literatureRouter as router, LitTrpcContext } from "@s2h/literature/router";
+import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IUser } from "@s2h/utils";
 import { createId } from "@paralleldrive/cuid2";
@@ -25,7 +25,7 @@ describe( "Create Game Mutation", () => {
 		email: ""
 	};
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockedDb = db as DeepMockProxy<Db>;
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
 	const writeResultMock = mockDeep<RDatum<WriteResult<ILiteratureGame>>>();

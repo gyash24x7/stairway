@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { IUser } from "@s2h/utils";
 import { createId } from "@paralleldrive/cuid2";
 import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
-import { literatureRouter as router, LitTrpcContext } from "@s2h/literature/router";
+import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
 import { RDatum, RSingleSelection, RTable, WriteResult } from "rethinkdb-ts";
 import {
 	Db,
@@ -50,7 +50,7 @@ describe( "Chance Transfer Mutation", () => {
 	const mockPlayer4 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
 	mockPlayer4.team = team2;
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
 	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();

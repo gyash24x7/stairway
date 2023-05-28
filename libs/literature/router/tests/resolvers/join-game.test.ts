@@ -1,4 +1,4 @@
-import { literatureRouter as router, LitTrpcContext } from "@s2h/literature/router";
+import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
 import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -27,7 +27,7 @@ describe( "Join Game Mutation", () => {
 		email: ""
 	};
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
 	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
 	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();

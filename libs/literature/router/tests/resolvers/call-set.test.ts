@@ -1,6 +1,6 @@
 import { createId, createId as cuid } from "@paralleldrive/cuid2";
 import { CardRank, CardSet, cardSetMap, CardSuit } from "@s2h/cards";
-import { literatureRouter as router, LitTrpcContext } from "@s2h/literature/router";
+import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
 import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -32,7 +32,7 @@ describe( "Call Set Mutation", () => {
 	const team1 = lorem.generateWords( 2 );
 	const team2 = lorem.generateWords( 2 );
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
 	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();

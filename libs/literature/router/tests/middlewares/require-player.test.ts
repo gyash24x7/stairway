@@ -6,7 +6,7 @@ import { requirePlayer } from "../../src/middlewares";
 import type { IUser } from "@s2h/utils";
 import { createId } from "@paralleldrive/cuid2";
 import { DeepMockProxy, mockDeep } from "vitest-mock-extended";
-import { LitTrpcContext } from "@s2h/literature/router";
+import { LiteratureTrpcContext } from "@s2h/literature/router";
 import { RSingleSelection, RTable } from "rethinkdb-ts";
 import { LoremIpsum } from "lorem-ipsum";
 
@@ -28,7 +28,7 @@ describe( "Require Player Middleware", () => {
 		email: ""
 	};
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockNextFn = vi.fn();
 	const mockGame = LiteratureGame.create( 2, mockUser );
 	mockGame.addPlayers( LiteraturePlayer.create( mockUser ) );

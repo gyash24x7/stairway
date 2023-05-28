@@ -3,7 +3,7 @@ import { Db, db, ILiteratureGame, LiteratureGame } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IUser } from "@s2h/utils";
-import { LitTrpcContext } from "@s2h/literature/router";
+import { LiteratureTrpcContext } from "@s2h/literature/router";
 import { requireGame } from "../../src/middlewares";
 import { Messages } from "../../src/constants";
 import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
@@ -29,7 +29,7 @@ describe( "Require Game Middleware", () => {
 		email: ""
 	};
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockNextFn = vi.fn();
 	const mockGame = LiteratureGame.create( 2, mockUser );
 

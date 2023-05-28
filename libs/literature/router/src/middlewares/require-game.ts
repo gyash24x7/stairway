@@ -1,11 +1,11 @@
 import { getGameInput } from "@s2h/literature/dtos";
-import { LitTrpcMiddleware } from "@s2h/literature/router";
+import { LiteratureTrpcMiddleware } from "@s2h/literature/router";
 import { db } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import { logger } from "@s2h/utils";
 
-export function requireGame(): LitTrpcMiddleware {
+export function requireGame(): LiteratureTrpcMiddleware {
 	return async ( { ctx, rawInput, next } ) => {
 		logger.debug( ">> requireGame()" );
 		const result = getGameInput.safeParse( rawInput );

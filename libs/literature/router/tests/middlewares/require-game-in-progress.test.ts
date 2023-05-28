@@ -8,7 +8,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
 import { RSingleSelection, RTable } from "rethinkdb-ts";
 import { LoremIpsum } from "lorem-ipsum";
-import { LitTrpcContext } from "@s2h/literature/router";
+import { LiteratureTrpcContext } from "@s2h/literature/router";
 
 vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
 	const originalImport = await importOriginal<any>();
@@ -28,7 +28,7 @@ describe( "Require Game in Progress Middleware", () => {
 		email: ""
 	};
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockNextFn = vi.fn();
 	const mockGame = LiteratureGame.create( 2, mockUser );
 

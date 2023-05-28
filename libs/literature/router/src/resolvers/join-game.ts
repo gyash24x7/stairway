@@ -2,10 +2,10 @@ import type { JoinGameInput } from "@s2h/literature/dtos";
 import { db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LitResolver, LitTrpcContext } from "../utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 import { CardHand } from "@s2h/cards";
 
-async function validate( ctx: LitTrpcContext, input: JoinGameInput ) {
+async function validate( ctx: LiteratureTrpcContext, input: JoinGameInput ) {
 	const [ game ] = await db.literature().filter( { code: input.code } ).run( ctx.connection );
 
 	if ( !game ) {
@@ -19,7 +19,7 @@ async function validate( ctx: LitTrpcContext, input: JoinGameInput ) {
 	return [ LiteratureGame.from( game ) ] as const;
 }
 
-export function joinGame(): LitResolver<JoinGameInput, ILiteratureGame> {
+export function joinGame(): LiteratureResolver<JoinGameInput, ILiteratureGame> {
 	return async ( { ctx, input } ) => {
 		const [ game ] = await validate( ctx, input );
 		const { id, name, avatar } = ctx.loggedInUser!;

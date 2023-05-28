@@ -13,7 +13,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { Connection } from "rethinkdb-ts";
 import { renderTrpcPanel } from "trpc-panel";
 import { askCard, callSet, chanceTransfer, createGame, createTeams, getGame, joinGame, startGame } from "./resolvers";
-import type { LitTrpcContext } from "./utils";
+import type { LiteratureTrpcContext } from "./utils";
 import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
 
 export const literatureRouter = router( {
@@ -32,7 +32,7 @@ export type LiteratureRouter = typeof literatureRouter;
 export function literatureExpressHandler( connection: Connection ): ExpressMiddleware {
 	return createExpressMiddleware( {
 		router: literatureRouter,
-		createContext( { res } ): LitTrpcContext {
+		createContext( { res } ): LiteratureTrpcContext {
 			return { connection, loggedInUser: res.locals[ "user" ] };
 		}
 	} );

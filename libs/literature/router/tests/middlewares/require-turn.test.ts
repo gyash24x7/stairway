@@ -6,7 +6,7 @@ import { requireTurn } from "../../src/middlewares";
 import type { IUser } from "@s2h/utils";
 import { createId } from "@paralleldrive/cuid2";
 import { mockDeep } from "vitest-mock-extended";
-import { LitTrpcContext } from "@s2h/literature/router";
+import { LiteratureTrpcContext } from "@s2h/literature/router";
 import { LoremIpsum } from "lorem-ipsum";
 
 const lorem = new LoremIpsum();
@@ -21,7 +21,7 @@ describe( "Require Turn Middleware", () => {
 		email: ""
 	};
 
-	const mockCtx = mockDeep<LitTrpcContext>();
+	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockNextFn = vi.fn();
 	const mockGame = LiteratureGame.create( 2, mockUser );
 	mockGame.addPlayers( LiteraturePlayer.create( mockUser ) );

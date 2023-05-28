@@ -1,10 +1,10 @@
 import type { ILiteratureGame } from "@s2h/literature/utils";
 import type { TrpcContext, TrpcMiddleware, TrpcResolverOptions } from "@s2h/utils";
 
-export type LitTrpcContext = TrpcContext & { currentGame?: ILiteratureGame; }
+export type LiteratureTrpcContext = TrpcContext & { currentGame?: ILiteratureGame; }
 
-export type LitTrpcMiddleware<R = any> = TrpcMiddleware<LitTrpcContext, R>
+export type LiteratureTrpcMiddleware<R = any> = TrpcMiddleware<LiteratureTrpcContext, R>
 
-export type LitResolverOptions<I = unknown> = TrpcResolverOptions<I, LitTrpcContext>
+export type LiteratureResolverOptions<I = unknown> = TrpcResolverOptions<I, LiteratureTrpcContext>
 
-export type LitResolver<I = unknown, O = unknown> = ( options: LitResolverOptions<I> ) => Promise<O>
+export type LiteratureResolver<I = unknown, O = unknown> = ( options: LiteratureResolverOptions<I> ) => Promise<O>
