@@ -71,12 +71,9 @@ describe( "Require Game in Progress Middleware", () => {
 
 	it( "should call next function when game is in progress", () => {
 		const middleware = requireGameInProgress();
-
-		expect.assertions( 2 );
 		return middleware( { ctx: mockCtx, rawInput: {}, next: mockNextFn } )
 			.then( () => {
-				expect( mockNextFn.mock.calls.length ).toBe( 1 );
-				expect( mockNextFn.mock.calls[ 0 ][ 0 ] ).toEqual( { ctx: mockCtx } );
+				expect( mockNextFn ).toHaveBeenCalledWith( { ctx: mockCtx } );
 			} );
 	} );
 
