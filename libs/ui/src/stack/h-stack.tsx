@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import React, { Children, isValidElement } from "react";
+import { Children, isValidElement } from "react";
 import { Flex } from "../flex/flex";
 import type { Size } from "../utils/types";
 import { VariantSchema } from "../utils/variant";

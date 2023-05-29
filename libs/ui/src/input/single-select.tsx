@@ -1,5 +1,5 @@
 import { RadioGroup } from "@headlessui/react";
-import React, { Fragment, ReactNode } from "react";
+import { Fragment, ReactNode } from "react";
 import { HStack } from "../stack/h-stack";
 import { VariantSchema } from "../utils/variant";
 

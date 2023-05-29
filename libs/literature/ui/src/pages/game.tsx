@@ -1,27 +1,29 @@
 import { LiteratureGameStatus } from "@s2h/literature/utils";
 import { Avatar, Banner, Flex, VStack } from "@s2h/ui";
-import React, { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { useWindowSize } from "react-use";
-import { CreateTeams } from "../components/create-teams";
-import { DisplayHand } from "../components/display-hand";
-import { DisplayTeams } from "../components/display-teams";
-import { GameCompleted } from "../components/game-completed";
-import { GameDescription } from "../components/game-description";
-import { GameStatus } from "../components/game-status";
-import { PlayerLobby } from "../components/player-lobby";
-import { StartGame } from "../components/start-game";
-import { useAuth } from "../utils/auth";
-import { useGame } from "../utils/game-context";
+import {
+	CreateTeams,
+	DisplayHand,
+	DisplayTeams,
+	GameCompleted,
+	GameDescription,
+	GameStatus,
+	PlayerLobby,
+	StartGame
+} from "../components";
+import { useAuth, useGame } from "../utils";
 
-export default function () {
-	const { status, creator, loggedInPlayer } = useGame();
+export const GamePage = () => {
 	const { user } = useAuth();
+	const { status, creator, players } = useGame();
+	const loggedInPlayer = useMemo( () => players[ user!.id ], [ players, user ] );
 
 	const { width } = useWindowSize();
 
 	const renderBasedOnStatus = () => {
 		switch ( status ) {
-			case LiteratureGameStatus.NOT_STARTED:
+			case LiteratureGameStatus.CREATED:
 				return [
 					<PlayerLobby/>,
 					<Banner message={ "Waiting For Players to Join" } isLoading className={ "mt-4" }/>

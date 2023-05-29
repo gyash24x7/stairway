@@ -1,13 +1,14 @@
 import { Flex, Spinner } from "@s2h/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import React, { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
+import { IUser } from "@s2h/utils";
 
 const SERVER_URL = "http://localhost:8000";
 const GOOGLE_CLIENT_ID = "920568500477-5rrmek91r0pskp7b23emvvt3nqdnp8ls.apps.googleusercontent.com";
 const GOOGLE_REDIRECT_URL = "http://localhost:8000/api/auth/callback/google";
 
 export interface IAuthContext {
-	user?: User;
+	user?: IUser;
 	login: VoidFunction;
 	logout: VoidFunction;
 }
@@ -15,7 +16,7 @@ export interface IAuthContext {
 const AuthContext = createContext<IAuthContext>( null! );
 
 export function AuthProvider( props: { children: ReactNode } ) {
-	const [ user, setUser ] = useState<User>();
+	const [ user, setUser ] = useState<IUser>();
 
 	const login = () => {
 		window.location.href = getGoogleAuthUrl();
@@ -31,7 +32,7 @@ export function AuthProvider( props: { children: ReactNode } ) {
 
 	const { isLoading } = useQuery( {
 		queryKey: [ "me" ],
-		onSuccess: ( data: User ) => setUser( data ),
+		onSuccess: ( data: IUser ) => setUser( data ),
 		queryFn: () => fetch( `${ SERVER_URL }/api/me`, { credentials: "include" } ).then( res => res.json() ).catch()
 	} );
 

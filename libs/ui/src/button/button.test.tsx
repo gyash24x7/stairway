@@ -1,12 +1,12 @@
 import { CheckIcon } from "@heroicons/react/24/solid";
 import { Button } from "@s2h/ui";
 import { cleanup, render } from "@testing-library/react";
-import React from "react";
+
 import { afterEach, describe, expect, it } from "vitest";
 
-describe( "Button Component", function () {
+describe( "Button Component", () => {
 
-	it( "should render button text correctly", function () {
+	it( "should render button text correctly", () => {
 		const { queryByTestId } = render( <Button
 			buttonText={ "Button Text" }
 			appearance={ "warning" }
@@ -17,7 +17,7 @@ describe( "Button Component", function () {
 		expect( buttonTextSpan?.textContent ).toBe( "Button Text" );
 	} );
 
-	it( "should render button text and icons correctly", function () {
+	it( "should render button text and icons correctly", () => {
 		const { queryByTestId } = render(
 			<Button buttonText={ "Button Text" } iconAfter={ CheckIcon } iconBefore={ CheckIcon }/>
 		);
@@ -33,7 +33,7 @@ describe( "Button Component", function () {
 
 	it(
 		"should not render button text when in loading state but render spinner with disabled button",
-		function () {
+		() => {
 			const { queryByTestId } = render( <Button buttonText={ "Button Text" } isLoading fullWidth/> );
 
 			const buttonTextSpan = queryByTestId( "button-text" );

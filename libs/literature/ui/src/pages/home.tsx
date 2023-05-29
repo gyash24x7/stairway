@@ -1,11 +1,8 @@
 import { Button, Flex, VStack } from "@s2h/ui";
-import React from "react";
-import { CreateGame } from "../components/create-game";
-import { JoinGame } from "../components/join-game";
-import { UserCard } from "../components/user-card";
-import { useAuth } from "../utils/auth";
+import { CreateGame, JoinGame, UserCard } from "../components";
+import { useAuth } from "../utils";
 
-export default function () {
+export const HomePage = () => {
 	const { user, login, logout } = useAuth();
 
 	return (

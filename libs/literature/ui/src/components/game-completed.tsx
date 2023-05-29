@@ -1,10 +1,10 @@
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { Flex } from "@s2h/ui";
-import React from "react";
-import { useGame } from "../utils/game-context";
+
+import { useCurrentGameTeams } from "../utils";
 
 export function GameCompleted() {
-	const { myTeam, oppositeTeam } = useGame();
+	const { myTeam, oppositeTeam } = useCurrentGameTeams();
 
 	return (
 		<Flex

@@ -1,12 +1,12 @@
 import { CheckIcon } from "@heroicons/react/24/solid";
 import { Banner } from "@s2h/ui";
 import { cleanup, render, screen } from "@testing-library/react";
-import React from "react";
+
 import { afterEach, describe, expect, it } from "vitest";
 
-describe( "Banner Component", function () {
+describe( "Banner Component", () => {
 
-	it( "should render banner with icon when not in loading state", function () {
+	it( "should render banner with icon when not in loading state", () => {
 		render( <Banner message={ "Banner Message" } icon={ CheckIcon }/> );
 
 		const msgElement = screen.queryByTestId( "banner-message" );
@@ -19,7 +19,7 @@ describe( "Banner Component", function () {
 		expect( msgElement?.textContent ).toBe( "Banner Message" );
 	} );
 
-	it( "should render banner without icon when in loading state", function () {
+	it( "should render banner without icon when in loading state", () => {
 		render(
 			<Banner
 				message={ "Banner Message" }
@@ -37,7 +37,7 @@ describe( "Banner Component", function () {
 		expect( msgElement?.textContent ).toBe( "Banner Message" );
 	} );
 
-	it( "should render banner correctly", function () {
+	it( "should render banner correctly", () => {
 		render( <Banner message={ "Banner Message" } isLoading={ true }/> );
 
 		const msgElement = screen.queryByTestId( "banner-message" );

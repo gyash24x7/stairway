@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import React from "react";
+
 import type { AvatarProps } from "./avatar";
 import { Avatar } from "./avatar";
 

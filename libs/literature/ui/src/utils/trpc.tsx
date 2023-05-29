@@ -2,7 +2,6 @@ import type { LiteratureRouter } from "@s2h/literature/router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCReact, httpBatchLink } from "@trpc/react-query";
 import type { ReactNode } from "react";
-import React from "react";
 import superjson from "superjson";
 
 export const trpc = createTRPCReact<LiteratureRouter>();

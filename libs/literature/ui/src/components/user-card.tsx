@@ -1,6 +1,6 @@
 import { Avatar, HStack } from "@s2h/ui";
-import React from "react";
-import { useAuth } from "../utils/auth";
+
+import { useAuth } from "../utils";
 
 export function UserCard() {
 	const { user } = useAuth();

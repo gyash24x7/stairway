@@ -1,11 +1,11 @@
 import { Avatar } from "@s2h/ui";
 import { cleanup, render, screen } from "@testing-library/react";
-import React from "react";
+
 import { afterEach, describe, expect, it } from "vitest";
 
-describe( "Avatar Component", function () {
+describe( "Avatar Component", () => {
 
-	it( "should render avatar image", function () {
+	it( "should render avatar image", () => {
 		render( <Avatar src={ "abcd.png" }/> );
 
 		const imageElement = screen.queryByAltText( "avatar-img" );
@@ -17,7 +17,7 @@ describe( "Avatar Component", function () {
 		}
 	} );
 
-	it( "should render initials when img not there", function () {
+	it( "should render initials when img not there", () => {
 		render( <Avatar name={ "Yash Gupta" }/> );
 
 		const imageElement = screen.queryByAltText( "avatar-img" );
@@ -30,7 +30,7 @@ describe( "Avatar Component", function () {
 		}
 	} );
 
-	it( "should render initials from first name when last name not there", function () {
+	it( "should render initials from first name when last name not there", () => {
 		render( <Avatar name={ "Yash" }/> );
 
 		const imageElement = screen.queryByAltText( "avatar-img" );
@@ -43,7 +43,7 @@ describe( "Avatar Component", function () {
 		}
 	} );
 
-	it( "should render initials from first name when last name not there", function () {
+	it( "should render initials from first name when last name not there", () => {
 		render( <Avatar name={ "Y" }/> );
 
 		const imageElement = screen.queryByAltText( "avatar-img" );
@@ -57,7 +57,7 @@ describe( "Avatar Component", function () {
 		}
 	} );
 
-	it( "should render random initials when name not there", function () {
+	it( "should render random initials when name not there", () => {
 		render( <Avatar/> );
 
 		const imageElement = screen.queryByAltText( "avatar-img" );

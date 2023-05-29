@@ -1,10 +1,9 @@
-import type { EnhancedLitPlayer } from "@s2h/literature/utils";
+import type { LiteraturePlayer } from "@s2h/literature/utils";
 import type { Size } from "@s2h/ui";
 import { Avatar, HStack } from "@s2h/ui";
-import React from "react";
 
 export interface PlayerCardProps {
-	player: EnhancedLitPlayer;
+	player: LiteraturePlayer;
 	size?: Size;
 }
 

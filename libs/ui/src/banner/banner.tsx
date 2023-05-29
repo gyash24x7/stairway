@@ -1,4 +1,3 @@
-import React from "react";
 import { Spinner } from "../spinner/spinner";
 import { HStack } from "../stack/h-stack";
 import type { Appearance, IconType } from "../utils/types";
@@ -45,7 +44,7 @@ export function Banner( props: BannerProps ) {
 				) }
 				{ !!Icon &&
 					!isLoading &&
-                    <Icon width={ 20 } height={ 20 } data-testid={ "banner-icon" }/> }
+					<Icon width={ 20 } height={ 20 } data-testid={ "banner-icon" }/> }
 				<h2 data-testid={ "banner-message" }>{ message }</h2>
 			</HStack>
 		</div>

@@ -1,5 +1,5 @@
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
-import React, { Fragment, ReactNode, useState } from "react";
+import { Fragment, ReactNode, useState } from "react";
 import { Button } from "../button/button";
 import { HStack } from "../stack/h-stack";
 

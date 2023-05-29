@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
-import React from "react";
+import { Fragment } from "react";
+
 import { HStack } from "../stack/h-stack";
 import { VariantSchema } from "../utils/variant";
 import type { SelectOption } from "./list-select";
 
 export interface MultiSelectProps<T> {
+	label?: string;
 	values: SelectOption<T>[];
 	onChange: ( v: SelectOption<T>[] ) => void | Promise<void>;
 	options: SelectOption<T>[];
@@ -35,16 +37,23 @@ export function MultiSelect<T>( props: MultiSelectProps<T> ) {
 	};
 
 	return (
-		<HStack wrap spacing={ "xs" }>
-			{ props.options.map( option => (
-				<div
-					key={ option.label }
-					className={ radioSelectOptionClassname( isChecked( option.label ) ) }
-					onClick={ handleOptionClick( option ) }
-				>
-					{ props.renderOption( option, isChecked( option.label ) ) }
-				</div>
-			) ) }
-		</HStack>
+		<Fragment>
+			{ props.label && (
+				<label className={ "text-sm text-dark-100 font-semibold" }>
+					{ props.label }
+				</label>
+			) }
+			<HStack wrap spacing={ "xs" }>
+				{ props.options.map( option => (
+					<div
+						key={ option.label }
+						className={ radioSelectOptionClassname( isChecked( option.label ) ) }
+						onClick={ handleOptionClick( option ) }
+					>
+						{ props.renderOption( option, isChecked( option.label ) ) }
+					</div>
+				) ) }
+			</HStack>
+		</Fragment>
 	);
 }

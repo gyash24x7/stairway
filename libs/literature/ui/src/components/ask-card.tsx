@@ -2,21 +2,22 @@ import type { CardSet, PlayingCard } from "@s2h/cards";
 import { cardSetMap } from "@s2h/cards";
 import type { AskCardInput } from "@s2h/literature/dtos";
 import { askCardInput } from "@s2h/literature/dtos";
-import type { EnhancedLitPlayer } from "@s2h/literature/utils";
+import type { LiteraturePlayer } from "@s2h/literature/utils";
 import { Banner, Button, Flex, HStack, Modal, ModalTitle, SingleSelect, Stepper } from "@s2h/ui";
-import React, { Fragment, useState } from "react";
-import { useGame } from "../utils/game-context";
-import { trpc } from "../utils/trpc";
+import { Fragment, useState } from "react";
+import { trpc, useCurrentGameTeams, useCurrentPlayer, useGame } from "../utils";
 import { cardSetSrcMap, DisplayCard } from "./display-card";
 import { PlayerCard } from "./player-card";
 
 export function AskCard() {
-	const { loggedInPlayer, askableCardSets, oppositeTeam, id: gameId } = useGame();
+	const { id: gameId, players } = useGame();
+	const loggedInPlayer = useCurrentPlayer();
+	const { oppositeTeam } = useCurrentGameTeams();
 
 	const [ isModalOpen, setIsModalOpen ] = useState( false );
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ selectedCard, setSelectedCard ] = useState<PlayingCard>();
-	const [ selectedPlayer, setSelectedPlayer ] = useState<EnhancedLitPlayer>();
+	const [ selectedPlayer, setSelectedPlayer ] = useState<LiteraturePlayer>();
 
 	const { mutateAsync, isLoading } = trpc.askCard.useMutation( {
 		onError( error ) {
@@ -55,7 +56,7 @@ export function AskCard() {
 
 	const renderCardOption = ( card: PlayingCard ) => <DisplayCard card={ card }/>;
 
-	const renderPlayerOption = ( player: EnhancedLitPlayer ) => <PlayerCard player={ player }/>;
+	const renderPlayerOption = ( player: LiteraturePlayer ) => <PlayerCard player={ player }/>;
 
 	const openModal = () => setIsModalOpen( true );
 
@@ -82,7 +83,7 @@ export function AskCard() {
 									<SingleSelect
 										value={ selectedCardSet }
 										onChange={ setSelectedCardSet }
-										options={ askableCardSets }
+										options={ loggedInPlayer!.askableCardSets }
 										renderOption={ renderCardSetOption }
 									/>
 								</Fragment>
@@ -112,7 +113,10 @@ export function AskCard() {
 									<SingleSelect
 										value={ selectedPlayer }
 										onChange={ setSelectedPlayer }
-										options={ oppositeTeam?.membersWithCards || [] }
+										options={ oppositeTeam?.members
+											?.filter( memberId => !players[ memberId ].hand.isEmpty() )
+											.map( memberId => players[ memberId ] ) || []
+										}
 										renderOption={ renderPlayerOption }
 									/>
 								</Fragment>

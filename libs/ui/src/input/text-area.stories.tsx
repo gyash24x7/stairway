@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import React from "react";
+
 import type { Appearance } from "../utils/types";
 import { TextArea, TextAreaProps } from "./text-area";
 

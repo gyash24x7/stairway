@@ -1,5 +1,5 @@
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
-import React from "react";
+
 
 export interface DisplayCardProps {
 	card: PlayingCard;
@@ -35,7 +35,7 @@ export function DisplayCard( { card }: DisplayCardProps ) {
 		: "text-danger";
 
 	return (
-		<div className={ "border border-light-700 rounded rounded-lg bg-light-100 h-24 w-16 pl-2 pt-1m king-yna-bg" }>
+		<div className={ "border border-light-700 rounded bg-light-100 h-24 w-16 pl-2 pt-1m king-yna-bg" }>
 			<h2 className={ `font-fjalla text-3xl ${ colorClass }` }>{ rankTextMap[ card.rank ] }</h2>
 			<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 16 } height={ 16 }/>
 		</div>

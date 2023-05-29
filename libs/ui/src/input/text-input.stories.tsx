@@ -1,6 +1,6 @@
 import { EnvelopeIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 import type { Meta, StoryObj } from "@storybook/react";
-import React from "react";
+
 import type { Appearance } from "../utils/types";
 import { TextInput, TextInputProps } from "./text-input";
 

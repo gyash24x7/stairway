@@ -1,10 +1,10 @@
 import { DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { Flex } from "@s2h/ui";
-import React from "react";
-import { useCopyToClipboard } from "react-use";
-import { useGame } from "../utils/game-context";
 
-export const GameDescription = function () {
+import { useCopyToClipboard } from "react-use";
+import { useGame } from "../utils";
+
+export const GameDescription = () => {
 	const { code } = useGame();
 	const [ , copyToClipboard ] = useCopyToClipboard();
 

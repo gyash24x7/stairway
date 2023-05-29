@@ -1,17 +1,10 @@
 import { Button, Flex } from "@s2h/ui";
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { useGame } from "../utils/game-context";
-import { trpc } from "../utils/trpc";
+import { trpc, useGame } from "../utils";
 
-export const StartGame = function () {
+export const StartGame = () => {
 	const { id: gameId } = useGame();
-	const navigate = useNavigate();
 
 	const { mutateAsync, isLoading } = trpc.startGame.useMutation( {
-		async onSuccess( { id } ) {
-			navigate( `/play/${ id }` );
-		},
 		onError( error ) {
 			console.log( error );
 			alert( error.message );

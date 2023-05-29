@@ -1,4 +1,3 @@
-import React from "react";
 import type { Appearance, Size } from "../utils/types";
 import { VariantSchema } from "../utils/variant";
 

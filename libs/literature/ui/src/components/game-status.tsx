@@ -1,34 +1,24 @@
 import { Banner, HStack, VStack } from "@s2h/ui";
-import React, { Fragment } from "react";
-import { useGame } from "../utils/game-context";
+import { useCurrentPlayer, useGame } from "../utils";
 import { AskCard } from "./ask-card";
 import { CallSet } from "./call-set";
-import { DeclineCard } from "./decline-card";
-import { GiveCard } from "./give-card";
 import { PlayerCard } from "./player-card";
 import { PreviousMoves } from "./previous-moves";
-import { TransferTurn } from "./transfer-turn";
 
 export function GameStatus() {
-	const { status, players, moves, loggedInPlayer } = useGame();
-
-	const hasAskedCard = () => {
-		if ( !moves[ 0 ] ) {
-			return false;
-		}
-		return !!loggedInPlayer?.hand.contains( moves[ 0 ].askedFor! );
-	};
+	const { status, players, moves, currentTurn } = useGame();
+	const loggedInPlayer = useCurrentPlayer();
 
 	const getCurrentMovePlayer = () => {
 		if ( !moves[ 0 ] ) {
 			return;
 		}
 
-		switch ( moves[ 0 ].type ) {
+		switch ( moves[ 0 ].actionData.action ) {
 			case "ASK":
-				return players.find( player => player.id === moves[ 0 ].askedFromId );
+				return players[ moves[ 0 ].actionData.askData!.from ];
 			default:
-				return players.find( player => player.id === moves[ 0 ].turnId );
+				return players[ currentTurn ];
 		}
 	};
 
@@ -37,7 +27,7 @@ export function GameStatus() {
 
 	return (
 		<VStack className={ "w-full py-4 lg:py-0" } spacing={ "2xl" }>
-			<Banner message={ moves[ 0 ].description }/>
+			<Banner message={ moves[ 0 ]?.description }/>
 			{ status === "IN_PROGRESS" && (
 				<HStack>
 					<h2 className={ "font-fjalla text-3xl text-dark-700" }>TURN:</h2>
@@ -46,22 +36,10 @@ export function GameStatus() {
 			) }
 			<HStack>
 				<PreviousMoves/>
-				{ moves[ 0 ]?.turnId === loggedInPlayer?.id && (
-					<Fragment>
-						{ loggedInPlayer.hand.length > 0
-							? (
-								<HStack>
-									<AskCard/>
-									<CallSet/>
-								</HStack>
-							)
-							: <TransferTurn/>
-						}
-					</Fragment>
-				) }
-				{ moves[ 0 ]?.type === LitMoveType.ASK && moves[ 0 ]?.askedFromId === loggedInPlayer?.id && (
-					<Fragment>{ hasAskedCard() ? <GiveCard/> : <DeclineCard/> }</Fragment>
-				) }
+				<HStack>
+					<AskCard/>
+					<CallSet/>
+				</HStack>
 			</HStack>
 		</VStack>
 	);

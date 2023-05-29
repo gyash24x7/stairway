@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import React from "react";
+
 import { VariantSchema } from "../utils/variant";
 
 export interface CardProps {

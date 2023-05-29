@@ -8,7 +8,7 @@
 		"module": "ESNext",
 		"resolveJsonModule": true,
 		"isolatedModules": true,
-		"jsx": "react"
+		"jsx": "react-jsx"
 	},
 	"files": [ ],
 	"include": [ "src", "vitest.config.ts" ],

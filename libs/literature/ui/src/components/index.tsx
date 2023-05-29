@@ -1,28 +1,16 @@
-import React from "react";
-import { Outlet, Route, Routes } from "react-router-dom";
-import HomePage from "../pages/home";
-import PlayPage from "../pages/play";
-import { AuthProvider } from "../utils/auth";
-import { GameProvider } from "../utils/game-context";
-import { TrpcProvider } from "../utils/trpc";
-
-export function LiteratureOutlet() {
-	return (
-		<TrpcProvider>
-			<AuthProvider>
-				<Outlet/>
-			</AuthProvider>
-		</TrpcProvider>
-	);
-}
-
-export function LiteratureApp() {
-	return (
-		<Routes>
-			<Route path={ "literature" } element={ <LiteratureOutlet/> }>
-				<Route path={ ":gameId" } element={ <GameProvider><PlayPage/></GameProvider> }/>
-				<Route index element={ <HomePage/> }/>
-			</Route>
-		</Routes>
-	);
-}
+export * from "./ask-card";
+export * from "./call-set";
+export * from "./create-game";
+export * from "./create-teams";
+export * from "./display-card";
+export * from "./display-hand";
+export * from "./display-teams";
+export * from "./game-completed";
+export * from "./game-description";
+export * from "./game-status";
+export * from "./join-game";
+export * from "./player-card";
+export * from "./player-lobby";
+export * from "./previous-moves";
+export * from "./start-game";
+export * from "./user-card";

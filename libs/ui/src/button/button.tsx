@@ -1,4 +1,3 @@
-import React from "react";
 import { Spinner } from "../spinner/spinner";
 import { HStack } from "../stack/h-stack";
 import type { Appearance, IconType, Size } from "../utils/types";

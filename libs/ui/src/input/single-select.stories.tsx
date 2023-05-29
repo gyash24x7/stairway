@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Avatar } from "../avatar/avatar";
 import { SingleSelect, SingleSelectProps } from "./single-select";
 

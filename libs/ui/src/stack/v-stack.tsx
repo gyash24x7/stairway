@@ -1,4 +1,4 @@
-import React, { Children, isValidElement, ReactNode } from "react";
+import { Children, isValidElement, ReactNode } from "react";
 import type { Size } from "../utils/types";
 import { VariantSchema } from "../utils/variant";
 

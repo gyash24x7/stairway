@@ -4,16 +4,17 @@ import type { CallSetInput } from "@s2h/literature/dtos";
 import { callSetInput } from "@s2h/literature/dtos";
 import { Button, Flex, HStack, Modal, ModalTitle, MultiSelect, SelectOption, SingleSelect, Stepper } from "@s2h/ui";
 import { sentenceCase } from "change-case";
-import React, { Fragment, useState } from "react";
-import { useGame } from "../utils/game-context";
-import { trpc } from "../utils/trpc";
+import { Fragment, useState } from "react";
+import { trpc, useCurrentGameTeams, useCurrentPlayer, useGame } from "../utils";
 import { cardSetSrcMap, DisplayCard } from "./display-card";
 
 export function CallSet() {
-	const { myTeam, loggedInPlayer, id: gameId, callableCardSets } = useGame();
+	const { id: gameId, players } = useGame();
+	const { myTeam } = useCurrentGameTeams();
+	const loggedInPlayer = useCurrentPlayer();
 
 	const mapDefaultValue: Record<string, PlayingCard[]> = {};
-	myTeam?.members.forEach( player => mapDefaultValue[ player.id ] = [] );
+	myTeam?.members.forEach( playerId => mapDefaultValue[ playerId ] = [] );
 
 	const [ isModalOpen, setIsModalOpen ] = useState( false );
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
@@ -104,33 +105,36 @@ export function CallSet() {
 									<SingleSelect
 										value={ selectedCardSet }
 										onChange={ handleCardSetSelect }
-										options={ callableCardSets }
+										options={ loggedInPlayer!.callableCardSets }
 										renderOption={ renderCardSetOption }
 									/>
 								</Fragment>
 							)
 						},
 						...myTeam!.members
-							.filter( player => player.hand.length > 0 && player.id !== loggedInPlayer?.id )
-							.map( ( player, i ) => {
+							.filter( playerId => players[ playerId ].hand.length >
+								0 &&
+								playerId !==
+								loggedInPlayer?.id )
+							.map( ( playerId, i ) => {
 								const alreadySelectedCardHand = CardHand.from( { cards: [] } );
 								for ( let j = 0; j < i; j++ ) {
-									alreadySelectedCardHand.addCard( ...cardMap[ myTeam!.members[ j ].id ] );
+									alreadySelectedCardHand.addCard( ...cardMap[ myTeam!.members[ j ] ] );
 								}
 								return (
 									{
-										name: player.id,
+										name: players[ playerId ].id,
 										content: (
-											<Fragment key={ player.id }>
+											<Fragment key={ playerId }>
 												<ModalTitle
-													title={ `${ sentenceCase( selectedCardSet
-														|| "" ) } With ${ player.name }` }
+													title={ `${ sentenceCase( selectedCardSet ||
+														"" ) } With ${ players[ playerId ].name }` }
 												/>
 												<MultiSelect
-													values={ cardMap[ player.id ].map( card => (
+													values={ cardMap[ playerId ].map( card => (
 														{ label: card.id, value: card }
 													) ) }
-													onChange={ handleCardSelect( player.id ) }
+													onChange={ handleCardSelect( playerId ) }
 													options={ cardOptions
 														.filter( cardOption => !alreadySelectedCardHand.contains(
 															cardOption ) )
@@ -150,8 +154,7 @@ export function CallSet() {
 							content: (
 								<Fragment>
 									<ModalTitle
-										title={ `Confirm Call for ${ sentenceCase( selectedCardSet ||
-											"" ) }` }
+										title={ `Confirm Call for ${ sentenceCase( selectedCardSet || "" ) }` }
 									/>
 								</Fragment>
 							)

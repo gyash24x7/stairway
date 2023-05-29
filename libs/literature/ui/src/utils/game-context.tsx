@@ -1,28 +1,43 @@
-import { EnhancedLitGame, IEnhancedLitGame } from "@s2h/literature/utils";
+import { ILiteratureGame, LiteratureGame } from "@s2h/literature/utils";
 import { Flex, Spinner } from "@s2h/ui";
-import React, { createContext, ReactNode, useContext, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useMount } from "react-use";
+import { createContext, ReactNode, useContext, useState } from "react";
+import { useMount, useUpdateEffect } from "react-use";
 import { io } from "socket.io-client";
-import { useAuth } from "./auth";
 import { trpc } from "./trpc";
+import { useAuth } from "./auth";
+import { useParams } from "@tanstack/router";
 
-const litGameContext = createContext<EnhancedLitGame>( null! );
+const litGameContext = createContext<LiteratureGame>( null! );
 
 export const useGame = () => useContext( litGameContext );
+export const useCurrentPlayer = () => {
+	const { players } = useGame();
+	const { user } = useAuth();
+	return !!user ? players[ user.id ] : undefined;
+};
+export const useCurrentGameTeams = () => {
+	const { teams, teamList } = useGame();
+	const currentPlayer = useCurrentPlayer();
+
+	return teamList.length !== 0 && !!currentPlayer
+		? {
+			myTeam: teams[ currentPlayer.team! ],
+			oppositeTeam: teamList.find( team => team.name !== currentPlayer.team )
+		}
+		: {};
+};
 
 export function GameProvider( props: { children: ReactNode } ) {
-	const { user } = useAuth();
-	const [ ctx, setCtx ] = useState<EnhancedLitGame>();
-	const params = useParams<{ gameId: string }>();
+	const [ ctx, setCtx ] = useState<LiteratureGame>();
+	const params = useParams();
 
-	const { isLoading } = trpc.getGame.useQuery( { gameId: params.gameId! }, {
-		onSuccess( data ) {
-			const game = new EnhancedLitGame( data );
-			game.loggedInUserId = user?.id;
-			setCtx( game );
+	const { isLoading, data, error } = trpc.getGame.useQuery( { gameId: params.gameId! } );
+
+	useUpdateEffect( () => {
+		if ( !!data && !error ) {
+			setCtx( LiteratureGame.from( data ) );
 		}
-	} );
+	}, [ data, error ] );
 
 	useMount( () => {
 		const socket = io( "http://localhost:8000/literature" );
@@ -30,10 +45,8 @@ export function GameProvider( props: { children: ReactNode } ) {
 			console.log( data );
 		} );
 
-		socket.on( params.gameId!, ( data: IEnhancedLitGame ) => {
-			const game = new EnhancedLitGame( data );
-			game.loggedInUserId = user?.id;
-			setCtx( game );
+		socket.on( params.gameId!, ( data: ILiteratureGame ) => {
+			setCtx( LiteratureGame.from( data ) );
 		} );
 
 		return () => socket.close();

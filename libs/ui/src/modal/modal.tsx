@@ -1,5 +1,5 @@
 import { Dialog, Transition } from "@headlessui/react";
-import React, { Fragment, ReactNode } from "react";
+import { Fragment, ReactNode } from "react";
 import { VariantSchema } from "../utils/variant";
 
 export interface ModalProps {

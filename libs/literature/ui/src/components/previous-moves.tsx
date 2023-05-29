@@ -1,6 +1,6 @@
 import { Banner, Button, Flex, Modal, VStack } from "@s2h/ui";
-import React, { Fragment, useState } from "react";
-import { useGame } from "../utils/game-context";
+import { Fragment, useState } from "react";
+import { useGame } from "../utils";
 
 export function PreviousMoves() {
 	const { moves } = useGame();

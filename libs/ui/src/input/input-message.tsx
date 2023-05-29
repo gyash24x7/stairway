@@ -1,5 +1,5 @@
 import { CheckCircleIcon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
-import React, { Fragment } from "react";
+import { Fragment } from "react";
 import { HStack } from "../stack/h-stack";
 import { VariantSchema } from "../utils/variant";
 

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import React from "react";
+
 import { VStack, VStackProps } from "./v-stack";
 
 const meta: Meta<VStackProps> = {
