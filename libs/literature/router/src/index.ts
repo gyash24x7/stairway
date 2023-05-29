@@ -8,13 +8,15 @@ import {
 	joinGameInput,
 	startGameInput
 } from "@s2h/literature/dtos";
-import { ExpressHandler, ExpressMiddleware, logger } from "@s2h/utils";
+import { ExpressHandler, ExpressMiddleware, initializeSocketNamespace, logger } from "@s2h/utils";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { Connection } from "rethinkdb-ts";
 import { renderTrpcPanel } from "trpc-panel";
 import { askCard, callSet, chanceTransfer, createGame, createTeams, getGame, joinGame, startGame } from "./resolvers";
-import type { LiteratureTrpcContext } from "./utils";
-import { procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
+import type { Db, LiteratureTrpcContext } from "./utils";
+import { initializeGameSubscription, procedure, procedureWithGame, procedureWithGameInProgress, router } from "./utils";
+import { ILiteratureGame } from "@s2h/literature/utils";
+import { Server } from "socket.io";
 
 export const literatureRouter = router( {
 	createGame: procedure.input( createGameInput ).mutation( createGame() ),
@@ -29,11 +31,13 @@ export const literatureRouter = router( {
 
 export type LiteratureRouter = typeof literatureRouter;
 
-export function literatureExpressHandler( connection: Connection ): ExpressMiddleware {
+export function literatureExpressHandler( io: Server, connection: Connection, db: Db ): ExpressMiddleware {
+	const publisher = initializeSocketNamespace<ILiteratureGame>( io, "literature" );
+	initializeGameSubscription( publisher, connection, db );
 	return createExpressMiddleware( {
 		router: literatureRouter,
 		createContext( { res } ): LiteratureTrpcContext {
-			return { connection, loggedInUser: res.locals[ "user" ] };
+			return { connection, loggedInUser: res.locals[ "user" ], db, publisher };
 		}
 	} );
 }

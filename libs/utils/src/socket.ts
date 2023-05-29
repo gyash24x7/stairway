@@ -1,35 +1,24 @@
-import console from "console";
-import * as http from "node:http";
 import { Namespace, Server } from "socket.io";
 import { logger } from "./logger";
 
-export async function initializeSocketServer( server: http.Server, ...namespaces: string[] ) {
-	logger.debug( ">> initializeSocketServer()" );
-	logger.debug( "Applications: %o", namespaces );
+export function initializeSocketNamespace<T extends { id: string; }>( io: Server, namespaceName: string ) {
+	logger.debug( ">> initializeSocketNamespace()" );
+	logger.debug( "Namespace: %o", namespaceName );
 
-	const io = new Server( server, {
-		cors: {
-			origin: [ "http://localhost:3000" ],
-			allowedHeaders: [ "Authorization" ],
-			credentials: true
-		}
-	} );
+	const namespace = io.of( `/${ namespaceName }` );
+	logger.debug( "Socket Namespace Initialized for %s!", namespaceName );
 
-	namespaces.forEach( namespaceName => {
-		const namespace = io.of( `/${ namespaceName }` );
+	namespace.on( "connection", socket => {
+		logger.debug( "New Client Connected!" );
+		logger.debug( `Socket: ${ socket.id }` );
 
-		namespace.on( "connection", socket => {
-			console.log( "New Client Connected!" );
-			console.log( `Socket: ${ socket.id }` );
-
-			socket.on( "disconnect", () => {
-				console.log( "Client Disconnected!" );
-				console.log( `Socket: ${ socket.id }` );
-			} );
+		socket.on( "disconnect", () => {
+			logger.debug( "Client Disconnected!" );
+			logger.debug( `Socket: ${ socket.id }` );
 		} );
 	} );
 
-	logger.debug( "Socket Server Initialized!" );
+	return new Publisher<T>( namespace );
 }
 
 export class Publisher<T extends { id: string }> {

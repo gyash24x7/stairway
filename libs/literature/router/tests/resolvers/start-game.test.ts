@@ -1,19 +1,13 @@
 import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
-import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
+import { ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
 import { IUser } from "@s2h/utils";
 import { createId } from "@paralleldrive/cuid2";
-import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
+import { mockClear, mockDeep } from "vitest-mock-extended";
 import { RDatum, RSingleSelection, RTable, WriteResult } from "rethinkdb-ts";
 import { LoremIpsum } from "lorem-ipsum";
-
-vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import("vitest-mock-extended");
-	return { ...originalImport, db: mockDeep<Db>() };
-} );
 
 const lorem = new LoremIpsum();
 
@@ -31,7 +25,6 @@ describe( "Start Game Mutation", () => {
 	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
 	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
-	const mockedDb = db as DeepMockProxy<Db>;
 
 	beforeEach( () => {
 		mockCtx.loggedInUser = mockUser;
@@ -46,14 +39,14 @@ describe( "Start Game Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).startGame( { gameId: mockGame.id } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_GAME_STATUS );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -73,7 +66,7 @@ describe( "Start Game Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).startGame( { gameId: mockGame.id } );
 
@@ -81,7 +74,7 @@ describe( "Start Game Mutation", () => {
 		expect( game.status ).toBe( LiteratureGameStatus.IN_PROGRESS );
 		expect( game.currentTurn ).toEqual( mockUser.id );
 
-		expect( mockedDb.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockCtx.db.literature ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
@@ -95,7 +88,6 @@ describe( "Start Game Mutation", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockedDb );
 		mockClear( mockLiteratureTable );
 		mockClear( mockRSingleSelection );
 		mockClear( mockWriteResult );

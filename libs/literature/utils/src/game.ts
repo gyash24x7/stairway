@@ -1,4 +1,4 @@
-import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, ICardHand, PlayingCard } from "@s2h/cards";
+import { CardDeck, CardRank, CardSet, cardSetMap, PlayingCard } from "@s2h/cards";
 import {
 	AskActionData,
 	CallActionData,
@@ -22,7 +22,6 @@ export interface ILiteratureGame {
 	status: LiteratureGameStatus;
 	players: Record<string, ILiteraturePlayer>;
 	teams: Record<string, ILiteratureTeam>;
-	hands: Record<string, ICardHand>;
 	moves: ILiteratureMove[];
 	currentTurn: string;
 }
@@ -43,7 +42,6 @@ export class LiteratureGame implements ILiteratureGame {
 	createdTimestamp: string;
 	status: LiteratureGameStatus;
 	players: Record<string, LiteraturePlayer>;
-	hands: Record<string, CardHand>;
 	teams: Record<string, LiteratureTeam>;
 	moves: Array<LiteratureMove>;
 	currentTurn: string;
@@ -61,11 +59,6 @@ export class LiteratureGame implements ILiteratureGame {
 			this.players[ player.id ] = LiteraturePlayer.from( player );
 		} );
 
-		this.hands = {};
-		Object.keys( gameData.hands ).forEach( playerId => {
-			this.hands[ playerId ] = CardHand.from( gameData.hands[ playerId ] );
-		} );
-
 		this.teams = {};
 		Object.values( gameData.teams ).forEach( team => {
 			this.teams[ team.name ] = LiteratureTeam.from( team );
@@ -75,13 +68,32 @@ export class LiteratureGame implements ILiteratureGame {
 		this.currentTurn = gameData.currentTurn;
 	}
 
+	get creator() {
+		return this.players[ this.createdBy ];
+	}
+
+	get playerList() {
+		return Object.values( this.players );
+	}
+
+	get playerIds() {
+		return Object.keys( this.players );
+	}
+
+	get teamList() {
+		return Object.values( this.teams );
+	}
+
+	get teamNames() {
+		return Object.keys( this.teams );
+	}
+
 	static create( playerCount: number, loggedInUser: IUser ) {
 		return new LiteratureGame( {
 			id: createId(),
 			createdBy: loggedInUser.id,
 			players: {},
 			teams: {},
-			hands: {},
 			code: LiteratureGame.generateGameCode(),
 			playerCount,
 			moves: [],
@@ -105,8 +117,7 @@ export class LiteratureGame implements ILiteratureGame {
 	}
 
 	addCardsToPlayer( playerId: string, ...cards: PlayingCard[] ) {
-		this.hands[ playerId ].addCard( ...cards );
-		this.players[ playerId ].hand = this.hands[ playerId ];
+		this.players[ playerId ].hand.addCard( ...cards );
 	}
 
 	dealCards() {
@@ -115,7 +126,6 @@ export class LiteratureGame implements ILiteratureGame {
 		const hands = deck.generateHands( this.playerCount );
 
 		Object.values( this.players ).forEach( ( player, i ) => {
-			this.hands[ player.id ] = hands[ i ]!;
 			this.players[ player.id ].hand = hands[ i ];
 		} );
 	}
@@ -147,10 +157,9 @@ export class LiteratureGame implements ILiteratureGame {
 	removeCardsOfSet( cardSet: CardSet ) {
 		const cardsCalled = cardSetMap[ cardSet ];
 
-		Object.keys( this.hands ).forEach( playerId => {
-			if ( this.hands[ playerId ].containsSome( cardsCalled ) ) {
-				this.hands[ playerId ].removeCardsOfSet( cardSet );
-				this.players[ playerId ].hand = this.hands[ playerId ];
+		this.playerList.forEach( player => {
+			if ( player.hand.containsSome( cardsCalled ) ) {
+				this.players[ player.id ].hand.removeCardsOfSet( cardSet );
 			}
 		} );
 	}
@@ -198,6 +207,10 @@ export class LiteratureGame implements ILiteratureGame {
 		const oppositeTeamId = Object.keys( this.teams ).filter( name => name !== player.team )[ 0 ];
 		this.teams[ success ? player.team! : oppositeTeamId ].score++;
 		this.removeCardsOfSet( set );
+
+		if ( player.hand.isEmpty() && !success ) {
+
+		}
 	}
 
 	private executeCallMove( { set, data, playerId }: CallActionData ): LiteratureMoveResultData {
@@ -230,13 +243,11 @@ export class LiteratureGame implements ILiteratureGame {
 		const askingPlayer = this.players[ by ];
 		const askedPlayer = this.players[ from ];
 		const card = PlayingCard.from( c );
-		const hasCard = this.hands[ from ].contains( card );
+		const hasCard = this.players[ from ].hand.contains( card );
 
 		if ( hasCard ) {
-			this.hands[ from ].removeCard( card );
-			this.hands[ by ].addCard( card );
-			this.players[ by ].hand = this.hands[ by ];
-			this.players[ from ].hand = this.hands[ from ];
+			this.players[ from ].hand.removeCard( card );
+			this.players[ by ].hand.addCard( card );
 
 			return {
 				result: "CARD_TRANSFER",

@@ -1,21 +1,15 @@
 import { createId } from "@paralleldrive/cuid2";
 import { CardRank, CardSet, cardSetMap, CardSuit } from "@s2h/cards";
 import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
-import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
+import { ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Messages } from "../../src/constants";
 import { IUser, logger } from "@s2h/utils";
-import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
+import { mockClear, mockDeep } from "vitest-mock-extended";
 import { RDatum, RSingleSelection, RTable, WriteResult } from "rethinkdb-ts";
 import { LoremIpsum } from "lorem-ipsum";
 import { CallSetInput } from "@s2h/literature/dtos";
-
-vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import("vitest-mock-extended");
-	return { ...originalImport, db: mockDeep<Db>() };
-} );
 
 const lorem = new LoremIpsum();
 
@@ -36,7 +30,6 @@ describe( "Call Set Mutation", () => {
 	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
 	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
-	const mockedDb = db as DeepMockProxy<Db>;
 
 	const mockPlayer1 = LiteraturePlayer.create( mockUser );
 	mockPlayer1.team = team1;
@@ -66,7 +59,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -81,7 +74,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.PLAYER_NOT_FOUND );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -100,7 +93,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -114,7 +107,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_CALL );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -133,7 +126,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -148,7 +141,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.DUPLICATES_IN_CALL );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -167,7 +160,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -182,7 +175,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_CARDS_OF_SAME_SET );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -202,7 +195,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -219,7 +212,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CANNOT_CALL_SET_THAT_YOU_DONT_HAVE );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -240,7 +233,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -261,7 +254,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_WITHIN_YOUR_TEAM );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -282,7 +275,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -296,7 +289,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_ALL_CARDS );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -321,7 +314,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 
 		const input: CallSetInput = {
@@ -363,7 +356,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -385,7 +378,6 @@ describe( "Call Set Mutation", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockedDb );
 		mockClear( mockLiteratureTable );
 		mockClear( mockRSingleSelection );
 		mockClear( mockWriteResult );

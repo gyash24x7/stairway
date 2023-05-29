@@ -1,20 +1,14 @@
-import { Db, db, ILiteratureGame, LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
+import { ILiteratureGame, LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
 import type { TRPCError } from "@trpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Messages } from "../../src/constants";
 import { requireGameInProgress } from "../../src/middlewares";
 import type { IUser } from "@s2h/utils";
 import { createId } from "@paralleldrive/cuid2";
-import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
+import { mockClear, mockDeep } from "vitest-mock-extended";
 import { RSingleSelection, RTable } from "rethinkdb-ts";
 import { LoremIpsum } from "lorem-ipsum";
 import { LiteratureTrpcContext } from "@s2h/literature/router";
-
-vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import("vitest-mock-extended");
-	return { ...originalImport, db: mockDeep<Db>() };
-} );
 
 const lorem = new LoremIpsum();
 
@@ -31,8 +25,6 @@ describe( "Require Game in Progress Middleware", () => {
 	const mockCtx = mockDeep<LiteratureTrpcContext>();
 	const mockNextFn = vi.fn();
 	const mockGame = LiteratureGame.create( 2, mockUser );
-
-	const mockedDb = db as DeepMockProxy<Db>;
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
 	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
 
@@ -41,7 +33,7 @@ describe( "Require Game in Progress Middleware", () => {
 		mockCtx.currentGame = mockGame;
 		mockRSingleSelection.run.calledWith( mockCtx.connection ).mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 	} );
 
 	it( "should throw error when game not present", () => {
@@ -79,7 +71,6 @@ describe( "Require Game in Progress Middleware", () => {
 
 	afterEach( () => {
 		mockClear( mockCtx );
-		mockClear( mockedDb );
 		mockClear( mockNextFn );
 		mockClear( mockRSingleSelection );
 		mockClear( mockLiteratureTable );

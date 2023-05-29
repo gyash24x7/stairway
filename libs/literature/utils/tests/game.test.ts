@@ -81,9 +81,6 @@ describe( "Literature Game", () => {
 		playerCount: 4,
 		createdBy: player1.id,
 		createdTimestamp: dayjs().toISOString(),
-		hands: {
-			[ player1.id ]: { cards: [] }
-		},
 		currentTurn: player1.id
 	};
 
@@ -138,10 +135,10 @@ describe( "Literature Game", () => {
 		literatureGame.createTeams( [ team2, team1 ] );
 		literatureGame.dealCards();
 
-		expect( literatureGame.hands[ player1.id ].length ).toBe( 12 );
-		expect( literatureGame.hands[ player2.id ].length ).toBe( 12 );
-		expect( literatureGame.hands[ player3.id ].length ).toBe( 12 );
-		expect( literatureGame.hands[ player4.id ].length ).toBe( 12 );
+		expect( literatureGame.players[ player1.id ].hand.length ).toBe( 12 );
+		expect( literatureGame.players[ player2.id ].hand.length ).toBe( 12 );
+		expect( literatureGame.players[ player3.id ].hand.length ).toBe( 12 );
+		expect( literatureGame.players[ player4.id ].hand.length ).toBe( 12 );
 	} );
 
 	it( "should remove cards of set from hands of all players", () => {
@@ -161,7 +158,7 @@ describe( "Literature Game", () => {
 		const literatureGame = LiteratureGame.from( { ...gameData } );
 		literatureGame.dealCards();
 
-		const askData = { from: player1.id, by: player2.id, card: literatureGame.hands[ player1.id ].cards[ 0 ] };
+		const askData = { from: player1.id, by: player2.id, card: literatureGame.players[ player1.id ].hand.get( 0 ) };
 		literatureGame.executeMoveAction( { action: "ASK", askData } );
 
 		const lastMove = literatureGame.moves[ 0 ];
@@ -176,7 +173,7 @@ describe( "Literature Game", () => {
 		const literatureGame = LiteratureGame.from( { ...gameData } );
 		literatureGame.dealCards();
 
-		const askData = { from: player1.id, by: player2.id, card: literatureGame.hands[ player2.id ].cards[ 0 ] };
+		const askData = { from: player1.id, by: player2.id, card: literatureGame.players[ player2.id ].hand.get( 0 ) };
 		literatureGame.executeMoveAction( { action: "ASK", askData } );
 
 		const lastMove = literatureGame.moves[ 0 ];

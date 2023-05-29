@@ -1,14 +1,15 @@
-import { CardHand, PlayingCard } from "@s2h/cards";
+import { PlayingCard } from "@s2h/cards";
 import type { AskCardInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
-import { db, LiteratureGame } from "@s2h/literature/utils";
+import { LiteratureGame } from "@s2h/literature/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 
 function validate( ctx: LiteratureTrpcContext, input: AskCardInput ) {
-	const askingPlayer = ctx.currentGame!.players[ ctx.loggedInUser!.id ];
-	const askedPlayer = ctx.currentGame!.players[ input.askedFrom ];
+	const game = LiteratureGame.from( ctx.currentGame! );
+	const askingPlayer = game.players[ ctx.loggedInUser!.id ];
+	const askedPlayer = game.players[ input.askedFrom ];
 
 	if ( !askedPlayer ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.PLAYER_NOT_FOUND } );
@@ -19,11 +20,11 @@ function validate( ctx: LiteratureTrpcContext, input: AskCardInput ) {
 	}
 
 	const askedCard = PlayingCard.from( input.askedFor );
-	if ( CardHand.from( askingPlayer.hand! ).contains( askedCard ) ) {
+	if ( askingPlayer.hand.contains( askedCard ) ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_ASK_CARD_THAT_YOU_HAVE } );
 	}
 
-	return [ LiteratureGame.from( ctx.currentGame! ) ] as const;
+	return [ game ] as const;
 }
 
 export function askCard(): LiteratureResolver<AskCardInput, ILiteratureGame> {
@@ -34,7 +35,7 @@ export function askCard(): LiteratureResolver<AskCardInput, ILiteratureGame> {
 			askData: { by: ctx.loggedInUser!.id, from: input.askedFrom, card: input.askedFor }
 		} );
 
-		await db.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
+		await ctx.db.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

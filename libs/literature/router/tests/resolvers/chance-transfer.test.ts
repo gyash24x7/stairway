@@ -1,12 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { IUser } from "@s2h/utils";
 import { createId } from "@paralleldrive/cuid2";
-import { DeepMockProxy, mockClear, mockDeep } from "vitest-mock-extended";
+import { mockClear, mockDeep } from "vitest-mock-extended";
 import { literatureRouter as router, LiteratureTrpcContext } from "@s2h/literature/router";
 import { RDatum, RSingleSelection, RTable, WriteResult } from "rethinkdb-ts";
 import {
-	Db,
-	db,
 	ILiteratureGame,
 	LiteratureGame,
 	LiteratureGameStatus,
@@ -16,15 +14,9 @@ import {
 	LiteraturePlayer
 } from "@s2h/literature/utils";
 import { LoremIpsum } from "lorem-ipsum";
-import { CardSet, cardSetMap } from "@s2h/cards";
+import { CardHand, CardSet, cardSetMap } from "@s2h/cards";
 import { Messages } from "../../src/constants";
 import { ChanceTransferInput } from "@s2h/literature/dtos";
-
-vi.mock( "@s2h/literature/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import( "vitest-mock-extended" );
-	return { ...originalImport, db: mockDeep<Db>() };
-} );
 
 const lorem = new LoremIpsum();
 
@@ -54,7 +46,6 @@ describe( "Chance Transfer Mutation", () => {
 	const mockWriteResult = mockDeep<RDatum<WriteResult<ILiteratureGame | null>>>();
 	const mockRSingleSelection = mockDeep<RSingleSelection<ILiteratureGame | null>>();
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
-	const mockedDb = db as DeepMockProxy<Db>;
 
 	beforeEach( () => {
 		mockCtx.loggedInUser = mockUser;
@@ -88,7 +79,7 @@ describe( "Chance Transfer Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: ChanceTransferInput = { transferTo: mockPlayer2.id, gameId: mockGame.id };
 
@@ -97,7 +88,7 @@ describe( "Chance Transfer Mutation", () => {
 			.catch( e => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_CHANCE_TRANSFER );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -125,7 +116,7 @@ describe( "Chance Transfer Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: ChanceTransferInput = { transferTo: mockPlayer2.id, gameId: mockGame.id };
 
@@ -134,7 +125,7 @@ describe( "Chance Transfer Mutation", () => {
 			.catch( e => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_CHANCE_TRANSFER );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -167,7 +158,7 @@ describe( "Chance Transfer Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: ChanceTransferInput = { transferTo: createId(), gameId: mockGame.id };
 
@@ -176,7 +167,7 @@ describe( "Chance Transfer Mutation", () => {
 			.catch( e => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.PLAYER_NOT_FOUND );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -191,7 +182,7 @@ describe( "Chance Transfer Mutation", () => {
 			{ name: team2, members: [ mockPlayer3.id, mockPlayer4.id ] }
 		] );
 		mockGame.dealCards();
-		mockGame.hands[ mockPlayer2.id ].cards = [];
+		mockGame.players[ mockPlayer2.id ].hand = CardHand.empty();
 		mockGame.players[ mockPlayer2.id ].hand.cards = [];
 		mockGame.status = LiteratureGameStatus.IN_PROGRESS;
 
@@ -211,7 +202,7 @@ describe( "Chance Transfer Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: ChanceTransferInput = { transferTo: mockPlayer2.id, gameId: mockGame.id };
 
@@ -220,7 +211,7 @@ describe( "Chance Transfer Mutation", () => {
 			.catch( e => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CHANCE_TRANSFER_TO_PLAYER_WITH_CARDS );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -253,7 +244,7 @@ describe( "Chance Transfer Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: ChanceTransferInput = { transferTo: mockPlayer3.id, gameId: mockGame.id };
 
@@ -262,7 +253,7 @@ describe( "Chance Transfer Mutation", () => {
 			.catch( e => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CHANCE_TRANSFER_TO_SAME_TEAM_PLAYER );
-				expect( mockedDb.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.literature ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -295,7 +286,7 @@ describe( "Chance Transfer Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockedDb.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
 
 		const input: ChanceTransferInput = { transferTo: mockPlayer2.id, gameId: mockGame.id };
 		const response = await router.createCaller( mockCtx ).chanceTransfer( input );
@@ -309,7 +300,7 @@ describe( "Chance Transfer Mutation", () => {
 		expect( lastMove.resultData.result ).toBe( "CHANCE_TRANSFER" );
 		expect( lastMove.resultData.success ).toBe( true );
 
-		expect( mockedDb.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockCtx.db.literature ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
@@ -320,7 +311,6 @@ describe( "Chance Transfer Mutation", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockedDb );
 		mockClear( mockLiteratureTable );
 		mockClear( mockRSingleSelection );
 		mockClear( mockWriteResult );

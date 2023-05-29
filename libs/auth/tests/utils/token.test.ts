@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { jwtVerify } from "jose";
-import * as process from "process";
+import process from "node:process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DeepMockProxy, mockDeep, mockReset } from "vitest-mock-extended";
 import { reIssueAccessToken, signJwt, verifyJwt } from "@s2h/auth";

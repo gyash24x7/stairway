@@ -1,8 +1,8 @@
-import type { ExpressMiddleware } from "@s2h/utils";
-import { db, logger } from "@s2h/utils";
+import type { Db, ExpressMiddleware } from "@s2h/utils";
+import { logger } from "@s2h/utils";
 import { Connection } from "rethinkdb-ts";
 
-export function requireUser( connection: Connection ): ExpressMiddleware {
+export function requireUser( connection: Connection, db: Db ): ExpressMiddleware {
 	return async ( _req, res, next ) => {
 		logger.debug( ">> requireUser()" );
 		logger.debug( "UserId: %s", res.locals[ "userId" ] );

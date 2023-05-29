@@ -1,9 +1,9 @@
 import type { ChanceTransferInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
-import { db, LiteratureGame } from "@s2h/literature/utils";
+import { LiteratureGame } from "@s2h/literature/utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 import { logger } from "@s2h/utils";
 
 function validate( ctx: LiteratureTrpcContext, input: ChanceTransferInput ) {
@@ -50,7 +50,7 @@ export function chanceTransfer(): LiteratureResolver<ChanceTransferInput, ILiter
 			}
 		} );
 
-		await db.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
+		await ctx.db.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

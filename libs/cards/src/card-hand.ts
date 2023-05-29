@@ -38,6 +38,10 @@ export class CardHand implements ICardHand {
 		return new CardHand( [] );
 	}
 
+	isEmpty() {
+		return this.cards.length === 0;
+	}
+
 	contains( card: PlayingCard ) {
 		return this.ids.includes( card.id );
 	}
@@ -79,7 +83,7 @@ export class CardHand implements ICardHand {
 		return this.cards[ index ];
 	}
 
-	serialize() {
+	serialize(): ICardHand {
 		return JSON.parse( JSON.stringify( this ) );
 	}
 }

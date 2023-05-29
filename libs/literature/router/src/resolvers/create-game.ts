@@ -1,5 +1,5 @@
 import type { CreateGameInput } from "@s2h/literature/dtos";
-import { db, ILiteratureGame, LiteratureGame, LiteraturePlayer } from "@s2h/literature/utils";
+import { ILiteratureGame, LiteratureGame, LiteraturePlayer } from "@s2h/literature/utils";
 import type { LiteratureResolver } from "../utils";
 
 export function createGame(): LiteratureResolver<CreateGameInput, ILiteratureGame> {
@@ -7,7 +7,7 @@ export function createGame(): LiteratureResolver<CreateGameInput, ILiteratureGam
 		const game = LiteratureGame.create( input.playerCount || 2, ctx.loggedInUser! );
 		const player = LiteraturePlayer.create( ctx.loggedInUser! );
 		game.addPlayers( player );
-		await db.literature().insert( game.serialize() ).run( ctx.connection );
+		await ctx.db.literature().insert( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

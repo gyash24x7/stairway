@@ -1,9 +1,9 @@
 import type { CreateTeamsInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
-import { db, LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
+import { LiteratureGame, LiteratureGameStatus } from "@s2h/literature/utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 
 function validate( ctx: LiteratureTrpcContext ) {
 	if ( ctx.currentGame!.status !== LiteratureGameStatus.PLAYERS_READY ) {
@@ -23,7 +23,7 @@ export function createTeams(): LiteratureResolver<CreateTeamsInput, ILiteratureG
 		game.createTeams( input.teams );
 		game.status = LiteratureGameStatus.TEAMS_CREATED;
 
-		await db.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
+		await ctx.db.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
 		return game;
 	};
 }

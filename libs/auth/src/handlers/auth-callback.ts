@@ -1,10 +1,10 @@
 import { createId } from "@paralleldrive/cuid2";
-import { AVATAR_BASE_URL, db, ExpressHandler, logger } from "@s2h/utils";
+import { AVATAR_BASE_URL, Db, ExpressHandler, logger } from "@s2h/utils";
 import * as bcrypt from "bcryptjs";
 import { Connection } from "rethinkdb-ts";
 import { accessTokenCookieOptions, getGoogleToken, getGoogleUser, refreshTokenCookieOptions, signJwt } from "../utils";
 
-export function handleAuthCallback( connection: Connection ): ExpressHandler {
+export function handleAuthCallback( connection: Connection, db: Db ): ExpressHandler {
 	return async ( req, res ) => {
 		logger.debug( ">> handleAuthCallback()" );
 
@@ -40,6 +40,6 @@ export function handleAuthCallback( connection: Connection ): ExpressHandler {
 		res.cookie( "refreshToken", refreshToken, refreshTokenCookieOptions );
 
 		logger.debug( "User Saved, Cookies Set!" );
-		return res.redirect( "http://localhost:3000/literature" );
+		return res.redirect( "http://localhost:3000" );
 	};
 }

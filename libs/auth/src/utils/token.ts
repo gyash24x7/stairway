@@ -1,7 +1,7 @@
-import { db } from "@s2h/utils";
+import { Db } from "@s2h/utils";
 import type { CookieOptions } from "express";
 import { jwtVerify, SignJWT } from "jose";
-import * as process from "process";
+import process from "node:process";
 import { Connection } from "rethinkdb-ts";
 
 export async function signJwt( subject: string, expiresIn: string ): Promise<string> {
@@ -25,7 +25,7 @@ export async function verifyJwt( token: string ): Promise<{ valid: boolean, expi
 	}
 }
 
-export async function reIssueAccessToken( refreshToken: string, connection: Connection ) {
+export async function reIssueAccessToken( refreshToken: string, connection: Connection, db: Db ) {
 	const { subject } = await verifyJwt( refreshToken );
 
 	if ( !subject ) {
