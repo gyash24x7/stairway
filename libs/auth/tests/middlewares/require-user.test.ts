@@ -1,15 +1,9 @@
 import { requireUser } from "@s2h/auth";
 import type { Request, Response } from "express";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DeepMockProxy, mockDeep, mockReset } from "vitest-mock-extended";
-import { db, IUser } from "@s2h/utils";
+import { mockDeep, mockReset } from "vitest-mock-extended";
+import { Db, IUser } from "@s2h/utils";
 import { Connection, RSingleSelection, RTable } from "rethinkdb-ts";
-
-vi.mock( "@s2h/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import("vitest-mock-extended");
-	return { ...originalImport, db: mockDeep<typeof db>() };
-} );
 
 describe( "Require User Middleware", () => {
 
@@ -26,14 +20,14 @@ describe( "Require User Middleware", () => {
 	};
 
 	const mockConnection = mockDeep<Connection>();
-	const mockedDb = db as DeepMockProxy<typeof db>;
+	const mockDb = mockDeep<Db>();
 	const mockUsersTable = mockDeep<RTable<IUser>>();
 	const mockRSingleSelect = mockDeep<RSingleSelection<IUser | null>>();
 
 	afterEach( () => {
 		mockReset( mockNextFn );
 		mockReset( mockConnection );
-		mockReset( mockedDb );
+		mockReset( mockDb );
 		mockReset( mockUsersTable );
 		mockReset( mockRSingleSelect );
 		mockReset( mockReq );
@@ -42,7 +36,7 @@ describe( "Require User Middleware", () => {
 
 	it( "should return 403 when userId not present", async () => {
 		mockRes.locals[ "userId" ] = undefined;
-		const middleware = requireUser( mockConnection );
+		const middleware = requireUser( mockConnection, mockDb );
 
 		await middleware( mockReq, mockRes, mockNextFn );
 		expect( mockRes.sendStatus ).toHaveBeenCalledWith( 403 );
@@ -52,15 +46,15 @@ describe( "Require User Middleware", () => {
 		mockRes.locals[ "userId" ] = "mock-user-id";
 		mockRSingleSelect.run.mockResolvedValue( null );
 		mockUsersTable.get.mockReturnValue( mockRSingleSelect );
-		mockedDb.users.mockReturnValue( mockUsersTable );
+		mockDb.users.mockReturnValue( mockUsersTable );
 
-		const middleware = requireUser( mockConnection );
+		const middleware = requireUser( mockConnection, mockDb );
 		await middleware( mockReq, mockRes, mockNextFn );
 
-		expect( mockedDb.users ).toHaveBeenCalled();
+		expect( mockDb.users ).toHaveBeenCalled();
 		expect( mockUsersTable.get ).toHaveBeenCalledWith( "mock-user-id" );
 		expect( mockRSingleSelect.run ).toHaveBeenCalledWith( mockConnection );
-		
+
 		expect( mockRes.sendStatus ).toHaveBeenCalledWith( 403 );
 	} );
 
@@ -68,12 +62,12 @@ describe( "Require User Middleware", () => {
 		mockRes.locals[ "userId" ] = "mock-user-id";
 		mockRSingleSelect.run.mockResolvedValue( mockUser );
 		mockUsersTable.get.mockReturnValue( mockRSingleSelect );
-		mockedDb.users.mockReturnValue( mockUsersTable );
+		mockDb.users.mockReturnValue( mockUsersTable );
 
-		const middleware = requireUser( mockConnection );
+		const middleware = requireUser( mockConnection, mockDb );
 		await middleware( mockReq, mockRes, mockNextFn );
 
-		expect( mockedDb.users ).toHaveBeenCalled();
+		expect( mockDb.users ).toHaveBeenCalled();
 		expect( mockUsersTable.get ).toHaveBeenCalledWith( "mock-user-id" );
 		expect( mockRSingleSelect.run ).toHaveBeenCalledWith( mockConnection );
 

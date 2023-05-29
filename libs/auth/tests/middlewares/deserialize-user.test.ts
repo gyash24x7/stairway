@@ -1,17 +1,11 @@
 import { deserializeUser, signJwt } from "@s2h/auth";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DeepMockProxy, mockDeep, mockReset } from "vitest-mock-extended";
-import { db, IUser } from "@s2h/utils";
+import { mockDeep, mockReset } from "vitest-mock-extended";
+import { Db, IUser } from "@s2h/utils";
 import { Connection, RTable } from "rethinkdb-ts";
 import process from "process";
 import { SignJWT } from "jose";
-
-vi.mock( "@s2h/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import("vitest-mock-extended");
-	return { ...originalImport, db: mockDeep<typeof db>() };
-} );
 
 describe( "Deserialize User Middleware", () => {
 
@@ -24,7 +18,7 @@ describe( "Deserialize User Middleware", () => {
 	};
 
 	const mockConnection = mockDeep<Connection>();
-	const mockedDb = db as DeepMockProxy<typeof db>;
+	const mockDb = mockDeep<Db>();
 	const mockUsersTable = mockDeep<RTable<IUser>>();
 
 	const mockNextFn = vi.fn();
@@ -44,7 +38,7 @@ describe( "Deserialize User Middleware", () => {
 		mockReq.cookies[ "accessToken" ] = undefined;
 		mockReq.cookies[ "refreshToken" ] = undefined;
 
-		const middleware = deserializeUser( mockConnection );
+		const middleware = deserializeUser( mockConnection, mockDb );
 		await middleware( mockReq, mockRes, mockNextFn );
 		expect( mockNextFn ).toHaveBeenCalledTimes( 1 );
 		expect( mockRes.locals[ "userId" ] ).toBeUndefined();
@@ -58,7 +52,7 @@ describe( "Deserialize User Middleware", () => {
 		mockReq.cookies[ "accessToken" ] = undefined;
 		mockReq.cookies[ "refreshToken" ] = undefined;
 
-		const middleware = deserializeUser( mockConnection );
+		const middleware = deserializeUser( mockConnection, mockDb );
 		await middleware( mockReq, mockRes, mockNextFn );
 		expect( mockNextFn ).toHaveBeenCalledTimes( 1 );
 		expect( mockRes.locals[ "userId" ] ).toBe( "subject" );
@@ -78,7 +72,7 @@ describe( "Deserialize User Middleware", () => {
 		mockReq.cookies[ "accessToken" ] = undefined;
 		mockReq.cookies[ "refreshToken" ] = undefined;
 
-		const middleware = deserializeUser( mockConnection );
+		const middleware = deserializeUser( mockConnection, mockDb );
 		await middleware( mockReq, mockRes, mockNextFn );
 		expect( mockNextFn ).toHaveBeenCalledTimes( 1 );
 		expect( mockRes.locals[ "userId" ] ).toBeUndefined();
@@ -87,7 +81,7 @@ describe( "Deserialize User Middleware", () => {
 	it( "should not re-issue access token when access token is expired but user not present", async () => {
 		mockUsersTable.filter.mockReturnValue( mockUsersTable );
 		mockUsersTable.run.mockResolvedValue( [] );
-		mockedDb.users.mockReturnValue( mockUsersTable );
+		mockDb.users.mockReturnValue( mockUsersTable );
 
 		const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] );
 		const accessToken = await new SignJWT( {} )
@@ -104,7 +98,7 @@ describe( "Deserialize User Middleware", () => {
 		mockReq.cookies[ "accessToken" ] = undefined;
 		mockReq.cookies[ "refreshToken" ] = undefined;
 
-		const middleware = deserializeUser( mockConnection );
+		const middleware = deserializeUser( mockConnection, mockDb );
 		await middleware( mockReq, mockRes, mockNextFn );
 		expect( mockNextFn ).toHaveBeenCalledTimes( 1 );
 		expect( mockRes.locals[ "userId" ] ).toBeUndefined();
@@ -113,7 +107,7 @@ describe( "Deserialize User Middleware", () => {
 	it( "should re-issue access token and call next when access token is expired", async () => {
 		mockUsersTable.filter.mockReturnValue( mockUsersTable );
 		mockUsersTable.run.mockResolvedValue( [ mockUser ] );
-		mockedDb.users.mockReturnValue( mockUsersTable );
+		mockDb.users.mockReturnValue( mockUsersTable );
 
 		const secret = new TextEncoder().encode( process.env[ "JWT_SECRET" ] || "" );
 		const accessToken = await new SignJWT( {} )
@@ -130,7 +124,7 @@ describe( "Deserialize User Middleware", () => {
 		mockReq.cookies[ "accessToken" ] = undefined;
 		mockReq.cookies[ "refreshToken" ] = undefined;
 
-		const middleware = deserializeUser( mockConnection );
+		const middleware = deserializeUser( mockConnection, mockDb );
 		await middleware( mockReq, mockRes, mockNextFn );
 		expect( mockNextFn ).toHaveBeenCalledTimes( 1 );
 		expect( mockRes.locals[ "userId" ] ).toBe( "subject" );
@@ -140,7 +134,7 @@ describe( "Deserialize User Middleware", () => {
 		mockReset( mockReq );
 		mockReset( mockRes );
 		mockReset( mockConnection );
-		mockReset( mockedDb );
+		mockReset( mockDb );
 		mockReset( mockUsersTable );
 		mockReset( mockNextFn );
 	} );

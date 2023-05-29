@@ -2,9 +2,9 @@ import { createId } from "@paralleldrive/cuid2";
 import { jwtVerify } from "jose";
 import process from "node:process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DeepMockProxy, mockDeep, mockReset } from "vitest-mock-extended";
+import { mockDeep, mockReset } from "vitest-mock-extended";
 import { reIssueAccessToken, signJwt, verifyJwt } from "@s2h/auth";
-import { db, IUser } from "@s2h/utils";
+import { Db, IUser } from "@s2h/utils";
 import { Connection, RTable } from "rethinkdb-ts";
 
 describe( "Sign JWT", () => {
@@ -63,12 +63,6 @@ describe( "Verify JWT", () => {
 	} );
 } );
 
-vi.mock( "@s2h/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import("vitest-mock-extended");
-	return { ...originalImport, db: mockDeep<typeof db>() };
-} );
-
 describe( "ReIssue Access Token", async () => {
 
 	const mockUser: IUser = {
@@ -80,19 +74,19 @@ describe( "ReIssue Access Token", async () => {
 	};
 
 	const mockConnection = mockDeep<Connection>();
-	const mockedDb = db as DeepMockProxy<typeof db>;
+	const mockDb = mockDeep<Db>();
 	const mockUsersTable = mockDeep<RTable<IUser>>();
 
 	beforeEach( () => {
 		mockUsersTable.filter.mockReturnValue( mockUsersTable );
 		mockUsersTable.run.mockResolvedValue( [ mockUser ] );
-		mockedDb.users.mockReturnValue( mockUsersTable );
+		mockDb.users.mockReturnValue( mockUsersTable );
 	} );
 
 	it( "should return undefined if subject not present", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const refreshToken = await signJwt( "", "1y" );
-		const newToken = await reIssueAccessToken( refreshToken, mockConnection );
+		const newToken = await reIssueAccessToken( refreshToken, mockConnection, mockDb );
 
 		expect( newToken ).toBeUndefined();
 		expect( mockUsersTable.filter ).toHaveBeenCalledTimes( 0 );
@@ -103,7 +97,7 @@ describe( "ReIssue Access Token", async () => {
 		const refreshToken = await signJwt( "saltAsSubject", "1y" );
 
 		mockUsersTable.run.mockResolvedValue( [] );
-		const newToken = await reIssueAccessToken( refreshToken, mockConnection );
+		const newToken = await reIssueAccessToken( refreshToken, mockConnection, mockDb );
 
 		expect( newToken ).toBeUndefined();
 		expect( mockUsersTable.run ).toHaveBeenCalledWith( mockConnection );
@@ -116,7 +110,7 @@ describe( "ReIssue Access Token", async () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const refreshToken = await signJwt( "saltAsSubject", "1y" );
 
-		const newToken = await reIssueAccessToken( refreshToken, mockConnection );
+		const newToken = await reIssueAccessToken( refreshToken, mockConnection, mockDb );
 
 		expect( newToken ).toBeTruthy();
 		expect( mockUsersTable.run ).toHaveBeenCalledWith( mockConnection );
@@ -127,7 +121,7 @@ describe( "ReIssue Access Token", async () => {
 
 	afterEach( () => {
 		mockReset( mockConnection );
-		mockReset( mockedDb );
+		mockReset( mockDb );
 		mockReset( mockUsersTable );
 		vi.clearAllMocks();
 	} );

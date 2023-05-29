@@ -1,19 +1,13 @@
 import { createId } from "@paralleldrive/cuid2";
 import { accessTokenCookieOptions, handleAuthCallback, refreshTokenCookieOptions } from "@s2h/auth";
-import type { GoogleUserResult, IUser } from "@s2h/utils";
-import { db } from "@s2h/utils";
+import type { Db, GoogleUserResult, IUser } from "@s2h/utils";
 import axios from "axios";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it, Mocked, vi } from "vitest";
-import { DeepMockProxy, mockDeep, mockReset } from "vitest-mock-extended";
+import { mockDeep, mockReset } from "vitest-mock-extended";
 import { Connection, RDatum, RTable, WriteResult } from "rethinkdb-ts";
 
 vi.mock( "axios" );
-vi.mock( "@s2h/utils", async ( importOriginal ) => {
-	const originalImport = await importOriginal<any>();
-	const { mockDeep } = await import("vitest-mock-extended");
-	return { ...originalImport, db: mockDeep<typeof db>() };
-} );
 
 describe( "Auth Callback Handler", () => {
 	const accessToken = "MOCK_ACCESS_TOKEN";
@@ -44,7 +38,7 @@ describe( "Auth Callback Handler", () => {
 	const mockConnection = mockDeep<Connection>();
 
 	const mockedAxios = axios as Mocked<typeof axios>;
-	const mockedDb = db as DeepMockProxy<typeof db>;
+	const mockDb = mockDeep<Db>();
 
 	process.env[ "JWT_SECRET" ] = "jwt_secret";
 
@@ -57,7 +51,7 @@ describe( "Auth Callback Handler", () => {
 
 		writeResultMock.run.mockResolvedValue( mockDeep() );
 		mockUsersTable.insert.mockReturnValue( writeResultMock );
-		mockedDb.users.mockReturnValue( mockUsersTable );
+		mockDb.users.mockReturnValue( mockUsersTable );
 
 		reqMock.query[ "code" ] = "MOCK_AUTH_CODE";
 
@@ -67,7 +61,7 @@ describe( "Auth Callback Handler", () => {
 
 	it( "should return 403 is email not verified", async () => {
 		mockedAxios.get.mockResolvedValue( { data: { ...googleUserResult, verified_email: false } } );
-		const handler = handleAuthCallback( mockConnection );
+		const handler = handleAuthCallback( mockConnection, mockDb );
 
 		await handler( reqMock, resMock );
 		expect( mockedAxios.post ).toHaveBeenCalledWith(
@@ -87,8 +81,8 @@ describe( "Auth Callback Handler", () => {
 
 	it( "should create new user if user not found and set cookies", async () => {
 		mockUsersTable.run.mockResolvedValue( [] );
-		mockedDb.users.mockReturnValue( mockUsersTable );
-		const handler = handleAuthCallback( mockConnection );
+		mockDb.users.mockReturnValue( mockUsersTable );
+		const handler = handleAuthCallback( mockConnection, mockDb );
 
 		await handler( reqMock, resMock );
 		expect( mockedAxios.post ).toHaveBeenCalledWith(
@@ -127,7 +121,7 @@ describe( "Auth Callback Handler", () => {
 	} );
 
 	it( "should set cookies when user is found", async () => {
-		const handler = handleAuthCallback( mockConnection );
+		const handler = handleAuthCallback( mockConnection, mockDb );
 
 		await handler( reqMock, resMock );
 		expect( mockedAxios.post ).toHaveBeenCalledWith(
@@ -164,7 +158,7 @@ describe( "Auth Callback Handler", () => {
 		mockReset( mockConnection );
 		mockReset( resMock );
 		mockReset( resMock );
-		mockReset( mockedDb );
+		mockReset( mockDb );
 		mockReset( mockUsersTable );
 		mockReset( writeResultMock );
 		vi.clearAllMocks();
