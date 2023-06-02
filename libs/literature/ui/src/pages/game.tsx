@@ -14,7 +14,7 @@ import {
 } from "../components";
 import { useAuth, useGame } from "../utils";
 
-export const GamePage = () => {
+export function GamePage() {
 	const { user } = useAuth();
 	const { status, creator, players } = useGame();
 	const loggedInPlayer = useMemo( () => players[ user!.id ], [ players, user ] );
@@ -106,4 +106,4 @@ export const GamePage = () => {
 			) }
 		</Flex>
 	);
-};
+}

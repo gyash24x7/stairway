@@ -1,14 +1,12 @@
 import { Button } from "@s2h/ui";
-import { useNavigate } from "@tanstack/router";
+import { useNavigate } from "react-router-dom";
 import { trpc } from "../utils";
 
-export const CreateGame = () => {
+export function CreateGame() {
 	const navigate = useNavigate();
 
 	const { mutateAsync, isLoading } = trpc.createGame.useMutation( {
-		async onSuccess( { id } ) {
-			await navigate( { to: "$gameId", params: { gameId: id } } );
-		},
+		onSuccess: ( { id } ) => navigate( id ),
 		onError( error ) {
 			console.log( error );
 			alert( error.message );
@@ -24,4 +22,4 @@ export const CreateGame = () => {
 			onClick={ () => mutateAsync( { playerCount: 2 } ) }
 		/>
 	);
-};
+}

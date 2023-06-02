@@ -3,7 +3,7 @@ import { HStack } from "@s2h/ui";
 import { useAuth, useGame } from "../utils";
 import { DisplayCard } from "./display-card";
 
-export const DisplayHand = () => {
+export function DisplayHand() {
 	const { user } = useAuth();
 	const { players } = useGame();
 
@@ -17,4 +17,4 @@ export const DisplayHand = () => {
 			</HStack>
 		</div>
 	);
-};
+}

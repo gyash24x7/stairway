@@ -2,7 +2,7 @@ import { Button, Flex, VStack } from "@s2h/ui";
 import { CreateGame, JoinGame, UserCard } from "../components";
 import { useAuth } from "../utils";
 
-export const HomePage = () => {
+export function HomePage() {
 	const { user, login, logout } = useAuth();
 
 	return (
@@ -43,4 +43,4 @@ export const HomePage = () => {
 			</VStack>
 		</Flex>
 	);
-};
+}

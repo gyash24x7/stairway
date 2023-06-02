@@ -1,18 +1,15 @@
 import { Button, Modal, TextInput } from "@s2h/ui";
 import { Fragment, useState } from "react";
-import { useNavigate } from "@tanstack/router";
+import { useNavigate } from "react-router-dom";
 import { trpc } from "../utils";
 
-export const JoinGame = () => {
+export function JoinGame() {
 	const [ isModalOpen, setIsModalOpen ] = useState( false );
 	const [ code, setCode ] = useState( "" );
 	const navigate = useNavigate();
 
 	const { mutateAsync, isLoading } = trpc.joinGame.useMutation( {
-		async onSuccess( data ) {
-			const { id } = data;
-			await navigate( { to: `/$gameId`, params: { gameId: id } } );
-		},
+		onSuccess: ( { id } ) => navigate( id ),
 		onError( error ) {
 			console.log( error );
 			alert( error.message );
@@ -50,4 +47,4 @@ export const JoinGame = () => {
 			</Modal>
 		</Fragment>
 	);
-};
+}

@@ -1,7 +1,7 @@
 import { Button, Flex } from "@s2h/ui";
 import { trpc, useGame } from "../utils";
 
-export const StartGame = () => {
+export function StartGame() {
 	const { id: gameId } = useGame();
 
 	const { mutateAsync, isLoading } = trpc.startGame.useMutation( {
@@ -24,4 +24,4 @@ export const StartGame = () => {
 			/>
 		</Flex>
 	);
-};
+}

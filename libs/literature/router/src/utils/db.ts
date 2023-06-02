@@ -9,14 +9,20 @@ export function initializeGameSubscription( publisher: Publisher<ILiteratureGame
 		.then( async cursor => {
 			logger.debug( "Database Feed Initialised!" );
 
-			const change = await cursor.next();
-			logger.debug( "Event Received: %o", change );
+			await cursor.each( ( err, change ) => {
+				if ( !!err ) {
+					logger.error( "Error initializing Database Feed!" );
+				} else {
+					logger.debug( "Event Received: %o", change );
 
-			if ( !!change.new_val ) {
-				publisher.publish( change.new_val );
-			} else {
-				logger.warn( "New Value not present!" );
-			}
+					if ( !!change.new_val ) {
+						publisher.publish( change.new_val );
+					} else {
+						logger.warn( "New Value not present!" );
+					}
+				}
+			} );
+
 		} )
 		.catch( e => {
 			logger.error( "Error creating database feed!" );

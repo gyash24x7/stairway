@@ -1,7 +1,7 @@
-import { Flex, Spinner } from "@s2h/ui";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { createContext, ReactNode, useContext, useState } from "react";
 import { IUser } from "@s2h/utils";
+import { useLoaderData } from "react-router-dom";
 
 const SERVER_URL = "http://localhost:8000";
 const GOOGLE_CLIENT_ID = "920568500477-5rrmek91r0pskp7b23emvvt3nqdnp8ls.apps.googleusercontent.com";
@@ -11,41 +11,29 @@ export interface IAuthContext {
 	user?: IUser;
 	login: VoidFunction;
 	logout: VoidFunction;
+	isLoggedIn: boolean;
 }
 
 const AuthContext = createContext<IAuthContext>( null! );
 
 export function AuthProvider( props: { children: ReactNode } ) {
-	const [ user, setUser ] = useState<IUser>();
+	const user = useLoaderData() as IUser | undefined;
+	const [ isLoggedIn, setIsLoggedIn ] = useState( !!user );
 
 	const login = () => {
 		window.location.href = getGoogleAuthUrl();
 	};
 
 	const { mutateAsync } = useMutation( {
-		onSuccess: () => setUser( undefined ),
+		onSuccess: () => setIsLoggedIn( false ),
 		mutationFn: () => fetch( `${ SERVER_URL }/api/auth/logout`, { method: "delete", credentials: "include" } )
 			.then( res => res.json() )
 	} );
 
 	const logout = () => mutateAsync();
 
-	const { isLoading } = useQuery( {
-		queryKey: [ "me" ],
-		onSuccess: ( data: IUser ) => setUser( data ),
-		queryFn: () => fetch( `${ SERVER_URL }/api/me`, { credentials: "include" } ).then( res => res.json() ).catch()
-	} );
-
-	if ( isLoading ) {
-		return (
-			<Flex align={ "center" } justify={ "center" } className={ "h-screen w-screen" }>
-				<Spinner size={ "2xl" } appearance={ "primary" }/>
-			</Flex>
-		);
-	}
-
 	return (
-		<AuthContext.Provider value={ { user, login, logout } }>
+		<AuthContext.Provider value={ { user, login, logout, isLoggedIn } }>
 			{ props.children }
 		</AuthContext.Provider>
 	);

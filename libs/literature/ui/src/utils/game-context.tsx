@@ -1,11 +1,9 @@
 import { ILiteratureGame, LiteratureGame } from "@s2h/literature/utils";
-import { Flex, Spinner } from "@s2h/ui";
 import { createContext, ReactNode, useContext, useState } from "react";
-import { useMount, useUpdateEffect } from "react-use";
+import { useMount } from "react-use";
 import { io } from "socket.io-client";
-import { trpc } from "./trpc";
 import { useAuth } from "./auth";
-import { useParams } from "@tanstack/router";
+import { useLoaderData, useParams } from "react-router-dom";
 
 const litGameContext = createContext<LiteratureGame>( null! );
 
@@ -28,16 +26,9 @@ export const useCurrentGameTeams = () => {
 };
 
 export function GameProvider( props: { children: ReactNode } ) {
-	const [ ctx, setCtx ] = useState<LiteratureGame>();
+	const game = useLoaderData() as ILiteratureGame;
+	const [ ctx, setCtx ] = useState( LiteratureGame.from( game ) );
 	const params = useParams();
-
-	const { isLoading, data, error } = trpc.getGame.useQuery( { gameId: params.gameId! } );
-
-	useUpdateEffect( () => {
-		if ( !!data && !error ) {
-			setCtx( LiteratureGame.from( data ) );
-		}
-	}, [ data, error ] );
 
 	useMount( () => {
 		const socket = io( "http://localhost:8000/literature" );
@@ -45,20 +36,12 @@ export function GameProvider( props: { children: ReactNode } ) {
 			console.log( data );
 		} );
 
-		socket.on( params.gameId!, ( data: ILiteratureGame ) => {
+		socket.on( params[ "gameId" ]!, ( data: ILiteratureGame ) => {
 			setCtx( LiteratureGame.from( data ) );
 		} );
 
 		return () => socket.close();
 	} );
-
-	if ( isLoading || !ctx ) {
-		return (
-			<Flex className={ "h-screen w-screen" } align={ "center" } justify={ "center" }>
-				<Spinner size={ "xl" } appearance={ "primary" }/>
-			</Flex>
-		);
-	}
 
 	return (
 		<litGameContext.Provider value={ ctx }>

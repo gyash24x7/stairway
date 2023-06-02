@@ -4,7 +4,7 @@ import { Flex } from "@s2h/ui";
 import { useCopyToClipboard } from "react-use";
 import { useGame } from "../utils";
 
-export const GameDescription = () => {
+export function GameDescription() {
 	const { code } = useGame();
 	const [ , copyToClipboard ] = useCopyToClipboard();
 
@@ -16,10 +16,10 @@ export const GameDescription = () => {
 				<DocumentDuplicateIcon
 					width={ 40 }
 					height={ 40 }
-					className={ "cursor-pointer" }
+					className={ "cursor-pointer p-1 hover:bg-light rounded-lg" }
 					onClick={ () => copyToClipboard( code ) }
 				/>
 			</Flex>
 		</div>
 	);
-};
+}
