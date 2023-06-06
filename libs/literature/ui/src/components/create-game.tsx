@@ -19,7 +19,7 @@ export function CreateGame() {
 			appearance={ "primary" }
 			fullWidth
 			isLoading={ isLoading }
-			onClick={ () => mutateAsync( { playerCount: 2 } ) }
+			onClick={ () => mutateAsync( { playerCount: 6 } ) }
 		/>
 	);
 }

@@ -204,12 +204,22 @@ export class LiteratureGame implements ILiteratureGame {
 	}
 
 	handleCallSet( success: boolean, set: CardSet, player: LiteraturePlayer ) {
-		const oppositeTeamId = Object.keys( this.teams ).filter( name => name !== player.team )[ 0 ];
+		const oppositeTeamId = Object.keys( this.teams ).find( name => name !== player.team )!;
 		this.teams[ success ? player.team! : oppositeTeamId ].score++;
 		this.removeCardsOfSet( set );
 
-		if ( player.hand.isEmpty() && !success ) {
-
+		if ( success ) {
+			if ( player.hand.isEmpty() ) {
+				this.currentTurn = this.teams[ player.team! ].members.find(
+					id => id !== player.id && !this.players[ id ].hand.isEmpty()
+				)!;
+			} else {
+				this.currentTurn = player.id;
+			}
+		} else {
+			this.currentTurn = this.teams[ oppositeTeamId ].members.find(
+				id => !this.players[ id ].hand.isEmpty()
+			)!;
 		}
 	}
 
