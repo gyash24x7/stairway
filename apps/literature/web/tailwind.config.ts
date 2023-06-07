@@ -4,8 +4,8 @@ import type { Config } from "tailwindcss";
 const config: Config = {
 	content: [
 		join( __dirname, "./src/**/*.tsx" ),
-		join( __dirname, "../../libs/literature/ui/**/*.tsx" ),
-		join( __dirname, "../../libs/ui/**/*.tsx" )
+		join( __dirname, "../../../libs/literature/ui/**/*.tsx" ),
+		join( __dirname, "../../../libs/ui/**/*.tsx" )
 	],
 	darkMode: "class",
 	theme: {

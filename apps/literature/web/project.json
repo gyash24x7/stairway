@@ -1,7 +1,7 @@
 {
-	"name": "literature",
-	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "apps/literature/src",
+	"name": "literature-web",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "apps/literature/web/src",
 	"projectType": "application",
 	"targets": {
 		"build": {
@@ -9,7 +9,7 @@
 			"outputs": [ "{options.outputPath}" ],
 			"defaultConfiguration": "development",
 			"options": {
-				"outputPath": "apps/literature/dist"
+				"outputPath": "apps/literature/web/dist"
 			},
 			"configurations": {
 				"development": {

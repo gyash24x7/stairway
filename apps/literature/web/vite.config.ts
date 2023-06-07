@@ -9,9 +9,9 @@ export default defineConfig( {
 	server: {
 		port: 3000,
 		host: "localhost",
-		fs: { allow: [ "../../" ] }
+		fs: { allow: [ "../../../" ] }
 	},
-	plugins: [ react(), viteTsConfigPaths( { root: "../../" } ) ],
+	plugins: [ react(), viteTsConfigPaths( { root: "../../../" } ) ],
 	define: {
 		"import.meta.vitest": undefined
 	},
