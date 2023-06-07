@@ -13,6 +13,8 @@
 		"esModuleInterop": true,
 		"rootDir": ".",
 		"baseUrl": ".",
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
 		"paths": {
 			"@s2h/auth": [ "libs/auth/src/index.ts" ],
 			"@s2h/cards": [ "libs/cards/src/index.ts" ],
