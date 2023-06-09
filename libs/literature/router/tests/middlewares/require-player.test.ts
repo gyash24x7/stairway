@@ -34,7 +34,7 @@ describe( "Require Player Middleware", () => {
 		mockCtx.currentGame = mockGame;
 		mockRSingleSelection.run.calledWith( mockCtx.connection ).mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 	} );
 
 	it( "should throw error when user not present", () => {

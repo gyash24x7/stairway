@@ -27,14 +27,14 @@ describe( "Create Game Mutation", () => {
 		mockCtx.loggedInUser = mockUser;
 		writeResultMock.run.mockResolvedValue( mockDeep() );
 		mockLiteratureTable.insert.mockReturnValue( writeResultMock );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 	} );
 
 	it( "should create new game with provided player count", async () => {
 		const game = await router.createCaller( mockCtx ).createGame( { playerCount: 6 } );
 
 		expect( game.playerCount ).toBe( 6 );
-		expect( mockCtx.db.literature ).toHaveBeenCalled();
+		expect( mockCtx.db.games ).toHaveBeenCalled();
 		expect( mockLiteratureTable.insert ).toHaveBeenCalledWith( game );
 		expect( writeResultMock.run ).toHaveBeenCalledWith( mockCtx.connection );
 	} );
@@ -43,7 +43,7 @@ describe( "Create Game Mutation", () => {
 		const game = await router.createCaller( mockCtx ).createGame( {} );
 
 		expect( game.playerCount ).toBe( 2 );
-		expect( mockCtx.db.literature ).toHaveBeenCalled();
+		expect( mockCtx.db.games ).toHaveBeenCalled();
 		expect( mockLiteratureTable.insert ).toHaveBeenCalledWith( game );
 		expect( writeResultMock.run ).toHaveBeenCalledWith( mockCtx.connection );
 	} );

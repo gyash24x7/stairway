@@ -33,7 +33,7 @@ describe( "Require Game in Progress Middleware", () => {
 		mockCtx.currentGame = mockGame;
 		mockRSingleSelection.run.calledWith( mockCtx.connection ).mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 	} );
 
 	it( "should throw error when game not present", () => {

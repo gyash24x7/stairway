@@ -10,7 +10,7 @@ export interface ICardHand {
 export class CardHand implements ICardHand {
 	cards: PlayingCard[] = [];
 
-	private constructor( cards: IPlayingCard[] ) {
+	private constructor( cards: IPlayingCard[] = [] ) {
 		this.cards = cards.map( PlayingCard.from );
 	}
 
@@ -35,7 +35,7 @@ export class CardHand implements ICardHand {
 	}
 
 	static empty() {
-		return new CardHand( [] );
+		return new CardHand();
 	}
 
 	isEmpty() {
@@ -68,7 +68,18 @@ export class CardHand implements ICardHand {
 	}
 
 	removeCardsOfSet( cardSet: CardSet ) {
-		this.cards = this.cards.filter( card => card.set !== cardSet );
+		const removedCards: PlayingCard[] = [];
+		
+		this.cards = this.cards.filter( card => {
+			if ( card.set !== cardSet ) {
+				removedCards.push( card );
+				return true;
+			}
+
+			return false;
+		} );
+
+		return removedCards;
 	}
 
 	addCard( ...cards: PlayingCard[] ) {

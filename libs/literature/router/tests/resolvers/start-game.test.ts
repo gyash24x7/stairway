@@ -39,14 +39,14 @@ describe( "Start Game Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).startGame( { gameId: mockGame.id } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_GAME_STATUS );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -66,7 +66,7 @@ describe( "Start Game Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).startGame( { gameId: mockGame.id } );
 
@@ -74,7 +74,7 @@ describe( "Start Game Mutation", () => {
 		expect( game.status ).toBe( LiteratureGameStatus.IN_PROGRESS );
 		expect( game.currentTurn ).toEqual( mockUser.id );
 
-		expect( mockCtx.db.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockCtx.db.games ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );

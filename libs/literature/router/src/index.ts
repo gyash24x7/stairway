@@ -10,7 +10,6 @@ import {
 } from "@s2h/literature/dtos";
 import { ExpressHandler, ExpressMiddleware, initializeSocketNamespace, logger } from "@s2h/utils";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { Connection } from "rethinkdb-ts";
 import { renderTrpcPanel } from "trpc-panel";
 import { askCard, callSet, chanceTransfer, createGame, createTeams, getGame, joinGame, startGame } from "./resolvers";
 import type { Db, LiteratureTrpcContext } from "./utils";
@@ -31,13 +30,13 @@ export const literatureRouter = router( {
 
 export type LiteratureRouter = typeof literatureRouter;
 
-export function literatureExpressHandler( io: Server, connection: Connection, db: Db ): ExpressMiddleware {
+export function literatureExpressHandler( io: Server, db: Db ): ExpressMiddleware {
 	const publisher = initializeSocketNamespace<ILiteratureGame>( io, "literature" );
-	initializeGameSubscription( publisher, connection, db );
+	initializeGameSubscription( publisher, db );
 	return createExpressMiddleware( {
 		router: literatureRouter,
 		createContext( { res } ): LiteratureTrpcContext {
-			return { connection, loggedInUser: res.locals[ "user" ], db, publisher };
+			return { loggedInUser: res.locals[ "user" ], db, publisher };
 		}
 	} );
 }

@@ -2,78 +2,130 @@ import { CardSet, IPlayingCard } from "@s2h/cards";
 import { createId } from "@paralleldrive/cuid2";
 import dayjs from "dayjs";
 
-export type LiteratureMoveAction = "ASK" | "CALL_SET" | "CHANCE_TRANSFER";
+export enum LiteratureMoveType {
+	ASK_CARD = "ASK_CARD",
+	CALL_SET = "CALL_SET",
+	CHANCE_TRANSFER = "CHANCE_TRANSFER"
+}
 
-export type AskActionData = {
+export interface PlayerCallData {
+	cards: Array<IPlayingCard>;
+}
+
+export interface AskActionData {
 	from: string;
 	by: string;
-	card: IPlayingCard
+	card: IPlayingCard;
 }
 
-export type CallActionData = {
-	playerId: string;
+export interface CallActionData {
+	by: string;
 	set: CardSet;
-	data: Record<string, Array<IPlayingCard>>
+	data: Record<string, PlayerCallData>;
 }
 
-export type ChanceTransferData = {
-	playerId: string;
+export interface TransferActionData {
+	from: string;
+	to: string;
 }
 
-export type LiteratureMoveActionData = {
-	action: LiteratureMoveAction;
-	description: string;
-	askData?: AskActionData;
-	callData?: CallActionData;
-	transferData?: ChanceTransferData;
-}
+export interface ILiteratureMove<T extends LiteratureMoveType> {
+	id: string;
+	timestamp: string;
+	moveType: T;
+	gameId: string;
 
-export type LiteratureMoveResult = "CARD_TRANSFER" | "CALL_SET" | "CHANCE_TRANSFER";
+	action: T extends LiteratureMoveType.ASK_CARD
+		? { askData: AskActionData }
+		: T extends LiteratureMoveType.CALL_SET
+			? { callData: CallActionData }
+			: { transferData: TransferActionData };
 
-export type LiteratureMoveResultData = {
-	result: LiteratureMoveResult;
-	description: string;
 	success: boolean;
+	correctCall: Record<string, PlayerCallData>;
 }
 
-export interface ILiteratureMove {
-	id: string;
-	description: string;
-	timestamp: string;
-	actionData: LiteratureMoveActionData;
-	resultData: LiteratureMoveResultData;
-}
+export type LiteratureMoveAction<T extends LiteratureMoveType> = T extends LiteratureMoveType.ASK_CARD
+	? { askData: AskActionData }
+	: ( T extends LiteratureMoveType.CALL_SET
+		? { callData: CallActionData }
+		: { transferData: TransferActionData } );
 
-export class LiteratureMove implements ILiteratureMove {
+export class LiteratureMove<T extends LiteratureMoveType> implements ILiteratureMove<T> {
 	id: string;
-	description: string;
-	actionData: LiteratureMoveActionData;
-	resultData: LiteratureMoveResultData;
 	timestamp: string;
+	moveType: T;
+	gameId: string;
+	action: LiteratureMoveAction<T>;
+	correctCall: Record<string, PlayerCallData> = {};
+	success: boolean;
 
-	private constructor( move: ILiteratureMove ) {
+	private constructor( move: ILiteratureMove<T> ) {
 		this.id = move.id;
-		this.actionData = move.actionData;
-		this.resultData = move.resultData;
 		this.timestamp = move.timestamp;
-		this.description = move.description;
+		this.moveType = move.moveType;
+		this.gameId = move.gameId;
+		this.action = move.action;
+		this.success = move.success;
+		this.correctCall = move.correctCall ?? {};
 	}
 
-	static from( move: ILiteratureMove ) {
-		return new LiteratureMove( move );
+	static from<T extends LiteratureMoveType>( move: ILiteratureMove<T> ) {
+		return new LiteratureMove<T>( move );
 	}
 
-	static create( actionData: LiteratureMoveActionData, resultData: LiteratureMoveResultData ) {
+	static createAskMove( gameId: string, askData: AskActionData, success: boolean ) {
+		return LiteratureMove.create<LiteratureMoveType.ASK_CARD>(
+			gameId,
+			LiteratureMoveType.ASK_CARD,
+			{ askData },
+			success
+		);
+	}
+
+	static createCallMove(
+		gameId: string,
+		callData: CallActionData,
+		success: boolean,
+		correctCall: Record<string, PlayerCallData>
+	) {
+		return LiteratureMove.create<LiteratureMoveType.CALL_SET>(
+			gameId,
+			LiteratureMoveType.CALL_SET,
+			{ callData },
+			success,
+			correctCall
+		);
+	}
+
+	static createChanceTransferMove( gameId: string, transferData: TransferActionData ) {
+		return LiteratureMove.create<LiteratureMoveType.CHANCE_TRANSFER>(
+			gameId,
+			LiteratureMoveType.CHANCE_TRANSFER,
+			{ transferData },
+			true
+		);
+	}
+
+	static create<T extends LiteratureMoveType>(
+		gameId: string,
+		moveType: T,
+		action: LiteratureMoveAction<T>,
+		success: boolean,
+		correctCall: Record<string, PlayerCallData> = {}
+	) {
 		return this.from( {
-			actionData,
-			resultData,
+			gameId,
+			action,
+			success,
 			id: createId(),
 			timestamp: dayjs().toISOString(),
-			description: `${ actionData.description } -> ${ resultData.description }`
+			correctCall,
+			moveType
 		} );
 	}
 
-	serialize(): ILiteratureMove {
+	serialize(): ILiteratureMove<T> {
 		return JSON.parse( JSON.stringify( this ) );
 	}
 }

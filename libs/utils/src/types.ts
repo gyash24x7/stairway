@@ -1,5 +1,4 @@
 import type { NextFunction, Request, Response } from "express";
-import type { Connection, RTable } from "rethinkdb-ts";
 
 export interface IUser {
 	id: string;
@@ -11,12 +10,7 @@ export interface IUser {
 
 export type TrpcContext = {
 	loggedInUser?: IUser;
-	connection: Connection;
 }
-
-export type UsersR = {
-	users: () => RTable<IUser>
-};
 
 export type TrpcMiddleware<C = TrpcContext, R = any> = ( opts: {
 	rawInput: unknown,

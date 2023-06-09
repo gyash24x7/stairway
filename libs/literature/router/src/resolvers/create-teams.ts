@@ -23,7 +23,7 @@ export function createTeams(): LiteratureResolver<CreateTeamsInput, ILiteratureG
 		game.createTeams( input.teams );
 		game.status = LiteratureGameStatus.TEAMS_CREATED;
 
-		await ctx.db.literature().get( input.gameId ).update( game.serialize() ).run( ctx.connection );
+		await ctx.db.games().updateOne( { id: game.id }, game.serialize() );
 		return game;
 	};
 }

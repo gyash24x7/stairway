@@ -34,12 +34,12 @@ describe( "Get Game Query", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).getGame( { gameId: mockGame.id } );
 
 		expect( game.id ).toBe( mockGame.id );
-		expect( mockCtx.db.literature ).toHaveBeenCalled();
+		expect( mockCtx.db.games ).toHaveBeenCalled();
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 	} );

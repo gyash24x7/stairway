@@ -40,7 +40,7 @@ describe( "Create Teams Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const team1 = { name: lorem.generateWords( 2 ), members: [] };
 		const team2 = { name: lorem.generateWords( 2 ), members: [] };
@@ -51,7 +51,7 @@ describe( "Create Teams Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_GAME_STATUS );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -63,7 +63,7 @@ describe( "Create Teams Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		mockGame.addPlayers( mockPlayer );
 		mockGame.status = LiteratureGameStatus.PLAYERS_READY;
@@ -78,7 +78,7 @@ describe( "Create Teams Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.NOT_ENOUGH_PLAYERS );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -98,7 +98,7 @@ describe( "Create Teams Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const team1 = { name: lorem.generateWords( 2 ), members: [ mockPlayer1.id ] };
 		const team2 = { name: lorem.generateWords( 2 ), members: [ mockPlayer2.id ] };
@@ -113,7 +113,7 @@ describe( "Create Teams Mutation", () => {
 		expect( game.players[ mockPlayer1.id ].team ).toEqual( team1.name );
 		expect( game.players[ mockPlayer2.id ].team ).toEqual( team2.name );
 
-		expect( mockCtx.db.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockCtx.db.games ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );

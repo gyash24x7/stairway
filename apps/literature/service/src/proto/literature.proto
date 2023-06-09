@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package literature;
+
+message IPlayingCard {
+  string rank = 1;
+  string suit = 2;
+  string set = 3;
+}
+
+message ICardHand {
+  repeated IPlayingCard cards = 1;
+}
+
+message ILiteraturePlayer {
+  string id = 1;
+  string name = 2;
+  string avatar = 3;
+  optional string teamId = 4;
+}
+
+message ILiteratureTeam {
+  string id = 1;
+  string name = 2;
+  int32 score = 3;
+  repeated string members = 4;
+}
+
+message PlayerCallData {
+  repeated IPlayingCard cards = 1;
+}
+
+message AskActionData {
+  string from = 1;
+  string by = 2;
+  IPlayingCard card = 3;
+}
+
+message CallActionData {
+  string by = 1;
+  string set = 2;
+  map<string, PlayerCallData> data = 3;
+}
+
+message TransferActionData {
+  string from = 1;
+  string to = 2;
+}
+
+message ILiteratureMove {
+  string id = 1;
+  string timestamp = 2;
+  string moveType = 3;
+  string gameId = 4;
+
+  oneof action {
+    AskActionData askData = 5;
+    CallActionData callData = 6;
+    TransferActionData transferData = 7;
+  }
+
+  bool success = 8;
+  map<string, PlayerCallData> correctCall = 9;
+}
+
+message ILiteratureGameHand {
+  string id = 1;
+  string gameId = 2;
+  string playerId = 3;
+  ICardHand hand = 4;
+}
+
+message ILiteratureGame {
+  string id = 1;
+  string code = 2;
+  int32 playerCount = 3;
+  string createdBy = 4;
+  string timestamp = 5;
+  string status = 6;
+  string currentTurn = 7;
+  map<string, ILiteraturePlayer> players = 8;
+  map<string, ILiteratureTeam> teams = 9;
+  map<string, ICardHand> initialHands = 10;
+}
+
+message CreateGameInput {
+  int32 playerCount = 1;
+  string loggedInPlayerId = 2;
+}
+
+message JoinGameInput {
+  string code = 1;
+  string loggedInPlayerId = 2;
+}
+
+message CreateTeamsInput {
+  string gameId = 1;
+  string loggedInPlayerId = 2;
+  map<string, string> data = 3;
+}
+
+message GetGameInput {
+  string gameId = 1;
+  string loggedInPlayerId = 2;
+}
+
+message StartGameInput {
+  string gameId = 1;
+  string loggedInPlayerId = 2;
+}
+
+message AskCardInput {
+  string gameId = 1;
+  string loggedInPlayerId = 2;
+  string askedFrom = 3;
+  IPlayingCard askedFor = 4;
+}
+
+message CallSetInput {
+  string gameId = 1;
+  string loggedInPlayerId = 2;
+  map<string, PlayerCallData> data = 3;
+}
+
+message ChanceTransferInput {
+  string gameId = 1;
+  string loggedInPlayerId = 2;
+  string transferTo = 3;
+}
+
+service LiteratureService {
+  rpc CreateGame(CreateGameInput) returns (ILiteratureGame);
+  rpc JoinGame(JoinGameInput) returns (ILiteratureGame);
+  rpc CreateTeams(CreateTeamsInput) returns (ILiteratureGame);
+  rpc StartGame(StartGameInput) returns (ILiteratureGame);
+  rpc GetGame(GetGameInput) returns (ILiteratureGame);
+  rpc AskCard(AskCardInput) returns (ILiteratureGame);
+  rpc CallSet(CallSetInput) returns (ILiteratureGame);
+  rpc ChanceTransfer(ChanceTransferInput) returns (ILiteratureGame);
+}

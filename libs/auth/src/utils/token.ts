@@ -1,7 +1,7 @@
 import { Db } from "@s2h/utils";
 import type { CookieOptions } from "express";
 import { jwtVerify, SignJWT } from "jose";
-import process from "node:process";
+import process from "process";
 import { Connection } from "rethinkdb-ts";
 
 export async function signJwt( subject: string, expiresIn: string ): Promise<string> {

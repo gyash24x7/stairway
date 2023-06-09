@@ -1,9 +1,9 @@
 import { constantCase } from "change-case";
 import { green, yellow } from "colorette";
 import type { NextFunction, Request, Response } from "express";
-import process from "node:process";
+import process from "process";
 import { Ogma } from "@ogma/logger";
-import { format } from "node:util";
+import { format } from "util";
 
 
 class Logger {

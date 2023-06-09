@@ -36,14 +36,14 @@ describe( "Join Game Mutation", () => {
 	it( "should throw error when game not found", async () => {
 		mockLiteratureTable.run.mockResolvedValue( [] );
 		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).joinGame( { code: mockGame.code } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "NOT_FOUND" );
 				expect( e.message ).toBe( Messages.GAME_NOT_FOUND );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
 				expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -55,14 +55,14 @@ describe( "Join Game Mutation", () => {
 
 		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
 		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).joinGame( { code: mockGame.code } );
 
 		expect( game.id ).toBe( mockGame.id );
 		expect( Object.keys( game.players ).length ).toBe( Object.keys( mockGame.players ).length );
 
-		expect( mockCtx.db.literature ).toHaveBeenCalled();
+		expect( mockCtx.db.games ).toHaveBeenCalled();
 		expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
 		expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 	} );
@@ -76,14 +76,14 @@ describe( "Join Game Mutation", () => {
 
 		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
 		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		expect.assertions( 5 );
 		return router.createCaller( mockCtx ).joinGame( { code: mockGame.code } )
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.PLAYER_CAPACITY_FULL );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
 				expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -96,7 +96,7 @@ describe( "Join Game Mutation", () => {
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
 		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
 		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).joinGame( { code: mockGame.code } );
 
@@ -104,7 +104,7 @@ describe( "Join Game Mutation", () => {
 		expect( Object.keys( game.players ).length ).toBe( Object.keys( mockGame.players ).length + 1 );
 		expect( game.status ).toBe( LiteratureGameStatus.CREATED );
 
-		expect( mockCtx.db.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockCtx.db.games ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
 		expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
@@ -127,7 +127,7 @@ describe( "Join Game Mutation", () => {
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
 		mockLiteratureTable.run.mockResolvedValue( [ mockGame ] );
 		mockLiteratureTable.filter.mockReturnValue( mockLiteratureTable );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).joinGame( { code: mockGame.code } );
 
@@ -135,7 +135,7 @@ describe( "Join Game Mutation", () => {
 		expect( Object.keys( game.players ).length ).toBe( Object.keys( mockGame.players ).length + 1 );
 		expect( game.status ).toBe( LiteratureGameStatus.PLAYERS_READY );
 
-		expect( mockCtx.db.literature ).toHaveBeenCalled();
+		expect( mockCtx.db.games ).toHaveBeenCalled();
 		expect( mockLiteratureTable.filter ).toHaveBeenCalledWith( { code: mockGame.code } );
 		expect( mockLiteratureTable.run ).toHaveBeenCalledWith( mockCtx.connection );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );

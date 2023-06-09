@@ -54,7 +54,7 @@ describe( "Ask Card Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		expect.assertions( 5 );
 		return router.createCaller( mockCtx )
@@ -62,7 +62,7 @@ describe( "Ask Card Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CANNOT_ASK_FROM_YOUR_TEAM );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -89,7 +89,7 @@ describe( "Ask Card Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		expect.assertions( 5 );
 		return router.createCaller( mockCtx )
@@ -97,7 +97,7 @@ describe( "Ask Card Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.PLAYER_NOT_FOUND );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -126,7 +126,7 @@ describe( "Ask Card Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		expect.assertions( 5 );
 		return router.createCaller( mockCtx )
@@ -134,7 +134,7 @@ describe( "Ask Card Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CANNOT_ASK_CARD_THAT_YOU_HAVE );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -165,7 +165,7 @@ describe( "Ask Card Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).askCard( {
 			gameId: mockGame.id,
@@ -182,7 +182,7 @@ describe( "Ask Card Mutation", () => {
 		expect( CardHand.from( game.players[ mockPlayer2.id ].hand ).contains( twoOfSpades ) ).toBeFalsy();
 		expect( CardHand.from( game.players[ mockPlayer1.id ].hand ).contains( twoOfSpades ) ).toBeTruthy();
 
-		expect( mockCtx.db.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockCtx.db.games ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
@@ -221,7 +221,7 @@ describe( "Ask Card Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const game = await router.createCaller( mockCtx ).askCard( {
 			gameId: mockGame.id,
@@ -238,7 +238,7 @@ describe( "Ask Card Mutation", () => {
 		expect( CardHand.from( game.players[ mockPlayer2.id ].hand ).contains( fiveOfSpades ) ).toBeFalsy();
 		expect( CardHand.from( game.players[ mockPlayer1.id ].hand ).contains( fiveOfSpades ) ).toBeFalsy();
 
-		expect( mockCtx.db.literature ).toHaveBeenCalledTimes( 2 );
+		expect( mockCtx.db.games ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledTimes( 2 );
 		expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 		expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );

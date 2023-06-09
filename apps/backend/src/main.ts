@@ -6,7 +6,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import http from "http";
-import process from "node:process";
+import process from "process";
 import { r } from "rethinkdb-ts";
 import { ILiteratureGame } from "@s2h/literature/utils";
 import { Server } from "socket.io";
@@ -33,7 +33,7 @@ async function bootstrap() {
 
 	const db: Db = {
 		users: () => database.table<IUser>( USERS_TABLE ),
-		literature: () => database.table<ILiteratureGame>( LITERATURE_TABLE )
+		games: () => database.table<ILiteratureGame>( LITERATURE_TABLE )
 	};
 
 	app.use( cookieParser() );

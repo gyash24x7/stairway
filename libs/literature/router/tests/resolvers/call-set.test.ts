@@ -32,13 +32,13 @@ describe( "Call Set Mutation", () => {
 	const mockLiteratureTable = mockDeep<RTable<ILiteratureGame>>();
 
 	const mockPlayer1 = LiteraturePlayer.create( mockUser );
-	mockPlayer1.team = team1;
+	mockPlayer1.teamId = team1;
 	const mockPlayer2 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
-	mockPlayer2.team = team1;
+	mockPlayer2.teamId = team1;
 	const mockPlayer3 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
-	mockPlayer3.team = team2;
+	mockPlayer3.teamId = team2;
 	const mockPlayer4 = LiteraturePlayer.create( { ...mockUser, id: createId() } );
-	mockPlayer4.team = team2;
+	mockPlayer4.teamId = team2;
 
 	beforeEach( () => {
 		mockCtx.loggedInUser = mockUser;
@@ -59,7 +59,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -74,7 +74,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.PLAYER_NOT_FOUND );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -93,7 +93,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -107,7 +107,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.INVALID_CALL );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -126,7 +126,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -141,7 +141,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.DUPLICATES_IN_CALL );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -160,7 +160,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -175,7 +175,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_CARDS_OF_SAME_SET );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -195,7 +195,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -212,7 +212,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CANNOT_CALL_SET_THAT_YOU_DONT_HAVE );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -233,7 +233,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -254,7 +254,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_WITHIN_YOUR_TEAM );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -275,7 +275,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -289,7 +289,7 @@ describe( "Call Set Mutation", () => {
 			.catch( ( e: TRPCError ) => {
 				expect( e.code ).toBe( "BAD_REQUEST" );
 				expect( e.message ).toBe( Messages.CALL_ALL_CARDS );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( mockGame.id );
 				expect( mockRSingleSelection.run ).toHaveBeenCalledWith( mockCtx.connection );
 			} );
@@ -314,7 +314,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 
 		const input: CallSetInput = {
@@ -334,7 +334,7 @@ describe( "Call Set Mutation", () => {
 		expect( game.players[ mockPlayer3.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
 		expect( game.players[ mockPlayer4.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
 		logger.debug( "Game: %o", game.serialize() );
-		expect( game.teams[ mockPlayer1.team! ].score ).toBe( 1 );
+		expect( game.teams[ mockPlayer1.teamId! ].score ).toBe( 1 );
 	} );
 
 	it( "should increase score for other team if called wrong", async () => {
@@ -356,7 +356,7 @@ describe( "Call Set Mutation", () => {
 
 		mockRSingleSelection.run.mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const input: CallSetInput = {
 			gameId: mockGame.id,
@@ -374,7 +374,7 @@ describe( "Call Set Mutation", () => {
 		expect( game.players[ mockPlayer2.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
 		expect( game.players[ mockPlayer3.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
 		expect( game.players[ mockPlayer4.id ].hand.containsSome( smallHearts ) ).toBeFalsy();
-		expect( game.teams[ mockPlayer3.team! ].score ).toBe( 1 );
+		expect( game.teams[ mockPlayer3.teamId! ].score ).toBe( 1 );
 	} );
 
 	afterEach( () => {

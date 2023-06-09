@@ -94,12 +94,12 @@ export const cardSuitMap: Record<CardSuit, PlayingCard[]> = {
 };
 
 export const cardSetMap: Record<CardSet, PlayingCard[]> = {
-	[ CardSet.SMALL_CLUBS ]: cardSuitMap.Clubs.slice( 0, 6 ),
-	[ CardSet.SMALL_SPADES ]: cardSuitMap.Spades.slice( 0, 6 ),
-	[ CardSet.SMALL_DIAMONDS ]: cardSuitMap.Diamonds.slice( 0, 6 ),
-	[ CardSet.SMALL_HEARTS ]: cardSuitMap.Hearts.slice( 0, 6 ),
-	[ CardSet.BIG_CLUBS ]: cardSuitMap.Clubs.slice( 7 ),
-	[ CardSet.BIG_SPADES ]: cardSuitMap.Spades.slice( 7 ),
-	[ CardSet.BIG_DIAMONDS ]: cardSuitMap.Diamonds.slice( 7 ),
-	[ CardSet.BIG_HEARTS ]: cardSuitMap.Hearts.slice( 7 )
+	[ CardSet.SMALL_CLUBS ]: cardSuitMap[ CardSuit.CLUBS ].slice( 0, 6 ),
+	[ CardSet.SMALL_SPADES ]: cardSuitMap[ CardSuit.SPADES ].slice( 0, 6 ),
+	[ CardSet.SMALL_DIAMONDS ]: cardSuitMap[ CardSuit.DIAMONDS ].slice( 0, 6 ),
+	[ CardSet.SMALL_HEARTS ]: cardSuitMap[ CardSuit.HEARTS ].slice( 0, 6 ),
+	[ CardSet.BIG_CLUBS ]: cardSuitMap[ CardSuit.CLUBS ].slice( 7 ),
+	[ CardSet.BIG_SPADES ]: cardSuitMap[ CardSuit.SPADES ].slice( 7 ),
+	[ CardSet.BIG_DIAMONDS ]: cardSuitMap[ CardSuit.DIAMONDS ].slice( 7 ),
+	[ CardSet.BIG_HEARTS ]: cardSuitMap[ CardSuit.HEARTS ].slice( 7 )
 };

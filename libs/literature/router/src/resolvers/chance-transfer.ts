@@ -28,12 +28,12 @@ function validate( ctx: LiteratureTrpcContext, input: ChanceTransferInput ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CHANCE_TRANSFER_TO_PLAYER_WITH_CARDS } );
 	}
 
-	if ( receivingPlayer.team !== givingPlayer.team ) {
+	if ( receivingPlayer.teamId !== givingPlayer.teamId ) {
 		logger.error( "Chance can only be transferred to member of your team!" );
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CHANCE_TRANSFER_TO_SAME_TEAM_PLAYER } );
 	}
 
-	return [ game ] as const;
+	return [ game, givingPlayer ] as const;
 }
 
 export function chanceTransfer(): LiteratureResolver<ChanceTransferInput, ILiteratureGame> {
@@ -41,16 +41,10 @@ export function chanceTransfer(): LiteratureResolver<ChanceTransferInput, ILiter
 		logger.debug( ">> chanceTransfer()" );
 		logger.debug( "Input: %o", input );
 
-		const [ game ] = validate( ctx, input );
+		const [ game, givingPlayer ] = validate( ctx, input );
+		game.executeChanceTransferMove( { to: input.transferTo, from: givingPlayer.id } );
 
-		game.executeMoveAction( {
-			action: "CHANCE_TRANSFER",
-			transferData: {
-				playerId: input.transferTo
-			}
-		} );
-
-		await ctx.db.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
+		await ctx.db.games().updateOne( { id: game.id }, game.serialize() );
 		return game;
 	};
 }

@@ -1,18 +1,18 @@
-export type ILiteratureTeam = {
+export interface ILiteratureTeam {
+	id: string;
 	name: string;
 	score: number;
-	gameId: string;
-	members: string[];
+	members: Array<string>;
 }
 
 export class LiteratureTeam implements ILiteratureTeam {
+	id: string;
 	name: string;
-	gameId: string;
 	members: string[];
 	score: number;
 
 	private constructor( teamData: ILiteratureTeam ) {
-		this.gameId = teamData.gameId;
+		this.id = teamData.id;
 		this.name = teamData.name;
 		this.members = teamData.members;
 		this.score = teamData.score;

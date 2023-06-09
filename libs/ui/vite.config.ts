@@ -17,7 +17,7 @@ export default defineConfig( {
 			provider: "istanbul",
 			enabled: true,
 			include: [ "src/**/*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}" ],
-			exclude: [ "src/index.ts", "src/**/*.stories.tsx", ".storybook" ],
+			exclude: [ "src/inputs.ts", "src/**/*.stories.tsx", ".storybook" ],
 			all: true,
 			clean: true,
 			reportsDirectory: "coverage"

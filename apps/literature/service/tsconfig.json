@@ -8,5 +8,5 @@
 		"sourceMap": true,
 		"sourceRoot": "src"
 	},
-	"include": [ "src/**/*.ts", "test", "vite.config.ts" ]
+	"include": [ "src", "test", "vite.config.ts" ]
 }

@@ -1,12 +1,5 @@
-import { CardDeck, CardRank, CardSet, cardSetMap, PlayingCard } from "@s2h/cards";
-import {
-	AskActionData,
-	CallActionData,
-	ILiteratureMove,
-	LiteratureMove,
-	LiteratureMoveActionData,
-	LiteratureMoveResultData
-} from "./move";
+import { CardDeck, CardHand, CardRank, ICardHand, PlayingCard } from "@s2h/cards";
+import { AskActionData, CallActionData, TransferActionData } from "./move";
 import { ILiteraturePlayer, LiteraturePlayer } from "./player";
 import { ILiteratureTeam, LiteratureTeam } from "./team";
 import { createId } from "@paralleldrive/cuid2";
@@ -18,12 +11,12 @@ export interface ILiteratureGame {
 	code: string;
 	playerCount: number;
 	createdBy: string;
-	createdTimestamp: string;
+	timestamp: string;
 	status: LiteratureGameStatus;
+	currentTurn: string;
 	players: Record<string, ILiteraturePlayer>;
 	teams: Record<string, ILiteratureTeam>;
-	moves: ILiteratureMove[];
-	currentTurn: string;
+	initialHands: Record<string, ICardHand>;
 }
 
 export enum LiteratureGameStatus {
@@ -39,19 +32,19 @@ export class LiteratureGame implements ILiteratureGame {
 	code: string;
 	playerCount: number;
 	createdBy: string;
-	createdTimestamp: string;
+	timestamp: string;
 	status: LiteratureGameStatus;
+	currentTurn: string;
 	players: Record<string, LiteraturePlayer>;
 	teams: Record<string, LiteratureTeam>;
-	moves: Array<LiteratureMove>;
-	currentTurn: string;
+	initialHands: Record<string, CardHand>;
 
 	private constructor( gameData: ILiteratureGame ) {
 		this.id = gameData.id;
 		this.code = gameData.code;
 		this.playerCount = gameData.playerCount;
 		this.createdBy = gameData.createdBy;
-		this.createdTimestamp = gameData.createdTimestamp;
+		this.timestamp = gameData.timestamp;
 		this.status = gameData.status;
 
 		this.players = {};
@@ -64,7 +57,6 @@ export class LiteratureGame implements ILiteratureGame {
 			this.teams[ team.name ] = LiteratureTeam.from( team );
 		} );
 
-		this.moves = gameData.moves.map( LiteratureMove.from );
 		this.currentTurn = gameData.currentTurn;
 	}
 
@@ -84,7 +76,7 @@ export class LiteratureGame implements ILiteratureGame {
 		return Object.values( this.teams );
 	}
 
-	get teamNames() {
+	get teamIds() {
 		return Object.keys( this.teams );
 	}
 
@@ -96,10 +88,10 @@ export class LiteratureGame implements ILiteratureGame {
 			teams: {},
 			code: LiteratureGame.generateGameCode(),
 			playerCount,
-			moves: [],
-			createdTimestamp: dayjs().toISOString(),
+			timestamp: dayjs().toISOString(),
 			status: LiteratureGameStatus.CREATED,
-			currentTurn: loggedInUser.id
+			currentTurn: loggedInUser.id,
+			initialHands: {}
 		} );
 	}
 
@@ -116,18 +108,16 @@ export class LiteratureGame implements ILiteratureGame {
 		return result;
 	}
 
-	addCardsToPlayer( playerId: string, ...cards: PlayingCard[] ) {
-		this.players[ playerId ].hand.addCard( ...cards );
-	}
-
 	dealCards() {
 		const deck = new CardDeck();
 		deck.removeCardsOfRank( CardRank.SEVEN );
 		const hands = deck.generateHands( this.playerCount );
 
 		Object.values( this.players ).forEach( ( player, i ) => {
-			this.players[ player.id ].hand = hands[ i ];
+			this.initialHands[ player.id ] = hands[ i ];
 		} );
+
+		return this.initialHands;
 	}
 
 	addPlayers( ...players: ILiteraturePlayer[] ) {
@@ -146,132 +136,68 @@ export class LiteratureGame implements ILiteratureGame {
 
 	createTeams( teams: Array<{ name: string, members: string[] }> ) {
 		teams.forEach( ( { name, members } ) => {
-			const team = LiteratureTeam.from( { name, members, score: 0, gameId: this.id } );
+			const team = LiteratureTeam.from( { name, members, score: 0, id: createId() } );
 			this.teams[ team.name ] = team;
 			members.forEach( memberId => {
-				this.players[ memberId ].team = name;
+				this.players[ memberId ].teamId = name;
 			} );
 		} );
 	}
 
-	removeCardsOfSet( cardSet: CardSet ) {
-		const cardsCalled = cardSetMap[ cardSet ];
-
-		this.playerList.forEach( player => {
-			if ( player.hand.containsSome( cardsCalled ) ) {
-				this.players[ player.id ].hand.removeCardsOfSet( cardSet );
-			}
-		} );
+	executeChanceTransferMove( { to }: TransferActionData ): boolean {
+		this.currentTurn = to;
+		return true;
 	}
 
-	executeMoveAction( actionData: Omit<LiteratureMoveActionData, "description"> ) {
-		let resultData: LiteratureMoveResultData;
-		let actionDescription: string;
-		const { action, askData, callData, transferData } = actionData;
-
-		switch ( action ) {
-			case "ASK" :
-				const askingPlayer = this.players[ askData!.by ];
-				const askedPlayer = this.players[ askData!.from ];
-				const card = PlayingCard.from( askData!.card );
-
-				actionDescription = `${ askingPlayer.name } asked ${ askedPlayer.name } for ${ card.cardString }`;
-				resultData = this.executeAskMove( askData! );
-				break;
-
-			case "CALL_SET":
-				const callingSet = callData!.set;
-				const callingPlayer = this.players[ callData!.playerId ];
-				actionDescription = `${ callingPlayer.name } is calling ${ callingSet }!`;
-				resultData = this.executeCallMove( callData! );
-				break;
-
-			case "CHANCE_TRANSFER" :
-				const currentPlayer = this.players[ this.currentTurn ];
-				const nextPlayer = this.players[ transferData!.playerId ];
-				actionDescription = `${ currentPlayer.name } is transferring chance to ${ nextPlayer.name }`;
-				this.currentTurn = transferData!.playerId;
-
-				resultData = {
-					result: "CHANCE_TRANSFER",
-					success: true,
-					description: `${ currentPlayer.name } transferred chance to ${ nextPlayer.name }`
-				};
-		}
-
-		const move = LiteratureMove.create( { ...actionData, description: actionDescription }, resultData );
-		this.moves = [ move, ...this.moves ];
-	}
-
-	handleCallSet( success: boolean, set: CardSet, player: LiteraturePlayer ) {
-		const oppositeTeamId = Object.keys( this.teams ).find( name => name !== player.team )!;
-		this.teams[ success ? player.team! : oppositeTeamId ].score++;
-		this.removeCardsOfSet( set );
-
-		if ( success ) {
-			if ( player.hand.isEmpty() ) {
-				this.currentTurn = this.teams[ player.team! ].members.find(
-					id => id !== player.id && !this.players[ id ].hand.isEmpty()
-				)!;
-			} else {
-				this.currentTurn = player.id;
-			}
-		} else {
-			this.currentTurn = this.teams[ oppositeTeamId ].members.find(
-				id => !this.players[ id ].hand.isEmpty()
-			)!;
-		}
-	}
-
-	private executeCallMove( { set, data, playerId }: CallActionData ): LiteratureMoveResultData {
-		const callingPlayer = this.players[ playerId ];
-		const teamMembers = this.teams[ callingPlayer.team! ].members.map( memberId => this.players[ memberId ] );
+	executeCallMove( { data, by }: CallActionData, hands: Record<string, CardHand> ): boolean {
+		const callingPlayer = this.players[ by ];
+		const teamMembers = this.teams[ callingPlayer.teamId! ].members.map( memberId => this.players[ memberId ] );
 
 		let cardsCalledCorrect = 0;
 		teamMembers.forEach( member => {
-			const cardsCalledForPlayer = data[ member.id ]?.map( PlayingCard.from );
+			const cardsCalledForPlayer = data[ member.id ].cards.map( PlayingCard.from );
 			if ( !!cardsCalledForPlayer ) {
-				if ( member.hand.containsAll( cardsCalledForPlayer ) ) {
+				if ( hands[ member.id ].containsAll( cardsCalledForPlayer ) ) {
 					cardsCalledCorrect += cardsCalledForPlayer.length;
 				}
 			}
 		} );
 
-		this.handleCallSet( cardsCalledCorrect === 6, set, callingPlayer );
-
-		return {
-			result: "CALL_SET",
-			success: cardsCalledCorrect === 6,
-			description: cardsCalledCorrect === 6
-				? `${ callingPlayer.name } called ${ set } correctly!`
-				: `${ callingPlayer.name } called ${ set } incorrectly!`
-		};
-
+		const success = cardsCalledCorrect === 6;
+		this.handleCallSet( success, callingPlayer, hands );
+		return success;
 	}
 
-	private executeAskMove( { by, from, card: c }: AskActionData ): LiteratureMoveResultData {
-		const askingPlayer = this.players[ by ];
+	executeAskMove( { from, card: c }: AskActionData, hands: Record<string, CardHand> ): boolean {
 		const askedPlayer = this.players[ from ];
 		const card = PlayingCard.from( c );
-		const hasCard = this.players[ from ].hand.contains( card );
+		const hasCard = hands[ from ].contains( card );
 
 		if ( hasCard ) {
-			this.players[ from ].hand.removeCard( card );
-			this.players[ by ].hand.addCard( card );
-
-			return {
-				result: "CARD_TRANSFER",
-				success: true,
-				description: `${ askedPlayer.name } gave ${ card.cardString } to ${ askingPlayer.name }`
-			};
+			hands[ from ].removeCard( card );
+			hands[ from ].addCard( card );
+			return true;
 
 		} else {
 			this.currentTurn = askedPlayer.id;
-			return {
-				result: "CARD_TRANSFER",
-				success: false,
-				description: `${ askedPlayer.name } declined ${ card.cardString } to ${ askingPlayer.name }`
-			};
+			return false;
+		}
+	}
+
+	private handleCallSet( success: boolean, player: LiteraturePlayer, hands: Record<string, CardHand> ) {
+		const oppositeTeamId = Object.keys( this.teams ).find( name => name !== player.teamId )!;
+		this.teams[ success ? player.teamId! : oppositeTeamId ].score++;
+
+		if ( success ) {
+			if ( hands[ player.id ].isEmpty() ) {
+				this.currentTurn = this.teams[ player.teamId! ].members.find(
+					id => id !== player.id && !hands[ id ].isEmpty()
+				)!;
+			} else {
+				this.currentTurn = player.id;
+			}
+		} else {
+			this.currentTurn = this.teams[ oppositeTeamId ].members.find( id => !hands[ id ].isEmpty() )!;
 		}
 	}
 }

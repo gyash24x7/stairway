@@ -19,8 +19,8 @@ export const useCurrentGameTeams = () => {
 
 	return teamList.length !== 0 && !!currentPlayer
 		? {
-			myTeam: teams[ currentPlayer.team! ],
-			oppositeTeam: teamList.find( team => team.name !== currentPlayer.team )
+			myTeam: teams[ currentPlayer.teamId! ],
+			oppositeTeam: teamList.find( team => team.name !== currentPlayer.teamId )
 		}
 		: {};
 };

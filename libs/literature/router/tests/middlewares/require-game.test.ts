@@ -8,7 +8,7 @@ import { Messages } from "../../src/constants";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { RSingleSelection, RTable } from "rethinkdb-ts";
 import { LoremIpsum } from "lorem-ipsum";
-import console from "node:console";
+import console from "console";
 import { createId } from "@paralleldrive/cuid2";
 
 const lorem = new LoremIpsum();
@@ -32,7 +32,7 @@ describe( "Require Game Middleware", () => {
 	beforeEach( () => {
 		mockRSingleSelection.run.calledWith( mockCtx.connection ).mockResolvedValue( mockGame );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 	} );
 
 	it( "should throw error when gameId not present in raw input", () => {
@@ -51,7 +51,7 @@ describe( "Require Game Middleware", () => {
 		const rawInput = { gameId: createId() };
 		mockRSingleSelection.run.calledWith( mockCtx.connection ).mockResolvedValue( null );
 		mockLiteratureTable.get.mockReturnValue( mockRSingleSelection );
-		mockCtx.db.literature.mockReturnValue( mockLiteratureTable );
+		mockCtx.db.games.mockReturnValue( mockLiteratureTable );
 
 		const middleware = requireGame();
 
@@ -61,7 +61,7 @@ describe( "Require Game Middleware", () => {
 				expect( e.code ).toBe( "NOT_FOUND" );
 				expect( e.message ).toBe( Messages.GAME_NOT_FOUND );
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( rawInput.gameId );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 			} );
 	} );
 
@@ -74,7 +74,7 @@ describe( "Require Game Middleware", () => {
 				expect( mockNextFn.mock.calls.length ).toBe( 1 );
 				expect( mockNextFn.mock.calls[ 0 ][ 0 ] ).toEqual( { ctx: mockCtx } );
 				expect( mockLiteratureTable.get ).toHaveBeenCalledWith( rawInput.gameId );
-				expect( mockCtx.db.literature ).toHaveBeenCalled();
+				expect( mockCtx.db.games ).toHaveBeenCalled();
 			} )
 			.catch( err => {
 				console.log( err );

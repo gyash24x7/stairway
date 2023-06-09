@@ -3,10 +3,9 @@ import { ILiteratureGame, LiteratureGame, LiteratureGameStatus, LiteraturePlayer
 import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import { CardHand } from "@s2h/cards";
 
 async function validate( ctx: LiteratureTrpcContext, input: JoinGameInput ) {
-	const [ game ] = await ctx.db.literature().filter( { code: input.code } ).run( ctx.connection );
+	const game = await ctx.db.games().findOne( { code: input.code } );
 
 	if ( !game ) {
 		throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
@@ -22,19 +21,18 @@ async function validate( ctx: LiteratureTrpcContext, input: JoinGameInput ) {
 export function joinGame(): LiteratureResolver<JoinGameInput, ILiteratureGame> {
 	return async ( { ctx, input } ) => {
 		const [ game ] = await validate( ctx, input );
-		const { id, name, avatar } = ctx.loggedInUser!;
 
-		if ( game.isUserAlreadyInGame( id ) ) {
+		if ( game.isUserAlreadyInGame( ctx.loggedInUser!.id ) ) {
 			return game;
 		}
 
-		game.addPlayers( LiteraturePlayer.from( { id, name, avatar, hand: CardHand.empty() } ) );
+		game.addPlayers( LiteraturePlayer.create( ctx.loggedInUser! ) );
 
 		game.status = Object.keys( game.players ).length === game.playerCount
 			? LiteratureGameStatus.PLAYERS_READY
 			: LiteratureGameStatus.CREATED;
 
-		await ctx.db.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
+		await ctx.db.games().updateOne( { id: game.id }, game.serialize() );
 		return game;
 	};
 }

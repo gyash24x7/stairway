@@ -14,9 +14,15 @@ export const askCardInput = z.object( {
 
 export type AskCardInput = z.infer<typeof askCardInput>;
 
+export const playerCallData = z.object( {
+	cards: z.array( playingCard )
+} );
+
+export type PlayerCallData = z.infer<typeof playerCallData>;
+
 export const callSetInput = z.object( {
 	gameId: z.string(),
-	data: z.record( z.string(), z.array( playingCard ) )
+	data: z.record( z.string(), playerCallData )
 } );
 
 export type CallSetInput = z.infer<typeof callSetInput>;

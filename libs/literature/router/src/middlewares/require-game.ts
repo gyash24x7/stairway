@@ -14,7 +14,7 @@ export function requireGame(): LiteratureTrpcMiddleware {
 			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_ID } );
 		}
 
-		const currentGame = await ctx.db.literature().get( result.data.gameId ).run( ctx.connection );
+		const currentGame = await ctx.db.games().findOne( { id: result.data.gameId } );
 		if ( !currentGame ) {
 			logger.error( "Game Not Found!" );
 			throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );

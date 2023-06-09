@@ -159,7 +159,7 @@ describe( "Literature Game", () => {
 		literatureGame.dealCards();
 
 		const askData = { from: player1.id, by: player2.id, card: literatureGame.players[ player1.id ].hand.get( 0 ) };
-		literatureGame.executeMoveAction( { action: "ASK", askData } );
+		literatureGame.executeMove( { action: "ASK", askData } );
 
 		const lastMove = literatureGame.moves[ 0 ];
 		expect( lastMove.actionData.action ).toBe( "ASK" );
@@ -174,7 +174,7 @@ describe( "Literature Game", () => {
 		literatureGame.dealCards();
 
 		const askData = { from: player1.id, by: player2.id, card: literatureGame.players[ player2.id ].hand.get( 0 ) };
-		literatureGame.executeMoveAction( { action: "ASK", askData } );
+		literatureGame.executeMove( { action: "ASK", askData } );
 
 		const lastMove = literatureGame.moves[ 0 ];
 		expect( lastMove.actionData.action ).toBe( "ASK" );
@@ -189,7 +189,7 @@ describe( "Literature Game", () => {
 		literatureGame.dealCards();
 
 		const transferData = { playerId: player1.id };
-		literatureGame.executeMoveAction( { action: "CHANCE_TRANSFER", transferData } );
+		literatureGame.executeMove( { action: "CHANCE_TRANSFER", transferData } );
 
 		const lastMove = literatureGame.moves[ 0 ];
 		expect( lastMove.actionData.action ).toBe( "CHANCE_TRANSFER" );
@@ -218,7 +218,7 @@ describe( "Literature Game", () => {
 			}
 		};
 
-		literatureGame.executeMoveAction( { action: "CALL_SET", callData } );
+		literatureGame.executeMove( { action: "CALL_SET", callData } );
 
 		const lastMove = literatureGame.moves[ 0 ];
 		expect( lastMove.actionData.action ).toBe( "CALL_SET" );
@@ -247,7 +247,7 @@ describe( "Literature Game", () => {
 			}
 		};
 
-		literatureGame.executeMoveAction( { action: "CALL_SET", callData } );
+		literatureGame.executeMove( { action: "CALL_SET", callData } );
 
 		const lastMove = literatureGame.moves[ 0 ];
 		expect( lastMove.actionData.action ).toBe( "CALL_SET" );
@@ -272,7 +272,7 @@ describe( "Literature Game", () => {
 			data: { [ player2.id ]: clubsSet }
 		};
 
-		literatureGame.executeMoveAction( { action: "CALL_SET", callData } );
+		literatureGame.executeMove( { action: "CALL_SET", callData } );
 
 		const lastMove = literatureGame.moves[ 0 ];
 		expect( lastMove.actionData.action ).toBe( "CALL_SET" );

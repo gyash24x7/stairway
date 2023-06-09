@@ -8,13 +8,17 @@ import { Messages } from "../constants";
 import { logger } from "@s2h/utils";
 
 function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
-	const calledCards = Object.values( input.data ).flat().map( PlayingCard.from );
+	const calledCards = Object.values( input.data )
+		.flatMap( playerCallData => playerCallData.cards )
+		.map( PlayingCard.from );
+
 	const calledCardIds = new Set( calledCards.map( card => card.id ) );
 	const cardSets = new Set( calledCards.map( card => card.set ) );
 
 	const user = ctx.loggedInUser!;
 	const game = LiteratureGame.from( ctx.currentGame! );
 	const callingPlayer = game.players[ user.id ];
+	const callingPlayerHand = CardHand.from( ctx.currentGameHands![ callingPlayer.id ] );
 
 	const calledPlayers = Object.keys( input.data ).map( playerId => {
 		const player = game.players[ playerId ];
@@ -27,7 +31,7 @@ function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
 		return player;
 	} );
 
-	if ( !Object.keys( input.data ).includes( user.id ) || input.data[ user.id ].length === 0 ) {
+	if ( !Object.keys( input.data ).includes( user.id ) || input.data[ user.id ].cards.length === 0 ) {
 		logger.trace( "Input: %o", input );
 		logger.trace( "Game: %o", game.serialize() );
 		logger.error( "Calling Player did not call own cards! UserId: %s", user.id );
@@ -50,14 +54,14 @@ function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
 
 	const [ callingSet ] = cardSets;
 
-	if ( !CardHand.from( callingPlayer.hand! ).cardSetsInHand.includes( callingSet ) ) {
+	if ( !callingPlayerHand.cardSetsInHand.includes( callingSet ) ) {
 		logger.trace( "Input: %o", input );
 		logger.trace( "Game: %o", game.serialize() );
 		logger.error( "Set called without having cards from that set! UserId: %s, Set: %s", user.id, callingSet );
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CANNOT_CALL_SET_THAT_YOU_DONT_HAVE } );
 	}
 
-	const calledTeams = new Set( calledPlayers.map( player => player.team ) );
+	const calledTeams = new Set( calledPlayers.map( player => player.teamId ) );
 
 	if ( calledTeams.size !== 1 ) {
 		logger.trace( "Input: %o", input );
@@ -79,16 +83,8 @@ function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
 export function callSet(): LiteratureResolver<CallSetInput, ILiteratureGame> {
 	return async ( { ctx, input } ) => {
 		const [ game, callingSet ] = validate( ctx, input );
-		game.executeMoveAction( {
-			action: "CALL_SET",
-			callData: {
-				playerId: ctx.loggedInUser!.id,
-				set: callingSet,
-				data: input.data
-			}
-		} );
-
-		await ctx.db.literature().get( game.id ).update( game.serialize() ).run( ctx.connection );
+		game.executeCallMove( { by: ctx.loggedInUser!.id, set: callingSet, data: input.data }, {} );
+		await ctx.db.games().updateOne( { id: game.id }, game.serialize() );
 		return game;
 	};
 }

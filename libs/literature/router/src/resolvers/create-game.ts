@@ -7,7 +7,7 @@ export function createGame(): LiteratureResolver<CreateGameInput, ILiteratureGam
 		const game = LiteratureGame.create( input.playerCount || 2, ctx.loggedInUser! );
 		const player = LiteraturePlayer.create( ctx.loggedInUser! );
 		game.addPlayers( player );
-		await ctx.db.literature().insert( game.serialize() ).run( ctx.connection );
+		await ctx.db.games().insertOne( game.serialize() );
 		return game;
 	};
 }

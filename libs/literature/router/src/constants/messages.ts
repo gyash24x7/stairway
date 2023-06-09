@@ -23,5 +23,6 @@ export const Messages = {
 	INVALID_CHANCE_TRANSFER: "You can transfer chance only when you have called a set correctly!",
 	CHANCE_TRANSFER_TO_PLAYER_WITH_CARDS: "You can transfer chance to a player with cards only!",
 	CHANCE_TRANSFER_TO_SAME_TEAM_PLAYER: "You can transfer chance to a player of your team only!",
-	OUT_OF_TURN: "You can not make a move unless it is your turn!"
+	OUT_OF_TURN: "You can not make a move unless it is your turn!",
+	HANDS_NOT_PRESENT: "Hands for all players not present!"
 };

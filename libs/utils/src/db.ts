@@ -1,4 +1,4 @@
 import { IUser } from "@s2h/utils";
-import { RTable } from "rethinkdb-ts";
+import { Collection } from "mongodb";
 
-export type Db = { users: () => RTable<IUser> };
+export type Db = { users: () => Collection<IUser> };
