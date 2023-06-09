@@ -16,8 +16,8 @@
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"paths": {
-			"@s2h/auth": [ "libs/auth/src/index.ts" ],
-			"@s2h/cards": [ "libs/cards/src/index.ts" ],
+			"@s2h/auth": [ "libs/common/auth/src/index.ts" ],
+			"@s2h/cards": [ "libs/common/cards/src/index.ts" ],
 			"@s2h/dtos": [ "libs/dtos/src/index.ts" ],
 			"@s2h/literature/dtos": [ "libs/literature/dtos/src/index.ts" ],
 			"@s2h/literature/router": [ "libs/literature/router/src/index.ts" ],
