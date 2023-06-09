@@ -1,11 +1,11 @@
 import { CardHand, PlayingCard } from "@s2h/cards";
 import type { CallSetInput } from "@s2h/literature/dtos";
-import type { ILiteratureGame } from "@s2h/literature/utils";
-import { LiteratureGame } from "@s2h/literature/utils";
-import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
+import type { ILiteratureGame, PlayerCallData } from "@s2h/literature/utils";
+import { LiteratureGame, LiteratureMove } from "@s2h/literature/utils";
+import { logger } from "@s2h/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import { logger } from "@s2h/utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 
 function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
 	const calledCards = Object.values( input.data )
@@ -14,6 +14,11 @@ function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
 
 	const calledCardIds = new Set( calledCards.map( card => card.id ) );
 	const cardSets = new Set( calledCards.map( card => card.set ) );
+
+	const hands: Record<string, CardHand> = {};
+	Object.keys( ctx.currentGameHands! ).map( playerId => {
+		hands[ playerId ] = CardHand.from( ctx.currentGameHands![ playerId ] );
+	} );
 
 	const user = ctx.loggedInUser!;
 	const game = LiteratureGame.from( ctx.currentGame! );
@@ -77,13 +82,26 @@ function validate( ctx: LiteratureTrpcContext, input: CallSetInput ) {
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CALL_ALL_CARDS } );
 	}
 
-	return [ game, callingSet ] as const;
+	return [ game, callingSet, hands ] as const;
 }
 
 export function callSet(): LiteratureResolver<CallSetInput, ILiteratureGame> {
 	return async ( { ctx, input } ) => {
-		const [ game, callingSet ] = validate( ctx, input );
-		game.executeCallMove( { by: ctx.loggedInUser!.id, set: callingSet, data: input.data }, {} );
+		const [ game, callingSet, hands ] = validate( ctx, input );
+		const callData = { by: ctx.loggedInUser!.id, set: callingSet, data: input.data };
+		const success = game.executeCallMove( callData, hands );
+
+		const correctCall: Record<string, PlayerCallData> = {};
+		Object.keys( hands ).map( playerId => {
+			const removedCards = hands[ playerId ].removeCardsOfSet( callingSet );
+			if ( removedCards.length !== 0 ) {
+				correctCall[ playerId ] = { cards: removedCards };
+			}
+		} );
+
+		const move = LiteratureMove.createCallMove( game.id, callData, success, correctCall );
+		await ctx.db.moves().insertOne( move.serialize() );
+
 		await ctx.db.games().updateOne( { id: game.id }, game.serialize() );
 		return game;
 	};

@@ -1,4 +1,9 @@
 import { Controller } from "@nestjs/common";
+import { GrpcMethod } from "@nestjs/microservices";
+import { ILiteratureGame, LiteratureGame } from "@s2h/literature/utils";
+import { IUser } from "@s2h/utils";
+import { Collection } from "mongodb";
+import { LiteratureCollection } from "../db";
 import {
 	AskCardInput,
 	CallSetInput,
@@ -9,66 +14,9 @@ import {
 	JoinGameInput,
 	StartGameInput
 } from "./game.inputs";
-import { GrpcMethod } from "@nestjs/microservices";
-import { LiteratureCollection } from "../db";
-import { Collection } from "mongodb";
-import { ILiteratureGame, LiteratureGame } from "@s2h/literature/utils";
-import { IUser } from "@s2h/utils";
-import { Metadata, ServerUnaryCall } from "@grpc/grpc-js";
-
-
-export interface ILiteratureService {
-	askCard(
-		input: AskCardInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<AskCardInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-
-	callSet(
-		input: CallSetInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<CallSetInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-
-	chanceTransfer(
-		input: ChanceTransferInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<ChanceTransferInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-
-	createGame(
-		input: CreateGameInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<CreateGameInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-
-	createTeams(
-		input: CreateTeamsInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<CreateTeamsInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-
-	getGame(
-		input: GetGameInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<GetGameInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-
-	joinGame(
-		input: JoinGameInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<JoinGameInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-
-	startGame(
-		input: StartGameInput,
-		metaData: Metadata,
-		call: ServerUnaryCall<StartGameInput, ILiteratureGame>
-	): Promise<ILiteratureGame>;
-}
 
 @Controller()
-export class LiteratureService implements ILiteratureService {
+export class LiteratureService {
 
 	constructor( @LiteratureCollection() private readonly collection: Collection<ILiteratureGame> ) {}
 

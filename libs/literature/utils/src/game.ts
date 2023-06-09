@@ -1,10 +1,10 @@
+import { createId } from "@paralleldrive/cuid2";
 import { CardDeck, CardHand, CardRank, ICardHand, PlayingCard } from "@s2h/cards";
+import { IUser } from "@s2h/utils";
+import dayjs from "dayjs";
 import { AskActionData, CallActionData, TransferActionData } from "./move";
 import { ILiteraturePlayer, LiteraturePlayer } from "./player";
 import { ILiteratureTeam, LiteratureTeam } from "./team";
-import { createId } from "@paralleldrive/cuid2";
-import { IUser } from "@s2h/utils";
-import dayjs from "dayjs";
 
 export interface ILiteratureGame {
 	id: string;
@@ -149,7 +149,7 @@ export class LiteratureGame implements ILiteratureGame {
 		return true;
 	}
 
-	executeCallMove( { data, by }: CallActionData, hands: Record<string, CardHand> ): boolean {
+	executeCallMove( { data, by }: CallActionData, hands: Record<string, ICardHand> ): boolean {
 		const callingPlayer = this.players[ by ];
 		const teamMembers = this.teams[ callingPlayer.teamId! ].members.map( memberId => this.players[ memberId ] );
 
@@ -157,7 +157,7 @@ export class LiteratureGame implements ILiteratureGame {
 		teamMembers.forEach( member => {
 			const cardsCalledForPlayer = data[ member.id ].cards.map( PlayingCard.from );
 			if ( !!cardsCalledForPlayer ) {
-				if ( hands[ member.id ].containsAll( cardsCalledForPlayer ) ) {
+				if ( CardHand.from( hands[ member.id ] ).containsAll( cardsCalledForPlayer ) ) {
 					cardsCalledCorrect += cardsCalledForPlayer.length;
 				}
 			}
@@ -168,36 +168,39 @@ export class LiteratureGame implements ILiteratureGame {
 		return success;
 	}
 
-	executeAskMove( { from, card: c }: AskActionData, hands: Record<string, CardHand> ): boolean {
+	executeAskMove( { from, by, card: c }: AskActionData, hands: Record<string, ICardHand> ) {
 		const askedPlayer = this.players[ from ];
 		const card = PlayingCard.from( c );
-		const hasCard = hands[ from ].contains( card );
+		const fromHand = CardHand.from( hands[ from ] );
+		const byHand = CardHand.from( hands[ by ] );
+		const hasCard = fromHand.contains( card );
 
 		if ( hasCard ) {
-			hands[ from ].removeCard( card );
-			hands[ from ].addCard( card );
-			return true;
-
+			fromHand.removeCard( card );
+			byHand.addCard( card );
+			return { [ from ]: fromHand, [ by ]: byHand };
 		} else {
 			this.currentTurn = askedPlayer.id;
-			return false;
+			return undefined;
 		}
 	}
 
-	private handleCallSet( success: boolean, player: LiteraturePlayer, hands: Record<string, CardHand> ) {
+	private handleCallSet( success: boolean, player: LiteraturePlayer, hands: Record<string, ICardHand> ) {
 		const oppositeTeamId = Object.keys( this.teams ).find( name => name !== player.teamId )!;
 		this.teams[ success ? player.teamId! : oppositeTeamId ].score++;
 
 		if ( success ) {
-			if ( hands[ player.id ].isEmpty() ) {
+			if ( CardHand.from( hands[ player.id ] ).isEmpty() ) {
 				this.currentTurn = this.teams[ player.teamId! ].members.find(
-					id => id !== player.id && !hands[ id ].isEmpty()
+					id => id !== player.id && !CardHand.from( hands[ id ] ).isEmpty()
 				)!;
 			} else {
 				this.currentTurn = player.id;
 			}
 		} else {
-			this.currentTurn = this.teams[ oppositeTeamId ].members.find( id => !hands[ id ].isEmpty() )!;
+			this.currentTurn = this.teams[ oppositeTeamId ].members.find(
+				id => !CardHand.from( hands[ id ] ).isEmpty()
+			)!;
 		}
 	}
 }

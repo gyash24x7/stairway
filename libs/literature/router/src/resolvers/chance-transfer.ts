@@ -1,29 +1,35 @@
+import { CardHand } from "@s2h/cards";
 import type { ChanceTransferInput } from "@s2h/literature/dtos";
 import type { ILiteratureGame } from "@s2h/literature/utils";
-import { LiteratureGame } from "@s2h/literature/utils";
-import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
+import { LiteratureGame, LiteratureMoveType } from "@s2h/literature/utils";
+import { logger } from "@s2h/utils";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
-import { logger } from "@s2h/utils";
+import type { LiteratureResolver, LiteratureTrpcContext } from "../utils";
 
-function validate( ctx: LiteratureTrpcContext, input: ChanceTransferInput ) {
+async function validate( ctx: LiteratureTrpcContext, input: ChanceTransferInput ) {
 	const game = LiteratureGame.from( ctx.currentGame! );
-	const lastMove = game.moves[ 0 ];
+	const lastMove = await ctx.db.moves().findOne( {
+		gameId: game.id,
+		moveType: LiteratureMoveType.CALL_SET,
+		action: { callData: { by: ctx.loggedInUser?.id } }
+	} );
 
-	if ( lastMove.resultData.result !== "CALL_SET" || !lastMove.resultData.success ) {
+	if ( !lastMove?.success ) {
 		logger.error( "Chance can only be transferred after successful call!" );
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_CHANCE_TRANSFER } );
 	}
 
 	const givingPlayer = game.players[ ctx.loggedInUser!.id ];
 	const receivingPlayer = game.players[ input.transferTo ];
+	const receivingPlayerHand = CardHand.from( ctx.currentGameHands![ receivingPlayer.id ] );
 
 	if ( !receivingPlayer ) {
 		logger.error( "Cannot transfer chance to unknown player!" );
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.PLAYER_NOT_FOUND } );
 	}
 
-	if ( receivingPlayer.hand.length === 0 ) {
+	if ( receivingPlayerHand.length === 0 ) {
 		logger.error( "Chance can only be transferred to a player with cards!" );
 		throw new TRPCError( { code: "BAD_REQUEST", message: Messages.CHANCE_TRANSFER_TO_PLAYER_WITH_CARDS } );
 	}
@@ -41,7 +47,7 @@ export function chanceTransfer(): LiteratureResolver<ChanceTransferInput, ILiter
 		logger.debug( ">> chanceTransfer()" );
 		logger.debug( "Input: %o", input );
 
-		const [ game, givingPlayer ] = validate( ctx, input );
+		const [ game, givingPlayer ] = await validate( ctx, input );
 		game.executeChanceTransferMove( { to: input.transferTo, from: givingPlayer.id } );
 
 		await ctx.db.games().updateOne( { id: game.id }, game.serialize() );
