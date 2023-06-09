@@ -4,30 +4,30 @@
 	"sourceRoot": "apps/literature/service/src",
 	"projectType": "application",
 	"targets": {
-		"proto:gen": {
-			"command": ""
-		},
 		"build": {
-			"executor": "@nrwl/webpack:webpack",
+			"executor": "@nx/rspack:rspack",
 			"outputs": [ "{options.outputPath}" ],
+			"defaultConfiguration": "production",
 			"options": {
 				"target": "node",
-				"compiler": "tsc",
 				"outputPath": "apps/literature/service/dist",
 				"main": "apps/literature/service/src/main.ts",
 				"tsConfig": "apps/literature/service/tsconfig.build.json",
-				"assets": [ "apps/literature/service/src/proto" ]
+				"assets": [ "apps/literature/service/src/proto" ],
+				"rspackConfig": "apps/literature/service/rspack.config.js"
 			},
 			"configurations": {
+				"development": {
+					"mode": "development"
+				},
 				"production": {
-					"optimization": true,
-					"extractLicenses": true,
-					"inspect": false
+					"mode": "production",
+					"sourceMap": false
 				}
 			}
 		},
 		"serve": {
-			"executor": "@nrwl/js:node",
+			"executor": "@nx/js:node",
 			"options": {
 				"buildTarget": "literature-service:build",
 				"inspect": false
