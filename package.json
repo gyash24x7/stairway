@@ -10,7 +10,7 @@
 	"private": true,
 	"type": "commonjs",
 	"devDependencies": {
-		"@nestjs/testing": "^9.4.2",
+		"@nestjs/testing": "9.4.2",
 		"@nx/js": "16.3.2",
 		"@nx/rspack": "16.3.0",
 		"@nx/storybook": "16.3.2",
@@ -44,6 +44,7 @@
 		"@vitest/coverage-istanbul": "0.32.0",
 		"@vitest/ui": "0.32.0",
 		"jsdom": "22.1.0",
+		"license-webpack-plugin": "4.0.2",
 		"lorem-ipsum": "2.0.8",
 		"nx": "16.3.2",
 		"nx-cloud": "^16.0.5",

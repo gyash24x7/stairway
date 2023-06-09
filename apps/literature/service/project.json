@@ -14,7 +14,7 @@
 				"main": "apps/literature/service/src/main.ts",
 				"tsConfig": "apps/literature/service/tsconfig.build.json",
 				"assets": [ "apps/literature/service/src/proto" ],
-				"rspackConfig": "apps/literature/service/rspack.config.js"
+				"rspackConfig": "rspack.config.js"
 			},
 			"configurations": {
 				"development": {
