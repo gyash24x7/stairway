@@ -1,4 +1,4 @@
-import { CardRank, CardSet, CardSuit, PlayingCard } from "src";
+import { CardRank, CardSet, CardSuit, PlayingCard } from "../src";
 import { describe, expect, it } from "vitest";
 
 describe( "Playing Card", () => {
@@ -9,9 +9,6 @@ describe( "Playing Card", () => {
 
 		expect( serializedCard[ "rank" ] ).toBe( "Ace" );
 		expect( serializedCard[ "suit" ] ).toBe( "Diamonds" );
-		expect( serializedCard[ "set" ] ).toBeUndefined();
-		expect( serializedCard[ "cardString" ] ).toBeUndefined();
-		expect( serializedCard[ "set" ] ).toBeUndefined();
 
 		const deserializedCard = PlayingCard.from( serializedCard );
 

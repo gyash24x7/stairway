@@ -1,7 +1,7 @@
 {
 	"name": "cards",
 	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "libs/cards/src",
+	"sourceRoot": "libs/common/cards/src",
 	"projectType": "library",
 	"targets": {
 		"test": {

@@ -1,4 +1,4 @@
-import { CardHand, CardRank, CardSet, CardSuit, IPlayingCard, PlayingCard } from "src";
+import { CardHand, CardRank, CardSet, CardSuit, IPlayingCard, PlayingCard } from "../src";
 import { describe, expect, it } from "vitest";
 
 describe( "Card Hand", () => {

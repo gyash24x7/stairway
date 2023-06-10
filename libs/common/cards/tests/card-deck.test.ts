@@ -1,4 +1,4 @@
-import { CardDeck, CardRank, SORTED_DECK } from "src";
+import { CardDeck, CardRank, SORTED_DECK } from "../src";
 import { describe, expect, it } from "vitest";
 
 describe( "Card Deck", () => {

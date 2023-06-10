@@ -1,9 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { MongoClient } from "mongodb";
+import { AppConfig, Config } from "../config";
 
 @Injectable()
 export class DatabaseClient extends MongoClient {
-	constructor() {
-		super( "mongodb://localhost:27017/stairway" );
+	constructor( @Config() private readonly config: AppConfig ) {
+		super( config.db.url );
 	}
 }
