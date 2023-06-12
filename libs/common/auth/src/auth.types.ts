@@ -1,5 +1,3 @@
-import { Collection } from "mongodb";
-
 export interface UserAuthInfo {
 	id: string;
 	name: string;
@@ -14,10 +12,4 @@ export interface IUser {
 	verified: boolean;
 	password: string;
 	salt: string;
-}
-
-export const USERS_COLLECTION = "users";
-
-export type Db = {
-	users: () => Collection<IUser>
 }

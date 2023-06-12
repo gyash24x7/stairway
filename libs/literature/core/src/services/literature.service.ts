@@ -8,7 +8,7 @@ import {
 	LiteratureMoveType,
 	LiteraturePlayer
 } from "../models";
-import { AuthGuard, AuthInfo, UserAuthInfo } from "@s2h/auth";
+import { AuthGuard, AuthInfo, type UserAuthInfo } from "@s2h/auth";
 import {
 	AskCardInput,
 	CallSetInput,
@@ -21,7 +21,7 @@ import {
 	StartGameInput
 } from "../inputs";
 import { Database, LoggerFactory } from "@s2h/utils";
-import { Db } from "../types";
+import type { Db } from "../types";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import { RequireActiveGameGuard, RequireGameGuard, RequireHandsGuard, RequirePlayerGuard } from "../guards";

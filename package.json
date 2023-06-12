@@ -64,7 +64,6 @@
 		"@heroicons/react": "2.0.18",
 		"@nestjs/common": "9.4.2",
 		"@nestjs/core": "9.4.2",
-		"@nestjs/graphql": "11.0.6",
 		"@nestjs/microservices": "9.4.2",
 		"@nestjs/platform-express": "9.4.2",
 		"@ogma/logger": "2.5.2",

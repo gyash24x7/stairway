@@ -1,17 +1,17 @@
 import { Logger } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
 import { MicroserviceOptions, Transport } from "@nestjs/microservices";
 import path from "path";
+import { LiteratureModule } from "@s2h/literature/core";
 
 async function bootstrap() {
 	const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-		AppModule,
+		LiteratureModule,
 		{
 			transport: Transport.GRPC,
 			options: {
 				package: "literature",
-				protoPath: path.join( __dirname, "proto/literature.proto" )
+				protoPath: path.join( __dirname, "assets/literature.proto" )
 			}
 		}
 	);

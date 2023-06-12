@@ -1,7 +1,7 @@
 {
 	"name": "literature-service",
 	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "apps/literature/service/src",
+	"sourceRoot": "apps/services/literature/src",
 	"projectType": "application",
 	"targets": {
 		"build": {
@@ -10,10 +10,10 @@
 			"defaultConfiguration": "production",
 			"options": {
 				"target": "node",
-				"outputPath": "apps/literature/service/dist",
-				"main": "apps/literature/service/src/main.ts",
-				"tsConfig": "apps/literature/service/tsconfig.build.json",
-				"assets": [ "apps/literature/service/src/proto" ],
+				"outputPath": "apps/services/literature/dist",
+				"main": "apps/services/literature/src/main.ts",
+				"tsConfig": "apps/services/literature/tsconfig.build.json",
+				"assets": [ "apps/services/literature/src/assets" ],
 				"rspackConfig": "rspack.config.js"
 			},
 			"configurations": {

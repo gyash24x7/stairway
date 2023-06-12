@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { AppConfig, Config, LoggerFactory } from "@s2h/utils";
+import { type AppConfig, Config, LoggerFactory } from "@s2h/utils";
 
 @Injectable()
 export class JwtService {

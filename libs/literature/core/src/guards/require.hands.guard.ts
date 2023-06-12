@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "../constants";
 import { ICardHand } from "@s2h/cards";
-import { Db, RpcContext } from "../types";
+import type { Db, RpcContext } from "../types";
 import { Database, LoggerFactory } from "@s2h/utils";
 
 @Injectable()

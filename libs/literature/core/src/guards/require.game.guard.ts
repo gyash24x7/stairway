@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Database, LoggerFactory } from "@s2h/utils";
-import { Db, RpcContext } from "../types";
+import type { Db, RpcContext } from "../types";
 import { Metadata } from "@grpc/grpc-js";
 
 @Injectable()
@@ -13,7 +13,7 @@ export class RequireGameGuard implements CanActivate {
 		const rpcContext = context.switchToRpc().getContext<RpcContext>();
 
 		const metadata: Metadata = context.getArgByIndex( 1 );
-		this.logger.debug( "Metadat: %o", metadata );
+		this.logger.debug( "Metadata: %o", metadata.toJSON() );
 
 		const [ gameId ] = metadata.get( "gameId" );
 		const game = await this.db.games().findOne( { id: gameId } );

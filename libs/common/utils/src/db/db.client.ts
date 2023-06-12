@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { MongoClient } from "mongodb";
-import { AppConfig, Config } from "../config";
+import { type AppConfig, Config } from "../config";
 
 @Injectable()
 export class DatabaseClient extends MongoClient {
