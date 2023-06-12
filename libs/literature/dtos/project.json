@@ -1,8 +1,0 @@
-{
-	"name": "literature-dtos",
-	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "libs/literature/dtos/src",
-	"projectType": "library",
-	"targets": { },
-	"tags": [ ]
-}

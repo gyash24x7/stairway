@@ -93,10 +93,14 @@ message JoinGameInput {
   string loggedInPlayerId = 2;
 }
 
+message MemberIdData {
+  repeated string members = 1;
+}
+
 message CreateTeamsInput {
   string gameId = 1;
   string loggedInPlayerId = 2;
-  map<string, string> data = 3;
+  map<string, MemberIdData> data = 3;
 }
 
 message GetGameInput {

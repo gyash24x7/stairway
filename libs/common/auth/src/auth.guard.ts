@@ -4,8 +4,8 @@ import { GqlExecutionContext } from "@nestjs/graphql";
 import { JwtService } from "./jwt.service";
 import { Request, Response } from "express";
 import { Database } from "@s2h/utils";
-import { WithId } from "mongodb";
-import { Db, IUser } from "./auth.types";
+import { Db, UserAuthInfo } from "./auth.types";
+import { Metadata } from "@grpc/grpc-js";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -16,19 +16,34 @@ export class AuthGuard implements CanActivate {
 	) {}
 
 	async canActivate( context: ExecutionContext ) {
-		const gqlContext = GqlExecutionContext.create( context );
-		const ctx = gqlContext.getContext<{ req: Request; res: Response }>();
+		let authInfo: UserAuthInfo | null = null;
 
-		const authCookie: string = ctx.req.cookies[ "auth-cookie" ];
-		const payload = await this.jwtService.verify( authCookie );
-		let authUser: WithId<IUser> | null = null;
+		switch ( context.getType() ) {
+			case "http":
+				const gqlContext = GqlExecutionContext.create( context );
+				const ctx = gqlContext.getContext<{ req: Request; res: Response }>();
 
-		if ( !!payload?.sub ) {
-			authUser = await this.db.users().findOne( { id: payload.sub } );
-			ctx.res.locals[ "authUser" ] = authUser;
+				const authCookie: string = ctx.req.cookies[ "auth-cookie" ];
+				const payload = await this.jwtService.verify( authCookie );
+
+				if ( !!payload?.sub ) {
+					authInfo = await this.db.users().findOne( { id: payload.sub } );
+					ctx.res.locals[ "authInfo" ] = authInfo;
+				}
+				break;
+
+			case "rpc":
+				const rpcContext = context.switchToRpc().getContext();
+				const metadata: Metadata = context.getArgByIndex( 1 );
+				const [ authInfoString ] = metadata.get( "authInfo" );
+				if ( !!authInfoString ) {
+					authInfo = JSON.parse( authInfoString as string );
+					rpcContext.authInfo = authInfo;
+				}
+				break;
 		}
 
-		return !!authUser;
+		return !!authInfo;
 	}
 
 }

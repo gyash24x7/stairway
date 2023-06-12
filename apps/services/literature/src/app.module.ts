@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { GameModule } from "./game";
+import { LiteratureModule } from "@s2h/literature/core";
 
-@Module( { imports: [ GameModule ] } )
+@Module( { imports: [ LiteratureModule ] } )
 export class AppModule {}

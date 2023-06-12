@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import type { Request } from "express";
 import { importPKCS8, importSPKI, jwtVerify, SignJWT } from "jose";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -54,15 +53,11 @@ export class JwtService {
 		return payload;
 	}
 
-	extractTokenFromRequestHeaders( req: Request ) {
+	extractTokenFromAuthHeader( authHeader: string ) {
 		let token: string | undefined;
-		const authHeader = req.headers.authorization;
-
-		if ( authHeader ) {
-			const [ scheme, tokenInHeader ] = authHeader.split( " " );
-			if ( scheme.toLowerCase() === "bearer" && !!tokenInHeader ) {
-				token = tokenInHeader;
-			}
+		const [ scheme, tokenInHeader ] = authHeader.split( " " );
+		if ( scheme.toLowerCase() === "bearer" && !!tokenInHeader ) {
+			token = tokenInHeader;
 		}
 		return token;
 	}
