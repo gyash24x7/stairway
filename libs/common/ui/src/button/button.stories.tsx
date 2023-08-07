@@ -1,19 +1,17 @@
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
 import type { Meta, StoryObj } from "@storybook/react";
+import type { Appearance, Size } from "../utils/index.js";
+import { Button, ButtonProps } from "./button.js";
 
-import type { Appearance, Size } from "../utils/types";
-import { Button, ButtonProps } from "./button";
-
-const meta: Meta = {
+const meta: Meta<ButtonProps> = {
 	component: Button,
 	title: "Button",
-
 	argTypes: {
-		iconBefore: {
-			description: "Sets the icon before the button text"
+		renderIconBefore: {
+			description: "Renders the icon before the button text"
 		},
-		iconAfter: {
-			description: "Sets the icon after the button text"
+		renderIconAfter: {
+			description: "Renders the icon after the button text"
 		},
 		fullWidth: {
 			description: "Sets the width of the button to container",
@@ -44,29 +42,30 @@ const meta: Meta = {
 		}
 	}
 };
+
 export default meta;
 
 export const Playground: StoryObj<ButtonProps> = {
-	render: args => <Button { ...args } />,
+	render: ( props ) => <Button { ...props } />,
 	args: { buttonText: "Submit", appearance: "default", size: "md" }
 };
 
 export const ButtonWithIconBefore: StoryObj<ButtonProps> = {
-	render: args => <Button { ...args } />,
+	render: ( props ) => <Button { ...props } />,
 	args: {
 		buttonText: "Submit",
 		appearance: "default",
 		size: "md",
-		iconBefore: ArrowLeftIcon
+		renderIconBefore: ( props ) => <ArrowLeftIcon { ...props }/>
 	}
 };
 
 export const ButtonWithIconAfter: StoryObj<ButtonProps> = {
-	render: args => <Button { ...args } />,
+	render: ( props ) => <Button { ...props } />,
 	args: {
 		buttonText: "Submit",
 		appearance: "default",
 		size: "md",
-		iconAfter: ArrowRightIcon
+		renderIconAfter: ( props ) => <ArrowRightIcon { ...props }/>
 	}
 };

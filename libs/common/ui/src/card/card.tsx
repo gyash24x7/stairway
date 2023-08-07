@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
-
-import { VariantSchema } from "../utils/variant";
+import { ReactNode, useMemo } from "react";
+import { When } from "react-if";
+import { VariantSchema } from "../utils/index.js";
 
 export interface CardProps {
 	title?: string;
@@ -15,13 +15,15 @@ const cardTitleVariantSchema = new VariantSchema(
 );
 
 export function Card( { centered, title, content }: CardProps ) {
+	const titleClass = useMemo( () => cardTitleVariantSchema.getClassname( {
+		centered: centered ? "true" : "false"
+	} ), [ centered ] );
+
 	return (
 		<div className={ "rounded-md p-4 flex-1 bg-light-100" }>
-			{ !!title && (
-				<h2 className={ cardTitleVariantSchema.getClassname( { centered: centered ? "true" : "false" } ) }>
-					{ title }
-				</h2>
-			) }
+			<When condition={ !!title }>
+				<h2 className={ titleClass }>{ title }</h2>
+			</When>
 			{ content }
 		</div>
 	);

@@ -1,4 +1,4 @@
-import { Avatar } from "@s2h/ui";
+import { Avatar } from "./avatar.js";
 import { cleanup, render, screen } from "@testing-library/react";
 
 import { afterEach, describe, expect, it } from "vitest";

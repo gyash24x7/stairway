@@ -1,31 +1,40 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import {
+	CanActivate,
+	ExecutionContext,
+	ForbiddenException,
+	Injectable,
+	NotFoundException,
+	UnauthorizedException
+} from "@nestjs/common";
 import { LoggerFactory } from "@s2h/utils";
-import { TRPCError } from "@trpc/server";
-import { Messages } from "../constants";
-import { RpcContext } from "../types";
+import type { Response } from "express";
+import type { UserAuthInfo } from "@auth/data";
+import type { LiteratureGame } from "@literature/data";
 
 @Injectable()
 export class RequireTurnGuard implements CanActivate {
 	private readonly logger = LoggerFactory.getLogger( RequireTurnGuard );
 
 	canActivate( context: ExecutionContext ) {
-		this.logger.debug( ">> requirePlayer()" );
-		const ctx = context.switchToRpc().getContext<RpcContext>();
+		this.logger.debug( ">> requireTurn()" );
+		const res = context.switchToHttp().getResponse<Response>();
+		const currentGame: LiteratureGame = res.locals[ "currentGame" ];
+		const authInfo: UserAuthInfo | null = res.locals[ "currentGame" ];
 
-		if ( !ctx.authInfo ) {
+		if ( !authInfo ) {
 			this.logger.error( "User Not Logged In!" );
-			throw new TRPCError( { code: "UNAUTHORIZED", message: Messages.USER_NOT_LOGGED_IN } );
+			throw new UnauthorizedException();
 		}
 
-		if ( !ctx.currentGame ) {
+		if ( !currentGame ) {
 			this.logger.error( "Game Not Present!" );
-			throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
+			throw new NotFoundException();
 		}
 
-		if ( ctx.currentGame.currentTurn !== ctx.authInfo.id ) {
-			this.logger.trace( "Game: %o", ctx.currentGame );
-			this.logger.error( "It is not logged in User's turn! UserId: %s", ctx.authInfo.id );
-			throw new TRPCError( { code: "FORBIDDEN", message: Messages.OUT_OF_TURN } );
+		if ( currentGame.currentTurn !== authInfo.id ) {
+			this.logger.trace( "Game: %o", currentGame );
+			this.logger.error( "It is not logged in User's turn! UserId: %s", authInfo.id );
+			throw new ForbiddenException();
 		}
 
 		return true;

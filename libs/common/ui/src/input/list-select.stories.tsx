@@ -1,12 +1,12 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { ListSelect, ListSelectProps } from "./list-select.js";
 
-import { ListSelect, ListSelectProps } from "./list-select";
+const meta: Meta<ListSelectProps<string>> = { component: ListSelect, title: "ListSelect" };
 
-const meta: Meta<ListSelectProps> = { component: ListSelect, title: "ListSelect" };
 export default meta;
 
-export const Playground: StoryObj<ListSelectProps> = {
-	render: args => <ListSelect { ...args } />,
+export const Playground: StoryObj<ListSelectProps<string>> = {
+	render: ( props ) => <ListSelect { ...props } />,
 	args: {
 		options: [
 			{ label: "Person 1", value: "AB" },

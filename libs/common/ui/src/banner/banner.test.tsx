@@ -1,5 +1,5 @@
 import { CheckIcon } from "@heroicons/react/24/solid";
-import { Banner } from "@s2h/ui";
+import { Banner } from "./banner.js";
 import { cleanup, render, screen } from "@testing-library/react";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 describe( "Banner Component", () => {
 
 	it( "should render banner with icon when not in loading state", () => {
-		render( <Banner message={ "Banner Message" } icon={ CheckIcon }/> );
+		render( <Banner message={ "Banner Message" } renderIcon={ () => <CheckIcon width={ 4 } height={ 4 }/> }/> );
 
 		const msgElement = screen.queryByTestId( "banner-message" );
 		const iconElement = screen.queryByTestId( "banner-icon" );
@@ -23,7 +23,7 @@ describe( "Banner Component", () => {
 		render(
 			<Banner
 				message={ "Banner Message" }
-				icon={ CheckIcon }
+				renderIcon={ () => <CheckIcon width={ 4 } height={ 4 }/> }
 				isLoading={ true }
 				appearance={ "primary" }
 			/>

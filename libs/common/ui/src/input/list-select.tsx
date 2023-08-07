@@ -1,8 +1,9 @@
-import { Combobox, Transition } from "@headlessui/react";
-import { CheckCircleIcon, CursorArrowRippleIcon } from "@heroicons/react/24/solid";
-import { Fragment, useState } from "react";
-import { VariantSchema } from "../utils/variant";
-import { InputMessage } from "./input-message";
+import { Listbox, Transition } from "@headlessui/react";
+import { CheckCircleIcon, ChevronUpDownIcon } from "@heroicons/react/24/solid";
+import { Fragment } from "react";
+import { When } from "react-if";
+import { VariantSchema } from "../utils/index.js";
+import { InputMessage } from "./input-message.js";
 
 export type SelectOption<T = any> = { label: string, value: T };
 
@@ -12,7 +13,7 @@ export interface ListSelectProps<T = any> {
 	label?: string;
 	placeholder?: string;
 	value?: SelectOption<T>;
-	onChange: ( value: SelectOption ) => void | Promise<void>;
+	onChange: ( value: SelectOption<T> ) => void;
 	appearance?: "default" | "success" | "danger"
 	message?: string;
 }
@@ -29,31 +30,44 @@ const optionIconVS = new VariantSchema(
 	{ active: "false" }
 );
 
-export function ListSelect( props: ListSelectProps ) {
-	const { options, label, name, message, appearance, placeholder, value, onChange } = props;
-	const [ query, setQuery ] = useState( "" );
+interface ListSelectOptionProps<T> {
+	option: SelectOption<T>;
+}
 
-	const filteredOptions = query === "" ? options : options.filter(
-		( option ) => option.label.toLowerCase().includes( query.toLowerCase() )
-	);
-
-	const optionClassname = ( { active }: { active: boolean } ) => {
+function ListSelectOption<T>( { option }: ListSelectOptionProps<T> ) {
+	const optionClassname = ( active: boolean ) => {
 		return optionVS.getClassname( { active: active ? "true" : "false" } );
 	};
 
-	const optionIconClassname = ( { active }: { active: boolean } ) => {
+	const optionIconClassname = ( active: boolean ) => {
 		return optionIconVS.getClassname( { active: active ? "true" : "false" } );
 	};
 
 	return (
+		<Listbox.Option value={ option }>
+			{ ( { selected, active } ) => (
+				<div className={ optionClassname( active ) }>
+					<span className={ "block truncate" }>{ option.label }</span>
+					<When condition={ selected }>
+						<span className={ optionIconClassname( active ) }>
+							<CheckCircleIcon className={ "w-4 h-4" } aria-hidden="true"/>
+						</span>
+					</When>
+				</div>
+			) }
+		</Listbox.Option>
+	);
+}
+
+export function ListSelect<T>( props: ListSelectProps<T> ) {
+	return (
 		<div className={ "w-full" }>
-			<Combobox value={ value || options[ 0 ] } onChange={ onChange }>
-				{ label && (
-					<label
-						className={ "text-sm text-dark-100 font-semibold" }
-						htmlFor={ name }
-					>{ label }</label>
-				) }
+			<Listbox<"div", SelectOption<T>> value={ props.value } onChange={ props.onChange }>
+				<When condition={ !!props.label }>
+					<label className={ "text-sm text-dark-100 font-semibold" } htmlFor={ props.name }>
+						{ props.label }
+					</label>
+				</When>
 				<div
 					className={
 						"flex w-full text-left rounded-md cursor-default"
@@ -61,15 +75,10 @@ export function ListSelect( props: ListSelectProps ) {
 						+ "border-2 border-light-700 text-dark p-2 text-base"
 					}
 				>
-					<Combobox.Input
-						displayValue={ ( option: SelectOption ) => option.label }
-						onChange={ ( event ) => setQuery( event.target.value ) }
-						placeholder={ placeholder }
-						className={ "w-full border-none focus:outline-none text-base leading-5 text-dark" }
-					/>
-					<Combobox.Button className={ "w-5 h-5 text-light-700" }>
-						<CursorArrowRippleIcon aria-hidden="true"/>
-					</Combobox.Button>
+					<Listbox.Button className={ "h-5 flex items-center w-full justify-between" }>
+						<span>{ props.value?.label }</span>
+						<ChevronUpDownIcon aria-hidden="true" className={ "w-3 h-3" }/>
+					</Listbox.Button>
 				</div>
 				<Transition
 					as={ Fragment }
@@ -77,44 +86,18 @@ export function ListSelect( props: ListSelectProps ) {
 					leaveFrom={ "opacity-100" }
 					leaveTo={ "opacity-0" }
 				>
-					<Combobox.Options
-						className={
-							"absolute w-full py-1 mt-1 bg-light-100 rounded-md "
-							+ "border border-light-700 max-h-60 text-base"
-						}
+					<Listbox.Options
+						className={ "py-1 mt-1 bg-light-100 rounded-md border border-light-700 max-h-60 text-base absolute overflow-auto" }
 					>
-						{ filteredOptions.length === 0 && query !== ""
-							? (
-								<div className={ "cursor-default select-none relative py-2 px-4 text-dark" }>
-									Nothing found.
-								</div>
-							)
-							: filteredOptions.map( ( option ) => (
-								<Combobox.Option
-									key={ option.label }
-									className={ optionClassname }
-									value={ option }
-								>
-									{ ( { selected, active } ) => (
-										<Fragment>
-											<span className={ "block truncate" }>{ option.label }</span>
-											{ selected && (
-												<span className={ optionIconClassname( { active } ) }>
-													<CheckCircleIcon
-														className={ "w-4 h-4" }
-														aria-hidden="true"
-													/>
-												</span>
-											) }
-										</Fragment>
-									) }
-								</Combobox.Option>
-							) )
-						}
-					</Combobox.Options>
+						{ props.options.map( ( option ) => (
+							<ListSelectOption option={ option } key={ option.label }/>
+						) ) }
+					</Listbox.Options>
 				</Transition>
-				{ message && <InputMessage text={ message } appearance={ appearance }/> }
-			</Combobox>
+				<When condition={ !!props.message }>
+					<InputMessage text={ props.message! } appearance={ props.appearance }/>
+				</When>
+			</Listbox>
 		</div>
 	);
 }

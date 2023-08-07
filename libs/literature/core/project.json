@@ -1,7 +1,7 @@
 {
-	"name": "literature-router",
+	"name": "literature-core",
 	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "libs/literature/router/src",
+	"sourceRoot": "libs/literature/core/src",
 	"projectType": "library",
 	"targets": {
 		"test": {

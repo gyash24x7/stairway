@@ -1,15 +1,14 @@
-import { Fragment } from "react";
-import { VariantSchema } from "../utils/variant";
-import { InputMessage } from "./input-message";
+import { Fragment, useMemo } from "react";
+import { When } from "react-if";
+import { VariantSchema } from "../utils/index.js";
+import { InputMessage } from "./input-message.js";
+import type { InputProps } from "./text-input.js";
 
-export interface TextAreaProps {
+export interface TextAreaProps extends InputProps {
 	label?: string;
-	name: string;
 	placeholder?: string;
 	message?: string;
 	rows?: number;
-	value?: string;
-	onChange?: ( value: string ) => void | Promise<void>;
 	appearance?: "default" | "danger" | "success";
 }
 
@@ -23,25 +22,31 @@ const inputRootVS = new VariantSchema(
 );
 
 export function TextArea( props: TextAreaProps ) {
-	const inputRootClassname = inputRootVS.getClassname( {
+	const inputRootClassname = useMemo( () => inputRootVS.getClassname( {
 		valid: props.appearance === "success" ? "true" : "false",
 		invalid: props.appearance === "danger" ? "true" : "false"
-	} );
+	} ), [ props.appearance ] );
 
 	return (
 		<Fragment>
-			{ props.label &&
-				<label className={ "label-root" } htmlFor={ props.name }>{ props.label }</label> }
+			<When condition={ !!props.label }>
+				<label className={ "text-sm text-dark-100 font-semibold" } htmlFor={ props.name.toString() }>
+					{ props.label }
+				</label>
+			</When>
 			<div className={ inputRootClassname }>
-				<textarea
-					name={ props.name }
-					rows={ props.rows || 3 }
-					placeholder={ props.placeholder || "" }
-					value={ props.value }
-					onChange={ e => props.onChange && props.onChange( e.target.value ) }
-				/>
+			<textarea
+				name={ props.name.toString() }
+				rows={ props.rows || 3 }
+				placeholder={ props.placeholder || "" }
+				value={ props.value || "" }
+				onInput={ e => props.setValue && props.setValue( e.currentTarget.value ) }
+				style={ { all: "unset", width: "100%" } }
+			/>
 			</div>
-			{ props.message && <InputMessage text={ props.message } appearance={ props.appearance }/> }
+			<When condition={ !!props.message }>
+				<InputMessage text={ props.message! } appearance={ props.appearance }/>
+			</When>
 		</Fragment>
 	);
 }

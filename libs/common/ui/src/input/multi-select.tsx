@@ -1,16 +1,12 @@
-import type { ReactNode } from "react";
-import { Fragment } from "react";
-
-import { HStack } from "../stack/h-stack";
-import { VariantSchema } from "../utils/variant";
-import type { SelectOption } from "./list-select";
+import { HStack } from "../stack/index.js";
+import { VariantSchema } from "../utils/index.js";
+import type { SelectOption } from "./list-select.js";
 
 export interface MultiSelectProps<T> {
-	label?: string;
 	values: SelectOption<T>[];
 	onChange: ( v: SelectOption<T>[] ) => void | Promise<void>;
 	options: SelectOption<T>[];
-	renderOption: ( option: SelectOption<T>, checked: boolean ) => ReactNode;
+	renderOption: ( option: SelectOption<T>, checked: boolean ) => JSX.Element;
 }
 
 const radioSelectOptionVS = new VariantSchema(
@@ -37,23 +33,16 @@ export function MultiSelect<T>( props: MultiSelectProps<T> ) {
 	};
 
 	return (
-		<Fragment>
-			{ props.label && (
-				<label className={ "text-sm text-dark-100 font-semibold" }>
-					{ props.label }
-				</label>
-			) }
-			<HStack wrap spacing={ "xs" }>
-				{ props.options.map( option => (
-					<div
-						key={ option.label }
-						className={ radioSelectOptionClassname( isChecked( option.label ) ) }
-						onClick={ handleOptionClick( option ) }
-					>
-						{ props.renderOption( option, isChecked( option.label ) ) }
-					</div>
-				) ) }
-			</HStack>
-		</Fragment>
+		<HStack wrap spacing={ "xs" }>
+			{ props.options.map( option => (
+				<div
+					className={ radioSelectOptionClassname( isChecked( option.label ) ) }
+					onClick={ handleOptionClick( option ) }
+					key={ option.label }
+				>
+					{ props.renderOption( option, isChecked( option.label ) ) }
+				</div>
+			) ) }
+		</HStack>
 	);
 }

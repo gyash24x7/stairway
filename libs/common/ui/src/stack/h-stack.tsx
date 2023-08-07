@@ -1,15 +1,14 @@
-import type { ReactNode } from "react";
-import { Children, isValidElement } from "react";
-import { Flex } from "../flex/flex";
-import type { Size } from "../utils/types";
-import { VariantSchema } from "../utils/variant";
+import { useMemo } from "react";
+import { Flex } from "../flex/index.js";
+import type { Size } from "../utils/index.js";
+import { VariantSchema } from "../utils/index.js";
 
 export interface HStackProps {
 	spacing?: Size;
 	className?: string;
 	centered?: boolean;
 	stackItemClassName?: string;
-	children: ReactNode;
+	children: JSX.Element[] | JSX.Element;
 	wrap?: boolean;
 	stackItemExpand?: boolean;
 }
@@ -29,26 +28,32 @@ const hStackItemVs = new VariantSchema(
 	{ spacing: "md", expand: "false" }
 );
 
-export const HStack = function ( { children, ...props }: HStackProps ) {
-	const validChildren = Children.toArray( children ).filter( ( child ) => isValidElement( child ) );
-	const stackItemClassname = hStackItemVs.getClassname( {
-		expand: props.stackItemExpand ? "true" : "false",
-		spacing: props.spacing
-	} );
+export function HStack( { children, ...props }: HStackProps ) {
+	const flexClassname = useMemo( () => {
+		return `${ hStackFlexVS.getClassname( { spacing: props.spacing } ) } ${ props.className }`;
+	}, [ props.spacing, props.className ] );
+
+	const stackItemClassname = useMemo( () => {
+		const hStackItemClassname = hStackItemVs.getClassname( {
+			expand: props.stackItemExpand ? "true" : "false",
+			spacing: props.spacing
+		} );
+		return `${ hStackItemClassname } ${ props.stackItemClassName }`;
+	}, [ props.stackItemClassName, props.stackItemExpand, props.spacing ] );
+
+	const stackItems = Array.isArray( children ) ? children : [ children ];
 
 	return (
 		<Flex
 			justify={ props.centered ? "center" : "start" }
 			align={ "center" }
-			className={ `${ hStackFlexVS.getClassname( { spacing: props.spacing } ) } ${ props.className }` }
+			className={ flexClassname }
 			wrap={ props.wrap }
 		>
-			{ validChildren.map( ( child, index ) => (
-				<div className={ `${ stackItemClassname } ${ props.stackItemClassName }` } key={ index }>
-					{ child }
-				</div>
+			{ stackItems.map( ( child, index ) => (
+				<div className={ stackItemClassname } key={ index }>{ child }</div>
 			) ) }
 		</Flex>
 	);
-};
+}
 

@@ -1,16 +1,26 @@
 import type { Meta, StoryObj } from "@storybook/react";
+import { Modal, ModalProps } from "./modal.js";
 
-import { Modal, ModalProps } from "./modal";
+const meta: Meta<ModalProps> = {
+	component: Modal,
+	title: "Modal",
+	argTypes: {
+		isOpen: {
+			type: "boolean"
+		}
+	}
+};
 
-const meta: Meta<ModalProps> = { component: Modal, title: "Modal" };
 export default meta;
 
 export const Playground: StoryObj<ModalProps> = {
-	render: args => <Modal { ...args } />,
+	render: ( props ) => <Modal { ...props } />,
 	args: {
-		title: "Modal StoryObj",
+		title: "Modal Story",
 		onClose: () => console.log( "Modal Closed!" ),
 		isOpen: true,
-		children: <div>Hello from modal child</div>
+		children: (
+			<div>Hello from modal child</div>
+		)
 	}
 };

@@ -16,13 +16,18 @@
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"paths": {
-			"@s2h/auth": [ "libs/common/auth/src/index.ts" ],
+			"@auth/client": [ "libs/auth/client/src/index.ts" ],
+			"@auth/core": [ "libs/auth/core/src/index.ts" ],
+			"@auth/data": [ "libs/auth/data/src/index.ts" ],
+			"@auth/ui": [ "libs/auth/ui/src/index.ts" ],
 			"@s2h/cards": [ "libs/common/cards/src/index.ts" ],
-			"@s2h/literature/core": [ "libs/literature/core/src/index.ts" ],
-			"@s2h/literature/ui": [ "libs/literature/ui/src/index.ts" ],
-			"@s2h/literature/utils": [ "libs/literature/utils/src/index.ts" ],
+			"@s2h/client": [ "libs/common/client/src/index.ts" ],
 			"@s2h/ui": [ "libs/common/ui/src/index.ts" ],
-			"@s2h/utils": [ "libs/common/utils/src/index.ts" ]
+			"@s2h/utils": [ "libs/common/utils/src/index.ts" ],
+			"@literature/client": [ "libs/literature/client/src/index.ts" ],
+			"@literature/core": [ "libs/literature/core/src/index.ts" ],
+			"@literature/data": [ "libs/literature/data/src/index.ts" ],
+			"@literature/ui": [ "libs/literature/ui/src/index.ts" ]
 		}
 	},
 	"exclude": [ "node_modules", "tmp", "dist", "coverage" ]

@@ -1,0 +1,43 @@
+{
+	"name": "backend",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "apps/backend/src",
+	"projectType": "application",
+	"targets": {
+		"build": {
+			"executor": "@nx/rspack:rspack",
+			"outputs": [ "{options.outputPath}" ],
+			"defaultConfiguration": "development",
+			"options": {
+				"target": "node",
+				"outputPath": "apps/backend/dist",
+				"main": "apps/backend/src/main.ts",
+				"tsConfig": "apps/backend/tsconfig.build.json",
+				"assets": [ "apps/backend/src/assets" ],
+				"rspackConfig": "rspack.config.js"
+			},
+			"configurations": {
+				"development": {
+					"mode": "development"
+				},
+				"production": {
+					"mode": "production",
+					"sourceMap": false
+				}
+			}
+		},
+		"serve": {
+			"executor": "@nx/js:node",
+			"options": {
+				"buildTarget": "backend:build",
+				"inspect": false
+			},
+			"configurations": {
+				"production": {
+					"buildTarget": "backend:build:production"
+				}
+			}
+		}
+	},
+	"tags": [ ]
+}

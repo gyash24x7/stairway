@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-
-import type { Appearance, Size } from "../utils/types";
-import { Spinner, SpinnerProps } from "./spinner";
+import type { Appearance, Size } from "../utils/index.js";
+import { Spinner, SpinnerProps } from "./spinner.js";
 
 const meta: Meta<SpinnerProps> = {
 	component: Spinner,
@@ -21,9 +20,10 @@ const meta: Meta<SpinnerProps> = {
 		}
 	}
 };
+
 export default meta;
 
 export const Playground: StoryObj<SpinnerProps> = {
-	render: args => <Spinner { ...args } />,
+	render: ( props ) => <Spinner { ...props } />,
 	args: { size: "md" }
 };

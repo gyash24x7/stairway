@@ -1,0 +1,8 @@
+{
+	"name": "auth-core",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/auth/core/src",
+	"projectType": "library",
+	"targets": { },
+	"tags": [ ]
+}

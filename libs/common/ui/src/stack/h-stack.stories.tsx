@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react";
-
-import { HStack, HStackProps } from "./h-stack";
+import { HStack, HStackProps } from "./h-stack.js";
 
 const meta: Meta<HStackProps> = {
 	component: HStack,
@@ -19,22 +18,22 @@ const meta: Meta<HStackProps> = {
 		}
 	}
 };
+
 export default meta;
 
 export const Playground: StoryObj<HStackProps> = {
-	render: args => (
-		<HStack { ...args }>
-			<div style={ { background: "#dfe1e6", padding: 20 } }>Stack Child 1</div>
-			<div style={ { background: "#c1c7d0", padding: 20 } }>Stack Child 2</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 3</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 4</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 5</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 6</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 7</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 8</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 9</div>
-			<div style={ { background: "#808080", padding: 20 } }>Stack Child 10</div>
+	render: ( props ) => (
+		<HStack { ...props }>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 1</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 2</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 3</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 4</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 5</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 6</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 7</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 8</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 9</div>
+			<div className={ "bg-blue-300 p-4" }>Stack Child 10</div>
 		</HStack>
-	),
-	args: {}
+	)
 };

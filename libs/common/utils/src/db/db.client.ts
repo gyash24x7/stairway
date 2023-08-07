@@ -4,7 +4,7 @@ import { type AppConfig, Config } from "../config";
 
 @Injectable()
 export class DatabaseClient extends MongoClient {
-	constructor( @Config() private readonly config: AppConfig ) {
+	constructor( @Config() readonly config: AppConfig ) {
 		super( config.db.url );
 	}
 }

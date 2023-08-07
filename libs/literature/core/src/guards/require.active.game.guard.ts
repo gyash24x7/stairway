@@ -1,25 +1,24 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { TRPCError } from "@trpc/server";
-import { Messages } from "../constants";
-import { LiteratureGameStatus } from "@s2h/literature/core";
+import { BadRequestException, CanActivate, ExecutionContext, Injectable, NotFoundException } from "@nestjs/common";
 import { LoggerFactory } from "@s2h/utils";
-import { RpcContext } from "../types";
+import type { Response } from "express";
+import { type LiteratureGame, LiteratureGameStatus } from "@literature/data";
 
 @Injectable()
 export class RequireActiveGameGuard implements CanActivate {
 	private readonly logger = LoggerFactory.getLogger( RequireActiveGameGuard );
 
 	async canActivate( context: ExecutionContext ) {
-		const rpcContext = context.switchToRpc().getContext<RpcContext>();
+		const res = context.switchToHttp().getResponse<Response>();
+		const currentGame: LiteratureGame = res.locals[ "currentGame" ];
 
-		if ( !rpcContext.currentGame ) {
+		if ( !currentGame ) {
 			this.logger.error( "Game Not Present!" );
-			throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
+			throw new NotFoundException();
 		}
 
-		if ( rpcContext.currentGame.status !== LiteratureGameStatus.IN_PROGRESS ) {
+		if ( currentGame.status !== LiteratureGameStatus.IN_PROGRESS ) {
 			this.logger.debug( "Game Present but not in progress!" );
-			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GAME_STATUS } );
+			throw new BadRequestException();
 		}
 
 		return true;

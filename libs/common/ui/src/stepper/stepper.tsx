@@ -1,11 +1,12 @@
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/24/solid";
-import { Fragment, ReactNode, useState } from "react";
-import { Button } from "../button/button";
-import { HStack } from "../stack/h-stack";
+import { Fragment, useState } from "react";
+import { Else, If, Then } from "react-if";
+import { Button } from "../button/index.js";
+import { HStack } from "../stack/index.js";
 
 export interface StepperStep {
 	name: string;
-	content: ReactNode;
+	content: JSX.Element;
 }
 
 export interface StepperProps {
@@ -20,11 +21,21 @@ interface StepperButtonProps {
 }
 
 const PreviousButton = ( props: StepperButtonProps & { disabled?: boolean } ) => (
-	<Button iconBefore={ ArrowLeftIcon } size={ "sm" } appearance={ "default" } { ...props } />
+	<Button
+		renderIconBefore={ props => <ArrowLeftIcon { ...props }/> }
+		size={ "sm" }
+		appearance={ "default" }
+		{ ...props }
+	/>
 );
 
 const NextButton = ( props: StepperButtonProps ) => (
-	<Button iconAfter={ ArrowRightIcon } size={ "sm" } appearance={ "primary" } { ...props } />
+	<Button
+		renderIconAfter={ props => <ArrowRightIcon { ...props } /> }
+		size={ "sm" }
+		appearance={ "primary" }
+		{ ...props }
+	/>
 );
 
 const EndButton = ( props: StepperButtonProps ) => (
@@ -32,7 +43,7 @@ const EndButton = ( props: StepperButtonProps ) => (
 );
 
 export function Stepper( props: StepperProps ) {
-	const stepMap: Record<string, ReactNode> = {};
+	const stepMap: Record<string, JSX.Element> = {};
 	const stepNames: string[] = [];
 
 	props.steps.forEach( step => {
@@ -65,20 +76,20 @@ export function Stepper( props: StepperProps ) {
 	return (
 		<Fragment>
 			{ stepMap[ activeStep ] }
-			{ activeStep === stepNames[ stepNames.length - 1 ] ? (
-				<HStack className={ "mt-6" } spacing={ "sm" }>
-					<PreviousButton onClick={ handlePrevious }/>
-					<EndButton onClick={ props.onEnd } isLoading={ props.isLoading }/>
-				</HStack>
-			) : (
-				<HStack className={ "mt-6" } spacing={ "sm" }>
-					<PreviousButton
-						onClick={ handlePrevious }
-						disabled={ stepNames[ 0 ] === activeStep }
-					/>
-					<NextButton onClick={ handleNext }/>
-				</HStack>
-			) }
+			<If condition={ activeStep === stepNames[ stepNames.length - 1 ] }>
+				<Then>
+					<HStack className={ "mt-6" } spacing={ "sm" }>
+						<PreviousButton onClick={ handlePrevious }/>
+						<EndButton onClick={ props.onEnd } isLoading={ props.isLoading }/>
+					</HStack>
+				</Then>
+				<Else>
+					<HStack className={ "mt-6" } spacing={ "sm" }>
+						<PreviousButton onClick={ handlePrevious } disabled={ stepNames[ 0 ] === activeStep }/>
+						<NextButton onClick={ handleNext }/>
+					</HStack>
+				</Else>
+			</If>
 		</Fragment>
 	);
 }

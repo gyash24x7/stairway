@@ -1,5 +1,6 @@
-import type { Size } from "../utils/types";
-import { VariantSchema } from "../utils/variant";
+import { useMemo } from "react";
+import { Else, If, Then } from "react-if";
+import { type Size, VariantSchema } from "../utils/index.js";
 
 export interface AvatarProps {
 	size?: Size;
@@ -67,23 +68,21 @@ const avatarDivVariantSchema = new VariantSchema(
 );
 
 export function Avatar( { size, src, name }: AvatarProps ) {
+	const rootClassname = useMemo( () => avatarRootVariantSchema.getClassname( { size } ), [ size ] );
+	const imageClassname = useMemo( () => avatarImageVariantSchema.getClassname(), [] );
+	const divClassname = useMemo( () => avatarDivVariantSchema.getClassname( { size } ), [ size ] );
+	const initials = useMemo( () => initialsFromName( name ), [] );
+
 	return (
-		<div className={ avatarRootVariantSchema.getClassname( { size } ) }>
-			{ !!src && (
-				<img
-					src={ src }
-					alt={ "avatar-img" }
-					className={ avatarImageVariantSchema.getClassname() }
-				/>
-			) }
-			{ !src && (
-				<div
-					className={ avatarDivVariantSchema.getClassname( { size } ) }
-					data-testid={ "avatar-initials" }
-				>
-					{ initialsFromName( name ) }
-				</div>
-			) }
+		<div className={ rootClassname }>
+			<If condition={ !!src }>
+				<Then>
+					<img src={ src! } alt={ "avatar-img" } className={ imageClassname }/>
+				</Then>
+				<Else>
+					<div className={ divClassname }>{ initials }</div>
+				</Else>
+			</If>
 		</div>
 	);
 }

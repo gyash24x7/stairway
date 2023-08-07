@@ -1,5 +1,5 @@
 import { CheckIcon } from "@heroicons/react/24/solid";
-import { Button } from "@s2h/ui";
+import { Button } from "./button.js";
 import { cleanup, render } from "@testing-library/react";
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -19,7 +19,11 @@ describe( "Button Component", () => {
 
 	it( "should render button text and icons correctly", () => {
 		const { queryByTestId } = render(
-			<Button buttonText={ "Button Text" } iconAfter={ CheckIcon } iconBefore={ CheckIcon }/>
+			<Button
+				buttonText={ "Button Text" }
+				renderIconAfter={ () => <CheckIcon width={ 4 } height={ 4 }/> }
+				renderIconBefore={ () => <CheckIcon width={ 4 } height={ 4 }/> }
+			/>
 		);
 
 		const buttonTextSpan = queryByTestId( "button-text" );

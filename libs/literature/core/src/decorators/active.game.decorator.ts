@@ -1,10 +1,10 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
-import { RpcContext } from "../types";
-import { LiteratureGame } from "@s2h/literature/core";
+import type { Response } from "express";
+import type { LiteratureGame } from "@literature/data";
 
 export const activeGameDecoratorFn = ( _data: unknown, context: ExecutionContext ): LiteratureGame => {
-	const { currentGame } = context.switchToRpc().getContext<RpcContext>();
-	return LiteratureGame.from( currentGame! );
+	const res = context.switchToHttp().getResponse<Response>();
+	return res.locals[ "currentGame" ];
 };
 
 export const ActiveGame = createParamDecorator( activeGameDecoratorFn );

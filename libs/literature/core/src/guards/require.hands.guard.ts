@@ -1,46 +1,56 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { TRPCError } from "@trpc/server";
-import { Messages } from "../constants";
-import { ICardHand } from "@s2h/cards";
-import type { Db, RpcContext } from "../types";
-import { Database, LoggerFactory } from "@s2h/utils";
+import {
+	BadRequestException,
+	CanActivate,
+	ExecutionContext,
+	Injectable,
+	NotFoundException,
+	UnauthorizedException
+} from "@nestjs/common";
+import { CardHand } from "@s2h/cards";
+import { LoggerFactory } from "@s2h/utils";
+import type { Response } from "express";
+import type { UserAuthInfo } from "@auth/data";
+import { LiteratureService } from "../services";
+import type { LiteratureGame } from "@literature/data";
 
 @Injectable()
 export class RequireHandsGuard implements CanActivate {
 	private readonly logger = LoggerFactory.getLogger( RequireHandsGuard );
 
-	constructor( @Database() private readonly db: Db ) {}
+	constructor( private readonly literatureService: LiteratureService ) {}
 
 	async canActivate( context: ExecutionContext ) {
 		this.logger.debug( ">> requireHands()" );
-		const ctx = context.switchToRpc().getContext<RpcContext>();
+		const res = context.switchToHttp().getResponse<Response>();
+		const currentGame: LiteratureGame = res.locals[ "currentGame" ];
+		const authInfo: UserAuthInfo | null = res.locals[ "currentGame" ];
 
-		if ( !ctx.authInfo ) {
+		if ( !authInfo ) {
 			this.logger.error( "User Not Logged In!" );
-			throw new TRPCError( { code: "UNAUTHORIZED", message: Messages.USER_NOT_LOGGED_IN } );
+			throw new UnauthorizedException();
 		}
 
-		if ( !ctx.currentGame ) {
+		if ( !currentGame ) {
 			this.logger.error( "Game Not Present!" );
-			throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
+			throw new NotFoundException();
 		}
 
-		const hands = await this.db.hands().find( { gameId: ctx.currentGame.id } );
-		const currentGameHands: Record<string, ICardHand> = {};
+		const hands = await this.literatureService.findHandsForGame( currentGame.id );
+		const currentGameHands: Record<string, CardHand> = {};
 
 		let handCount = 0;
-		for await ( const hand of hands ) {
-			currentGameHands[ hand.playerId ] = hand.hand;
+		for ( const hand of hands ) {
+			currentGameHands[ hand.playerId ] = CardHand.from( hand.hand );
 			handCount++;
 		}
 
 		if ( handCount !== 6 ) {
-			this.logger.trace( "Game: %o", ctx.currentGame );
-			this.logger.error( "Hands Not Present! GameId: %s", ctx.currentGame.id );
-			throw new TRPCError( { code: "FORBIDDEN", message: Messages.HANDS_NOT_PRESENT } );
+			this.logger.trace( "Game: %o", currentGame );
+			this.logger.error( "Hands Not Present! GameId: %s", currentGame.id );
+			throw new BadRequestException();
 		}
 
-		ctx.currentGameHands = currentGameHands;
+		res.locals[ "currentGameHands" ] = currentGameHands;
 		return true;
 	}
 

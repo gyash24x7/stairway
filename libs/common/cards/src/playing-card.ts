@@ -1,5 +1,4 @@
-import type { CardRank } from "./card-const";
-import { BIG_CARD_RANKS, CardSet, CardSuit } from "./card-const";
+import { BIG_CARD_RANKS, CardRank, CardSet, CardSuit } from "./card-const";
 
 export interface IPlayingCard {
 	rank: CardRank;
@@ -15,7 +14,7 @@ export class PlayingCard implements IPlayingCard {
 		this.suit = suit;
 	}
 
-	get set() {
+	get cardSet() {
 		switch ( this.suit ) {
 			case CardSuit.CLUBS:
 				return BIG_CARD_RANKS.includes( this.rank ) ? CardSet.BIG_CLUBS : CardSet.SMALL_CLUBS;
@@ -32,7 +31,7 @@ export class PlayingCard implements IPlayingCard {
 		return `${ this.rank } of ${ this.suit }`;
 	}
 
-	get id() {
+	get cardId() {
 		return `${ this.rank }Of${ this.suit }`;
 	}
 
@@ -47,6 +46,6 @@ export class PlayingCard implements IPlayingCard {
 	}
 
 	serialize(): IPlayingCard {
-		return JSON.parse( JSON.stringify( this ) );
+		return { rank: this.rank, suit: this.suit };
 	}
 }

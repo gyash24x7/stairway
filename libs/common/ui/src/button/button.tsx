@@ -1,7 +1,8 @@
-import { Spinner } from "../spinner/spinner";
-import { HStack } from "../stack/h-stack";
-import type { Appearance, IconType, Size } from "../utils/types";
-import { VariantSchema } from "../utils/variant";
+import { useMemo } from "react";
+import { Else, If, Then, When } from "react-if";
+import type { Appearance, RenderIcon, Size } from "../utils/index.js";
+import { VariantSchema } from "../utils/index.js";
+import { Spinner } from "../spinner/index.js";
 
 export interface ButtonProps {
 	disabled?: boolean;
@@ -14,11 +15,15 @@ export interface ButtonProps {
 
 	buttonText?: string;
 	isLoading?: boolean;
-	iconBefore?: IconType;
-	iconAfter?: IconType;
+	renderIconBefore?: RenderIcon;
+	renderIconAfter?: RenderIcon;
 }
 
-function renderButtonIcon( Icon: IconType, size: Size = "md" ) {
+function renderButtonIcon( renderIcon?: RenderIcon, size: Size = "md" ) {
+	if ( !renderIcon ) {
+		return;
+	}
+
 	const sizeMap = {
 		xs: { width: 10, height: 10 },
 		sm: { width: 12, height: 12 },
@@ -28,7 +33,7 @@ function renderButtonIcon( Icon: IconType, size: Size = "md" ) {
 		"2xl": { width: 24, height: 24 }
 	};
 	const { width, height } = sizeMap[ size ];
-	return <Icon width={ width } height={ height }/>;
+	return renderIcon( { width, height, className: "mx-4" } );
 }
 
 const buttonVariantSchema = new VariantSchema(
@@ -64,30 +69,40 @@ const buttonVariantSchema = new VariantSchema(
 );
 
 export function Button( props: ButtonProps ) {
-	const spinnerAppearance = [ "warning", "default" ].includes( props.appearance || "" )
-		? "dark"
-		: "default";
+	const spinnerAppearance = useMemo( () => {
+		return props.appearance === "warning" || props.appearance === "default" ? "dark" : "default";
+	}, [ props.appearance ] );
+
+	const buttonClassname = useMemo( () => buttonVariantSchema.getClassname( {
+		appearance: props.appearance,
+		size: props.size,
+		fullWidth: props.fullWidth ? "true" : "false",
+		disabled: props.disabled || props.isLoading ? "true" : "false"
+	} ), [ props.appearance, props.size, props.fullWidth, props.disabled ] );
+
 	return (
 		<button
 			disabled={ props.disabled || props.isLoading }
 			onClick={ props.onClick }
 			type={ props.type }
-			className={ buttonVariantSchema.getClassname( {
-				appearance: props.appearance,
-				size: props.size,
-				fullWidth: props.fullWidth ? "true" : "false",
-				disabled: props.disabled || props.isLoading ? "true" : "false"
-			} ) }
-			data-testid={ "button-main" }
+			className={ buttonClassname }
 		>
-			{ !!props.isLoading && <Spinner size={ props.size } appearance={ spinnerAppearance }/> }
-			{ !props.isLoading && (
-				<HStack spacing={ "sm" }>
-					{ props.iconBefore && renderButtonIcon( props.iconBefore, props.size ) }
-					{ props.buttonText && <span data-testid={ "button-text" }>{ props.buttonText }</span> }
-					{ props.iconAfter && renderButtonIcon( props.iconAfter, props.size ) }
-				</HStack>
-			) }
+			<If condition={ !props.isLoading }>
+				<Then>
+					<When condition={ !!props.renderIconBefore }>
+						{ renderButtonIcon( props.renderIconBefore, props.size ) }
+					</When>
+					<When condition={ !!props.buttonText }>
+						<span>{ props.buttonText }</span>
+					</When>
+					<When condition={ !!props.renderIconAfter }>
+						{ renderButtonIcon( props.renderIconAfter, props.size ) }
+					</When>
+				</Then>
+				<Else>
+					<Spinner size={ props.size } appearance={ spinnerAppearance }/>
+				</Else>
+			</If>
 		</button>
 	);
 }

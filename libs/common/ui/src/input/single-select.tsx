@@ -1,13 +1,12 @@
 import { RadioGroup } from "@headlessui/react";
-import { Fragment, ReactNode } from "react";
-import { HStack } from "../stack/h-stack";
-import { VariantSchema } from "../utils/variant";
+import { HStack } from "../stack/index.js";
+import { VariantSchema } from "../utils/index.js";
 
 export interface SingleSelectProps<T> {
-	value?: T;
-	onChange: ( v: T ) => void | Promise<void>;
-	options: T[];
-	renderOption: ( option: T, checked: boolean ) => ReactNode;
+	value: T;
+	onChange: ( value: T ) => void;
+	options: Array<T>;
+	renderOption: ( option: T, checked: boolean ) => JSX.Element;
 }
 
 const radioSelectOptionVS = new VariantSchema(
@@ -16,25 +15,21 @@ const radioSelectOptionVS = new VariantSchema(
 	{ checked: "false" }
 );
 
-export function SingleSelect<T>( props: SingleSelectProps<T> ) {
-	const radioSelectOptionClassname = ( { checked }: { checked: boolean } ) => {
-		return radioSelectOptionVS.getClassname( { checked: checked ? "true" : "false" } );
-	};
+const radioSelectOptionClassname = ( checked: boolean ) => {
+	return radioSelectOptionVS.getClassname( { checked: checked ? "true" : "false" } );
+};
 
+export function SingleSelect<T>( props: SingleSelectProps<T> ) {
 	return (
-		<RadioGroup value={ props.value } onChange={ props.onChange }>
+		<RadioGroup<"div", T> value={ props.value } onChange={ props.onChange }>
 			<HStack wrap spacing={ "xs" }>
 				{ props.options.map( ( option, index ) => (
 					<RadioGroup.Option
 						value={ option }
+						className={ ( { checked } ) => radioSelectOptionClassname( checked ) }
 						key={ index }
-						className={ radioSelectOptionClassname }
 					>
-						{ ( { checked } ) => (
-							<Fragment>
-								{ props.renderOption( option, checked ) }
-							</Fragment>
-						) }
+						{ ( { checked } ) => props.renderOption( option, checked ) }
 					</RadioGroup.Option>
 				) ) }
 			</HStack>

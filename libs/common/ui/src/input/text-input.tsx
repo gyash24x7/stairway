@@ -1,18 +1,21 @@
-import { Fragment } from "react";
-import type { IconType } from "../utils/types";
-import { VariantSchema } from "../utils/variant";
-import { InputMessage } from "./input-message";
+import { Fragment, useMemo } from "react";
+import { When } from "react-if";
+import { RenderIcon, VariantSchema } from "../utils/index.js";
+import { InputMessage } from "./input-message.js";
 
-export interface TextInputProps {
+export interface InputProps<V = any> {
+	name: string | number | symbol;
+	value?: V;
+	setValue?: ( value: V ) => void;
+}
+
+export interface TextInputProps extends InputProps<string> {
 	label?: string;
-	name: string;
 	placeholder?: string;
 	message?: string;
 	type?: "text" | "number" | "email" | "password";
-	iconBefore?: IconType;
-	iconAfter?: IconType;
-	value?: string;
-	onChange?: ( value: string ) => void | Promise<void>;
+	renderIconBefore?: RenderIcon;
+	renderIconAfter?: RenderIcon;
 	appearance?: "default" | "danger" | "success";
 }
 
@@ -26,32 +29,38 @@ const inputRootVS = new VariantSchema(
 );
 
 export function TextInput( props: TextInputProps ) {
-	const { iconAfter: IconAfter, iconBefore: IconBefore } = props;
-	const inputRootClassname = inputRootVS.getClassname( {
+	const inputRootClassname = useMemo( () => inputRootVS.getClassname( {
 		valid: props.appearance === "success" ? "true" : "false",
 		invalid: props.appearance === "danger" ? "true" : "false"
-	} );
+	} ), [ props.appearance ] );
 
 	return (
 		<Fragment>
-			{ props.label && (
-				<label className={ "text-sm text-dark-100 font-semibold" } htmlFor={ props.name }>
+			<When condition={ !!props.label }>
+				<label className={ "text-sm text-dark-100 font-semibold" } htmlFor={ props.name.toString() }>
 					{ props.label }
 				</label>
-			) }
+			</When>
 			<div className={ inputRootClassname }>
-				{ IconBefore!! && <IconBefore className={ "w-4 h-4 mr-3 text-light-700" }/> }
+				<When condition={ !!props.renderIconBefore }>
+					{ props.renderIconBefore && props.renderIconBefore( { className: "w-4 h-4 mr-3 text-light-700" } ) }
+				</When>
 				<input
 					style={ { all: "unset", flex: 1 } }
 					type={ props.type || "text" }
-					name={ props.name }
+					name={ props.name.toString() }
 					placeholder={ props.placeholder }
-					value={ props.value }
-					onChange={ ( e: any ) => props.onChange && props.onChange( e.target.value ) }
+					value={ props.value || "" }
+					onInput={ e => props.setValue && props.setValue( e.currentTarget.value ) }
+					autoComplete={ "" }
 				/>
-				{ IconAfter!! && <IconAfter className={ "w-4 h-4 ml-3 text-light-700" }/> }
+				<When condition={ !!props.renderIconAfter }>
+					{ props.renderIconAfter && props.renderIconAfter( { className: "w-4 h-4 ml-3 text-light-700" } ) }
+				</When>
 			</div>
-			{ props.message && <InputMessage text={ props.message } appearance={ props.appearance }/> }
+			<When condition={ !!props.message }>
+				<InputMessage text={ props.message! } appearance={ props.appearance }/>
+			</When>
 		</Fragment>
 	);
 }

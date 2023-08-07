@@ -1,6 +1,5 @@
-import type { ReactNode } from "react";
-
-import { VariantSchema } from "../utils/variant";
+import { useMemo } from "react";
+import { VariantSchema } from "../utils/index.js";
 
 export interface FlexProps {
 	className?: string;
@@ -9,7 +8,7 @@ export interface FlexProps {
 	align?: "center" | "start" | "end" | "baseline" | "stretch";
 	direction?: "row" | "col" | "col-reverse" | "row-reverse";
 	wrap?: boolean;
-	children: ReactNode;
+	children: JSX.Element[] | JSX.Element;
 }
 
 const flexVariantSchema = new VariantSchema(
@@ -42,12 +41,12 @@ const flexVariantSchema = new VariantSchema(
 );
 
 export function Flex( props: FlexProps ) {
-	const baseClassName = flexVariantSchema.getClassname( {
+	const baseClassName = useMemo( () => flexVariantSchema.getClassname( {
 		justify: props.justify || "start",
 		align: props.align || "start",
 		direction: props.direction || "row",
 		wrap: props.wrap ? "true" : "false"
-	} );
+	} ), [ props.justify, props.align, props.direction, props.wrap ] );
 
 	return <div className={ baseClassName + ` ${ props.className }` }>{ props.children }</div>;
 }

@@ -2,21 +2,20 @@ import type { CardRank } from "./card-const";
 import { SORTED_DECK } from "./card-const";
 import { CardHand } from "./card-hand";
 import { chunk, shuffle } from "./card-utils";
-import type { IPlayingCard } from "./playing-card";
 
-export interface ICardDeck {
-	cards: IPlayingCard[];
-}
+export class CardDeck {
+	private _cards = shuffle( SORTED_DECK );
 
-export class CardDeck implements ICardDeck {
-	cards = shuffle( SORTED_DECK );
+	get cards() {
+		return this._cards;
+	}
 
 	get length() {
-		return this.cards.length;
+		return this._cards.length;
 	}
 
 	removeCardsOfRank( rank: CardRank ) {
-		this.cards = this.cards.filter( card => card.rank !== rank );
+		this._cards = this._cards.filter( card => card.rank !== rank );
 	}
 
 	generateHands( handCount: number ): CardHand[] {
@@ -24,11 +23,11 @@ export class CardDeck implements ICardDeck {
 			return [];
 		}
 
-		const handSize = this.cards.length / handCount;
-		return chunk( this.cards, handSize ).map( cards => CardHand.from( { cards } ) );
+		const handSize = this._cards.length / handCount;
+		return chunk( this._cards, handSize ).map( CardHand.create );
 	}
 
 	sort() {
-		this.cards = SORTED_DECK;
+		this._cards = SORTED_DECK.filter( card => this._cards.includes( card ) );
 	}
 }
