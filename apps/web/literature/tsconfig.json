@@ -1,0 +1,33 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/esm", "@tsconfig/node18", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"target": "ESNext",
+		"useDefineForClassFields": true,
+		"lib": [ "ESNext", "DOM", "DOM.Iterable" ],
+		"module": "ESNext",
+		"skipLibCheck": true,
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"strict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"verbatimModuleSyntax": false,
+		"exactOptionalPropertyTypes": false,
+		"strictPropertyInitialization": false,
+		"noUncheckedIndexedAccess": false,
+		"ignoreDeprecations": "5.0",
+		"importHelpers": true,
+		"esModuleInterop": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"importsNotUsedAsValues": "error"
+	},
+	"include": [ "src" ],
+	"references": [ { "path": "./tsconfig.node.json" } ]
+}
