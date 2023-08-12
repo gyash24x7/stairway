@@ -1,0 +1,32 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/esm", "@tsconfig/node18", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"target": "ESNext",
+		"useDefineForClassFields": true,
+		"lib": [ "DOM", "DOM.Iterable", "ESNext" ],
+		"module": "ESNext",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "react-jsx",
+		"verbatimModuleSyntax": false,
+		"exactOptionalPropertyTypes": false,
+		"strictPropertyInitialization": false,
+		"noUncheckedIndexedAccess": false,
+		"ignoreDeprecations": "5.0",
+		"importHelpers": true,
+		"esModuleInterop": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"importsNotUsedAsValues": "error"
+	},
+	"include": [ "src", "vite.config.ts" ],
+	"exclude": [
+		"src/**/*.stories.tsx",
+		"**/*.stories.ts",
+		"**/*.stories.js",
+		"**/*.stories.jsx",
+		"**/*.stories.tsx"
+	],
+	"references": [ { "path": "./.storybook/tsconfig.json" } ]
+}

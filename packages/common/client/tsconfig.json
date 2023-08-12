@@ -2,6 +2,13 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": [ "@tsconfig/node18", "@tsconfig/strictest" ],
 	"compilerOptions": {
+		"target": "ESNext",
+		"useDefineForClassFields": true,
+		"lib": [ "DOM", "DOM.Iterable", "ESNext" ],
+		"module": "ESNext",
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"jsx": "react-jsx",
 		"verbatimModuleSyntax": false,
 		"exactOptionalPropertyTypes": false,
 		"strictPropertyInitialization": false,
@@ -13,5 +20,6 @@
 		"experimentalDecorators": true,
 		"importsNotUsedAsValues": "error"
 	},
-	"include": [ "src", "tests", "vite.config.ts" ]
+	"include": [ "src" ],
+	"references": [ { "path": "./tsconfig.node.json" } ]
 }

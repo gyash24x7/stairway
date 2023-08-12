@@ -1,0 +1,19 @@
+{
+	"name": "@s2h/client",
+	"version": "1.0.0",
+	"description": "",
+	"main": "dist/index.js",
+	"types": "src/index.ts",
+	"scripts": {
+		"build": "swc --config-file=../../../configs/.swcrc --out-dir=dist src"
+	},
+	"keywords": [ ],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"superagent": "8.0.9"
+	},
+	"devDependencies": {
+		"@types/superagent": "4.1.18"
+	}
+}
