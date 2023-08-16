@@ -31,7 +31,6 @@ export class CallMoveData implements ICallMoveData {
 	actualCall: Record<string, PlayingCard[]>;
 	correctCall: Record<string, PlayingCard[]>;
 
-
 	constructor( { by, correctCall, actualCall, cardSet }: ICallMoveData ) {
 		this.by = by;
 		this.cardSet = cardSet;
@@ -125,7 +124,7 @@ export class LiteratureMove implements ILiteratureMove {
 		} );
 	}
 
-	static buildChanceTransferMove( id: string, gameId: string, transferData: TransferMoveData ) {
+	static buildTransferMove( id: string, gameId: string, transferData: TransferMoveData ) {
 		return new LiteratureMove( {
 			id,
 			gameId,

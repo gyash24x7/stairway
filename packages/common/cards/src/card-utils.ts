@@ -21,3 +21,12 @@ export function chunk<T>( arr: T[], size: number ): T[][] {
 export function intersection<T>( arr1: T[], arr2: T[] ): T[] {
 	return arr1.filter( a => arr2.includes( a ) );
 }
+
+export function generateGameCode() {
+	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	let result = "";
+	for ( let i = 0; i < 6; i++ ) {
+		result += chars[ Math.floor( Math.random() * 36 ) ];
+	}
+	return result;
+}

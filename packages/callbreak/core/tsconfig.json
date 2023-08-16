@@ -1,0 +1,17 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/node18", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"verbatimModuleSyntax": false,
+		"exactOptionalPropertyTypes": false,
+		"strictPropertyInitialization": false,
+		"noUncheckedIndexedAccess": false,
+		"ignoreDeprecations": "5.0",
+		"importHelpers": true,
+		"esModuleInterop": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"importsNotUsedAsValues": "error"
+	},
+	"include": [ "src", "tests", "vite.config.ts" ]
+}

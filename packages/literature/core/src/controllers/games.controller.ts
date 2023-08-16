@@ -303,7 +303,12 @@ export class GamesController {
 			throw new NotFoundException();
 		}
 
-		currentGame.executeChanceTransferMove( { to: input.transferTo, from: givingPlayer.id } );
+		const transferData = { to: input.transferTo, from: givingPlayer.id };
+		currentGame.executeTransferMove( transferData );
+
+		const moveId = new ObjectId().toHexString();
+		const move = LiteratureMove.buildTransferMove( moveId, currentGame.id, transferData );
+		await this.literatureService.saveMove( move );
 
 		await this.literatureService.saveGame( currentGame );
 		return currentGame.id;

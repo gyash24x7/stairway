@@ -1,6 +1,6 @@
 import { ILiteraturePlayer, LiteraturePlayer } from "./player";
 import { ILiteratureTeam, LiteratureTeam } from "./team";
-import { CardDeck, CardHand, CardRank, PlayingCard } from "@s2h/cards";
+import { CardDeck, CardHand, CardRank, generateGameCode, PlayingCard } from "@s2h/cards";
 import type { AskMoveData, CallMoveData, TransferMoveData } from "./move";
 import type { UserAuthInfo } from "@auth/data";
 
@@ -76,10 +76,9 @@ export class LiteratureGame implements ILiteratureGame {
 	}
 
 	static createNew( id: string, playerCount: number, authInfo: UserAuthInfo ) {
-		const code = LiteratureGame.generateGameCode();
 		return new LiteratureGame( {
 			id,
-			code,
+			code: generateGameCode(),
 			playerCount,
 			createdBy: authInfo.id,
 			players: {},
@@ -87,15 +86,6 @@ export class LiteratureGame implements ILiteratureGame {
 			status: LiteratureGameStatus.CREATED,
 			currentTurn: authInfo.id
 		} );
-	}
-
-	static generateGameCode() {
-		const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		let result = "";
-		for ( let i = 0; i < 6; i++ ) {
-			result += chars[ Math.floor( Math.random() * 36 ) ];
-		}
-		return result;
 	}
 
 	dealCards() {
@@ -129,7 +119,7 @@ export class LiteratureGame implements ILiteratureGame {
 		} );
 	}
 
-	executeChanceTransferMove( { to }: TransferMoveData ): boolean {
+	executeTransferMove( { to }: TransferMoveData ): boolean {
 		this.currentTurn = to;
 		return true;
 	}

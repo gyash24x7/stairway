@@ -11,9 +11,6 @@ importers:
       '@swc/helpers':
         specifier: 0.5.1
         version: 0.5.1
-      esm:
-        specifier: 3.2.25
-        version: 3.2.25
       tslib:
         specifier: 2.6.1
         version: 2.6.1
@@ -222,6 +219,43 @@ importers:
       '@types/react-dom':
         specifier: 18.2.7
         version: 18.2.7
+
+  packages/callbreak/core:
+    dependencies:
+      '@auth/core':
+        specifier: workspace:*
+        version: link:../../auth/core
+      '@auth/data':
+        specifier: workspace:*
+        version: link:../../auth/data
+      '@callbreak/data':
+        specifier: workspace:*
+        version: link:../data
+      '@nestjs/common':
+        specifier: 10.1.3
+        version: 10.1.3(reflect-metadata@0.1.13)(rxjs@7.8.1)
+      '@s2h/cards':
+        specifier: workspace:*
+        version: link:../../common/cards
+      '@s2h/utils':
+        specifier: workspace:*
+        version: link:../../common/utils
+      mongodb:
+        specifier: 5.7.0
+        version: 5.7.0
+    devDependencies:
+      '@types/express':
+        specifier: 4.17.17
+        version: 4.17.17
+
+  packages/callbreak/data:
+    dependencies:
+      '@auth/data':
+        specifier: workspace:*
+        version: link:../../auth/data
+      '@s2h/cards':
+        specifier: workspace:*
+        version: link:../../common/cards
 
   packages/common/cards: {}
 
@@ -4839,11 +4873,6 @@ packages:
       esrecurse: 4.3.0
       estraverse: 4.3.0
     dev: true
-
-  /esm@3.2.25:
-    resolution: {integrity: sha512-U1suiZ2oDVWv4zPO56S0NcR5QriEahGtdN2OR6FiOG4WJvcjBVFB0qI4+eKoWFH483PKGuLuu6V8Z4T5g63UVA==}
-    engines: {node: '>=6'}
-    dev: false
 
   /esprima@4.0.1:
     resolution: {integrity: sha512-eGuFFw7Upda+g4p+QHvnW0RyTX/SVeJBDM/gCtMARO0cLuT2HcEKnTPvhjV6aGeqrCB/sbNop0Kszm0jsaWU4A==}
