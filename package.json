@@ -1,7 +1,17 @@
 {
 	"name": "stairway",
 	"private": true,
-	"dependencies": { },
-	"devDependencies": { },
+	"devDependencies": {
+		"@nx/js": "16.8.1",
+		"@nx/vite": "16.8.1",
+		"@nx/workspace": "16.8.1",
+		"@tsconfig/node18": "18.2.2",
+		"@tsconfig/strictest": "2.0.2",
+		"@types/node": "20.6.2",
+		"nx": "16.8.1",
+		"nx-cloud": "16.4.0",
+		"ts-node": "10.9.1",
+		"typescript": "5.2.2"
+	},
 	"packageManager": "pnpm@8.6.0"
 }
