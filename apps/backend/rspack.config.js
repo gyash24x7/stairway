@@ -11,7 +11,6 @@ module.exports = composePlugins( withNx(), ( config ) => {
 				"cache-manager",
 				"class-validator",
 				"class-transformer",
-				// ADD THIS
 				"@nestjs/microservices/microservices-module",
 				"@nestjs/websockets",
 				"socket.io-adapter",
