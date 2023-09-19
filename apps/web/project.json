@@ -5,35 +5,48 @@
 	"projectType": "application",
 	"targets": {
 		"build": {
-			"executor": "@nx/rspack:rspack",
+			"executor": "@nx/vite:build",
 			"outputs": [ "{options.outputPath}" ],
 			"defaultConfiguration": "production",
 			"options": {
-				"target": "web",
-				"outputPath": "apps/web/dist",
-				"main": "apps/web/src/main.tsx",
-				"tsConfig": "apps/web/tsconfig.json",
-				"rspackConfig": "apps/web/rspack.config.js",
-				"assets": [ "apps/web/src/favicon.ico", "apps/web/src/assets" ]
+				"outputPath": "apps/web/dist"
 			},
 			"configurations": {
 				"development": {
 					"mode": "development"
 				},
 				"production": {
-					"mode": "production",
-					"optimization": true,
-					"sourceMap": false
+					"mode": "production"
 				}
 			}
 		},
 		"serve": {
-			"executor": "@nx/rspack:dev-server",
+			"executor": "@nx/vite:dev-server",
+			"defaultConfiguration": "development",
 			"options": {
-				"buildTarget": "web:build:development"
+				"buildTarget": "web:build"
 			},
 			"configurations": {
-				"development": { },
+				"development": {
+					"buildTarget": "web:build:development",
+					"hmr": true
+				},
+				"production": {
+					"buildTarget": "web:build:production",
+					"hmr": false
+				}
+			}
+		},
+		"preview": {
+			"executor": "@nx/vite:preview-server",
+			"defaultConfiguration": "development",
+			"options": {
+				"buildTarget": "web:build"
+			},
+			"configurations": {
+				"development": {
+					"buildTarget": "web:build:development"
+				},
 				"production": {
 					"buildTarget": "web:build:production"
 				}

@@ -5,6 +5,6 @@ import type { UserAuthInfo } from "@auth/data";
 
 export const useMeQuery = ( ops?: OpOps<UserAuthInfo> ) => useQuery( {
 	queryKey: [ "me" ],
-	queryFn: () => me(),
+	queryFn: () => me().catch( () => null ),
 	...ops
 } );

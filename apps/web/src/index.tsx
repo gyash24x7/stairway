@@ -3,9 +3,10 @@ import { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { theme } from "@s2h/ui";
-import { RouterProvider } from "react-router-dom";
-import { router } from "./routes";
+import { BrowserRouter } from "react-router-dom";
+import { AppRoutes } from "./routes";
 import { MantineProvider } from "@mantine/core";
+import { ModalsProvider } from "@mantine/modals";
 
 const root = ReactDOM.createRoot( document.getElementById( "root" ) as HTMLElement );
 
@@ -22,10 +23,14 @@ const queryClient = new QueryClient( {
 
 root.render(
 	<StrictMode>
-		<MantineProvider theme={ theme }>
-			<QueryClientProvider client={ queryClient }>
-				<RouterProvider router={ router }/>
-			</QueryClientProvider>
-		</MantineProvider>
+		<QueryClientProvider client={ queryClient }>
+			<BrowserRouter>
+				<MantineProvider theme={ theme }>
+					<ModalsProvider>
+						<AppRoutes/>
+					</ModalsProvider>
+				</MantineProvider>
+			</BrowserRouter>
+		</QueryClientProvider>
 	</StrictMode>
 );
