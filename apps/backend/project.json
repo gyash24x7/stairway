@@ -5,25 +5,22 @@
 	"projectType": "application",
 	"targets": {
 		"build": {
-			"executor": "@nx/rspack:rspack",
+			"executor": "@nx/webpack:webpack",
 			"outputs": [ "{options.outputPath}" ],
 			"defaultConfiguration": "production",
 			"options": {
 				"target": "node",
+				"compiler": "tsc",
 				"outputPath": "apps/backend/dist",
 				"main": "apps/backend/src/main.ts",
 				"tsConfig": "apps/backend/tsconfig.json",
-				"rspackConfig": "apps/backend/rspack.config.js",
-				"assets": [ "apps/backend/src/assets" ]
+				"assets": [ "apps/backend/src/assets" ],
+				"isolatedConfig": true,
+				"webpackConfig": "apps/backend/webpack.config.js"
 			},
 			"configurations": {
-				"development": {
-					"mode": "development"
-				},
-				"production": {
-					"mode": "production",
-					"sourceMap": false
-				}
+				"development": { },
+				"production": { }
 			}
 		},
 		"serve": {
