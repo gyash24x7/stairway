@@ -1,27 +1,25 @@
-import type { IPlayingCard } from "@s2h/cards";
-
-export class CreateGameInput {
+export type CreateGameInput = {
 	playerCount: number;
 }
 
-export class JoinGameInput {
+export type JoinGameInput = {
 	code: string;
 }
 
-export class CreateTeamsInput {
-	data: { [ key: string ]: string[] } = {};
+export type CreateTeamsInput = {
+	data: { [ key: string ]: string[] };
 }
 
-export class AskCardInput {
+export type AskCardInput = {
 	askedFrom: string;
-	askedFor: IPlayingCard;
+	askedFor: string;
 }
 
-export class CallSetInput {
-	data: { [ key: string ]: IPlayingCard[] } = {};
+export type CallSetInput = {
+	data: { [ key: string ]: string };
 }
 
-export class TransferChanceInput {
+export type TransferChanceInput = {
 	transferTo: string;
 }
 

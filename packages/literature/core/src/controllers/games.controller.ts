@@ -1,19 +1,17 @@
 import { Body, Controller, Get, Post, Put, UseGuards } from "@nestjs/common";
-import {
+import type {
+	AggregatedGameData,
 	AskCardInput,
 	CallSetInput,
 	CreateGameInput,
 	CreateTeamsInput,
-	IAggregatedGameData,
 	JoinGameInput,
-	LiteratureGame,
-	LiteraturePlayer,
+	PlayerSpecificGameData,
 	TransferChanceInput
 } from "@literature/data";
 import { AuthGuard, AuthInfo } from "@auth/core";
-import { RequireActiveGameGuard, RequireGameGuard, RequireHandsGuard, RequirePlayerGuard } from "../guards";
-import { ActiveGame, ActiveGameHands, ActivePlayer } from "../decorators";
-import type { CardHand } from "@s2h/cards";
+import { RequireGameGuard, RequireGameStatusGuard, RequirePlayerGuard, RequireTurnGuard } from "../guards";
+import { ActiveGame, RequiresStatus } from "../decorators";
 import type { UserAuthInfo } from "@auth/data";
 import { Paths } from "../constants";
 import { CommandBus, QueryBus } from "@nestjs/cqrs";
@@ -28,6 +26,7 @@ import {
 } from "../commands";
 import { AggregateGameQuery } from "../queries";
 import { LoggerFactory } from "@s2h/core";
+import { GameStatus } from "@literature/prisma";
 
 @UseGuards( AuthGuard )
 @Controller( Paths.BASE )
@@ -46,9 +45,7 @@ export class GamesController {
 		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<string> {
 		this.logger.debug( ">> createGame()" );
-		const gameId = await this.commandBus.execute( new CreateGameCommand( input, authInfo ) );
-		this.logger.debug( "<< createGame() %s", gameId );
-		return gameId;
+		return this.commandBus.execute( new CreateGameCommand( input, authInfo ) );
 	}
 
 	@Post( Paths.JOIN_GAME )
@@ -61,67 +58,67 @@ export class GamesController {
 	}
 
 	@Put( Paths.CREATE_TEAMS )
-	@UseGuards( RequireGameGuard, RequirePlayerGuard )
+	@RequiresStatus( GameStatus.PLAYERS_READY )
+	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireGameStatusGuard )
 	async createTeams(
 		@Body() input: CreateTeamsInput,
-		@ActiveGame() currentGame: LiteratureGame
+		@ActiveGame() currentGame: AggregatedGameData
 	): Promise<string> {
 		this.logger.debug( ">> createTeams()" );
 		return this.commandBus.execute( new CreateTeamsCommand( input, currentGame ) );
 	}
 
 	@Put( Paths.START_GAME )
-	@UseGuards( RequireGameGuard, RequirePlayerGuard )
-	async startGame( @ActiveGame() currentGame: LiteratureGame ): Promise<string> {
+	@RequiresStatus( GameStatus.TEAMS_CREATED )
+	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireGameStatusGuard )
+	async startGame( @ActiveGame() currentGame: AggregatedGameData ): Promise<string> {
 		this.logger.debug( ">> startGame()" );
 		return this.commandBus.execute( new StartGameCommand( currentGame ) );
 	}
 
 	@Put( Paths.ASK_CARD )
-	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireActiveGameGuard, RequireHandsGuard )
+	@RequiresStatus( GameStatus.IN_PROGRESS )
+	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireGameStatusGuard, RequireTurnGuard )
 	async askCard(
 		@Body() input: AskCardInput,
-		@ActiveGame() currentGame: LiteratureGame,
-		@ActivePlayer() currentPlayer: LiteraturePlayer,
-		@ActiveGameHands() currentGameHands: Record<string, CardHand>
+		@ActiveGame() currentGame: AggregatedGameData,
+		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<string> {
 		this.logger.debug( ">> askCard()" );
-		return this.commandBus.execute( new AskCardCommand( input, currentGame, currentPlayer, currentGameHands ) );
+		return this.commandBus.execute( new AskCardCommand( input, currentGame, authInfo ) );
 	}
 
 	@Put( Paths.CALL_SET )
-	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireActiveGameGuard, RequireHandsGuard )
+	@RequiresStatus( GameStatus.IN_PROGRESS )
+	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireGameStatusGuard, RequireTurnGuard )
 	async callSet(
 		@Body() input: CallSetInput,
-		@ActiveGame() currentGame: LiteratureGame,
-		@ActivePlayer() currentPlayer: LiteraturePlayer,
-		@ActiveGameHands() currentGameHands: Record<string, CardHand>
+		@ActiveGame() currentGame: AggregatedGameData,
+		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<string> {
 		this.logger.debug( ">> callSet()" );
-		return this.commandBus.execute( new CallSetCommand( input, currentGame, currentPlayer, currentGameHands ) );
+		return this.commandBus.execute( new CallSetCommand( input, currentGame, authInfo ) );
 	}
 
 	@Put( Paths.TRANSFER_CHANCE )
-	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireActiveGameGuard, RequireHandsGuard )
+	@RequiresStatus( GameStatus.IN_PROGRESS )
+	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireGameStatusGuard, RequireTurnGuard )
 	async transferChance(
 		@Body() input: TransferChanceInput,
-		@ActiveGame() currentGame: LiteratureGame,
-		@ActivePlayer() currentPlayer: LiteraturePlayer,
-		@ActiveGameHands() currentGameHands: Record<string, CardHand>
+		@ActiveGame() currentGame: AggregatedGameData,
+		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<string> {
 		this.logger.debug( ">> transferChance()" );
-		return this.commandBus.execute(
-			new TransferChanceCommand( input, currentGame, currentPlayer, currentGameHands )
-		);
+		return this.commandBus.execute( new TransferChanceCommand( input, currentGame, authInfo ) );
 	}
 
 	@Get( Paths.GET_GAME )
 	@UseGuards( RequireGameGuard, RequirePlayerGuard )
-	async getGame(
-		@ActiveGame() currentGame: LiteratureGame,
-		@ActivePlayer() currentPlayer: LiteraturePlayer
-	): Promise<IAggregatedGameData> {
+	async getGameForPlayer(
+		@ActiveGame() currentGame: AggregatedGameData,
+		@AuthInfo() authInfo: UserAuthInfo
+	): Promise<PlayerSpecificGameData> {
 		this.logger.debug( ">> getGame()" );
-		return this.queryBus.execute( new AggregateGameQuery( currentGame, currentPlayer ) );
+		return this.queryBus.execute( new AggregateGameQuery( currentGame, authInfo ) );
 	}
 }

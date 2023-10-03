@@ -1,10 +1,10 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import { CreateGameInput, LiteratureGame, LiteraturePlayer } from "@literature/data";
+import type { CreateGameInput } from "@literature/data";
 import type { UserAuthInfo } from "@auth/data";
-import { ObjectId } from "mongodb";
-import { LiteratureService } from "../services";
+import { prisma } from "../utils";
 import { LoggerFactory } from "@s2h/core";
+import { generateGameCode } from "@s2h/cards";
 
 export class CreateGameCommand implements ICommand {
 	constructor(
@@ -18,15 +18,25 @@ export class CreateGameCommandHandler implements ICommandHandler<CreateGameComma
 
 	private readonly logger = LoggerFactory.getLogger( CreateGameCommandHandler );
 
-	constructor( private readonly literatureService: LiteratureService ) {}
-
 	async execute( { input, authInfo }: CreateGameCommand ) {
 		this.logger.debug( ">> execute()" );
-		const id = new ObjectId();
-		const game = LiteratureGame.createNew( id.toHexString(), input.playerCount || 2, authInfo );
-		const player = LiteraturePlayer.createFromAuthInfo( authInfo );
-		game.addPlayers( player );
-		await this.literatureService.createGame( game );
-		return id.toHexString();
+
+		const game = await prisma.game.create( {
+			data: {
+				playerCount: input.playerCount,
+				code: generateGameCode()
+			}
+		} );
+
+		await prisma.player.create( {
+			data: {
+				id: authInfo.id,
+				name: authInfo.name,
+				avatar: authInfo.avatar,
+				gameId: game.id
+			}
+		} );
+
+		return game.id;
 	}
 }

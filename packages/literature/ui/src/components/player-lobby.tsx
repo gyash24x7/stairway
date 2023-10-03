@@ -1,10 +1,10 @@
-import type { LiteraturePlayer } from "@literature/data";
 import { Fragment } from "react";
 import { useCurrentGameCardCounts } from "../utils";
 import { Avatar, Box, Flex, Text, Title } from "@mantine/core";
+import type { Player } from "@literature/prisma";
 
 export interface PlayerLobbyProps {
-	playerList: LiteraturePlayer[];
+	playerList: Player[];
 	displayHeading?: boolean;
 	displayCardCount?: boolean;
 }

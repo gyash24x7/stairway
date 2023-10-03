@@ -2,8 +2,8 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@
 import { LoggerFactory } from "@s2h/core";
 import type { UserAuthInfo } from "@auth/data";
 import type { Response } from "express";
-import type { LiteratureGame } from "@literature/data";
 import { Constants } from "../constants";
+import type { AggregatedGameData } from "@literature/data";
 
 @Injectable()
 export class RequirePlayerGuard implements CanActivate {
@@ -12,7 +12,7 @@ export class RequirePlayerGuard implements CanActivate {
 	canActivate( context: ExecutionContext ) {
 		this.logger.debug( ">> requirePlayer()" );
 		const res = context.switchToHttp().getResponse<Response>();
-		const currentGame: LiteratureGame = res.locals[ Constants.ACTIVE_GAME ];
+		const currentGame: AggregatedGameData = res.locals[ Constants.ACTIVE_GAME ];
 		const authInfo: UserAuthInfo = res.locals[ Constants.AUTH_INFO ];
 
 		if ( !currentGame.players[ authInfo.id ] ) {

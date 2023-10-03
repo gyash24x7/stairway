@@ -1,18 +1,17 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import { LiteratureGame, LiteratureMove, LiteraturePlayer, TransferChanceInput } from "@literature/data";
-import type { CardHand } from "@s2h/cards";
+import type { AggregatedGameData, TransferChanceInput, TransferMoveData } from "@literature/data";
 import { LoggerFactory } from "@s2h/core";
-import { NotFoundException } from "@nestjs/common";
-import { ObjectId } from "mongodb";
-import { LiteratureService } from "../services";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { prisma } from "../utils";
+import { MoveType } from "@literature/prisma";
+import type { UserAuthInfo } from "@auth/data";
 
 export class TransferChanceCommand implements ICommand {
 	constructor(
 		public readonly input: TransferChanceInput,
-		public readonly currentGame: LiteratureGame,
-		public readonly currentPlayer: LiteraturePlayer,
-		public readonly currentGameHands: Record<string, CardHand>
+		public readonly currentGame: AggregatedGameData,
+		public readonly authInfo: UserAuthInfo
 	) {}
 }
 
@@ -21,20 +20,21 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 
 	private readonly logger = LoggerFactory.getLogger( TransferChanceCommandHandler );
 
-	constructor( private readonly literatureService: LiteratureService ) {}
-
-
-	async execute( { input, currentGame, currentPlayer, currentGameHands }: TransferChanceCommand ): Promise<string> {
+	async execute( { input, currentGame, authInfo }: TransferChanceCommand ): Promise<string> {
 		this.logger.debug( ">> execute()" );
-		const lastMove = await this.literatureService.findLastCallMove( currentGame.id );
+		const lastMove = await prisma.move.findFirstOrThrow( {
+			where: { gameId: currentGame.id },
+			orderBy: { timestamp: "desc" }
+		} );
 
-		if ( !lastMove?.success ) {
-			this.logger.error( "Chance can only be transferred after successful call!" );
-			throw new NotFoundException();
+		if ( lastMove.type !== MoveType.CALL_SET || !lastMove.success ) {
+			this.logger.error( "Chance can only be transferred after a successful call move!" );
+			throw new BadRequestException();
 		}
 
+		const transferringPlayer = currentGame.players[ authInfo.id ];
 		const receivingPlayer = currentGame.players[ input.transferTo ];
-		const receivingPlayerHand = currentGameHands[ receivingPlayer.id ];
+		const receivingPlayerHand = currentGame.hands[ input.transferTo ];
 
 		if ( !receivingPlayer ) {
 			this.logger.error( "Cannot transfer chance to unknown player!" );
@@ -43,22 +43,32 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 
 		if ( receivingPlayerHand.length === 0 ) {
 			this.logger.error( "Chance can only be transferred to a player with cards!" );
-			throw new NotFoundException();
+			throw new BadRequestException();
 		}
 
-		if ( receivingPlayer.teamId !== currentPlayer.teamId ) {
+		if ( receivingPlayer.teamId !== transferringPlayer.teamId ) {
 			this.logger.error( "Chance can only be transferred to member of your team!" );
-			throw new NotFoundException();
+			throw new BadRequestException();
 		}
 
-		const transferData = { to: input.transferTo, from: currentPlayer.id };
-		currentGame.executeTransferMove( transferData );
+		const transferData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
+		const description = `${ transferringPlayer.name } transferred the chance to ${ receivingPlayer.name }`;
 
-		const moveId = new ObjectId().toHexString();
-		const move = LiteratureMove.buildTransferMove( moveId, currentGame.id, transferData );
-		await this.literatureService.saveMove( move );
+		await prisma.move.create( {
+			data: {
+				gameId: currentGame.id,
+				type: MoveType.TRANSFER_CHANCE,
+				success: true,
+				data: transferData,
+				description
+			}
+		} );
 
-		await this.literatureService.saveGame( currentGame );
+		await prisma.game.update( {
+			where: { id: currentGame.id },
+			data: { currentTurn: receivingPlayer.id }
+		} );
+
 		return currentGame.id;
 	}
 }

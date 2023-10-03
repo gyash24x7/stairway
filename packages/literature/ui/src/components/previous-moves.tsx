@@ -1,12 +1,10 @@
 import { Box, Button, Flex, Modal, Stack } from "@mantine/core";
 import { Fragment } from "react";
-import { useCurrentGame, useCurrentGameMoves } from "../utils";
-import { LiteratureMove } from "@literature/data";
+import { useCurrentGameMoves } from "../utils";
 import { useDisclosure } from "@mantine/hooks";
 
 export function PreviousMoves() {
 	const moves = useCurrentGameMoves();
-	const { players } = useCurrentGame();
 
 	const [ opened, { open, close } ] = useDisclosure();
 
@@ -19,7 +17,7 @@ export function PreviousMoves() {
 				<Stack>
 					{ moves.slice( 0, 4 ).map( move => (
 						<Box bg={ "light" } p={ 16 } w={ "100%" }>
-							{ LiteratureMove.getMoveDescription( move, players ) }
+							{ move.description }
 						</Box>
 					) ) }
 				</Stack>

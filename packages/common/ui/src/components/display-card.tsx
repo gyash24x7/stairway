@@ -37,7 +37,7 @@ export function DisplayCard( { card }: DisplayCardProps ) {
 			<Title order={ 2 } className={ classnames.cardColor[ card.suit ] }>
 				{ rankTextMap[ card.rank ] }
 			</Title>
-			<img src={ suitSrcMap[ card.suit ] } alt={ card.cardId } width={ 16 } height={ 16 }/>
+			<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 16 } height={ 16 }/>
 		</div>
 	);
 

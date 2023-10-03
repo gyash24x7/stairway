@@ -4,8 +4,8 @@ import type {
 	CallSetInput,
 	CreateGameInput,
 	CreateTeamsInput,
-	IAggregatedGameData,
 	JoinGameInput,
+	PlayerSpecificGameData,
 	TransferChanceInput
 } from "@literature/data";
 
@@ -33,4 +33,4 @@ export const transferChance = ( id: string, data: TransferChanceInput ): Promise
 	data
 );
 
-export const getGame = ( id: string ) => getRequest<IAggregatedGameData>( getGamePath( id ) );
+export const getGame = ( id: string ) => getRequest<PlayerSpecificGameData>( getGamePath( id ) );

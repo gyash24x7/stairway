@@ -1,10 +1,11 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import { JoinGameInput, LiteratureGameStatus, LiteraturePlayer } from "@literature/data";
+import type { JoinGameInput } from "@literature/data";
 import type { UserAuthInfo } from "@auth/data";
-import { LiteratureService } from "../services";
+import { prisma } from "../utils";
 import { LoggerFactory } from "@s2h/core";
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { GameStatus } from "@literature/prisma";
 
 export class JoinGameCommand implements ICommand {
 	constructor(
@@ -18,30 +19,46 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 
 	private readonly logger = LoggerFactory.getLogger( JoinGameCommandHandler );
 
-	constructor( private readonly literatureService: LiteratureService ) {}
-
-
 	async execute( { input, authInfo }: JoinGameCommand ) {
 		this.logger.debug( ">> execute()" );
-		const game = await this.literatureService.findGameByCode( input.code );
+		const game = await prisma.game.findUnique( {
+			where: { code: input.code },
+			include: { players: true }
+		} );
 
-		if ( game.playerIds.length >= game.playerCount ) {
+		if ( !game ) {
+			this.logger.error( "Game Not Found!" );
+			throw new NotFoundException();
+		}
+
+		if ( game.players.length >= game.playerCount ) {
 			this.logger.error( "The Game already has required players! GameId: %s", game.id );
 			throw new BadRequestException();
 		}
 
-		if ( game.isUserAlreadyInGame( authInfo.id ) ) {
+		const isUserAlreadyInGame = !!game.players.find( player => player.id === authInfo.id );
+
+		if ( isUserAlreadyInGame ) {
 			this.logger.warn( "The User is already part of the Game! GameId: %s", game.id );
 			return game.id;
 		}
 
-		game.addPlayers( LiteraturePlayer.createFromAuthInfo( authInfo ) );
+		await prisma.player.create( {
+			data: {
+				id: authInfo.id,
+				name: authInfo.name,
+				avatar: authInfo.avatar,
+				gameId: game.id
+			}
+		} );
 
-		game.status = game.playerIds.length === game.playerCount
-			? LiteratureGameStatus.PLAYERS_READY
-			: LiteratureGameStatus.CREATED;
+		await prisma.game.update( {
+			where: { id: game.id },
+			data: {
+				status: game.playerCount ? GameStatus.PLAYERS_READY : GameStatus.CREATED
+			}
+		} );
 
-		await this.literatureService.saveGame( game );
 		return game.id;
 	}
 }

@@ -1,15 +1,15 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import { CreateTeamsInput, LiteratureGame, LiteratureGameStatus, LiteratureTeam } from "@literature/data";
+import type { AggregatedGameData, CreateTeamsInput } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
-import { ObjectId } from "mongodb";
-import { LiteratureService } from "../services";
+import { prisma } from "../utils";
 import { LoggerFactory } from "@s2h/core";
+import { GameStatus } from "@literature/prisma";
 
 export class CreateTeamsCommand implements ICommand {
 	constructor(
 		public readonly input: CreateTeamsInput,
-		public readonly currentGame: LiteratureGame
+		public readonly currentGame: AggregatedGameData
 	) {}
 }
 
@@ -18,28 +18,39 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 
 	private readonly logger = LoggerFactory.getLogger( CreateTeamsCommandHandler );
 
-	constructor( private readonly literatureService: LiteratureService ) {}
-
-
 	async execute( { input, currentGame }: CreateTeamsCommand ) {
 		this.logger.debug( ">> execute()" );
-		if ( currentGame.status !== LiteratureGameStatus.PLAYERS_READY ) {
+		if ( currentGame.status !== GameStatus.PLAYERS_READY ) {
 			this.logger.error( "The Game is not in current status! GameId: %s", currentGame.id );
 			throw new BadRequestException();
 		}
 
-		if ( currentGame.playerIds.length !== currentGame.playerCount ) {
+		if ( currentGame.playerList.length !== currentGame.playerCount ) {
 			this.logger.error( "The Game doesn't have enough players! GameId: %s", currentGame.id );
 			throw new BadRequestException();
 		}
 
-		const teams = Object.keys( input.data )
-			.map( name => LiteratureTeam.create( new ObjectId().toHexString(), name, input.data[ name ] ) );
+		await Promise.all(
+			Object.keys( input.data ).map( teamName => {
+				return prisma.team.create( {
+					data: {
+						name: teamName,
+						gameId: currentGame.id,
+						members: {
+							connect: input.data[ teamName ].map( ( memberId ) => {
+								return { id_gameId: { id: memberId, gameId: currentGame.id } };
+							} )
+						}
+					}
+				} );
+			} )
+		);
 
-		currentGame.addTeams( teams );
-		currentGame.status = LiteratureGameStatus.TEAMS_CREATED;
+		await prisma.game.update( {
+			where: { id: currentGame.id },
+			data: { status: GameStatus.TEAMS_CREATED }
+		} );
 
-		await this.literatureService.saveGame( currentGame );
 		return currentGame.id;
 	}
 }

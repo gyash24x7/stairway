@@ -2,7 +2,8 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@
 import { LoggerFactory } from "@s2h/core";
 import type { Response } from "express";
 import type { UserAuthInfo } from "@auth/data";
-import type { LiteratureGame } from "@literature/data";
+import type { AggregatedGameData } from "@literature/data";
+import { Constants } from "../constants";
 
 @Injectable()
 export class RequireTurnGuard implements CanActivate {
@@ -11,8 +12,8 @@ export class RequireTurnGuard implements CanActivate {
 	canActivate( context: ExecutionContext ) {
 		this.logger.debug( ">> requireTurn()" );
 		const res = context.switchToHttp().getResponse<Response>();
-		const currentGame: LiteratureGame = res.locals[ "currentGame" ];
-		const authInfo: UserAuthInfo = res.locals[ "currentGame" ];
+		const currentGame: AggregatedGameData = res.locals[ Constants.ACTIVE_GAME ];
+		const authInfo: UserAuthInfo = res.locals[ Constants.AUTH_INFO ];
 
 		if ( currentGame.currentTurn !== authInfo.id ) {
 			this.logger.trace( "Game: %o", currentGame );

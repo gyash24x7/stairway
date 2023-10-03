@@ -1,9 +1,9 @@
-import { useCurrentGameTeams } from "../utils";
+import { useCurrentGame } from "../utils";
 import { Stack, Title } from "@mantine/core";
 import { IconCircleCheck } from "@tabler/icons-react";
 
 export function GameCompleted() {
-	const { myTeam, oppositeTeam } = useCurrentGameTeams();
+	const { myTeam, oppositeTeam } = useCurrentGame();
 
 	return (
 		<Stack gap={ "xxl" } justify={ "center" } align={ "center" } w={ "100%" } h={ "100%" }>

@@ -9,7 +9,7 @@ import { chunk, shuffle } from "@s2h/cards";
 function CreateTeamsModalContent() {
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
-	const { id, players, playerIds, playerCount } = useCurrentGame();
+	const { id, players, playerCount } = useCurrentGame();
 
 	const handleInput = ( index: 0 | 1 ) => ( e: ChangeEvent<HTMLInputElement> ) => {
 		setTeamNames( teamNames => {
@@ -30,7 +30,7 @@ function CreateTeamsModalContent() {
 	};
 
 	const groupPlayers = () => {
-		const teamMembers = chunk( shuffle( playerIds ), playerCount / 2 );
+		const teamMembers = chunk( shuffle( Object.keys( players ) ), playerCount / 2 );
 		setTeamMemberData( {
 			[ teamNames[ 0 ] ]: teamMembers[ 0 ],
 			[ teamNames[ 1 ] ]: teamMembers[ 1 ]

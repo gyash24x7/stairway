@@ -1,8 +1,8 @@
-import { CardSet, cardSetMap, PlayingCard } from "@s2h/cards";
+import { CardSet, getCardsOfSet } from "@s2h/cards";
 import type { AskCardInput } from "@literature/data";
 import { Button, Combobox, useCombobox } from "@mantine/core";
 import { Dispatch, SetStateAction, useState } from "react";
-import { useCurrentGame, useCurrentGameHandData, useCurrentGameTeams } from "../utils";
+import { useCurrentGame, useCurrentGameHandData } from "../utils";
 import { PlayerCard } from "./player-card";
 import { useAskCardMutation } from "@literature/client";
 import { DisplayCard } from "@s2h/ui";
@@ -10,22 +10,20 @@ import { modals } from "@mantine/modals";
 import { SelectCardSet } from "./select-card-set";
 
 interface SelectCardProps {
-	cardSet: CardSet;
-	card?: PlayingCard;
-	setCard: Dispatch<SetStateAction<PlayingCard | undefined>>;
+	set: CardSet;
+	card?: string;
+	setCard: Dispatch<SetStateAction<string | undefined>>;
 }
 
-function SelectCard( { cardSet, setCard, card }: SelectCardProps ) {
+function SelectCard( { set, setCard, card }: SelectCardProps ) {
 	const { hand } = useCurrentGameHandData();
 	const combobox = useCombobox();
 
-	const handleSelection = ( cardId: string ) => setCard( PlayingCard.fromId( cardId ) );
-
 	return (
-		<Combobox store={ combobox } onOptionSubmit={ handleSelection }>
+		<Combobox store={ combobox } onOptionSubmit={ setCard }>
 			<Combobox.Options>
-				{ cardSetMap[ cardSet ].filter( c => hand?.contains( c ) ).map( c => (
-					<Combobox.Option value={ c.cardId } key={ c.cardId } selected={ c.cardId === card?.cardId } p={ 8 }>
+				{ getCardsOfSet( hand, set ).map( c => (
+					<Combobox.Option value={ c.id } key={ c.id } selected={ c.id === card } p={ 8 }>
 						<DisplayCard card={ c }/>
 					</Combobox.Option>
 				) ) }
@@ -40,8 +38,7 @@ interface SelectPlayerProps {
 }
 
 function SelectPlayer( { setPlayer, player }: SelectPlayerProps ) {
-	const { players } = useCurrentGame();
-	const { oppositeTeam } = useCurrentGameTeams();
+	const { players, oppositeTeam } = useCurrentGame();
 	const combobox = useCombobox();
 
 	return (
@@ -61,7 +58,7 @@ export function AskCard() {
 	const { id } = useCurrentGame();
 	const { askableCardSets } = useCurrentGameHandData();
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
-	const [ selectedCard, setSelectedCard ] = useState<PlayingCard>();
+	const [ selectedCard, setSelectedCard ] = useState<string>();
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 
 	const closeModal = () => {
@@ -101,7 +98,7 @@ export function AskCard() {
 		centered: true,
 		closeOnConfirm: false,
 		labels: { confirm: "Select Player", cancel: "Back" },
-		children: <SelectCard cardSet={ selectedCardSet! } setCard={ setSelectedCard } card={ selectedCard }/>,
+		children: <SelectCard set={ selectedCardSet! } setCard={ setSelectedCard } card={ selectedCard }/>,
 		onConfirm: openSelectPlayerModal
 	} );
 

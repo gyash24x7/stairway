@@ -1,18 +1,18 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import { CallMoveData, CallSetInput, LiteratureGame, LiteratureMove, LiteraturePlayer } from "@literature/data";
-import { CardHand, PlayingCard } from "@s2h/cards";
+import type { AggregatedGameData, CallMoveData, CallSetInput } from "@literature/data";
+import { cardSetMap, getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
 import { BadRequestException } from "@nestjs/common";
-import { ObjectId } from "mongodb";
 import { LoggerFactory } from "@s2h/core";
-import { LiteratureService } from "../services";
+import { prisma } from "../utils";
+import type { UserAuthInfo } from "@auth/data";
+import { MoveType } from "@literature/prisma";
 
 export class CallSetCommand implements ICommand {
 	constructor(
 		public readonly input: CallSetInput,
-		public readonly currentGame: LiteratureGame,
-		public readonly currentPlayer: LiteraturePlayer,
-		public readonly currentGameHands: Record<string, CardHand>
+		public readonly currentGame: AggregatedGameData,
+		public readonly authInfo: UserAuthInfo
 	) {}
 }
 
@@ -21,16 +21,13 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 
 	private readonly logger = LoggerFactory.getLogger( CallSetCommandHandler );
 
-	constructor( private readonly literatureService: LiteratureService ) {}
+	async execute( { input: { data }, currentGame, authInfo }: CallSetCommand ) {
+		const calledCards = Object.keys( data ).map( getPlayingCardFromId );
+		const calledCardIds = new Set( Object.keys( data ) );
+		const cardSuits = new Set( calledCards.map( card => card.suit ) );
+		const cardSets = new Set( calledCards.map( card => card.set ) );
 
-
-	async execute( { input: { data }, currentGame, currentPlayer, currentGameHands }: CallSetCommand ) {
-		const calledCards = Object.values( data ).flat().map( PlayingCard.from );
-		const calledCardIds = new Set( calledCards.map( card => card.cardId ) );
-		const cardSets = new Set( calledCards.map( card => card.cardSet ) );
-
-		const callingPlayerHand = currentGameHands[ currentPlayer.id ];
-		const calledPlayers = Object.keys( data ).map( playerId => {
+		const calledPlayers = Array.from( new Set( Object.values( data ) ) ).map( playerId => {
 			const player = currentGame.players[ playerId ];
 			if ( !player ) {
 				this.logger.trace( "Input: %o", { data } );
@@ -38,43 +35,52 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 				this.logger.error(
 					"Called Player Not Found in Game! PlayerId: %s, UserId: %s",
 					playerId,
-					currentPlayer.id
+					authInfo.id
 				);
 				throw new BadRequestException();
 			}
 			return player;
 		} );
 
-		if ( !Object.keys( data ).includes( currentPlayer.id ) || data[ currentPlayer.id ].length === 0 ) {
+		if ( !Object.values( data ).includes( authInfo.id ) ) {
 			this.logger.trace( "Input: %o", { data } );
 			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Calling Player did not call own cards! UserId: %s", currentPlayer.id );
+			this.logger.error( "Calling Player did not call own cards! UserId: %s", authInfo.id );
 			throw new BadRequestException();
 		}
 
 		if ( calledCardIds.size !== calledCards.length ) {
 			this.logger.trace( "Input: %o", { data } );
 			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Same Cards called for multiple players! UserId: %s", currentPlayer.id );
+			this.logger.error( "Same Cards called for multiple players! UserId: %s", authInfo.id );
 			throw new BadRequestException();
 		}
 
-		if ( cardSets.size !== 1 ) {
+		if ( cardSets.size !== 1 || cardSuits.size !== 1 ) {
 			this.logger.trace( "Input: %o", { data } );
 			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Cards Called from multiple sets! UserId: %s", currentPlayer.id );
+			this.logger.error( "Cards Called from multiple sets! UserId: %s", authInfo.id );
 			throw new BadRequestException();
 		}
 
-		const [ callingSet ] = cardSets;
+		const [ calledSet ] = cardSets;
+		const callingPlayerHand = currentGame.hands[ authInfo.id ];
+		const correctCall: Record<string, string> = {};
 
-		if ( !callingPlayerHand.cardSetsInHand.includes( callingSet ) ) {
+		Object.keys( currentGame.cardMappings ).forEach( cardId => {
+			const card = getPlayingCardFromId( cardId );
+			if ( card.set === calledSet ) {
+				correctCall[ cardId ] = currentGame.cardMappings[ cardId ];
+			}
+		} );
+
+		if ( !isCardSetInHand( callingPlayerHand, calledSet ) ) {
 			this.logger.trace( "Input: %o", { data } );
 			this.logger.trace( "Game: %o", currentGame );
 			this.logger.error(
 				"Set called without cards from that set! UserId: %s, Set: %s",
-				currentPlayer.id,
-				callingSet
+				authInfo.id,
+				calledSet
 			);
 			throw new BadRequestException();
 		}
@@ -84,7 +90,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 		if ( calledTeams.size !== 1 ) {
 			this.logger.trace( "Input: %o", { data } );
 			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Cards Called for players from multiple teams! UserId: %s", currentPlayer.id );
+			this.logger.error( "Cards Called for players from multiple teams! UserId: %s", authInfo.id );
 			throw new BadRequestException();
 		}
 
@@ -93,37 +99,61 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			this.logger.trace( "Game: %o", currentGame );
 			this.logger.error(
 				"All Cards not called for the set! UserId: %s, Set: %s",
-				currentPlayer.id,
-				callingSet
+				authInfo.id,
+				calledSet
 			);
 			throw new BadRequestException();
 		}
 
-		const actualCall: Record<string, PlayingCard[]> = {};
-		Object.keys( data ).forEach( playerId => {
-			actualCall[ playerId ] = data[ playerId ].map( PlayingCard.from );
-		} );
+		const callingPlayer = currentGame.players[ authInfo.id ]!;
+		const callingTeam = currentGame.teams[ callingPlayer.teamId! ];
+		const oppositeTeam = currentGame.teamList.find( team => team.id !== callingPlayer.teamId )!;
 
-		const callData: CallMoveData = {
-			by: currentPlayer.id,
-			cardSet: callingSet,
-			actualCall,
-			correctCall: {}
-		};
+		let success = true;
+		let successString = "correctly!";
 
-		const success = currentGame.executeCallMove( callData, currentGameHands );
-		Object.keys( currentGameHands ).map( playerId => {
-			const removedCards = currentGameHands[ playerId ].removeCardsOfSet( callingSet );
-			if ( removedCards.length !== 0 ) {
-				callData.correctCall[ playerId ] = removedCards;
+		const cardsOfCallingSet = cardSetMap[ calledSet ];
+		for ( const card of cardsOfCallingSet ) {
+			if ( correctCall[ card.id ] !== data[ card.id ] ) {
+				success = false;
+				successString = "incorrectly!";
+				break;
+			}
+		}
+
+		await prisma.cardMapping.deleteMany( {
+			where: {
+				cardId: { in: Object.keys( data ) }
 			}
 		} );
 
-		const moveId = new ObjectId().toHexString();
-		const move = LiteratureMove.buildCallMove( moveId, currentGame.id, callData, success );
-		await this.literatureService.saveMove( move );
+		const callMoveData: CallMoveData = {
+			by: authInfo.id,
+			cardSet: calledSet,
+			actualCall: data,
+			correctCall
+		};
 
-		await this.literatureService.saveGame( currentGame );
+		await prisma.move.create( {
+			data: {
+				gameId: currentGame.id,
+				type: MoveType.CALL_SET,
+				success,
+				description: `${ callingPlayer.name } called ${ calledSet } ${ successString }`,
+				data: callMoveData
+			}
+		} );
+
+		await prisma.team.update( {
+			where: {
+				id: success ? callingPlayer.teamId! : oppositeTeam.id
+			},
+			data: {
+				score: success ? callingTeam.score + 1 : oppositeTeam.score + 1,
+				setsWon: success ? [ ...callingTeam.setsWon, calledSet ] : [ ...oppositeTeam.setsWon, calledSet ]
+			}
+		} );
+
 		return currentGame.id;
 	}
 }

@@ -1,9 +1,9 @@
 import { DisplayCard } from "./display-card";
-import type { CardHand } from "@s2h/cards";
+import { type PlayingCard, sortCards } from "@s2h/cards";
 import { Box, Flex, Title } from "@mantine/core";
 
 export interface DisplayHandProps {
-	hand: CardHand;
+	hand: PlayingCard[];
 }
 
 export function DisplayHand( { hand }: DisplayHandProps ) {
@@ -11,8 +11,8 @@ export function DisplayHand( { hand }: DisplayHandProps ) {
 		<Box py={ 8 } w={ "100%" }>
 			<Title order={ 2 }>Your Hand</Title>
 			<Flex gap={ "sm" } wrap={ "wrap" }>
-				{ hand.sorted().map( card => (
-					<DisplayCard card={ card } key={ card.cardId }/>
+				{ sortCards( hand ).map( card => (
+					<DisplayCard card={ card } key={ card.id }/>
 				) ) }
 			</Flex>
 		</Box>

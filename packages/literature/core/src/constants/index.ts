@@ -1,7 +1,7 @@
 export class Constants {
 	public static readonly ACTIVE_GAME = "activeGame";
-	public static readonly ACTIVE_GAME_HANDS = "activeGameHands";
 	public static readonly AUTH_INFO = "authInfo";
+	public static readonly STATUS_KEY = "requiredStatus";
 }
 
 export class Paths {
@@ -14,13 +14,4 @@ export class Paths {
 	public static readonly TRANSFER_CHANCE = ":gameId/transfer-chance";
 
 	public static readonly GET_GAME = ":gameId";
-	public static readonly GET_GAME_HANDS = ":id/hand";
-	public static readonly GET_GAME_MOVES = ":id/moves";
-}
-
-export class DbConstants {
-	public static readonly LITERATURE_DB = "literature";
-	public static readonly GAMES_COLLECTION = "games";
-	public static readonly HANDS_COLLECTION = "hands";
-	public static readonly MOVES_COLLECTION = "moves";
 }

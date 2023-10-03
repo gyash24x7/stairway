@@ -1,9 +1,9 @@
-import type { LiteraturePlayer } from "@literature/data";
 import { useCurrentGameCardCounts } from "../utils";
 import { Avatar, Box, Group, Text, Title } from "@mantine/core";
+import type { Player } from "@literature/prisma";
 
 export interface PlayerCardProps {
-	player: LiteraturePlayer;
+	player: Player;
 }
 
 export function PlayerCard( { player }: PlayerCardProps ) {

@@ -1,7 +1,6 @@
 import { Module } from "@nestjs/common";
 import { GamesController } from "./controllers";
 import { DatabaseModule } from "@s2h/core";
-import { LiteratureService } from "./services";
 import { AuthModule } from "@auth/core";
 import {
 	AskCardCommandHandler,
@@ -19,7 +18,6 @@ import { CqrsModule } from "@nestjs/cqrs";
 	imports: [ DatabaseModule, AuthModule, CqrsModule ],
 	controllers: [ GamesController ],
 	providers: [
-		LiteratureService,
 		CreateGameCommandHandler,
 		JoinGameCommandHandler,
 		CreateTeamsCommandHandler,

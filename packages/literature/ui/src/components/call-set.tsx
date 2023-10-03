@@ -1,14 +1,7 @@
-import { CardSet, cardSetMap, PlayingCard } from "@s2h/cards";
-import type { CallSetInput } from "@literature/data";
+import { CardSet, cardSetMap, getCardsOfSet, getPlayingCardFromId } from "@s2h/cards";
 import { Button, Combobox, useCombobox } from "@mantine/core";
 import { useState } from "react";
-import {
-	useCurrentGame,
-	useCurrentGameCardCounts,
-	useCurrentGameHandData,
-	useCurrentGameTeams,
-	useCurrentPlayer
-} from "../utils";
+import { useCurrentGame, useCurrentGameCardCounts, useCurrentGameHandData, useCurrentPlayer } from "../utils";
 import { useCallSetMutation } from "@literature/client";
 import { DisplayCard } from "@s2h/ui";
 import { modals } from "@mantine/modals";
@@ -28,7 +21,7 @@ function SelectCards( { handleSelection, cardIds, options }: SelectCardsProps ) 
 			<Combobox.Options>
 				{ options.map( cardId => (
 					<Combobox.Option value={ cardId } key={ cardId } selected={ cardIds.includes( cardId ) } p={ 8 }>
-						<DisplayCard card={ PlayingCard.fromId( cardId ) }/>
+						<DisplayCard card={ getPlayingCardFromId( cardId ) }/>
 					</Combobox.Option>
 				) ) }
 			</Combobox.Options>
@@ -37,14 +30,10 @@ function SelectCards( { handleSelection, cardIds, options }: SelectCardsProps ) 
 }
 
 export function CallSet() {
-	const { id: gameId, players } = useCurrentGame();
-	const { myTeam } = useCurrentGameTeams();
+	const { id: gameId, players, myTeam } = useCurrentGame();
 	const loggedInPlayer = useCurrentPlayer();
 	const { hand, callableCardSets } = useCurrentGameHandData();
 	const cardCounts = useCurrentGameCardCounts();
-
-	const mapDefaultValue: Record<string, string[]> = {};
-	myTeam?.members.forEach( playerId => mapDefaultValue[ playerId ] = [] );
 
 	const teamMemberIds = [
 		loggedInPlayer.id,
@@ -54,7 +43,7 @@ export function CallSet() {
 
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ cardOptions, setCardOptions ] = useState<string[]>( [] );
-	const [ cardMap, setCardMap ] = useState<Record<string, string[]>>( mapDefaultValue );
+	const [ cardMap, setCardMap ] = useState<Record<string, string>>( {} );
 
 	const { mutateAsync, isLoading } = useCallSetMutation( gameId, {
 		onSuccess() {
@@ -69,31 +58,24 @@ export function CallSet() {
 	const handleCardSetSelect = ( value: string ) => {
 		const cardSet: CardSet = value as CardSet;
 		setSelectedCardSet( cardSet );
-		setCardOptions( cardSetMap[ cardSet ].filter( hand!.contains ).map( c => c.cardId ) );
-		const newCardMap = { ...cardMap };
-		newCardMap[ loggedInPlayer!.id ] = hand!.getCardsOfSet( cardSet ).map( c => c.cardId );
-		setCardMap( newCardMap );
+		setCardOptions( cardSetMap[ cardSet ].map( c => c.id )
+			.filter( cardId => hand.map( c => c.id ).includes( cardId ) ) );
+		setCardMap( currentValue => {
+			getCardsOfSet( hand, cardSet ).forEach( card => {
+				currentValue[ card.id ] = loggedInPlayer.id;
+			} );
+			return currentValue;
+		} );
 	};
 
 	const handleCardSelect = ( playerId: string ) => ( cardId: string ) => {
-		let cardsForPlayer = [ ...cardMap[ playerId ] ];
-		cardsForPlayer = cardsForPlayer.includes( cardId )
-			? cardsForPlayer.filter( c => c !== cardId )
-			: [ ...cardsForPlayer, cardId ];
-
-		setCardMap( current => {
-			return { ...current, [ playerId ]: cardsForPlayer };
+		setCardMap( currentValue => {
+			return { ...currentValue, [ cardId ]: playerId };
 		} );
 	};
 
 	const handleConfirm = async () => {
-		const finalCardMap: Record<string, PlayingCard[]> = {};
-		Object.keys( cardMap ).forEach( playerId => {
-			finalCardMap[ playerId ] = cardMap[ playerId ].map( PlayingCard.fromId );
-		} );
-
-		const input: CallSetInput = { data: finalCardMap };
-		await mutateAsync( input );
+		await mutateAsync( { data: cardMap } );
 	};
 
 	const openModalForPlayer = ( playerId: string ) => () => modals.openConfirmModal( {
@@ -107,7 +89,7 @@ export function CallSet() {
 		confirmProps: { loading: isLoading },
 		children: (
 			<SelectCards
-				cardIds={ cardMap[ playerId ] }
+				cardIds={ Object.keys( cardMap ).filter( cardId => cardMap[ cardId ] === playerId ) }
 				options={ cardOptions }
 				handleSelection={ handleCardSelect( playerId ) }
 			/>
@@ -143,7 +125,7 @@ export function CallSet() {
 	const closeModal = () => {
 		modals.closeAll();
 		setCardOptions( [] );
-		setCardMap( mapDefaultValue );
+		setCardMap( {} );
 	};
 
 	return <Button color={ "info" } onClick={ openModal }>Call Set</Button>;

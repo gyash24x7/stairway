@@ -1,13 +1,14 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import { LiteratureGame, LiteratureGameHand, LiteratureGameStatus } from "@literature/data";
 import { LoggerFactory } from "@s2h/core";
-import { LiteratureService } from "../services";
+import { prisma } from "../utils";
+import type { AggregatedGameData } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
-import { ObjectId } from "mongodb";
+import { CardRank, generateHandsFromCards, removeCardsOfRank, shuffle, SORTED_DECK } from "@s2h/cards";
+import { GameStatus } from "@literature/prisma";
 
 export class StartGameCommand implements ICommand {
-	constructor( public readonly currentGame: LiteratureGame ) {}
+	constructor( public readonly currentGame: AggregatedGameData ) {}
 }
 
 @CommandHandler( StartGameCommand )
@@ -15,27 +16,35 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 
 	private readonly logger = LoggerFactory.getLogger( StartGameCommandHandler );
 
-	constructor( private readonly literatureService: LiteratureService ) {}
-
-
 	async execute( { currentGame }: StartGameCommand ) {
 		this.logger.debug( ">> execute()" );
-		if ( currentGame!.status !== LiteratureGameStatus.TEAMS_CREATED ) {
+		if ( currentGame!.status !== GameStatus.TEAMS_CREATED ) {
 			this.logger.debug( "The teams have not been created for the game! GameId: %s", currentGame.id );
 			throw new BadRequestException();
 		}
 
-		const hands = currentGame.dealCards();
-		await Promise.all(
-			Object.keys( hands ).map( playerId => {
-				const id = new ObjectId().toHexString();
-				const hand = LiteratureGameHand.create( id, playerId, currentGame.id, hands[ playerId ] );
-				return this.literatureService.saveHand( hand );
-			} )
-		);
-		currentGame.status = LiteratureGameStatus.IN_PROGRESS;
+		let deck = shuffle( SORTED_DECK );
+		deck = removeCardsOfRank( deck, CardRank.SEVEN );
 
-		await this.literatureService.saveGame( currentGame );
+		generateHandsFromCards( deck, currentGame.playerCount ).map( async ( hand, index ) => {
+			await Promise.all(
+				hand.map( card => {
+					return prisma.cardMapping.create( {
+						data: {
+							cardId: card.id,
+							gameId: currentGame.id,
+							playerId: currentGame.playerList[ index ].id
+						}
+					} );
+				} )
+			);
+		} );
+
+		await prisma.game.update( {
+			where: { id: currentGame.id },
+			data: { status: GameStatus.IN_PROGRESS }
+		} );
+
 		return currentGame.id;
 	}
 }

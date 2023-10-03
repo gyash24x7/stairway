@@ -1,3 +1,7 @@
+import type { PlayingCard } from "./playing-card";
+import type { CardSet } from "./card-const";
+import { CardRank, SORTED_DECK } from "./card-const";
+
 export function shuffle<T>( arr: T[] ): T[] {
 	return arr
 		.map( value => {
@@ -18,10 +22,6 @@ export function chunk<T>( arr: T[], size: number ): T[][] {
 	return chunks;
 }
 
-export function intersection<T>( arr1: T[], arr2: T[] ): T[] {
-	return arr1.filter( a => arr2.includes( a ) );
-}
-
 export function generateGameCode() {
 	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	let result = "";
@@ -29,4 +29,34 @@ export function generateGameCode() {
 		result += chars[ Math.floor( Math.random() * 36 ) ];
 	}
 	return result;
+}
+
+export function removeCardsOfRank( cards: PlayingCard[], rank: CardRank ) {
+	return cards.filter( card => card.rank !== rank );
+}
+
+export function generateHandsFromCards( cards: PlayingCard[], handCount: number ) {
+	if ( cards.length % handCount !== 0 ) {
+		return [];
+	}
+
+	const handSize = cards.length / handCount;
+	return chunk( cards, handSize );
+}
+
+export function isCardSetInHand( cards: PlayingCard[], set: CardSet ) {
+	return getCardSetsInHand( cards ).includes( set );
+}
+
+export function getCardSetsInHand( cards: PlayingCard[] ): CardSet[] {
+	return Array.from( new Set( cards.map( card => card.set ) ) );
+}
+
+export function getCardsOfSet( cards: PlayingCard[], set: CardSet ): PlayingCard[] {
+	return cards.filter( card => card.set === set );
+}
+
+export function sortCards( cards: PlayingCard[] ) {
+	const cardIds = cards.map( card => card.id );
+	return SORTED_DECK.filter( card => cardIds.includes( card.id ) );
 }

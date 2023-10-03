@@ -3,7 +3,6 @@ import { AskCard } from "./ask-card";
 import { CallSet } from "./call-set";
 import { PlayerCard } from "./player-card";
 import { PreviousMoves } from "./previous-moves";
-import { LiteratureMove } from "@literature/data";
 import { Box, Group, Stack, Title } from "@mantine/core";
 
 export function GameStatus() {
@@ -14,7 +13,7 @@ export function GameStatus() {
 	return (
 		<Stack py={ 16 } w={ "100%" } gap={ "xxl" }>
 			<Box bg={ "light" } p={ 16 } w={ "100%" }>
-				{ LiteratureMove.getMoveDescription( moves[ 0 ], players ) }
+				{ moves[ 0 ].description }
 			</Box>
 			{ status === "IN_PROGRESS" && (
 				<Group>
