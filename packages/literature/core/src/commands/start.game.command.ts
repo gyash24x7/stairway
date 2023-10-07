@@ -1,11 +1,11 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import { LoggerFactory } from "@s2h/core";
-import { prisma } from "../utils";
 import type { AggregatedGameData } from "@literature/data";
+import { GameStatus } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
 import { CardRank, generateHandsFromCards, removeCardsOfRank, shuffle, SORTED_DECK } from "@s2h/cards";
-import { GameStatus } from "@literature/prisma";
+import { PrismaService } from "../services";
 
 export class StartGameCommand implements ICommand {
 	constructor( public readonly currentGame: AggregatedGameData ) {}
@@ -15,6 +15,8 @@ export class StartGameCommand implements ICommand {
 export class StartGameCommandHandler implements ICommandHandler<StartGameCommand, string> {
 
 	private readonly logger = LoggerFactory.getLogger( StartGameCommandHandler );
+
+	constructor( private readonly prisma: PrismaService ) {}
 
 	async execute( { currentGame }: StartGameCommand ) {
 		this.logger.debug( ">> execute()" );
@@ -29,7 +31,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 		generateHandsFromCards( deck, currentGame.playerCount ).map( async ( hand, index ) => {
 			await Promise.all(
 				hand.map( card => {
-					return prisma.cardMapping.create( {
+					return this.prisma.cardMapping.create( {
 						data: {
 							cardId: card.id,
 							gameId: currentGame.id,
@@ -40,7 +42,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 			);
 		} );
 
-		await prisma.game.update( {
+		await this.prisma.game.update( {
 			where: { id: currentGame.id },
 			data: { status: GameStatus.IN_PROGRESS }
 		} );

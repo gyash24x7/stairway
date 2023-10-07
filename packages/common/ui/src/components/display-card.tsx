@@ -24,20 +24,22 @@ export function DisplayCardSet( { cardSet }: { cardSet: CardSet } ) {
 	const cardSuit = cardSet.split( " " )[ 1 ] as CardSuit;
 
 	return (
-		<Group gap={ "xs" }>
-			<h2 className={ classnames.cardColor[ cardSuit ] }>{ cardSetPosition }</h2>
-			<img src={ suitSrcMap[ cardSuit ] } alt={ cardSet } width={ 32 } height={ 32 }/>
-		</Group>
+		<div className={ classnames.wrapper }>
+			<Group gap={ "xs" }>
+				<Title className={ classnames.cardColor[ cardSuit ] }>{ cardSetPosition }</Title>
+				<img src={ suitSrcMap[ cardSuit ] } alt={ cardSet } width={ 32 } height={ 32 }/>
+			</Group>
+		</div>
 	);
 }
 
 export function DisplayCard( { card }: DisplayCardProps ) {
 	return (
 		<div className={ classnames.wrapper }>
-			<Title order={ 2 } className={ classnames.cardColor[ card.suit ] }>
+			<div className={ classnames.cardColor[ card.suit ] }>
 				{ rankTextMap[ card.rank ] }
-			</Title>
-			<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 16 } height={ 16 }/>
+			</div>
+			<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 32 } height={ 32 }/>
 		</div>
 	);
 

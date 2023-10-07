@@ -1,10 +1,10 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData, CreateTeamsInput } from "@literature/data";
+import { GameStatus } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
-import { prisma } from "../utils";
 import { LoggerFactory } from "@s2h/core";
-import { GameStatus } from "@literature/prisma";
+import { PrismaService } from "../services";
 
 export class CreateTeamsCommand implements ICommand {
 	constructor(
@@ -17,6 +17,8 @@ export class CreateTeamsCommand implements ICommand {
 export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCommand, string> {
 
 	private readonly logger = LoggerFactory.getLogger( CreateTeamsCommandHandler );
+
+	constructor( private readonly prisma: PrismaService ) {}
 
 	async execute( { input, currentGame }: CreateTeamsCommand ) {
 		this.logger.debug( ">> execute()" );
@@ -32,7 +34,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 
 		await Promise.all(
 			Object.keys( input.data ).map( teamName => {
-				return prisma.team.create( {
+				return this.prisma.team.create( {
 					data: {
 						name: teamName,
 						gameId: currentGame.id,
@@ -46,7 +48,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 			} )
 		);
 
-		await prisma.game.update( {
+		await this.prisma.game.update( {
 			where: { id: currentGame.id },
 			data: { status: GameStatus.TEAMS_CREATED }
 		} );

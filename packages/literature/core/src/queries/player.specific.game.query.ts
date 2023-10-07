@@ -3,18 +3,22 @@ import { QueryHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData, PlayerSpecificGameData } from "@literature/data";
 import type { UserAuthInfo } from "@auth/data";
 import type { PlayingCard } from "@s2h/cards";
+import { LoggerFactory } from "@s2h/core";
 
-export class AggregateGameQuery implements IQuery {
+export class PlayerSpecificGameQuery implements IQuery {
 	constructor(
 		public readonly currentGame: AggregatedGameData,
 		public readonly authInfo: UserAuthInfo
 	) {}
 }
 
-@QueryHandler( AggregateGameQuery )
-export class AggregateGameQueryHandler implements IQueryHandler<AggregateGameQuery, PlayerSpecificGameData> {
+@QueryHandler( PlayerSpecificGameQuery )
+export class PlayerSpecificGameQueryHandler implements IQueryHandler<PlayerSpecificGameQuery, PlayerSpecificGameData> {
 
-	async execute( { currentGame, authInfo }: AggregateGameQuery ) {
+	private readonly logger = LoggerFactory.getLogger( PlayerSpecificGameQueryHandler );
+
+	async execute( { currentGame, authInfo }: PlayerSpecificGameQuery ) {
+		this.logger.debug( ">> execute()" );
 		const { teams, teamList, playerList, hands, cardMappings, ...rest } = currentGame;
 		const currentPlayer = rest.players[ authInfo.id ];
 
@@ -29,11 +33,11 @@ export class AggregateGameQueryHandler implements IQueryHandler<AggregateGameQue
 			currentPlayer.teamId );
 		const oppositeTeamMembers = !!oppositeTeam
 			? playerList
-				.filter( player => player.teamId === currentPlayer.teamId )
+				.filter( player => player.teamId !== currentPlayer.teamId )
 				.map( player => player.id )
 			: [];
 
-		const hand: PlayingCard[] = hands[ currentPlayer.id ];
+		const hand: PlayingCard[] = hands[ currentPlayer.id ] ?? [];
 		const cardCounts: Record<string, number> = {};
 		for ( const playerId in hands ) {
 			cardCounts[ playerId ] = hands[ playerId ].length;

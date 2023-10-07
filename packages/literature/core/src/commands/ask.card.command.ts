@@ -1,11 +1,11 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData, AskCardInput, AskMoveData } from "@literature/data";
+import { MoveType } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
 import { LoggerFactory } from "@s2h/core";
-import { prisma } from "../utils";
-import { MoveType } from "@literature/prisma";
 import type { UserAuthInfo } from "@auth/data";
+import { PrismaService } from "../services";
 
 export class AskCardCommand implements ICommand {
 	constructor(
@@ -19,6 +19,8 @@ export class AskCardCommand implements ICommand {
 export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, string> {
 
 	private readonly logger = LoggerFactory.getLogger( AskCardCommandHandler );
+
+	constructor( private readonly prisma: PrismaService ) {}
 
 	async execute( { input, currentGame, authInfo }: AskCardCommand ) {
 		const askingPlayer = currentGame.players[ authInfo.id ];
@@ -49,7 +51,7 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 			card: input.askedFor
 		};
 
-		await prisma.move.create( {
+		await this.prisma.move.create( {
 			data: {
 				type: MoveType.ASK_CARD,
 				gameId: currentGame.id,
@@ -60,12 +62,12 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 		} );
 
 		if ( moveSuccess ) {
-			await prisma.cardMapping.update( {
+			await this.prisma.cardMapping.update( {
 				where: { cardId_gameId: { cardId: input.askedFor, gameId: currentGame.id } },
 				data: { playerId: askingPlayer.id }
 			} );
 		} else {
-			await prisma.game.update( {
+			await this.prisma.game.update( {
 				where: { id: currentGame.id },
 				data: { currentTurn: askedPlayer.id }
 			} );

@@ -1,12 +1,12 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData, CallMoveData, CallSetInput } from "@literature/data";
+import { MoveType } from "@literature/data";
 import { cardSetMap, getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
 import { BadRequestException } from "@nestjs/common";
 import { LoggerFactory } from "@s2h/core";
-import { prisma } from "../utils";
 import type { UserAuthInfo } from "@auth/data";
-import { MoveType } from "@literature/prisma";
+import { PrismaService } from "../services";
 
 export class CallSetCommand implements ICommand {
 	constructor(
@@ -20,6 +20,8 @@ export class CallSetCommand implements ICommand {
 export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, string> {
 
 	private readonly logger = LoggerFactory.getLogger( CallSetCommandHandler );
+
+	constructor( private readonly prisma: PrismaService ) {}
 
 	async execute( { input: { data }, currentGame, authInfo }: CallSetCommand ) {
 		const calledCards = Object.keys( data ).map( getPlayingCardFromId );
@@ -121,7 +123,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			}
 		}
 
-		await prisma.cardMapping.deleteMany( {
+		await this.prisma.cardMapping.deleteMany( {
 			where: {
 				cardId: { in: Object.keys( data ) }
 			}
@@ -134,7 +136,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			correctCall
 		};
 
-		await prisma.move.create( {
+		await this.prisma.move.create( {
 			data: {
 				gameId: currentGame.id,
 				type: MoveType.CALL_SET,
@@ -144,7 +146,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			}
 		} );
 
-		await prisma.team.update( {
+		await this.prisma.team.update( {
 			where: {
 				id: success ? callingPlayer.teamId! : oppositeTeam.id
 			},

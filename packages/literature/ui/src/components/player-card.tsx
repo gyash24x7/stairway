@@ -1,19 +1,17 @@
-import { useCurrentGameCardCounts } from "../utils";
-import { Avatar, Box, Group, Text, Title } from "@mantine/core";
-import type { Player } from "@literature/prisma";
+import { Avatar, Box, Group, Title } from "@mantine/core";
+import type { Player } from "@literature/data";
 
 export interface PlayerCardProps {
 	player: Player;
 }
 
 export function PlayerCard( { player }: PlayerCardProps ) {
-	const cardCounts = useCurrentGameCardCounts();
+	// const cardCounts = useCurrentGameCardCounts();
 	return (
 		<Group wrap={ "nowrap" }>
-			<Avatar src={ player.avatar } size={ 48 } radius={ "50%" }/>
+			<Avatar src={ player.avatar } size={ 32 } radius={ "50%" }/>
 			<Box>
-				<Title order={ 5 }>{ player.name }</Title>
-				<Text fz={ "xs" } c={ "dimmed" } mt={ 3 }>{ cardCounts[ player.id ] }</Text>
+				<Title order={ 4 }>{ player.name }</Title>
 			</Box>
 		</Group>
 	);

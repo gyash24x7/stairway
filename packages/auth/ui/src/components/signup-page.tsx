@@ -34,7 +34,7 @@ export function SignUpPage() {
 
 	return (
 		<AuthLayout>
-			<Title order={ 2 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
+			<Title order={ 1 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
 				SIGNUP
 			</Title>
 

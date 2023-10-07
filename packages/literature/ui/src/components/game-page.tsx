@@ -1,4 +1,4 @@
-import { Avatar, Box, Flex, Group, Loader, Stack, Text } from "@mantine/core";
+import { Avatar, Box, Flex, Group, Loader, Stack, Text, Title } from "@mantine/core";
 import { Fragment } from "react";
 import {
 	CreateTeams,
@@ -65,7 +65,7 @@ export function GamePage() {
 				];
 			case "IN_PROGRESS":
 			case "COMPLETED":
-				return [ <DisplayTeams/> ];
+				return [ <DisplayTeams displayCardCount/> ];
 			default:
 				return [];
 		}
@@ -75,13 +75,16 @@ export function GamePage() {
 		<Flex w={ "100vw" } h={ "100vh" }>
 			<Stack className={ classnames.stack } w={ "33%" } h={ "100%" } p={ 20 }>
 				<Flex justify={ "space-between" } align={ "center" }>
-					<img src={ "logo.png" } width={ 80 } height={ 80 } alt={ "literature" }/>
-					<Avatar size={ "lg" } src={ user?.avatar }/>
+					<img src={ "logo.png" } width={ 120 } height={ 120 } alt={ "literature" }/>
+					<Flex gap={ "xs" } align={ "center" } justify={ "center" } direction={ "column" }>
+						<Avatar size={ "lg" } src={ user?.avatar }/>
+						<Title order={ 4 }>{ user?.name }</Title>
+					</Flex>
 				</Flex>
 				<GameDescription/>
 				{ renderBasedOnStatus() }
 			</Stack>
-			<Flex p={ 20 } h={ "100%" } direction={ "column" } justify={ "space-between" }>
+			<Flex className={ classnames.playArea }>
 				{ status === "IN_PROGRESS" && (
 					<Fragment>
 						<DisplayHand hand={ hand }/>

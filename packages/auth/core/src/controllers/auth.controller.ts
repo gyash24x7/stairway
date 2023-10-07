@@ -6,6 +6,7 @@ import type { AuthTokenData, CreateUserInput, LoginInput, UserAuthInfo } from "@
 import { Paths } from "../constants";
 import { CommandBus } from "@nestjs/cqrs";
 import { CreateUserCommand, LoginCommand, VerifyUserCommand } from "../commands";
+import type { ApiResponse } from "@s2h/client";
 
 const cookieOptions: CookieOptions = {
 	maxAge: 9000000,
@@ -23,34 +24,31 @@ export class AuthController {
 
 	@Get( Paths.ME )
 	@UseGuards( AuthGuard )
-
 	getUser( @AuthInfo() authInfo: UserAuthInfo ): UserAuthInfo {
 		return authInfo;
 	}
 
 	@Post( Paths.SIGNUP )
-
-	async createUser( @Body() data: CreateUserInput ): Promise<string> {
-		return this.commandBus.execute( new CreateUserCommand( data ) );
+	async createUser( @Body() data: CreateUserInput ): Promise<ApiResponse> {
+		await this.commandBus.execute( new CreateUserCommand( data ) );
+		return { success: true };
 	}
 
 	@Post( Paths.LOGIN )
-
 	async login( @Body() data: LoginInput, @Res() res: Response ) {
-		const { token, userId }: AuthTokenData = await this.commandBus.execute( new LoginCommand( data ) );
+		const { token }: AuthTokenData = await this.commandBus.execute( new LoginCommand( data ) );
 		res.cookie( "auth-cookie", token, cookieOptions );
-		res.status( 200 ).send( userId );
+		res.status( 200 ).json( { success: true } );
 	}
 
 	@Get( Paths.VERIFY )
-
-	async verifyUser( @Query( "hash" ) salt: string, @Query( "id" ) id: string ): Promise<string> {
-		return this.commandBus.execute( new VerifyUserCommand( { salt, id } ) );
+	async verifyUser( @Query( "hash" ) salt: string, @Query( "id" ) id: string ): Promise<ApiResponse> {
+		await this.commandBus.execute( new VerifyUserCommand( { salt, id } ) );
+		return { success: true };
 	}
 
 	@Post( Paths.LOGOUT )
 	@UseGuards( AuthGuard )
-
 	logout( @Res() res: Response, @AuthInfo() authInfo: UserAuthInfo ) {
 		res.clearCookie( "auth-cookie", cookieOptions );
 		res.status( 200 ).send( authInfo.id );

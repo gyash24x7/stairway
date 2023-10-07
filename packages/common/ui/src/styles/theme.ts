@@ -13,8 +13,8 @@ export const theme = createTheme( {
 	},
 	fontFamily: "Raleway",
 	headings: {
-		fontFamily: "Fjalla One",
-		fontWeight: "lighter"
+		fontFamily: "Saira Extra Condensed",
+		fontWeight: "600"
 	}
 } );
 

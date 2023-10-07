@@ -13,3 +13,5 @@ export * from "./start-game";
 export * from "./home-page";
 export * from "./game-page";
 export * from "./select-card-set";
+export * from "./select-player";
+export * from "./transfer-chance";

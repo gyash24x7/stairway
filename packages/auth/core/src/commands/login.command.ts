@@ -2,7 +2,7 @@ import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import type { AuthTokenData, LoginInput } from "@auth/data";
 import { LoggerFactory } from "@s2h/core";
-import { JwtService, UserService } from "../services";
+import { JwtService, PrismaService } from "../services";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 
@@ -16,13 +16,12 @@ export class LoginCommandHandler implements ICommandHandler<LoginCommand, AuthTo
 	private readonly logger = LoggerFactory.getLogger( LoginCommandHandler );
 
 	constructor(
-		private readonly userService: UserService,
+		private readonly prisma: PrismaService,
 		private readonly jwtService: JwtService
 	) {}
 
-
 	async execute( { data }: LoginCommand ) {
-		const user = await this.userService.findUserByEmail( data.email );
+		const user = await this.prisma.user.findUnique( { where: { email: data.email } } );
 
 		if ( !user ) {
 			this.logger.error( "User Not Found! Email: %s", data.email );

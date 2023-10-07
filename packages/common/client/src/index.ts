@@ -28,5 +28,9 @@ export const putRequest = <I extends Object, R>( path: string, data: I ) => requ
 
 export type OpOps<R> = {
 	onSuccess?: ( data: R ) => void;
-	onError?: () => void;
+	onError?: ( error: any ) => void;
+}
+
+export type ApiResponse = {
+	success: boolean;
 }

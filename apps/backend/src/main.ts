@@ -14,7 +14,7 @@ export class AppModule {}
 
 async function bootstrap() {
 	const logger = LoggerFactory.getLogger( AppModule );
-	const app = await NestFactory.create( AppModule, { logger } );
+	const app = await NestFactory.create( AppModule );
 
 	const httpAdapter = app.getHttpAdapter();
 

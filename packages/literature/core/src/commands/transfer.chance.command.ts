@@ -1,11 +1,11 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData, TransferChanceInput, TransferMoveData } from "@literature/data";
+import { MoveType } from "@literature/data";
 import { LoggerFactory } from "@s2h/core";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { prisma } from "../utils";
-import { MoveType } from "@literature/prisma";
 import type { UserAuthInfo } from "@auth/data";
+import { PrismaService } from "../services";
 
 export class TransferChanceCommand implements ICommand {
 	constructor(
@@ -20,9 +20,11 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 
 	private readonly logger = LoggerFactory.getLogger( TransferChanceCommandHandler );
 
+	constructor( private readonly prisma: PrismaService ) {}
+
 	async execute( { input, currentGame, authInfo }: TransferChanceCommand ): Promise<string> {
 		this.logger.debug( ">> execute()" );
-		const lastMove = await prisma.move.findFirstOrThrow( {
+		const lastMove = await this.prisma.move.findFirstOrThrow( {
 			where: { gameId: currentGame.id },
 			orderBy: { timestamp: "desc" }
 		} );
@@ -54,7 +56,7 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 		const transferData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
 		const description = `${ transferringPlayer.name } transferred the chance to ${ receivingPlayer.name }`;
 
-		await prisma.move.create( {
+		await this.prisma.move.create( {
 			data: {
 				gameId: currentGame.id,
 				type: MoveType.TRANSFER_CHANCE,
@@ -64,7 +66,7 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 			}
 		} );
 
-		await prisma.game.update( {
+		await this.prisma.game.update( {
 			where: { id: currentGame.id },
 			data: { currentTurn: receivingPlayer.id }
 		} );

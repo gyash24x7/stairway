@@ -2,30 +2,14 @@ import { Module } from "@nestjs/common";
 import { GamesController } from "./controllers";
 import { DatabaseModule } from "@s2h/core";
 import { AuthModule } from "@auth/core";
-import {
-	AskCardCommandHandler,
-	CallSetCommandHandler,
-	CreateGameCommandHandler,
-	CreateTeamsCommandHandler,
-	JoinGameCommandHandler,
-	StartGameCommandHandler,
-	TransferChanceCommandHandler
-} from "./commands";
-import { AggregateGameQueryHandler } from "./queries";
+import { commandHandlers } from "./commands";
+import { queryHandlers } from "./queries";
 import { CqrsModule } from "@nestjs/cqrs";
+import { services } from "./services";
 
 @Module( {
 	imports: [ DatabaseModule, AuthModule, CqrsModule ],
 	controllers: [ GamesController ],
-	providers: [
-		CreateGameCommandHandler,
-		JoinGameCommandHandler,
-		CreateTeamsCommandHandler,
-		StartGameCommandHandler,
-		AskCardCommandHandler,
-		CallSetCommandHandler,
-		TransferChanceCommandHandler,
-		AggregateGameQueryHandler
-	]
+	providers: [ ...services, ...commandHandlers, ...queryHandlers ]
 } )
 export class LiteratureModule {}

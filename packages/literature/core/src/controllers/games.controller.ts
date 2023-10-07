@@ -5,10 +5,12 @@ import type {
 	CallSetInput,
 	CreateGameInput,
 	CreateTeamsInput,
+	GameIdResponse,
 	JoinGameInput,
 	PlayerSpecificGameData,
 	TransferChanceInput
 } from "@literature/data";
+import { GameStatus } from "@literature/data";
 import { AuthGuard, AuthInfo } from "@auth/core";
 import { RequireGameGuard, RequireGameStatusGuard, RequirePlayerGuard, RequireTurnGuard } from "../guards";
 import { ActiveGame, RequiresStatus } from "../decorators";
@@ -24,9 +26,9 @@ import {
 	StartGameCommand,
 	TransferChanceCommand
 } from "../commands";
-import { AggregateGameQuery } from "../queries";
+import { PlayerSpecificGameQuery } from "../queries";
 import { LoggerFactory } from "@s2h/core";
-import { GameStatus } from "@literature/prisma";
+import type { ApiResponse } from "@s2h/client";
 
 @UseGuards( AuthGuard )
 @Controller( Paths.BASE )
@@ -43,18 +45,20 @@ export class GamesController {
 	async createGame(
 		@Body() input: CreateGameInput,
 		@AuthInfo() authInfo: UserAuthInfo
-	): Promise<string> {
+	): Promise<GameIdResponse> {
 		this.logger.debug( ">> createGame()" );
-		return this.commandBus.execute( new CreateGameCommand( input, authInfo ) );
+		const id: string = await this.commandBus.execute( new CreateGameCommand( input, authInfo ) );
+		return { id };
 	}
 
 	@Post( Paths.JOIN_GAME )
 	async joinGame(
 		@Body() input: JoinGameInput,
 		@AuthInfo() authInfo: UserAuthInfo
-	): Promise<string> {
+	): Promise<GameIdResponse> {
 		this.logger.debug( ">> joinGame()" );
-		return this.commandBus.execute( new JoinGameCommand( input, authInfo ) );
+		const id: string = await this.commandBus.execute( new JoinGameCommand( input, authInfo ) );
+		return { id };
 	}
 
 	@Put( Paths.CREATE_TEAMS )
@@ -63,17 +67,19 @@ export class GamesController {
 	async createTeams(
 		@Body() input: CreateTeamsInput,
 		@ActiveGame() currentGame: AggregatedGameData
-	): Promise<string> {
+	): Promise<ApiResponse> {
 		this.logger.debug( ">> createTeams()" );
-		return this.commandBus.execute( new CreateTeamsCommand( input, currentGame ) );
+		await this.commandBus.execute( new CreateTeamsCommand( input, currentGame ) );
+		return { success: true };
 	}
 
 	@Put( Paths.START_GAME )
 	@RequiresStatus( GameStatus.TEAMS_CREATED )
 	@UseGuards( RequireGameGuard, RequirePlayerGuard, RequireGameStatusGuard )
-	async startGame( @ActiveGame() currentGame: AggregatedGameData ): Promise<string> {
+	async startGame( @ActiveGame() currentGame: AggregatedGameData ): Promise<ApiResponse> {
 		this.logger.debug( ">> startGame()" );
-		return this.commandBus.execute( new StartGameCommand( currentGame ) );
+		await this.commandBus.execute( new StartGameCommand( currentGame ) );
+		return { success: true };
 	}
 
 	@Put( Paths.ASK_CARD )
@@ -83,9 +89,10 @@ export class GamesController {
 		@Body() input: AskCardInput,
 		@ActiveGame() currentGame: AggregatedGameData,
 		@AuthInfo() authInfo: UserAuthInfo
-	): Promise<string> {
+	): Promise<ApiResponse> {
 		this.logger.debug( ">> askCard()" );
-		return this.commandBus.execute( new AskCardCommand( input, currentGame, authInfo ) );
+		await this.commandBus.execute( new AskCardCommand( input, currentGame, authInfo ) );
+		return { success: true };
 	}
 
 	@Put( Paths.CALL_SET )
@@ -95,9 +102,10 @@ export class GamesController {
 		@Body() input: CallSetInput,
 		@ActiveGame() currentGame: AggregatedGameData,
 		@AuthInfo() authInfo: UserAuthInfo
-	): Promise<string> {
+	): Promise<ApiResponse> {
 		this.logger.debug( ">> callSet()" );
-		return this.commandBus.execute( new CallSetCommand( input, currentGame, authInfo ) );
+		await this.commandBus.execute( new CallSetCommand( input, currentGame, authInfo ) );
+		return { success: true };
 	}
 
 	@Put( Paths.TRANSFER_CHANCE )
@@ -107,9 +115,10 @@ export class GamesController {
 		@Body() input: TransferChanceInput,
 		@ActiveGame() currentGame: AggregatedGameData,
 		@AuthInfo() authInfo: UserAuthInfo
-	): Promise<string> {
+	): Promise<ApiResponse> {
 		this.logger.debug( ">> transferChance()" );
-		return this.commandBus.execute( new TransferChanceCommand( input, currentGame, authInfo ) );
+		await this.commandBus.execute( new TransferChanceCommand( input, currentGame, authInfo ) );
+		return { success: true };
 	}
 
 	@Get( Paths.GET_GAME )
@@ -119,6 +128,11 @@ export class GamesController {
 		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<PlayerSpecificGameData> {
 		this.logger.debug( ">> getGame()" );
-		return this.queryBus.execute( new AggregateGameQuery( currentGame, authInfo ) );
+		const data: PlayerSpecificGameData = await this.queryBus.execute( new PlayerSpecificGameQuery(
+			currentGame,
+			authInfo
+		) );
+		this.logger.debug( "GameData: %o", data );
+		return data;
 	}
 }

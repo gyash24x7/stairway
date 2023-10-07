@@ -87,11 +87,10 @@ export const playingCardClassnames = {
 		borderStyle: "solid",
 		borderRadius: 4,
 		background: vars.colors[ "gray" ][ 1 ],
-		height: 96,
-		width: 64,
+		minWidth: 80,
 		paddingLeft: 8,
-		paddingTop: 4,
-		fontSize: 60,
+		paddingRight: 8,
+		fontSize: 48,
 		fontFamily: vars.fontFamilyHeadings
 	} ),
 

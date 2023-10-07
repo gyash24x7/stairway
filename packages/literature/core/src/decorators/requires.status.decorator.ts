@@ -1,4 +1,4 @@
-import type { GameStatus } from "@literature/prisma";
+import type { GameStatus } from "@literature/data";
 import { SetMetadata } from "@nestjs/common";
 import { Constants } from "../constants";
 

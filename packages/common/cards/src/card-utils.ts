@@ -1,6 +1,6 @@
 import type { PlayingCard } from "./playing-card";
 import type { CardSet } from "./card-const";
-import { CardRank, SORTED_DECK } from "./card-const";
+import { CardRank, cardSetMap, SORTED_DECK } from "./card-const";
 
 export function shuffle<T>( arr: T[] ): T[] {
 	return arr
@@ -54,6 +54,10 @@ export function getCardSetsInHand( cards: PlayingCard[] ): CardSet[] {
 
 export function getCardsOfSet( cards: PlayingCard[], set: CardSet ): PlayingCard[] {
 	return cards.filter( card => card.set === set );
+}
+
+export function getAskableCardsOfSet( cards: PlayingCard[], set: CardSet ): PlayingCard[] {
+	return cardSetMap[ set ].filter( card => !cards.map( c => c.id ).includes( card.id ) );
 }
 
 export function sortCards( cards: PlayingCard[] ) {

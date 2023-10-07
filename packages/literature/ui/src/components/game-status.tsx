@@ -4,6 +4,8 @@ import { CallSet } from "./call-set";
 import { PlayerCard } from "./player-card";
 import { PreviousMoves } from "./previous-moves";
 import { Box, Group, Stack, Title } from "@mantine/core";
+import { TransferChance } from "./transfer-chance";
+import { gameStatusClassnames } from "../styles";
 
 export function GameStatus() {
 	const { status, players, currentTurn } = useCurrentGame();
@@ -12,9 +14,11 @@ export function GameStatus() {
 
 	return (
 		<Stack py={ 16 } w={ "100%" } gap={ "xxl" }>
-			<Box bg={ "light" } p={ 16 } w={ "100%" }>
-				{ moves[ 0 ].description }
-			</Box>
+			{ !!moves[ 0 ] && (
+				<Box className={ gameStatusClassnames.banner }>
+					{ moves[ 0 ].description }
+				</Box>
+			) }
 			{ status === "IN_PROGRESS" && (
 				<Group>
 					<Title order={ 3 }>TURN:</Title>
@@ -27,6 +31,9 @@ export function GameStatus() {
 					<Group>
 						<AskCard/>
 						<CallSet/>
+						{ !!moves[ 0 ] && moves[ 0 ].type === "CALL_SET" && moves[ 0 ].success && (
+							<TransferChance/>
+						) }
 					</Group>
 				) }
 			</Group>

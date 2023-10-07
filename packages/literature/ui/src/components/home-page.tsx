@@ -1,36 +1,42 @@
-import { Button, Flex, Image, Stack } from "@mantine/core";
+import { Box, Button, Group, Paper, Text, Title } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { homePageClassnames as classnames } from "../styles";
 import { useCreateGameMutation } from "@literature/client";
-import { modals } from "@mantine/modals";
+import { Navbar } from "@auth/ui";
 import { JoinGame } from "./join-game";
 
 export function HomePage() {
 	const navigate = useNavigate();
 
-	const createGameMutation = useCreateGameMutation( {
-		onSuccess: ( id ) => {
+	const { isLoading, mutateAsync } = useCreateGameMutation( {
+		onSuccess: ( { id } ) => {
 			navigate( "/literature/" + id );
 		},
-		onError( error ) {
+		onError( error: any ) {
 			console.log( error );
 			alert( error.message );
 		}
 	} );
 
-	const createGame = () => createGameMutation.mutateAsync( { playerCount: 2 } );
-
-	const openJoinGameModal = () => modals.open( { title: "Join Game", children: <JoinGame/>, centered: true } );
+	const createGame = () => mutateAsync( { playerCount: 2 } );
 
 	return (
-		<Flex justify={ "center" } align={ "center" } className={ classnames.flex }>
-			<Stack gap={ "xxl" } className={ classnames.stack }>
-				<Image src={ "logo.png" } height={ 200 } fit={ "contain" }/>
-				<Button color={ "primary" } fullWidth onClick={ createGame } loading={ createGameMutation.isLoading }>
-					Create Game
-				</Button>
-				<Button color={ "info" } fullWidth onClick={ openJoinGameModal }>Join Game</Button>
-			</Stack>
-		</Flex>
+		<Box p={ "xl" }>
+			<Navbar/>
+			<Box py={ "xl" }>
+				<Paper shadow={ "md" } p={ "xl" } radius={ "md" } className={ classnames.card }>
+					<div>
+						<Text className={ classnames.category } size={ "xs" }>Games</Text>
+						<Title order={ 3 } className={ classnames.title }>Literature</Title>
+					</div>
+					<Group>
+						<Button color={ "primary" } onClick={ createGame } loading={ isLoading }>
+							Create Game
+						</Button>
+						<JoinGame/>
+					</Group>
+				</Paper>
+			</Box>
+		</Box>
 	);
 }

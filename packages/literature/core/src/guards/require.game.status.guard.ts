@@ -2,8 +2,7 @@ import { BadRequestException, CanActivate, ExecutionContext, Injectable, NotFoun
 import { LoggerFactory } from "@s2h/core";
 import type { Response } from "express";
 import { Constants } from "../constants";
-import type { AggregatedGameData } from "@literature/data";
-import type { GameStatus } from "@literature/prisma";
+import type { AggregatedGameData, GameStatus } from "@literature/data";
 import { Reflector } from "@nestjs/core";
 
 @Injectable()

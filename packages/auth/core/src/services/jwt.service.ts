@@ -3,7 +3,7 @@ import { importPKCS8, importSPKI, JWTPayload, jwtVerify, SignJWT } from "jose";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { type AppConfig, Config, LoggerFactory } from "@s2h/core";
-import type { IUser, UserAuthInfo } from "@auth/data";
+import type { User, UserAuthInfo } from "@auth/data";
 import { Constants } from "../constants";
 
 export interface AuthPayload extends JWTPayload {
@@ -30,7 +30,7 @@ export class JwtService {
 		return importSPKI( publicKey, JwtService.ALGORITHM );
 	}
 
-	async sign( { id, email, verified, avatar, name }: IUser & { id: string } ) {
+	async sign( { id, email, verified, avatar, name }: User & { id: string } ) {
 		const privateKey = await this.getPrivateKey();
 
 		return new SignJWT( { id, name, email, avatar, verified } )

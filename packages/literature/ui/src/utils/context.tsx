@@ -1,11 +1,12 @@
 import type { PlayerSpecificGameData } from "@literature/data";
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext } from "react";
 import { useAuth } from "@auth/ui";
 // @ts-ignore
 import { io } from "socket.io-client";
 import { useParams } from "react-router-dom";
 import { useGetGameQuery } from "@literature/client";
 import { getCardSetsInHand, getCardsOfSet } from "@s2h/cards";
+import { Loader } from "@mantine/core";
 
 const litGameContext = createContext<PlayerSpecificGameData>( null! );
 
@@ -36,30 +37,21 @@ export const useCurrentGameCardCounts = () => {
 };
 
 export function GameProvider( props: { children: ReactNode } ) {
-	const [ gameData, setGameData ] = useState<PlayerSpecificGameData>();
 	const { gameId } = useParams();
-	const { user } = useAuth();
+	const { isLoading, data, error } = useGetGameQuery( gameId! );
 
-	useGetGameQuery( gameId!, {
-		onSuccess( data ) {
-			setGameData( data );
-		}
-	} );
+	if ( !!error ) {
+		console.log( error );
+		return <div>Some Error Happened!</div>;
+	}
 
-	useEffect( () => {
-		const socket = io( "http://localhost:8000/literature" );
-		socket.on( "welcome", ( data: string ) => {
-			console.log( data );
-		} );
+	if ( isLoading || !data ) {
+		return <Loader/>;
+	}
 
-		socket.on( gameId + user!.id, ( data: PlayerSpecificGameData ) => {
-			setGameData( data );
-		} );
-
-		return () => {
-			socket.close();
-		};
-	}, [] );
-
-	return <litGameContext.Provider value={ gameData! }>{ props.children }</litGameContext.Provider>;
+	return (
+		<litGameContext.Provider value={ data }>
+			{ props.children }
+		</litGameContext.Provider>
+	);
 }

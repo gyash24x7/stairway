@@ -1,4 +1,4 @@
-import { emailValidator, minLengthValidator } from "../utils";
+import { emailValidator, minLengthValidator, useAuth } from "../utils";
 import { Alert, Anchor, Button, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
@@ -6,8 +6,10 @@ import { useLoginMutation } from "@auth/client";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
+import type { MouseEvent } from "react";
 
 export function LoginPage() {
+	const { refetchAuthInfo } = useAuth();
 	const navigate = useNavigate();
 	const { getInputProps, onSubmit } = useForm( {
 		initialValues: {
@@ -21,17 +23,20 @@ export function LoginPage() {
 	} );
 
 	const { mutateAsync, isLoading, isError } = useLoginMutation( {
-		onSuccess: () => navigate( "/" )
+		onSuccess: () => {
+			refetchAuthInfo();
+			navigate( "/" );
+		}
 	} );
 
-	const goToSignup = ( e: React.MouseEvent<HTMLAnchorElement> ) => {
+	const goToSignup = ( e: MouseEvent<HTMLAnchorElement> ) => {
 		e.preventDefault();
 		navigate( "/auth/signup" );
 	};
 
 	return (
 		<AuthLayout>
-			<Title order={ 2 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
+			<Title order={ 1 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
 				LOGIN
 			</Title>
 
