@@ -1,5 +1,5 @@
 import type { PlayerSpecificGameData } from "@literature/data";
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 import { useAuth } from "@auth/ui";
 // @ts-ignore
 import { io } from "socket.io-client";
@@ -7,6 +7,7 @@ import { useParams } from "react-router-dom";
 import { useGetGameQuery } from "@literature/client";
 import { getCardSetsInHand, getCardsOfSet } from "@s2h/cards";
 import { Loader } from "@mantine/core";
+import { LiveUpdatesProvider } from "@s2h/ui";
 
 const litGameContext = createContext<PlayerSpecificGameData>( null! );
 
@@ -38,20 +39,28 @@ export const useCurrentGameCardCounts = () => {
 
 export function GameProvider( props: { children: ReactNode } ) {
 	const { gameId } = useParams();
-	const { isLoading, data, error } = useGetGameQuery( gameId! );
+	const { user } = useAuth();
+	const [ gameData, setGameData ] = useState<PlayerSpecificGameData>();
+	const { isLoading, error } = useGetGameQuery( gameId!, {
+		onSuccess( data ) {
+			setGameData( data );
+		}
+	} );
 
 	if ( !!error ) {
 		console.log( error );
 		return <div>Some Error Happened!</div>;
 	}
 
-	if ( isLoading || !data ) {
+	if ( isLoading || !gameData ) {
 		return <Loader/>;
 	}
 
 	return (
-		<litGameContext.Provider value={ data }>
-			{ props.children }
+		<litGameContext.Provider value={ gameData }>
+			<LiveUpdatesProvider eventMap={ { [ gameId! + user!.id ]: setGameData } }>
+				{ props.children }
+			</LiveUpdatesProvider>
 		</litGameContext.Provider>
 	);
 }

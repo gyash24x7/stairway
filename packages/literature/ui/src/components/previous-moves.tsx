@@ -17,7 +17,7 @@ export function PreviousMoves() {
 			<Modal opened={ opened } onClose={ close } title={ "Previous Moves" }>
 				<Stack>
 					{ moves.slice( 0, 4 ).map( move => (
-						<Box className={ gameStatusClassnames.banner }>
+						<Box className={ gameStatusClassnames.banner } key={ move.id }>
 							{ move.description }
 						</Box>
 					) ) }

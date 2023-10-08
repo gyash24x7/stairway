@@ -39,35 +39,35 @@ export function GamePage() {
 	const renderBasedOnStatus = () => {
 		switch ( status ) {
 			case "CREATED":
-				return [
-					<PlayerLobby playerList={ Object.values( players ) } displayHeading/>,
-					<Banner message={ "Waiting For Players to Join" } isLoading/>
-				];
-			case "PLAYERS_READY":
-				return [
-					<PlayerLobby playerList={ Object.values( players ) } displayHeading/>,
+				return (
 					<Fragment>
+						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
+						<Banner message={ "Waiting For Players to Join" } isLoading/>
+					</Fragment>
+				);
+			case "PLAYERS_READY":
+				return (
+					<Fragment>
+						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
 						{ loggedInPlayer?.id !== currentTurn
 							? <Banner message={ `Waiting For Teams to get Created` } isLoading/>
 							: <CreateTeams/>
 						}
 					</Fragment>
-				];
+				);
 			case "TEAMS_CREATED":
-				return [
-					<DisplayTeams/>,
+				return (
 					<Fragment>
+						<DisplayTeams/>
 						{ loggedInPlayer?.id !== currentTurn
 							? <Banner message={ `Waiting for the game to Start` } isLoading/>
 							: <StartGame/>
 						}
 					</Fragment>
-				];
+				);
 			case "IN_PROGRESS":
 			case "COMPLETED":
-				return [ <DisplayTeams displayCardCount/> ];
-			default:
-				return [];
+				return <DisplayTeams displayCardCount/>;
 		}
 	};
 

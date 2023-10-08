@@ -20,7 +20,7 @@ export function DisplayTeams( { displayCardCount }: DisplayTeamsProps ) {
 
 	return (
 		<Stack>
-			<Box key={ myTeam.name }>
+			<Box>
 				<Flex justify={ "space-between" } gap={ "16px" }>
 					<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>Team { myTeam.name }</Title>
 					<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>{ myTeam.score }</Title>
@@ -31,7 +31,7 @@ export function DisplayTeams( { displayCardCount }: DisplayTeamsProps ) {
 					displayCardCount={ displayCardCount }
 				/>
 			</Box>
-			<Box key={ oppositeTeam.name }>
+			<Box>
 				<Flex justify={ "space-between" } gap={ "12px" }>
 					<Title order={ 4 } fz={ "24px" } pr={ 8 }>Team { oppositeTeam.name }</Title>
 					<Title order={ 4 } fz={ "24px" } pr={ 8 }>{ oppositeTeam.score }</Title>
