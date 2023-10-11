@@ -4,7 +4,7 @@ import type { AppConfig } from "./config.types";
 export function generateConfig(): AppConfig {
 	const host = process.env[ "APP_HOST" ] || "localhost";
 	const port = parseInt( process.env[ "APP_PORT" ] || "8000" );
-	const dbUrl = process.env[ "DATABASE_URL" ] ?? "mongodb://localhost:27017/stairway";
+	const dbUrl = process.env[ "DATABASE_URL" ];
 
 	return {
 		appInfo: { id: "stairway", name: "Stairway", host, port },

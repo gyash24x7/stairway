@@ -8,7 +8,7 @@
 			"runner": "nx-cloud",
 			"options": {
 				"cacheableOperations": [ "build", "lint", "test", "e2e" ],
-				"accessToken": "NzljMDhhYTgtMWUwNS00MDdlLWIxZDEtZDIxOGRjZDcwOWE0fHJlYWQtd3JpdGU="
+				"accessToken": "ZTM5MjE3ZjYtNDA3Zi00ZWI2LWI5YzEtYmQ3MzM0NmY1OTIxfHJlYWQtd3JpdGU="
 			}
 		}
 	},
@@ -20,7 +20,11 @@
 	},
 	"namedInputs": {
 		"default": [ "{projectRoot}/**/*", "sharedGlobals" ],
-		"production": [ "default" ],
+		"production": [
+			"default",
+			"!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+			"!{projectRoot}/tsconfig.spec.json"
+		],
 		"sharedGlobals": [ ]
 	}
 }

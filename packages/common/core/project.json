@@ -1,8 +1,17 @@
 {
-	"name": "core",
+	"name": "common-core",
 	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/common/utils/src",
+	"sourceRoot": "packages/common/core/src",
 	"projectType": "library",
-	"targets": { },
+	"targets": {
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": [ "{projectRoot}/coverage/**" ],
+			"options": {
+				"config": "packages/common/core/vitest.config.ts",
+				"passWithNoTests": true
+			}
+		}
+	},
 	"tags": [ ]
 }
