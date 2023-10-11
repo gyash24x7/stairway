@@ -6,7 +6,13 @@ import { type AppConfig, Config } from "../config";
 export class BasePrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
 
 	constructor( @Config() readonly config: AppConfig ) {
-		super();
+		super( {
+			datasources: {
+				db: {
+					url: config.db.url
+				}
+			}
+		} );
 	}
 
 	async onModuleInit() {

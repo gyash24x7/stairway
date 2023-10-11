@@ -2,6 +2,7 @@ import type { CardSet, PlayingCard } from "@s2h/cards";
 import type {
 	LiteratureCardMapping,
 	LiteratureGame,
+	LiteratureGameStatus,
 	LiteratureMove,
 	LiteraturePlayer,
 	LiteratureTeam
@@ -45,7 +46,16 @@ export type TransferMoveData = {
 	to: string;
 }
 
-export type AggregatedGameData = Game & {
+export type RawGameData = Game & { players: Player[], teams: Team[], cardMappings: CardMapping[], moves: Move[] }
+
+export type CardMappingData = { handMap: Record<string, PlayingCard[]>, cardMappingMap: Record<string, string> };
+
+export type AggregatedGameData = {
+	id: string;
+	code: string;
+	status: LiteratureGameStatus;
+	playerCount: number;
+	currentTurn: string;
 	players: Record<string, Player>;
 	teams: Record<string, Team>;
 	cardMappings: Record<string, string>;
@@ -55,7 +65,12 @@ export type AggregatedGameData = Game & {
 	hands: Record<string, PlayingCard[]>;
 }
 
-export type PlayerSpecificGameData = Game & {
+export type PlayerSpecificGameData = {
+	id: string;
+	code: string;
+	status: LiteratureGameStatus;
+	playerCount: number;
+	currentTurn: string;
 	players: Record<string, Player>;
 	myTeam?: Team & { members: string[] };
 	oppositeTeam?: Team & { members: string[] };

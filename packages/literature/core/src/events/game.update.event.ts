@@ -1,12 +1,12 @@
 import { EventsHandler, IEvent, IEventHandler, QueryBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, PlayerSpecificGameData } from "@literature/data";
 import type { UserAuthInfo } from "@auth/data";
-import { AggregatedGameQuery, PlayerSpecificGameQuery } from "../queries";
+import { PlayerSpecificGameQuery } from "../queries";
 import { LoggerFactory, RealtimeService } from "@s2h/core";
 
 export class GameUpdateEvent implements IEvent {
 	constructor(
-		public readonly gameId: string,
+		public readonly currentGame: AggregatedGameData,
 		public readonly authInfo: UserAuthInfo
 	) {}
 }
@@ -21,15 +21,14 @@ export class GameUpdateEventHandler implements IEventHandler<GameUpdateEvent> {
 		private readonly realtimeService: RealtimeService
 	) {}
 
-	async handle( { gameId, authInfo }: GameUpdateEvent ) {
+	async handle( { currentGame, authInfo }: GameUpdateEvent ) {
 		this.logger.debug( ">> handle()" );
-		const aggregatedData: AggregatedGameData = await this.queryBus.execute( new AggregatedGameQuery( gameId ) );
 
-		for ( const player of aggregatedData.playerList ) {
+		for ( const player of currentGame.playerList ) {
 			const playerSpecificData: PlayerSpecificGameData = await this.queryBus.execute(
-				new PlayerSpecificGameQuery( aggregatedData, authInfo )
+				new PlayerSpecificGameQuery( currentGame, authInfo )
 			);
-			this.realtimeService.publishMessage( "LITERATURE", gameId + player.id, playerSpecificData );
+			this.realtimeService.publishDirectMessage( "literature", currentGame.id + player.id, playerSpecificData );
 		}
 	}
 }

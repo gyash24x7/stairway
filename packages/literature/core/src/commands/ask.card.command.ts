@@ -1,11 +1,12 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, AskCardInput, AskMoveData } from "@literature/data";
 import { MoveType } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
 import { LoggerFactory } from "@s2h/core";
 import type { UserAuthInfo } from "@auth/data";
 import { PrismaService } from "../services";
+import { GameUpdateEvent, MoveCreatedEvent } from "../events";
 
 export class AskCardCommand implements ICommand {
 	constructor(
@@ -20,7 +21,10 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 
 	private readonly logger = LoggerFactory.getLogger( AskCardCommandHandler );
 
-	constructor( private readonly prisma: PrismaService ) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly eventBus: EventBus
+	) {}
 
 	async execute( { input, currentGame, authInfo }: AskCardCommand ) {
 		const askingPlayer = currentGame.players[ authInfo.id ];
@@ -51,7 +55,7 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 			card: input.askedFor
 		};
 
-		await this.prisma.move.create( {
+		const move = await this.prisma.move.create( {
 			data: {
 				type: MoveType.ASK_CARD,
 				gameId: currentGame.id,
@@ -61,17 +65,28 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 			}
 		} );
 
+		currentGame.moves = [ move, ...currentGame.moves ];
+
+		this.eventBus.publish( new MoveCreatedEvent( move ) );
+
 		if ( moveSuccess ) {
 			await this.prisma.cardMapping.update( {
 				where: { cardId_gameId: { cardId: input.askedFor, gameId: currentGame.id } },
 				data: { playerId: askingPlayer.id }
 			} );
+
+			currentGame.cardMappings[ input.askedFor ] = askingPlayer.id;
+
 		} else {
 			await this.prisma.game.update( {
 				where: { id: currentGame.id },
 				data: { currentTurn: askedPlayer.id }
 			} );
+
+			currentGame.currentTurn = askedPlayer.id;
 		}
+
+		this.eventBus.publish( new GameUpdateEvent( currentGame, authInfo ) );
 
 		return currentGame.id;
 	}

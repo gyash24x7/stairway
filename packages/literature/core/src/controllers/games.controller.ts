@@ -16,7 +16,7 @@ import { RequireGameGuard, RequireGameStatusGuard, RequirePlayerGuard, RequireTu
 import { ActiveGame, RequiresStatus } from "../decorators";
 import type { UserAuthInfo } from "@auth/data";
 import { Paths } from "../constants";
-import { CommandBus, EventBus, QueryBus } from "@nestjs/cqrs";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import {
 	AskCardCommand,
 	CallSetCommand,
@@ -29,7 +29,6 @@ import {
 import { PlayerSpecificGameQuery } from "../queries";
 import { LoggerFactory } from "@s2h/core";
 import type { ApiResponse } from "@s2h/client";
-import { GameUpdateEvent } from "../events/game.update.event";
 
 @UseGuards( AuthGuard )
 @Controller( Paths.BASE )
@@ -39,8 +38,7 @@ export class GamesController {
 
 	constructor(
 		private readonly commandBus: CommandBus,
-		private readonly queryBus: QueryBus,
-		private readonly eventBus: EventBus
+		private readonly queryBus: QueryBus
 	) {}
 
 	@Post()
@@ -60,7 +58,6 @@ export class GamesController {
 	): Promise<GameIdResponse> {
 		this.logger.debug( ">> joinGame()" );
 		const id: string = await this.commandBus.execute( new JoinGameCommand( input, authInfo ) );
-		this.eventBus.publish( new GameUpdateEvent( id, authInfo ) );
 		return { id };
 	}
 
@@ -73,8 +70,7 @@ export class GamesController {
 		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<ApiResponse> {
 		this.logger.debug( ">> createTeams()" );
-		await this.commandBus.execute( new CreateTeamsCommand( input, currentGame ) );
-		this.eventBus.publish( new GameUpdateEvent( currentGame.id, authInfo ) );
+		await this.commandBus.execute( new CreateTeamsCommand( input, currentGame, authInfo ) );
 		return { success: true };
 	}
 
@@ -86,8 +82,7 @@ export class GamesController {
 		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<ApiResponse> {
 		this.logger.debug( ">> startGame()" );
-		await this.commandBus.execute( new StartGameCommand( currentGame ) );
-		this.eventBus.publish( new GameUpdateEvent( currentGame.id, authInfo ) );
+		await this.commandBus.execute( new StartGameCommand( currentGame, authInfo ) );
 		return { success: true };
 	}
 
@@ -101,7 +96,6 @@ export class GamesController {
 	): Promise<ApiResponse> {
 		this.logger.debug( ">> askCard()" );
 		await this.commandBus.execute( new AskCardCommand( input, currentGame, authInfo ) );
-		this.eventBus.publish( new GameUpdateEvent( currentGame.id, authInfo ) );
 		return { success: true };
 	}
 
@@ -115,7 +109,6 @@ export class GamesController {
 	): Promise<ApiResponse> {
 		this.logger.debug( ">> callSet()" );
 		await this.commandBus.execute( new CallSetCommand( input, currentGame, authInfo ) );
-		this.eventBus.publish( new GameUpdateEvent( currentGame.id, authInfo ) );
 		return { success: true };
 	}
 
@@ -129,7 +122,6 @@ export class GamesController {
 	): Promise<ApiResponse> {
 		this.logger.debug( ">> transferChance()" );
 		await this.commandBus.execute( new TransferChanceCommand( input, currentGame, authInfo ) );
-		this.eventBus.publish( new GameUpdateEvent( currentGame.id, authInfo ) );
 		return { success: true };
 	}
 

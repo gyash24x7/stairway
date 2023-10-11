@@ -1,44 +1,30 @@
-import { Fragment, ReactNode, useEffect, useState } from "react";
+import { Fragment, ReactNode, useEffect } from "react";
 import { socket } from "./socket";
 
 export interface LiveUpdatesProviderProps {
+	room: string;
 	eventMap: Record<string, ( data: any ) => void>;
 	children: ReactNode;
 }
 
-export function LiveUpdatesProvider( { children, eventMap }: LiveUpdatesProviderProps ) {
-	const [ _, setIsConnected ] = useState( socket.connected );
+export function LiveUpdatesProvider( { children, eventMap, room }: LiveUpdatesProviderProps ) {
 
 	useEffect( () => {
-		function onConnect() {
-			setIsConnected( true );
-		}
-
-		function onDisconnect() {
-			setIsConnected( false );
-		}
-
-		function onWelcomeEvent() {
-			console.log( "Received Welcome!" );
-		}
-
-		socket.on( "connect", onConnect );
-		socket.on( "disconnect", onDisconnect );
-		socket.on( "welcome", onWelcomeEvent );
+		socket.on( "connect", () => {
+			socket.emit( "join-room", room );
+		} );
 
 		Object.keys( eventMap ).map( eventId => {
 			socket.on( eventId, eventMap[ eventId ] );
 		} );
 
 		return () => {
-			socket.off( "connect", onConnect );
-			socket.off( "disconnect", onDisconnect );
-			socket.off( "welcome", onWelcomeEvent );
+			socket.off( "connect" );
 			Object.keys( eventMap ).map( eventId => {
 				socket.off( eventId, eventMap[ eventId ] );
 			} );
 		};
-	}, [ eventMap ] );
+	}, [] );
 
 	return <Fragment>{ children }</Fragment>;
 }

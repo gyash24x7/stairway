@@ -1,11 +1,12 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { JoinGameInput } from "@literature/data";
 import { GameStatus } from "@literature/data";
 import type { UserAuthInfo } from "@auth/data";
 import { LoggerFactory } from "@s2h/core";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../services";
+import { GameUpdateEvent } from "../events";
 
 export class JoinGameCommand implements ICommand {
 	constructor(
@@ -19,7 +20,10 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 
 	private readonly logger = LoggerFactory.getLogger( JoinGameCommandHandler );
 
-	constructor( private readonly prisma: PrismaService ) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly eventBus: EventBus
+	) {}
 
 	async execute( { input, authInfo }: JoinGameCommand ) {
 		this.logger.debug( ">> execute()" );
@@ -45,7 +49,7 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 			return game.id;
 		}
 
-		await this.prisma.player.create( {
+		const newPlayer = await this.prisma.player.create( {
 			data: {
 				id: authInfo.id,
 				name: authInfo.name,
@@ -54,12 +58,22 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 			}
 		} );
 
+		const status = game.playerCount === game.players.length + 1 ? GameStatus.PLAYERS_READY : GameStatus.CREATED;
 		await this.prisma.game.update( {
 			where: { id: game.id },
-			data: {
-				status: game.playerCount ? GameStatus.PLAYERS_READY : GameStatus.CREATED
-			}
+			data: { status }
 		} );
+
+		game.status = status;
+		const aggregatedData = this.prisma.buildAggregatedGameData( {
+			...game,
+			players: [ ...game.players, newPlayer ],
+			teams: [],
+			cardMappings: [],
+			moves: []
+		} );
+
+		this.eventBus.publish( new GameUpdateEvent( aggregatedData, authInfo ) );
 
 		return game.id;
 	}

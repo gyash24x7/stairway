@@ -21,8 +21,12 @@ function SelectCards( { handleSelection, cardIds, options }: SelectCardsProps ) 
 			<Combobox.Options>
 				<Flex wrap={ "wrap" } gap={ "sm" }>
 					{ options.map( cardId => (
-						<Combobox.Option value={ cardId } key={ cardId } selected={ cardIds.includes( cardId ) }
-										 p={ 8 }>
+						<Combobox.Option
+							value={ cardId }
+							key={ cardId }
+							selected={ cardIds.includes( cardId ) }
+							p={ 8 }
+						>
 							<DisplayCard card={ getPlayingCardFromId( cardId ) }/>
 						</Combobox.Option>
 					) ) }

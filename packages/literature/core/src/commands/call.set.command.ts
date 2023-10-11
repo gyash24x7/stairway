@@ -1,5 +1,5 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, CallMoveData, CallSetInput } from "@literature/data";
 import { MoveType } from "@literature/data";
 import { cardSetMap, getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
@@ -7,6 +7,7 @@ import { BadRequestException } from "@nestjs/common";
 import { LoggerFactory } from "@s2h/core";
 import type { UserAuthInfo } from "@auth/data";
 import { PrismaService } from "../services";
+import { GameUpdateEvent, MoveCreatedEvent } from "../events";
 
 export class CallSetCommand implements ICommand {
 	constructor(
@@ -21,7 +22,10 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 
 	private readonly logger = LoggerFactory.getLogger( CallSetCommandHandler );
 
-	constructor( private readonly prisma: PrismaService ) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly eventBus: EventBus
+	) {}
 
 	async execute( { input: { data }, currentGame, authInfo }: CallSetCommand ) {
 		const calledCards = Object.keys( data ).map( getPlayingCardFromId );
@@ -129,6 +133,10 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			}
 		} );
 
+		Object.keys( data ).map( cardId => {
+			delete currentGame.cardMappings[ cardId ];
+		} );
+
 		const callMoveData: CallMoveData = {
 			by: authInfo.id,
 			cardSet: calledSet,
@@ -136,7 +144,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			correctCall
 		};
 
-		await this.prisma.move.create( {
+		const move = await this.prisma.move.create( {
 			data: {
 				gameId: currentGame.id,
 				type: MoveType.CALL_SET,
@@ -146,7 +154,10 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			}
 		} );
 
-		await this.prisma.team.update( {
+		this.eventBus.publish( new MoveCreatedEvent( move ) );
+		currentGame.moves = [ move, ...currentGame.moves ];
+
+		const updatedTeam = await this.prisma.team.update( {
 			where: {
 				id: success ? callingPlayer.teamId! : oppositeTeam.id
 			},
@@ -155,6 +166,9 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 				setsWon: success ? [ ...callingTeam.setsWon, calledSet ] : [ ...oppositeTeam.setsWon, calledSet ]
 			}
 		} );
+
+		currentGame.teams[ updatedTeam.id ] = updatedTeam;
+		this.eventBus.publish( new GameUpdateEvent( currentGame, authInfo ) );
 
 		return currentGame.id;
 	}

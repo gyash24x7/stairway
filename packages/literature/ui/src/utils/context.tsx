@@ -48,7 +48,7 @@ export function GameProvider( props: { children: ReactNode } ) {
 	} );
 
 	if ( !!error ) {
-		console.log( error );
+		console.log( error + user?.id );
 		return <div>Some Error Happened!</div>;
 	}
 
@@ -58,7 +58,7 @@ export function GameProvider( props: { children: ReactNode } ) {
 
 	return (
 		<litGameContext.Provider value={ gameData }>
-			<LiveUpdatesProvider eventMap={ { [ gameId! + user!.id ]: setGameData } }>
+			<LiveUpdatesProvider eventMap={ { [ gameData.id + user?.id! ]: setGameData } } room={ gameData.id }>
 				{ props.children }
 			</LiveUpdatesProvider>
 		</litGameContext.Provider>

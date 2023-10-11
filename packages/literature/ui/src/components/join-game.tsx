@@ -2,7 +2,6 @@ import { Button, Modal, Stack, TextInput } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { useJoinGameMutation } from "@literature/client";
 import { ChangeEvent, Fragment, useState } from "react";
-import { modals } from "@mantine/modals";
 import { useDisclosure } from "@mantine/hooks";
 
 export function JoinGame() {
@@ -16,7 +15,7 @@ export function JoinGame() {
 
 	const joinGameMutation = useJoinGameMutation( {
 		onSuccess: ( { id } ) => {
-			modals.closeAll();
+			close();
 			navigate( "/literature/" + id );
 		},
 		onError( error: Error ) {

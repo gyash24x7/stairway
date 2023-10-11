@@ -1,6 +1,6 @@
-import { Module } from "@nestjs/common";
+import { Module, OnModuleInit } from "@nestjs/common";
 import { GamesController } from "./controllers";
-import { DatabaseModule, RealtimeModule } from "@s2h/core";
+import { PrismaModule, RealtimeModule, RealtimeService } from "@s2h/core";
 import { AuthModule } from "@auth/core";
 import { commandHandlers } from "./commands";
 import { queryHandlers } from "./queries";
@@ -9,8 +9,15 @@ import { services } from "./services";
 import { eventHandlers } from "./events";
 
 @Module( {
-	imports: [ DatabaseModule, AuthModule, CqrsModule, RealtimeModule ],
+	imports: [ PrismaModule, AuthModule, CqrsModule, RealtimeModule ],
 	controllers: [ GamesController ],
 	providers: [ ...services, ...commandHandlers, ...queryHandlers, ...eventHandlers ]
 } )
-export class LiteratureModule {}
+export class LiteratureModule implements OnModuleInit {
+
+	constructor( private readonly realtimeService: RealtimeService ) {}
+
+	onModuleInit() {
+		this.realtimeService.registerNamespace( "literature" );
+	}
+}

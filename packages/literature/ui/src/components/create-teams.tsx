@@ -3,7 +3,6 @@ import { ChangeEvent, Fragment, useState } from "react";
 import { useCurrentGame } from "../utils";
 import { PlayerCard } from "./player-card";
 import { useCreateTeamsMutation } from "@literature/client";
-import { modals } from "@mantine/modals";
 import { chunk, shuffle } from "@s2h/cards";
 import { useDisclosure } from "@mantine/hooks";
 
@@ -31,7 +30,7 @@ export function CreateTeams() {
 
 	const { mutateAsync, isLoading } = useCreateTeamsMutation( id, {
 		onSuccess: () => {
-			modals.closeAll();
+			close();
 		},
 		onError( error: Error ) {
 			console.log( error );
@@ -64,7 +63,7 @@ export function CreateTeams() {
 							<Text>Team { team }</Text>
 							<Group>
 								{ teamMemberData[ team ].map( member => (
-									<PlayerCard player={ players[ member ] }/>
+									<PlayerCard player={ players[ member ] } key={ member }/>
 								) ) }
 							</Group>
 						</Stack>
