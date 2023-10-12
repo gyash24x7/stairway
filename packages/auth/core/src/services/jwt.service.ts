@@ -20,17 +20,7 @@ export class JwtService {
 
 	constructor( @Config() private readonly config: AppConfig ) {}
 
-	async getPrivateKey() {
-		const privateKey = await readFile( join( __dirname, this.config.auth.privateKeyPath ), Constants.UTF_8 );
-		return importPKCS8( privateKey, JwtService.ALGORITHM );
-	}
-
-	async getPublicKey() {
-		const publicKey = await readFile( join( __dirname, this.config.auth.publicKeyPath ), Constants.UTF_8 );
-		return importSPKI( publicKey, JwtService.ALGORITHM );
-	}
-
-	async sign( { id, email, verified, avatar, name }: User & { id: string } ) {
+	async sign( { id, email, verified, avatar, name }: Omit<User, "password" | "salt"> ) {
 		const privateKey = await this.getPrivateKey();
 
 		return new SignJWT( { id, name, email, avatar, verified } )
@@ -63,7 +53,17 @@ export class JwtService {
 			return null;
 		}
 
-		const { name, avatar, sub: id = "", verified, email } = result.payload as AuthPayload;
-		return { id, name, email, verified, avatar };
+		const { name, avatar, sub, verified, email } = result.payload as AuthPayload;
+		return { id: sub!, name, email, verified, avatar };
+	}
+
+	private async getPrivateKey() {
+		const privateKey = await readFile( join( __dirname, this.config.auth.privateKeyPath ), Constants.UTF_8 );
+		return importPKCS8( privateKey, JwtService.ALGORITHM );
+	}
+
+	private async getPublicKey() {
+		const publicKey = await readFile( join( __dirname, this.config.auth.publicKeyPath ), Constants.UTF_8 );
+		return importSPKI( publicKey, JwtService.ALGORITHM );
 	}
 }

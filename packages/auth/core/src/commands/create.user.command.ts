@@ -20,7 +20,7 @@ export class CreateUserCommandHandler implements ICommandHandler<CreateUserComma
 		const avatar = Constants.AVATAR_BASE_URL + salt;
 
 		const user = await this.prisma.user.create( {
-			data: { ...data, salt, password, avatar, verified: false }
+			data: { ...data, salt, password, avatar }
 		} );
 
 		return user.id;
