@@ -7,6 +7,7 @@ import { LoggerFactory } from "@s2h/core";
 import { PrismaService } from "../services";
 import { GameUpdateEvent } from "../events";
 import type { UserAuthInfo } from "@auth/data";
+import { Messages } from "../constants";
 
 export class CreateTeamsCommand implements ICommand {
 	constructor(
@@ -29,13 +30,13 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 	async execute( { input, currentGame, authInfo }: CreateTeamsCommand ) {
 		this.logger.debug( ">> execute()" );
 		if ( currentGame.status !== GameStatus.PLAYERS_READY ) {
-			this.logger.error( "The Game is not in current status! GameId: %s", currentGame.id );
-			throw new BadRequestException();
+			this.logger.error( "%s GameId: %s", Messages.GAME_NOT_IN_REQUIRED_STATUS, currentGame.id );
+			throw new BadRequestException( Messages.GAME_NOT_IN_REQUIRED_STATUS );
 		}
 
 		if ( currentGame.playerList.length !== currentGame.playerCount ) {
-			this.logger.error( "The Game doesn't have enough players! GameId: %s", currentGame.id );
-			throw new BadRequestException();
+			this.logger.error( "%s GameId: %s", Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS, currentGame.id );
+			throw new BadRequestException( Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS );
 		}
 
 		const [ teamA, teamB ] = await Promise.all(

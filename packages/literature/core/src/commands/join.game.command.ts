@@ -7,6 +7,8 @@ import { LoggerFactory } from "@s2h/core";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../services";
 import { GameUpdateEvent } from "../events";
+import { buildAggregatedGameData } from "../utils";
+import { Messages } from "../constants";
 
 export class JoinGameCommand implements ICommand {
 	constructor(
@@ -33,20 +35,20 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 		} );
 
 		if ( !game ) {
-			this.logger.error( "Game Not Found!" );
-			throw new NotFoundException();
-		}
-
-		if ( game.players.length >= game.playerCount ) {
-			this.logger.error( "The Game already has required players! GameId: %s", game.id );
-			throw new BadRequestException();
+			this.logger.error( Messages.GAME_NOT_FOUND );
+			throw new NotFoundException( Messages.GAME_NOT_FOUND );
 		}
 
 		const isUserAlreadyInGame = !!game.players.find( player => player.id === authInfo.id );
 
 		if ( isUserAlreadyInGame ) {
-			this.logger.warn( "The User is already part of the Game! GameId: %s", game.id );
+			this.logger.warn( "%s GameId: %s", Messages.USER_ALREADY_PART_OF_GAME, game.id );
 			return game.id;
+		}
+
+		if ( game.players.length >= game.playerCount ) {
+			this.logger.error( "%s GameId: %s", Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS, game.id );
+			throw new BadRequestException( Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS );
 		}
 
 		const newPlayer = await this.prisma.player.create( {
@@ -58,21 +60,16 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 			}
 		} );
 
-		const status = game.playerCount === game.players.length + 1 ? GameStatus.PLAYERS_READY : GameStatus.CREATED;
-		await this.prisma.game.update( {
-			where: { id: game.id },
-			data: { status }
-		} );
+		if ( game.playerCount === game.players.length + 1 ) {
+			await this.prisma.game.update( {
+				where: { id: game.id },
+				data: { status: GameStatus.PLAYERS_READY }
+			} );
 
-		game.status = status;
-		const aggregatedData = this.prisma.buildAggregatedGameData( {
-			...game,
-			players: [ ...game.players, newPlayer ],
-			teams: [],
-			cardMappings: [],
-			moves: []
-		} );
+			game.status = GameStatus.PLAYERS_READY;
+		}
 
+		const aggregatedData = buildAggregatedGameData( { ...game, players: [ ...game.players, newPlayer ] } );
 		this.eventBus.publish( new GameUpdateEvent( aggregatedData, authInfo ) );
 
 		return game.id;

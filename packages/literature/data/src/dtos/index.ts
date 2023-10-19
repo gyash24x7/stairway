@@ -46,7 +46,7 @@ export type TransferMoveData = {
 	to: string;
 }
 
-export type RawGameData = Game & { players: Player[], teams: Team[], cardMappings: CardMapping[], moves: Move[] }
+export type RawGameData = Game & { players: Player[], teams?: Team[], cardMappings?: CardMapping[], moves?: Move[] }
 
 export type CardMappingData = { handMap: Record<string, PlayingCard[]>, cardMappingMap: Record<string, string> };
 

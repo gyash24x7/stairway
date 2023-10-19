@@ -3,10 +3,11 @@ import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, TransferChanceInput, TransferMoveData } from "@literature/data";
 import { MoveType } from "@literature/data";
 import { LoggerFactory } from "@s2h/core";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import type { UserAuthInfo } from "@auth/data";
 import { PrismaService } from "../services";
 import { GameUpdateEvent, MoveCreatedEvent } from "../events";
+import { Messages } from "../constants";
 
 export class TransferChanceCommand implements ICommand {
 	constructor(
@@ -28,33 +29,30 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 
 	async execute( { input, currentGame, authInfo }: TransferChanceCommand ): Promise<string> {
 		this.logger.debug( ">> execute()" );
-		const lastMove = await this.prisma.move.findFirstOrThrow( {
-			where: { gameId: currentGame.id },
-			orderBy: { timestamp: "desc" }
-		} );
+		const [ lastMove ] = currentGame.moves;
 
 		if ( lastMove.type !== MoveType.CALL_SET || !lastMove.success ) {
-			this.logger.error( "Chance can only be transferred after a successful call move!" );
-			throw new BadRequestException();
+			this.logger.error( Messages.TRANSFER_AFTER_SUCCESSFUL_CALL );
+			throw new BadRequestException( Messages.TRANSFER_AFTER_SUCCESSFUL_CALL );
 		}
 
 		const transferringPlayer = currentGame.players[ authInfo.id ];
 		const receivingPlayer = currentGame.players[ input.transferTo ];
-		const receivingPlayerHand = currentGame.hands[ input.transferTo ];
+		const receivingPlayerHand = currentGame.hands[ input.transferTo ] ?? [];
 
 		if ( !receivingPlayer ) {
-			this.logger.error( "Cannot transfer chance to unknown player!" );
-			throw new NotFoundException();
+			this.logger.error( Messages.PLAYER_NOT_PART_OF_GAME );
+			throw new BadRequestException( Messages.PLAYER_NOT_PART_OF_GAME );
 		}
 
 		if ( receivingPlayerHand.length === 0 ) {
-			this.logger.error( "Chance can only be transferred to a player with cards!" );
-			throw new BadRequestException();
+			this.logger.error( Messages.NO_CARDS_WITH_RECEIVING_PLAYER );
+			throw new BadRequestException( Messages.NO_CARDS_WITH_RECEIVING_PLAYER );
 		}
 
 		if ( receivingPlayer.teamId !== transferringPlayer.teamId ) {
-			this.logger.error( "Chance can only be transferred to member of your team!" );
-			throw new BadRequestException();
+			this.logger.error( Messages.TRANSFER_TO_OPPONENT_TEAM );
+			throw new BadRequestException( Messages.TRANSFER_TO_OPPONENT_TEAM );
 		}
 
 		const transferData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
@@ -79,8 +77,6 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 		} );
 
 		currentGame.currentTurn = receivingPlayer.id;
-		currentGame.moves.push( move );
-
 		this.eventBus.publish( new GameUpdateEvent( currentGame, authInfo ) );
 
 		return currentGame.id;

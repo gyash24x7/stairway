@@ -4,10 +4,12 @@ import { LoggerFactory } from "@s2h/core";
 import type { AggregatedGameData } from "@literature/data";
 import { GameStatus } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
-import { CardRank, generateHandsFromCards, removeCardsOfRank, shuffle, SORTED_DECK } from "@s2h/cards";
+import { CardRank, removeCardsOfRank, shuffle, SORTED_DECK } from "@s2h/cards";
 import { PrismaService } from "../services";
 import type { UserAuthInfo } from "@auth/data";
 import { GameUpdateEvent } from "../events";
+import { buildCardMappingsAndHandMap } from "../utils";
+import { Messages } from "../constants";
 
 export class StartGameCommand implements ICommand {
 	constructor(
@@ -29,28 +31,26 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 	async execute( { currentGame, authInfo }: StartGameCommand ) {
 		this.logger.debug( ">> execute()" );
 		if ( currentGame!.status !== GameStatus.TEAMS_CREATED ) {
-			this.logger.debug( "The teams have not been created for the game! GameId: %s", currentGame.id );
-			throw new BadRequestException();
+			this.logger.debug( "%s GameId: %s", Messages.TEAMS_NOT_CREATED, currentGame.id );
+			throw new BadRequestException( Messages.TEAMS_NOT_CREATED );
 		}
 
 		let deck = shuffle( SORTED_DECK );
 		deck = removeCardsOfRank( deck, CardRank.SEVEN );
 
 		const cardMappings = await Promise.all(
-			generateHandsFromCards( deck, currentGame.playerCount ).flatMap( ( hand, index ) => {
-				return hand.map( card => {
-					return this.prisma.cardMapping.create( {
-						data: {
-							cardId: card.id,
-							gameId: currentGame.id,
-							playerId: currentGame.playerList[ index ].id
-						}
-					} );
+			deck.map( ( card, index ) => {
+				return this.prisma.cardMapping.create( {
+					data: {
+						cardId: card.id,
+						gameId: currentGame.id,
+						playerId: currentGame.playerList[ index % currentGame.playerCount ].id
+					}
 				} );
 			} )
 		);
 
-		const { cardMappingMap, handMap } = this.prisma.buildCardMappingsAndHandMap( cardMappings );
+		const { cardMappingMap, handMap } = buildCardMappingsAndHandMap( cardMappings );
 
 		const [ playerId ] = shuffle( currentGame.playerList.map( player => player.id ) );
 

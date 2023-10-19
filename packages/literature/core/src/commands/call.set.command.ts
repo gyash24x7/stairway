@@ -8,6 +8,7 @@ import { LoggerFactory } from "@s2h/core";
 import type { UserAuthInfo } from "@auth/data";
 import { PrismaService } from "../services";
 import { GameUpdateEvent, MoveCreatedEvent } from "../events";
+import { Messages } from "../constants";
 
 export class CallSetCommand implements ICommand {
 	constructor(
@@ -29,44 +30,30 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 
 	async execute( { input: { data }, currentGame, authInfo }: CallSetCommand ) {
 		const calledCards = Object.keys( data ).map( getPlayingCardFromId );
-		const calledCardIds = new Set( Object.keys( data ) );
-		const cardSuits = new Set( calledCards.map( card => card.suit ) );
 		const cardSets = new Set( calledCards.map( card => card.set ) );
 
 		const calledPlayers = Array.from( new Set( Object.values( data ) ) ).map( playerId => {
 			const player = currentGame.players[ playerId ];
 			if ( !player ) {
-				this.logger.trace( "Input: %o", { data } );
-				this.logger.trace( "Game: %o", currentGame );
 				this.logger.error(
-					"Called Player Not Found in Game! PlayerId: %s, UserId: %s",
-					playerId,
-					authInfo.id
+					"%s GameId: %s, PlayerId: %s",
+					Messages.PLAYER_NOT_PART_OF_GAME,
+					currentGame.id,
+					playerId
 				);
-				throw new BadRequestException();
+				throw new BadRequestException( Messages.PLAYER_NOT_PART_OF_GAME );
 			}
 			return player;
 		} );
 
 		if ( !Object.values( data ).includes( authInfo.id ) ) {
-			this.logger.trace( "Input: %o", { data } );
-			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Calling Player did not call own cards! UserId: %s", authInfo.id );
-			throw new BadRequestException();
+			this.logger.error( "%s UserId: %s", Messages.DIDNT_CALL_OWN_CARDS, authInfo.id );
+			throw new BadRequestException( Messages.DIDNT_CALL_OWN_CARDS );
 		}
 
-		if ( calledCardIds.size !== calledCards.length ) {
-			this.logger.trace( "Input: %o", { data } );
-			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Same Cards called for multiple players! UserId: %s", authInfo.id );
-			throw new BadRequestException();
-		}
-
-		if ( cardSets.size !== 1 || cardSuits.size !== 1 ) {
-			this.logger.trace( "Input: %o", { data } );
-			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Cards Called from multiple sets! UserId: %s", authInfo.id );
-			throw new BadRequestException();
+		if ( cardSets.size !== 1 ) {
+			this.logger.error( "%s UserId: %s", Messages.MULTIPLE_SETS_CALLED, authInfo.id );
+			throw new BadRequestException( Messages.MULTIPLE_SETS_CALLED );
 		}
 
 		const [ calledSet ] = cardSets;
@@ -81,34 +68,20 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 		} );
 
 		if ( !isCardSetInHand( callingPlayerHand, calledSet ) ) {
-			this.logger.trace( "Input: %o", { data } );
-			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error(
-				"Set called without cards from that set! UserId: %s, Set: %s",
-				authInfo.id,
-				calledSet
-			);
-			throw new BadRequestException();
+			this.logger.error( "%s UserId: %s, Set: %s", Messages.SET_CALLED_WITHOUT_CARDS, authInfo.id, calledSet );
+			throw new BadRequestException( Messages.SET_CALLED_WITHOUT_CARDS );
 		}
 
 		const calledTeams = new Set( calledPlayers.map( player => player.teamId ) );
 
 		if ( calledTeams.size !== 1 ) {
-			this.logger.trace( "Input: %o", { data } );
-			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error( "Cards Called for players from multiple teams! UserId: %s", authInfo.id );
-			throw new BadRequestException();
+			this.logger.error( "%s UserId: %s", Messages.SET_CALLED_FROM_MULTIPLE_TEAMS, authInfo.id );
+			throw new BadRequestException( Messages.SET_CALLED_FROM_MULTIPLE_TEAMS );
 		}
 
 		if ( calledCards.length !== 6 ) {
-			this.logger.trace( "Input: %o", { data } );
-			this.logger.trace( "Game: %o", currentGame );
-			this.logger.error(
-				"All Cards not called for the set! UserId: %s, Set: %s",
-				authInfo.id,
-				calledSet
-			);
-			throw new BadRequestException();
+			this.logger.error( "%s UserId: %s, Set: %s", Messages.ALL_CARDS_NOT_CALLED, authInfo.id, calledSet );
+			throw new BadRequestException( Messages.ALL_CARDS_NOT_CALLED );
 		}
 
 		const callingPlayer = currentGame.players[ authInfo.id ]!;

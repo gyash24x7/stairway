@@ -2,6 +2,7 @@ import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData } from "@literature/data";
 import { PrismaService } from "../services";
+import { buildAggregatedGameData } from "../utils";
 
 export class AggregatedGameQuery implements IQuery {
 	constructor( public readonly gameId: string ) {}
@@ -28,6 +29,6 @@ export class AggregatedGameQueryHandler implements IQueryHandler<AggregatedGameQ
 			}
 		} );
 
-		return this.prisma.buildAggregatedGameData( data );
+		return buildAggregatedGameData( data );
 	}
 }

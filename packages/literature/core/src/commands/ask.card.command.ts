@@ -7,6 +7,7 @@ import { LoggerFactory } from "@s2h/core";
 import type { UserAuthInfo } from "@auth/data";
 import { PrismaService } from "../services";
 import { GameUpdateEvent, MoveCreatedEvent } from "../events";
+import { Messages } from "../constants";
 
 export class AskCardCommand implements ICommand {
 	constructor(
@@ -32,18 +33,23 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 		const playerWithAskedCard = currentGame.players[ currentGame.cardMappings[ input.askedFor ] ];
 
 		if ( !askedPlayer ) {
-			this.logger.debug( "The asked player doesn't exist! GameId: %s", currentGame.id );
-			throw new BadRequestException();
-		}
-
-		if ( askingPlayer.teamId! === askedPlayer.teamId! ) {
-			this.logger.debug( "The asked player is from the same team! GameId: %s", currentGame.id );
-			throw new BadRequestException();
+			this.logger.debug(
+				"%s GameId: %s, PlayerId: %s",
+				Messages.PLAYER_NOT_PART_OF_GAME,
+				currentGame.id,
+				input.askedFrom
+			);
+			throw new BadRequestException( Messages.PLAYER_NOT_PART_OF_GAME );
 		}
 
 		if ( playerWithAskedCard.id === askingPlayer.id ) {
-			this.logger.debug( "The asked card is with asking player itself! GameId: %s", currentGame.id );
-			throw new BadRequestException();
+			this.logger.debug( "%s GameId: %s", Messages.ASKED_CARD_WITH_ASKING_PLAYER, currentGame.id );
+			throw new BadRequestException( Messages.ASKED_CARD_WITH_ASKING_PLAYER );
+		}
+
+		if ( askingPlayer.teamId! === askedPlayer.teamId! ) {
+			this.logger.debug( "%s GameId: %s", Messages.ASKED_PLAYER_FROM_SAME_TEAM, currentGame.id );
+			throw new BadRequestException( Messages.ASKED_PLAYER_FROM_SAME_TEAM );
 		}
 
 		const moveSuccess = askedPlayer.id === playerWithAskedCard.id;
