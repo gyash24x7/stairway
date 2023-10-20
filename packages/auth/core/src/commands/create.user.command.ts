@@ -15,7 +15,7 @@ export class CreateUserCommandHandler implements ICommandHandler<CreateUserComma
 	constructor( private readonly prisma: PrismaService ) {}
 
 	async execute( { data }: CreateUserCommand ) {
-		const salt = await bcrypt.genSalt( 15 );
+		const salt = await bcrypt.genSalt( 10 );
 		const password = await bcrypt.hash( data.password, salt );
 		const avatar = Constants.AVATAR_BASE_URL + salt;
 

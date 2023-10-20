@@ -5,6 +5,7 @@ import type { RealtimeService } from "@s2h/core";
 import { GameUpdateEvent, GameUpdateEventHandler } from "../../src/events";
 import { buildMockAggregatedGameData, mockAuthInfo } from "../mockdata";
 import { GameStatus, PlayerSpecificGameData } from "@literature/data";
+import { PlayerSpecificGameQuery } from "../../src/queries";
 
 test( "When GameUpdateEvent is published, update should be sent to all the players", async () => {
 	const mockPlayerSpecificGameData = mockDeep<PlayerSpecificGameData>();
@@ -17,12 +18,7 @@ test( "When GameUpdateEvent is published, update should be sent to all the playe
 	await gameUpdateEventHandler.handle( new GameUpdateEvent( currentGame, mockAuthInfo ) );
 
 	expect( mockQueryBus.execute ).toHaveBeenCalledTimes( 4 );
-	expect( mockQueryBus.execute ).toHaveBeenCalledWith(
-		expect.objectContaining( {
-			currentGame,
-			authInfo: mockAuthInfo
-		} )
-	);
+	expect( mockQueryBus.execute ).toHaveBeenCalledWith( new PlayerSpecificGameQuery( currentGame, mockAuthInfo.id ) );
 	expect( mockRealtimeService.publishDirectMessage ).toHaveBeenCalledTimes( 4 );
 	expect( mockRealtimeService.publishDirectMessage ).toHaveBeenCalledWith(
 		"literature",
