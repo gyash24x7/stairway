@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { CreateTeamsInput } from "@literature/data";
 import { GameStatus } from "@literature/data";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
 import { CreateTeamsCommand, CreateTeamsCommandHandler } from "../../src/commands";
 import { GameUpdateEvent } from "../../src/events";
@@ -60,7 +60,7 @@ describe( "CreateTeamsCommand", () => {
 	} );
 
 	it( "should create teams and assign teams to players", async () => {
-		mockPrisma.team.create.mockResolvedValueOnce( mockTeamA ).mockResolvedValueOnce( mockTeamB );
+		mockPrisma.literature.team.create.mockResolvedValueOnce( mockTeamA ).mockResolvedValueOnce( mockTeamB );
 		const handler = new CreateTeamsCommandHandler( mockPrisma, mockEventBus );
 		const result = await handler.execute( new CreateTeamsCommand(
 			mockInput,
@@ -69,8 +69,8 @@ describe( "CreateTeamsCommand", () => {
 		) );
 
 		expect( result ).toEqual( mockAggregatedGameData.id );
-		expect( mockPrisma.team.create ).toHaveBeenCalledTimes( 2 );
-		expect( mockPrisma.team.create ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.team.create ).toHaveBeenCalledTimes( 2 );
+		expect( mockPrisma.literature.team.create ).toHaveBeenCalledWith( {
 			data: {
 				name: "Team A",
 				gameId: "1",
@@ -82,7 +82,7 @@ describe( "CreateTeamsCommand", () => {
 				}
 			}
 		} );
-		expect( mockPrisma.team.create ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.team.create ).toHaveBeenCalledWith( {
 			data: {
 				name: "Team B",
 				gameId: "1",
@@ -101,8 +101,8 @@ describe( "CreateTeamsCommand", () => {
 		} );
 		expect( mockAggregatedGameData.players[ mockPlayer1.id ].teamId ).toEqual( mockTeamA.id );
 		expect( mockAggregatedGameData.players[ mockPlayer2.id ].teamId ).toEqual( mockTeamB.id );
-		expect( mockPrisma.game.update ).toHaveBeenCalledTimes( 1 );
-		expect( mockPrisma.game.update ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.game.update ).toHaveBeenCalledTimes( 1 );
+		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
 			where: { id: mockAggregatedGameData.id },
 			data: { status: GameStatus.TEAMS_CREATED }
 		} );

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { CallSetInput, CardMapping, GameStatus, Move, MoveType } from "@literature/data";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
 import { CardSet } from "@s2h/cards";
 import { CallSetCommand, CallSetCommandHandler } from "../../src/commands";
@@ -212,19 +212,23 @@ describe( "CallSetCommand", () => {
 			description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } incorrectly!`
 		};
 
-		mockPrisma.move.create.mockResolvedValue( mockMove );
-		mockPrisma.team.update.mockResolvedValue( { ...mockTeamB, score: 1, setsWon: [ CardSet.LOWER_CLUBS ] } );
+		mockPrisma.literature.move.create.mockResolvedValue( mockMove );
+		mockPrisma.literature.team.update.mockResolvedValue( {
+			...mockTeamB,
+			score: 1,
+			setsWon: [ CardSet.LOWER_CLUBS ]
+		} );
 
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 		const result = await handler.execute( new CallSetCommand( mockInput, mockAggregatedGameData, mockAuthInfo ) );
 
 		expect( result ).toEqual( mockAggregatedGameData.id );
-		expect( mockPrisma.cardMapping.deleteMany ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.cardMapping.deleteMany ).toHaveBeenCalledWith( {
 			where: {
 				cardId: { in: Object.keys( mockInput.data ) }
 			}
 		} );
-		expect( mockPrisma.move.create ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
 			data: {
 				gameId: mockAggregatedGameData.id,
 				type: MoveType.CALL_SET,
@@ -239,7 +243,7 @@ describe( "CallSetCommand", () => {
 			}
 		} );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( new MoveCreatedEvent( mockMove ) );
-		expect( mockPrisma.team.update ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.team.update ).toHaveBeenCalledWith( {
 			where: { id: mockTeamB.id },
 			data: {
 				score: 1,
@@ -261,19 +265,23 @@ describe( "CallSetCommand", () => {
 
 		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
 
-		mockPrisma.move.create.mockResolvedValue( mockCallMove );
-		mockPrisma.team.update.mockResolvedValue( { ...mockTeamA, score: 1, setsWon: [ CardSet.LOWER_CLUBS ] } );
+		mockPrisma.literature.move.create.mockResolvedValue( mockCallMove );
+		mockPrisma.literature.team.update.mockResolvedValue( {
+			...mockTeamA,
+			score: 1,
+			setsWon: [ CardSet.LOWER_CLUBS ]
+		} );
 
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 		const result = await handler.execute( new CallSetCommand( mockInput, mockAggregatedGameData, mockAuthInfo ) );
 
 		expect( result ).toEqual( mockAggregatedGameData.id );
-		expect( mockPrisma.cardMapping.deleteMany ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.cardMapping.deleteMany ).toHaveBeenCalledWith( {
 			where: {
 				cardId: { in: Object.keys( mockInput.data ) }
 			}
 		} );
-		expect( mockPrisma.move.create ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
 			data: {
 				gameId: mockAggregatedGameData.id,
 				type: MoveType.CALL_SET,
@@ -288,7 +296,7 @@ describe( "CallSetCommand", () => {
 			}
 		} );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( new MoveCreatedEvent( mockCallMove ) );
-		expect( mockPrisma.team.update ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.team.update ).toHaveBeenCalledWith( {
 			where: { id: mockTeamA.id },
 			data: {
 				score: 1,

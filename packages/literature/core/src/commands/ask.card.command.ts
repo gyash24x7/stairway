@@ -3,11 +3,11 @@ import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, AskCardInput, AskMoveData } from "@literature/data";
 import { MoveType } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
-import { LoggerFactory } from "@s2h/core";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import type { UserAuthInfo } from "@auth/data";
-import { PrismaService } from "../services";
 import { GameUpdateEvent, MoveCreatedEvent } from "../events";
 import { Messages } from "../constants";
+import { rebuildHands } from "../utils";
 
 export class AskCardCommand implements ICommand {
 	constructor(
@@ -61,7 +61,7 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 			card: input.askedFor
 		};
 
-		const move = await this.prisma.move.create( {
+		const move = await this.prisma.literature.move.create( {
 			data: {
 				type: MoveType.ASK_CARD,
 				gameId: currentGame.id,
@@ -76,15 +76,16 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, st
 		this.eventBus.publish( new MoveCreatedEvent( move ) );
 
 		if ( moveSuccess ) {
-			await this.prisma.cardMapping.update( {
+			await this.prisma.literature.cardMapping.update( {
 				where: { cardId_gameId: { cardId: input.askedFor, gameId: currentGame.id } },
 				data: { playerId: askingPlayer.id }
 			} );
 
 			currentGame.cardMappings[ input.askedFor ] = askingPlayer.id;
+			currentGame.hands = rebuildHands( currentGame.cardMappings );
 
 		} else {
-			await this.prisma.game.update( {
+			await this.prisma.literature.game.update( {
 				where: { id: currentGame.id },
 				data: { currentTurn: askedPlayer.id }
 			} );

@@ -19,7 +19,7 @@ describe( "PlayerSpecificGameQuery", () => {
 	it( "should return the current game data for the player when teams not created", async () => {
 		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.PLAYERS_READY );
 		const handler = new PlayerSpecificGameQueryHandler();
-		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo );
+		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo.id );
 
 		const result = await handler.execute( query );
 		expect( result ).toEqual(
@@ -40,7 +40,7 @@ describe( "PlayerSpecificGameQuery", () => {
 
 		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappings );
 		const handler = new PlayerSpecificGameQueryHandler();
-		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo );
+		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo.id );
 
 		const result = await handler.execute( query );
 		const tempArr = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CreateUserCommand, CreateUserCommandHandler } from "../../src/commands";
 import { mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import type { CreateUserInput, User } from "@auth/data";
 
 describe( "CreateUserCommandHandler", () => {

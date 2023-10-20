@@ -3,9 +3,8 @@ import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { JoinGameInput } from "@literature/data";
 import { GameStatus } from "@literature/data";
 import type { UserAuthInfo } from "@auth/data";
-import { LoggerFactory } from "@s2h/core";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../services";
 import { GameUpdateEvent } from "../events";
 import { buildAggregatedGameData } from "../utils";
 import { Messages } from "../constants";
@@ -29,7 +28,7 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 
 	async execute( { input, authInfo }: JoinGameCommand ) {
 		this.logger.debug( ">> execute()" );
-		const game = await this.prisma.game.findUnique( {
+		const game = await this.prisma.literature.game.findUnique( {
 			where: { code: input.code },
 			include: { players: true }
 		} );
@@ -51,7 +50,7 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 			throw new BadRequestException( Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS );
 		}
 
-		const newPlayer = await this.prisma.player.create( {
+		const newPlayer = await this.prisma.literature.player.create( {
 			data: {
 				id: authInfo.id,
 				name: authInfo.name,
@@ -61,7 +60,7 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 		} );
 
 		if ( game.playerCount === game.players.length + 1 ) {
-			await this.prisma.game.update( {
+			await this.prisma.literature.game.update( {
 				where: { id: game.id },
 				data: { status: GameStatus.PLAYERS_READY }
 			} );

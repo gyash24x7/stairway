@@ -21,12 +21,12 @@ export class GameUpdateEventHandler implements IEventHandler<GameUpdateEvent> {
 		private readonly realtimeService: RealtimeService
 	) {}
 
-	async handle( { currentGame, authInfo }: GameUpdateEvent ) {
+	async handle( { currentGame }: GameUpdateEvent ) {
 		this.logger.debug( ">> handle()" );
 
 		for ( const player of currentGame.playerList ) {
 			const playerSpecificData: PlayerSpecificGameData = await this.queryBus.execute(
-				new PlayerSpecificGameQuery( currentGame, authInfo )
+				new PlayerSpecificGameQuery( currentGame, player.id )
 			);
 			this.realtimeService.publishDirectMessage( "literature", currentGame.id + player.id, playerSpecificData );
 		}

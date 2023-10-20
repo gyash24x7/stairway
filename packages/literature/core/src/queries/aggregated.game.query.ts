@@ -1,8 +1,8 @@
 import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData } from "@literature/data";
-import { PrismaService } from "../services";
 import { buildAggregatedGameData } from "../utils";
+import { PrismaService } from "@s2h/core";
 
 export class AggregatedGameQuery implements IQuery {
 	constructor( public readonly gameId: string ) {}
@@ -14,7 +14,7 @@ export class AggregatedGameQueryHandler implements IQueryHandler<AggregatedGameQ
 	constructor( private readonly prisma: PrismaService ) {}
 
 	async execute( { gameId }: AggregatedGameQuery ): Promise<AggregatedGameData> {
-		const data = await this.prisma.game.findUniqueOrThrow( {
+		const data = await this.prisma.literature.game.findUniqueOrThrow( {
 			where: { id: gameId },
 			include: {
 				players: true,

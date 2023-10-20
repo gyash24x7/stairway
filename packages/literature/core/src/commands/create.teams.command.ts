@@ -3,8 +3,7 @@ import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, CreateTeamsInput } from "@literature/data";
 import { GameStatus } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
-import { LoggerFactory } from "@s2h/core";
-import { PrismaService } from "../services";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import { GameUpdateEvent } from "../events";
 import type { UserAuthInfo } from "@auth/data";
 import { Messages } from "../constants";
@@ -41,7 +40,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 
 		const [ teamA, teamB ] = await Promise.all(
 			Object.keys( input.data ).map( teamName => {
-				return this.prisma.team.create( {
+				return this.prisma.literature.team.create( {
 					data: {
 						name: teamName,
 						gameId: currentGame.id,
@@ -67,7 +66,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 			} );
 		} );
 
-		await this.prisma.game.update( {
+		await this.prisma.literature.game.update( {
 			where: { id: currentGame.id },
 			data: { status: GameStatus.TEAMS_CREATED }
 		} );

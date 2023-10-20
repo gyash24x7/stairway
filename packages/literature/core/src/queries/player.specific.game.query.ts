@@ -1,14 +1,13 @@
 import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
 import type { AggregatedGameData, PlayerSpecificGameData } from "@literature/data";
-import type { UserAuthInfo } from "@auth/data";
 import type { PlayingCard } from "@s2h/cards";
 import { LoggerFactory } from "@s2h/core";
 
 export class PlayerSpecificGameQuery implements IQuery {
 	constructor(
 		public readonly currentGame: AggregatedGameData,
-		public readonly authInfo: UserAuthInfo
+		public readonly playerId: string
 	) {}
 }
 
@@ -17,10 +16,10 @@ export class PlayerSpecificGameQueryHandler implements IQueryHandler<PlayerSpeci
 
 	private readonly logger = LoggerFactory.getLogger( PlayerSpecificGameQueryHandler );
 
-	async execute( { currentGame, authInfo }: PlayerSpecificGameQuery ) {
+	async execute( { currentGame, playerId }: PlayerSpecificGameQuery ) {
 		this.logger.debug( ">> execute()" );
 		const { teams, teamList, playerList, hands, cardMappings, ...rest } = currentGame;
-		const currentPlayer = rest.players[ authInfo.id ];
+		const currentPlayer = rest.players[ playerId ];
 
 		const currentPlayerTeam = !!currentPlayer.teamId ? teams[ currentPlayer.teamId ] : undefined;
 		const currentPlayerTeamMembers = !!currentPlayerTeam

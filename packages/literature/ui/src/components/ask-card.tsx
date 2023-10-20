@@ -56,7 +56,7 @@ export function AskCard() {
 		setPaneState( "SET" );
 	};
 
-	const { mutateAsync, isLoading } = useAskCardMutation( id, {
+	const { mutateAsync, isPending } = useAskCardMutation( id, {
 		onSuccess: closeModal,
 		onError( error ) {
 			console.log( error );
@@ -125,7 +125,7 @@ export function AskCard() {
 						</Title>
 						<Group>
 							<Button onClick={ openSelectPlayerModal }>Back</Button>
-							<Button onClick={ handleConfirm } loading={ isLoading }>Ask Card</Button>
+							<Button onClick={ handleConfirm } loading={ isPending }>Ask Card</Button>
 						</Group>
 					</Stack>
 				) }

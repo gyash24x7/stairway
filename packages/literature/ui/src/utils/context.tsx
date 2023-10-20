@@ -1,5 +1,5 @@
 import type { PlayerSpecificGameData } from "@literature/data";
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext } from "react";
 import { useAuth } from "@auth/ui";
 // @ts-ignore
 import { io } from "socket.io-client";
@@ -8,6 +8,7 @@ import { useGetGameQuery } from "@literature/client";
 import { getCardSetsInHand, getCardsOfSet } from "@s2h/cards";
 import { Loader } from "@mantine/core";
 import { LiveUpdatesProvider } from "@s2h/ui";
+import { useQueryClient } from "@tanstack/react-query";
 
 const litGameContext = createContext<PlayerSpecificGameData>( null! );
 
@@ -39,26 +40,26 @@ export const useCurrentGameCardCounts = () => {
 
 export function GameProvider( props: { children: ReactNode } ) {
 	const { gameId } = useParams();
+	const queryClient = useQueryClient();
+	const setGameData = ( data: PlayerSpecificGameData ) => {
+		queryClient.setQueryData( [ "literature", gameId! ], data );
+	};
+
 	const { user } = useAuth();
-	const [ gameData, setGameData ] = useState<PlayerSpecificGameData>();
-	const { isLoading, error } = useGetGameQuery( gameId!, {
-		onSuccess( data ) {
-			setGameData( data );
-		}
-	} );
+	const { isLoading, error, data } = useGetGameQuery( gameId! );
 
 	if ( !!error ) {
-		console.log( error + user?.id );
+		console.log( error + user?.id! );
 		return <div>Some Error Happened!</div>;
 	}
 
-	if ( isLoading || !gameData ) {
+	if ( isLoading || !data ) {
 		return <Loader/>;
 	}
 
 	return (
-		<litGameContext.Provider value={ gameData }>
-			<LiveUpdatesProvider eventMap={ { [ gameData.id + user?.id! ]: setGameData } } room={ gameData.id }>
+		<litGameContext.Provider value={ data }>
+			<LiveUpdatesProvider eventMap={ { [ data.id + user?.id! ]: setGameData } } room={ data.id }>
 				{ props.children }
 			</LiveUpdatesProvider>
 		</litGameContext.Provider>

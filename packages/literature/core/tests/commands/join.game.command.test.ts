@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import type { Game, JoinGameInput, Player } from "@literature/data";
 import { GameStatus } from "@literature/data";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
 import { JoinGameCommand, JoinGameCommandHandler } from "../../src/commands";
 import { GameUpdateEvent } from "../../src/events";
@@ -26,7 +26,7 @@ describe( "JoinGameCommand", () => {
 	const mockEventBus = mockDeep<EventBus>();
 
 	it( "should throw error if game not there", async () => {
-		mockPrisma.game.findUnique.mockResolvedValue( null );
+		mockPrisma.literature.game.findUnique.mockResolvedValue( null );
 
 		const joinGameCommandHandler = new JoinGameCommandHandler( mockPrisma, mockEventBus );
 
@@ -36,7 +36,7 @@ describe( "JoinGameCommand", () => {
 			.catch( ( err: HttpException ) => {
 				expect( err.getStatus() ).toEqual( 404 );
 				expect( err.message ).toEqual( Messages.GAME_NOT_FOUND );
-				expect( mockPrisma.game.findUnique ).toHaveBeenCalledWith( {
+				expect( mockPrisma.literature.game.findUnique ).toHaveBeenCalledWith( {
 					where: { code: mockInput.code },
 					include: { players: true }
 				} );
@@ -44,7 +44,7 @@ describe( "JoinGameCommand", () => {
 	} );
 
 	it( "should throw error if game has enough players", async () => {
-		mockPrisma.game.findUnique.mockResolvedValue( {
+		mockPrisma.literature.game.findUnique.mockResolvedValue( {
 			...mockGame,
 			players: [ ...mockGame.players, { ...mockPlayer1, id: "5" } ]
 		} as any );
@@ -56,7 +56,7 @@ describe( "JoinGameCommand", () => {
 			.catch( ( err: HttpException ) => {
 				expect( err.getStatus() ).toEqual( 400 );
 				expect( err.message ).toEqual( Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS );
-				expect( mockPrisma.game.findUnique ).toHaveBeenCalledWith( {
+				expect( mockPrisma.literature.game.findUnique ).toHaveBeenCalledWith( {
 					where: { code: mockInput.code },
 					include: { players: true }
 				} );
@@ -64,7 +64,7 @@ describe( "JoinGameCommand", () => {
 	} );
 
 	it( "should return game id if user already part of game", async () => {
-		mockPrisma.game.findUnique.mockResolvedValue( {
+		mockPrisma.literature.game.findUnique.mockResolvedValue( {
 			...mockGame,
 			players: [ ...mockGame.players, mockPlayer1 ]
 		} as any );
@@ -72,7 +72,7 @@ describe( "JoinGameCommand", () => {
 		const joinGameCommandHandler = new JoinGameCommandHandler( mockPrisma, mockEventBus );
 		const gameId = await joinGameCommandHandler.execute( new JoinGameCommand( mockInput, mockAuthInfo ) );
 
-		expect( mockPrisma.game.findUnique ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.game.findUnique ).toHaveBeenCalledWith( {
 			where: { code: mockInput.code },
 			include: { players: true }
 		} );
@@ -81,18 +81,18 @@ describe( "JoinGameCommand", () => {
 	} );
 
 	it( "should add user to the game and publish game update event", async () => {
-		mockPrisma.game.findUnique.mockResolvedValue( { ...mockGame, playerCount: 6 } );
-		mockPrisma.player.create.mockResolvedValue( mockPlayer1 );
+		mockPrisma.literature.game.findUnique.mockResolvedValue( { ...mockGame, playerCount: 6 } );
+		mockPrisma.literature.player.create.mockResolvedValue( mockPlayer1 );
 
 		const joinGameCommandHandler = new JoinGameCommandHandler( mockPrisma, mockEventBus );
 		await joinGameCommandHandler.execute( new JoinGameCommand( mockInput, mockAuthInfo ) );
 
-		expect( mockPrisma.game.findUnique ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.game.findUnique ).toHaveBeenCalledWith( {
 			where: { code: mockInput.code },
 			include: { players: true }
 		} );
 
-		expect( mockPrisma.player.create ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.player.create ).toHaveBeenCalledWith( {
 			data: {
 				id: mockAuthInfo.id,
 				name: mockAuthInfo.name,
@@ -110,18 +110,18 @@ describe( "JoinGameCommand", () => {
 	} );
 
 	it( "should add user to the game and publish game update event with updated status", async () => {
-		mockPrisma.game.findUnique.mockResolvedValue( mockGame );
-		mockPrisma.player.create.mockResolvedValue( mockPlayer1 );
+		mockPrisma.literature.game.findUnique.mockResolvedValue( mockGame );
+		mockPrisma.literature.player.create.mockResolvedValue( mockPlayer1 );
 
 		const joinGameCommandHandler = new JoinGameCommandHandler( mockPrisma, mockEventBus );
 		await joinGameCommandHandler.execute( new JoinGameCommand( mockInput, mockAuthInfo ) );
 
-		expect( mockPrisma.game.findUnique ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.game.findUnique ).toHaveBeenCalledWith( {
 			where: { code: mockInput.code },
 			include: { players: true }
 		} );
 
-		expect( mockPrisma.player.create ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.player.create ).toHaveBeenCalledWith( {
 			data: {
 				id: mockAuthInfo.id,
 				name: mockAuthInfo.name,
@@ -130,7 +130,7 @@ describe( "JoinGameCommand", () => {
 			}
 		} );
 
-		expect( mockPrisma.game.update ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
 			where: { id: mockGame.id },
 			data: { status: GameStatus.PLAYERS_READY }
 		} );

@@ -2,6 +2,23 @@ import type { AggregatedGameData, CardMapping, CardMappingData, Player, RawGameD
 import { GameStatus } from "@literature/data";
 import { getPlayingCardFromId, PlayingCard } from "@s2h/cards";
 
+export function checkIfGameOver( currentGame: AggregatedGameData ) {
+	return !Object.values( currentGame.hands ).some( hand => hand.length !== 0 );
+}
+
+export function rebuildHands( cardMappings: Record<string, string> ): Record<string, PlayingCard[]> {
+	const data: Record<string, PlayingCard[]> = {};
+	Object.keys( cardMappings ).map( cardId => {
+		const playerId = cardMappings[ cardId ];
+		if ( !data[ playerId ] ) {
+			data[ playerId ] = [];
+		}
+		data[ playerId ].push( getPlayingCardFromId( cardId ) );
+	} );
+
+	return data;
+}
+
 export function buildCardMappingsAndHandMap( cardMappings: CardMapping[] ): CardMappingData {
 	const cardMappingMap: Record<string, string> = {};
 	const handMap: Record<string, PlayingCard[]> = {};

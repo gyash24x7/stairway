@@ -30,7 +30,7 @@ export const useStartGameMutation = ( id: string, options?: OpOps<ApiResponse> )
 	...options
 } );
 
-export const useAskCardMutation = ( id: string, options?: OpOps<AskCardInput> ) => useMutation( {
+export const useAskCardMutation = ( id: string, options?: OpOps<ApiResponse> ) => useMutation( {
 	mutationFn: ( data: AskCardInput ) => askCard( id, data ),
 	...options
 } );

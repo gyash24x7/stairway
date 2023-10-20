@@ -51,6 +51,7 @@ dist
 .netlify
 netlify
 .turbo
+/.nx
 
 coverage
 out

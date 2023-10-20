@@ -3,7 +3,7 @@ import { CommandHandler } from "@nestjs/cqrs";
 import type { CreateUserInput } from "@auth/data";
 import { Constants } from "../constants";
 import bcrypt from "bcryptjs";
-import { PrismaService } from "../services";
+import { PrismaService } from "@s2h/core";
 
 export class CreateUserCommand implements ICommand {
 	constructor( public readonly data: CreateUserInput ) {}

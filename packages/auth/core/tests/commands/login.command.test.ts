@@ -1,10 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { JwtService, PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import { LoginCommand, LoginCommandHandler } from "../../src/commands";
 import type { LoginInput, User } from "@auth/data";
 import type { HttpException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
+import type { JwtService } from "@nestjs/jwt";
 
 describe( "LoginCommandHandler", () => {
 
@@ -66,7 +67,7 @@ describe( "LoginCommandHandler", () => {
 
 		const data = await loginCommandHandler.execute( new LoginCommand( mockInput ) );
 		expect( mockPrisma.user.findUnique ).toHaveBeenCalledWith( { where: { email: mockInput.email } } );
-		expect( mockJwtService.sign ).toHaveBeenCalledWith( { ...mockUser, verified: true } );
+		expect( mockJwtService.signAsync ).toHaveBeenCalledWith( { ...mockUser, verified: true } );
 		expect( data.userId ).toEqual( mockUser.id );
 
 	} );

@@ -1,25 +1,30 @@
 import { PrismaClient } from "@prisma/client";
 import { Injectable, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
-import { type AppConfig, Config } from "../config";
 
 @Injectable()
-export class BasePrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
-	constructor( @Config() readonly config: AppConfig ) {
-		super( {
-			datasources: {
-				db: {
-					url: config.db.url
-				}
-			}
-		} );
+	private readonly prismaClient = new PrismaClient();
+
+	get user() {
+		return this.prismaClient.user;
+	}
+
+	get literature() {
+		return {
+			game: this.prismaClient.literatureGame,
+			player: this.prismaClient.literaturePlayer,
+			cardMapping: this.prismaClient.literatureCardMapping,
+			team: this.prismaClient.literatureTeam,
+			move: this.prismaClient.literatureMove
+		};
 	}
 
 	async onModuleInit() {
-		super.$connect();
+		this.prismaClient.$connect();
 	}
 
 	async onModuleDestroy() {
-		super.$disconnect();
+		this.prismaClient.$disconnect();
 	}
 }

@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
 
 export default defineConfig( {
-	cacheDir: "../../../node_modules/.vite/common/core",
+	cacheDir: "../../../node_modules/.vite/literature/core",
 	plugins: [ nxViteTsPaths() ],
 	test: {
 		globals: true,
@@ -12,7 +12,7 @@ export default defineConfig( {
 			reportsDirectory: "coverage"
 		},
 		cache: {
-			dir: "../../../node_modules/.vitest/common/core"
+			dir: "../../../node_modules/.vitest/literature/core"
 		},
 		environment: "node",
 		include: [ "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}" ]

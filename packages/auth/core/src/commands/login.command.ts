@@ -1,10 +1,10 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import type { AuthTokenData, LoginInput } from "@auth/data";
-import { LoggerFactory } from "@s2h/core";
-import { JwtService, PrismaService } from "../services";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
+import { JwtService } from "@nestjs/jwt";
 
 export class LoginCommand implements ICommand {
 	constructor( public readonly data: LoginInput ) {}
@@ -39,7 +39,7 @@ export class LoginCommandHandler implements ICommandHandler<LoginCommand, AuthTo
 			throw new BadRequestException();
 		}
 
-		const token = await this.jwtService.sign( { ...user } );
+		const token = await this.jwtService.signAsync( { ...user } );
 		return { userId: user.id, token };
 	}
 

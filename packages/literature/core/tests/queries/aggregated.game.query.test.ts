@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import { AggregatedGameQuery, AggregatedGameQueryHandler } from "../../src/queries";
 import {
 	deck,
@@ -25,7 +25,7 @@ test( "AggregateGameQuery should return aggregated game data", async () => {
 
 	const { cardMappingMap, handMap } = buildCardMappingsAndHandMap( cardMappings );
 
-	mockPrisma.game.findUniqueOrThrow.mockResolvedValue( {
+	mockPrisma.literature.game.findUniqueOrThrow.mockResolvedValue( {
 		id: "1",
 		status: "IN_PROGRESS",
 		teams: [ mockTeamA, mockTeamB ],

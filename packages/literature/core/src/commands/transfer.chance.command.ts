@@ -2,10 +2,9 @@ import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, TransferChanceInput, TransferMoveData } from "@literature/data";
 import { MoveType } from "@literature/data";
-import { LoggerFactory } from "@s2h/core";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import { BadRequestException } from "@nestjs/common";
 import type { UserAuthInfo } from "@auth/data";
-import { PrismaService } from "../services";
 import { GameUpdateEvent, MoveCreatedEvent } from "../events";
 import { Messages } from "../constants";
 
@@ -58,7 +57,7 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 		const transferData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
 		const description = `${ transferringPlayer.name } transferred the chance to ${ receivingPlayer.name }`;
 
-		const move = await this.prisma.move.create( {
+		const move = await this.prisma.literature.move.create( {
 			data: {
 				gameId: currentGame.id,
 				type: MoveType.TRANSFER_CHANCE,
@@ -71,7 +70,7 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 		this.eventBus.publish( new MoveCreatedEvent( move ) );
 		currentGame.moves = [ move, ...currentGame.moves ];
 
-		await this.prisma.game.update( {
+		await this.prisma.literature.game.update( {
 			where: { id: currentGame.id },
 			data: { currentTurn: receivingPlayer.id }
 		} );

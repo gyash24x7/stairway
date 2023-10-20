@@ -1,11 +1,10 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import { LoggerFactory } from "@s2h/core";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import type { AggregatedGameData } from "@literature/data";
 import { GameStatus } from "@literature/data";
 import { BadRequestException } from "@nestjs/common";
 import { CardRank, removeCardsOfRank, shuffle, SORTED_DECK } from "@s2h/cards";
-import { PrismaService } from "../services";
 import type { UserAuthInfo } from "@auth/data";
 import { GameUpdateEvent } from "../events";
 import { buildCardMappingsAndHandMap } from "../utils";
@@ -40,7 +39,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 
 		const cardMappings = await Promise.all(
 			deck.map( ( card, index ) => {
-				return this.prisma.cardMapping.create( {
+				return this.prisma.literature.cardMapping.create( {
 					data: {
 						cardId: card.id,
 						gameId: currentGame.id,
@@ -54,7 +53,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 
 		const [ playerId ] = shuffle( currentGame.playerList.map( player => player.id ) );
 
-		await this.prisma.game.update( {
+		await this.prisma.literature.game.update( {
 			where: { id: currentGame.id },
 			data: {
 				status: GameStatus.IN_PROGRESS,

@@ -132,6 +132,6 @@ export class GamesController {
 		@AuthInfo() authInfo: UserAuthInfo
 	): Promise<PlayerSpecificGameData> {
 		this.logger.debug( ">> getGame()" );
-		return this.queryBus.execute( new PlayerSpecificGameQuery( currentGame, authInfo ) );
+		return this.queryBus.execute( new PlayerSpecificGameQuery( currentGame, authInfo.id ) );
 	}
 }

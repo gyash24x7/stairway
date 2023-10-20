@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { CardMapping, GameStatus, MoveType } from "@literature/data";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
 import { AskCardCommand, AskCardCommandHandler } from "../../src/commands";
 import { GameUpdateEvent, MoveCreatedEvent } from "../../src/events";
@@ -73,7 +73,7 @@ describe( "AskCardCommand", () => {
 	} );
 
 	it( "should transfer the chance to asked player when asked incorrectly and create ask move", async () => {
-		mockPrisma.move.create.mockResolvedValue( mockAskMove );
+		mockPrisma.literature.move.create.mockResolvedValue( mockAskMove );
 
 		const handler = new AskCardCommandHandler( mockPrisma, mockEventBus );
 		const result = await handler.execute( new AskCardCommand(
@@ -83,8 +83,8 @@ describe( "AskCardCommand", () => {
 		) );
 
 		expect( result ).toBe( mockAggregatedGameData.id );
-		expect( mockPrisma.move.create ).toBeCalledTimes( 1 );
-		expect( mockPrisma.move.create ).toBeCalledWith( {
+		expect( mockPrisma.literature.move.create ).toBeCalledTimes( 1 );
+		expect( mockPrisma.literature.move.create ).toBeCalledWith( {
 			data: {
 				type: MoveType.ASK_CARD,
 				gameId: mockAggregatedGameData.id,
@@ -97,9 +97,9 @@ describe( "AskCardCommand", () => {
 				description: `${ mockPlayer1.name } asked ${ mockPlayer4.name } for ${ mockInput.askedFor } and was declined!`
 			}
 		} );
-		expect( mockPrisma.cardMapping.update ).toBeCalledTimes( 0 );
-		expect( mockPrisma.game.update ).toBeCalledTimes( 1 );
-		expect( mockPrisma.game.update ).toBeCalledWith( {
+		expect( mockPrisma.literature.cardMapping.update ).toBeCalledTimes( 0 );
+		expect( mockPrisma.literature.game.update ).toBeCalledTimes( 1 );
+		expect( mockPrisma.literature.game.update ).toBeCalledWith( {
 			where: { id: mockAggregatedGameData.id },
 			data: { currentTurn: mockPlayer4.id }
 		} );
@@ -109,14 +109,14 @@ describe( "AskCardCommand", () => {
 	} );
 
 	it( "should transfer the card to the asking player when asked correctly and create ask move", async () => {
-		mockPrisma.move.create.mockResolvedValue( mockAskMove );
+		mockPrisma.literature.move.create.mockResolvedValue( mockAskMove );
 
 		const handler = new AskCardCommandHandler( mockPrisma, mockEventBus );
 		const result = await handler.execute( new AskCardCommand( mockInput, mockAggregatedGameData, mockAuthInfo ) );
 
 		expect( result ).toBe( mockAggregatedGameData.id );
-		expect( mockPrisma.move.create ).toBeCalledTimes( 1 );
-		expect( mockPrisma.move.create ).toBeCalledWith( {
+		expect( mockPrisma.literature.move.create ).toBeCalledTimes( 1 );
+		expect( mockPrisma.literature.move.create ).toBeCalledWith( {
 			data: {
 				type: MoveType.ASK_CARD,
 				gameId: mockAggregatedGameData.id,
@@ -129,8 +129,8 @@ describe( "AskCardCommand", () => {
 				description: `${ mockPlayer1.name } asked ${ mockPlayer2.name } for ${ mockInput.askedFor } and got the card!`
 			}
 		} );
-		expect( mockPrisma.cardMapping.update ).toBeCalledTimes( 1 );
-		expect( mockPrisma.cardMapping.update ).toBeCalledWith( {
+		expect( mockPrisma.literature.cardMapping.update ).toBeCalledTimes( 1 );
+		expect( mockPrisma.literature.cardMapping.update ).toBeCalledWith( {
 			where: { cardId_gameId: { cardId: mockInput.askedFor, gameId: mockAggregatedGameData.id } },
 			data: { playerId: mockPlayer1.id }
 		} );

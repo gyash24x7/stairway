@@ -26,7 +26,7 @@ export const createTeams = ( id: string, data: CreateTeamsInput ): Promise<ApiRe
 	data
 );
 export const startGame = ( id: string ): Promise<ApiResponse> => putRequest( startGamePath( id ), {} );
-export const askCard = ( id: string, data: AskCardInput ): Promise<AskCardInput> => putRequest(
+export const askCard = ( id: string, data: AskCardInput ): Promise<ApiResponse> => putRequest(
 	askCardPath( id ),
 	data
 );

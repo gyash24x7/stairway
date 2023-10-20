@@ -2,8 +2,7 @@ import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import type { VerifyUserInput } from "@auth/data";
 import { NotFoundException } from "@nestjs/common";
-import { LoggerFactory } from "@s2h/core";
-import { PrismaService } from "../services";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 
 export class VerifyUserCommand implements ICommand {
 	constructor( public readonly data: VerifyUserInput ) {}

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { GameStatus } from "@literature/data";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
 import { StartGameCommand, StartGameCommandHandler } from "../../src/commands";
 import { GameUpdateEvent } from "../../src/events";
@@ -28,7 +28,7 @@ describe( "StartGameCommand", () => {
 	} );
 
 	it( "should create card mappings and start the game", async () => {
-		const mock = mockPrisma.cardMapping.create;
+		const mock = mockPrisma.literature.cardMapping.create;
 		deck.forEach( ( card, index ) => {
 			mock.mockResolvedValueOnce( {
 				cardId: card.id,
@@ -42,7 +42,7 @@ describe( "StartGameCommand", () => {
 
 		expect( result ).toBe( mockAggregatedGameData.id );
 		expect( mock ).toHaveBeenCalledTimes( deck.length );
-		expect( mockPrisma.game.update ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
 			where: { id: mockAggregatedGameData.id },
 			data: {
 				status: GameStatus.IN_PROGRESS,

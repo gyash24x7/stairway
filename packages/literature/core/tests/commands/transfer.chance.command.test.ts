@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CardMapping, GameStatus, MoveType } from "@literature/data";
 import { mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "../../src/services";
+import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
 import { TransferChanceCommand, TransferChanceCommandHandler } from "../../src/commands";
 import { GameUpdateEvent, MoveCreatedEvent } from "../../src/events";
@@ -150,7 +150,7 @@ describe( "TransferChanceCommand", () => {
 			cardMappingList,
 			[ mockCallMove ]
 		);
-		mockPrisma.move.create.mockResolvedValue( mockTransferMove );
+		mockPrisma.literature.move.create.mockResolvedValue( mockTransferMove );
 
 		const handler = new TransferChanceCommandHandler( mockPrisma, mockEventBus );
 		const command = new TransferChanceCommand( mockInput, mockAggregatedGameData, mockAuthInfo );
@@ -158,8 +158,8 @@ describe( "TransferChanceCommand", () => {
 		const result = await handler.execute( command );
 
 		expect( result ).toEqual( mockAggregatedGameData.id );
-		expect( mockPrisma.move.create ).toHaveBeenCalledTimes( 1 );
-		expect( mockPrisma.move.create ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.move.create ).toHaveBeenCalledTimes( 1 );
+		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
 			data: {
 				gameId: mockAggregatedGameData.id,
 				type: MoveType.TRANSFER_CHANCE,
@@ -173,8 +173,8 @@ describe( "TransferChanceCommand", () => {
 		} );
 		expect( mockEventBus.publish ).toHaveBeenCalledTimes( 2 );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( new MoveCreatedEvent( mockTransferMove ) );
-		expect( mockPrisma.game.update ).toHaveBeenCalledTimes( 1 );
-		expect( mockPrisma.game.update ).toHaveBeenCalledWith( {
+		expect( mockPrisma.literature.game.update ).toHaveBeenCalledTimes( 1 );
+		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
 			where: { id: mockAggregatedGameData.id },
 			data: { currentTurn: mockInput.transferTo }
 		} );

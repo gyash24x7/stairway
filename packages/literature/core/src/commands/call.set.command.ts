@@ -1,14 +1,14 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { AggregatedGameData, CallMoveData, CallSetInput } from "@literature/data";
-import { MoveType } from "@literature/data";
-import { cardSetMap, getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
+import { GameStatus, MoveType } from "@literature/data";
+import { cardSetMap, getPlayingCardFromId, isCardSetInHand, shuffle } from "@s2h/cards";
 import { BadRequestException } from "@nestjs/common";
-import { LoggerFactory } from "@s2h/core";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import type { UserAuthInfo } from "@auth/data";
-import { PrismaService } from "../services";
 import { GameUpdateEvent, MoveCreatedEvent } from "../events";
 import { Messages } from "../constants";
+import { checkIfGameOver, rebuildHands } from "../utils";
 
 export class CallSetCommand implements ICommand {
 	constructor(
@@ -90,17 +90,22 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 
 		let success = true;
 		let successString = "correctly!";
+		let currentTurn = currentGame.currentTurn;
 
 		const cardsOfCallingSet = cardSetMap[ calledSet ];
 		for ( const card of cardsOfCallingSet ) {
 			if ( correctCall[ card.id ] !== data[ card.id ] ) {
 				success = false;
 				successString = "incorrectly!";
+				const oppositeTeamMembers = currentGame.playerList.filter(
+					player => player.teamId !== callingPlayer.teamId
+				);
+				[ currentTurn ] = shuffle( oppositeTeamMembers ).map( player => player.id );
 				break;
 			}
 		}
 
-		await this.prisma.cardMapping.deleteMany( {
+		await this.prisma.literature.cardMapping.deleteMany( {
 			where: {
 				cardId: { in: Object.keys( data ) }
 			}
@@ -110,6 +115,8 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			delete currentGame.cardMappings[ cardId ];
 		} );
 
+		currentGame.hands = rebuildHands( currentGame.cardMappings );
+
 		const callMoveData: CallMoveData = {
 			by: authInfo.id,
 			cardSet: calledSet,
@@ -117,7 +124,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			correctCall
 		};
 
-		const move = await this.prisma.move.create( {
+		const move = await this.prisma.literature.move.create( {
 			data: {
 				gameId: currentGame.id,
 				type: MoveType.CALL_SET,
@@ -130,7 +137,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 		this.eventBus.publish( new MoveCreatedEvent( move ) );
 		currentGame.moves = [ move, ...currentGame.moves ];
 
-		const updatedTeam = await this.prisma.team.update( {
+		const updatedTeam = await this.prisma.literature.team.update( {
 			where: {
 				id: success ? callingPlayer.teamId! : oppositeTeam.id
 			},
@@ -140,7 +147,19 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, st
 			}
 		} );
 
+		const isGameOver = checkIfGameOver( currentGame );
+		const status = isGameOver ? GameStatus.COMPLETED : GameStatus.IN_PROGRESS;
+
+		await this.prisma.literature.game.update( {
+			where: { id: currentGame.id },
+			data: { currentTurn, status }
+		} );
+
+		currentGame.currentTurn = currentTurn;
+		currentGame.status = status;
+
 		currentGame.teams[ updatedTeam.id ] = updatedTeam;
+		currentGame.teamList = Object.values( currentGame.teams );
 		this.eventBus.publish( new GameUpdateEvent( currentGame, authInfo ) );
 
 		return currentGame.id;
