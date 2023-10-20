@@ -11,7 +11,7 @@ export function TransferChance() {
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ opened, { open, close } ] = useDisclosure();
 
-	const { mutateAsync, isLoading } = useTransferChanceMutation( id, {
+	const { mutateAsync, isPending } = useTransferChanceMutation( id, {
 		onSuccess: () => {
 			setSelectedPlayer( undefined );
 			close();
@@ -36,7 +36,7 @@ export function TransferChance() {
 						options={ myTeam?.members.filter( memberId => memberId !== player.id )
 							.map( memberId => players[ memberId ] ) ?? [] }
 					/>
-					<Button disabled={ !selectedPlayer } onClick={ transferTurn } loading={ isLoading }>
+					<Button disabled={ !selectedPlayer } onClick={ transferTurn } loading={ isPending }>
 						Transfer Chance
 					</Button>
 				</Stack>

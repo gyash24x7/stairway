@@ -27,7 +27,7 @@ export function JoinGame() {
 	return (
 		<Fragment>
 			<Button color={ "warning" } onClick={ open }>Join Game</Button>
-			<Modal opened={ opened } onClose={ close } title={ "Join Game" }>
+			<Modal opened={ opened } onClose={ close } title={ "Join Game" } centered>
 				<Stack>
 					<TextInput
 						name={ "code" }
@@ -35,7 +35,7 @@ export function JoinGame() {
 						onChange={ handleCodeChange }
 						placeholder={ "Enter the Game Code" }
 					/>
-					<Button color={ "primary" } fullWidth onClick={ joinGame } loading={ joinGameMutation.isLoading }>
+					<Button color={ "primary" } fullWidth onClick={ joinGame } loading={ joinGameMutation.isPending }>
 						Join Game
 					</Button>
 				</Stack>

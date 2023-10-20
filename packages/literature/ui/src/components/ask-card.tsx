@@ -88,7 +88,7 @@ export function AskCard() {
 							handleSelection={ handleCardSetSelection }
 							cardSetOptions={ askableCardSets }
 						/>
-						<Button onClick={ openSelectCardModal }>Select Card</Button>
+						<Button onClick={ openSelectCardModal } disabled={ !selectedCardSet }>Select Card</Button>
 					</Stack>
 				) }
 				{ paneState === "CARD" && (
@@ -100,7 +100,7 @@ export function AskCard() {
 						/>
 						<Group>
 							<Button onClick={ openModal }>Back</Button>
-							<Button onClick={ openSelectPlayerModal }>Select Player</Button>
+							<Button onClick={ openSelectPlayerModal } disabled={ !selectedCard }>Select Player</Button>
 						</Group>
 					</Stack>
 				) }
@@ -114,7 +114,7 @@ export function AskCard() {
 						/>
 						<Group>
 							<Button onClick={ openSelectCardModal }>Back</Button>
-							<Button onClick={ openConfirmModal }>Confirm</Button>
+							<Button onClick={ openConfirmModal } disabled={ !selectedPlayer }>Confirm</Button>
 						</Group>
 					</Stack>
 				) }

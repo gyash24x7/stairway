@@ -46,14 +46,14 @@ export function GameProvider( props: { children: ReactNode } ) {
 	};
 
 	const { user } = useAuth();
-	const { isLoading, error, data } = useGetGameQuery( gameId! );
+	const { isPending, error, data } = useGetGameQuery( gameId! );
 
 	if ( !!error ) {
 		console.log( error + user?.id! );
 		return <div>Some Error Happened!</div>;
 	}
 
-	if ( isLoading || !data ) {
+	if ( isPending || !data ) {
 		return <Loader/>;
 	}
 

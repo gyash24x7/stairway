@@ -8,7 +8,7 @@ import { JoinGame } from "./join-game";
 export function HomePage() {
 	const navigate = useNavigate();
 
-	const { isLoading, mutateAsync } = useCreateGameMutation( {
+	const { isPending, mutateAsync } = useCreateGameMutation( {
 		onSuccess: ( { id } ) => {
 			navigate( "/literature/" + id );
 		},
@@ -30,7 +30,7 @@ export function HomePage() {
 						<Title order={ 3 } className={ classnames.title }>Literature</Title>
 					</div>
 					<Group>
-						<Button color={ "primary" } onClick={ createGame } loading={ isLoading }>
+						<Button color={ "primary" } onClick={ createGame } loading={ isPending }>
 							Create Game
 						</Button>
 						<JoinGame/>

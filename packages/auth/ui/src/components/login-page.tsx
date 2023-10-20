@@ -22,7 +22,7 @@ export function LoginPage() {
 		}
 	} );
 
-	const { mutateAsync, isLoading, isError } = useLoginMutation( {
+	const { mutateAsync, isPending, isError } = useLoginMutation( {
 		onSuccess: () => {
 			refetchAuthInfo();
 			navigate( "/" );
@@ -59,7 +59,7 @@ export function LoginPage() {
 					{ ...getInputProps( "password" ) }
 				/>
 
-				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isLoading }>
+				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isPending }>
 					Login
 				</Button>
 			</form>

@@ -5,6 +5,7 @@ import { emailValidator, minLengthValidator, requiredValidator } from "../utils"
 import { useForm } from "@mantine/form";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
+import type { MouseEvent } from "react";
 
 export function SignUpPage() {
 	const navigate = useNavigate();
@@ -21,13 +22,13 @@ export function SignUpPage() {
 		}
 	} );
 
-	const { mutateAsync, data, isLoading, isError } = useSignUpMutation( {
+	const { mutateAsync, data, isPending, isError } = useSignUpMutation( {
 		onSuccess() {
 			navigate( "/auth/login" );
 		}
 	} );
 
-	const goToLogin = ( e: React.MouseEvent<HTMLAnchorElement> ) => {
+	const goToLogin = ( e: MouseEvent<HTMLAnchorElement> ) => {
 		e.preventDefault();
 		navigate( "/auth/login" );
 	};
@@ -66,7 +67,7 @@ export function SignUpPage() {
 					{ ...getInputProps( "password" ) }
 				/>
 
-				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isLoading }>
+				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isPending }>
 					Sign Up
 				</Button>
 			</form>

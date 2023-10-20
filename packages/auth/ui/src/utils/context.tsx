@@ -12,11 +12,11 @@ export interface IAuthContext {
 const AuthContext = createContext<IAuthContext>( null! );
 
 export function AuthProvider( props: { children: ReactNode } ) {
-	const { data: user, isLoading, refetch } = useMeQuery();
+	const { data: user, isPending, refetch } = useMeQuery();
 
 	const refetchAuthInfo = () => refetch();
 
-	if ( isLoading ) {
+	if ( isPending ) {
 		return <Loader/>;
 	}
 

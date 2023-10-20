@@ -10,7 +10,7 @@ export function Navbar() {
 	const { refetchAuthInfo } = useAuth();
 	const navigate = useNavigate();
 
-	const { mutateAsync, isLoading } = useLogoutMutation( {
+	const { mutateAsync, isPending } = useLogoutMutation( {
 		onSuccess: () => {
 			refetchAuthInfo();
 			navigate( "/auth/login" );
@@ -22,7 +22,7 @@ export function Navbar() {
 	return (
 		<Flex justify={ "space-between" } align={ "center" } className={ classnames.userInfo } p={ "md" }>
 			<UserCard/>
-			<ActionIcon onClick={ logout } size="lg" color={ "danger" } loading={ isLoading }>
+			<ActionIcon onClick={ logout } size="lg" color={ "danger" } loading={ isPending }>
 				<IconPower size={ "1.2rem" }/>
 			</ActionIcon>
 		</Flex>

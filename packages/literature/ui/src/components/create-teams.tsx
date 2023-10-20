@@ -28,7 +28,7 @@ export function CreateTeams() {
 		} );
 	};
 
-	const { mutateAsync, isLoading } = useCreateTeamsMutation( id, {
+	const { mutateAsync, isPending } = useCreateTeamsMutation( id, {
 		onSuccess: () => {
 			close();
 		},
@@ -69,7 +69,7 @@ export function CreateTeams() {
 						</Stack>
 					) ) }
 
-					<Button onClick={ createTeams } loading={ isLoading }>
+					<Button onClick={ createTeams } loading={ isPending }>
 						Create Teams
 					</Button>
 				</Stack>

@@ -15,11 +15,7 @@ export function LiveUpdatesProvider( { children, eventMap, room }: LiveUpdatesPr
 		} );
 
 		Object.keys( eventMap ).map( eventId => {
-			socket.on( eventId, ( data ) => {
-				console.log( "Got Event: " + eventId );
-				console.log( data );
-				eventMap[ eventId ]( data );
-			} );
+			socket.on( eventId, eventMap[ eventId ] );
 		} );
 
 		return () => {

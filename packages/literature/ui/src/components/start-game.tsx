@@ -5,7 +5,7 @@ import { useStartGameMutation } from "@literature/client";
 export function StartGame() {
 	const { id } = useCurrentGame();
 
-	const { mutateAsync, isLoading } = useStartGameMutation( id, {
+	const { mutateAsync, isPending } = useStartGameMutation( id, {
 		onError( error ) {
 			console.log( error );
 			alert( error.message );
@@ -14,5 +14,5 @@ export function StartGame() {
 
 	const startGame = () => mutateAsync();
 
-	return <Button fullWidth color={ "primary" } loading={ isLoading } onClick={ startGame }>Start Game</Button>;
+	return <Button fullWidth color={ "primary" } loading={ isPending } onClick={ startGame }>Start Game</Button>;
 }

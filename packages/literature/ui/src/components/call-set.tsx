@@ -54,7 +54,7 @@ export function CallSet() {
 	const [ modalTitle, setModalTitle ] = useState( "Select Card Set to Call" );
 	const [ paneState, setPaneState ] = useState( "SET" );
 
-	const { mutateAsync, isLoading } = useCallSetMutation( gameId, {
+	const { mutateAsync, isPending } = useCallSetMutation( gameId, {
 		onSuccess() {
 			closeModal();
 		},
@@ -115,7 +115,7 @@ export function CallSet() {
 							cardSet={ selectedCardSet }
 							cardSetOptions={ callableCardSets }
 						/>
-						<Button onClick={ openModalForPlayer( 0 ) }>
+						<Button onClick={ openModalForPlayer( 0 ) } disabled={ !selectedCardSet }>
 							Select Card Locations
 						</Button>
 					</Stack>
@@ -123,7 +123,7 @@ export function CallSet() {
 				{ teamMemberIds.map( ( memberId, index ) => {
 					if ( paneState === memberId ) {
 						return (
-							<Stack>
+							<Stack key={ memberId }>
 								<SelectCards
 									cardIds={ Object.keys( cardMap ).filter( id => cardMap[ id ] === memberId ) }
 									options={ cardOptions }
@@ -146,7 +146,13 @@ export function CallSet() {
 				{ paneState === "CONFIRM" && (
 					<Group>
 						<Button onClick={ openModalForPlayer( teamMemberIds.length - 1 ) }>Back</Button>
-						<Button onClick={ handleConfirm } loading={ isLoading }>Call Set</Button>
+						<Button
+							onClick={ handleConfirm }
+							loading={ isPending }
+							disabled={ Object.keys( cardMap ).length !== 6 }
+						>
+							Call Set
+						</Button>
 					</Group>
 				) }
 			</Modal>
