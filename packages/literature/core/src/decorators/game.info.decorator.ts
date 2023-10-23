@@ -1,11 +1,11 @@
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import type { Response } from "express";
 import { Constants } from "../constants";
-import type { AggregatedGameData } from "@literature/data";
+import type { GameData } from "@literature/types";
 
-export const activeGameDecoratorFn = ( _data: unknown, context: ExecutionContext ): AggregatedGameData => {
+export const activeGameDecoratorFn = ( _data: unknown, context: ExecutionContext ): GameData => {
 	const res = context.switchToHttp().getResponse<Response>();
-	return res.locals[ Constants.ACTIVE_GAME ];
+	return res.locals[ Constants.GAME_DATA ];
 };
 
 export const ActiveGame = createParamDecorator( activeGameDecoratorFn );

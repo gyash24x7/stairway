@@ -1,8 +1,0 @@
-{
-	"name": "literature-client",
-	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/literature/client/src",
-	"projectType": "library",
-	"targets": { },
-	"tags": [ ]
-}
