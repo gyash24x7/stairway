@@ -7,14 +7,15 @@ export class Constants {
 
 export class Paths {
 	public static readonly BASE = "auth";
-	public static readonly ME = "me";
 	public static readonly LOGIN = "login";
 	public static readonly LOGOUT = "logout";
 	public static readonly SIGNUP = "signup";
 	public static readonly VERIFY = "verify";
 }
 
-export class DbConstants {
-	public static readonly AUTH_DB = "auth";
-	public static readonly USERS_COLLECTION = "users";
+export class Messages {
+	public static readonly INVALID_CREDENTIALS = "Invalid Credentials!";
+	public static readonly USER_NOT_FOUND = "User Not Found!";
+	public static readonly USER_NOT_VERIFIED = "User Not Verified!";
+	public static readonly USER_ALREADY_EXISTS = "User Already Exists!";
 }

@@ -1,11 +1,12 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import type { VerifyUserInput } from "@auth/data";
+import type { VerifyUserInput } from "@auth/types";
 import { NotFoundException } from "@nestjs/common";
 import { LoggerFactory, PrismaService } from "@s2h/core";
+import { Messages } from "../constants";
 
 export class VerifyUserCommand implements ICommand {
-	constructor( public readonly data: VerifyUserInput ) {}
+	constructor( public readonly input: VerifyUserInput ) {}
 }
 
 @CommandHandler( VerifyUserCommand )
@@ -15,16 +16,28 @@ export class VerifyUserCommandHandler implements ICommandHandler<VerifyUserComma
 
 	constructor( private readonly prisma: PrismaService ) {}
 
-	async execute( { data: { id, salt } }: VerifyUserCommand ) {
+	async execute( { input }: VerifyUserCommand ) {
+		this.logger.debug( ">> executeVerifyUserCommand()" );
+
+		const user = await this.validate( { input } );
+		await this.prisma.user.update( { where: { id: user.id }, data: { verified: true } } );
+
+		this.logger.debug( "<< executeVerifyUserCommand()" );
+		return user.id;
+	}
+
+	private async validate( { input: { id, salt } }: VerifyUserCommand ) {
+		this.logger.debug( ">> validateVerifyUserCommand()" );
+
 		const user = await this.prisma.user.findFirst( { where: { id, salt } } );
 
 		if ( !user ) {
-			this.logger.error( "User Not Found! id: %s, hash: %s", id, salt );
-			throw new NotFoundException();
+			this.logger.error( "%s id: %s, hash: %s", Messages.USER_NOT_FOUND, id, salt );
+			throw new NotFoundException( Messages.USER_NOT_FOUND );
 		}
 
-		await this.prisma.user.update( { where: { id }, data: { verified: true } } );
-		return id;
+		this.logger.debug( "<< validateVerifyUserCommand()" );
+		return user;
 	}
 
 }

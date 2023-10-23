@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import type { PrismaService } from "@s2h/core";
 import { LoginCommand, LoginCommandHandler } from "../../src/commands";
-import type { LoginInput, User } from "@auth/data";
+import type { LoginInput, User } from "@auth/types";
 import type { HttpException } from "@nestjs/common";
 import bcrypt from "bcryptjs";
 import type { JwtService } from "@nestjs/jwt";

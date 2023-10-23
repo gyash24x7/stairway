@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { User, VerifyUserInput } from "@auth/data";
+import type { User, VerifyUserInput } from "@auth/types";
 import bcrypt from "bcryptjs";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import type { PrismaService } from "@s2h/core";
