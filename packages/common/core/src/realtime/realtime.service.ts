@@ -42,8 +42,15 @@ export class RealtimeService implements OnModuleDestroy {
 		this.namespaces[ namespace ] = ns;
 	}
 
-	publishDirectMessage( namespace: string, event: string, data: any ) {
-		this.namespaces[ namespace ].emit( event, data );
+	publishDirectMessage( namespace: string, gameId: string, playerId: string, event: string, data: any ) {
+		const eventKey = event.concat( "_" ).concat( playerId );
+		this.namespaces[ namespace ].to( gameId ).emit( eventKey, data );
+		this.logger.debug( "Published Direct Message to %s. Message: %o", eventKey, data );
+	}
+
+	publishRoomMessage( namespace: string, gameId: string, event: string, data: any ) {
+		this.namespaces[ namespace ].to( gameId ).emit( event, data );
+		this.logger.debug( "Published Room Message to %s. Message: %o", gameId, data );
 	}
 
 	onModuleDestroy() {

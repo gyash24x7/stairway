@@ -1,0 +1,39 @@
+{
+	"compileOnSave": false,
+	"extends": [ "@tsconfig/node18", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"target": "ESNext",
+		"resolveJsonModule": true,
+		"useDefineForClassFields": true,
+		"verbatimModuleSyntax": false,
+		"exactOptionalPropertyTypes": false,
+		"strictPropertyInitialization": false,
+		"noUncheckedIndexedAccess": false,
+		"importHelpers": true,
+		"declaration": false,
+		"isolatedModules": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"importsNotUsedAsValues": "error",
+		"ignoreDeprecations": "5.0",
+		"rootDir": ".",
+		"baseUrl": ".",
+		"types": [ "node" ],
+		"paths": {
+			"@auth/core": [ "packages/auth/core/src/index.ts" ],
+			"@auth/types": [ "packages/common/types/src/auth.ts" ],
+			"@auth/ui": [ "packages/auth/ui/src/index.ts" ],
+			"@literature/core": [ "packages/literature/core/src/index.ts" ],
+			"@literature/types": [ "packages/common/types/src/literature.ts" ],
+			"@literature/ui": [ "packages/literature/ui/src/index.ts" ],
+			"@s2h/cards": [ "packages/common/cards/src/index.ts" ],
+			"@s2h/client": [ "packages/common/client/src/index.ts" ],
+			"@s2h/core": [ "packages/common/core/src/index.ts" ],
+			"@s2h/ui": [ "packages/common/ui/src/index.ts" ]
+		},
+		"skipLibCheck": true
+	},
+	"exclude": [ "node_modules", "tmp" ]
+}
