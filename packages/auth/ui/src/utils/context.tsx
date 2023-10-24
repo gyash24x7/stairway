@@ -1,30 +1,22 @@
-import { createContext, ReactNode, useContext } from "react";
-import type { UserAuthInfo } from "@auth/data";
-import { useMeQuery } from "@auth/client";
+import { Fragment, ReactNode, useEffect } from "react";
 import { Loader } from "@mantine/core";
+import { initializeAuthStore } from "./store";
+import { ErrorPage, useAction } from "@s2h/ui";
 
-export interface IAuthContext {
-	user: UserAuthInfo | null | undefined;
-	isLoggedIn: boolean;
-	refetchAuthInfo: VoidFunction;
-}
+export function AuthStoreProvider( props: { children: ReactNode } ) {
+	const { execute, error, isLoading } = useAction( initializeAuthStore );
 
-const AuthContext = createContext<IAuthContext>( null! );
+	useEffect( () => {
+		execute( undefined ).then();
+	}, [] );
 
-export function AuthProvider( props: { children: ReactNode } ) {
-	const { data: user, isPending, refetch } = useMeQuery();
+	if ( error ) {
+		return <ErrorPage/>;
+	}
 
-	const refetchAuthInfo = () => refetch();
-
-	if ( isPending ) {
+	if ( isLoading ) {
 		return <Loader/>;
 	}
 
-	return (
-		<AuthContext.Provider value={ { user, isLoggedIn: !!user, refetchAuthInfo } }>
-			{ props.children }
-		</AuthContext.Provider>
-	);
+	return <Fragment>{ props.children }</Fragment>;
 }
-
-export const useAuth = () => useContext( AuthContext );

@@ -2,27 +2,25 @@ import { ActionIcon, Flex } from "@mantine/core";
 import { navBarClassnames as classnames } from "../styles";
 import { UserCard } from "./user-card";
 import { IconPower } from "@tabler/icons-react";
-import { useAuth } from "../utils";
+import { useAuthStore } from "../utils";
 import { useNavigate } from "react-router-dom";
-import { useLogoutMutation } from "@auth/client";
+import { useAction } from "@s2h/ui";
 
 export function Navbar() {
-	const { refetchAuthInfo } = useAuth();
+	const logout = useAuthStore( store => store.logout );
 	const navigate = useNavigate();
 
-	const { mutateAsync, isPending } = useLogoutMutation( {
-		onSuccess: () => {
-			refetchAuthInfo();
+	const { execute, isLoading } = useAction(
+		async () => {
+			await logout();
 			navigate( "/auth/login" );
 		}
-	} );
-
-	const logout = () => mutateAsync();
+	);
 
 	return (
 		<Flex justify={ "space-between" } align={ "center" } className={ classnames.userInfo } p={ "md" }>
 			<UserCard/>
-			<ActionIcon onClick={ logout } size="lg" color={ "danger" } loading={ isPending }>
+			<ActionIcon onClick={ execute } size="lg" color={ "danger" } loading={ isLoading }>
 				<IconPower size={ "1.2rem" }/>
 			</ActionIcon>
 		</Flex>

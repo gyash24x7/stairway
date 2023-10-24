@@ -1,13 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import { useSignUpMutation } from "@auth/client";
 import { Alert, Anchor, Button, PasswordInput, Text, TextInput, Title } from "@mantine/core";
-import { emailValidator, minLengthValidator, requiredValidator } from "../utils";
+import { emailValidator, minLengthValidator, requiredValidator, useAuthStore } from "../utils";
 import { useForm } from "@mantine/form";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
 import type { MouseEvent } from "react";
+import { useAction } from "@s2h/ui";
+import type { CreateUserInput } from "@auth/types";
 
 export function SignUpPage() {
+	const signUp = useAuthStore( store => store.signUp );
 	const navigate = useNavigate();
 	const { getInputProps, onSubmit } = useForm( {
 		initialValues: {
@@ -22,11 +24,12 @@ export function SignUpPage() {
 		}
 	} );
 
-	const { mutateAsync, data, isPending, isError } = useSignUpMutation( {
-		onSuccess() {
+	const { execute, isLoading, error, data } = useAction(
+		async ( data: CreateUserInput ) => {
+			await signUp( data );
 			navigate( "/auth/login" );
 		}
-	} );
+	);
 
 	const goToLogin = ( e: MouseEvent<HTMLAnchorElement> ) => {
 		e.preventDefault();
@@ -39,7 +42,7 @@ export function SignUpPage() {
 				SIGNUP
 			</Title>
 
-			<form noValidate onSubmit={ onSubmit( ( values ) => mutateAsync( values ) ) }>
+			<form noValidate onSubmit={ onSubmit( ( values ) => execute( values ) ) }>
 				<TextInput
 					label={ "Name" }
 					placeholder={ "Enter your Name" }
@@ -67,7 +70,7 @@ export function SignUpPage() {
 					{ ...getInputProps( "password" ) }
 				/>
 
-				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isPending }>
+				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isLoading }>
 					Sign Up
 				</Button>
 			</form>
@@ -79,7 +82,7 @@ export function SignUpPage() {
 				</Anchor>
 			</Text>
 			{ !!data && <Alert title={ "Woohoo!" } color={ "green" }>Verification Email Has Been Sent!</Alert> }
-			{ isError && <Alert title={ "Bummer!" } color={ "red" }>Something went wrong!</Alert> }
+			{ !!error && <Alert title={ "Bummer!" } color={ "red" }>Something went wrong!</Alert> }
 		</AuthLayout>
 	);
 }

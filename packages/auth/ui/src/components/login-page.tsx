@@ -1,15 +1,16 @@
-import { emailValidator, minLengthValidator, useAuth } from "../utils";
+import { emailValidator, minLengthValidator, useAuthStore } from "../utils";
 import { Alert, Anchor, Button, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
-import { useLoginMutation } from "@auth/client";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
 import type { MouseEvent } from "react";
+import { useAction } from "@s2h/ui";
+import type { LoginInput } from "@auth/types";
 
 export function LoginPage() {
-	const { refetchAuthInfo } = useAuth();
+	const login = useAuthStore( state => state.login );
 	const navigate = useNavigate();
 	const { getInputProps, onSubmit } = useForm( {
 		initialValues: {
@@ -22,12 +23,12 @@ export function LoginPage() {
 		}
 	} );
 
-	const { mutateAsync, isPending, isError } = useLoginMutation( {
-		onSuccess: () => {
-			refetchAuthInfo();
+	const { execute, isLoading, error } = useAction(
+		async ( data: LoginInput ) => {
+			await login( data );
 			navigate( "/" );
 		}
-	} );
+	);
 
 	const goToSignup = ( e: MouseEvent<HTMLAnchorElement> ) => {
 		e.preventDefault();
@@ -40,7 +41,7 @@ export function LoginPage() {
 				LOGIN
 			</Title>
 
-			<form noValidate onSubmit={ onSubmit( ( { email, password } ) => mutateAsync( { email, password } ) ) }>
+			<form noValidate onSubmit={ onSubmit( ( { email, password } ) => execute( { email, password } ) ) }>
 				<TextInput
 					label={ "Email" }
 					placeholder={ "Enter your Email" }
@@ -59,7 +60,7 @@ export function LoginPage() {
 					{ ...getInputProps( "password" ) }
 				/>
 
-				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isPending }>
+				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isLoading }>
 					Login
 				</Button>
 			</form>
@@ -70,7 +71,7 @@ export function LoginPage() {
 					<b>Register</b>
 				</Anchor>
 			</Text>
-			{ isError &&
+			{ !!error &&
 				<Alert icon={ <IconAlertCircle/> } title="Bummer!" color="red" mt={ "md" }>
 					Something went wrong!
 				</Alert>

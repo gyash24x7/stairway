@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 
-export const useAction = <R, I = undefined>( action: ( input: I ) => Promise<R> ) => {
+export const useAction = <R, I = any>( action: ( input: I ) => Promise<R> ) => {
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ error, setError ] = useState<string>();
 	const [ data, setData ] = useState<R>();
