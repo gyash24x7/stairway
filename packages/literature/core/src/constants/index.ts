@@ -1,7 +1,10 @@
 export class Constants {
-	public static readonly ACTIVE_GAME = "activeGame";
+	public static readonly GAME_DATA = "gameData";
 	public static readonly AUTH_INFO = "authInfo";
-	public static readonly STATUS_KEY = "requiredStatus";
+	public static readonly PLAYER_DATA = "playerData";
+	public static readonly CARD_MAPPINGS = "cardMappings";
+	public static readonly REQUIRES_KEY = "requires";
+	public static readonly LITERATURE = "literature";
 }
 
 export class Paths {
@@ -14,6 +17,20 @@ export class Paths {
 	public static readonly TRANSFER_CHANCE = ":gameId/transfer-chance";
 
 	public static readonly GET_GAME = ":gameId";
+	public static readonly GET_PLAYER = ":gameId/player";
+}
+
+export class GameEvents {
+	public static readonly PLAYER_JOINED = "PLAYER_JOINED";
+	public static readonly TEAMS_CREATED = "TEAMS_CREATED";
+	public static readonly MOVE_CREATED = "MOVE_CREATED";
+	public static readonly TURN_UPDATED = "TURN_UPDATED";
+	public static readonly SCORE_UPDATED = "SCORE_UPDATED";
+	public static readonly STATUS_UPDATED = "STATUS_UPDATED";
+	public static readonly CARD_COUNT_UPDATED = "CARD_COUNT_UPDATED";
+	// Player Specific Events
+	public static readonly HAND_UPDATED = "HAND_UPDATED";
+	public static readonly INFERENCES_UPDATED = "INFERENCES_UPDATED";
 }
 
 export class Messages {

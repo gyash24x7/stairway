@@ -1,13 +1,17 @@
-import type { AggregatedGameData, CardMapping, CardMappingData, Player, RawGameData, Team } from "@literature/data";
-import { GameStatus } from "@literature/data";
-import { getPlayingCardFromId, PlayingCard } from "@s2h/cards";
+import type {
+	CardInferences,
+	CardMapping,
+	CardMappingData,
+	GameData,
+	HandData,
+	Player,
+	RawGameData,
+	TeamWithMembers
+} from "@literature/types";
+import { getPlayingCardFromId, SORTED_DECK } from "@s2h/cards";
 
-export function checkIfGameOver( currentGame: AggregatedGameData ) {
-	return !Object.values( currentGame.hands ).some( hand => hand.length !== 0 );
-}
-
-export function rebuildHands( cardMappings: Record<string, string> ): Record<string, PlayingCard[]> {
-	const data: Record<string, PlayingCard[]> = {};
+export function buildHandData( cardMappings: Record<string, string> ): HandData {
+	const data: HandData = {};
 	Object.keys( cardMappings ).map( cardId => {
 		const playerId = cardMappings[ cardId ];
 		if ( !data[ playerId ] ) {
@@ -15,66 +19,53 @@ export function rebuildHands( cardMappings: Record<string, string> ): Record<str
 		}
 		data[ playerId ].push( getPlayingCardFromId( cardId ) );
 	} );
-
 	return data;
 }
 
-export function buildCardMappingsAndHandMap( cardMappings: CardMapping[] ): CardMappingData {
-	const cardMappingMap: Record<string, string> = {};
-	const handMap: Record<string, PlayingCard[]> = {};
-
+export function buildCardMappingData( cardMappings: CardMapping[] ): CardMappingData {
+	const cardMappingData: CardMappingData = {};
 	cardMappings.forEach( cardMapping => {
-		cardMappingMap[ cardMapping.cardId ] = cardMapping.playerId;
-
-		if ( !handMap[ cardMapping.playerId ] ) {
-			handMap[ cardMapping.playerId ] = [];
-		}
-
-		handMap[ cardMapping.playerId ].push( getPlayingCardFromId( cardMapping.cardId ) );
+		cardMappingData[ cardMapping.cardId ] = cardMapping.playerId;
 	} );
-
-	return { cardMappingMap, handMap };
+	return cardMappingData;
 }
 
-export function buildAggregatedGameData( data: RawGameData ): AggregatedGameData {
+export function buildGameData( data: RawGameData ): GameData {
+	const teamMap: Record<string, TeamWithMembers> = {};
+	data.teams?.forEach( team => {
+		teamMap[ team.id ] = { ...team, members: [] };
+	} );
+
 	const playerMap: Record<string, Player> = {};
 	data.players.forEach( player => {
 		playerMap[ player.id ] = player;
-	} );
-
-	const teamMap: Record<string, Team> = {};
-	data.teams?.forEach( team => {
-		teamMap[ team.id ] = team;
-	} );
-
-	const cardMappingMap: Record<string, string> = {};
-	const cardHandMap: Record<string, PlayingCard[]> = {};
-	data.cardMappings?.forEach( cardMapping => {
-		cardMappingMap[ cardMapping.cardId ] = cardMapping.playerId;
-
-		if ( !cardHandMap[ cardMapping.playerId ] ) {
-			cardHandMap[ cardMapping.playerId ] = [];
+		if ( !!player.teamId ) {
+			teamMap[ player.teamId ].members.push( player.id );
 		}
-
-		cardHandMap[ cardMapping.playerId ].push( getPlayingCardFromId( cardMapping.cardId ) );
 	} );
 
-	return {
-		...data,
-		players: playerMap,
-		teams: teamMap,
-		cardMappings: cardMappingMap,
-		playerList: data.players,
-		teamList: data.teams ?? [],
-		hands: cardHandMap,
-		moves: data.moves ?? []
-	};
+	const cardCounts: Record<string, number> = {};
+	data.cardMappings?.forEach( cardMapping => {
+		if ( !cardCounts[ cardMapping.playerId ] ) {
+			cardCounts[ cardMapping.playerId ] = 0;
+		}
+		cardCounts[ cardMapping.playerId ]++;
+	} );
+
+	return { ...data, players: playerMap, teams: teamMap, cardCounts, moves: data.moves ?? [] };
 }
 
-export function areTeamsCreated( status: GameStatus ) {
-	return status === GameStatus.TEAMS_CREATED || status === GameStatus.IN_PROGRESS || status === GameStatus.COMPLETED;
-}
+export function buildDefaultCardInferences( playerIds: string[], playerId: string, cards: string[] ) {
+	const cardInferences: CardInferences = {};
+	const defaultProbablePlayers = playerIds.filter( player => player !== playerId );
 
-export function isGameStarted( status: GameStatus ) {
-	return status === GameStatus.IN_PROGRESS || status === GameStatus.COMPLETED;
+	SORTED_DECK.forEach( card => {
+		if ( !cards.includes( card.id ) ) {
+			cardInferences[ card.id ] = [ playerId ];
+		} else {
+			cardInferences[ card.id ] = defaultProbablePlayers;
+		}
+	} );
+
+	return cardInferences;
 }

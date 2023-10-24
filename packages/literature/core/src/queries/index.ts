@@ -1,7 +1,13 @@
-import { PlayerSpecificGameQueryHandler } from "./player.specific.game.query";
-import { AggregatedGameQueryHandler } from "./aggregated.game.query";
+import { GameDataQueryHandler } from "./game.data.query";
+import { PlayerDataQueryHandler } from "./player.data.query";
+import { CardMappingsQueryHandler } from "./card.mappings.query";
 
-export * from "./aggregated.game.query";
-export * from "./player.specific.game.query";
+export * from "./game.data.query";
+export * from "./player.data.query";
+export * from "./card.mappings.query";
 
-export const queryHandlers = [ PlayerSpecificGameQueryHandler, AggregatedGameQueryHandler ];
+export const queryHandlers = [
+	GameDataQueryHandler,
+	PlayerDataQueryHandler,
+	CardMappingsQueryHandler
+];

@@ -5,13 +5,13 @@ import { Constants } from "../constants";
 import { QueryBus } from "@nestjs/cqrs";
 import { CardMappingsQuery, GameDataQuery, PlayerDataQuery } from "../queries";
 import type { GameData } from "@literature/types";
-import type { Reflector } from "@nestjs/core";
+import { Reflector } from "@nestjs/core";
 import type { UserAuthInfo } from "@auth/types";
 import type { RequiresGameData } from "../decorators";
 
 @Injectable()
-export class RequireGameGuard implements CanActivate {
-	private readonly logger = LoggerFactory.getLogger( RequireGameGuard );
+export class GameGuard implements CanActivate {
+	private readonly logger = LoggerFactory.getLogger( GameGuard );
 
 	constructor(
 		private readonly queryBus: QueryBus,

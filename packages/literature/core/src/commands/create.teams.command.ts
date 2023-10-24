@@ -1,23 +1,20 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import type { AggregatedGameData, CreateTeamsInput } from "@literature/data";
-import { GameStatus } from "@literature/data";
+import type { CreateTeamsInput, GameData, TeamData, TeamWithMembers } from "@literature/types";
 import { BadRequestException } from "@nestjs/common";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { GameUpdateEvent } from "../events";
-import type { UserAuthInfo } from "@auth/data";
 import { Messages } from "../constants";
+import { TeamsCreatedEvent } from "../events";
 
 export class CreateTeamsCommand implements ICommand {
 	constructor(
 		public readonly input: CreateTeamsInput,
-		public readonly currentGame: AggregatedGameData,
-		public readonly authInfo: UserAuthInfo
+		public readonly gameData: GameData
 	) {}
 }
 
 @CommandHandler( CreateTeamsCommand )
-export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCommand, string> {
+export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCommand, TeamData> {
 
 	private readonly logger = LoggerFactory.getLogger( CreateTeamsCommandHandler );
 
@@ -26,27 +23,20 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 		private readonly eventBus: EventBus
 	) {}
 
-	async execute( { input, currentGame, authInfo }: CreateTeamsCommand ) {
-		this.logger.debug( ">> execute()" );
-		if ( currentGame.status !== GameStatus.PLAYERS_READY ) {
-			this.logger.error( "%s GameId: %s", Messages.GAME_NOT_IN_REQUIRED_STATUS, currentGame.id );
-			throw new BadRequestException( Messages.GAME_NOT_IN_REQUIRED_STATUS );
-		}
+	async execute( { input, gameData }: CreateTeamsCommand ) {
+		this.logger.debug( ">> executeCreateTeamsCommand()" );
 
-		if ( currentGame.playerList.length !== currentGame.playerCount ) {
-			this.logger.error( "%s GameId: %s", Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS, currentGame.id );
-			throw new BadRequestException( Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS );
-		}
+		this.validate( { input, gameData } );
 
 		const [ teamA, teamB ] = await Promise.all(
 			Object.keys( input.data ).map( teamName => {
 				return this.prisma.literature.team.create( {
 					data: {
 						name: teamName,
-						gameId: currentGame.id,
+						gameId: gameData.id,
 						members: {
 							connect: input.data[ teamName ].map( ( memberId ) => {
-								return { id_gameId: { id: memberId, gameId: currentGame.id } };
+								return { id_gameId: { id: memberId, gameId: gameData.id } };
 							} )
 						}
 					}
@@ -54,27 +44,26 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 			} )
 		);
 
-		currentGame.teamList = [ teamA, teamB ];
-		currentGame.teams = {
-			[ teamA.id ]: teamA,
-			[ teamB.id ]: teamB
+		const teamMap: Record<string, TeamWithMembers> = {
+			[ teamA.id ]: { ...teamA, members: input.data[ teamA.name ] },
+			[ teamB.id ]: { ...teamB, members: input.data[ teamB.name ] }
 		};
 
-		currentGame.teamList.map( team => {
-			input.data[ team.name ].map( ( memberId ) => {
-				currentGame.players[ memberId ].teamId = team.id;
-			} );
-		} );
+		this.eventBus.publish( new TeamsCreatedEvent( gameData.id, teamMap ) );
+		this.logger.debug( "Published TeamsCreatedEvent!" );
 
-		await this.prisma.literature.game.update( {
-			where: { id: currentGame.id },
-			data: { status: GameStatus.TEAMS_CREATED }
-		} );
+		this.logger.debug( "<< executeCreateTeamsCommand()" );
+		return teamMap;
+	}
 
-		currentGame.status = GameStatus.TEAMS_CREATED;
+	private validate( { gameData }: CreateTeamsCommand ) {
+		this.logger.debug( ">> validateCreateTeamsCommand()" );
 
-		this.eventBus.publish( new GameUpdateEvent( currentGame, authInfo ) );
+		if ( Object.keys( gameData.players ).length !== gameData.playerCount ) {
+			this.logger.error( "%s GameId: %s", Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS, gameData.id );
+			throw new BadRequestException( Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS );
+		}
 
-		return currentGame.id;
+		this.logger.debug( "<< validateCreateTeamsCommand()" );
 	}
 }

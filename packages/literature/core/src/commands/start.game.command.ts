@@ -1,24 +1,17 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import type { AggregatedGameData } from "@literature/data";
-import { GameStatus } from "@literature/data";
-import { BadRequestException } from "@nestjs/common";
+import type { CardMapping, GameData } from "@literature/types";
 import { CardRank, removeCardsOfRank, shuffle, SORTED_DECK } from "@s2h/cards";
-import type { UserAuthInfo } from "@auth/data";
-import { GameUpdateEvent } from "../events";
-import { buildCardMappingsAndHandMap } from "../utils";
-import { Messages } from "../constants";
+import { GameStartedEvent } from "../events";
+import { buildCardMappingData } from "../utils";
 
 export class StartGameCommand implements ICommand {
-	constructor(
-		public readonly currentGame: AggregatedGameData,
-		public readonly authInfo: UserAuthInfo
-	) {}
+	constructor( public readonly gameData: GameData ) {}
 }
 
 @CommandHandler( StartGameCommand )
-export class StartGameCommandHandler implements ICommandHandler<StartGameCommand, string> {
+export class StartGameCommandHandler implements ICommandHandler<StartGameCommand, CardMapping[]> {
 
 	private readonly logger = LoggerFactory.getLogger( StartGameCommandHandler );
 
@@ -27,47 +20,30 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 		private readonly eventBus: EventBus
 	) {}
 
-	async execute( { currentGame, authInfo }: StartGameCommand ) {
-		this.logger.debug( ">> execute()" );
-		if ( currentGame!.status !== GameStatus.TEAMS_CREATED ) {
-			this.logger.debug( "%s GameId: %s", Messages.TEAMS_NOT_CREATED, currentGame.id );
-			throw new BadRequestException( Messages.TEAMS_NOT_CREATED );
-		}
+	async execute( { gameData }: StartGameCommand ) {
+		this.logger.debug( ">> executeStartGameCommand()" );
 
 		let deck = shuffle( SORTED_DECK );
 		deck = removeCardsOfRank( deck, CardRank.SEVEN );
+		const playerIds = Object.keys( gameData.players );
 
 		const cardMappings = await Promise.all(
 			deck.map( ( card, index ) => {
 				return this.prisma.literature.cardMapping.create( {
 					data: {
 						cardId: card.id,
-						gameId: currentGame.id,
-						playerId: currentGame.playerList[ index % currentGame.playerCount ].id
+						gameId: gameData.id,
+						playerId: playerIds[ index % gameData.playerCount ]
 					}
 				} );
 			} )
 		);
 
-		const { cardMappingMap, handMap } = buildCardMappingsAndHandMap( cardMappings );
+		const cardMappingData = buildCardMappingData( cardMappings );
+		this.eventBus.publish( new GameStartedEvent( gameData, cardMappingData ) );
+		this.logger.debug( "Published GameStartedEvent!" );
 
-		const [ playerId ] = shuffle( currentGame.playerList.map( player => player.id ) );
-
-		await this.prisma.literature.game.update( {
-			where: { id: currentGame.id },
-			data: {
-				status: GameStatus.IN_PROGRESS,
-				currentTurn: playerId
-			}
-		} );
-
-		currentGame.status = GameStatus.IN_PROGRESS;
-		currentGame.cardMappings = cardMappingMap;
-		currentGame.currentTurn = playerId;
-		currentGame.hands = handMap;
-
-		this.eventBus.publish( new GameUpdateEvent( currentGame, authInfo ) );
-
-		return currentGame.id;
+		this.logger.debug( "<< executeStartGameCommand()" );
+		return cardMappings;
 	}
 }
