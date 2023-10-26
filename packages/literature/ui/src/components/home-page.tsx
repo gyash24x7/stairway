@@ -1,24 +1,18 @@
 import { Box, Button, Group, Paper, Text, Title } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import { homePageClassnames as classnames } from "../styles";
-import { useCreateGameMutation } from "@literature/client";
 import { Navbar } from "@auth/ui";
 import { JoinGame } from "./join-game";
+import { useAction } from "@s2h/ui";
+import { createGame } from "../utils";
 
 export function HomePage() {
 	const navigate = useNavigate();
+	const { isLoading, execute } = useAction( createGame );
 
-	const { isPending, mutateAsync } = useCreateGameMutation( {
-		onSuccess: ( { id } ) => {
-			navigate( "/literature/" + id );
-		},
-		onError( error: any ) {
-			console.log( error );
-			alert( error.message );
-		}
-	} );
-
-	const createGame = () => mutateAsync( { playerCount: 2 } );
+	const handleSubmit = () => execute( { playerCount: 2 } )
+		.then( ( { id } ) => navigate( "/literature/" + id ) )
+		.catch( ( error: Error ) => alert( error.message ) );
 
 	return (
 		<Box p={ "xl" }>
@@ -30,7 +24,7 @@ export function HomePage() {
 						<Title order={ 3 } className={ classnames.title }>Literature</Title>
 					</div>
 					<Group>
-						<Button color={ "primary" } onClick={ createGame } loading={ isPending }>
+						<Button color={ "primary" } onClick={ handleSubmit } loading={ isLoading }>
 							Create Game
 						</Button>
 						<JoinGame/>

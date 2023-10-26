@@ -1,16 +1,16 @@
 import { Box, Divider, Flex, Stack, Title } from "@mantine/core";
-
-import { useCurrentGame } from "../utils";
 import { PlayerLobby } from "./player-lobby";
+import { useGameStore } from "../utils";
 
 export interface DisplayTeamsProps {
 	displayCardCount?: boolean;
 }
 
 export function DisplayTeams( { displayCardCount }: DisplayTeamsProps ) {
-	const { myTeam, oppositeTeam, players } = useCurrentGame();
+	const teams = useGameStore( state => state.gameData!.teams );
+	const players = useGameStore( state => state.gameData!.players );
 
-	if ( !myTeam || !oppositeTeam ) {
+	if ( Object.keys( teams ).length !== 2 ) {
 		return (
 			<Stack>
 				<Title>Team Not Created Yet!</Title>
@@ -20,28 +20,19 @@ export function DisplayTeams( { displayCardCount }: DisplayTeamsProps ) {
 
 	return (
 		<Stack>
-			<Box>
-				<Flex justify={ "space-between" } gap={ "16px" }>
-					<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>Team { myTeam.name }</Title>
-					<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>{ myTeam.score }</Title>
-				</Flex>
-				<Divider my={ "sm" }/>
-				<PlayerLobby
-					playerList={ myTeam.members.map( id => players[ id ] ) }
-					displayCardCount={ displayCardCount }
-				/>
-			</Box>
-			<Box>
-				<Flex justify={ "space-between" } gap={ "12px" }>
-					<Title order={ 4 } fz={ "24px" } pr={ 8 }>Team { oppositeTeam.name }</Title>
-					<Title order={ 4 } fz={ "24px" } pr={ 8 }>{ oppositeTeam.score }</Title>
-				</Flex>
-				<Divider my={ "sm" }/>
-				<PlayerLobby
-					playerList={ oppositeTeam.members.map( id => players[ id ] ) }
-					displayCardCount={ displayCardCount }
-				/>
-			</Box>
+			{ Object.values( teams ).map( team => (
+				<Box key={ team.id }>
+					<Flex justify={ "space-between" } gap={ "16px" }>
+						<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>Team { team.name }</Title>
+						<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>{ team.score }</Title>
+					</Flex>
+					<Divider my={ "sm" }/>
+					<PlayerLobby
+						playerList={ team.members.map( id => players[ id ] ) }
+						displayCardCount={ displayCardCount }
+					/>
+				</Box>
+			) ) }
 		</Stack>
 	);
 }

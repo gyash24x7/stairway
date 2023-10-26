@@ -1,4 +1,4 @@
-import { Avatar, Box, Flex, Group, Loader, Stack, Text, Title } from "@mantine/core";
+import { Avatar, Flex, Stack, Title } from "@mantine/core";
 import { Fragment } from "react";
 import {
 	CreateTeams,
@@ -9,32 +9,18 @@ import {
 	PlayerLobby,
 	StartGame
 } from "../components";
-import { useCurrentGame, useCurrentGameHandData, useCurrentPlayer } from "../utils";
-import { useAuth } from "@auth/ui";
 import { gamePageClassnames as classnames } from "../styles";
-import { DisplayHand } from "@s2h/ui";
-
-interface BannerProps {
-	isLoading?: boolean;
-	message: string;
-}
-
-export function Banner( { message, isLoading }: BannerProps ) {
-	return (
-		<Box p={ 16 } w={ "100%" }>
-			<Group>
-				{ isLoading && <Loader size={ "sm" }/> }
-				<Text>{ message }</Text>
-			</Group>
-		</Box>
-	);
-}
+import { Banner, DisplayHand } from "@s2h/ui";
+import { useGameStore } from "../utils";
 
 export function GamePage() {
-	const { user } = useAuth();
-	const { status, currentTurn, players } = useCurrentGame();
-	const loggedInPlayer = useCurrentPlayer();
-	const { hand } = useCurrentGameHandData();
+	const status = useGameStore( state => state.gameData!.status );
+	const players = useGameStore( state => state.gameData!.players );
+	const currentTurn = useGameStore( state => state.gameData!.currentTurn );
+	const playerId = useGameStore( state => state.playerData!.id );
+	const playerAvatar = useGameStore( state => state.playerData!.avatar );
+	const playerName = useGameStore( state => state.playerData!.name );
+	const hand = useGameStore( state => state.playerData!.hand );
 
 	const renderBasedOnStatus = () => {
 		switch ( status ) {
@@ -49,7 +35,7 @@ export function GamePage() {
 				return (
 					<Fragment>
 						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
-						{ loggedInPlayer?.id !== currentTurn
+						{ playerId !== currentTurn
 							? <Banner message={ `Waiting For Teams to get Created` } isLoading/>
 							: <CreateTeams/>
 						}
@@ -59,7 +45,7 @@ export function GamePage() {
 				return (
 					<Fragment>
 						<DisplayTeams/>
-						{ loggedInPlayer?.id !== currentTurn
+						{ playerId !== currentTurn
 							? <Banner message={ `Waiting for the game to Start` } isLoading/>
 							: <StartGame/>
 						}
@@ -69,6 +55,7 @@ export function GamePage() {
 			case "COMPLETED":
 				return <DisplayTeams displayCardCount/>;
 		}
+		return null;
 	};
 
 	return (
@@ -77,8 +64,8 @@ export function GamePage() {
 				<Flex justify={ "space-between" } align={ "center" }>
 					<img src={ "logo.png" } width={ 120 } height={ 120 } alt={ "literature" }/>
 					<Flex gap={ "xs" } align={ "center" } justify={ "center" } direction={ "column" }>
-						<Avatar size={ "lg" } src={ user?.avatar }/>
-						<Title order={ 4 }>{ user?.name }</Title>
+						<Avatar size={ "lg" } src={ playerAvatar }/>
+						<Title order={ 4 }>{ playerName }</Title>
 					</Flex>
 				</Flex>
 				<GameDescription/>

@@ -1,9 +1,13 @@
-import { useCurrentGame } from "../utils";
 import { Stack, Title } from "@mantine/core";
 import { IconCircleCheck } from "@tabler/icons-react";
+import { useGameStore } from "../utils";
 
 export function GameCompleted() {
-	const { myTeam, oppositeTeam } = useCurrentGame();
+	const teams = useGameStore( state => state.gameData!.teams );
+	const teamId = useGameStore( state => state.playerData!.teamId );
+	const oppositeTeamId = useGameStore( state => state.playerData!.oppositeTeamId );
+	const myTeam = teams[ teamId! ];
+	const oppositeTeam = teams[ oppositeTeamId! ];
 
 	return (
 		<Stack gap={ "xxl" } justify={ "center" } align={ "center" } w={ "100%" } h={ "100%" }>

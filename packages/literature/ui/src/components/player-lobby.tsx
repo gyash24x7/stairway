@@ -1,6 +1,6 @@
-import { useCurrentGameCardCounts } from "../utils";
+import { useGameStore } from "../utils";
 import { Avatar, Box, Flex, Text, Title } from "@mantine/core";
-import type { Player } from "@literature/data";
+import type { Player } from "@literature/types";
 
 export interface PlayerLobbyProps {
 	playerList: Player[];
@@ -9,7 +9,7 @@ export interface PlayerLobbyProps {
 }
 
 export function PlayerLobby( { playerList, displayHeading, displayCardCount }: PlayerLobbyProps ) {
-	const cardCounts = useCurrentGameCardCounts();
+	const cardCounts = useGameStore( state => state.gameData!.cardCounts );
 	return (
 		<Box my={ 8 } w={ "100%" }>
 			{ !!displayHeading && <Title order={ 4 } fz={ "24px" } pb={ 8 }>Players Joined</Title> }

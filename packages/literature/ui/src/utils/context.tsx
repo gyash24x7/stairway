@@ -1,67 +1,59 @@
-import type { PlayerSpecificGameData } from "@literature/data";
-import { createContext, ReactNode, useContext } from "react";
-import { useAuth } from "@auth/ui";
-// @ts-ignore
-import { io } from "socket.io-client";
+import { ReactNode, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useGetGameQuery } from "@literature/client";
-import { getCardSetsInHand, getCardsOfSet } from "@s2h/cards";
 import { Loader } from "@mantine/core";
-import { LiveUpdatesProvider } from "@s2h/ui";
-import { useQueryClient } from "@tanstack/react-query";
+import { LiveUpdatesProvider, useAction } from "@s2h/ui";
+import { initializeGameStore, useGameStore } from "./store";
 
-const litGameContext = createContext<PlayerSpecificGameData>( null! );
+function GameLiveUpdatesProvider( props: { children: ReactNode, gameId: string } ) {
+	const {
+		handlePlayerJoinedEvent,
+		handleTeamsCreatedEvent,
+		handleMoveCreatedEvent,
+		handleTurnUpdatedEvent,
+		handleScoreUpdatedEvent,
+		handleStatusUpdatedEvent,
+		handleHandUpdatedEvent,
+		handleInferencesUpdatedEvent,
+		handleCardCountUpdatedEvent
+	} = useGameStore( state => state.eventHandlers );
 
-export const useCurrentGame = () => useContext( litGameContext );
-
-export const useCurrentPlayer = () => {
-	const { user } = useAuth();
-	const { players } = useContext( litGameContext );
-	return players[ user?.id! ];
-};
-
-export const useCurrentGameHandData = () => {
-	const { hand } = useContext( litGameContext );
-	const cardSetsInHand = getCardSetsInHand( hand );
-	const askableCardSets = cardSetsInHand.filter( cardSet => getCardsOfSet( hand, cardSet ).length !== 6 ) ?? [];
-	const callableCardSets = cardSetsInHand;
-	return { hand, askableCardSets, callableCardSets };
-};
-
-export const useCurrentGameMoves = () => {
-	const ctx = useContext( litGameContext );
-	return ctx.moves;
-};
-
-export const useCurrentGameCardCounts = () => {
-	const ctx = useContext( litGameContext );
-	return ctx.cardCounts;
-};
-
-export function GameProvider( props: { children: ReactNode } ) {
-	const { gameId } = useParams();
-	const queryClient = useQueryClient();
-	const setGameData = ( data: PlayerSpecificGameData ) => {
-		queryClient.setQueryData( [ "literature", gameId! ], data );
+	const gameEvents = {
+		PLAYER_JOINED: handlePlayerJoinedEvent,
+		TEAMS_CREATED: handleTeamsCreatedEvent,
+		MOVE_CREATED: handleMoveCreatedEvent,
+		TURN_UPDATED: handleTurnUpdatedEvent,
+		SCORE_UPDATED: handleScoreUpdatedEvent,
+		STATUS_UPDATED: handleStatusUpdatedEvent,
+		CARD_COUNT_UPDATED: handleCardCountUpdatedEvent
 	};
 
-	const { user } = useAuth();
-	const { isPending, error, data } = useGetGameQuery( gameId! );
+	const playerEvents = {
+		HAND_UPDATED: handleHandUpdatedEvent,
+		INFERENCES_UPDATED: handleInferencesUpdatedEvent
+	};
+
+	return (
+		<LiveUpdatesProvider gameEvents={ gameEvents } playerEvents={ playerEvents } room={ props.gameId }>
+			{ props.children }
+		</LiveUpdatesProvider>
+	);
+}
+
+export function GameStoreProvider( props: { children: ReactNode } ) {
+	const { gameId } = useParams();
+	const { isLoading, error, data, execute } = useAction( initializeGameStore );
+
+	useEffect( () => {
+		execute( gameId! ).then();
+	}, [] );
 
 	if ( !!error ) {
-		console.log( error + user?.id! );
 		return <div>Some Error Happened!</div>;
 	}
 
-	if ( isPending || !data ) {
+	if ( isLoading || !data ) {
 		return <Loader/>;
 	}
 
-	return (
-		<litGameContext.Provider value={ data }>
-			<LiveUpdatesProvider eventMap={ { [ data.id + user?.id! ]: setGameData } } room={ data.id }>
-				{ props.children }
-			</LiveUpdatesProvider>
-		</litGameContext.Provider>
-	);
+	return <GameLiveUpdatesProvider gameId={ gameId! }>{ props.children }</GameLiveUpdatesProvider>;
 }

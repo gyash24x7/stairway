@@ -1,11 +1,11 @@
-import { useCurrentGame } from "../utils";
 import { gameDescriptionClassnames as classnames } from "../styles";
 import { useClipboard } from "@mantine/hooks";
 import { IconCopy } from "@tabler/icons-react";
 import { Box, Flex, Text, Title } from "@mantine/core";
+import { useGameStore } from "../utils";
 
 export function GameDescription() {
-	const { code } = useCurrentGame();
+	const code = useGameStore( state => state.gameData!.code );
 	const clipboard = useClipboard();
 
 	const copyCode = () => clipboard.copy( code );

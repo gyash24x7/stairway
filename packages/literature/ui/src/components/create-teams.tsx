@@ -1,14 +1,17 @@
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { ChangeEvent, Fragment, useState } from "react";
-import { useCurrentGame } from "../utils";
 import { PlayerCard } from "./player-card";
-import { useCreateTeamsMutation } from "@literature/client";
 import { chunk, shuffle } from "@s2h/cards";
 import { useDisclosure } from "@mantine/hooks";
+import { useAction } from "@s2h/ui";
+import { createTeams, useGameStore } from "../utils";
 
 
 export function CreateTeams() {
-	const { id, players, playerCount } = useCurrentGame();
+	const gameId = useGameStore( state => state.gameData!.id );
+	const players = useGameStore( state => state.gameData!.players );
+	const playerCount = useGameStore( state => state.gameData!.playerCount );
+
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ opened, { open, close } ] = useDisclosure();
@@ -28,17 +31,9 @@ export function CreateTeams() {
 		} );
 	};
 
-	const { mutateAsync, isPending } = useCreateTeamsMutation( id, {
-		onSuccess: () => {
-			close();
-		},
-		onError( error: Error ) {
-			console.log( error );
-			alert( error.message );
-		}
-	} );
+	const { execute, isLoading } = useAction( createTeams );
 
-	const createTeams = () => mutateAsync( { data: teamMemberData } );
+	const handleSubmit = () => execute( { data: teamMemberData, gameId } );
 
 	return (
 		<Fragment>
@@ -69,7 +64,7 @@ export function CreateTeams() {
 						</Stack>
 					) ) }
 
-					<Button onClick={ createTeams } loading={ isPending }>
+					<Button onClick={ handleSubmit } loading={ isLoading }>
 						Create Teams
 					</Button>
 				</Stack>

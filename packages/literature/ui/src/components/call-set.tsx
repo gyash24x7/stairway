@@ -1,11 +1,11 @@
 import { CardSet, cardSetMap, getPlayingCardFromId } from "@s2h/cards";
 import { Button, Combobox, Flex, Group, Modal, Stack, useCombobox } from "@mantine/core";
 import { Fragment, useState } from "react";
-import { useCurrentGame, useCurrentGameCardCounts, useCurrentGameHandData, useCurrentPlayer } from "../utils";
-import { useCallSetMutation } from "@literature/client";
-import { DisplayCard } from "@s2h/ui";
+import { DisplayCard, useAction } from "@s2h/ui";
 import { SelectCardSet } from "./select-card-set";
 import { useDisclosure } from "@mantine/hooks";
+import { callSet, useGameStore } from "../utils";
+import { useAuthStore } from "@auth/ui";
 
 interface SelectCardsProps {
 	cardIds: string[];
@@ -37,10 +37,14 @@ function SelectCards( { handleSelection, cardIds, options }: SelectCardsProps ) 
 }
 
 export function CallSet() {
-	const { id: gameId, players, myTeam } = useCurrentGame();
-	const loggedInPlayer = useCurrentPlayer();
-	const { callableCardSets } = useCurrentGameHandData();
-	const cardCounts = useCurrentGameCardCounts();
+	const authInfo = useAuthStore( state => state.authInfo );
+	const players = useGameStore( state => state.gameData!.players );
+	const loggedInPlayer = players[ authInfo!.id ];
+
+	const gameId = useGameStore( state => state.gameData!.id );
+	const callableCardSets = useGameStore( state => state.playerData!.cardSets );
+	const cardCounts = useGameStore( state => state.gameData!.cardCounts );
+	const myTeam = useGameStore( state => state.gameData!.teams[ loggedInPlayer.teamId! ] );
 
 	const teamMemberIds = [
 		loggedInPlayer.id,
@@ -50,19 +54,12 @@ export function CallSet() {
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ cardOptions, setCardOptions ] = useState<string[]>( [] );
 	const [ cardMap, setCardMap ] = useState<Record<string, string>>( {} );
+
 	const [ opened, { open, close } ] = useDisclosure();
 	const [ modalTitle, setModalTitle ] = useState( "Select Card Set to Call" );
 	const [ paneState, setPaneState ] = useState( "SET" );
 
-	const { mutateAsync, isPending } = useCallSetMutation( gameId, {
-		onSuccess() {
-			closeModal();
-		},
-		onError( error ) {
-			console.log( error );
-			alert( error.message );
-		}
-	} );
+	const { execute, isLoading } = useAction( callSet );
 
 	const handleCardSetSelect = ( value: string ) => {
 		const cardSet: CardSet = value as CardSet;
@@ -76,9 +73,9 @@ export function CallSet() {
 		} );
 	};
 
-	const handleConfirm = async () => {
-		await mutateAsync( { data: cardMap } );
-	};
+	const handleConfirm = () => execute( { data: cardMap, gameId } )
+		.catch( e => alert( e.message ) )
+		.then( closeModal );
 
 	const openModalForPlayer = ( index: number ) => async () => {
 		const playerId = teamMemberIds[ index ];
@@ -148,7 +145,7 @@ export function CallSet() {
 						<Button onClick={ openModalForPlayer( teamMemberIds.length - 1 ) }>Back</Button>
 						<Button
 							onClick={ handleConfirm }
-							loading={ isPending }
+							loading={ isLoading }
 							disabled={ Object.keys( cardMap ).length !== 6 }
 						>
 							Call Set

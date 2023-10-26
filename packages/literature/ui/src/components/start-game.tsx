@@ -1,18 +1,13 @@
 import { Button } from "@mantine/core";
-import { useCurrentGame } from "../utils";
-import { useStartGameMutation } from "@literature/client";
+import { startGame, useGameStore } from "../utils";
+import { useAction } from "@s2h/ui";
 
 export function StartGame() {
-	const { id } = useCurrentGame();
+	const gameId = useGameStore( ( state ) => state.gameData!.id );
+	const { execute, isLoading } = useAction( startGame );
 
-	const { mutateAsync, isPending } = useStartGameMutation( id, {
-		onError( error ) {
-			console.log( error );
-			alert( error.message );
-		}
-	} );
+	const handleSubmit = () => execute( { gameId } )
+		.catch( ( error ) => alert( error.message ) );
 
-	const startGame = () => mutateAsync();
-
-	return <Button fullWidth color={ "primary" } loading={ isPending } onClick={ startGame }>Start Game</Button>;
+	return <Button fullWidth color={ "primary" } loading={ isLoading } onClick={ handleSubmit }>Start Game</Button>;
 }

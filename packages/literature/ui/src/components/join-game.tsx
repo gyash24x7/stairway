@@ -1,28 +1,22 @@
 import { Button, Modal, Stack, TextInput } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import { useJoinGameMutation } from "@literature/client";
 import { ChangeEvent, Fragment, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
+import { useAction } from "@s2h/ui";
+import { joinGame } from "../utils";
 
 export function JoinGame() {
 	const navigate = useNavigate();
 	const [ code, setCode ] = useState( "" );
 	const [ opened, { open, close } ] = useDisclosure( false );
 
+	const { execute, isLoading } = useAction( joinGame );
+
+	const handleSubmit = () => execute( { code } )
+		.then( ( { id } ) => navigate( `/literature/${ id }` ) )
+		.catch( ( error: Error ) => alert( error.message ) );
+
 	const handleCodeChange = ( e: ChangeEvent<HTMLInputElement> ) => setCode( e.currentTarget.value.toUpperCase() );
-
-	const joinGame = () => joinGameMutation.mutateAsync( { code } );
-
-	const joinGameMutation = useJoinGameMutation( {
-		onSuccess: ( { id } ) => {
-			close();
-			navigate( "/literature/" + id );
-		},
-		onError( error: Error ) {
-			console.log( error );
-			alert( error.message );
-		}
-	} );
 
 	return (
 		<Fragment>
@@ -35,7 +29,7 @@ export function JoinGame() {
 						onChange={ handleCodeChange }
 						placeholder={ "Enter the Game Code" }
 					/>
-					<Button color={ "primary" } fullWidth onClick={ joinGame } loading={ joinGameMutation.isPending }>
+					<Button color={ "primary" } fullWidth onClick={ handleSubmit } loading={ isLoading }>
 						Join Game
 					</Button>
 				</Stack>

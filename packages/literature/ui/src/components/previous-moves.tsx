@@ -1,12 +1,11 @@
 import { Box, Button, Flex, Modal, Stack } from "@mantine/core";
 import { Fragment } from "react";
-import { useCurrentGameMoves } from "../utils";
+import { useGameStore } from "../utils";
 import { useDisclosure } from "@mantine/hooks";
 import { gameStatusClassnames } from "../styles";
 
 export function PreviousMoves() {
-	const moves = useCurrentGameMoves();
-
+	const moves = useGameStore( state => state.gameData!.moves );
 	const [ opened, { open, close } ] = useDisclosure();
 
 	return (

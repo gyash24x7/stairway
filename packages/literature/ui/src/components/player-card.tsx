@@ -1,12 +1,11 @@
 import { Avatar, Box, Group, Title } from "@mantine/core";
-import type { Player } from "@literature/data";
+import type { Player } from "@literature/types";
 
 export interface PlayerCardProps {
 	player: Player;
 }
 
 export function PlayerCard( { player }: PlayerCardProps ) {
-	// const cardCounts = useCurrentGameCardCounts();
 	return (
 		<Group wrap={ "nowrap" }>
 			<Avatar src={ player.avatar } size={ 32 } radius={ "50%" }/>

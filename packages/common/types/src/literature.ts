@@ -2,7 +2,6 @@ import type { CardSet, PlayingCard } from "@s2h/cards";
 import type {
 	LiteratureCardMapping,
 	LiteratureGame,
-	LiteratureGameStatus,
 	LiteratureMove,
 	LiteraturePlayer,
 	LiteratureTeam
@@ -53,7 +52,7 @@ export enum GameStatus {
 export enum MoveType {
 	ASK_CARD = "ASK_CARD",
 	CALL_SET = "CALL_SET",
-	TRANSFER_CHANCE = "TRANSFER_CHANCE"
+	TRANSFER_TURN = "TRANSFER_TURN"
 }
 
 export type AskMoveData = {
@@ -85,7 +84,7 @@ export type RawGameData = Game & { players: Player[], teams?: Team[], cardMappin
 export type GameData = {
 	id: string;
 	code: string;
-	status: LiteratureGameStatus;
+	status: GameStatus;
 	playerCount: number;
 	currentTurn: string;
 	players: PlayerData;
@@ -127,6 +126,6 @@ export type CallSetInput = {
 	data: { [ key: string ]: string };
 }
 
-export type TransferChanceInput = {
+export type TransferTurnInput = {
 	transferTo: string;
 }
