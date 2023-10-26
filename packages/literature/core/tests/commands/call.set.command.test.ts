@@ -1,26 +1,25 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { CallSetInput, CardMapping, GameStatus, Move, MoveType } from "@literature/data";
+import { CallSetInput, CardMapping, GameStatus, Move, MoveType } from "@literature/types";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
 import { CardSet } from "@s2h/cards";
 import { CallSetCommand, CallSetCommandHandler } from "../../src/commands";
-import { GameUpdateEvent, MoveCreatedEvent } from "../../src/events";
+import { MoveCreatedEvent } from "../../src/events";
 import type { HttpException } from "@nestjs/common";
 import { Messages } from "../../src/constants";
 import {
-	buildMockAggregatedGameData,
+	buildMockGameData,
+	buildPlayerSpecificData,
 	deck,
-	mockAuthInfo,
 	mockCallMove,
 	mockCallSetInput as mockInput,
 	mockPlayer1,
 	mockPlayer2,
 	mockPlayer4,
-	mockPlayerIds,
-	mockTeamA,
-	mockTeamB
+	mockPlayerIds
 } from "../mockdata";
+import { buildCardMappingData } from "../../src/utils";
 
 describe( "CallSetCommand", () => {
 
@@ -35,7 +34,7 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 		const input: CallSetInput = {
 			data: {
@@ -48,8 +47,12 @@ describe( "CallSetCommand", () => {
 			}
 		};
 
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+
 		expect.assertions( 2 );
-		await handler.execute( new CallSetCommand( input, mockAggregatedGameData, mockAuthInfo ) )
+		await handler.execute( command )
 			.catch( ( error: HttpException ) => {
 				expect( error.getStatus() ).toEqual( 400 );
 				expect( error.message ).toEqual( Messages.PLAYER_NOT_PART_OF_GAME );
@@ -64,7 +67,7 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 		const input: CallSetInput = {
 			data: {
@@ -77,8 +80,12 @@ describe( "CallSetCommand", () => {
 			}
 		};
 
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+
 		expect.assertions( 2 );
-		await handler.execute( new CallSetCommand( input, mockAggregatedGameData, mockAuthInfo ) )
+		await handler.execute( command )
 			.catch( ( error: HttpException ) => {
 				expect( error.getStatus() ).toEqual( 400 );
 				expect( error.message ).toEqual( Messages.DIDNT_CALL_OWN_CARDS );
@@ -93,7 +100,7 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 		const input: CallSetInput = {
 			data: {
@@ -106,8 +113,12 @@ describe( "CallSetCommand", () => {
 			}
 		};
 
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+
 		expect.assertions( 2 );
-		await handler.execute( new CallSetCommand( input, mockAggregatedGameData, mockAuthInfo ) )
+		await handler.execute( command )
 			.catch( ( error: HttpException ) => {
 				expect( error.getStatus() ).toEqual( 400 );
 				expect( error.message ).toEqual( Messages.MULTIPLE_SETS_CALLED );
@@ -122,11 +133,15 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+
 		expect.assertions( 2 );
-		await handler.execute( new CallSetCommand( mockInput, mockAggregatedGameData, mockAuthInfo ) )
+		await handler.execute( command )
 			.catch( ( error: HttpException ) => {
 				expect( error.getStatus() ).toEqual( 400 );
 				expect( error.message ).toEqual( Messages.SET_CALLED_WITHOUT_CARDS );
@@ -141,7 +156,7 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 		const input: CallSetInput = {
 			data: {
@@ -154,8 +169,12 @@ describe( "CallSetCommand", () => {
 			}
 		};
 
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+
 		expect.assertions( 2 );
-		await handler.execute( new CallSetCommand( input, mockAggregatedGameData, mockAuthInfo ) )
+		await handler.execute( command )
 			.catch( ( error: HttpException ) => {
 				expect( error.getStatus() ).toEqual( 400 );
 				expect( error.message ).toEqual( Messages.SET_CALLED_FROM_MULTIPLE_TEAMS );
@@ -170,7 +189,7 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
 		const input: CallSetInput = {
 			data: {
@@ -182,8 +201,12 @@ describe( "CallSetCommand", () => {
 			}
 		};
 
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+
 		expect.assertions( 2 );
-		await handler.execute( new CallSetCommand( input, mockAggregatedGameData, mockAuthInfo ) )
+		await handler.execute( command )
 			.catch( ( error: HttpException ) => {
 				expect( error.getStatus() ).toEqual( 400 );
 				expect( error.message ).toEqual( Messages.ALL_CARDS_NOT_CALLED );
@@ -204,7 +227,7 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const mockMove: Move = {
 			...mockCallMove,
 			success: false,
@@ -213,24 +236,18 @@ describe( "CallSetCommand", () => {
 		};
 
 		mockPrisma.literature.move.create.mockResolvedValue( mockMove );
-		mockPrisma.literature.team.update.mockResolvedValue( {
-			...mockTeamB,
-			score: 1,
-			setsWon: [ CardSet.LOWER_CLUBS ]
-		} );
+
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
 
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
-		const result = await handler.execute( new CallSetCommand( mockInput, mockAggregatedGameData, mockAuthInfo ) );
+		const result = await handler.execute( command );
 
-		expect( result ).toEqual( mockAggregatedGameData.id );
-		expect( mockPrisma.literature.cardMapping.deleteMany ).toHaveBeenCalledWith( {
-			where: {
-				cardId: { in: Object.keys( mockInput.data ) }
-			}
-		} );
+		expect( result ).toEqual( mockMove );
 		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
 			data: {
-				gameId: mockAggregatedGameData.id,
+				gameId: mockGameData.id,
 				type: MoveType.CALL_SET,
 				success: false,
 				description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } incorrectly!`,
@@ -242,17 +259,8 @@ describe( "CallSetCommand", () => {
 				}
 			}
 		} );
-		expect( mockEventBus.publish ).toHaveBeenCalledWith( new MoveCreatedEvent( mockMove ) );
-		expect( mockPrisma.literature.team.update ).toHaveBeenCalledWith( {
-			where: { id: mockTeamB.id },
-			data: {
-				score: 1,
-				setsWon: [ CardSet.LOWER_CLUBS ]
-			}
-		} );
-
 		expect( mockEventBus.publish )
-			.toHaveBeenCalledWith( new GameUpdateEvent( mockAggregatedGameData, mockAuthInfo ) );
+			.toHaveBeenCalledWith( new MoveCreatedEvent( mockMove, mockGameData, cardMappingData ) );
 	} );
 
 	it( "should increase current team score and remove cards of set on successful call", async () => {
@@ -263,27 +271,20 @@ describe( "CallSetCommand", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const cardMappingData = buildCardMappingData( cardMappingList );
+		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
+		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
 
 		mockPrisma.literature.move.create.mockResolvedValue( mockCallMove );
-		mockPrisma.literature.team.update.mockResolvedValue( {
-			...mockTeamA,
-			score: 1,
-			setsWon: [ CardSet.LOWER_CLUBS ]
-		} );
 
 		const handler = new CallSetCommandHandler( mockPrisma, mockEventBus );
-		const result = await handler.execute( new CallSetCommand( mockInput, mockAggregatedGameData, mockAuthInfo ) );
+		const result = await handler.execute( command );
 
-		expect( result ).toEqual( mockAggregatedGameData.id );
-		expect( mockPrisma.literature.cardMapping.deleteMany ).toHaveBeenCalledWith( {
-			where: {
-				cardId: { in: Object.keys( mockInput.data ) }
-			}
-		} );
+		expect( result ).toEqual( mockCallMove );
 		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
 			data: {
-				gameId: mockAggregatedGameData.id,
+				gameId: mockGameData.id,
 				type: MoveType.CALL_SET,
 				success: true,
 				description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } correctly!`,
@@ -295,17 +296,8 @@ describe( "CallSetCommand", () => {
 				}
 			}
 		} );
-		expect( mockEventBus.publish ).toHaveBeenCalledWith( new MoveCreatedEvent( mockCallMove ) );
-		expect( mockPrisma.literature.team.update ).toHaveBeenCalledWith( {
-			where: { id: mockTeamA.id },
-			data: {
-				score: 1,
-				setsWon: [ CardSet.LOWER_CLUBS ]
-			}
-		} );
-
 		expect( mockEventBus.publish )
-			.toHaveBeenCalledWith( new GameUpdateEvent( mockAggregatedGameData, mockAuthInfo ) );
+			.toHaveBeenCalledWith( new MoveCreatedEvent( mockCallMove, mockGameData, cardMappingData ) );
 	} );
 
 	afterEach( () => {

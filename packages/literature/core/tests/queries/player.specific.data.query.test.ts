@@ -1,62 +1,61 @@
-import { describe, expect, it } from "vitest";
-import {
-	buildMockGameData,
-	deck,
-	mockAuthInfo,
-	mockPlayer1,
-	mockPlayer2,
-	mockPlayer3,
-	mockPlayer4,
-	mockPlayerIds,
-	mockTeamA,
-	mockTeamB
-} from "../mockdata";
+import { afterEach, describe, expect, it } from "vitest";
+import { buildMockCardMappings, buildMockGameData, mockAuthInfo, mockTeamA, mockTeamB } from "../mockdata";
 import { GameStatus } from "@literature/types";
-import { PlayerSpecificGameQuery, PlayerSpecificGameQueryHandler } from "../../src/queries";
+import { PlayerSpecificDataQuery, PlayerSpecificDataQueryHandler } from "../../src/queries";
+import { mockClear, mockDeep } from "vitest-mock-extended";
+import type { PrismaService } from "@s2h/core";
+import { getCardSetsInHand } from "@s2h/cards";
+import { buildCardMappingData, buildHandData } from "../../src/utils";
 
 describe( "PlayerSpecificGameQuery", () => {
 
+	const mockPrisma = mockDeep<PrismaService>();
+
 	it( "should return the current game data for the player when teams not created", async () => {
-		const mockAggregatedGameData = buildMockGameData( GameStatus.PLAYERS_READY );
-		const handler = new PlayerSpecificGameQueryHandler();
-		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo.id );
+		const mockGameData = buildMockGameData( GameStatus.PLAYERS_READY );
+		mockPrisma.literature.cardMapping.findMany.mockResolvedValue( [] );
+
+		const handler = new PlayerSpecificDataQueryHandler( mockPrisma );
+		const query = new PlayerSpecificDataQuery( mockGameData, mockAuthInfo.id );
 
 		const result = await handler.execute( query );
 		expect( result ).toEqual(
 			expect.objectContaining( {
 				id: "1",
-				myTeam: undefined,
-				oppositeTeam: undefined,
+				oppositeTeamId: undefined,
 				hand: [],
-				cardCounts: {}
+				cardSets: []
 			} )
 		);
+
+		expect( mockPrisma.literature.cardMapping.findMany ).toHaveBeenCalledWith( {
+			where: { gameId: mockGameData.id, playerId: mockAuthInfo.id }
+		} );
 	} );
 
 	it( "should return the current game data for the player when teams created", async () => {
-		const cardMappings = deck.map( ( card, index ) => {
-			return { cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" };
-		} );
+		const cardMappings = buildMockCardMappings();
+		const cardMappingsForPlayer = cardMappings.filter( cardMapping => cardMapping.playerId === mockAuthInfo.id );
+		const hands = buildHandData( buildCardMappingData( cardMappings ) );
+		mockPrisma.literature.cardMapping.findMany.mockResolvedValue( cardMappingsForPlayer );
 
-		const mockAggregatedGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappings );
-		const handler = new PlayerSpecificGameQueryHandler();
-		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo.id );
+		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappings );
+		const handler = new PlayerSpecificDataQueryHandler( mockPrisma );
+		const query = new PlayerSpecificDataQuery( mockGameData, mockAuthInfo.id );
 
 		const result = await handler.execute( query );
-		const tempArr = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ];
-		expect( result ).toEqual(
-			expect.objectContaining( {
-				id: "1",
-				myTeam: { ...mockTeamA, members: [ mockPlayer1.id, mockPlayer3.id ] },
-				oppositeTeam: { ...mockTeamB, members: [ mockPlayer2.id, mockPlayer4.id ] },
-				hand: tempArr.map( i => deck[ i * 4 ] ),
-				cardCounts: {
-					"1": 12,
-					"2": 12,
-					"3": 12,
-					"4": 12
-				}
-			} )
-		);
+
+		expect( result.teamId ).toEqual( mockTeamA.id );
+		expect( result.oppositeTeamId ).toEqual( mockTeamB.id );
+		expect( result.hand ).toEqual( hands[ mockAuthInfo.id ] );
+		expect( result.cardSets ).toEqual( getCardSetsInHand( hands[ mockAuthInfo.id ] ) );
+
+		expect( mockPrisma.literature.cardMapping.findMany ).toHaveBeenCalledWith( {
+			where: { gameId: mockGameData.id, playerId: mockAuthInfo.id }
+		} );
+	} );
+
+	afterEach( () => {
+		mockClear( mockPrisma );
 	} );
 } );

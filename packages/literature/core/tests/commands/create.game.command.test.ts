@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import type { CreateGameInput, Game } from "@literature/data";
+import type { CreateGameInput, Game } from "@literature/types";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import type { PrismaService } from "@s2h/core";
 import { CreateGameCommand, CreateGameCommandHandler } from "../../src/commands";
