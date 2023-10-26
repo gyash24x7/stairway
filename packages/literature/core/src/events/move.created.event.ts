@@ -28,7 +28,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 
 		await this.commandBus.execute( new UpdateInferencesCommand( move, gameData.players ) );
 		await this.commandBus.execute( new UpdateHandsCommand( move, cardMappings ) );
-		await this.commandBus.execute( new UpdateTurnCommand( move, gameData.players ) );
+		await this.commandBus.execute( new UpdateTurnCommand( gameData.currentTurn, move, gameData.players ) );
 		await this.commandBus.execute( new UpdateScoreCommand( move, gameData.players, gameData.teams ) );
 
 		this.realtimeService.publishRoomMessage(

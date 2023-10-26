@@ -4,9 +4,9 @@ import type {
 	CardMappingData,
 	GameData,
 	PlayerSpecificData,
-	TransferChanceInput,
 	TransferMove,
-	TransferMoveData
+	TransferMoveData,
+	TransferTurnInput
 } from "@literature/types";
 import { MoveType } from "@literature/types";
 import { LoggerFactory, PrismaService } from "@s2h/core";
@@ -15,38 +15,38 @@ import { MoveCreatedEvent } from "../events";
 import { Messages } from "../constants";
 import { buildHandData } from "../utils";
 
-export class TransferChanceCommand implements ICommand {
+export class TransferTurnCommand implements ICommand {
 	constructor(
-		public readonly input: TransferChanceInput,
+		public readonly input: TransferTurnInput,
 		public readonly gameData: GameData,
 		public readonly playerData: PlayerSpecificData,
 		public readonly cardMappings: CardMappingData
 	) {}
 }
 
-@CommandHandler( TransferChanceCommand )
-export class TransferChanceCommandHandler implements ICommandHandler<TransferChanceCommand, TransferMove> {
+@CommandHandler( TransferTurnCommand )
+export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnCommand, TransferMove> {
 
-	private readonly logger = LoggerFactory.getLogger( TransferChanceCommandHandler );
+	private readonly logger = LoggerFactory.getLogger( TransferTurnCommandHandler );
 
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly eventBus: EventBus
 	) {}
 
-	async execute( command: TransferChanceCommand ) {
-		this.logger.debug( ">> executeTransferChanceCommand()" );
+	async execute( command: TransferTurnCommand ) {
+		this.logger.debug( ">> executeTransferTurnCommand()" );
 
 		const { input, gameData, cardMappings } = command;
 		const { transferringPlayer, receivingPlayer } = this.validate( command );
 
 		const transferMoveData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
-		const description = `${ transferringPlayer.name } transferred the chance to ${ receivingPlayer.name }`;
+		const description = `${ transferringPlayer.name } transferred the turn to ${ receivingPlayer.name }`;
 
 		const move = await this.prisma.literature.move.create( {
 			data: {
 				gameId: gameData.id,
-				type: MoveType.TRANSFER_CHANCE,
+				type: MoveType.TRANSFER_TURN,
 				success: true,
 				data: transferMoveData,
 				description
@@ -55,13 +55,13 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 
 		this.eventBus.publish( new MoveCreatedEvent( move, gameData, cardMappings ) );
 		this.logger.debug( "Published MoveCreatedEvent!" );
-		
-		this.logger.debug( "<< executeTransferChanceCommand()" );
+
+		this.logger.debug( "<< executeTransferTurnCommand()" );
 		return { ...move, data: transferMoveData };
 	}
 
-	private validate( { gameData, cardMappings, input, playerData }: TransferChanceCommand ) {
-		this.logger.debug( ">> validateTransferChanceCommand()" );
+	private validate( { gameData, cardMappings, input, playerData }: TransferTurnCommand ) {
+		this.logger.debug( ">> validateTransferTurnCommand()" );
 
 		const [ lastMove ] = gameData.moves;
 		const hands = buildHandData( cardMappings );
@@ -90,7 +90,7 @@ export class TransferChanceCommandHandler implements ICommandHandler<TransferCha
 			throw new BadRequestException( Messages.TRANSFER_TO_OPPONENT_TEAM );
 		}
 
-		this.logger.debug( "<< validateTransferChanceCommand()" );
+		this.logger.debug( "<< validateTransferTurnCommand()" );
 		return { transferringPlayer, receivingPlayer };
 	}
 }

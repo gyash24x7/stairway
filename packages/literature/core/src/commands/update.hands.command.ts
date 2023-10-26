@@ -26,21 +26,25 @@ export class UpdateHandsCommandHandler implements ICommandHandler<UpdateHandsCom
 	async execute( { cardMappings, currentMove }: UpdateHandsCommand ) {
 		this.logger.debug( ">> executeUpdateHandsCommand()" );
 
+		let hasCardTransferHappened = false;
+
 		switch ( currentMove.type ) {
 			case MoveType.ASK_CARD:
-				const { from, card, by } = currentMove.data as AskMoveData;
+				const { card, by } = currentMove.data as AskMoveData;
 				if ( currentMove.success ) {
 					await this.prisma.literature.cardMapping.update( {
 						where: { cardId_gameId: { gameId: currentMove.gameId, cardId: card } },
-						data: { playerId: from }
+						data: { playerId: by }
 					} );
+
+					cardMappings[ card ] = by;
+					hasCardTransferHappened = true;
 				}
-				cardMappings[ card ] = by;
 				break;
 
 			case MoveType.CALL_SET:
 				const { correctCall } = currentMove.data as CallMoveData;
-				const calledCards = Object.keys( correctCall ).map( cardId => cardMappings[ cardId ] );
+				const calledCards = Object.keys( correctCall );
 				await this.prisma.literature.cardMapping.deleteMany( {
 					where: { cardId: { in: calledCards } }
 				} );
@@ -48,12 +52,17 @@ export class UpdateHandsCommandHandler implements ICommandHandler<UpdateHandsCom
 				calledCards.map( cardId => {
 					delete cardMappings[ cardId ];
 				} );
+
+				hasCardTransferHappened = true;
 				break;
 		}
 
 		const updatedHands = buildHandData( cardMappings );
-		this.eventBus.publish( new HandsUpdatedEvent( updatedHands, currentMove.gameId ) );
-		this.logger.debug( "Published HandsUpdatedEvent!" );
+
+		if ( hasCardTransferHappened ) {
+			this.eventBus.publish( new HandsUpdatedEvent( updatedHands, currentMove.gameId ) );
+			this.logger.debug( "Published HandsUpdatedEvent!" );
+		}
 
 		this.logger.debug( "<< executeUpdateHandsCommand()" );
 		return updatedHands;

@@ -4,7 +4,7 @@ import { CreateTeamsCommandHandler } from "./create.teams.command";
 import { StartGameCommandHandler } from "./start.game.command";
 import { AskCardCommandHandler } from "./ask.card.command";
 import { CallSetCommandHandler } from "./call.set.command";
-import { TransferChanceCommandHandler } from "./transfer.chance.command";
+import { TransferTurnCommandHandler } from "./transfer.turn.command";
 import { CreateInferencesCommandHandler } from "./create.inferences.command";
 import { UpdateHandsCommandHandler } from "./update.hands.command";
 import { UpdateInferencesCommandHandler } from "./update.inferences.command";
@@ -18,7 +18,7 @@ export * from "./create.teams.command";
 export * from "./start.game.command";
 export * from "./ask.card.command";
 export * from "./call.set.command";
-export * from "./transfer.chance.command";
+export * from "./transfer.turn.command";
 export * from "./create.inferences.command";
 export * from "./update.hands.command";
 export * from "./update.inferences.command";
@@ -33,7 +33,7 @@ export const commandHandlers = [
 	StartGameCommandHandler,
 	AskCardCommandHandler,
 	CallSetCommandHandler,
-	TransferChanceCommandHandler,
+	TransferTurnCommandHandler,
 	CreateInferencesCommandHandler,
 	UpdateHandsCommandHandler,
 	UpdateInferencesCommandHandler,

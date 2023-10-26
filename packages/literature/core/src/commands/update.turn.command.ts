@@ -8,6 +8,7 @@ import { TurnUpdatedEvent } from "../events";
 
 export class UpdateTurnCommand implements ICommand {
 	constructor(
+		public readonly currentTurn: string,
 		public readonly currentMove: Move,
 		public readonly players: Record<string, Player>
 	) {}
@@ -23,7 +24,7 @@ export class UpdateTurnCommandHandler implements ICommandHandler<UpdateTurnComma
 		private readonly eventBus: EventBus
 	) {}
 
-	async execute( { currentMove, players }: UpdateTurnCommand ) {
+	async execute( { currentTurn, currentMove, players }: UpdateTurnCommand ) {
 		this.logger.debug( ">> executeUpdateTurnCommand()" );
 		let nextTurn: string;
 
@@ -31,15 +32,7 @@ export class UpdateTurnCommandHandler implements ICommandHandler<UpdateTurnComma
 			case MoveType.ASK_CARD: {
 				this.logger.debug( "CurrentMove is ASK_MOVE!" );
 				const { from, by } = currentMove.data as AskMoveData;
-				if ( !currentMove.success ) {
-					await this.prisma.literature.game.update( {
-						where: { id: currentMove.gameId },
-						data: { currentTurn: from }
-					} );
-					nextTurn = from;
-				} else {
-					nextTurn = by;
-				}
+				nextTurn = !currentMove.success ? from : by;
 				break;
 			}
 
@@ -47,36 +40,29 @@ export class UpdateTurnCommandHandler implements ICommandHandler<UpdateTurnComma
 				this.logger.debug( "CurrentMoveType is CALL_SET!" );
 				const { by } = currentMove.data as CallMoveData;
 				const currentTeam = players[ by ].teamId;
-				if ( !currentMove.success ) {
-					const [ player ] = shuffle( Object.values( players )
-						.filter( player => player.teamId !== currentTeam ) );
-
-					await this.prisma.literature.game.update( {
-						where: { id: currentMove.gameId },
-						data: { currentTurn: player.id }
-					} );
-
-					nextTurn = player.id;
-				} else {
-					nextTurn = by;
-				}
+				const [ player ] = shuffle( Object.values( players )
+					.filter( player => player.teamId !== currentTeam ) );
+				nextTurn = !currentMove.success ? player.id : by;
 				break;
 			}
 
 			default: {
-				this.logger.debug( "CurrentMoveType is TRANSFER_CHANCE!" );
-				const { to } = currentMove.data as TransferMoveData;
-				await this.prisma.literature.game.update( {
-					where: { id: currentMove.gameId },
-					data: { currentTurn: to }
-				} );
-				nextTurn = to;
+				this.logger.debug( "CurrentMoveType is TRANSFER_TURN!" );
+				const data = currentMove.data as TransferMoveData;
+				nextTurn = data.to;
 				break;
 			}
 		}
 
-		this.eventBus.publish( new TurnUpdatedEvent( nextTurn, currentMove.gameId ) );
-		this.logger.debug( "Published TurnUpdatedEvent!" );
+		if ( nextTurn !== currentTurn ) {
+			await this.prisma.literature.game.update( {
+				where: { id: currentMove.gameId },
+				data: { currentTurn: nextTurn }
+			} );
+
+			this.eventBus.publish( new TurnUpdatedEvent( nextTurn, currentMove.gameId ) );
+			this.logger.debug( "Published TurnUpdatedEvent!" );
+		}
 
 		this.logger.debug( "<< executeUpdateTurnCommand()" );
 		return nextTurn;

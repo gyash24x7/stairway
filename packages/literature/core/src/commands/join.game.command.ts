@@ -42,13 +42,12 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 			}
 		} );
 
-		game.players.push( newPlayer );
-		const isCapacityFull = game.playerCount === game.players.length;
+		const isCapacityFull = game.playerCount === game.players.length + 1;
 		this.eventBus.publish( new PlayerJoinedEvent( game.id, newPlayer, isCapacityFull ) );
 		this.logger.debug( "Published PlayerJoinedEvent!" );
 
 		this.logger.debug( "<< executeJoinGameCommand()" );
-		return game;
+		return { ...game, players: [ ...game.players, newPlayer ] };
 	}
 
 	private async validate( { input, authInfo }: JoinGameCommand ) {
@@ -63,6 +62,8 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 			this.logger.error( Messages.GAME_NOT_FOUND );
 			throw new NotFoundException( Messages.GAME_NOT_FOUND );
 		}
+
+		this.logger.debug( "Found Game: %o", game.players.length );
 
 		const isUserAlreadyInGame = !!game.players.find( player => player.id === authInfo.id );
 

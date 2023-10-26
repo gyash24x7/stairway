@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-	buildMockAggregatedGameData,
+	buildMockGameData,
 	deck,
 	mockAuthInfo,
 	mockPlayer1,
@@ -11,13 +11,13 @@ import {
 	mockTeamA,
 	mockTeamB
 } from "../mockdata";
-import { GameStatus } from "@literature/data";
+import { GameStatus } from "@literature/types";
 import { PlayerSpecificGameQuery, PlayerSpecificGameQueryHandler } from "../../src/queries";
 
 describe( "PlayerSpecificGameQuery", () => {
 
 	it( "should return the current game data for the player when teams not created", async () => {
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.PLAYERS_READY );
+		const mockAggregatedGameData = buildMockGameData( GameStatus.PLAYERS_READY );
 		const handler = new PlayerSpecificGameQueryHandler();
 		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo.id );
 
@@ -38,7 +38,7 @@ describe( "PlayerSpecificGameQuery", () => {
 			return { cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" };
 		} );
 
-		const mockAggregatedGameData = buildMockAggregatedGameData( GameStatus.IN_PROGRESS, cardMappings );
+		const mockAggregatedGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappings );
 		const handler = new PlayerSpecificGameQueryHandler();
 		const query = new PlayerSpecificGameQuery( mockAggregatedGameData, mockAuthInfo.id );
 

@@ -35,6 +35,8 @@ export class CreateInferencesCommandHandler implements ICommandHandler<CreateInf
 					hands[ player.id ].map( card => card.id )
 				);
 
+				inferencesData[ player.id ] = inferences;
+
 				return this.prisma.literature.player.update( {
 					where: { id_gameId: { id: player.id, gameId: gameData.id } },
 					data: { inferences }

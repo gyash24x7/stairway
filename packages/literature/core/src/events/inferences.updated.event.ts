@@ -18,7 +18,7 @@ export class InferencesUpdatedEventHandler implements IEventHandler<InferencesUp
 
 	constructor( private readonly realtimeService: RealtimeService ) {}
 
-	handle( { inferences, gameId }: InferencesUpdatedEvent ) {
+	async handle( { inferences, gameId }: InferencesUpdatedEvent ) {
 		this.logger.debug( ">> handleInferencesUpdatedEvent()" );
 
 		Object.keys( inferences ).map( playerId => {

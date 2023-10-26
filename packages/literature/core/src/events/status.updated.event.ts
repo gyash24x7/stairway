@@ -17,7 +17,7 @@ export class StatusUpdatedEventHandler implements IEventHandler<StatusUpdatedEve
 
 	constructor( private readonly realtimeService: RealtimeService ) {}
 
-	handle( { updatedStatus, gameId }: StatusUpdatedEvent ) {
+	async handle( { updatedStatus, gameId }: StatusUpdatedEvent ) {
 		this.logger.debug( ">> handleStatusUpdatedEvent()" );
 
 		this.realtimeService.publishRoomMessage(

@@ -3,7 +3,7 @@ import { LoggerFactory } from "@s2h/core";
 import type { Request, Response } from "express";
 import { Constants } from "../constants";
 import { QueryBus } from "@nestjs/cqrs";
-import { CardMappingsQuery, GameDataQuery, PlayerDataQuery } from "../queries";
+import { CardMappingsQuery, GameDataQuery, PlayerSpecificDataQuery } from "../queries";
 import type { GameData } from "@literature/types";
 import { Reflector } from "@nestjs/core";
 import type { UserAuthInfo } from "@auth/types";
@@ -34,7 +34,8 @@ export class GameGuard implements CanActivate {
 			throw new ForbiddenException();
 		}
 
-		res.locals[ Constants.PLAYER_DATA ] = await this.queryBus.execute( new PlayerDataQuery( game, authInfo.id ) );
+		res.locals[ Constants.PLAYER_DATA ] =
+			await this.queryBus.execute( new PlayerSpecificDataQuery( game, authInfo.id ) );
 
 		const { status, turn, cardMappings }: RequiresGameData = this.reflector.get(
 			Constants.REQUIRES_KEY,
@@ -52,7 +53,7 @@ export class GameGuard implements CanActivate {
 		}
 
 		if ( !!cardMappings ) {
-			res.locals[ Constants.CARD_MAPPINGS ] = await this.queryBus.execute( new CardMappingsQuery( game ) );
+			res.locals[ Constants.CARD_MAPPINGS ] = await this.queryBus.execute( new CardMappingsQuery( game.id ) );
 		}
 
 		return !!game;

@@ -13,8 +13,8 @@ import type {
 	JoinGameInput,
 	PlayerSpecificData,
 	TeamData,
-	TransferChanceInput,
-	TransferMove
+	TransferMove,
+	TransferTurnInput
 } from "@literature/types";
 import { GameStatus } from "@literature/types";
 import { AuthInfo, RequiresAuth } from "@auth/core";
@@ -29,7 +29,7 @@ import {
 	CreateTeamsCommand,
 	JoinGameCommand,
 	StartGameCommand,
-	TransferChanceCommand
+	TransferTurnCommand
 } from "../commands";
 import { LoggerFactory } from "@s2h/core";
 
@@ -116,19 +116,19 @@ export class GamesController {
 		return callMove;
 	}
 
-	@Put( Paths.TRANSFER_CHANCE )
+	@Put( Paths.TRANSFER_TURN )
 	@RequiresGame( { status: GameStatus.IN_PROGRESS, cardMappings: true, turn: true } )
-	async transferChance(
-		@Body() input: TransferChanceInput,
+	async transferTurn(
+		@Body() input: TransferTurnInput,
 		@GameInfo() gameData: GameData,
 		@PlayerInfo() playerData: PlayerSpecificData,
 		@CardMappings() cardMappings: CardMappingData
 	): Promise<TransferMove> {
-		this.logger.debug( ">> transferChance()" );
+		this.logger.debug( ">> transferTurn()" );
 		const transferMove: TransferMove = await this.commandBus.execute(
-			new TransferChanceCommand( input, gameData, playerData, cardMappings )
+			new TransferTurnCommand( input, gameData, playerData, cardMappings )
 		);
-		this.logger.debug( "<< transferChance()" );
+		this.logger.debug( "<< transferTurn()" );
 		return transferMove;
 	}
 

@@ -14,7 +14,7 @@ export class Paths {
 	public static readonly START_GAME = ":gameId/start";
 	public static readonly ASK_CARD = ":gameId/ask-card";
 	public static readonly CALL_SET = ":gameId/call-set";
-	public static readonly TRANSFER_CHANCE = ":gameId/transfer-chance";
+	public static readonly TRANSFER_TURN = ":gameId/transfer-turn";
 
 	public static readonly GET_GAME = ":gameId";
 	public static readonly GET_PLAYER = ":gameId/player";
@@ -48,7 +48,7 @@ export class Messages {
 	public static readonly SET_CALLED_WITHOUT_CARDS = "Set called without cards from that set!";
 	public static readonly SET_CALLED_FROM_MULTIPLE_TEAMS = "Set called from multiple teams!";
 	public static readonly ALL_CARDS_NOT_CALLED = "All Cards not called for the set!";
-	public static readonly TRANSFER_AFTER_SUCCESSFUL_CALL = "Chance can only be transferred after a successful call!";
-	public static readonly NO_CARDS_WITH_RECEIVING_PLAYER = "Chance can only be transferred to a player with cards!";
-	public static readonly TRANSFER_TO_OPPONENT_TEAM = "Chance can only be transferred to member of your team!";
+	public static readonly TRANSFER_AFTER_SUCCESSFUL_CALL = "Turn can only be transferred after a successful call!";
+	public static readonly NO_CARDS_WITH_RECEIVING_PLAYER = "Turn can only be transferred to a player with cards!";
+	public static readonly TRANSFER_TO_OPPONENT_TEAM = "Turn can only be transferred to member of your team!";
 }

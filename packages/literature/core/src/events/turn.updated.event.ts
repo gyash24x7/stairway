@@ -17,7 +17,7 @@ export class TurnUpdatedEventHandler implements IEventHandler<TurnUpdatedEvent> 
 
 	constructor( private readonly realtimeService: RealtimeService ) {}
 
-	handle( { nextTurn, gameId }: TurnUpdatedEvent ) {
+	async handle( { nextTurn, gameId }: TurnUpdatedEvent ) {
 		this.logger.debug( ">> handleTurnUpdatedEvent()" );
 
 		this.realtimeService.publishRoomMessage(

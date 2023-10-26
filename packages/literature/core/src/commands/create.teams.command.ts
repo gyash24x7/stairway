@@ -1,6 +1,6 @@
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import type { CreateTeamsInput, GameData, TeamData, TeamWithMembers } from "@literature/types";
+import type { CreateTeamsInput, GameData, TeamData } from "@literature/types";
 import { BadRequestException } from "@nestjs/common";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { Messages } from "../constants";
@@ -44,7 +44,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 			} )
 		);
 
-		const teamMap: Record<string, TeamWithMembers> = {
+		const teamMap: TeamData = {
 			[ teamA.id ]: { ...teamA, members: input.data[ teamA.name ] },
 			[ teamB.id ]: { ...teamB, members: input.data[ teamB.name ] }
 		};

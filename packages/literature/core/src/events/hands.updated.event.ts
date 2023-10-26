@@ -18,7 +18,7 @@ export class HandsUpdatedEventHandler implements IEventHandler<HandsUpdatedEvent
 
 	constructor( private readonly realtimeService: RealtimeService ) {}
 
-	handle( { hands, gameId }: HandsUpdatedEvent ) {
+	async handle( { hands, gameId }: HandsUpdatedEvent ) {
 		this.logger.debug( ">> handleHandsUpdatedEvent()" );
 
 		const cardCounts: Record<string, number> = {};

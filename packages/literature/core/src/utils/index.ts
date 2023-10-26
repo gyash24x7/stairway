@@ -52,7 +52,7 @@ export function buildGameData( data: RawGameData ): GameData {
 		cardCounts[ cardMapping.playerId ]++;
 	} );
 
-	return { ...data, players: playerMap, teams: teamMap, cardCounts, moves: data.moves ?? [] };
+	return { ...data, players: playerMap, teams: teamMap, cardCounts, moves: data.moves! };
 }
 
 export function buildDefaultCardInferences( playerIds: string[], playerId: string, cards: string[] ) {
@@ -60,7 +60,7 @@ export function buildDefaultCardInferences( playerIds: string[], playerId: strin
 	const defaultProbablePlayers = playerIds.filter( player => player !== playerId );
 
 	SORTED_DECK.forEach( card => {
-		if ( !cards.includes( card.id ) ) {
+		if ( cards.includes( card.id ) ) {
 			cardInferences[ card.id ] = [ playerId ];
 		} else {
 			cardInferences[ card.id ] = defaultProbablePlayers;
