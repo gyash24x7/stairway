@@ -1,7 +1,7 @@
-import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler } from "@nestjs/cqrs";
 import type { VerifyUserInput } from "@auth/types";
 import { NotFoundException } from "@nestjs/common";
+import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { Messages } from "../constants";
 

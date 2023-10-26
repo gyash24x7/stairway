@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it } from "vitest";
 import type { CreateGameInput, Game } from "@literature/types";
-import { mockClear, mockDeep } from "vitest-mock-extended";
 import type { PrismaService } from "@s2h/core";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
 import { CreateGameCommand, CreateGameCommandHandler } from "../../src/commands";
 import { mockAuthInfo, mockPlayer1 } from "../mockdata";
 

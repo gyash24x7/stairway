@@ -1,13 +1,13 @@
+import { GameStatus } from "@literature/types";
+import type { CommandBus } from "@nestjs/cqrs";
+import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { RealtimeService } from "@s2h/core";
-import { GameStartedEvent, GameStartedEventHandler } from "../../src/events";
-import { GameStatus } from "@literature/types";
-import { Constants, GameEvents } from "../../src/constants";
-import type { CommandBus } from "@nestjs/cqrs";
-import { buildMockCardMappings, buildMockGameData } from "../mockdata";
 import { CreateInferencesCommand, UpdateStatusCommand } from "../../src/commands";
+import { Constants, GameEvents } from "../../src/constants";
+import { GameStartedEvent, GameStartedEventHandler } from "../../src/events";
 import { buildCardMappingData, buildHandData } from "../../src/utils";
+import { buildMockCardMappings, buildMockGameData } from "../mockdata";
 
 describe( "GameStartedEvent", () => {
 

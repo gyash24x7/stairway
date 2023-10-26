@@ -1,11 +1,11 @@
-import { CreateGameCommandHandler } from "./create.game.command";
-import { JoinGameCommandHandler } from "./join.game.command";
-import { CreateTeamsCommandHandler } from "./create.teams.command";
-import { StartGameCommandHandler } from "./start.game.command";
 import { AskCardCommandHandler } from "./ask.card.command";
 import { CallSetCommandHandler } from "./call.set.command";
-import { TransferTurnCommandHandler } from "./transfer.turn.command";
+import { CreateGameCommandHandler } from "./create.game.command";
 import { CreateInferencesCommandHandler } from "./create.inferences.command";
+import { CreateTeamsCommandHandler } from "./create.teams.command";
+import { JoinGameCommandHandler } from "./join.game.command";
+import { StartGameCommandHandler } from "./start.game.command";
+import { TransferTurnCommandHandler } from "./transfer.turn.command";
 import { UpdateHandsCommandHandler } from "./update.hands.command";
 import { UpdateInferencesCommandHandler } from "./update.inferences.command";
 import { UpdateScoreCommandHandler } from "./update.score.command";

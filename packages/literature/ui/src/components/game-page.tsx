@@ -1,4 +1,5 @@
 import { Avatar, Flex, Stack, Title } from "@mantine/core";
+import { Banner, DisplayHand } from "@s2h/ui";
 import { Fragment } from "react";
 import {
 	CreateTeams,
@@ -10,7 +11,6 @@ import {
 	StartGame
 } from "../components";
 import { gamePageClassnames as classnames } from "../styles";
-import { Banner, DisplayHand } from "@s2h/ui";
 import { useGameStore } from "../utils";
 
 export function GamePage() {

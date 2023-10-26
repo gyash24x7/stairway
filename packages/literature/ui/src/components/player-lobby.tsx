@@ -1,6 +1,6 @@
-import { useGameStore } from "../utils";
-import { Avatar, Box, Flex, Text, Title } from "@mantine/core";
 import type { Player } from "@literature/types";
+import { Avatar, Box, Flex, Text, Title } from "@mantine/core";
+import { useGameStore } from "../utils";
 
 export interface PlayerLobbyProps {
 	playerList: Player[];

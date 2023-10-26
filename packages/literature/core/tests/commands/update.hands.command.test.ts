@@ -1,12 +1,12 @@
+import type { EventBus } from "@nestjs/cqrs";
+import { getPlayingCardFromId } from "@s2h/cards";
+import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
-import { buildMockCardMappings, mockAskMove, mockCallMove } from "../mockdata";
-import { buildCardMappingData } from "../../src/utils";
 import { UpdateHandsCommand, UpdateHandsCommandHandler } from "../../src/commands";
 import { HandsUpdatedEvent } from "../../src/events";
-import { getPlayingCardFromId } from "@s2h/cards";
+import { buildCardMappingData } from "../../src/utils";
+import { buildMockCardMappings, mockAskMove, mockCallMove } from "../mockdata";
 
 describe( "UpdateHandsCommand", () => {
 
@@ -61,7 +61,7 @@ describe( "UpdateHandsCommand", () => {
 
 		const allCardsOfCalledSet = Object.values( updatedHands ).flat().filter( card => card.set === calledSet );
 		const calledCards = Object.keys( mockCallMove.data.correctCall );
-		
+
 		expect( allCardsOfCalledSet ).toHaveLength( 0 );
 		expect( mockPrisma.literature.cardMapping.deleteMany ).toHaveBeenCalledWith( {
 			where: { cardId: { in: calledCards } }

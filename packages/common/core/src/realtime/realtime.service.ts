@@ -1,5 +1,5 @@
-import { Namespace, Server } from "socket.io";
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
+import { Namespace, Server } from "socket.io";
 import { LoggerFactory } from "../logger";
 
 @Injectable()

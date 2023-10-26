@@ -1,6 +1,6 @@
 import { Box, Divider, Flex, Stack, Title } from "@mantine/core";
-import { PlayerLobby } from "./player-lobby";
 import { useGameStore } from "../utils";
+import { PlayerLobby } from "./player-lobby";
 
 export interface DisplayTeamsProps {
 	displayCardCount?: boolean;

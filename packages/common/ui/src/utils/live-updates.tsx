@@ -1,6 +1,6 @@
+import { useAuthStore } from "@auth/ui";
 import { Fragment, ReactNode, useEffect } from "react";
 import { socket } from "./socket";
-import { useAuthStore } from "@auth/ui";
 
 export interface LiveUpdatesProviderProps {
 	room: string;

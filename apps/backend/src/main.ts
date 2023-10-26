@@ -1,10 +1,10 @@
-import { NestFactory } from "@nestjs/core";
+import { LiteratureModule } from "@literature/core";
 import { Module } from "@nestjs/common";
+import { NestFactory } from "@nestjs/core";
 import { LoggerFactory, loggerMiddleware } from "@s2h/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
-import { LiteratureModule } from "@literature/core";
 
 dotenv.config();
 

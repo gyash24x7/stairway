@@ -1,6 +1,6 @@
+import { generateColors } from "@mantine/colors-generator";
 import { createTheme } from "@mantine/core";
 import { themeToVars } from "@mantine/vanilla-extract";
-import { generateColors } from "@mantine/colors-generator";
 
 export const theme = createTheme( {
 	colors: {

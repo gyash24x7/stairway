@@ -1,11 +1,11 @@
-import { Module, OnModuleInit } from "@nestjs/common";
-import { GamesController } from "./controllers";
-import { PrismaModule, RealtimeModule, RealtimeService } from "@s2h/core";
 import { AuthModule } from "@auth/core";
-import { commandHandlers } from "./commands";
-import { queryHandlers } from "./queries";
+import { Module, OnModuleInit } from "@nestjs/common";
 import { CqrsModule } from "@nestjs/cqrs";
+import { PrismaModule, RealtimeModule, RealtimeService } from "@s2h/core";
+import { commandHandlers } from "./commands";
+import { GamesController } from "./controllers";
 import { eventHandlers } from "./events";
+import { queryHandlers } from "./queries";
 
 @Module( {
 	imports: [ PrismaModule, AuthModule, CqrsModule, RealtimeModule ],

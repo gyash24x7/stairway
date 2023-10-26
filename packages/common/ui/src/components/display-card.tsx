@@ -1,6 +1,6 @@
+import { Group, Title } from "@mantine/core";
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
 import { playingCardClassnames as classnames } from "../styles";
-import { Group, Title } from "@mantine/core";
 
 
 export interface DisplayCardProps {

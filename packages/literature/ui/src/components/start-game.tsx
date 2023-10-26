@@ -1,6 +1,6 @@
 import { Button } from "@mantine/core";
-import { startGame, useGameStore } from "../utils";
 import { useAction } from "@s2h/ui";
+import { startGame, useGameStore } from "../utils";
 
 export function StartGame() {
 	const gameId = useGameStore( ( state ) => state.gameData!.id );

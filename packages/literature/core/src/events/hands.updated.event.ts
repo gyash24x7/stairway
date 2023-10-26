@@ -1,8 +1,8 @@
+import type { HandData } from "@literature/types";
 import type { IEvent, IEventHandler } from "@nestjs/cqrs";
 import { EventsHandler } from "@nestjs/cqrs";
 import { LoggerFactory, RealtimeService } from "@s2h/core";
 import { Constants, GameEvents } from "../constants";
-import type { HandData } from "@literature/types";
 
 export class HandsUpdatedEvent implements IEvent {
 	constructor(

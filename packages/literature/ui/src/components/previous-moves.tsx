@@ -1,8 +1,8 @@
 import { Box, Button, Flex, Modal, Stack } from "@mantine/core";
-import { Fragment } from "react";
-import { useGameStore } from "../utils";
 import { useDisclosure } from "@mantine/hooks";
+import { Fragment } from "react";
 import { gameStatusClassnames } from "../styles";
+import { useGameStore } from "../utils";
 
 export function PreviousMoves() {
 	const moves = useGameStore( state => state.gameData!.moves );

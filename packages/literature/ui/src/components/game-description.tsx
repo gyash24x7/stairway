@@ -1,7 +1,7 @@
-import { gameDescriptionClassnames as classnames } from "../styles";
+import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { IconCopy } from "@tabler/icons-react";
-import { Box, Flex, Text, Title } from "@mantine/core";
+import { gameDescriptionClassnames as classnames } from "../styles";
 import { useGameStore } from "../utils";
 
 export function GameDescription() {

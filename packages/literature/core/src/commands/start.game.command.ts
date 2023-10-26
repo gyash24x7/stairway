@@ -1,8 +1,8 @@
+import type { CardMapping, GameData } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import { LoggerFactory, PrismaService } from "@s2h/core";
-import type { CardMapping, GameData } from "@literature/types";
 import { CardRank, removeCardsOfRank, shuffle, SORTED_DECK } from "@s2h/cards";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 import { GameStartedEvent } from "../events";
 import { buildCardMappingData } from "../utils";
 

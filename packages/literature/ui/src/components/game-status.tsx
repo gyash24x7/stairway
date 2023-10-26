@@ -1,11 +1,11 @@
+import { Box, Group, Stack, Title } from "@mantine/core";
+import { gameStatusClassnames } from "../styles";
+import { useGameStore } from "../utils";
 import { AskCard } from "./ask-card";
 import { CallSet } from "./call-set";
 import { PlayerCard } from "./player-card";
 import { PreviousMoves } from "./previous-moves";
-import { Box, Group, Stack, Title } from "@mantine/core";
 import { TransferTurn } from "./transfer-turn";
-import { gameStatusClassnames } from "../styles";
-import { useGameStore } from "../utils";
 
 export function GameStatus() {
 	const status = useGameStore( state => state.gameData!.status );

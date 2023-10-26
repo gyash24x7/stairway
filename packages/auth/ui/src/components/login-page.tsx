@@ -1,13 +1,13 @@
-import { emailValidator, minLengthValidator, useAuthStore } from "../utils";
+import type { LoginInput } from "@auth/types";
 import { Alert, Anchor, Button, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useNavigate } from "react-router-dom";
+import { useAction } from "@s2h/ui";
 import { IconAlertCircle } from "@tabler/icons-react";
+import type { MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
-import type { MouseEvent } from "react";
-import { useAction } from "@s2h/ui";
-import type { LoginInput } from "@auth/types";
+import { emailValidator, minLengthValidator, useAuthStore } from "../utils";
 
 export function LoginPage() {
 	const login = useAuthStore( state => state.login );

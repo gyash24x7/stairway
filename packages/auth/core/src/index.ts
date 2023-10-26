@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
-import { PrismaModule } from "@s2h/core";
-import { AuthController } from "./controllers";
-import { commandHandlers } from "./commands";
 import { CqrsModule } from "@nestjs/cqrs";
 import { JwtModule as NestJwtModule } from "@nestjs/jwt";
+import { PrismaModule } from "@s2h/core";
 import * as process from "process";
+import { commandHandlers } from "./commands";
+import { AuthController } from "./controllers";
 
 const JwtModule = NestJwtModule.register( {
 	global: true,

@@ -1,7 +1,7 @@
-import { MoveCreatedEventHandler } from "./move.created.event";
 import { GameStartedEventHandler } from "./game.started.event";
 import { HandsUpdatedEventHandler } from "./hands.updated.event";
 import { InferencesUpdatedEvent } from "./inferences.updated.event";
+import { MoveCreatedEventHandler } from "./move.created.event";
 import { PlayerJoinedEventHandler } from "./player.joined.event";
 import { ScoreUpdatedEventHandler } from "./score.updated.event";
 import { StatusUpdatedEventHandler } from "./status.updated.event";

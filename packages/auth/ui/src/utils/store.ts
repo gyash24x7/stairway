@@ -1,7 +1,7 @@
 import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
-import { create } from "zustand";
 import type { ApiResponse } from "@s2h/client";
 import { getRequest, postRequest } from "@s2h/client";
+import { create } from "zustand";
 
 export type AuthStore = {
 	authInfo?: UserAuthInfo;

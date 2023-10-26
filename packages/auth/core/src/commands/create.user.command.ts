@@ -1,10 +1,10 @@
+import type { CreateUserInput } from "@auth/types";
+import { ConflictException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import type { CreateUserInput } from "@auth/types";
-import { Constants, Messages } from "../constants";
-import bcrypt from "bcryptjs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { ConflictException } from "@nestjs/common";
+import bcrypt from "bcryptjs";
+import { Constants, Messages } from "../constants";
 
 export class CreateUserCommand implements ICommand {
 	constructor( public readonly input: CreateUserInput ) {}

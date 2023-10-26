@@ -1,13 +1,14 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { CallSetInput, CardMapping, GameStatus, Move, MoveType } from "@literature/types";
-import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
+import type { HttpException } from "@nestjs/common";
 import type { EventBus } from "@nestjs/cqrs";
 import { CardSet } from "@s2h/cards";
+import type { PrismaService } from "@s2h/core";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
 import { CallSetCommand, CallSetCommandHandler } from "../../src/commands";
-import { MoveCreatedEvent } from "../../src/events";
-import type { HttpException } from "@nestjs/common";
 import { Messages } from "../../src/constants";
+import { MoveCreatedEvent } from "../../src/events";
+import { buildCardMappingData } from "../../src/utils";
 import {
 	buildMockGameData,
 	buildPlayerSpecificData,
@@ -19,7 +20,6 @@ import {
 	mockPlayer4,
 	mockPlayerIds
 } from "../mockdata";
-import { buildCardMappingData } from "../../src/utils";
 
 describe( "CallSetCommand", () => {
 

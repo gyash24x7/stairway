@@ -1,6 +1,6 @@
-import type { PlayingCard } from "./playing-card";
 import type { CardSet } from "./card-const";
 import { CardRank, cardSetMap, SORTED_DECK } from "./card-const";
+import type { PlayingCard } from "./playing-card";
 
 export function shuffle<T>( arr: T[] ): T[] {
 	return arr

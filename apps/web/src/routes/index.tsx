@@ -1,6 +1,6 @@
-import { Outlet, Route, Routes } from "react-router-dom";
 import { AuthStoreProvider, LoginPage, SignUpPage } from "@auth/ui";
 import { GamePage, GameStoreProvider, HomePage as LiteratureHomePage } from "@literature/ui";
+import { Outlet, Route, Routes } from "react-router-dom";
 import { HomePage } from "../components";
 import { AuthGateway } from "./auth-gateway";
 

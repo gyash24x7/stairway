@@ -1,3 +1,4 @@
+import type { UserAuthInfo } from "@auth/types";
 import type {
 	AskMove,
 	CallMove,
@@ -18,7 +19,6 @@ import {
 	Team,
 	TransferTurnInput
 } from "@literature/types";
-import type { UserAuthInfo } from "@auth/types";
 import {
 	CardRank,
 	CardSet,

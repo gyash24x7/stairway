@@ -1,12 +1,12 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { CardMapping, GameStatus } from "@literature/types";
-import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
 import type { EventBus } from "@nestjs/cqrs";
+import type { PrismaService } from "@s2h/core";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
 import { StartGameCommand, StartGameCommandHandler } from "../../src/commands";
 import { GameStartedEvent } from "../../src/events";
-import { buildMockGameData, deck, mockPlayerIds } from "../mockdata";
 import { buildCardMappingData } from "../../src/utils";
+import { buildMockGameData, deck, mockPlayerIds } from "../mockdata";
 
 describe( "StartGameCommand", () => {
 

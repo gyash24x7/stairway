@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { CreateUserCommand, CreateUserCommandHandler } from "../../src/commands";
-import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
 import type { CreateUserInput, User } from "@auth/types";
 import type { HttpException } from "@nestjs/common";
+import type { PrismaService } from "@s2h/core";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
+import { CreateUserCommand, CreateUserCommandHandler } from "../../src/commands";
 import { Messages } from "../../src/constants";
 
 describe( "CreateUserCommandHandler", () => {

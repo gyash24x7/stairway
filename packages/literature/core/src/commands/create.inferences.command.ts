@@ -1,9 +1,9 @@
+import type { GameData, HandData, InferenceData } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import type { GameData, HandData, InferenceData } from "@literature/types";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { buildDefaultCardInferences } from "../utils";
 import { InferencesUpdatedEvent } from "../events";
+import { buildDefaultCardInferences } from "../utils";
 
 export class CreateInferencesCommand implements ICommand {
 	constructor(

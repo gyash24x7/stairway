@@ -1,10 +1,10 @@
 import { ActionIcon, Flex } from "@mantine/core";
-import { navBarClassnames as classnames } from "../styles";
-import { UserCard } from "./user-card";
-import { IconPower } from "@tabler/icons-react";
-import { useAuthStore } from "../utils";
-import { useNavigate } from "react-router-dom";
 import { useAction } from "@s2h/ui";
+import { IconPower } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom";
+import { navBarClassnames as classnames } from "../styles";
+import { useAuthStore } from "../utils";
+import { UserCard } from "./user-card";
 
 export function Navbar() {
 	const logout = useAuthStore( store => store.logout );

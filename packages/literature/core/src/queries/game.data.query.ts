@@ -1,6 +1,6 @@
+import type { GameData } from "@literature/types";
 import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
-import type { GameData } from "@literature/types";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { buildGameData } from "../utils";
 

@@ -1,13 +1,13 @@
+import type { UserAuthInfo } from "@auth/types";
+import type { GameData } from "@literature/types";
 import { BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { QueryBus } from "@nestjs/cqrs";
 import { LoggerFactory } from "@s2h/core";
 import type { Request, Response } from "express";
 import { Constants } from "../constants";
-import { QueryBus } from "@nestjs/cqrs";
-import { CardMappingsQuery, GameDataQuery, PlayerSpecificDataQuery } from "../queries";
-import type { GameData } from "@literature/types";
-import { Reflector } from "@nestjs/core";
-import type { UserAuthInfo } from "@auth/types";
 import type { RequiresGameData } from "../decorators";
+import { CardMappingsQuery, GameDataQuery, PlayerSpecificDataQuery } from "../queries";
 
 @Injectable()
 export class GameGuard implements CanActivate {

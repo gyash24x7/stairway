@@ -8,9 +8,9 @@ import type {
 	ScoreUpdate,
 	TeamWithMembers
 } from "@literature/types";
+import type { PlayingCard } from "@s2h/cards";
 import { create } from "zustand";
 import { loadGameData, loadPlayerData } from "./client";
-import type { PlayingCard } from "@s2h/cards";
 
 export type EventHandlers = {
 	handlePlayerJoinedEvent: ( player: Player ) => void;

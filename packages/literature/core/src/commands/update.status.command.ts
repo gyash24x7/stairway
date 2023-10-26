@@ -1,6 +1,6 @@
+import type { GameStatus } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import type { GameStatus } from "@literature/types";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { StatusUpdatedEvent } from "../events";
 

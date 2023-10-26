@@ -1,7 +1,7 @@
-import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { CallMoveData, Move, PlayerData, ScoreUpdate, TeamData } from "@literature/types";
 import { MoveType } from "@literature/types";
+import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { ScoreUpdatedEvent } from "../events";
 

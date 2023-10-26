@@ -1,10 +1,10 @@
+import { Navbar } from "@auth/ui";
 import { Box, Button, Group, Paper, Text, Title } from "@mantine/core";
+import { useAction } from "@s2h/ui";
 import { useNavigate } from "react-router-dom";
 import { homePageClassnames as classnames } from "../styles";
-import { Navbar } from "@auth/ui";
-import { JoinGame } from "./join-game";
-import { useAction } from "@s2h/ui";
 import { createGame } from "../utils";
+import { JoinGame } from "./join-game";
 
 export function HomePage() {
 	const navigate = useNavigate();

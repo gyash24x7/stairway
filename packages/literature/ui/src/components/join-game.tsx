@@ -1,8 +1,8 @@
 import { Button, Modal, Stack, TextInput } from "@mantine/core";
-import { useNavigate } from "react-router-dom";
-import { ChangeEvent, Fragment, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
 import { useAction } from "@s2h/ui";
+import { ChangeEvent, Fragment, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { joinGame } from "../utils";
 
 export function JoinGame() {

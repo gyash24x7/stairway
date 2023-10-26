@@ -1,12 +1,12 @@
+import { GameStatus } from "@literature/types";
+import type { EventBus } from "@nestjs/cqrs";
+import { CardSet } from "@s2h/cards";
+import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
 import { UpdateScoreCommand, UpdateScoreCommandHandler } from "../../src/commands";
-import { buildMockGameData, mockAskMove, mockCallMove, mockTeamA, mockTeamB } from "../mockdata";
-import { GameStatus } from "@literature/types";
-import { CardSet } from "@s2h/cards";
 import { ScoreUpdatedEvent } from "../../src/events";
+import { buildMockGameData, mockAskMove, mockCallMove, mockTeamA, mockTeamB } from "../mockdata";
 
 describe( "UpdateScoreCommand", () => {
 

@@ -1,10 +1,10 @@
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
-import { ChangeEvent, Fragment, useState } from "react";
-import { PlayerCard } from "./player-card";
-import { chunk, shuffle } from "@s2h/cards";
 import { useDisclosure } from "@mantine/hooks";
+import { chunk, shuffle } from "@s2h/cards";
 import { useAction } from "@s2h/ui";
+import { ChangeEvent, Fragment, useState } from "react";
 import { createTeams, useGameStore } from "../utils";
+import { PlayerCard } from "./player-card";
 
 
 export function CreateTeams() {

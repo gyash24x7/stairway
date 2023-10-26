@@ -1,6 +1,6 @@
+import { Navbar } from "@auth/ui";
 import { Box, Flex } from "@mantine/core";
 import { ApplicationCard } from "@s2h/ui";
-import { Navbar } from "@auth/ui";
 
 export function HomePage() {
 	return (

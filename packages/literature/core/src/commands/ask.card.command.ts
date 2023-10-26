@@ -1,5 +1,3 @@
-import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type {
 	AskCardInput,
 	AskMove,
@@ -10,9 +8,11 @@ import type {
 } from "@literature/types";
 import { MoveType } from "@literature/types";
 import { BadRequestException } from "@nestjs/common";
+import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { MoveCreatedEvent } from "../events";
 import { Messages } from "../constants";
+import { MoveCreatedEvent } from "../events";
 
 export class AskCardCommand implements ICommand {
 	constructor(

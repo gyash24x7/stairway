@@ -1,6 +1,6 @@
+import type { CardMappingData, GameData, Move } from "@literature/types";
 import type { IEvent, IEventHandler } from "@nestjs/cqrs";
 import { CommandBus, EventsHandler } from "@nestjs/cqrs";
-import type { CardMappingData, GameData, Move } from "@literature/types";
 import { LoggerFactory, RealtimeService } from "@s2h/core";
 import { UpdateHandsCommand, UpdateInferencesCommand, UpdateScoreCommand, UpdateTurnCommand } from "../commands";
 import { Constants, GameEvents } from "../constants";

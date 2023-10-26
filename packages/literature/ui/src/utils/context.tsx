@@ -1,7 +1,7 @@
-import { ReactNode, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import { Loader } from "@mantine/core";
 import { LiveUpdatesProvider, useAction } from "@s2h/ui";
+import { ReactNode, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { initializeGameStore, useGameStore } from "./store";
 
 function GameLiveUpdatesProvider( props: { children: ReactNode, gameId: string } ) {

@@ -1,5 +1,3 @@
-import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type {
 	CallMove,
 	CallMoveData,
@@ -9,11 +7,13 @@ import type {
 	PlayerSpecificData
 } from "@literature/types";
 import { MoveType } from "@literature/types";
-import { cardSetMap, getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
 import { BadRequestException } from "@nestjs/common";
+import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
+import { cardSetMap, getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { MoveCreatedEvent } from "../events";
 import { Messages } from "../constants";
+import { MoveCreatedEvent } from "../events";
 
 export class CallSetCommand implements ICommand {
 	constructor(

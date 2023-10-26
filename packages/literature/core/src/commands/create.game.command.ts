@@ -1,9 +1,9 @@
+import type { UserAuthInfo } from "@auth/types";
+import type { CreateGameInput, Game } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import type { CreateGameInput, Game } from "@literature/types";
-import type { UserAuthInfo } from "@auth/types";
-import { LoggerFactory, PrismaService } from "@s2h/core";
 import { generateGameCode } from "@s2h/cards";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 
 export class CreateGameCommand implements ICommand {
 	constructor(

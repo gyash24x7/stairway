@@ -1,12 +1,12 @@
-import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
-import { AuthInfo, RequiresAuth } from "../decorators";
-import type { CookieOptions, Response } from "express";
 import type { AuthTokenData, CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
-import { Paths } from "../constants";
+import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
-import { CreateUserCommand, LoginCommand, VerifyUserCommand } from "../commands";
 import type { ApiResponse } from "@s2h/client";
 import { LoggerFactory } from "@s2h/core";
+import type { CookieOptions, Response } from "express";
+import { CreateUserCommand, LoginCommand, VerifyUserCommand } from "../commands";
+import { Paths } from "../constants";
+import { AuthInfo, RequiresAuth } from "../decorators";
 
 const cookieOptions: CookieOptions = {
 	maxAge: 9000000,

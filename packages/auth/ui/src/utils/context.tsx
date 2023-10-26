@@ -1,7 +1,7 @@
-import { Fragment, ReactNode, useEffect } from "react";
 import { Loader } from "@mantine/core";
-import { initializeAuthStore } from "./store";
 import { ErrorPage, useAction } from "@s2h/ui";
+import { Fragment, ReactNode, useEffect } from "react";
+import { initializeAuthStore } from "./store";
 
 export function AuthStoreProvider( props: { children: ReactNode } ) {
 	const { execute, error, isLoading } = useAction( initializeAuthStore );

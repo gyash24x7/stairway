@@ -1,7 +1,7 @@
-import type { Dispatch, SetStateAction } from "react";
-import { Combobox, useCombobox } from "@mantine/core";
-import { PlayerCard } from "./player-card";
 import type { Player } from "@literature/types";
+import { Combobox, useCombobox } from "@mantine/core";
+import type { Dispatch, SetStateAction } from "react";
+import { PlayerCard } from "./player-card";
 
 export interface SelectPlayerProps {
 	options: Player[];

@@ -1,8 +1,8 @@
+import type { CardInferences, GameData, PlayerSpecificData } from "@literature/types";
 import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
-import type { CardInferences, GameData, PlayerSpecificData } from "@literature/types";
-import { LoggerFactory, PrismaService } from "@s2h/core";
 import { getCardSetsInHand, getPlayingCardFromId } from "@s2h/cards";
+import { LoggerFactory, PrismaService } from "@s2h/core";
 
 export class PlayerSpecificDataQuery implements IQuery {
 	constructor(

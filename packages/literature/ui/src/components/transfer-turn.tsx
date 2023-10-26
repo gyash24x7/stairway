@@ -1,9 +1,9 @@
 import { Button, Modal, Stack } from "@mantine/core";
-import { Fragment, useState } from "react";
 import { useDisclosure } from "@mantine/hooks";
-import { SelectPlayer } from "./select-player";
 import { useAction } from "@s2h/ui";
+import { Fragment, useState } from "react";
 import { transferTurn, useGameStore } from "../utils";
+import { SelectPlayer } from "./select-player";
 
 export function TransferTurn() {
 	const teams = useGameStore( state => state.gameData!.teams );

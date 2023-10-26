@@ -1,6 +1,6 @@
-import { DisplayCard } from "./display-card";
-import { type PlayingCard, sortCards } from "@s2h/cards";
 import { Box, Flex, Title } from "@mantine/core";
+import { type PlayingCard, sortCards } from "@s2h/cards";
+import { DisplayCard } from "./display-card";
 
 export interface DisplayHandProps {
 	hand: PlayingCard[];

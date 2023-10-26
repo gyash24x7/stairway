@@ -1,10 +1,10 @@
+import type { AuthTokenData, LoginInput } from "@auth/types";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
-import type { AuthTokenData, LoginInput } from "@auth/types";
-import { LoggerFactory, PrismaService } from "@s2h/core";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
-import bcrypt from "bcryptjs";
 import { JwtService } from "@nestjs/jwt";
+import { LoggerFactory, PrismaService } from "@s2h/core";
+import bcrypt from "bcryptjs";
 import { Messages } from "../constants";
 
 export class LoginCommand implements ICommand {

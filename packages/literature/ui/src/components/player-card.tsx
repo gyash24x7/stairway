@@ -1,5 +1,5 @@
-import { Avatar, Box, Group, Title } from "@mantine/core";
 import type { Player } from "@literature/types";
+import { Avatar, Box, Group, Title } from "@mantine/core";
 
 export interface PlayerCardProps {
 	player: Player;

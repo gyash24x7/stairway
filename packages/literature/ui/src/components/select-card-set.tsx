@@ -1,6 +1,6 @@
+import { Combobox, Flex, useCombobox } from "@mantine/core";
 import type { CardSet } from "@s2h/cards";
 import { DisplayCardSet } from "@s2h/ui";
-import { Combobox, Flex, useCombobox } from "@mantine/core";
 
 export interface SelectCardSetProps {
 	cardSet?: CardSet;

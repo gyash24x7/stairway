@@ -1,12 +1,12 @@
+import { CardInferences, GameStatus, InferenceData } from "@literature/types";
+import type { EventBus } from "@nestjs/cqrs";
+import { getPlayingCardFromId } from "@s2h/cards";
+import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
-import { buildMockGameData, mockAskMove, mockCallMove, mockTransferMove } from "../mockdata";
 import { UpdateInferencesCommand, UpdateInferencesCommandHandler } from "../../src/commands";
 import { InferencesUpdatedEvent } from "../../src/events";
-import { getPlayingCardFromId } from "@s2h/cards";
-import { CardInferences, GameStatus, InferenceData } from "@literature/types";
+import { buildMockGameData, mockAskMove, mockCallMove, mockTransferMove } from "../mockdata";
 
 describe( "UpdateInferencesCommand", () => {
 

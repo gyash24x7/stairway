@@ -1,7 +1,7 @@
-import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import type { CreateTeamsInput, GameData, TeamData } from "@literature/types";
 import { BadRequestException } from "@nestjs/common";
+import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { Messages } from "../constants";
 import { TeamsCreatedEvent } from "../events";

@@ -1,6 +1,6 @@
+import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
 import { GameDataQuery, GameDataQueryHandler } from "../../src/queries";
 import {
 	deck,

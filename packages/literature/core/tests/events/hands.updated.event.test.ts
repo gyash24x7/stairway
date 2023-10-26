@@ -1,11 +1,11 @@
+import { GameStatus } from "@literature/types";
+import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { RealtimeService } from "@s2h/core";
-import { HandsUpdatedEvent, HandsUpdatedEventHandler } from "../../src/events";
-import { GameStatus } from "@literature/types";
 import { Constants, GameEvents } from "../../src/constants";
-import { buildMockCardMappings, buildMockGameData } from "../mockdata";
+import { HandsUpdatedEvent, HandsUpdatedEventHandler } from "../../src/events";
 import { buildCardMappingData, buildHandData } from "../../src/utils";
+import { buildMockCardMappings, buildMockGameData } from "../mockdata";
 
 describe( "HandsUpdatedEvent", () => {
 

@@ -1,9 +1,9 @@
+import { GameStatus } from "@literature/types";
+import type { EventBus } from "@nestjs/cqrs";
+import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
 import { UpdateStatusCommand, UpdateStatusCommandHandler } from "../../src/commands";
-import { GameStatus } from "@literature/types";
 import { StatusUpdatedEvent } from "../../src/events";
 
 describe( "UpdateStatusCommand", () => {

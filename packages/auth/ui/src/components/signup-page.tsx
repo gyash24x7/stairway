@@ -1,12 +1,12 @@
-import { useNavigate } from "react-router-dom";
+import type { CreateUserInput } from "@auth/types";
 import { Alert, Anchor, Button, PasswordInput, Text, TextInput, Title } from "@mantine/core";
-import { emailValidator, minLengthValidator, requiredValidator, useAuthStore } from "../utils";
 import { useForm } from "@mantine/form";
+import { useAction } from "@s2h/ui";
+import type { MouseEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
-import type { MouseEvent } from "react";
-import { useAction } from "@s2h/ui";
-import type { CreateUserInput } from "@auth/types";
+import { emailValidator, minLengthValidator, requiredValidator, useAuthStore } from "../utils";
 
 export function SignUpPage() {
 	const signUp = useAuthStore( store => store.signUp );

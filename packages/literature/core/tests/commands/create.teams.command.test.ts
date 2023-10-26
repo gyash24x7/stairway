@@ -1,12 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
 import type { CreateTeamsInput } from "@literature/types";
 import { GameStatus } from "@literature/types";
-import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
-import { CreateTeamsCommand, CreateTeamsCommandHandler } from "../../src/commands";
 import type { HttpException } from "@nestjs/common";
+import type { EventBus } from "@nestjs/cqrs";
+import type { PrismaService } from "@s2h/core";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
+import { CreateTeamsCommand, CreateTeamsCommandHandler } from "../../src/commands";
 import { Messages } from "../../src/constants";
+import { TeamsCreatedEvent } from "../../src/events";
 import {
 	buildMockGameData,
 	mockPlayer1,
@@ -16,7 +17,6 @@ import {
 	mockTeamA,
 	mockTeamB
 } from "../mockdata";
-import { TeamsCreatedEvent } from "../../src/events";
 
 describe( "CreateTeamsCommand", () => {
 	const mockInput: CreateTeamsInput = {

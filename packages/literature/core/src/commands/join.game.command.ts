@@ -1,9 +1,9 @@
+import type { UserAuthInfo } from "@auth/types";
+import type { GameWithPlayers, JoinGameInput } from "@literature/types";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import type { GameWithPlayers, JoinGameInput } from "@literature/types";
-import type { UserAuthInfo } from "@auth/types";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Messages } from "../constants";
 import { PlayerJoinedEvent } from "../events";
 

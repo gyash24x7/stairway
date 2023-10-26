@@ -1,5 +1,5 @@
-import { useAuthStore } from "../utils";
 import { Avatar, Box, Group, Text, Title } from "@mantine/core";
+import { useAuthStore } from "../utils";
 
 export function UserCard() {
 	const { authInfo } = useAuthStore();

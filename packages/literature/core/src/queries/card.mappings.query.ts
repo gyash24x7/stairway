@@ -1,6 +1,6 @@
+import type { CardMappingData } from "@literature/types";
 import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
-import type { CardMappingData } from "@literature/types";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { buildCardMappingData } from "../utils";
 

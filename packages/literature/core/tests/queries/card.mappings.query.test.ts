@@ -1,9 +1,9 @@
+import type { CardMapping } from "@literature/types";
+import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
 import { CardMappingsQuery, CardMappingsQueryHandler } from "../../src/queries";
 import { deck, mockPlayerIds } from "../mockdata";
-import type { CardMapping } from "@literature/types";
 
 describe( "CardMappingsQuery", () => {
 

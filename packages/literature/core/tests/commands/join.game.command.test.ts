@@ -1,14 +1,14 @@
-import { afterEach, describe, expect, it } from "vitest";
 import type { JoinGameInput } from "@literature/types";
 import { GameStatus } from "@literature/types";
-import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
-import { JoinGameCommand, JoinGameCommandHandler } from "../../src/commands";
 import type { HttpException } from "@nestjs/common";
+import type { EventBus } from "@nestjs/cqrs";
+import type { PrismaService } from "@s2h/core";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
+import { JoinGameCommand, JoinGameCommandHandler } from "../../src/commands";
 import { Messages } from "../../src/constants";
-import { buildMockRawGameData, mockAuthInfo, mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 } from "../mockdata";
 import { PlayerJoinedEvent } from "../../src/events";
+import { buildMockRawGameData, mockAuthInfo, mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 } from "../mockdata";
 
 describe( "JoinGameCommand", () => {
 

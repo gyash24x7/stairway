@@ -1,6 +1,6 @@
+import { useAuthStore } from "@auth/ui";
 import type { ReactNode } from "react";
 import { Fragment, useEffect } from "react";
-import { useAuthStore } from "@auth/ui";
 import { useNavigate } from "react-router-dom";
 
 export interface AuthGatewayProps {

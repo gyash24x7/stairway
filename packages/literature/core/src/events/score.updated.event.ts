@@ -1,11 +1,11 @@
-import type { IEvent, IEventHandler } from "@nestjs/cqrs";
-import { CommandBus, EventsHandler } from "@nestjs/cqrs";
-import { LoggerFactory, RealtimeService } from "@s2h/core";
-import { Constants, GameEvents } from "../constants";
 import type { ScoreUpdate, TeamData } from "@literature/types";
 import { GameStatus } from "@literature/types";
+import type { IEvent, IEventHandler } from "@nestjs/cqrs";
+import { CommandBus, EventsHandler } from "@nestjs/cqrs";
 import type { CardSet } from "@s2h/cards";
+import { LoggerFactory, RealtimeService } from "@s2h/core";
 import { UpdateStatusCommand } from "../commands";
+import { Constants, GameEvents } from "../constants";
 
 export class ScoreUpdatedEvent implements IEvent {
 	constructor(

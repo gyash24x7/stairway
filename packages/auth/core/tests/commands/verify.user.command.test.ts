@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it } from "vitest";
 import type { User, VerifyUserInput } from "@auth/types";
-import bcrypt from "bcryptjs";
-import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import { VerifyUserCommand, VerifyUserCommandHandler } from "../../src/commands";
 import type { HttpException } from "@nestjs/common";
+import type { PrismaService } from "@s2h/core";
+import bcrypt from "bcryptjs";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
+import { VerifyUserCommand, VerifyUserCommandHandler } from "../../src/commands";
 
 describe( "VerifyUserCommand", () => {
 

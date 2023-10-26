@@ -1,11 +1,11 @@
+import { GameStatus } from "@literature/types";
+import type { EventBus } from "@nestjs/cqrs";
+import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
-import { buildMockGameData, mockAskMove, mockCallMove, mockTransferMove } from "../mockdata";
 import { UpdateTurnCommand, UpdateTurnCommandHandler } from "../../src/commands";
 import { TurnUpdatedEvent } from "../../src/events";
-import { GameStatus } from "@literature/types";
+import { buildMockGameData, mockAskMove, mockCallMove, mockTransferMove } from "../mockdata";
 
 describe( "UpdateTurnCommand", () => {
 

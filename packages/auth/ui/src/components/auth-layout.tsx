@@ -1,6 +1,6 @@
+import { Flex, Paper } from "@mantine/core";
 import type { ReactNode } from "react";
 import { authLayoutClassnames as classnames } from "../styles";
-import { Flex, Paper } from "@mantine/core";
 
 export function AuthLayout( props: { children: ReactNode } ) {
 	return (

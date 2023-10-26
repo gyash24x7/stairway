@@ -1,4 +1,3 @@
-import { ApiResponse, getRequest, postRequest, putRequest } from "@s2h/client";
 import type {
 	AskCardInput,
 	CallSetInput,
@@ -9,6 +8,7 @@ import type {
 	PlayerSpecificData,
 	TransferTurnInput
 } from "@literature/types";
+import { ApiResponse, getRequest, postRequest, putRequest } from "@s2h/client";
 
 export const gamesPath = ( id?: string ) => `/literature/games${ !!id ? "/" + id : "" }`;
 export const createGamePath = () => gamesPath();

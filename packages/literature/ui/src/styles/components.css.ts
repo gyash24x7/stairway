@@ -1,6 +1,6 @@
-import { style } from "@vanilla-extract/css";
-import { vars } from "@s2h/ui";
 import { rem } from "@mantine/core";
+import { vars } from "@s2h/ui";
+import { style } from "@vanilla-extract/css";
 
 export const gameDescriptionClassnames = {
 	copyIcon: style( {

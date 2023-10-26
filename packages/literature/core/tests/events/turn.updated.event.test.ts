@@ -1,8 +1,8 @@
+import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { RealtimeService } from "@s2h/core";
-import { TurnUpdatedEvent, TurnUpdatedEventHandler } from "../../src/events";
 import { Constants, GameEvents } from "../../src/constants";
+import { TurnUpdatedEvent, TurnUpdatedEventHandler } from "../../src/events";
 
 describe( "TurnUpdatedEvent", () => {
 

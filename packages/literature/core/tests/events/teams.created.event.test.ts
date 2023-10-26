@@ -1,12 +1,12 @@
+import { GameStatus, TeamData } from "@literature/types";
+import type { CommandBus } from "@nestjs/cqrs";
+import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { RealtimeService } from "@s2h/core";
-import { TeamsCreatedEvent, TeamsCreatedEventHandler } from "../../src/events";
-import { GameStatus, TeamData } from "@literature/types";
-import { Constants, GameEvents } from "../../src/constants";
-import type { CommandBus } from "@nestjs/cqrs";
-import { mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4, mockTeamA, mockTeamB } from "../mockdata";
 import { UpdateStatusCommand } from "../../src/commands";
+import { Constants, GameEvents } from "../../src/constants";
+import { TeamsCreatedEvent, TeamsCreatedEventHandler } from "../../src/events";
+import { mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4, mockTeamA, mockTeamB } from "../mockdata";
 
 describe( "TeamsCreatedEvent", () => {
 

@@ -1,7 +1,7 @@
-import { style, styleVariants } from "@vanilla-extract/css";
 import { rem } from "@mantine/core";
-import { vars } from "./theme";
 import { CardSuit } from "@s2h/cards";
+import { style, styleVariants } from "@vanilla-extract/css";
+import { vars } from "./theme";
 
 export const applicationCardClassnames = {
 	card: style( {

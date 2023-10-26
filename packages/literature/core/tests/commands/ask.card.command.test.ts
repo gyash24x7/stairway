@@ -1,12 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { CardMapping, GameStatus, MoveType } from "@literature/types";
-import { mockClear, mockDeep } from "vitest-mock-extended";
-import type { PrismaService } from "@s2h/core";
-import type { EventBus } from "@nestjs/cqrs";
-import { AskCardCommand, AskCardCommandHandler } from "../../src/commands";
-import { MoveCreatedEvent } from "../../src/events";
 import type { HttpException } from "@nestjs/common";
+import type { EventBus } from "@nestjs/cqrs";
+import type { PrismaService } from "@s2h/core";
+import { afterEach, describe, expect, it } from "vitest";
+import { mockClear, mockDeep } from "vitest-mock-extended";
+import { AskCardCommand, AskCardCommandHandler } from "../../src/commands";
 import { Messages } from "../../src/constants";
+import { MoveCreatedEvent } from "../../src/events";
+import { buildCardMappingData } from "../../src/utils";
 import {
 	buildMockGameData,
 	buildPlayerSpecificData,
@@ -20,7 +21,6 @@ import {
 	mockPlayer4,
 	mockPlayerIds
 } from "../mockdata";
-import { buildCardMappingData } from "../../src/utils";
 
 describe( "AskCardCommand", () => {
 
