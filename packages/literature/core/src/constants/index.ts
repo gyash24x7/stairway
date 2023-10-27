@@ -35,11 +35,9 @@ export class GameEvents {
 
 export class Messages {
 	public static readonly GAME_NOT_FOUND = "Game Not Found!";
-	public static readonly GAME_NOT_IN_REQUIRED_STATUS = "The Game is not in required status!";
 	public static readonly GAME_ALREADY_HAS_REQUIRED_PLAYERS = "The Game already has required players!";
 	public static readonly GAME_DOESNT_HAVE_ENOUGH_PLAYERS = "The Game doesn't have enough players!";
 	public static readonly USER_ALREADY_PART_OF_GAME = "The User is already part of the Game!";
-	public static readonly TEAMS_NOT_CREATED = "The Teams have not been created for the Game!";
 	public static readonly PLAYER_NOT_PART_OF_GAME = "The Player is not part of the Game!";
 	public static readonly ASKED_PLAYER_FROM_SAME_TEAM = "The asked player is from the same team!";
 	public static readonly ASKED_CARD_WITH_ASKING_PLAYER = "The asked card is with asking player itself!";

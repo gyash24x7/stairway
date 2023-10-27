@@ -3,6 +3,7 @@ import type {
 	CardMapping,
 	CardMappingData,
 	GameData,
+	GameStatus,
 	HandData,
 	Player,
 	RawGameData,
@@ -52,7 +53,14 @@ export function buildGameData( data: RawGameData ): GameData {
 		cardCounts[ cardMapping.playerId ]++;
 	} );
 
-	return { ...data, players: playerMap, teams: teamMap, cardCounts, moves: data.moves! };
+	return {
+		...data,
+		players: playerMap,
+		teams: teamMap,
+		cardCounts,
+		moves: data.moves!,
+		status: data.status as GameStatus
+	};
 }
 
 export function buildDefaultCardInferences( playerIds: string[], playerId: string, cards: string[] ) {

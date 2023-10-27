@@ -9,7 +9,7 @@ export interface AuthGatewayProps {
 }
 
 export function AuthGateway( { isPrivate, children }: AuthGatewayProps ) {
-	const isLoggedIn = useAuthStore( ( state ) => state.isLoggedIn );
+	const isLoggedIn = useAuthStore( state => state.isLoggedIn );
 	const navigate = useNavigate();
 
 	useEffect( () => {

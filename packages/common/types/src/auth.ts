@@ -10,7 +10,7 @@ export type UserAuthInfo = {
 
 export type AuthTokenData = {
 	token: string;
-	userId: string;
+	authInfo: UserAuthInfo;
 }
 
 export type User = PrismaUser

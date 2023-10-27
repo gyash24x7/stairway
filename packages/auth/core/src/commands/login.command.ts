@@ -42,9 +42,11 @@ export class LoginCommandHandler implements ICommandHandler<LoginCommand, AuthTo
 			throw new BadRequestException( Messages.INVALID_CREDENTIALS );
 		}
 
+		const { salt, password, ...authInfo } = user;
 		const token = await this.jwtService.signAsync( { ...user } );
+
 		this.logger.debug( "<< executeLoginCommand()" );
-		return { userId: user.id, token };
+		return { authInfo, token };
 	}
 
 

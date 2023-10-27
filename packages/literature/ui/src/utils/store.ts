@@ -1,7 +1,9 @@
 import type {
 	CardInferences,
+	CreateGameInput,
 	GameData,
 	GameStatus,
+	JoinGameInput,
 	Move,
 	Player,
 	PlayerSpecificData,
@@ -10,7 +12,12 @@ import type {
 } from "@literature/types";
 import type { PlayingCard } from "@s2h/cards";
 import { create } from "zustand";
-import { loadGameData, loadPlayerData } from "./client";
+import { createGame, joinGame, loadGameData, loadPlayerData } from "./client";
+
+export type Actions = {
+	createGame: ( input: CreateGameInput ) => Promise<void>;
+	joinGame: ( input: JoinGameInput ) => Promise<void>;
+}
 
 export type EventHandlers = {
 	handlePlayerJoinedEvent: ( player: Player ) => void;
@@ -28,6 +35,7 @@ export type GameStore = {
 	gameData?: GameData;
 	playerData?: PlayerSpecificData,
 	eventHandlers: EventHandlers;
+	actions: Actions;
 }
 
 export async function initializeGameStore( gameId: string ) {
@@ -40,6 +48,22 @@ export async function initializeGameStore( gameId: string ) {
 
 export const useGameStore = create<GameStore>( set => {
 	return {
+		actions: {
+			async createGame( input: CreateGameInput ) {
+				const gameData = await createGame( input );
+				set( state => {
+					state.gameData = gameData;
+					return state;
+				} );
+			},
+			async joinGame( input: JoinGameInput ) {
+				const gameData = await joinGame( input );
+				set( state => {
+					state.gameData = gameData;
+					return state;
+				} );
+			}
+		},
 		eventHandlers: {
 			handleMoveCreatedEvent( move: Move ) {
 				set( state => {

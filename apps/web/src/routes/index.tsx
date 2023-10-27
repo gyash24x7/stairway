@@ -1,22 +1,39 @@
 import { AuthStoreProvider, LoginPage, SignUpPage } from "@auth/ui";
 import { GamePage, GameStoreProvider, HomePage as LiteratureHomePage } from "@literature/ui";
-import { Outlet, Route, Routes } from "react-router-dom";
+import { Outlet, RootRoute, Route } from "@tanstack/react-router";
 import { HomePage } from "../components";
 import { AuthGateway } from "./auth-gateway";
+
+function RootComponent() {
+	return (
+		<AuthStoreProvider>
+			<Outlet/>
+		</AuthStoreProvider>
+	);
+}
+
+const rootRoute = new RootRoute( {
+	component: RootComponent
+} );
+
+const indexRoute = new Route( {
+	path: "/",
+	element: <HomePage/>
+} );
 
 export function AppRoutes() {
 	return (
 		<Routes>
 			<Route path={ "/" } element={ <AuthStoreProvider><Outlet/></AuthStoreProvider> }>
 				<Route path={ "literature" } element={ <AuthGateway isPrivate><Outlet/></AuthGateway> }>
-					<Route path={ "" } element={ <LiteratureHomePage/> }/>
 					<Route path={ ":gameId" } element={ <GameStoreProvider><GamePage/></GameStoreProvider> }/>
+					<Route index element={ <LiteratureHomePage/> }/>
 				</Route>
 				<Route path={ "auth" } element={ <AuthGateway><Outlet/></AuthGateway> }>
 					<Route path={ "login" } element={ <LoginPage/> }/>
 					<Route path={ "signup" } element={ <SignUpPage/> }/>
 				</Route>
-				<Route path={ "" } element={ <AuthGateway isPrivate><HomePage/></AuthGateway> }/>
+				<Route index element={ <AuthGateway isPrivate><HomePage/></AuthGateway> }/>
 			</Route>
 		</Routes>
 	);

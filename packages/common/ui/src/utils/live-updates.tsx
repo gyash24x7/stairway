@@ -1,47 +1,47 @@
-import { useAuthStore } from "@auth/ui";
 import { Fragment, ReactNode, useEffect } from "react";
 import { socket } from "./socket";
 
 export interface LiveUpdatesProviderProps {
-	room: string;
+	gameId: string;
+	playerId: string;
 	gameEvents?: Record<string, ( data: any ) => void>;
 	playerEvents?: Record<string, ( data: any ) => void>;
 	children: ReactNode;
 }
 
 export function LiveUpdatesProvider( props: LiveUpdatesProviderProps ) {
-	const { children, gameEvents = {}, playerEvents = {}, room } = props;
-	const authInfo = useAuthStore( state => state.authInfo );
+	const { children, gameEvents = {}, playerEvents = {}, gameId, playerId } = props;
 
 	useEffect( () => {
 		socket.on( "connect", () => {
-			socket.emit( "join-room", room );
+			socket.emit( "join-room", gameId );
 		} );
 
-		Object.keys( gameEvents ).map( eventId => {
-			socket.on( eventId, ( data ) => {
-				console.log( "Event Received: ", eventId, data );
-				gameEvents[ eventId ]( data );
+		Object.keys( gameEvents ).map( event => {
+			socket.on( event, ( data ) => {
+				console.log( "Event Received: ", event, data );
+				const handler = gameEvents[ event ];
+				handler( data );
 			} );
-			socket.emit( "subscription", { event: eventId, gameId: room, playerId: authInfo!.id } );
+			socket.emit( "subscription", { event, gameId, playerId } );
 		} );
 
-		Object.keys( playerEvents ).map( eventId => {
-			socket.on( eventId.concat( "_" ).concat( authInfo!.id ), ( data ) => {
-				console.log( "Event Received: ", eventId, data );
-				playerEvents[ eventId ]( data );
+		Object.keys( playerEvents ).map( event => {
+			socket.on( event.concat( "_" ).concat( playerId ), ( data ) => {
+				console.log( "Event Received: ", event, data );
+				playerEvents[ event ]( data );
 			} );
-			socket.emit( "subscription", { event: eventId, gameId: room, playerId: authInfo!.id } );
+			socket.emit( "subscription", { event, gameId, playerId } );
 		} );
 
 		return () => {
 			socket.off( "connect" );
-			Object.keys( gameEvents ).map( eventId => {
-				socket.off( eventId, gameEvents[ eventId ] );
+			Object.keys( gameEvents ).map( event => {
+				socket.off( event, gameEvents[ event ] );
 			} );
 
-			Object.keys( playerEvents ).map( eventId => {
-				socket.off( eventId.concat( "_" ).concat( authInfo!.id ), playerEvents[ eventId ] );
+			Object.keys( playerEvents ).map( event => {
+				socket.off( event.concat( "_" ).concat( playerId ), playerEvents[ event ] );
 			} );
 		};
 	}, [] );

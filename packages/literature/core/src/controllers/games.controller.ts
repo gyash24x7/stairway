@@ -8,7 +8,6 @@ import type {
 	CardMappingData,
 	CreateGameInput,
 	CreateTeamsInput,
-	Game,
 	GameData,
 	GameWithPlayers,
 	JoinGameInput,
@@ -45,9 +44,9 @@ export class GamesController {
 	async createGame(
 		@Body() input: CreateGameInput,
 		@AuthInfo() authInfo: UserAuthInfo
-	): Promise<Game> {
+	): Promise<GameData> {
 		this.logger.debug( ">> createGame()" );
-		const game: Game = await this.commandBus.execute( new CreateGameCommand( input, authInfo ) );
+		const game: GameData = await this.commandBus.execute( new CreateGameCommand( input, authInfo ) );
 		this.logger.debug( "<< createGame()" );
 		return game;
 	}

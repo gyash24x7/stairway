@@ -1,4 +1,4 @@
-import type { VerifyUserInput } from "@auth/types";
+import type { UserAuthInfo, VerifyUserInput } from "@auth/types";
 import { NotFoundException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
@@ -10,7 +10,7 @@ export class VerifyUserCommand implements ICommand {
 }
 
 @CommandHandler( VerifyUserCommand )
-export class VerifyUserCommandHandler implements ICommandHandler<VerifyUserCommand, string> {
+export class VerifyUserCommandHandler implements ICommandHandler<VerifyUserCommand, UserAuthInfo> {
 
 	private readonly logger = LoggerFactory.getLogger( VerifyUserCommandHandler );
 
@@ -19,11 +19,11 @@ export class VerifyUserCommandHandler implements ICommandHandler<VerifyUserComma
 	async execute( { input }: VerifyUserCommand ) {
 		this.logger.debug( ">> executeVerifyUserCommand()" );
 
-		const user = await this.validate( { input } );
-		await this.prisma.user.update( { where: { id: user.id }, data: { verified: true } } );
+		const { salt, password, ...authInfo } = await this.validate( { input } );
+		await this.prisma.user.update( { where: { id: authInfo.id }, data: { verified: true } } );
 
 		this.logger.debug( "<< executeVerifyUserCommand()" );
-		return user.id;
+		return authInfo;
 	}
 
 	private async validate( { input: { id, salt } }: VerifyUserCommand ) {

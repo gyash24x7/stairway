@@ -3,6 +3,7 @@ import { LiveUpdatesProvider, useAction } from "@s2h/ui";
 import { ReactNode, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { initializeGameStore, useGameStore } from "./store";
+import { useAuthStore } from "@auth/ui";
 
 function GameLiveUpdatesProvider( props: { children: ReactNode, gameId: string } ) {
 	const {
@@ -16,6 +17,7 @@ function GameLiveUpdatesProvider( props: { children: ReactNode, gameId: string }
 		handleInferencesUpdatedEvent,
 		handleCardCountUpdatedEvent
 	} = useGameStore( state => state.eventHandlers );
+	const playerId = useAuthStore( state => state.authInfo!.id );
 
 	const gameEvents = {
 		PLAYER_JOINED: handlePlayerJoinedEvent,
@@ -33,7 +35,12 @@ function GameLiveUpdatesProvider( props: { children: ReactNode, gameId: string }
 	};
 
 	return (
-		<LiveUpdatesProvider gameEvents={ gameEvents } playerEvents={ playerEvents } room={ props.gameId }>
+		<LiveUpdatesProvider
+			gameEvents={ gameEvents }
+			playerEvents={ playerEvents }
+			gameId={ props.gameId }
+			playerId={ playerId }
+		>
 			{ props.children }
 		</LiveUpdatesProvider>
 	);
@@ -41,7 +48,7 @@ function GameLiveUpdatesProvider( props: { children: ReactNode, gameId: string }
 
 export function GameStoreProvider( props: { children: ReactNode } ) {
 	const { gameId } = useParams();
-	const { isLoading, error, data, execute } = useAction( initializeGameStore );
+	const { isLoading, error, execute } = useAction( initializeGameStore );
 
 	useEffect( () => {
 		execute( gameId! ).then();
@@ -51,7 +58,7 @@ export function GameStoreProvider( props: { children: ReactNode } ) {
 		return <div>Some Error Happened!</div>;
 	}
 
-	if ( isLoading || !data ) {
+	if ( isLoading ) {
 		return <Loader/>;
 	}
 
