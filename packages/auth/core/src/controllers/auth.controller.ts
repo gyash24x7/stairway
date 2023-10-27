@@ -1,5 +1,5 @@
 import type { AuthTokenData, CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
-import { Body, Controller, Get, Post, Query, Res } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Res } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
 import { LoggerFactory } from "@s2h/core";
 import type { CookieOptions, Response } from "express";
@@ -25,26 +25,27 @@ export class AuthController {
 
 	@Get()
 	@RequiresAuth()
-	getUser( @AuthInfo() authInfo: UserAuthInfo ): UserAuthInfo {
+	async getAuthInfo( @AuthInfo() authInfo: UserAuthInfo ) {
 		this.logger.debug( ">> getUser()" );
 		return authInfo;
 	}
 
 	@Post( Paths.SIGNUP )
-	async createUser( @Body() data: CreateUserInput ): Promise<UserAuthInfo> {
+	@HttpCode( HttpStatus.CREATED )
+	async createUser( @Body() data: CreateUserInput ) {
 		this.logger.debug( ">> createUser()" );
-		const authInfo: UserAuthInfo = await this.commandBus.execute( new CreateUserCommand( data ) );
+		await this.commandBus.execute( new CreateUserCommand( data ) );
 		this.logger.debug( "<< createUser()" );
-		return authInfo;
 	}
 
 	@Post( Paths.LOGIN )
-	async login( @Body() data: LoginInput, @Res() res: Response ) {
+	async login( @Body() data: LoginInput, @Res( { passthrough: true } ) res: Response ) {
 		this.logger.debug( ">> login()" );
 		const { token, authInfo }: AuthTokenData = await this.commandBus.execute( new LoginCommand( data ) );
 		res.cookie( "auth-cookie", token, cookieOptions );
-		res.status( 200 ).json( authInfo );
+		res.status( HttpStatus.OK );
 		this.logger.debug( "<< login()" );
+		return authInfo;
 	}
 
 	@Get( Paths.VERIFY )
@@ -57,10 +58,11 @@ export class AuthController {
 
 	@Post( Paths.LOGOUT )
 	@RequiresAuth()
-	logout( @Res() res: Response, @AuthInfo() authInfo: UserAuthInfo ) {
+	@HttpCode( HttpStatus.NO_CONTENT )
+	logout( @Res() res: Response ) {
 		this.logger.debug( ">> logout()" );
 		res.clearCookie( "auth-cookie", cookieOptions );
-		res.status( 200 ).send( authInfo );
+		res.status( HttpStatus.NO_CONTENT ).send();
 		this.logger.debug( "<< logout()" );
 	}
 }

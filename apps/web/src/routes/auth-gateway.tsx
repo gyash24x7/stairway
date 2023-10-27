@@ -1,7 +1,7 @@
-import { useAuthStore } from "@auth/ui";
+import { useAuth } from "@auth/ui";
 import type { ReactNode } from "react";
-import { Fragment, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Fragment } from "react";
+import { Navigate } from "react-router-dom";
 
 export interface AuthGatewayProps {
 	isPrivate?: boolean;
@@ -9,16 +9,15 @@ export interface AuthGatewayProps {
 }
 
 export function AuthGateway( { isPrivate, children }: AuthGatewayProps ) {
-	const isLoggedIn = useAuthStore( state => state.isLoggedIn );
-	const navigate = useNavigate();
+	const { isLoggedIn } = useAuth();
 
-	useEffect( () => {
-		if ( isPrivate && !isLoggedIn ) {
-			navigate( "/auth/login" );
-		} else if ( !isPrivate && isLoggedIn ) {
-			navigate( "/" );
-		}
-	}, [ isLoggedIn, isPrivate ] );
+	if ( isPrivate && !isLoggedIn ) {
+		return <Navigate to={ "/auth/login" }/>;
+	}
+
+	if ( !isPrivate && isLoggedIn ) {
+		return <Navigate to={ "/" }/>;
+	}
 
 	return <Fragment>{ children }</Fragment>;
 }

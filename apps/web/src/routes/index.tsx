@@ -1,40 +1,66 @@
-import { AuthStoreProvider, LoginPage, SignUpPage } from "@auth/ui";
-import { GamePage, GameStoreProvider, HomePage as LiteratureHomePage } from "@literature/ui";
-import { Outlet, RootRoute, Route } from "@tanstack/react-router";
+import { authClient, AuthProvider, LoginPage, SignUpPage } from "@auth/ui";
+import { GamePage, GameProvider, HomePage as LiteratureHomePage, literatureClient } from "@literature/ui";
+import { ErrorPage } from "@s2h/ui";
+import { createBrowserRouter, IndexRouteObject, Outlet, RouteObject } from "react-router-dom";
 import { HomePage } from "../components";
 import { AuthGateway } from "./auth-gateway";
 
-function RootComponent() {
-	return (
-		<AuthStoreProvider>
-			<Outlet/>
-		</AuthStoreProvider>
-	);
-}
+const loginRoute: RouteObject = {
+	path: "login",
+	element: <LoginPage/>,
+	errorElement: <ErrorPage/>
+};
 
-const rootRoute = new RootRoute( {
-	component: RootComponent
-} );
+const signUpRoute: RouteObject = {
+	path: "signup",
+	element: <SignUpPage/>,
+	errorElement: <ErrorPage/>
+};
 
-const indexRoute = new Route( {
+const authRoute: RouteObject = {
+	path: "auth",
+	element: <AuthGateway><Outlet/></AuthGateway>,
+	errorElement: <ErrorPage/>,
+	children: [ loginRoute, signUpRoute ]
+};
+
+const literatureHomeRoute: IndexRouteObject = {
+	index: true,
+	element: <LiteratureHomePage/>,
+	errorElement: <ErrorPage/>
+};
+
+const literatureGameRoute: RouteObject = {
+	path: ":gameId",
+	element: <GameProvider><GamePage/></GameProvider>,
+	errorElement: <ErrorPage/>,
+	loader: async ( { params } ) => {
+		const gameId = params[ "gameId" ]!;
+		const gameData = await literatureClient.loadGameData( { gameId } );
+		const playerData = await literatureClient.loadPlayerData( { gameId } );
+		return { gameData, playerData };
+	}
+};
+
+const literatureRoute: RouteObject = {
+	path: "literature",
+	element: <AuthGateway isPrivate><Outlet/></AuthGateway>,
+	errorElement: <ErrorPage/>,
+	children: [ literatureGameRoute, literatureHomeRoute ]
+};
+
+const homeRoute: IndexRouteObject = {
+	index: true,
+	element: <AuthGateway isPrivate><HomePage/></AuthGateway>,
+	errorElement: <ErrorPage/>
+};
+
+const rootRoute: RouteObject = {
 	path: "/",
-	element: <HomePage/>
-} );
+	element: <AuthProvider><Outlet/></AuthProvider>,
+	errorElement: <ErrorPage/>,
+	children: [ authRoute, literatureRoute, homeRoute ],
+	loader: authClient.loadAuthInfo
+};
 
-export function AppRoutes() {
-	return (
-		<Routes>
-			<Route path={ "/" } element={ <AuthStoreProvider><Outlet/></AuthStoreProvider> }>
-				<Route path={ "literature" } element={ <AuthGateway isPrivate><Outlet/></AuthGateway> }>
-					<Route path={ ":gameId" } element={ <GameStoreProvider><GamePage/></GameStoreProvider> }/>
-					<Route index element={ <LiteratureHomePage/> }/>
-				</Route>
-				<Route path={ "auth" } element={ <AuthGateway><Outlet/></AuthGateway> }>
-					<Route path={ "login" } element={ <LoginPage/> }/>
-					<Route path={ "signup" } element={ <SignUpPage/> }/>
-				</Route>
-				<Route index element={ <AuthGateway isPrivate><HomePage/></AuthGateway> }/>
-			</Route>
-		</Routes>
-	);
-}
+export const router = createBrowserRouter( [ rootRoute ] );

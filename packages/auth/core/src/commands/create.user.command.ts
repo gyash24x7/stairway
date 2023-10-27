@@ -1,4 +1,4 @@
-import type { CreateUserInput, UserAuthInfo } from "@auth/types";
+import type { CreateUserInput } from "@auth/types";
 import { ConflictException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
@@ -11,7 +11,7 @@ export class CreateUserCommand implements ICommand {
 }
 
 @CommandHandler( CreateUserCommand )
-export class CreateUserCommandHandler implements ICommandHandler<CreateUserCommand, UserAuthInfo> {
+export class CreateUserCommandHandler implements ICommandHandler<CreateUserCommand, void> {
 
 	private readonly logger = LoggerFactory.getLogger( CreateUserCommandHandler );
 
@@ -26,12 +26,9 @@ export class CreateUserCommandHandler implements ICommandHandler<CreateUserComma
 		const password = await bcrypt.hash( input.password, salt );
 		const avatar = Constants.AVATAR_BASE_URL + salt;
 
-		const { salt: s, password: p, ...authInfo } = await this.prisma.user.create( {
-			data: { ...input, salt, password, avatar }
-		} );
+		await this.prisma.user.create( { data: { ...input, salt, password, avatar } } );
 
 		this.logger.debug( "<< executeCreateUserCommand()" );
-		return authInfo;
 	}
 
 	private async validate( { input }: CreateUserCommand ) {

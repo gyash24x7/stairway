@@ -1,22 +1,46 @@
-import { Loader } from "@mantine/core";
-import { ErrorPage, useAction } from "@s2h/ui";
-import { Fragment, ReactNode, useEffect } from "react";
-import { initializeAuthStore } from "./store";
+import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
+import { createContext, ReactNode, useContext, useState } from "react";
+import { useLoaderData } from "react-router-dom";
+import { authClient } from "./client";
 
-export function AuthStoreProvider( props: { children: ReactNode } ) {
-	const { execute, error, isLoading } = useAction( initializeAuthStore );
+export type AuthContextType = {
+	authInfo?: UserAuthInfo;
+	isLoggedIn: boolean;
+	login: ( data: LoginInput ) => Promise<void>;
+	logout: () => Promise<void>;
+	signUp: ( data: CreateUserInput ) => Promise<void>;
+};
 
-	useEffect( () => {
-		execute( undefined ).then();
-	}, [] );
+export const AuthContext = createContext<AuthContextType>( {
+	isLoggedIn: false,
+	login: () => Promise.resolve(),
+	logout: () => Promise.resolve(),
+	signUp: () => Promise.resolve()
+} );
 
-	if ( error ) {
-		return <ErrorPage/>;
-	}
+export function AuthProvider( props: { children: ReactNode } ) {
+	const authInfoFromLoader = useLoaderData() as UserAuthInfo | undefined;
+	const [ authInfo, setAuthInfo ] = useState( authInfoFromLoader );
 
-	if ( isLoading ) {
-		return <Loader/>;
-	}
+	const login = async ( data: LoginInput ) => {
+		const authInfo = await authClient.login( data );
+		setAuthInfo( authInfo );
+	};
 
-	return <Fragment>{ props.children }</Fragment>;
+	const logout = async () => {
+		await authClient.logout();
+		setAuthInfo( undefined );
+	};
+
+	const signUp = async ( data: CreateUserInput ) => {
+		await authClient.signUp( data );
+	};
+
+	return (
+		<AuthContext.Provider value={ { authInfo, isLoggedIn: !!authInfo, login, logout, signUp } }>
+			{ props.children }
+		</AuthContext.Provider>
+	);
 }
+
+export const useAuth = () => useContext( AuthContext );
