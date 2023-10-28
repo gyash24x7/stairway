@@ -1,8 +1,8 @@
 import { Avatar, Box, Group, Text, Title } from "@mantine/core";
-import { useAuthStore } from "../utils";
+import { useAuth } from "../utils";
 
 export function UserCard() {
-	const { authInfo } = useAuthStore();
+	const { authInfo } = useAuth();
 
 	return (
 		<Group wrap={ "nowrap" }>

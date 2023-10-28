@@ -43,9 +43,8 @@ describe( "CreateUserCommandHandler", () => {
 	it( "should create new user and return the id", async () => {
 		mockPrismaService.user.findUnique.mockResolvedValue( null );
 		const createUserCommandHandler = new CreateUserCommandHandler( mockPrismaService );
-		const id = await createUserCommandHandler.execute( new CreateUserCommand( mockInput ) );
+		await createUserCommandHandler.execute( new CreateUserCommand( mockInput ) );
 
-		expect( id ).toBe( mockUser.id );
 		expect( mockPrismaService.user.findUnique ).toHaveBeenCalledWith( {
 			where: { email: mockInput.email }
 		} );

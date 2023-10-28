@@ -7,10 +7,10 @@ import type { MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
-import { emailValidator, minLengthValidator, useAuthStore } from "../utils";
+import { emailValidator, minLengthValidator, useAuth } from "../utils";
 
 export function LoginPage() {
-	const login = useAuthStore( state => state.login );
+	const { login } = useAuth();
 	const navigate = useNavigate();
 	const { getInputProps, onSubmit } = useForm( {
 		initialValues: {

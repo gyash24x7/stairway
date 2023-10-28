@@ -43,8 +43,8 @@ describe( "VerifyUserCommand", () => {
 		mockPrisma.user.findFirst.mockResolvedValueOnce( mockUser );
 		const verifyUserCommandHandler = new VerifyUserCommandHandler( mockPrisma );
 
-		const userId = await verifyUserCommandHandler.execute( new VerifyUserCommand( mockInput ) );
-		expect( userId ).toEqual( mockUser.id );
+		const authInfo = await verifyUserCommandHandler.execute( new VerifyUserCommand( mockInput ) );
+		expect( authInfo.id ).toEqual( mockUser.id );
 		expect( mockPrisma.user.findFirst ).toHaveBeenCalledWith( {
 			where: { id: mockInput.id, salt: mockInput.salt }
 		} );

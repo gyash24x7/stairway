@@ -39,6 +39,7 @@ export class AuthController {
 	}
 
 	@Post( Paths.LOGIN )
+	@HttpCode( HttpStatus.OK )
 	async login( @Body() data: LoginInput, @Res( { passthrough: true } ) res: Response ) {
 		this.logger.debug( ">> login()" );
 		const { token, authInfo }: AuthTokenData = await this.commandBus.execute( new LoginCommand( data ) );
@@ -49,6 +50,7 @@ export class AuthController {
 	}
 
 	@Get( Paths.VERIFY )
+	@HttpCode( HttpStatus.OK )
 	async verifyUser( @Query( "hash" ) salt: string, @Query( "id" ) id: string ): Promise<UserAuthInfo> {
 		this.logger.debug( ">> verifyUser()" );
 		const authInfo = await this.commandBus.execute( new VerifyUserCommand( { salt, id } ) );

@@ -6,10 +6,10 @@ import type { MouseEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
-import { emailValidator, minLengthValidator, requiredValidator, useAuthStore } from "../utils";
+import { emailValidator, minLengthValidator, requiredValidator, useAuth } from "../utils";
 
 export function SignUpPage() {
-	const signUp = useAuthStore( store => store.signUp );
+	const { signUp } = useAuth();
 	const navigate = useNavigate();
 	const { getInputProps, onSubmit } = useForm( {
 		initialValues: {

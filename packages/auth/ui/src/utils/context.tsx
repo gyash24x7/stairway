@@ -1,5 +1,5 @@
 import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 import { useLoaderData } from "react-router-dom";
 import { authClient } from "./client";
 
@@ -22,19 +22,19 @@ export function AuthProvider( props: { children: ReactNode } ) {
 	const authInfoFromLoader = useLoaderData() as UserAuthInfo | undefined;
 	const [ authInfo, setAuthInfo ] = useState( authInfoFromLoader );
 
-	const login = async ( data: LoginInput ) => {
+	const login = useCallback( async ( data: LoginInput ) => {
 		const authInfo = await authClient.login( data );
 		setAuthInfo( authInfo );
-	};
+	}, [] );
 
-	const logout = async () => {
+	const logout = useCallback( async () => {
 		await authClient.logout();
 		setAuthInfo( undefined );
-	};
+	}, [] );
 
-	const signUp = async ( data: CreateUserInput ) => {
+	const signUp = useCallback( async ( data: CreateUserInput ) => {
 		await authClient.signUp( data );
-	};
+	}, [] );
 
 	return (
 		<AuthContext.Provider value={ { authInfo, isLoggedIn: !!authInfo, login, logout, signUp } }>

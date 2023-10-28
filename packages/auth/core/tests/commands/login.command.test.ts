@@ -68,7 +68,7 @@ describe( "LoginCommandHandler", () => {
 		const data = await loginCommandHandler.execute( new LoginCommand( mockInput ) );
 		expect( mockPrisma.user.findUnique ).toHaveBeenCalledWith( { where: { email: mockInput.email } } );
 		expect( mockJwtService.signAsync ).toHaveBeenCalledWith( { ...mockUser, verified: true } );
-		expect( data.userId ).toEqual( mockUser.id );
+		expect( data.authInfo.id ).toEqual( mockUser.id );
 
 	} );
 
