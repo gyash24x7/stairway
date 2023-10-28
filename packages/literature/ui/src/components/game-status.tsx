@@ -1,6 +1,6 @@
 import { Box, Group, Stack, Title } from "@mantine/core";
 import { gameStatusClassnames } from "../styles";
-import { useGameStore } from "../utils";
+import { useGameData, usePlayerData } from "../utils";
 import { AskCard } from "./ask-card";
 import { CallSet } from "./call-set";
 import { PlayerCard } from "./player-card";
@@ -8,11 +8,8 @@ import { PreviousMoves } from "./previous-moves";
 import { TransferTurn } from "./transfer-turn";
 
 export function GameStatus() {
-	const status = useGameStore( state => state.gameData!.status );
-	const players = useGameStore( state => state.gameData!.players );
-	const currentTurn = useGameStore( state => state.gameData!.currentTurn );
-	const playerId = useGameStore( state => state.playerData!.id );
-	const moves = useGameStore( state => state.gameData!.moves );
+	const { status, moves, players, currentTurn } = useGameData()!;
+	const { id } = usePlayerData()!;
 
 	return (
 		<Stack py={ 16 } w={ "100%" } gap={ "xxl" }>
@@ -29,7 +26,7 @@ export function GameStatus() {
 			) }
 			<Group>
 				<PreviousMoves/>
-				{ currentTurn === playerId && (
+				{ currentTurn === id && (
 					<Group>
 						<AskCard/>
 						<CallSet/>

@@ -1,22 +1,27 @@
 import { Button, Modal, Stack, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useAction } from "@s2h/ui";
-import { ChangeEvent, Fragment, useState } from "react";
+import { ChangeEvent, Fragment, useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { joinGame } from "../utils";
+import { useJoinGameAction } from "../utils";
 
 export function JoinGame() {
 	const navigate = useNavigate();
 	const [ code, setCode ] = useState( "" );
 	const [ opened, { open, close } ] = useDisclosure( false );
 
-	const { execute, isLoading } = useAction( joinGame );
+	const { execute, isLoading } = useJoinGameAction();
 
-	const handleSubmit = () => execute( { code } )
-		.then( ( { id } ) => navigate( `/literature/${ id }` ) )
-		.catch( ( error: Error ) => alert( error.message ) );
+	const handleSubmit = useCallback(
+		() => execute( { code } )
+			.then( ( { id } ) => navigate( `/literature/${ id }` ) )
+			.catch( ( error: Error ) => alert( error.message ) ),
+		[ code ]
+	);
 
-	const handleCodeChange = ( e: ChangeEvent<HTMLInputElement> ) => setCode( e.currentTarget.value.toUpperCase() );
+	const handleCodeChange = useCallback(
+		( e: ChangeEvent<HTMLInputElement> ) => setCode( e.currentTarget.value.toUpperCase() ),
+		[]
+	);
 
 	return (
 		<Fragment>

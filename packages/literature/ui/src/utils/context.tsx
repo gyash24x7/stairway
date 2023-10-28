@@ -9,9 +9,10 @@ import type {
 	TeamWithMembers
 } from "@literature/types";
 import type { PlayingCard } from "@s2h/cards";
-import { LiveUpdatesProvider } from "@s2h/ui";
-import { createContext, ReactNode, useContext, useState } from "react";
+import { LiveUpdatesProvider, useAction } from "@s2h/ui";
+import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 import { useLoaderData } from "react-router-dom";
+import { literatureClient } from "./client";
 
 export type LiteratureContextType = {
 	gameData?: GameData;
@@ -25,69 +26,69 @@ export function GameProvider( props: { children: ReactNode } ) {
 	const [ gameData, setGameData ] = useState( loaderData.gameData );
 	const [ playerData, setPlayerData ] = useState( loaderData.playerData );
 
-	const handlePlayerJoinedEvent = ( player: Player ) => {
+	const handlePlayerJoinedEvent = useCallback( ( player: Player ) => {
 		setGameData( gameData => {
 			gameData.players[ player.id ] = player;
 			return gameData;
 		} );
-	};
+	}, [] );
 
-	const handleTeamsCreatedEvent = ( teams: Record<string, TeamWithMembers> ) => {
+	const handleTeamsCreatedEvent = useCallback( ( teams: Record<string, TeamWithMembers> ) => {
 		setGameData( gameData => {
 			gameData.teams = teams;
 			return gameData;
 		} );
-	};
+	}, [] );
 
-	const handleMoveCreatedEvent = ( move: Move ) => {
+	const handleMoveCreatedEvent = useCallback( ( move: Move ) => {
 		setGameData( gameData => {
 			gameData.moves = [ move, ...gameData.moves ];
 			return gameData;
 		} );
-	};
+	}, [] );
 
-	const handleTurnUpdatedEvent = ( turn: string ) => {
+	const handleTurnUpdatedEvent = useCallback( ( turn: string ) => {
 		setGameData( gameData => {
 			gameData.currentTurn = turn;
 			return gameData;
 		} );
-	};
+	}, [] );
 
-	const handleScoreUpdatedEvent = ( { teamId, score, setWon }: ScoreUpdate ) => {
+	const handleScoreUpdatedEvent = useCallback( ( { teamId, score, setWon }: ScoreUpdate ) => {
 		setGameData( gameData => {
 			gameData.teams[ teamId ].score = score;
 			gameData.teams[ teamId ].setsWon.push( setWon );
 			return gameData;
 		} );
-	};
+	}, [] );
 
-	const handleStatusUpdatedEvent = ( status: GameStatus ) => {
+	const handleStatusUpdatedEvent = useCallback( ( status: GameStatus ) => {
 		setGameData( gameData => {
 			gameData.status = status;
 			return gameData;
 		} );
-	};
+	}, [] );
 
-	const handleCardCountUpdatedEvent = ( cardCounts: Record<string, number> ) => {
+	const handleCardCountUpdatedEvent = useCallback( ( cardCounts: Record<string, number> ) => {
 		setGameData( gameData => {
 			gameData.cardCounts = cardCounts;
 			return gameData;
 		} );
-	};
+	}, [] );
 
-	const handleHandUpdatedEvent = ( hand: PlayingCard[] ) => {
+	const handleHandUpdatedEvent = useCallback( ( hand: PlayingCard[] ) => {
 		setPlayerData( playerData => {
 			playerData.hand = hand;
 			return playerData;
 		} );
-	};
+	}, [] );
 
-	const handleInferencesUpdatedEvent = ( inferences: CardInferences ) => {
+	const handleInferencesUpdatedEvent = useCallback( ( inferences: CardInferences ) => {
 		setPlayerData( playerData => {
 			playerData.inferences = inferences;
 			return playerData;
 		} );
-	};
+	}, [] );
 
 	const gameEvents = {
 		PLAYER_JOINED: handlePlayerJoinedEvent,
@@ -118,5 +119,40 @@ export function GameProvider( props: { children: ReactNode } ) {
 	);
 }
 
-export const useGameData = () => useContext( GameContext ).gameData;
-export const usePlayerData = () => useContext( GameContext ).playerData;
+export const useGameData = () => {
+	const { gameData } = useContext( GameContext );
+	return gameData;
+};
+
+export const usePlayerData = () => {
+	const { playerData } = useContext( GameContext );
+	return playerData;
+};
+
+export const useCreateGameAction = () => {
+	return useAction( literatureClient.createGame );
+};
+
+export const useJoinGameAction = () => {
+	return useAction( literatureClient.joinGame );
+};
+
+export const useStartGameAction = () => {
+	return useAction( literatureClient.startGame );
+};
+
+export const useCreateTeamsAction = () => {
+	return useAction( literatureClient.createTeams );
+};
+
+export const useAskCardAction = () => {
+	return useAction( literatureClient.askCard );
+};
+
+export const useCallSetAction = () => {
+	return useAction( literatureClient.callSet );
+};
+
+export const useTransferTurnAction = () => {
+	return useAction( literatureClient.transferTurn );
+};

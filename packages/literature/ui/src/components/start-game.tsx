@@ -1,13 +1,15 @@
 import { Button } from "@mantine/core";
-import { useAction } from "@s2h/ui";
-import { startGame, useGameStore } from "../utils";
+import { useGameData, useStartGameAction } from "../utils";
+import { useCallback } from "react";
 
 export function StartGame() {
-	const gameId = useGameStore( ( state ) => state.gameData!.id );
-	const { execute, isLoading } = useAction( startGame );
+	const { id: gameId } = useGameData()!;
+	const { execute, isLoading } = useStartGameAction();
 
-	const handleSubmit = () => execute( { gameId } )
-		.catch( ( error ) => alert( error.message ) );
+	const handleSubmit = useCallback(
+		() => execute( { gameId } ).catch( ( error ) => alert( error.message ) ),
+		[ gameId ]
+	);
 
 	return <Button fullWidth color={ "primary" } loading={ isLoading } onClick={ handleSubmit }>Start Game</Button>;
 }

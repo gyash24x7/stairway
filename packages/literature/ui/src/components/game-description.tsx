@@ -2,13 +2,14 @@ import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { IconCopy } from "@tabler/icons-react";
 import { gameDescriptionClassnames as classnames } from "../styles";
-import { useGameStore } from "../utils";
+import { useGameData } from "../utils";
+import { useCallback } from "react";
 
 export function GameDescription() {
-	const code = useGameStore( state => state.gameData!.code );
+	const { code } = useGameData()!;
 	const clipboard = useClipboard();
 
-	const copyCode = () => clipboard.copy( code );
+	const copyCode = useCallback( () => clipboard.copy( code ), [ code ] );
 
 	return (
 		<Box my={ 8 }>

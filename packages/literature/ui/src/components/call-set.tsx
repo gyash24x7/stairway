@@ -1,10 +1,9 @@
-import { useAuthStore } from "@auth/ui";
 import { Button, Combobox, Flex, Group, Modal, Stack, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { CardSet, cardSetMap, getPlayingCardFromId } from "@s2h/cards";
-import { DisplayCard, useAction } from "@s2h/ui";
-import { Fragment, useState } from "react";
-import { callSet, useGameStore } from "../utils";
+import { DisplayCard } from "@s2h/ui";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import { useCallSetAction, useGameData, usePlayerData } from "../utils";
 import { SelectCardSet } from "./select-card-set";
 
 interface SelectCardsProps {
@@ -37,19 +36,15 @@ function SelectCards( { handleSelection, cardIds, options }: SelectCardsProps ) 
 }
 
 export function CallSet() {
-	const authInfo = useAuthStore( state => state.authInfo );
-	const players = useGameStore( state => state.gameData!.players );
-	const loggedInPlayer = players[ authInfo!.id ];
+	const { id: gameId, players, cardCounts, teams } = useGameData()!;
+	const { cardSets, id: playerId, teamId } = usePlayerData()!;
 
-	const gameId = useGameStore( state => state.gameData!.id );
-	const callableCardSets = useGameStore( state => state.playerData!.cardSets );
-	const cardCounts = useGameStore( state => state.gameData!.cardCounts );
-	const myTeam = useGameStore( state => state.gameData!.teams[ loggedInPlayer.teamId! ] );
-
-	const teamMemberIds = [
-		loggedInPlayer.id,
-		...myTeam!.members.filter( id => id !== loggedInPlayer.id || !cardCounts[ id ] )
-	];
+	const teamMemberIds = useMemo( () => {
+		return [
+			playerId,
+			...teams[ teamId! ].members.filter( id => id !== playerId || !cardCounts[ id ] )
+		];
+	}, [ playerId, teamId, teams, cardCounts ] );
 
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ cardOptions, setCardOptions ] = useState<string[]>( [] );
@@ -59,25 +54,29 @@ export function CallSet() {
 	const [ modalTitle, setModalTitle ] = useState( "Select Card Set to Call" );
 	const [ paneState, setPaneState ] = useState( "SET" );
 
-	const { execute, isLoading } = useAction( callSet );
+	const { execute, isLoading } = useCallSetAction();
 
-	const handleCardSetSelect = ( value: string ) => {
+	const handleCardSetSelect = useCallback( ( value: string ) => {
 		const cardSet: CardSet = value as CardSet;
 		setSelectedCardSet( cardSet );
 		setCardOptions( cardSetMap[ cardSet ].map( c => c.id ) );
-	};
+	}, [] );
 
-	const handleCardSelect = ( playerId: string ) => ( cardId: string ) => {
+
+	const handleCardSelect = useCallback( ( playerId: string ) => ( cardId: string ) => {
 		setCardMap( currentValue => {
 			return { ...currentValue, [ cardId ]: playerId };
 		} );
-	};
+	}, [] );
 
-	const handleConfirm = () => execute( { data: cardMap, gameId } )
-		.catch( e => alert( e.message ) )
-		.then( closeModal );
+	const handleConfirm = useCallback(
+		() => execute( { data: cardMap, gameId } )
+			.catch( e => alert( e.message ) )
+			.then( closeModal ),
+		[ cardMap, gameId ]
+	);
 
-	const openModalForPlayer = ( index: number ) => async () => {
+	const openModalForPlayer = useCallback( ( index: number ) => async () => {
 		const playerId = teamMemberIds[ index ];
 
 		if ( index < teamMemberIds.length ) {
@@ -87,20 +86,20 @@ export function CallSet() {
 			setPaneState( "CONFIRM" );
 			setModalTitle( "Confirm Call" );
 		}
-	};
+	}, [ teamMemberIds ] );
 
-	const openSelectCardSet = () => {
+	const openSelectCardSet = useCallback( () => {
 		setPaneState( "SET" );
 		open();
-	};
+	}, [] );
 
-	const closeModal = () => {
+	const closeModal = useCallback( () => {
 		setPaneState( "SET" );
 		setSelectedCardSet( undefined );
 		setCardOptions( [] );
 		setCardMap( {} );
 		close();
-	};
+	}, [] );
 
 	return (
 		<Fragment>
@@ -110,7 +109,7 @@ export function CallSet() {
 						<SelectCardSet
 							handleSelection={ handleCardSetSelect }
 							cardSet={ selectedCardSet }
-							cardSetOptions={ callableCardSets }
+							cardSetOptions={ cardSets }
 						/>
 						<Button onClick={ openModalForPlayer( 0 ) } disabled={ !selectedCardSet }>
 							Select Card Locations

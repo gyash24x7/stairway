@@ -1,18 +1,21 @@
 import { Navbar } from "@auth/ui";
 import { Box, Button, Group, Paper, Text, Title } from "@mantine/core";
-import { useAction } from "@s2h/ui";
 import { useNavigate } from "react-router-dom";
 import { homePageClassnames as classnames } from "../styles";
-import { createGame } from "../utils";
+import { useCreateGameAction } from "../utils";
 import { JoinGame } from "./join-game";
+import { useCallback } from "react";
 
 export function HomePage() {
 	const navigate = useNavigate();
-	const { isLoading, execute } = useAction( createGame );
+	const { isLoading, execute } = useCreateGameAction();
 
-	const handleSubmit = () => execute( { playerCount: 2 } )
-		.then( ( { id } ) => navigate( "/literature/" + id ) )
-		.catch( ( error: Error ) => alert( error.message ) );
+	const handleSubmit = useCallback(
+		() => execute( { playerCount: 2 } )
+			.then( ( { id } ) => navigate( "/literature/" + id ) )
+			.catch( ( error: Error ) => alert( error.message ) ),
+		[]
+	);
 
 	return (
 		<Box p={ "xl" }>

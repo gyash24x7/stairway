@@ -1,6 +1,6 @@
 import type { Player } from "@literature/types";
 import { Avatar, Box, Flex, Text, Title } from "@mantine/core";
-import { useGameStore } from "../utils";
+import { useGameData } from "../utils";
 
 export interface PlayerLobbyProps {
 	playerList: Player[];
@@ -9,7 +9,7 @@ export interface PlayerLobbyProps {
 }
 
 export function PlayerLobby( { playerList, displayHeading, displayCardCount }: PlayerLobbyProps ) {
-	const cardCounts = useGameStore( state => state.gameData!.cardCounts );
+	const { cardCounts } = useGameData()!;
 	return (
 		<Box my={ 8 } w={ "100%" }>
 			{ !!displayHeading && <Title order={ 4 } fz={ "24px" } pb={ 8 }>Players Joined</Title> }

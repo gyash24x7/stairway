@@ -1,39 +1,39 @@
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { chunk, shuffle } from "@s2h/cards";
-import { useAction } from "@s2h/ui";
-import { ChangeEvent, Fragment, useState } from "react";
-import { createTeams, useGameStore } from "../utils";
+import { ChangeEvent, Fragment, useCallback, useState } from "react";
+import { useCreateTeamsAction, useGameData } from "../utils";
 import { PlayerCard } from "./player-card";
 
 
 export function CreateTeams() {
-	const gameId = useGameStore( state => state.gameData!.id );
-	const players = useGameStore( state => state.gameData!.players );
-	const playerCount = useGameStore( state => state.gameData!.playerCount );
+	const { id: gameId, players, playerCount } = useGameData()!;
 
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ opened, { open, close } ] = useDisclosure();
 
-	const handleInput = ( index: 0 | 1 ) => ( e: ChangeEvent<HTMLInputElement> ) => {
+	const handleInput = useCallback( ( index: 0 | 1 ) => ( e: ChangeEvent<HTMLInputElement> ) => {
 		setTeamNames( teamNames => {
 			teamNames[ index ] = e.currentTarget.value;
 			return teamNames;
 		} );
-	};
+	}, [] );
 
-	const groupPlayers = () => {
+	const groupPlayers = useCallback( () => {
 		const teamMembers = chunk( shuffle( Object.keys( players ) ), playerCount / 2 );
 		setTeamMemberData( {
 			[ teamNames[ 0 ] ]: teamMembers[ 0 ],
 			[ teamNames[ 1 ] ]: teamMembers[ 1 ]
 		} );
-	};
+	}, [ teamNames, players, playerCount ] );
 
-	const { execute, isLoading } = useAction( createTeams );
+	const { execute, isLoading } = useCreateTeamsAction();
 
-	const handleSubmit = () => execute( { data: teamMemberData, gameId } );
+	const handleSubmit = useCallback(
+		() => execute( { data: teamMemberData, gameId } ),
+		[ teamMemberData, gameId ]
+	);
 
 	return (
 		<Fragment>

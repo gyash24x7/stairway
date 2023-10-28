@@ -11,52 +11,11 @@ import {
 	StartGame
 } from "../components";
 import { gamePageClassnames as classnames } from "../styles";
-import { useGameStore } from "../utils";
+import { useGameData, usePlayerData } from "../utils";
 
 export function GamePage() {
-	const status = useGameStore( state => state.gameData!.status );
-	const players = useGameStore( state => state.gameData!.players );
-	const currentTurn = useGameStore( state => state.gameData!.currentTurn );
-	const playerId = useGameStore( state => state.playerData!.id );
-	const playerAvatar = useGameStore( state => state.playerData!.avatar );
-	const playerName = useGameStore( state => state.playerData!.name );
-	const hand = useGameStore( state => state.playerData!.hand );
-
-	const renderBasedOnStatus = () => {
-		switch ( status ) {
-			case "CREATED":
-				return (
-					<Fragment>
-						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
-						<Banner message={ "Waiting For Players to Join" } isLoading/>
-					</Fragment>
-				);
-			case "PLAYERS_READY":
-				return (
-					<Fragment>
-						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
-						{ playerId !== currentTurn
-							? <Banner message={ `Waiting For Teams to get Created` } isLoading/>
-							: <CreateTeams/>
-						}
-					</Fragment>
-				);
-			case "TEAMS_CREATED":
-				return (
-					<Fragment>
-						<DisplayTeams/>
-						{ playerId !== currentTurn
-							? <Banner message={ `Waiting for the game to Start` } isLoading/>
-							: <StartGame/>
-						}
-					</Fragment>
-				);
-			case "IN_PROGRESS":
-			case "COMPLETED":
-				return <DisplayTeams displayCardCount/>;
-		}
-		return null;
-	};
+	const { status, players, currentTurn } = useGameData()!;
+	const { hand, name, id, avatar } = usePlayerData()!;
 
 	return (
 		<Flex w={ "100vw" } h={ "100vh" }>
@@ -64,12 +23,58 @@ export function GamePage() {
 				<Flex justify={ "space-between" } align={ "center" }>
 					<img src={ "logo.png" } width={ 120 } height={ 120 } alt={ "literature" }/>
 					<Flex gap={ "xs" } align={ "center" } justify={ "center" } direction={ "column" }>
-						<Avatar size={ "lg" } src={ playerAvatar }/>
-						<Title order={ 4 }>{ playerName }</Title>
+						<Avatar size={ "lg" } src={ avatar }/>
+						<Title order={ 4 }>{ name }</Title>
 					</Flex>
 				</Flex>
 				<GameDescription/>
-				{ renderBasedOnStatus() }
+				{ status === "CREATED" && (
+					<Fragment>
+						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
+						<Banner message={ "Waiting For Players to Join" } isLoading/>
+					</Fragment>
+				) }
+
+				{ status === "PLAYERS_READY" && (
+					<Fragment>
+						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
+						<Banner message={ "Waiting For Teams to get Created" } isLoading/>
+					</Fragment>
+				) }
+
+				{ status === "TEAMS_CREATED" && (
+					<Fragment>
+						<DisplayTeams/>
+						{ id !== currentTurn
+							? <Banner message={ `Waiting for the game to Start` } isLoading/>
+							: <StartGame/>
+						}
+					</Fragment>
+				) }
+
+				{ status === "IN_PROGRESS" && (
+					<Fragment>
+						<PlayerLobby playerList={ Object.values( players ) } displayHeading/>
+						{ id !== currentTurn
+							? <Banner message={ `Waiting For Teams to get Created` } isLoading/>
+							: <CreateTeams/>
+						}
+					</Fragment>
+				) }
+
+				{ status === "IN_PROGRESS" && (
+					<Fragment>
+						<DisplayTeams/>
+						<GameStatus/>
+					</Fragment>
+				) }
+
+				{ status === "COMPLETED" && (
+					<Fragment>
+						<DisplayTeams/>
+						<GameCompleted/>
+					</Fragment>
+				) }
 			</Stack>
 			<Flex className={ classnames.playArea }>
 				{ status === "IN_PROGRESS" && (

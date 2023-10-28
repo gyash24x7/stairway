@@ -1,10 +1,9 @@
-import type { AskCardInput } from "@literature/types";
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { CardSet, getAskableCardsOfSet, getPlayingCardFromId } from "@s2h/cards";
-import { DisplayCard, useAction } from "@s2h/ui";
-import { Dispatch, Fragment, SetStateAction, useState } from "react";
-import { askCard, useGameStore } from "../utils";
+import { DisplayCard } from "@s2h/ui";
+import { Dispatch, Fragment, SetStateAction, useCallback, useState } from "react";
+import { useAskCardAction, useGameData, usePlayerData } from "../utils";
 import { SelectCardSet } from "./select-card-set";
 import { SelectPlayer } from "./select-player";
 
@@ -15,7 +14,7 @@ interface SelectCardProps {
 }
 
 function SelectCard( { set, setCard, card }: SelectCardProps ) {
-	const hand = useGameStore( state => state.playerData!.hand );
+	const { hand } = usePlayerData()!;
 	const combobox = useCombobox();
 
 	return (
@@ -34,12 +33,8 @@ function SelectCard( { set, setCard, card }: SelectCardProps ) {
 }
 
 export function AskCard() {
-	const gameId = useGameStore( state => state.gameData!.id );
-	const players = useGameStore( state => state.gameData!.players );
-	const askableCardSets = useGameStore( state => state.playerData!.cardSets );
-	const oppositeTeamId = useGameStore( state => state.playerData!.oppositeTeamId );
-	const oppositeTeam = useGameStore( state => state.gameData!.teams[ oppositeTeamId! ] );
-	const cardCounts = useGameStore( state => state.gameData!.cardCounts );
+	const { id: gameId, players, cardCounts, teams } = useGameData()!;
+	const { cardSets, oppositeTeamId } = usePlayerData()!;
 
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ selectedCard, setSelectedCard ] = useState<string>();
@@ -47,27 +42,29 @@ export function AskCard() {
 	const [ opened, { open, close } ] = useDisclosure();
 	const [ paneState, setPaneState ] = useState<"SET" | "CARD" | "PLAYER" | "CONFIRM">();
 
-	const openModal = () => {
+	const openModal = useCallback( () => {
 		setPaneState( "SET" );
 		open();
-	};
+	}, [] );
 
-	const closeModal = () => {
+	const closeModal = useCallback( () => {
 		close();
 		setSelectedCardSet( undefined );
 		setSelectedCard( undefined );
 		setSelectedPlayer( undefined );
 		setPaneState( "SET" );
-	};
+	}, [] );
 
-	const { execute, isLoading } = useAction( askCard );
+	const { execute, isLoading } = useAskCardAction();
 
-	const handleCardSetSelection = ( cardSet: string ) => setSelectedCardSet( cardSet as CardSet );
+	const handleCardSetSelection = useCallback( ( cardSet: string ) => setSelectedCardSet( cardSet as CardSet ), [] );
 
-	const handleConfirm = async () => {
-		const input: AskCardInput = { askedFor: selectedCard!, askedFrom: selectedPlayer! };
-		await execute( { ...input, gameId } ).catch( e => alert( e.message ) ).then( closeModal );
-	};
+	const handleConfirm = useCallback(
+		() => execute( { askedFor: selectedCard!, askedFrom: selectedPlayer!, gameId } )
+			.catch( e => alert( e.message ) )
+			.finally( closeModal ),
+		[ selectedCard, selectedPlayer, gameId ]
+	);
 
 	const openConfirmModal = () => setPaneState( "CONFIRM" );
 
@@ -84,7 +81,7 @@ export function AskCard() {
 						<SelectCardSet
 							cardSet={ selectedCardSet }
 							handleSelection={ handleCardSetSelection }
-							cardSetOptions={ askableCardSets }
+							cardSetOptions={ cardSets }
 						/>
 						<Button onClick={ openSelectCardModal } disabled={ !selectedCardSet }>Select Card</Button>
 					</Stack>
@@ -107,7 +104,7 @@ export function AskCard() {
 						<SelectPlayer
 							player={ selectedPlayer }
 							setPlayer={ setSelectedPlayer }
-							options={ oppositeTeam?.members.map( memberId => players[ memberId ] )
+							options={ teams[ oppositeTeamId! ]?.members.map( memberId => players[ memberId ] )
 								.filter( member => !!cardCounts[ member.id ] ) ?? [] }
 						/>
 						<Group>

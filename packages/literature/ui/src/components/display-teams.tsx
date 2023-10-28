@@ -1,5 +1,5 @@
 import { Box, Divider, Flex, Stack, Title } from "@mantine/core";
-import { useGameStore } from "../utils";
+import { useGameData } from "../utils";
 import { PlayerLobby } from "./player-lobby";
 
 export interface DisplayTeamsProps {
@@ -7,8 +7,7 @@ export interface DisplayTeamsProps {
 }
 
 export function DisplayTeams( { displayCardCount }: DisplayTeamsProps ) {
-	const teams = useGameStore( state => state.gameData!.teams );
-	const players = useGameStore( state => state.gameData!.players );
+	const { teams, players } = useGameData()!;
 
 	if ( Object.keys( teams ).length !== 2 ) {
 		return (

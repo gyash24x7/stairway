@@ -1,30 +1,29 @@
 import { Button, Modal, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { useAction } from "@s2h/ui";
-import { Fragment, useState } from "react";
-import { transferTurn, useGameStore } from "../utils";
+import { Fragment, useCallback, useState } from "react";
+import { useGameData, usePlayerData, useTransferTurnAction } from "../utils";
 import { SelectPlayer } from "./select-player";
 
 export function TransferTurn() {
-	const teams = useGameStore( state => state.gameData!.teams );
-	const players = useGameStore( state => state.gameData!.players );
-	const playerId = useGameStore( state => state.playerData!.id );
-	const teamId = useGameStore( state => state.playerData!.teamId );
-	const gameId = useGameStore( state => state.gameData!.id );
+	const { teams, players, id: gameId } = useGameData()!;
+	const { id: playerId, teamId } = usePlayerData()!;
 	const myTeam = teams[ teamId! ];
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ opened, { open, close } ] = useDisclosure();
-	const { execute, isLoading } = useAction( transferTurn );
+	const { execute, isLoading } = useTransferTurnAction();
 
-	const closeModal = () => {
+	const closeModal = useCallback( () => {
 		setSelectedPlayer( undefined );
 		close();
-	};
+	}, [] );
 
-	const handleSubmit = () => execute( { transferTo: selectedPlayer!, gameId } )
-		.then( closeModal )
-		.catch( error => alert( error.message ) );
+	const handleSubmit = useCallback(
+		() => execute( { transferTo: selectedPlayer!, gameId } )
+			.catch( error => alert( error.message ) )
+			.finally( closeModal ),
+		[ selectedPlayer, gameId ]
+	);
 
 	return (
 		<Fragment>

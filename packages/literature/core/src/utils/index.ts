@@ -41,7 +41,7 @@ export function buildGameData( data: RawGameData ): GameData {
 	data.players.forEach( player => {
 		playerMap[ player.id ] = player;
 		if ( !!player.teamId ) {
-			teamMap[ player.teamId ].members.push( player.id );
+			teamMap[ player.teamId ]?.members.push( player.id );
 		}
 	} );
 
