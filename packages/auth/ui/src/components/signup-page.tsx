@@ -1,15 +1,11 @@
-import type { CreateUserInput } from "@auth/types";
-import { Alert, Anchor, Button, PasswordInput, Text, TextInput, Title } from "@mantine/core";
+import { Alert, Button, Flex, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useAction } from "@s2h/ui";
-import type { MouseEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
-import { emailValidator, minLengthValidator, requiredValidator, useAuth } from "../utils";
+import { emailValidator, minLengthValidator, requiredValidator, useSignUpAction } from "../utils";
 
 export function SignUpPage() {
-	const { signUp } = useAuth();
 	const navigate = useNavigate();
 	const { getInputProps, onSubmit } = useForm( {
 		initialValues: {
@@ -24,17 +20,9 @@ export function SignUpPage() {
 		}
 	} );
 
-	const { execute, isLoading, error, data } = useAction(
-		async ( data: CreateUserInput ) => {
-			await signUp( data );
-			navigate( "/auth/login" );
-		}
-	);
+	const { execute, isLoading, error, data } = useSignUpAction();
 
-	const goToLogin = ( e: MouseEvent<HTMLAnchorElement> ) => {
-		e.preventDefault();
-		navigate( "/auth/login" );
-	};
+	const handleSignup = onSubmit( values => execute( values ).then( () => navigate( "/auth/login" ) ) );
 
 	return (
 		<AuthLayout>
@@ -42,7 +30,7 @@ export function SignUpPage() {
 				SIGNUP
 			</Title>
 
-			<form noValidate onSubmit={ onSubmit( ( values ) => execute( values ) ) }>
+			<form noValidate onSubmit={ handleSignup }>
 				<TextInput
 					label={ "Name" }
 					placeholder={ "Enter your Name" }
@@ -75,12 +63,12 @@ export function SignUpPage() {
 				</Button>
 			</form>
 
-			<Text ta={ "center" } mt={ "md" }>
-				Already have an account?{ " " }
-				<Anchor<"a"> onClick={ goToLogin }>
+			<Flex justify={ "space-between" }>
+				<Text>Already have an account?</Text>
+				<Link to={ "/auth/login" }>
 					<b>Login</b>
-				</Anchor>
-			</Text>
+				</Link>
+			</Flex>
 			{ !!data && <Alert title={ "Woohoo!" } color={ "green" }>Verification Email Has Been Sent!</Alert> }
 			{ !!error && <Alert title={ "Bummer!" } color={ "red" }>Something went wrong!</Alert> }
 		</AuthLayout>

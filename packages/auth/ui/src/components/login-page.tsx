@@ -1,16 +1,12 @@
-import type { LoginInput } from "@auth/types";
-import { Alert, Anchor, Button, PasswordInput, Text, TextInput, Title } from "@mantine/core";
+import { Alert, Button, Flex, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useAction } from "@s2h/ui";
 import { IconAlertCircle } from "@tabler/icons-react";
-import type { MouseEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
-import { emailValidator, minLengthValidator, useAuth } from "../utils";
+import { emailValidator, minLengthValidator, useLoginAction } from "../utils";
 
 export function LoginPage() {
-	const { login } = useAuth();
 	const navigate = useNavigate();
 	const { getInputProps, onSubmit } = useForm( {
 		initialValues: {
@@ -23,17 +19,9 @@ export function LoginPage() {
 		}
 	} );
 
-	const { execute, isLoading, error } = useAction(
-		async ( data: LoginInput ) => {
-			await login( data );
-			navigate( "/" );
-		}
-	);
+	const { execute, isLoading, error } = useLoginAction();
 
-	const goToSignup = ( e: MouseEvent<HTMLAnchorElement> ) => {
-		e.preventDefault();
-		navigate( "/auth/signup" );
-	};
+	const handleLogin = onSubmit( input => execute( input ).then( () => navigate( "/" ) ) );
 
 	return (
 		<AuthLayout>
@@ -41,7 +29,7 @@ export function LoginPage() {
 				LOGIN
 			</Title>
 
-			<form noValidate onSubmit={ onSubmit( ( { email, password } ) => execute( { email, password } ) ) }>
+			<form noValidate onSubmit={ handleLogin }>
 				<TextInput
 					label={ "Email" }
 					placeholder={ "Enter your Email" }
@@ -65,12 +53,13 @@ export function LoginPage() {
 				</Button>
 			</form>
 
-			<Text ta={ "center" } mt={ "md" }>
-				Don&apos;t have an account?{ " " }
-				<Anchor<"a"> onClick={ goToSignup }>
+			<Flex justify={ "space-between" }>
+				<Text>Don&apos;t have an account?</Text>
+				<Link to={ "/auth/signup" }>
 					<b>Register</b>
-				</Anchor>
-			</Text>
+				</Link>
+			</Flex>
+
 			{ !!error &&
 				<Alert icon={ <IconAlertCircle/> } title="Bummer!" color="red" mt={ "md" }>
 					Something went wrong!

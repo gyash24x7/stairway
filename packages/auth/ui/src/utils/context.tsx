@@ -2,6 +2,7 @@ import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
 import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 import { useLoaderData } from "react-router-dom";
 import { authClient } from "./client";
+import { useAction } from "@s2h/ui";
 
 export type AuthContextType = {
 	authInfo?: UserAuthInfo;
@@ -44,3 +45,18 @@ export function AuthProvider( props: { children: ReactNode } ) {
 }
 
 export const useAuth = () => useContext( AuthContext );
+
+export const useLoginAction = () => {
+	const { login } = useAuth();
+	return useAction( login );
+};
+
+export const useLogoutAction = () => {
+	const { logout } = useAuth();
+	return useAction( logout );
+};
+
+export const useSignUpAction = () => {
+	const { signUp } = useAuth();
+	return useAction( signUp );
+};
