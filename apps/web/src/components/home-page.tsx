@@ -9,7 +9,7 @@ export function HomePage() {
 	);
 }
 
-export function HomePageFooterHeading() {
+export function HomePageFooter() {
 	return (
 		<Group wrap={ "nowrap" }>
 			<img src={ "logo.png" } width={ 72 } height={ 72 } alt={ "literature" }/>

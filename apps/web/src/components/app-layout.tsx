@@ -1,19 +1,19 @@
 import type { ReactNode } from "react";
 import { AppShell, Avatar, Container, Flex, Group, Tabs, Title } from "@mantine/core";
 import { appLayoutClassnames as classnames } from "../styles";
-import { Logout, useAuth } from "@auth/ui";
+import { Logout, useAuthInfo } from "@auth/ui";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export type AppLayoutProps = {
 	children: ReactNode;
 	footer?: ReactNode;
-	footerContent?: ReactNode;
 }
 
 export function AppLayout( props: AppLayoutProps ) {
-	const { authInfo } = useAuth();
+	const authInfo = useAuthInfo();
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
+
 	const activeTab = pathname.includes( "callbreak" )
 		? "callbreak"
 		: pathname.includes( "literature" )
