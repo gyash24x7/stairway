@@ -71,10 +71,6 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 		const askedPlayer = gameData.players[ input.askedFrom ];
 		const playerWithAskedCard = gameData.players[ cardMappings[ input.askedFor ] ];
 
-		this.logger.debug( "Asked Player Id & Name: %s, %s", askedPlayer.id, askedPlayer.name );
-		this.logger.debug( "Player with asked card Id & Name: %s", playerWithAskedCard?.id, playerWithAskedCard?.name );
-		this.logger.debug( "Card Mapping For %s: %s", input.askedFor, cardMappings[ input.askedFor ] );
-
 		if ( !askedPlayer ) {
 			this.logger.debug(
 				"%s GameId: %s, PlayerId: %s",
