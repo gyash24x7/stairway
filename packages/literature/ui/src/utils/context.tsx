@@ -9,6 +9,7 @@ import type {
 	TeamWithMembers
 } from "@literature/types";
 import type { PlayingCard } from "@s2h/cards";
+import { getCardSetsInHand } from "@s2h/cards";
 import { LiveUpdatesProvider, useAction } from "@s2h/ui";
 import { createContext, ReactNode, useCallback, useContext, useState } from "react";
 import { useLoaderData } from "react-router-dom";
@@ -18,6 +19,19 @@ export type LiteratureContextType = {
 	gameData?: GameData;
 	playerData?: PlayerSpecificData
 }
+
+const GameEvents = {
+	PLAYER_JOINED: "player-joined",
+	TEAMS_CREATED: "teams-created",
+	MOVE_CREATED: "move-created",
+	TURN_UPDATED: "turn-updated",
+	SCORE_UPDATED: "score-updated",
+	STATUS_UPDATED: "status-updated",
+	CARD_COUNT_UPDATED: "card-count-updated",
+	// Player Specific Events
+	HAND_UPDATED: "hand-updated",
+	INFERENCES_UPDATED: "inferences-updated"
+};
 
 export const GameContext = createContext<LiteratureContextType>( {} );
 
@@ -29,28 +43,28 @@ export function GameProvider( props: { children: ReactNode } ) {
 	const handlePlayerJoinedEvent = useCallback( ( player: Player ) => {
 		setGameData( gameData => {
 			gameData.players[ player.id ] = player;
-			return gameData;
+			return { ...gameData };
 		} );
 	}, [] );
 
 	const handleTeamsCreatedEvent = useCallback( ( teams: Record<string, TeamWithMembers> ) => {
 		setGameData( gameData => {
 			gameData.teams = teams;
-			return gameData;
+			return { ...gameData };
 		} );
 	}, [] );
 
 	const handleMoveCreatedEvent = useCallback( ( move: Move ) => {
 		setGameData( gameData => {
 			gameData.moves = [ move, ...gameData.moves ];
-			return gameData;
+			return { ...gameData };
 		} );
 	}, [] );
 
 	const handleTurnUpdatedEvent = useCallback( ( turn: string ) => {
 		setGameData( gameData => {
 			gameData.currentTurn = turn;
-			return gameData;
+			return { ...gameData };
 		} );
 	}, [] );
 
@@ -58,60 +72,58 @@ export function GameProvider( props: { children: ReactNode } ) {
 		setGameData( gameData => {
 			gameData.teams[ teamId ].score = score;
 			gameData.teams[ teamId ].setsWon.push( setWon );
-			return gameData;
+			return { ...gameData };
 		} );
 	}, [] );
 
 	const handleStatusUpdatedEvent = useCallback( ( status: GameStatus ) => {
 		setGameData( gameData => {
 			gameData.status = status;
-			return gameData;
+			return { ...gameData };
 		} );
 	}, [] );
 
 	const handleCardCountUpdatedEvent = useCallback( ( cardCounts: Record<string, number> ) => {
 		setGameData( gameData => {
 			gameData.cardCounts = cardCounts;
-			return gameData;
+			return { ...gameData };
 		} );
 	}, [] );
 
 	const handleHandUpdatedEvent = useCallback( ( hand: PlayingCard[] ) => {
 		setPlayerData( playerData => {
 			playerData.hand = hand;
-			return playerData;
+			return { ...playerData, cardSets: getCardSetsInHand( hand ) };
 		} );
 	}, [] );
 
 	const handleInferencesUpdatedEvent = useCallback( ( inferences: CardInferences ) => {
 		setPlayerData( playerData => {
 			playerData.inferences = inferences;
-			return playerData;
+			return { ...playerData };
 		} );
 	}, [] );
 
-	const gameEvents = {
-		PLAYER_JOINED: handlePlayerJoinedEvent,
-		TEAMS_CREATED: handleTeamsCreatedEvent,
-		MOVE_CREATED: handleMoveCreatedEvent,
-		TURN_UPDATED: handleTurnUpdatedEvent,
-		SCORE_UPDATED: handleScoreUpdatedEvent,
-		STATUS_UPDATED: handleStatusUpdatedEvent,
-		CARD_COUNT_UPDATED: handleCardCountUpdatedEvent
-	};
-
-	const playerEvents = {
-		HAND_UPDATED: handleHandUpdatedEvent,
-		INFERENCES_UPDATED: handleInferencesUpdatedEvent
-	};
 
 	return (
 		<GameContext.Provider value={ { gameData, playerData } }>
 			<LiveUpdatesProvider
+				socketUrl={ literatureClient.socketUrl }
 				gameId={ gameData.id }
 				playerId={ playerData.id }
-				gameEvents={ gameEvents }
-				playerEvents={ playerEvents }
+				gameEventHandlers={ {
+					[ GameEvents.PLAYER_JOINED ]: handlePlayerJoinedEvent,
+					[ GameEvents.TEAMS_CREATED ]: handleTeamsCreatedEvent,
+					[ GameEvents.MOVE_CREATED ]: handleMoveCreatedEvent,
+					[ GameEvents.TURN_UPDATED ]: handleTurnUpdatedEvent,
+					[ GameEvents.SCORE_UPDATED ]: handleScoreUpdatedEvent,
+					[ GameEvents.STATUS_UPDATED ]: handleStatusUpdatedEvent,
+					[ GameEvents.CARD_COUNT_UPDATED ]: handleCardCountUpdatedEvent
+				} }
+				playerEventHandlers={ {
+					[ GameEvents.HAND_UPDATED ]: handleHandUpdatedEvent,
+					[ GameEvents.INFERENCES_UPDATED ]: handleInferencesUpdatedEvent
+				} }
 			>
 				{ props.children }
 			</LiveUpdatesProvider>

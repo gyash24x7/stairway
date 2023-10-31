@@ -22,7 +22,7 @@ export class InferencesUpdatedEventHandler implements IEventHandler<InferencesUp
 		this.logger.debug( ">> handleInferencesUpdatedEvent()" );
 
 		Object.keys( inferences ).map( playerId => {
-			this.realtimeService.publishDirectMessage(
+			this.realtimeService.publishMemberMessage(
 				Constants.LITERATURE,
 				gameId,
 				playerId,

@@ -2,9 +2,9 @@ import { Alert, Button, Flex, PasswordInput, Text, TextInput, Title } from "@man
 import { useForm } from "@mantine/form";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
 import { emailValidator, minLengthValidator, useLoginAction } from "../utils";
+import { Fragment } from "react";
 
 export function LoginPage() {
 	const navigate = useNavigate();
@@ -24,7 +24,7 @@ export function LoginPage() {
 	const handleLogin = onSubmit( input => execute( input ).then( () => navigate( "/" ) ) );
 
 	return (
-		<AuthLayout>
+		<Fragment>
 			<Title order={ 1 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
 				LOGIN
 			</Title>
@@ -65,6 +65,6 @@ export function LoginPage() {
 					Something went wrong!
 				</Alert>
 			}
-		</AuthLayout>
+		</Fragment>
 	);
 }

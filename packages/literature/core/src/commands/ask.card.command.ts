@@ -37,11 +37,11 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 		this.logger.debug( ">> executeAskCardCommand()" );
 
 		const { input, playerData, gameData, cardMappings } = command;
-		const { askingPlayer, playerWithAskedCard, askedPlayer } = this.validate( command );
+		const { playerWithAskedCard, askedPlayer } = this.validate( command );
 
 		const moveSuccess = askedPlayer.id === playerWithAskedCard.id;
 		const receivedString = moveSuccess ? "got the card!" : "was declined!";
-		const description = `${ askingPlayer.name } asked ${ askedPlayer.name } for ${ input.askedFor } and ${ receivedString }`;
+		const description = `${ playerData.name } asked ${ askedPlayer.name } for ${ input.askedFor } and ${ receivedString }`;
 		const askMoveData: AskMoveData = {
 			from: input.askedFrom,
 			by: playerData.id,
@@ -68,9 +68,12 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 	private validate( { gameData, playerData, cardMappings, input }: AskCardCommand ) {
 		this.logger.debug( ">> validateAskCardCommand()" );
 
-		const askingPlayer = gameData.players[ playerData.id ];
 		const askedPlayer = gameData.players[ input.askedFrom ];
 		const playerWithAskedCard = gameData.players[ cardMappings[ input.askedFor ] ];
+
+		this.logger.debug( "Asked Player Id & Name: %s, %s", askedPlayer.id, askedPlayer.name );
+		this.logger.debug( "Player with asked card Id & Name: %s", playerWithAskedCard?.id, playerWithAskedCard?.name );
+		this.logger.debug( "Card Mapping For %s: %s", input.askedFor, cardMappings[ input.askedFor ] );
 
 		if ( !askedPlayer ) {
 			this.logger.debug(
@@ -82,17 +85,17 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 			throw new BadRequestException( Messages.PLAYER_NOT_PART_OF_GAME );
 		}
 
-		if ( playerWithAskedCard.id === askingPlayer.id ) {
+		if ( playerWithAskedCard.id === playerData.id ) {
 			this.logger.debug( "%s GameId: %s", Messages.ASKED_CARD_WITH_ASKING_PLAYER, gameData.id );
 			throw new BadRequestException( Messages.ASKED_CARD_WITH_ASKING_PLAYER );
 		}
 
-		if ( askingPlayer.teamId! === askedPlayer.teamId! ) {
+		if ( playerData.teamId === askedPlayer.teamId ) {
 			this.logger.debug( "%s GameId: %s", Messages.ASKED_PLAYER_FROM_SAME_TEAM, gameData.id );
 			throw new BadRequestException( Messages.ASKED_PLAYER_FROM_SAME_TEAM );
 		}
 
 		this.logger.debug( "<< validateAskCardCommand()" );
-		return { askedPlayer, askingPlayer, playerWithAskedCard };
+		return { askedPlayer, playerWithAskedCard };
 	}
 }

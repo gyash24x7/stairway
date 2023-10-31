@@ -1,4 +1,5 @@
-import { Box, Group, Loader, Text } from "@mantine/core";
+import { Group, Loader, Text } from "@mantine/core";
+import { Card } from "./card";
 
 export interface BannerProps {
 	isLoading?: boolean;
@@ -7,11 +8,11 @@ export interface BannerProps {
 
 export function Banner( { message, isLoading }: BannerProps ) {
 	return (
-		<Box p={ 16 } w={ "100%" }>
+		<Card>
 			<Group>
 				{ isLoading && <Loader size={ "sm" }/> }
-				<Text>{ message }</Text>
+				<Text fw={ 600 }>{ message }</Text>
 			</Group>
-		</Box>
+		</Card>
 	);
 }

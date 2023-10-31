@@ -5,7 +5,7 @@ import { Constants } from "../constants";
 
 export const cardMappingsDecoratorFn = ( _data: unknown, context: ExecutionContext ): CardMappingData => {
 	const res = context.switchToHttp().getResponse<Response>();
-	return res.locals[ Constants.PLAYER_DATA ];
+	return res.locals[ Constants.CARD_MAPPINGS ];
 };
 
 export const CardMappings = createParamDecorator( cardMappingsDecoratorFn );

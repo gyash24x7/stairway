@@ -1,6 +1,6 @@
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { CardSet, getAskableCardsOfSet, getPlayingCardFromId } from "@s2h/cards";
+import { CardSet, getAskableCardsOfSet, getCardsOfSet, getPlayingCardFromId } from "@s2h/cards";
 import { DisplayCard } from "@s2h/ui";
 import { Dispatch, Fragment, SetStateAction, useCallback, useState } from "react";
 import { useAskCardAction, useGameData, usePlayerData } from "../utils";
@@ -34,7 +34,7 @@ function SelectCard( { set, setCard, card }: SelectCardProps ) {
 
 export function AskCard() {
 	const { id: gameId, players, cardCounts, teams } = useGameData()!;
-	const { cardSets, oppositeTeamId } = usePlayerData()!;
+	const { cardSets, oppositeTeamId, hand } = usePlayerData()!;
 
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ selectedCard, setSelectedCard ] = useState<string>();
@@ -74,16 +74,27 @@ export function AskCard() {
 
 	return (
 		<Fragment>
-			<Button color={ "warning" } onClick={ openModal }>Ask Card</Button>
-			<Modal opened={ opened } onClose={ closeModal } title={ "Ask Card" } size={ "lg" } centered>
+			<Button color={ "warning" } onClick={ openModal } fw={ 700 }>ASK CARD</Button>
+			<Modal
+				opened={ opened }
+				onClose={ closeModal }
+				title={ <Title order={ 2 }>Ask Card</Title> }
+				size={ "lg" }
+				centered
+			>
 				{ paneState === "SET" && (
 					<Stack>
 						<SelectCardSet
 							cardSet={ selectedCardSet }
 							handleSelection={ handleCardSetSelection }
-							cardSetOptions={ cardSets }
+							cardSetOptions={ cardSets.filter( cardSet => {
+								const cards = getCardsOfSet( hand, cardSet );
+								return cards.length !== 6;
+							} ) }
 						/>
-						<Button onClick={ openSelectCardModal } disabled={ !selectedCardSet }>Select Card</Button>
+						<Button onClick={ openSelectCardModal } disabled={ !selectedCardSet } fw={ 700 }>
+							SELECT CARD
+						</Button>
 					</Stack>
 				) }
 				{ paneState === "CARD" && (
@@ -94,8 +105,10 @@ export function AskCard() {
 							card={ selectedCard }
 						/>
 						<Group>
-							<Button onClick={ openModal }>Back</Button>
-							<Button onClick={ openSelectPlayerModal } disabled={ !selectedCard }>Select Player</Button>
+							<Button onClick={ openModal } fw={ 700 }>BACK</Button>
+							<Button onClick={ openSelectPlayerModal } disabled={ !selectedCard } fw={ 700 }>
+								SELECT PLAYER
+							</Button>
 						</Group>
 					</Stack>
 				) }
@@ -108,8 +121,10 @@ export function AskCard() {
 								.filter( member => !!cardCounts[ member.id ] ) ?? [] }
 						/>
 						<Group>
-							<Button onClick={ openSelectCardModal }>Back</Button>
-							<Button onClick={ openConfirmModal } disabled={ !selectedPlayer }>Confirm</Button>
+							<Button onClick={ openSelectCardModal } fw={ 700 }>Back</Button>
+							<Button onClick={ openConfirmModal } disabled={ !selectedPlayer } fw={ 700 }>
+								CONFIRM
+							</Button>
 						</Group>
 					</Stack>
 				) }
@@ -119,8 +134,10 @@ export function AskCard() {
 							Ask { players[ selectedPlayer! ].name } for { getPlayingCardFromId( selectedCard! ).displayString }
 						</Title>
 						<Group>
-							<Button onClick={ openSelectPlayerModal }>Back</Button>
-							<Button onClick={ handleConfirm } loading={ isLoading }>Ask Card</Button>
+							<Button onClick={ openSelectPlayerModal } fw={ 700 }>BACK</Button>
+							<Button onClick={ handleConfirm } loading={ isLoading } fw={ 700 }>
+								ASK CARD
+							</Button>
 						</Group>
 					</Stack>
 				) }

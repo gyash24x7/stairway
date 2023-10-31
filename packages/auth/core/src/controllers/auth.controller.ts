@@ -4,7 +4,7 @@ import { CommandBus } from "@nestjs/cqrs";
 import { LoggerFactory } from "@s2h/core";
 import type { CookieOptions, Response } from "express";
 import { CreateUserCommand, LoginCommand, VerifyUserCommand } from "../commands";
-import { Paths } from "../constants";
+import { Constants, Paths } from "../constants";
 import { AuthInfo, RequiresAuth } from "../decorators";
 
 const cookieOptions: CookieOptions = {
@@ -47,6 +47,16 @@ export class AuthController {
 		res.status( HttpStatus.OK );
 		this.logger.debug( "<< login()" );
 		return authInfo;
+	}
+
+	@Get( Paths.TOKEN )
+	@RequiresAuth()
+	@HttpCode( HttpStatus.OK )
+	async getToken( @Res( { passthrough: true } ) res: Response ) {
+		this.logger.debug( ">> getToken()" );
+		const token: string = res.locals[ Constants.AUTH_TOKEN ];
+		this.logger.debug( "<< getToken()" );
+		return { token };
 	}
 
 	@Get( Paths.VERIFY )

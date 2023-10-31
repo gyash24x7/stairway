@@ -3,30 +3,32 @@ import { useDisclosure } from "@mantine/hooks";
 import { chunk, shuffle } from "@s2h/cards";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
 import { useCreateTeamsAction, useGameData } from "../utils";
-import { PlayerCard } from "./player-card";
+import { DisplayPlayerMedium } from "./display-player";
 
 
 export function CreateTeams() {
 	const { id: gameId, players, playerCount } = useGameData()!;
 
-	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
+	const [ teamAName, setTeamAName ] = useState<string>( "" );
+	const [ teamBName, setTeamBName ] = useState<string>( "" );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ opened, { open, close } ] = useDisclosure();
 
-	const handleInput = useCallback( ( index: 0 | 1 ) => ( e: ChangeEvent<HTMLInputElement> ) => {
-		setTeamNames( teamNames => {
-			teamNames[ index ] = e.currentTarget.value;
-			return teamNames;
-		} );
+	const handleTeamAInput = useCallback( ( e: ChangeEvent<HTMLInputElement> ) => {
+		setTeamAName( e.target.value );
+	}, [] );
+
+	const handleTeamBInput = useCallback( ( e: ChangeEvent<HTMLInputElement> ) => {
+		setTeamBName( e.target.value );
 	}, [] );
 
 	const groupPlayers = useCallback( () => {
 		const teamMembers = chunk( shuffle( Object.keys( players ) ), playerCount / 2 );
 		setTeamMemberData( {
-			[ teamNames[ 0 ] ]: teamMembers[ 0 ],
-			[ teamNames[ 1 ] ]: teamMembers[ 1 ]
+			[ teamAName ]: teamMembers[ 0 ],
+			[ teamBName ]: teamMembers[ 1 ]
 		} );
-	}, [ teamNames, players, playerCount ] );
+	}, [ teamAName, teamBName, players, playerCount ] );
 
 	const { execute, isLoading } = useCreateTeamsAction();
 
@@ -41,35 +43,35 @@ export function CreateTeams() {
 				<Stack>
 					<TextInput
 						name={ "team1" }
-						value={ teamNames[ 0 ] }
-						onChange={ handleInput( 0 ) }
+						value={ teamAName }
+						onInput={ handleTeamAInput }
 						placeholder={ "Enter Team Name" }
 					/>
 					<TextInput
 						name={ "team2" }
-						value={ teamNames[ 1 ] }
-						onChange={ handleInput( 1 ) }
+						value={ teamBName }
+						onInput={ handleTeamBInput }
 						placeholder={ "Enter Team Name" }
 					/>
-					<Button onClick={ groupPlayers }>Group Players</Button>
+					<Button onClick={ groupPlayers } fw={ 700 }>GROUP PLAYERS</Button>
 
-					{ teamNames.map( team => (
+					{ Object.keys( teamMemberData ).map( team => (
 						<Stack key={ team }>
 							<Text>Team { team }</Text>
 							<Group>
-								{ teamMemberData[ team ].map( member => (
-									<PlayerCard player={ players[ member ] } key={ member }/>
+								{ teamMemberData[ team ]?.map( member => (
+									<DisplayPlayerMedium player={ players[ member ] } key={ member }/>
 								) ) }
 							</Group>
 						</Stack>
 					) ) }
 
-					<Button onClick={ handleSubmit } loading={ isLoading }>
-						Create Teams
+					<Button onClick={ handleSubmit } loading={ isLoading } fw={ 700 }>
+						CREATE TEAMS
 					</Button>
 				</Stack>
 			</Modal>
-			<Button fullWidth color={ "primary" } onClick={ open }>Create Teams</Button>
+			<Button color={ "brand" } onClick={ open } fw={ 700 }>CREATE TEAMS</Button>
 		</Fragment>
 	);
 }

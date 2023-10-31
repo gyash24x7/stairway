@@ -1,7 +1,7 @@
 import type { Player } from "@literature/types";
 import { Combobox, useCombobox } from "@mantine/core";
 import type { Dispatch, SetStateAction } from "react";
-import { PlayerCard } from "./player-card";
+import { DisplayPlayerMedium } from "./display-player";
 
 export interface SelectPlayerProps {
 	options: Player[];
@@ -17,7 +17,7 @@ export function SelectPlayer( { setPlayer, player, options }: SelectPlayerProps 
 			<Combobox.Options>
 				{ options.map( option => (
 					<Combobox.Option value={ option.id } key={ option.id } selected={ player === option.id } p={ 8 }>
-						<PlayerCard player={ option }/>
+						<DisplayPlayerMedium player={ option }/>
 					</Combobox.Option>
 				) ) }
 			</Combobox.Options>

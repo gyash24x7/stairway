@@ -4,14 +4,14 @@ import { themeToVars } from "@mantine/vanilla-extract";
 
 export const theme = createTheme( {
 	colors: {
-		primary: generateColors( "#0052CC" ),
+		brand: generateColors( "#0052CC" ),
 		danger: generateColors( "#DE350B" ),
 		warning: generateColors( "#FF991F" ),
 		success: generateColors( "#00875A" ),
 		alt: generateColors( "#5243AA" ),
 		info: generateColors( "#00B8D9" )
 	},
-	fontFamily: "Raleway",
+	fontFamily: "Montserrat",
 	headings: {
 		fontFamily: "Saira Extra Condensed",
 		fontWeight: "600"

@@ -38,26 +38,6 @@ export const authLayoutClassnames = {
 	logo: style( { width: "100%", height: 200, objectFit: "contain" } )
 };
 
-export const navBarClassnames = {
-	themeToggle: style( {
-		backgroundColor: vars.colors.gray[ 0 ],
-		color: vars.colors.primary[ 6 ],
-		selectors: {
-			[ vars.darkSelector ]: {
-				backgroundColor: vars.colors.gray[ 6 ],
-				color: vars.colors[ "warning" ][ 4 ]
-			}
-		}
-	} ),
-
-	userInfo: style( {
-		borderRadius: vars.radius.md,
-		borderColor: vars.colors.gray[ 6 ],
-		borderStyle: "dashed",
-		borderWidth: rem( 1 )
-	} )
-};
-
 export const pageClassnames = {
 	title: style( {
 		color: vars.colors.black,
@@ -69,17 +49,4 @@ export const pageClassnames = {
 			}
 		}
 	} )
-};
-
-export const userCardClassnames = {
-	icon: style( {
-		color: vars.colors.gray[ 5 ],
-		selectors: {
-			[ vars.darkSelector ]: {
-				color: vars.colors.dark[ 3 ]
-			}
-		}
-	} ),
-
-	name: style( { fontFamily: vars.fontFamilyHeadings } )
 };

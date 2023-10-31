@@ -11,5 +11,5 @@ export function StartGame() {
 		[ gameId ]
 	);
 
-	return <Button fullWidth color={ "primary" } loading={ isLoading } onClick={ handleSubmit }>Start Game</Button>;
+	return <Button color={ "brand" } loading={ isLoading } onClick={ handleSubmit } fw={ 700 }>START GAME</Button>;
 }

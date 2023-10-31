@@ -1,8 +1,15 @@
 import { authClient, AuthProvider, LoginPage, SignUpPage } from "@auth/ui";
-import { GamePage, GameProvider, HomePage as LiteratureHomePage, literatureClient } from "@literature/ui";
+import {
+	GamePage,
+	GamePageFooter as LiteratureGamePageFooter,
+	GameProvider,
+	HomePage as LiteratureHomePage,
+	HomePageFooter as LiteratureHomePageFooter,
+	literatureClient
+} from "@literature/ui";
 import { ErrorPage } from "@s2h/ui";
 import { createBrowserRouter, IndexRouteObject, Outlet, RouteObject } from "react-router-dom";
-import { HomePage } from "../components";
+import { HomePage, HomePageFooterHeading } from "../components";
 import { AuthGateway } from "./auth-gateway";
 
 const loginRoute: RouteObject = {
@@ -26,13 +33,23 @@ const authRoute: RouteObject = {
 
 const literatureHomeRoute: IndexRouteObject = {
 	index: true,
-	element: <LiteratureHomePage/>,
+	element: (
+		<AuthGateway isPrivate footer={ <LiteratureHomePageFooter/> }>
+			<LiteratureHomePage/>
+		</AuthGateway>
+	),
 	errorElement: <ErrorPage/>
 };
 
 const literatureGameRoute: RouteObject = {
 	path: ":gameId",
-	element: <GameProvider><GamePage/></GameProvider>,
+	element: (
+		<GameProvider>
+			<AuthGateway isPrivate footer={ <LiteratureGamePageFooter/> }>
+				<GamePage/>
+			</AuthGateway>
+		</GameProvider>
+	),
 	errorElement: <ErrorPage/>,
 	loader: async ( { params } ) => {
 		const gameId = params[ "gameId" ]!;
@@ -44,14 +61,14 @@ const literatureGameRoute: RouteObject = {
 
 const literatureRoute: RouteObject = {
 	path: "literature",
-	element: <AuthGateway isPrivate><Outlet/></AuthGateway>,
+	element: <Outlet/>,
 	errorElement: <ErrorPage/>,
 	children: [ literatureGameRoute, literatureHomeRoute ]
 };
 
 const homeRoute: IndexRouteObject = {
 	index: true,
-	element: <AuthGateway isPrivate><HomePage/></AuthGateway>,
+	element: <AuthGateway isPrivate footer={ <HomePageFooterHeading/> }><HomePage/></AuthGateway>,
 	errorElement: <ErrorPage/>
 };
 
@@ -60,7 +77,15 @@ const rootRoute: RouteObject = {
 	element: <AuthProvider><Outlet/></AuthProvider>,
 	errorElement: <ErrorPage/>,
 	children: [ authRoute, literatureRoute, homeRoute ],
-	loader: authClient.loadAuthInfo
+	loader: async () => {
+		const authInfo = await authClient.loadAuthInfo();
+		if ( !!authInfo ) {
+			const { token } = await authClient.getToken();
+			localStorage.setItem( "authToken", token );
+		}
+
+		return authInfo;
+	}
 };
 
 export const router = createBrowserRouter( [ rootRoute ] );

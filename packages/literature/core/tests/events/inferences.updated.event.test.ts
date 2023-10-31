@@ -17,29 +17,29 @@ describe( "InferencesUpdatedEvent", () => {
 		const event = new InferencesUpdatedEvent( inferenceData, "1" );
 		await handler.handle( event );
 
-		expect( mockRealtimeService.publishDirectMessage ).toHaveBeenCalledTimes( 4 );
-		expect( mockRealtimeService.publishDirectMessage ).toHaveBeenCalledWith(
+		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledTimes( 4 );
+		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
 			"1",
 			GameEvents.INFERENCES_UPDATED,
 			inferenceData[ "1" ]
 		);
-		expect( mockRealtimeService.publishDirectMessage ).toHaveBeenCalledWith(
+		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
 			"2",
 			GameEvents.INFERENCES_UPDATED,
 			inferenceData[ "2" ]
 		);
-		expect( mockRealtimeService.publishDirectMessage ).toHaveBeenCalledWith(
+		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
 			"3",
 			GameEvents.INFERENCES_UPDATED,
 			inferenceData[ "3" ]
 		);
-		expect( mockRealtimeService.publishDirectMessage ).toHaveBeenCalledWith(
+		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
 			"4",

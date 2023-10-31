@@ -1,50 +1,72 @@
-import { Fragment, ReactNode, useEffect } from "react";
-import { socket } from "./socket";
+import { Fragment, ReactNode, useCallback, useEffect } from "react";
+//@ts-ignore
+import { connect } from "socket.io-client";
 
 export interface LiveUpdatesProviderProps {
+	socketUrl: string;
 	gameId: string;
 	playerId: string;
-	gameEvents?: Record<string, ( data: any ) => void>;
-	playerEvents?: Record<string, ( data: any ) => void>;
+	gameEventHandlers?: Record<string, ( data: any ) => void>;
+	playerEventHandlers?: Record<string, ( data: any ) => void>;
 	children: ReactNode;
 }
 
+const socket = connect( "ws://localhost:8001/literature" );
+socket.on( "connect", () => {
+	console.log( "WebSocket connection established!" );
+} );
+
 export function LiveUpdatesProvider( props: LiveUpdatesProviderProps ) {
-	const { children, gameEvents = {}, playerEvents = {}, gameId, playerId } = props;
+
+	const initializeSocket = useCallback(
+		() => {
+			socket.emit( "join-room", props.gameId );
+
+			socket.on( "disconnect", () => {
+				console.log( "WebSocket connection closed!" );
+			} );
+
+			if ( props.gameEventHandlers ) {
+				Object.keys( props.gameEventHandlers ).forEach( event => {
+					socket?.on( event, props.gameEventHandlers![ event ] );
+				} );
+			}
+
+			if ( props.playerEventHandlers ) {
+				Object.keys( props.playerEventHandlers ).forEach( event => {
+					const eventKey = event.concat( ":" ).concat( props.playerId );
+					socket?.on( eventKey, props.playerEventHandlers![ event ] );
+				} );
+			}
+		},
+		[ props.gameEventHandlers, props.playerEventHandlers, props.playerId, props.gameId ]
+	);
+
+	const resetSocket = useCallback(
+		() => {
+			socket.emit( "leave-room", props.gameId );
+
+			if ( props.gameEventHandlers ) {
+				Object.keys( props.gameEventHandlers ).forEach( event => {
+					socket?.off( event );
+				} );
+			}
+
+			if ( props.playerEventHandlers ) {
+				Object.keys( props.playerEventHandlers ).forEach( event => {
+					const eventKey = event.concat( ":" ).concat( props.playerId );
+					socket.off( eventKey );
+				} );
+			}
+		},
+		[ props.playerEventHandlers, props.gameEventHandlers, props.playerId, props.gameId ]
+	);
+
 
 	useEffect( () => {
-		socket.on( "connect", () => {
-			socket.emit( "join-room", gameId );
-		} );
-
-		Object.keys( gameEvents ).map( event => {
-			socket.on( event, ( data ) => {
-				console.log( "Event Received: ", event, data );
-				const handler = gameEvents[ event ];
-				handler( data );
-			} );
-			socket.emit( "subscription", { event, gameId, playerId } );
-		} );
-
-		Object.keys( playerEvents ).map( event => {
-			socket.on( event.concat( "_" ).concat( playerId ), ( data ) => {
-				console.log( "Event Received: ", event, data );
-				playerEvents[ event ]( data );
-			} );
-			socket.emit( "subscription", { event, gameId, playerId } );
-		} );
-
-		return () => {
-			socket.off( "connect" );
-			Object.keys( gameEvents ).map( event => {
-				socket.off( event, gameEvents[ event ] );
-			} );
-
-			Object.keys( playerEvents ).map( event => {
-				socket.off( event.concat( "_" ).concat( playerId ), playerEvents[ event ] );
-			} );
-		};
+		initializeSocket();
+		return resetSocket;
 	}, [] );
 
-	return <Fragment>{ children }</Fragment>;
+	return <Fragment>{ props.children } </Fragment>;
 }

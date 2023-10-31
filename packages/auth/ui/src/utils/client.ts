@@ -4,7 +4,11 @@ import { getRequest, postRequest } from "@s2h/client";
 export class AuthClient {
 
 	async loadAuthInfo() {
-		return getRequest<UserAuthInfo>( "/auth" );
+		return getRequest<UserAuthInfo>( "/auth" ).catch( () => null );
+	}
+
+	async getToken() {
+		return getRequest<{ token: string }>( "/auth/token" );
 	}
 
 	async login( data: LoginInput ) {

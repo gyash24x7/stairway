@@ -2,6 +2,7 @@ import { rem } from "@mantine/core";
 import { CardSuit } from "@s2h/cards";
 import { style, styleVariants } from "@vanilla-extract/css";
 import { vars } from "./theme";
+import { recipe } from "@vanilla-extract/recipes";
 
 export const applicationCardClassnames = {
 	card: style( {
@@ -13,25 +14,7 @@ export const applicationCardClassnames = {
 		alignItems: "flex-start",
 		backgroundSize: "cover",
 		backgroundPosition: "center",
-		backgroundImage: "url(background.jpg)",
-		borderColor: vars.colors.gray[ 6 ],
-		borderStyle: "dashed",
-		borderWidth: rem( 1 )
-	} ),
-
-	title: style( {
-		fontWeight: 900,
-		color: vars.colors.white,
-		lineHeight: 1.2,
-		fontSize: rem( 32 ),
-		marginTop: vars.spacing.xs
-	} ),
-
-	category: style( {
-		color: vars.colors.white,
-		opacity: 0.7,
-		fontWeight: 700,
-		textTransform: "uppercase"
+		backgroundImage: "url(background.jpg)"
 	} )
 };
 
@@ -99,5 +82,29 @@ export const playingCardClassnames = {
 		[ CardSuit.CLUBS ]: { color: vars.colors[ "gray" ][ 8 ] },
 		[ CardSuit.HEARTS ]: { color: vars.colors[ "danger" ][ 6 ] },
 		[ CardSuit.DIAMONDS ]: { color: vars.colors[ "danger" ][ 6 ] }
+	} )
+};
+
+export const cardClassnames = {
+	root: recipe( {
+		base: {
+			width: "100%",
+			padding: 20,
+			background: vars.colors.white,
+			borderWidth: 1,
+			borderStyle: "solid",
+			borderRadius: 10,
+			borderColor: vars.colors[ "gray" ][ 3 ]
+		},
+		variants: {
+			stretch: {
+				true: {
+					flex: 1
+				}
+			}
+		},
+		defaultVariants: {
+			stretch: false
+		}
 	} )
 };

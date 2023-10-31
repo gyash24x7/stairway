@@ -1,10 +1,12 @@
-import { Group, Title } from "@mantine/core";
+import { Flex, Group, Title } from "@mantine/core";
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
 import { playingCardClassnames as classnames } from "../styles";
+import { Fragment } from "react";
 
 
 export interface DisplayCardProps {
 	card: PlayingCard;
+	orientation?: "horizontal" | "vertical";
 }
 
 export const suitSrcMap: Record<CardSuit, string> = {
@@ -33,14 +35,25 @@ export function DisplayCardSet( { cardSet }: { cardSet: CardSet } ) {
 	);
 }
 
-export function DisplayCard( { card }: DisplayCardProps ) {
+export function DisplayCard( { card, orientation }: DisplayCardProps ) {
 	return (
-		<div className={ classnames.wrapper }>
-			<div className={ classnames.cardColor[ card.suit ] }>
-				{ rankTextMap[ card.rank ] }
-			</div>
-			<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 32 } height={ 32 }/>
-		</div>
+		<Fragment>
+			{ orientation === "horizontal" ? (
+				<Flex className={ classnames.wrapper } gap={ 20 } align={ "center" }>
+					<div className={ classnames.cardColor[ card.suit ] }>
+						{ rankTextMap[ card.rank ] }
+					</div>
+					<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 32 } height={ 32 }/>
+				</Flex>
+			) : (
+				<div className={ classnames.wrapper }>
+					<div className={ classnames.cardColor[ card.suit ] }>
+						{ rankTextMap[ card.rank ] }
+					</div>
+					<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 32 } height={ 32 }/>
+				</div>
+			) }
+		</Fragment>
 	);
 
 }

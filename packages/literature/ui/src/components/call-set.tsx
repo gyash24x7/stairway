@@ -1,10 +1,12 @@
-import { Button, Combobox, Flex, Group, Modal, Stack, useCombobox } from "@mantine/core";
+import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { CardSet, cardSetMap, getPlayingCardFromId } from "@s2h/cards";
 import { DisplayCard } from "@s2h/ui";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import { useCallSetAction, useGameData, usePlayerData } from "../utils";
 import { SelectCardSet } from "./select-card-set";
+import { DisplayPlayerVertical } from "./display-player";
+import { IconArrowBigRight } from "@tabler/icons-react";
 
 interface SelectCardsProps {
 	cardIds: string[];
@@ -36,15 +38,8 @@ function SelectCards( { handleSelection, cardIds, options }: SelectCardsProps ) 
 }
 
 export function CallSet() {
-	const { id: gameId, players, cardCounts, teams } = useGameData()!;
-	const { cardSets, id: playerId, teamId } = usePlayerData()!;
-
-	const teamMemberIds = useMemo( () => {
-		return [
-			playerId,
-			...teams[ teamId! ].members.filter( id => id !== playerId || !cardCounts[ id ] )
-		];
-	}, [ playerId, teamId, teams, cardCounts ] );
+	const { id: gameId, players, teams } = useGameData()!;
+	const { cardSets, teamId } = usePlayerData()!;
 
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ cardOptions, setCardOptions ] = useState<string[]>( [] );
@@ -77,6 +72,7 @@ export function CallSet() {
 	);
 
 	const openModalForPlayer = useCallback( ( index: number ) => async () => {
+		const teamMemberIds = teams[ teamId! ].members;
 		const playerId = teamMemberIds[ index ];
 
 		if ( index < teamMemberIds.length ) {
@@ -86,7 +82,7 @@ export function CallSet() {
 			setPaneState( "CONFIRM" );
 			setModalTitle( "Confirm Call" );
 		}
-	}, [ teamMemberIds ] );
+	}, [ teamId, teams ] );
 
 	const openSelectCardSet = useCallback( () => {
 		setPaneState( "SET" );
@@ -103,7 +99,13 @@ export function CallSet() {
 
 	return (
 		<Fragment>
-			<Modal opened={ opened } onClose={ closeModal } title={ modalTitle } centered size={ "lg" }>
+			<Modal
+				opened={ opened }
+				onClose={ closeModal }
+				title={ <Title order={ 2 }>{ modalTitle }</Title> }
+				centered
+				size={ "lg" }
+			>
 				{ paneState === "SET" && (
 					<Stack>
 						<SelectCardSet
@@ -111,12 +113,12 @@ export function CallSet() {
 							cardSet={ selectedCardSet }
 							cardSetOptions={ cardSets }
 						/>
-						<Button onClick={ openModalForPlayer( 0 ) } disabled={ !selectedCardSet }>
-							Select Card Locations
+						<Button onClick={ openModalForPlayer( 0 ) } disabled={ !selectedCardSet } fw={ 700 }>
+							SELECT CARD LOCATIONS
 						</Button>
 					</Stack>
 				) }
-				{ teamMemberIds.map( ( memberId, index ) => {
+				{ teams[ teamId! ]?.members.map( ( memberId, index ) => {
 					if ( paneState === memberId ) {
 						return (
 							<Stack key={ memberId }>
@@ -127,11 +129,13 @@ export function CallSet() {
 								/>
 								<Group>
 									<Button
-										onClick={ index <= 0 ? openSelectCardSet : openModalForPlayer( index - 1 ) }>
-										Back
+										onClick={ index <= 0 ? openSelectCardSet : openModalForPlayer( index - 1 ) }
+										fw={ 700 }
+									>
+										BACK
 									</Button>
-									<Button onClick={ openModalForPlayer( index + 1 ) }>
-										Next
+									<Button onClick={ openModalForPlayer( index + 1 ) } fw={ 700 }>
+										NEXT
 									</Button>
 								</Group>
 							</Stack>
@@ -140,19 +144,36 @@ export function CallSet() {
 					return undefined;
 				} ) }
 				{ paneState === "CONFIRM" && (
-					<Group>
-						<Button onClick={ openModalForPlayer( teamMemberIds.length - 1 ) }>Back</Button>
-						<Button
-							onClick={ handleConfirm }
-							loading={ isLoading }
-							disabled={ Object.keys( cardMap ).length !== 6 }
-						>
-							Call Set
-						</Button>
-					</Group>
+					<Stack>
+						<Flex gap={ 10 } wrap={ "wrap" }>
+							{ Object.keys( cardMap ).map( cardId => (
+								<Group>
+									<DisplayCard card={ getPlayingCardFromId( cardId ) } orientation={ "horizontal" }/>
+									<IconArrowBigRight size={ 24 }/>
+									<DisplayPlayerVertical player={ players[ cardMap[ cardId ] ] }/>
+								</Group>
+							) ) }
+						</Flex>
+						<Group>
+							<Button
+								onClick={ openModalForPlayer( teams[ teamId! ]?.members.length ?? 1 - 1 ) }
+								fw={ 700 }
+							>
+								BACK
+							</Button>
+							<Button
+								onClick={ handleConfirm }
+								loading={ isLoading }
+								disabled={ Object.keys( cardMap ).length !== 6 }
+								fw={ 700 }
+							>
+								CALL SET
+							</Button>
+						</Group>
+					</Stack>
 				) }
 			</Modal>
-			<Button color={ "danger" } onClick={ openSelectCardSet }>Call Set</Button>
+			<Button color={ "danger" } onClick={ openSelectCardSet } fw={ 700 }>CALL SET</Button>
 		</Fragment>
 	);
 }

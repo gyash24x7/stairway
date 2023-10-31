@@ -21,16 +21,16 @@ export class Paths {
 }
 
 export class GameEvents {
-	public static readonly PLAYER_JOINED = "PLAYER_JOINED";
-	public static readonly TEAMS_CREATED = "TEAMS_CREATED";
-	public static readonly MOVE_CREATED = "MOVE_CREATED";
-	public static readonly TURN_UPDATED = "TURN_UPDATED";
-	public static readonly SCORE_UPDATED = "SCORE_UPDATED";
-	public static readonly STATUS_UPDATED = "STATUS_UPDATED";
-	public static readonly CARD_COUNT_UPDATED = "CARD_COUNT_UPDATED";
+	public static readonly PLAYER_JOINED = "player-joined";
+	public static readonly TEAMS_CREATED = "teams-created";
+	public static readonly MOVE_CREATED = "move-created";
+	public static readonly TURN_UPDATED = "turn-updated";
+	public static readonly SCORE_UPDATED = "score-updated";
+	public static readonly STATUS_UPDATED = "status-updated";
+	public static readonly CARD_COUNT_UPDATED = "card-count-updated";
 	// Player Specific Events
-	public static readonly HAND_UPDATED = "HAND_UPDATED";
-	public static readonly INFERENCES_UPDATED = "INFERENCES_UPDATED";
+	public static readonly HAND_UPDATED = "hand-updated";
+	public static readonly INFERENCES_UPDATED = "inferences-updated";
 }
 
 export class Messages {

@@ -1,4 +1,4 @@
-import { Button, Modal, Stack } from "@mantine/core";
+import { Button, Modal, Stack, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Fragment, useCallback, useState } from "react";
 import { useGameData, usePlayerData, useTransferTurnAction } from "../utils";
@@ -30,7 +30,7 @@ export function TransferTurn() {
 			<Modal
 				opened={ opened }
 				onClose={ close }
-				title={ "Select Player to Transfer Turn" }
+				title={ <Title order={ 2 }>Select Player to Transfer Turn</Title> }
 				centered
 				size={ "lg" }
 			>
@@ -46,7 +46,7 @@ export function TransferTurn() {
 					</Button>
 				</Stack>
 			</Modal>
-			<Button color={ "alt" } onClick={ open }>Transfer Turn</Button>
+			<Button color={ "alt" } onClick={ open } fw={ 700 }>TRANSFER TURN</Button>
 		</Fragment>
 	);
 }

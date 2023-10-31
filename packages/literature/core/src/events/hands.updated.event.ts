@@ -25,7 +25,7 @@ export class HandsUpdatedEventHandler implements IEventHandler<HandsUpdatedEvent
 
 		Object.keys( hands ).map( playerId => {
 			cardCounts[ playerId ] = hands[ playerId ].length;
-			this.realtimeService.publishDirectMessage(
+			this.realtimeService.publishMemberMessage(
 				Constants.LITERATURE,
 				gameId,
 				playerId,

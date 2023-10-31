@@ -1,9 +1,9 @@
 import { Alert, Button, Flex, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthLayout } from "../components";
 import { pageClassnames as classnames } from "../styles";
 import { emailValidator, minLengthValidator, requiredValidator, useSignUpAction } from "../utils";
+import { Fragment } from "react";
 
 export function SignUpPage() {
 	const navigate = useNavigate();
@@ -25,7 +25,7 @@ export function SignUpPage() {
 	const handleSignup = onSubmit( values => execute( values ).then( () => navigate( "/auth/login" ) ) );
 
 	return (
-		<AuthLayout>
+		<Fragment>
 			<Title order={ 1 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
 				SIGNUP
 			</Title>
@@ -71,6 +71,6 @@ export function SignUpPage() {
 			</Flex>
 			{ !!data && <Alert title={ "Woohoo!" } color={ "green" }>Verification Email Has Been Sent!</Alert> }
 			{ !!error && <Alert title={ "Bummer!" } color={ "red" }>Something went wrong!</Alert> }
-		</AuthLayout>
+		</Fragment>
 	);
 }

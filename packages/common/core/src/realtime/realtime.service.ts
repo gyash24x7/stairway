@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
-import { Namespace, Server } from "socket.io";
 import { LoggerFactory } from "../logger";
+import type { Namespace } from "socket.io";
+import { Server } from "socket.io";
 
 @Injectable()
 export class RealtimeService implements OnModuleDestroy {
@@ -8,7 +9,7 @@ export class RealtimeService implements OnModuleDestroy {
 	private readonly logger = LoggerFactory.getLogger( RealtimeService );
 
 	private readonly io: Server;
-	private namespaces: Record<string, Namespace> = {};
+	private readonly namespaces: Map<string, Namespace> = new Map();
 
 	constructor() {
 		this.io = new Server( 8001, {
@@ -21,6 +22,7 @@ export class RealtimeService implements OnModuleDestroy {
 	}
 
 	registerNamespace( namespace: string ) {
+		this.logger.debug( ">> registerNamespace()" );
 		this.logger.debug( "Registering Namespace for %s", namespace );
 		const ns = this.io.of( namespace.toLowerCase() );
 
@@ -33,29 +35,38 @@ export class RealtimeService implements OnModuleDestroy {
 				socket.join( gameId );
 			} );
 
+			socket.on( "leave-room", ( gameId: string ) => {
+				this.logger.debug( "Leaving Room: %s", gameId );
+				socket.leave( gameId );
+			} );
+
 			socket.on( "disconnect", () => {
 				this.logger.warn( "Client Disconnected!" );
 				this.logger.warn( `Socket: ${ socket.id }` );
 			} );
 		} );
 
-		this.namespaces[ namespace ] = ns;
-	}
+		this.namespaces.set( namespace, ns );
 
-	publishDirectMessage( namespace: string, gameId: string, playerId: string, event: string, data: any ) {
-		const eventKey = event.concat( "_" ).concat( playerId );
-		this.namespaces[ namespace ].to( gameId ).emit( eventKey, data );
-		this.logger.debug( "Published Direct Message to %s. Message: %o", eventKey, data );
-	}
-
-	publishRoomMessage( namespace: string, gameId: string, event: string, data: any ) {
-		this.namespaces[ namespace ].to( gameId ).emit( event, data );
-		this.logger.debug( "Published Room Message to %s. Message: %o", gameId, data );
+		this.logger.debug( "<< registerNamespace()" );
 	}
 
 	onModuleDestroy() {
-		Object.values( this.namespaces ).forEach( namespace => {
-			namespace.disconnectSockets( true );
+		this.namespaces.forEach( namespace => {
+			namespace.disconnectSockets();
 		} );
+	}
+
+	publishMemberMessage( namespace: string, gameId: string, playerId: string, event: string, data: any ) {
+		const eventKey = event.concat( ":" ).concat( playerId );
+		const ns = this.namespaces.get( namespace )!;
+		ns.to( gameId ).emit( eventKey, data );
+		this.logger.debug( "Published Direct Message to %s", eventKey );
+	}
+
+	publishRoomMessage( namespace: string, gameId: string, event: string, data: any ) {
+		const ns = this.namespaces.get( namespace )!;
+		ns.to( gameId ).emit( event, data );
+		this.logger.debug( "Published Room Message to %s", gameId );
 	}
 }
