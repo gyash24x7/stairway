@@ -1,17 +1,15 @@
 import { rem } from "@mantine/core";
 import { CardSuit } from "@s2h/cards";
 import { style, styleVariants } from "@vanilla-extract/css";
-import { vars } from "./theme";
 import { recipe } from "@vanilla-extract/recipes";
+import { vars } from "./theme";
 
 export const applicationCardClassnames = {
 	card: style( {
 		height: 300,
 		width: 300,
-		display: "flex",
-		flexDirection: "column",
-		justifyContent: "space-between",
-		alignItems: "flex-start",
+		borderRadius: 10,
+		color: vars.colors.white,
 		backgroundSize: "cover",
 		backgroundPosition: "center",
 		backgroundImage: "url(background.jpg)"
@@ -105,6 +103,38 @@ export const cardClassnames = {
 		},
 		defaultVariants: {
 			stretch: false
+		}
+	} )
+};
+
+export const navTabsClassnames = {
+	tabsList: style( {
+		"::before": {
+			display: "none"
+		}
+	} ),
+
+	tab: recipe( {
+		base: {
+			fontWeight: 700,
+			height: 40,
+			backgroundColor: "transparent",
+			position: "relative",
+			borderBottomWidth: 0,
+			textTransform: "uppercase",
+			":hover": {
+				backgroundColor: vars.colors[ "gray" ][ 1 ]
+			}
+		},
+		variants: {
+			isActive: {
+				true: {
+					backgroundColor: vars.colors[ "gray" ][ 1 ]
+				}
+			}
+		},
+		defaultVariants: {
+			isActive: false
 		}
 	} )
 };

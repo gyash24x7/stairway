@@ -1,7 +1,7 @@
 import { Flex, Group, Title } from "@mantine/core";
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
-import { playingCardClassnames as classnames } from "../styles";
 import { Fragment } from "react";
+import { playingCardClassnames as classnames } from "../styles";
 
 
 export interface DisplayCardProps {

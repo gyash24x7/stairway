@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
 import { Box } from "@mantine/core";
+import type { ReactNode } from "react";
 import { cardClassnames } from "../styles";
 
 export type CardProps = {

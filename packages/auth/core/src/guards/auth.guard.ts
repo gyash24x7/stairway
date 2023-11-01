@@ -1,13 +1,13 @@
+import type { UserAuthInfo } from "@auth/types";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import { LoggerFactory } from "@s2h/core";
 import type { Request, Response } from "express";
-import { Constants } from "../constants";
-import { Reflector } from "@nestjs/core";
 
 import type { Socket } from "socket.io";
-import type { UserAuthInfo } from "@auth/types";
+import { Constants } from "../constants";
 
 @Injectable()
 export class AuthGuard implements CanActivate {

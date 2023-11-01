@@ -1,13 +1,17 @@
 import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
-import { IconCopy } from "@tabler/icons-react";
-import { gameDescriptionClassnames as classnames } from "../styles";
-import { useGameData } from "../utils";
-import { useCallback, useMemo } from "react";
 import { Card } from "@s2h/ui";
+import { IconCopy } from "@tabler/icons-react";
+import { useCallback, useMemo } from "react";
+import { useGameCode, useGameStatus, usePlayers, useTeams } from "../store";
+import { gameDescriptionClassnames as classnames } from "../styles";
 
 export function GameDescription() {
-	const { code, teams, players, status } = useGameData()!;
+	const code = useGameCode();
+	const status = useGameStatus();
+	const teams = useTeams();
+	const players = usePlayers();
+
 	const teamList = useMemo( () => Object.values( teams ), [ teams ] );
 	const clipboard = useClipboard();
 

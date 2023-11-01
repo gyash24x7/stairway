@@ -2,11 +2,11 @@ import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from 
 import { useDisclosure } from "@mantine/hooks";
 import { CardSet, cardSetMap, getPlayingCardFromId } from "@s2h/cards";
 import { DisplayCard } from "@s2h/ui";
-import { Fragment, useCallback, useState } from "react";
-import { useCallSetAction, useGameData, usePlayerData } from "../utils";
-import { SelectCardSet } from "./select-card-set";
-import { DisplayPlayerVertical } from "./display-player";
 import { IconArrowBigRight } from "@tabler/icons-react";
+import { Fragment, useCallback, useState } from "react";
+import { useCallSetAction, useCardSetsInHand, useGameId, useMyTeam, usePlayers } from "../store";
+import { DisplayPlayerVertical } from "./display-player";
+import { SelectCardSet } from "./select-card-set";
 
 interface SelectCardsProps {
 	cardIds: string[];
@@ -38,8 +38,10 @@ function SelectCards( { handleSelection, cardIds, options }: SelectCardsProps ) 
 }
 
 export function CallSet() {
-	const { id: gameId, players, teams } = useGameData()!;
-	const { cardSets, teamId } = usePlayerData()!;
+	const gameId = useGameId();
+	const team = useMyTeam();
+	const players = usePlayers();
+	const cardSets = useCardSetsInHand();
 
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ cardOptions, setCardOptions ] = useState<string[]>( [] );
@@ -72,7 +74,7 @@ export function CallSet() {
 	);
 
 	const openModalForPlayer = useCallback( ( index: number ) => async () => {
-		const teamMemberIds = teams[ teamId! ].members;
+		const teamMemberIds = team!.members;
 		const playerId = teamMemberIds[ index ];
 
 		if ( index < teamMemberIds.length ) {
@@ -82,7 +84,7 @@ export function CallSet() {
 			setPaneState( "CONFIRM" );
 			setModalTitle( "Confirm Call" );
 		}
-	}, [ teamId, teams ] );
+	}, [ team ] );
 
 	const openSelectCardSet = useCallback( () => {
 		setPaneState( "SET" );
@@ -118,7 +120,7 @@ export function CallSet() {
 						</Button>
 					</Stack>
 				) }
-				{ teams[ teamId! ]?.members.map( ( memberId, index ) => {
+				{ team?.members.map( ( memberId, index ) => {
 					if ( paneState === memberId ) {
 						return (
 							<Stack key={ memberId }>
@@ -145,9 +147,9 @@ export function CallSet() {
 				} ) }
 				{ paneState === "CONFIRM" && (
 					<Stack>
-						<Flex gap={ 10 } wrap={ "wrap" }>
+						<Flex gap={ 20 } wrap={ "wrap" }>
 							{ Object.keys( cardMap ).map( cardId => (
-								<Group>
+								<Group key={ cardId }>
 									<DisplayCard card={ getPlayingCardFromId( cardId ) } orientation={ "horizontal" }/>
 									<IconArrowBigRight size={ 24 }/>
 									<DisplayPlayerVertical player={ players[ cardMap[ cardId ] ] }/>
@@ -156,7 +158,7 @@ export function CallSet() {
 						</Flex>
 						<Group>
 							<Button
-								onClick={ openModalForPlayer( teams[ teamId! ]?.members.length ?? 1 - 1 ) }
+								onClick={ openModalForPlayer( team?.members.length ?? 1 - 1 ) }
 								fw={ 700 }
 							>
 								BACK

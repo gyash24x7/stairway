@@ -2,12 +2,14 @@ import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { chunk, shuffle } from "@s2h/cards";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
-import { useCreateTeamsAction, useGameData } from "../utils";
+import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "../store";
 import { DisplayPlayerMedium } from "./display-player";
 
 
 export function CreateTeams() {
-	const { id: gameId, players, playerCount } = useGameData()!;
+	const gameId = useGameId();
+	const players = usePlayers();
+	const playerCount = usePlayerCount();
 
 	const [ teamAName, setTeamAName ] = useState<string>( "" );
 	const [ teamBName, setTeamBName ] = useState<string>( "" );

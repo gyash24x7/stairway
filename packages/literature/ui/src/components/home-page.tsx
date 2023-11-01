@@ -1,9 +1,9 @@
 import { Box, Button, Divider, Flex, Group, Paper, Text, Title } from "@mantine/core";
-import { useNavigate } from "react-router-dom";
-import { homePageClassnames as classnames } from "../styles";
-import { useCreateGameAction } from "../utils";
-import { JoinGame } from "./join-game";
 import { useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useCreateGameAction } from "../store";
+import { homePageClassnames as classnames } from "../styles";
+import { JoinGame } from "./join-game";
 
 export function HomePage() {
 	return (

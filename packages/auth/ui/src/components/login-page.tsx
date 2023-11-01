@@ -1,10 +1,11 @@
 import { Alert, Button, Flex, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { IconAlertCircle } from "@tabler/icons-react";
-import { Link, useNavigate } from "react-router-dom";
-import { pageClassnames as classnames } from "../styles";
-import { emailValidator, minLengthValidator, useLoginAction } from "../utils";
 import { Fragment } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useLoginAction } from "../store";
+import { pageClassnames as classnames } from "../styles";
+import { emailValidator, minLengthValidator } from "../utils";
 
 export function LoginPage() {
 	const navigate = useNavigate();
@@ -53,7 +54,7 @@ export function LoginPage() {
 				</Button>
 			</form>
 
-			<Flex justify={ "space-between" }>
+			<Flex justify={ "space-between" } mt={ 10 }>
 				<Text>Don&apos;t have an account?</Text>
 				<Link to={ "/auth/signup" }>
 					<b>Register</b>

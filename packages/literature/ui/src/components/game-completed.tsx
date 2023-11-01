@@ -1,13 +1,11 @@
 import { Stack, Title } from "@mantine/core";
-import { IconCircleCheck } from "@tabler/icons-react";
-import { useGameData, usePlayerData } from "../utils";
 import { Card } from "@s2h/ui";
+import { IconCircleCheck } from "@tabler/icons-react";
+import { useMyTeam, useOppositeTeam } from "../store";
 
 export function GameCompleted() {
-	const { teams } = useGameData()!;
-	const { oppositeTeamId, teamId } = usePlayerData()!;
-	const myTeam = teams[ teamId! ];
-	const oppositeTeam = teams[ oppositeTeamId! ];
+	const oppositeTeam = useOppositeTeam();
+	const myTeam = useMyTeam();
 
 	return (
 		<Card>

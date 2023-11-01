@@ -1,5 +1,5 @@
 import { Flex, Group, Title } from "@mantine/core";
-import { ApplicationCard } from "@s2h/ui";
+import { ApplicationCard } from "./application-card";
 
 export function HomePage() {
 	return (

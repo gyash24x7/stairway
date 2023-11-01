@@ -1,9 +1,9 @@
 import { Button } from "@mantine/core";
-import { useGameData, useStartGameAction } from "../utils";
 import { useCallback } from "react";
+import { useGameId, useStartGameAction } from "../store";
 
 export function StartGame() {
-	const { id: gameId } = useGameData()!;
+	const gameId = useGameId();
 	const { execute, isLoading } = useStartGameAction();
 
 	const handleSubmit = useCallback(

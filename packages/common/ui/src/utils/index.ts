@@ -1,2 +1,2 @@
-export * from "./live-updates";
+export * from "./realtime";
 export * from "./hooks";

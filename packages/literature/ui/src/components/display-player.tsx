@@ -1,6 +1,6 @@
-import { Avatar, Group, Stack, Text } from "@mantine/core";
 import type { Player } from "@literature/types";
-import { useGameData } from "../utils";
+import { Avatar, Group, Stack, Text } from "@mantine/core";
+import { useCardCounts } from "../store";
 
 export type DisplayPlayerProps = {
 	player: Player;
@@ -8,7 +8,7 @@ export type DisplayPlayerProps = {
 }
 
 export function DisplayPlayerSmall( { player, displayCardCount }: DisplayPlayerProps ) {
-	const { cardCounts } = useGameData()!;
+	const cardCounts = useCardCounts();
 	return (
 		<Group align={ "center" }>
 			<Avatar size={ 28 } src={ player.avatar }/>
@@ -33,7 +33,7 @@ export function DisplayPlayerVertical( { player }: DisplayPlayerProps ) {
 	return (
 		<Stack align={ "center" }>
 			<Avatar size={ 56 } src={ player.avatar }/>
-			<Text fz={ 14 } fw={ 600 } lh={ 2 }>{ player.name }</Text>
+			<Text fz={ 14 } fw={ 600 } lh={ 1 }>{ player.name }</Text>
 		</Stack>
 	);
 }

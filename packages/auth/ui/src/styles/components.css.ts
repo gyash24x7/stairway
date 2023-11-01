@@ -1,8 +1,44 @@
-import { rem } from "@mantine/core";
+import { rem, rgba } from "@mantine/core";
 import { vars } from "@s2h/ui";
 import { style } from "@vanilla-extract/css";
 
-export const authLayoutClassnames = {
+export const privateLayoutClassnames = {
+	main: style( {
+		background: vars.colors[ "gray" ][ 1 ],
+		paddingTop: 125,
+		paddingBottom: 220,
+		minHeight: "100vh"
+	} ),
+
+	header: style( {
+		background: vars.colors.white,
+		border: "none"
+	} ),
+
+	navContainer: style( {
+		display: "flex",
+		justifyContent: "space-between",
+		flexDirection: "column"
+	} ),
+
+	footer: style( {
+		backgroundSize: "cover",
+		backgroundPosition: "center",
+		backgroundImage: "url(background.jpg)",
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: vars.colors[ "gray" ][ 3 ]
+	} ),
+
+	inner: style( {
+		paddingTop: 40,
+		paddingBottom: 40,
+		backgroundColor: rgba( vars.colors.black, 0.3 ),
+		backdropFilter: "blur(5px)"
+	} )
+};
+
+export const publicLayoutClassnames = {
 	wrapper: style( {
 		height: "100vh",
 		minHeight: rem( 900 ),

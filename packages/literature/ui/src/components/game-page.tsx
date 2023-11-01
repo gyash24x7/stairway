@@ -1,6 +1,6 @@
+import { GameStatus, MoveType } from "@literature/types";
 import { Box, Flex, Grid, Group, Text, Title } from "@mantine/core";
 import { Banner, DisplayHand } from "@s2h/ui";
-import { Fragment, useMemo } from "react";
 import {
 	AskCard,
 	CallSet,
@@ -12,22 +12,27 @@ import {
 	StartGame,
 	TransferTurn
 } from "../components";
-import { useGameData, usePlayerData } from "../utils";
+import { useCurrentTurn, useGameCode, useGameStatus, useHand, useMoves, usePlayerData, usePlayers } from "../store";
+
+function getBannerMessage( status: GameStatus ) {
+	switch ( status ) {
+		case GameStatus.CREATED:
+			return "Waiting for players to join";
+		case GameStatus.PLAYERS_READY:
+			return "Waiting for teams to get created";
+		case GameStatus.TEAMS_CREATED:
+			return "Waiting for the game to Start";
+		case GameStatus.IN_PROGRESS:
+			return "Waiting for the player to make a move";
+		case GameStatus.COMPLETED:
+			return "";
+	}
+}
 
 export function GamePage() {
-	const { status, players, moves, currentTurn } = useGameData()!;
-	const { hand } = usePlayerData()!;
-	const bannerMessage = useMemo( () => {
-		return status === "CREATED"
-			? "Waiting For Players to Join"
-			: status === "PLAYERS_READY"
-				? "Waiting For Teams to get Created"
-				: status === "TEAMS_CREATED"
-					? "Waiting for the game to Start"
-					: status === "IN_PROGRESS" && moves.length > 0
-						? `Waiting for the ${ players[ currentTurn ].name } to make a move`
-						: "";
-	}, [ status, moves, players, currentTurn ] );
+	const status = useGameStatus();
+	const players = usePlayers();
+	const hand = useHand();
 
 	return (
 		<Grid p={ 10 } gutter={ 10 }>
@@ -39,53 +44,54 @@ export function GamePage() {
 					<PlayerLobby
 						playerList={ Object.values( players ) }
 						displayHeading
-						displayCardCount={ status === "IN_PROGRESS" }
+						displayCardCount={ status === GameStatus.IN_PROGRESS }
 					/>
-					<Banner message={ bannerMessage } isLoading/>
+					<Banner message={ getBannerMessage( status ) } isLoading/>
 				</Flex>
 			</Grid.Col>
 			<Grid.Col span={ 8 }>
-				{ status === "IN_PROGRESS" && <DisplayHand hand={ hand }/> }
-				{ status === "COMPLETED" && <GameCompleted/> }
+				{ status === GameStatus.IN_PROGRESS && <DisplayHand hand={ hand }/> }
+				{ status === GameStatus.COMPLETED && <GameCompleted/> }
 			</Grid.Col>
 		</Grid>
 	);
 }
 
 export function GamePageFooter() {
-	const { status, currentTurn, players, code, moves } = useGameData()!;
-	const { id } = usePlayerData()!;
+	const status = useGameStatus();
+	const currentTurn = useCurrentTurn();
+	const players = usePlayers();
+	const moves = useMoves();
+	const code = useGameCode();
+	const { id } = usePlayerData();
 
 	return (
-		<Fragment>
-			<Flex mih={ 100 } justify={ "space-between" } c={ "white" } align={ "center" }>
-				<Box>
-					<Text fz={ 14 } fw={ 700 } lh={ 1 }>GAME CODE</Text>
-					<Title fz={ 56 } lh={ 1 }>{ code }</Title>
-				</Box>
-				<Flex justify={ "end" }>
-					{ status === "PLAYERS_READY" && id === currentTurn && <CreateTeams/> }
-					{ status === "TEAMS_CREATED" && id === currentTurn && <StartGame/> }
-					{ status === "IN_PROGRESS" && (
-						<Box>
-							<Text ta={ "right" } style={ { flex: 1 } } fw={ 700 } fz={ 20 }>
-								IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
-							</Text>
-							{ currentTurn === id && (
-								<Group>
-									<PreviousMoves/>
-									<AskCard/>
-									<CallSet/>
-									{ !!moves[ 0 ] && moves[ 0 ].type === "CALL_SET" && moves[ 0 ].success && (
-										<TransferTurn/>
-									) }
-								</Group>
-							) }
-						</Box>
-					) }
-				</Flex>
+		<Flex mih={ 100 } justify={ "space-between" } c={ "white" } align={ "center" }>
+			<Box>
+				<Text fz={ 14 } fw={ 700 } lh={ 1 }>GAME CODE</Text>
+				<Title fz={ 56 } lh={ 1 }>{ code }</Title>
+			</Box>
+			<Flex justify={ "end" }>
+				{ status === GameStatus.PLAYERS_READY && id === currentTurn && <CreateTeams/> }
+				{ status === GameStatus.TEAMS_CREATED && id === currentTurn && <StartGame/> }
+				{ status === GameStatus.IN_PROGRESS && (
+					<Box>
+						<Text ta={ "right" } style={ { flex: 1 } } fw={ 700 } fz={ 20 }>
+							IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
+						</Text>
+						{ currentTurn === id && (
+							<Group>
+								<PreviousMoves/>
+								<AskCard/>
+								<CallSet/>
+								{ !!moves[ 0 ] && moves[ 0 ].type === MoveType.CALL_SET && moves[ 0 ].success && (
+									<TransferTurn/>
+								) }
+							</Group>
+						) }
+					</Box>
+				) }
 			</Flex>
-
-		</Fragment>
+		</Flex>
 	);
 }

@@ -1,8 +1,8 @@
-import { Flex, Title } from "@mantine/core";
-import { useGameData } from "../utils";
 import type { TeamWithMembers } from "@literature/types";
-import { DisplayPlayerSmall } from "./display-player";
+import { Flex, Title } from "@mantine/core";
 import { Card } from "@s2h/ui";
+import { usePlayers } from "../store";
+import { DisplayPlayerSmall } from "./display-player";
 
 export interface DisplayTeamProps {
 	team: TeamWithMembers;
@@ -10,7 +10,7 @@ export interface DisplayTeamProps {
 }
 
 export function DisplayTeam( { displayCardCount, team }: DisplayTeamProps ) {
-	const { players } = useGameData()!;
+	const players = usePlayers();
 
 	return (
 		<Card>

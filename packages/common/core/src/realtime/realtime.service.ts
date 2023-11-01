@@ -1,7 +1,7 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
-import { LoggerFactory } from "../logger";
 import type { Namespace } from "socket.io";
 import { Server } from "socket.io";
+import { LoggerFactory } from "../logger";
 
 @Injectable()
 export class RealtimeService implements OnModuleDestroy {

@@ -1,9 +1,10 @@
 import { Alert, Button, Flex, PasswordInput, Text, TextInput, Title } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { Link, useNavigate } from "react-router-dom";
-import { pageClassnames as classnames } from "../styles";
-import { emailValidator, minLengthValidator, requiredValidator, useSignUpAction } from "../utils";
 import { Fragment } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useSignUpAction } from "../store";
+import { pageClassnames as classnames } from "../styles";
+import { emailValidator, minLengthValidator, requiredValidator } from "../utils";
 
 export function SignUpPage() {
 	const navigate = useNavigate();
@@ -63,7 +64,7 @@ export function SignUpPage() {
 				</Button>
 			</form>
 
-			<Flex justify={ "space-between" }>
+			<Flex justify={ "space-between" } mt={ 10 }>
 				<Text>Already have an account?</Text>
 				<Link to={ "/auth/login" }>
 					<b>Login</b>
