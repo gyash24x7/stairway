@@ -27,8 +27,6 @@ export const getPlayerDataPath = ( id: string ) => gamesPath( id ) + "/player";
 
 export class LiteratureClient {
 
-	readonly socketUrl = "ws://localhost:8001/literature";
-
 	async createGame( data: CreateGameInput ) {
 		return postRequest<GameData>( createGamePath(), data );
 	}

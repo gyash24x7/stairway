@@ -15,8 +15,8 @@ export function GameProvider( props: { children: ReactNode } ) {
 		initializeSocketForNamespace( "literature", authToken );
 		const unsubscribe = subscribeToEvents(
 			"literature",
-			gameId!,
-			playerId!,
+			gameId,
+			playerId,
 			gameEventHandlers,
 			playerEventHandlers
 		);

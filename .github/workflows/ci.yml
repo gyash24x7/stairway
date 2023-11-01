@@ -45,6 +45,9 @@ jobs:
       - name: Set SHAs
         uses: nrwl/nx-set-shas@v3
 
+      - name: Generate Prisma Client
+        run: pnpm prisma generate
+
       - name: Execute Tests
         run: pnpm nx affected:test --parallel=3
 
