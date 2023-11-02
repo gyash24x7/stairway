@@ -1,13 +1,12 @@
 import { CardMapping, GameStatus, MoveType } from "@literature/types";
-import type { HttpException } from "@nestjs/common";
 import type { EventBus } from "@nestjs/cqrs";
 import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { AskCardCommand, AskCardCommandHandler } from "../../src/commands";
-import { Messages } from "../../src/constants";
 import { MoveCreatedEvent } from "../../src/events";
 import { buildCardMappingData } from "../../src/utils";
+import type { AskCardValidator } from "../../src/validators";
 import {
 	buildMockGameData,
 	buildPlayerSpecificData,
@@ -17,7 +16,6 @@ import {
 	mockAuthInfo,
 	mockPlayer1,
 	mockPlayer2,
-	mockPlayer3,
 	mockPlayer4,
 	mockPlayerIds
 } from "../mockdata";
@@ -37,59 +35,13 @@ describe( "AskCardCommand", () => {
 	const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 	const mockPrisma = mockDeep<PrismaService>();
 	const mockEventBus = mockDeep<EventBus>();
-
-	it( "should throw error if asked player is not part of game", async () => {
-		const handler = new AskCardCommandHandler( mockPrisma, mockEventBus );
-		const command = new AskCardCommand(
-			{ ...mockInput, askedFrom: "5" },
-			mockGameData,
-			mockPlayerSpecificData,
-			cardMappingData
-		);
-
-		expect.assertions( 2 );
-		await handler.execute( command ).catch( ( err: HttpException ) => {
-			expect( err.getStatus() ).toBe( 400 );
-			expect( err.message ).toBe( Messages.PLAYER_NOT_PART_OF_GAME );
-		} );
-	} );
-
-	it( "should throw error if asked card is with current player ", async () => {
-		const handler = new AskCardCommandHandler( mockPrisma, mockEventBus );
-		const command = new AskCardCommand(
-			mockInput,
-			mockGameData,
-			{ ...mockPlayerSpecificData, id: mockPlayer2.id },
-			cardMappingData
-		);
-
-		expect.assertions( 2 );
-		await handler.execute( command ).catch( ( err: HttpException ) => {
-			expect( err.getStatus() ).toBe( 400 );
-			expect( err.message ).toBe( Messages.ASKED_CARD_WITH_ASKING_PLAYER );
-		} );
-	} );
-
-	it( "should throw error if asked player from same team", async () => {
-		const handler = new AskCardCommandHandler( mockPrisma, mockEventBus );
-		const command = new AskCardCommand(
-			{ ...mockInput, askedFrom: mockPlayer3.id },
-			mockGameData,
-			mockPlayerSpecificData,
-			cardMappingData
-		);
-
-		expect.assertions( 2 );
-		await handler.execute( command ).catch( ( err: HttpException ) => {
-			expect( err.getStatus() ).toBe( 400 );
-			expect( err.message ).toBe( Messages.ASKED_PLAYER_FROM_SAME_TEAM );
-		} );
-	} );
+	const mockValidator = mockDeep<AskCardValidator>();
 
 	it( "should transfer the turn to asked player when asked incorrectly and create ask move", async () => {
+		mockValidator.validate.mockResolvedValue( { askedPlayer: mockPlayer4, playerWithAskedCard: mockPlayer1 } );
 		mockPrisma.literature.move.create.mockResolvedValue( mockAskMove );
 
-		const handler = new AskCardCommandHandler( mockPrisma, mockEventBus );
+		const handler = new AskCardCommandHandler( mockPrisma, mockValidator, mockEventBus );
 		const command = new AskCardCommand(
 			{ ...mockInput, askedFrom: mockPlayer4.id },
 			mockGameData,
@@ -114,14 +66,18 @@ describe( "AskCardCommand", () => {
 				description: `${ mockPlayer1.name } asked ${ mockPlayer4.name } for ${ mockInput.askedFor } and was declined!`
 			}
 		} );
-		expect( mockEventBus.publish )
-			.toBeCalledWith( new MoveCreatedEvent( mockAskMove, mockGameData, cardMappingData ) );
+
+		expect( mockValidator.validate ).toHaveBeenCalledWith( command );
+
+		const event = new MoveCreatedEvent( mockAskMove, mockGameData, cardMappingData );
+		expect( mockEventBus.publish ).toBeCalledWith( event );
 	} );
 
 	it( "should transfer the card to the asking player when asked correctly and create ask move", async () => {
+		mockValidator.validate.mockResolvedValue( { askedPlayer: mockPlayer2, playerWithAskedCard: mockPlayer2 } );
 		mockPrisma.literature.move.create.mockResolvedValue( mockAskMove );
 
-		const handler = new AskCardCommandHandler( mockPrisma, mockEventBus );
+		const handler = new AskCardCommandHandler( mockPrisma, mockValidator, mockEventBus );
 		const command = new AskCardCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
 		const result = await handler.execute( command );
 
@@ -140,13 +96,17 @@ describe( "AskCardCommand", () => {
 				description: `${ mockPlayer1.name } asked ${ mockPlayer2.name } for ${ mockInput.askedFor } and got the card!`
 			}
 		} );
-		expect( mockEventBus.publish )
-			.toBeCalledWith( new MoveCreatedEvent( mockAskMove, mockGameData, cardMappingData ) );
+
+		expect( mockValidator.validate ).toHaveBeenCalledWith( command );
+
+		const event = new MoveCreatedEvent( mockAskMove, mockGameData, cardMappingData );
+		expect( mockEventBus.publish ).toBeCalledWith( event );
 	} );
 
 	afterEach( () => {
 		mockClear( mockPrisma );
 		mockClear( mockEventBus );
+		mockClear( mockValidator );
 	} );
 
 } );

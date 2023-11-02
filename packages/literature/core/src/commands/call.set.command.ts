@@ -7,13 +7,12 @@ import type {
 	PlayerSpecificData
 } from "@literature/types";
 import { MoveType } from "@literature/types";
-import { BadRequestException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
-import { cardSetMap, getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
+import { cardSetMap } from "@s2h/cards";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { Messages } from "../constants";
 import { MoveCreatedEvent } from "../events";
+import { CallSetValidator } from "../validators";
 
 export class CallSetCommand implements ICommand {
 	constructor(
@@ -31,6 +30,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, Ca
 
 	constructor(
 		private readonly prisma: PrismaService,
+		private readonly validator: CallSetValidator,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -38,7 +38,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, Ca
 		this.logger.debug( ">> executeCallSetCommand()" );
 
 		const { input: { data }, gameData, playerData, cardMappings } = command;
-		const { correctCall, calledSet } = this.validate( command );
+		const { correctCall, calledSet } = await this.validator.validate( command );
 
 		const callingPlayer = gameData.players[ playerData.id ]!;
 
@@ -76,65 +76,5 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, Ca
 
 		this.logger.debug( "<< executeCallSetCommand()" );
 		return { ...move, data: callMoveData };
-	}
-
-	private validate( { input: { data }, gameData, playerData, cardMappings }: CallSetCommand ) {
-		this.logger.debug( ">> validateCallSetCommand()" );
-		const calledCards = Object.keys( data ).map( getPlayingCardFromId );
-		const cardSets = new Set( calledCards.map( card => card.set ) );
-
-		const calledPlayers = Array.from( new Set( Object.values( data ) ) ).map( playerId => {
-			const player = gameData.players[ playerId ];
-			if ( !player ) {
-				this.logger.error(
-					"%s GameId: %s, PlayerId: %s",
-					Messages.PLAYER_NOT_PART_OF_GAME,
-					gameData.id,
-					playerId
-				);
-				throw new BadRequestException( Messages.PLAYER_NOT_PART_OF_GAME );
-			}
-			return player;
-		} );
-
-		if ( !Object.values( data ).includes( playerData.id ) ) {
-			this.logger.error( "%s UserId: %s", Messages.DIDNT_CALL_OWN_CARDS, playerData.id );
-			throw new BadRequestException( Messages.DIDNT_CALL_OWN_CARDS );
-		}
-
-		if ( cardSets.size !== 1 ) {
-			this.logger.error( "%s UserId: %s", Messages.MULTIPLE_SETS_CALLED, playerData.id );
-			throw new BadRequestException( Messages.MULTIPLE_SETS_CALLED );
-		}
-
-		const [ calledSet ] = cardSets;
-		const correctCall: Record<string, string> = {};
-
-		Object.keys( cardMappings ).forEach( cardId => {
-			const card = getPlayingCardFromId( cardId );
-			if ( card.set === calledSet ) {
-				correctCall[ cardId ] = cardMappings[ cardId ];
-			}
-		} );
-
-		if ( !isCardSetInHand( playerData.hand, calledSet ) ) {
-			this.logger.error( "%s UserId: %s, Set: %s", Messages.SET_CALLED_WITHOUT_CARDS, playerData.id, calledSet );
-			throw new BadRequestException( Messages.SET_CALLED_WITHOUT_CARDS );
-		}
-
-		const calledTeams = new Set( calledPlayers.map( player => player.teamId ) );
-
-		if ( calledTeams.size !== 1 ) {
-			this.logger.error( "%s UserId: %s", Messages.SET_CALLED_FROM_MULTIPLE_TEAMS, playerData.id );
-			throw new BadRequestException( Messages.SET_CALLED_FROM_MULTIPLE_TEAMS );
-		}
-
-		if ( calledCards.length !== 6 ) {
-			this.logger.error( "%s UserId: %s, Set: %s", Messages.ALL_CARDS_NOT_CALLED, playerData.id, calledSet );
-			throw new BadRequestException( Messages.ALL_CARDS_NOT_CALLED );
-		}
-
-		this.logger.debug( "<< validateCallSetCommand()" );
-		return { correctCall, calledSet };
 	}
 }

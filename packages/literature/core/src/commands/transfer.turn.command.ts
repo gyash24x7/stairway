@@ -7,13 +7,11 @@ import type {
 	TransferTurnInput
 } from "@literature/types";
 import { MoveType } from "@literature/types";
-import { BadRequestException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { Messages } from "../constants";
 import { MoveCreatedEvent } from "../events";
-import { buildHandData } from "../utils";
+import { TransferTurnValidator } from "../validators";
 
 export class TransferTurnCommand implements ICommand {
 	constructor(
@@ -31,6 +29,7 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 
 	constructor(
 		private readonly prisma: PrismaService,
+		private readonly validator: TransferTurnValidator,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -38,7 +37,7 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 		this.logger.debug( ">> executeTransferTurnCommand()" );
 
 		const { input, gameData, cardMappings } = command;
-		const { transferringPlayer, receivingPlayer } = this.validate( command );
+		const { transferringPlayer, receivingPlayer } = await this.validator.validate( command );
 
 		const transferMoveData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
 		const description = `${ transferringPlayer.name } transferred the turn to ${ receivingPlayer.name }`;
@@ -58,39 +57,5 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 
 		this.logger.debug( "<< executeTransferTurnCommand()" );
 		return { ...move, data: transferMoveData };
-	}
-
-	private validate( { gameData, cardMappings, input, playerData }: TransferTurnCommand ) {
-		this.logger.debug( ">> validateTransferTurnCommand()" );
-
-		const [ lastMove ] = gameData.moves;
-		const hands = buildHandData( cardMappings );
-
-		if ( lastMove.type !== MoveType.CALL_SET || !lastMove.success ) {
-			this.logger.error( Messages.TRANSFER_AFTER_SUCCESSFUL_CALL );
-			throw new BadRequestException( Messages.TRANSFER_AFTER_SUCCESSFUL_CALL );
-		}
-
-		const transferringPlayer = gameData.players[ playerData.id ];
-		const receivingPlayer = gameData.players[ input.transferTo ];
-		const receivingPlayerHand = hands[ input.transferTo ] ?? [];
-
-		if ( !receivingPlayer ) {
-			this.logger.error( Messages.PLAYER_NOT_PART_OF_GAME );
-			throw new BadRequestException( Messages.PLAYER_NOT_PART_OF_GAME );
-		}
-
-		if ( receivingPlayerHand.length === 0 ) {
-			this.logger.error( Messages.NO_CARDS_WITH_RECEIVING_PLAYER );
-			throw new BadRequestException( Messages.NO_CARDS_WITH_RECEIVING_PLAYER );
-		}
-
-		if ( receivingPlayer.teamId !== transferringPlayer.teamId ) {
-			this.logger.error( Messages.TRANSFER_TO_OPPONENT_TEAM );
-			throw new BadRequestException( Messages.TRANSFER_TO_OPPONENT_TEAM );
-		}
-
-		this.logger.debug( "<< validateTransferTurnCommand()" );
-		return { transferringPlayer, receivingPlayer };
 	}
 }

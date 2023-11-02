@@ -1,10 +1,9 @@
 import type { CreateTeamsInput, GameData, TeamData } from "@literature/types";
-import { BadRequestException } from "@nestjs/common";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { Messages } from "../constants";
 import { TeamsCreatedEvent } from "../events";
+import { CreateTeamsValidator } from "../validators";
 
 export class CreateTeamsCommand implements ICommand {
 	constructor(
@@ -20,13 +19,14 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 
 	constructor(
 		private readonly prisma: PrismaService,
+		private readonly validator: CreateTeamsValidator,
 		private readonly eventBus: EventBus
 	) {}
 
 	async execute( { input, gameData }: CreateTeamsCommand ) {
 		this.logger.debug( ">> executeCreateTeamsCommand()" );
 
-		this.validate( { input, gameData } );
+		await this.validator.validate( { input, gameData } );
 
 		const [ teamA, teamB ] = await Promise.all(
 			Object.keys( input.data ).map( teamName => {
@@ -54,16 +54,5 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 
 		this.logger.debug( "<< executeCreateTeamsCommand()" );
 		return teamMap;
-	}
-
-	private validate( { gameData }: CreateTeamsCommand ) {
-		this.logger.debug( ">> validateCreateTeamsCommand()" );
-
-		if ( Object.keys( gameData.players ).length !== gameData.playerCount ) {
-			this.logger.error( "%s GameId: %s", Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS, gameData.id );
-			throw new BadRequestException( Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS );
-		}
-
-		this.logger.debug( "<< validateCreateTeamsCommand()" );
 	}
 }

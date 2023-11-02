@@ -1,13 +1,12 @@
 import type { CreateTeamsInput } from "@literature/types";
 import { GameStatus } from "@literature/types";
-import type { HttpException } from "@nestjs/common";
 import type { EventBus } from "@nestjs/cqrs";
 import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { CreateTeamsCommand, CreateTeamsCommandHandler } from "../../src/commands";
-import { Messages } from "../../src/constants";
 import { TeamsCreatedEvent } from "../../src/events";
+import type { CreateTeamsValidator } from "../../src/validators";
 import {
 	buildMockGameData,
 	mockPlayer1,
@@ -29,21 +28,11 @@ describe( "CreateTeamsCommand", () => {
 	const mockGameData = buildMockGameData( GameStatus.PLAYERS_READY );
 	const mockPrisma = mockDeep<PrismaService>();
 	const mockEventBus = mockDeep<EventBus>();
-
-	it( "should throw error if playerCount is less than required", async () => {
-		const handler = new CreateTeamsCommandHandler( mockPrisma, mockEventBus );
-		const command = new CreateTeamsCommand( mockInput, { ...mockGameData, playerCount: 6 } );
-
-		expect.assertions( 2 );
-		handler.execute( command ).catch( ( err: HttpException ) => {
-			expect( err.getStatus() ).toEqual( 400 );
-			expect( err.message ).toEqual( Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS );
-		} );
-	} );
+	const mockValidator = mockDeep<CreateTeamsValidator>();
 
 	it( "should create teams and assign teams to players", async () => {
 		mockPrisma.literature.team.create.mockResolvedValueOnce( mockTeamA ).mockResolvedValueOnce( mockTeamB );
-		const handler = new CreateTeamsCommandHandler( mockPrisma, mockEventBus );
+		const handler = new CreateTeamsCommandHandler( mockPrisma, mockValidator, mockEventBus );
 		const result = await handler.execute( new CreateTeamsCommand( mockInput, mockGameData ) );
 
 		expect( result ).toEqual( {
@@ -78,8 +67,8 @@ describe( "CreateTeamsCommand", () => {
 		} );
 
 		expect( mockEventBus.publish ).toHaveBeenCalledTimes( 1 );
-		expect( mockEventBus.publish )
-			.toHaveBeenCalledWith( new TeamsCreatedEvent( mockGameData.id, result ) );
+		const event = new TeamsCreatedEvent( mockGameData.id, result );
+		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 
 	afterEach( () => {
