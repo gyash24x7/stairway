@@ -5,11 +5,13 @@ export class Constants {
 	public static readonly CARD_MAPPINGS = "cardMappings";
 	public static readonly REQUIRES_KEY = "requires";
 	public static readonly LITERATURE = "literature";
+	public static readonly AVATAR_BASE_URL = "https://api.dicebear.com/7.x/open-peeps/svg?seed=";
 }
 
 export class Paths {
 	public static readonly BASE = "literature/games";
 	public static readonly JOIN_GAME = "join";
+	public static readonly ADD_BOTS = ":gameId/add-bots";
 	public static readonly CREATE_TEAMS = ":gameId/create-teams";
 	public static readonly START_GAME = ":gameId/start";
 	public static readonly ASK_CARD = ":gameId/ask-card";

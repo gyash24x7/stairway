@@ -1,13 +1,11 @@
+import type { GameData } from "@literature/types";
 import type { IEvent, IEventHandler } from "@nestjs/cqrs";
 import { EventsHandler } from "@nestjs/cqrs";
 import { LoggerFactory, RealtimeService } from "@s2h/core";
 import { Constants, GameEvents } from "../constants";
 
 export class StatusUpdatedEvent implements IEvent {
-	constructor(
-		public readonly gameId: string,
-		public readonly updatedStatus: string
-	) {}
+	constructor( public readonly gameData: GameData ) {}
 }
 
 @EventsHandler( StatusUpdatedEvent )
@@ -17,14 +15,14 @@ export class StatusUpdatedEventHandler implements IEventHandler<StatusUpdatedEve
 
 	constructor( private readonly realtimeService: RealtimeService ) {}
 
-	async handle( { updatedStatus, gameId }: StatusUpdatedEvent ) {
+	async handle( { gameData }: StatusUpdatedEvent ) {
 		this.logger.debug( ">> handleStatusUpdatedEvent()" );
 
 		this.realtimeService.publishRoomMessage(
 			Constants.LITERATURE,
-			gameId,
+			gameData.id,
 			GameEvents.STATUS_UPDATED,
-			updatedStatus
+			gameData.status
 		);
 
 		this.logger.debug( "<< handleStatusUpdatedEvent()" );

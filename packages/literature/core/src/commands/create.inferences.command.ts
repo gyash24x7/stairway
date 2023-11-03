@@ -44,7 +44,7 @@ export class CreateInferencesCommandHandler implements ICommandHandler<CreateInf
 			} )
 		);
 
-		this.eventBus.publish( new InferencesUpdatedEvent( inferencesData, gameData.id ) );
+		this.eventBus.publish( new InferencesUpdatedEvent( gameData, inferencesData ) );
 		this.logger.debug( "Published InferencesUpdatedEvent!" );
 
 		this.logger.debug( "<< executeCreateInferencesCommand()" );

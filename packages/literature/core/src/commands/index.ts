@@ -1,3 +1,4 @@
+import { AddBotsCommandHandler } from "./add.bots.command";
 import { AskCardCommandHandler } from "./ask.card.command";
 import { CallSetCommandHandler } from "./call.set.command";
 import { CreateGameCommandHandler } from "./create.game.command";
@@ -14,6 +15,7 @@ import { UpdateTurnCommandHandler } from "./update.turn.command";
 
 export * from "./create.game.command";
 export * from "./join.game.command";
+export * from "./add.bots.command";
 export * from "./create.teams.command";
 export * from "./start.game.command";
 export * from "./ask.card.command";
@@ -29,6 +31,7 @@ export * from "./update.turn.command";
 export const commandHandlers = [
 	CreateGameCommandHandler,
 	JoinGameCommandHandler,
+	AddBotsCommandHandler,
 	CreateTeamsCommandHandler,
 	StartGameCommandHandler,
 	AskCardCommandHandler,

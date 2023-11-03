@@ -60,7 +60,7 @@ export class UpdateHandsCommandHandler implements ICommandHandler<UpdateHandsCom
 		const updatedHands = buildHandData( cardMappings );
 
 		if ( hasCardTransferHappened ) {
-			this.eventBus.publish( new HandsUpdatedEvent( updatedHands, currentMove.gameId ) );
+			this.eventBus.publish( new HandsUpdatedEvent( currentMove.gameId, updatedHands ) );
 			this.logger.debug( "Published HandsUpdatedEvent!" );
 		}
 

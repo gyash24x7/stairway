@@ -11,6 +11,7 @@ import type {
 	GameData,
 	GameWithPlayers,
 	JoinGameInput,
+	PlayerData,
 	PlayerSpecificData,
 	TeamData,
 	TransferMove,
@@ -21,6 +22,7 @@ import { Body, Controller, Get, HttpCode, Post, Put } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
 import { LoggerFactory } from "@s2h/core";
 import {
+	AddBotsCommand,
 	AskCardCommand,
 	CallSetCommand,
 	CreateGameCommand,
@@ -60,6 +62,15 @@ export class GamesController {
 		const game: GameWithPlayers = await this.commandBus.execute( new JoinGameCommand( input, authInfo ) );
 		this.logger.debug( "<< joinGame()" );
 		return game;
+	}
+
+	@Put( Paths.ADD_BOTS )
+	@RequiresGame( { status: GameStatus.CREATED } )
+	async addBots( @GameInfo() gameData: GameData ): Promise<PlayerData> {
+		this.logger.debug( ">> addBots()" );
+		const botData: PlayerData = await this.commandBus.execute( new AddBotsCommand( gameData ) );
+		this.logger.debug( "<< addBots()" );
+		return botData;
 	}
 
 	@Put( Paths.CREATE_TEAMS )

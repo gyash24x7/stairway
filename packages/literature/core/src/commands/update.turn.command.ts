@@ -1,4 +1,4 @@
-import type { AskMoveData, CallMoveData, Move, Player, TransferMoveData } from "@literature/types";
+import type { AskMoveData, CallMoveData, Move, PlayerData, TransferMoveData } from "@literature/types";
 import { MoveType } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
@@ -10,7 +10,7 @@ export class UpdateTurnCommand implements ICommand {
 	constructor(
 		public readonly currentTurn: string,
 		public readonly currentMove: Move,
-		public readonly players: Record<string, Player>
+		public readonly players: PlayerData
 	) {}
 }
 

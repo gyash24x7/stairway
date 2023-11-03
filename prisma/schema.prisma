@@ -23,7 +23,7 @@ model User {
 }
 
 model LiteraturePlayer {
-    id         String
+    id         String                  @default(cuid())
     name       String
     avatar     String
     gameId     String
@@ -83,7 +83,7 @@ model LiteratureGame {
     id           String                  @id @default(cuid())
     code         String                  @unique
     status       String                  @default("CREATED")
-    playerCount  Int                     @default(2)
+    playerCount  Int                     @default(6)
     players      LiteraturePlayer[]
     teams        LiteratureTeam[]
     cardMappings LiteratureCardMapping[]
