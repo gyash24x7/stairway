@@ -2,6 +2,7 @@ import { GameStatus, MoveType } from "@literature/types";
 import { Box, Flex, Grid, Group, Text, Title } from "@mantine/core";
 import { Banner, DisplayHand } from "@s2h/ui";
 import {
+	AddBots,
 	AskCard,
 	CallSet,
 	CreateTeams,
@@ -72,6 +73,7 @@ export function GamePageFooter() {
 				<Title fz={ 56 } lh={ 1 }>{ code }</Title>
 			</Box>
 			<Flex justify={ "end" }>
+				{ status === GameStatus.CREATED && id === currentTurn && <AddBots/> }
 				{ status === GameStatus.PLAYERS_READY && id === currentTurn && <CreateTeams/> }
 				{ status === GameStatus.TEAMS_CREATED && id === currentTurn && <StartGame/> }
 				{ status === GameStatus.IN_PROGRESS && (

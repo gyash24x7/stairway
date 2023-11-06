@@ -18,7 +18,6 @@ export const useGameCode = () => useGameStore( state => state.gameData.code );
 
 export const usePlayerId = () => useGameStore( state => state.playerData.id );
 export const useHand = () => useGameStore( state => state.playerData.hand );
-export const useInferences = () => useGameStore( state => state.playerData.inferences );
 export const useCardSetsInHand = () => useGameStore( state => state.playerData.cardSets );
 
 export const useMyTeam = () => useGameStore( state => {
@@ -68,14 +67,14 @@ export const useGameEventHandlers = () => useGameStore( state => {
 
 export const usePlayerSpecificEventHandlers = () => useGameStore( state => {
 	return {
-		[ PlayerSpecificEvents.HAND_UPDATED ]: state.handleHandUpdatedEvent,
-		[ PlayerSpecificEvents.INFERENCES_UPDATED ]: state.handleInferencesUpdatedEvent
+		[ PlayerSpecificEvents.HAND_UPDATED ]: state.handleHandUpdatedEvent
 	};
 } );
 
 // Game Action Hooks
 export const useCreateGameAction = () => useAction( literatureClient.createGame );
 export const useJoinGameAction = () => useAction( literatureClient.joinGame );
+export const useAddBotsAction = () => useAction( literatureClient.addBots );
 export const useStartGameAction = () => useAction( literatureClient.startGame );
 export const useCreateTeamsAction = () => useAction( literatureClient.createTeams );
 export const useAskCardAction = () => useAction( literatureClient.askCard );

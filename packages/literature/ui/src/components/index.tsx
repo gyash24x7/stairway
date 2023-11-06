@@ -14,3 +14,4 @@ export * from "./game-page";
 export * from "./select-card-set";
 export * from "./select-player";
 export * from "./transfer-turn";
+export * from "./add-bots";

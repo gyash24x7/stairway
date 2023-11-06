@@ -79,7 +79,7 @@ export function HomePageFooter() {
 	const { isLoading, execute } = useCreateGameAction();
 
 	const handleSubmit = useCallback(
-		() => execute( { playerCount: 2 } )
+		() => execute( { playerCount: 6 } )
 			.then( ( { id } ) => navigate( "/literature/" + id ) )
 			.catch( ( error: Error ) => alert( error.message ) ),
 		[]

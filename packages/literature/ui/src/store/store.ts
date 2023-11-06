@@ -1,4 +1,4 @@
-import type { GameData, Inference, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/types";
+import type { GameData, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/types";
 import { GameStatus } from "@literature/types";
 import type { PlayingCard } from "@s2h/cards";
 import { produce } from "immer";
@@ -18,7 +18,6 @@ export type GameEventHandlers = {
 	handleStatusUpdatedEvent: ( data: GameStatus ) => void;
 	handleCardCountsUpdatedEvent: ( data: Record<string, number> ) => void;
 	handleHandUpdatedEvent: ( data: PlayingCard[] ) => void;
-	handleInferencesUpdatedEvent: ( data: Inference ) => void;
 }
 
 export type GameStore = GameState & GameEventHandlers;
@@ -43,7 +42,6 @@ const defaultPlayerData: PlayerSpecificData = {
 	teamId: "",
 	oppositeTeamId: "",
 	hand: [],
-	inferences: {},
 	cardSets: []
 };
 
@@ -106,13 +104,6 @@ export const useGameStore = create<GameStore>( ( set ) => {
 			set(
 				produce<GameStore>( state => {
 					state.playerData.hand = data;
-				} )
-			);
-		},
-		handleInferencesUpdatedEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.playerData.inferences = data;
 				} )
 			);
 		}

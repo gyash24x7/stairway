@@ -7,6 +7,7 @@ import type {
 	CreateTeamsInput,
 	GameData,
 	JoinGameInput,
+	PlayerData,
 	PlayerSpecificData,
 	TeamData,
 	TransferMove,
@@ -17,6 +18,7 @@ import { ApiResponse, getRequest, postRequest, putRequest } from "@s2h/client";
 export const gamesPath = ( id?: string ) => `/literature/games${ !!id ? "/" + id : "" }`;
 export const createGamePath = () => gamesPath();
 export const joinGamePath = () => gamesPath() + "/join";
+export const addBotsPath = ( id: string ) => gamesPath( id ) + "/add-bots";
 export const createTeamsPath = ( id: string ) => gamesPath( id ) + "/create-teams";
 export const startGamePath = ( id: string ) => gamesPath( id ) + "/start";
 export const askCardPath = ( id: string ) => gamesPath( id ) + "/ask-card";
@@ -33,6 +35,10 @@ export class LiteratureClient {
 
 	async joinGame( data: JoinGameInput ) {
 		return postRequest<GameData>( joinGamePath(), data );
+	}
+
+	async addBots( { gameId }: { gameId: string } ) {
+		return putRequest<PlayerData>( addBotsPath( gameId ), {} );
 	}
 
 	async createTeams( { gameId, ...data }: CreateTeamsInput & { gameId: string } ) {

@@ -1,6 +1,6 @@
 import type { GameData, PlayerData } from "@literature/types";
-import type { EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
-import { CommandHandler } from "@nestjs/cqrs";
+import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
+import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { Constants } from "../constants";
 import { PlayerJoinedEvent } from "../events";
@@ -38,7 +38,7 @@ export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand, Pl
 			} );
 
 			botData[ bot.id ] = bot;
-			this.eventBus.publish( new PlayerJoinedEvent( gameData.id, bot, i < botCount - 1 ) );
+			this.eventBus.publish( new PlayerJoinedEvent( gameData.id, bot, i === botCount - 1 ) );
 		}
 
 		this.logger.debug( "<< executeAddBotsCommand()" );

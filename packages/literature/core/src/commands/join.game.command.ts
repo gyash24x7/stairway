@@ -4,7 +4,7 @@ import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { PlayerJoinedEvent } from "../events";
-import type { JoinGameValidator } from "../validators";
+import { JoinGameValidator } from "../validators";
 
 export class JoinGameCommand implements ICommand {
 	constructor(

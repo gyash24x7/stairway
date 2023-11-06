@@ -24,7 +24,7 @@ export class TurnUpdatedEventHandler implements IEventHandler<TurnUpdatedEvent> 
 
 		const nextPlayer = players[ nextTurn ];
 		if ( nextPlayer.isBot ) {
-			// TODO: publish bot move command
+			// TODO: publish bot move command after 10s
 		}
 
 		this.realtimeService.publishRoomMessage(
