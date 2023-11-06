@@ -29,8 +29,8 @@ export class GameStartedEventHandler implements IEventHandler<GameStartedEvent> 
 		const handData = buildHandData( cardMappings );
 
 		await this.commandBus.execute( new CreateInferencesCommand( gameData, handData ) );
-		await this.commandBus.execute( new UpdateStatusCommand( { ...gameData, status: GameStatus.IN_PROGRESS } ) );
-		await this.eventBus.publish( new HandsUpdatedEvent( gameData, handData ) );
+		await this.commandBus.execute( new UpdateStatusCommand( gameData.id, GameStatus.IN_PROGRESS ) );
+		await this.eventBus.publish( new HandsUpdatedEvent( gameData.id, handData ) );
 
 		this.logger.debug( "<< handleGameStartedEvent()" );
 	}

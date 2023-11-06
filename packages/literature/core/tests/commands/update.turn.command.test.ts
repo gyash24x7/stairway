@@ -40,7 +40,7 @@ describe( "UpdateTurnCommand", () => {
 			data: { currentTurn: updatedTurn }
 		} );
 
-		const event = new TurnUpdatedEvent( updatedTurn, mockAskMove.gameId );
+		const event = new TurnUpdatedEvent( mockAskMove.gameId, updatedTurn, mockGameData.players );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 
@@ -73,7 +73,7 @@ describe( "UpdateTurnCommand", () => {
 			data: { currentTurn: updatedTurn }
 		} );
 
-		const event = new TurnUpdatedEvent( updatedTurn, mockAskMove.gameId );
+		const event = new TurnUpdatedEvent( mockAskMove.gameId, updatedTurn, mockGameData.players );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 
@@ -89,7 +89,7 @@ describe( "UpdateTurnCommand", () => {
 			data: { currentTurn: updatedTurn }
 		} );
 
-		const event = new TurnUpdatedEvent( updatedTurn, mockAskMove.gameId );
+		const event = new TurnUpdatedEvent( mockAskMove.gameId, updatedTurn, mockGameData.players );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 

@@ -17,7 +17,7 @@ describe( "HandsUpdatedEvent", () => {
 	it( "should publish hand updated message to the players", async () => {
 		const handler = new HandsUpdatedEventHandler( mockRealtimeService );
 
-		const event = new HandsUpdatedEvent( hands, mockGameData.id );
+		const event = new HandsUpdatedEvent( mockGameData.id, hands );
 		await handler.handle( event );
 
 		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledTimes( 4 );

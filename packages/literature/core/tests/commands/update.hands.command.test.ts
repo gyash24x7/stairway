@@ -32,7 +32,7 @@ describe( "UpdateHandsCommand", () => {
 			data: { playerId: mockAskMove.data.by }
 		} );
 
-		const event = new HandsUpdatedEvent( updatedHands, mockAskMove.gameId );
+		const event = new HandsUpdatedEvent( mockAskMove.gameId, updatedHands );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 
@@ -67,7 +67,7 @@ describe( "UpdateHandsCommand", () => {
 			where: { cardId: { in: calledCards } }
 		} );
 
-		const event = new HandsUpdatedEvent( updatedHands, mockAskMove.gameId );
+		const event = new HandsUpdatedEvent( mockAskMove.gameId, updatedHands );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 
 	} );

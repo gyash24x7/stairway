@@ -60,7 +60,7 @@ export class UpdateTurnCommandHandler implements ICommandHandler<UpdateTurnComma
 				data: { currentTurn: nextTurn }
 			} );
 
-			this.eventBus.publish( new TurnUpdatedEvent( nextTurn, currentMove.gameId ) );
+			this.eventBus.publish( new TurnUpdatedEvent( currentMove.gameId, nextTurn, players ) );
 			this.logger.debug( "Published TurnUpdatedEvent!" );
 		}
 

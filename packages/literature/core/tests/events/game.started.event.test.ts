@@ -28,7 +28,7 @@ describe( "GameStartedEvent", () => {
 		expect( mockCommandBus.execute ).toHaveBeenCalledTimes( 2 );
 		expect( mockCommandBus.execute ).toHaveBeenCalledWith( updateStatusCommand );
 		expect( mockCommandBus.execute ).toHaveBeenCalledWith( createInferencesCommand );
-		expect( mockEventBus.publish ).toHaveBeenCalledWith( new HandsUpdatedEvent( hands, mockGameData.id ) );
+		expect( mockEventBus.publish ).toHaveBeenCalledWith( new HandsUpdatedEvent( mockGameData.id, hands ) );
 	} );
 
 	afterEach( () => {

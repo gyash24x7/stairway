@@ -29,7 +29,7 @@ describe( "UpdateInferencesCommand", () => {
 			} );
 		} );
 
-		const event = new InferencesUpdatedEvent( updatedInferences, mockAskMove.gameId );
+		const event = new InferencesUpdatedEvent( mockAskMove.gameId, updatedInferences );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 
@@ -50,7 +50,7 @@ describe( "UpdateInferencesCommand", () => {
 			} );
 		} );
 
-		const event = new InferencesUpdatedEvent( updatedInferences, mockAskMove.gameId );
+		const event = new InferencesUpdatedEvent( mockAskMove.gameId, updatedInferences );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 
@@ -74,7 +74,7 @@ describe( "UpdateInferencesCommand", () => {
 			} );
 		} );
 
-		const event = new InferencesUpdatedEvent( updatedInferences, mockAskMove.gameId );
+		const event = new InferencesUpdatedEvent( mockAskMove.gameId, updatedInferences );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 

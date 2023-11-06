@@ -14,7 +14,7 @@ describe( "InferencesUpdatedEvent", () => {
 	it( "should publish inferences updated message to the players", async () => {
 		const handler = new InferencesUpdatedEventHandler( mockRealtimeService );
 
-		const event = new InferencesUpdatedEvent( inferenceData, "1" );
+		const event = new InferencesUpdatedEvent( "1", inferenceData );
 		await handler.handle( event );
 
 		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledTimes( 4 );

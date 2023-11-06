@@ -59,7 +59,7 @@ describe( "CreateInferencesCommand", () => {
 		} );
 
 		expect( mockEventBus.publish ).toHaveBeenCalledTimes( 1 );
-		const event = new InferencesUpdatedEvent( inferenceData, "1" );
+		const event = new InferencesUpdatedEvent( "1", inferenceData );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 
 	} );

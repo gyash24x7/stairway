@@ -49,7 +49,7 @@ export class UpdateInferencesCommandHandler implements ICommandHandler<UpdateInf
 				} );
 			} ) );
 
-			this.eventBus.publish( new InferencesUpdatedEvent( inferencesData, currentMove.gameId ) );
+			this.eventBus.publish( new InferencesUpdatedEvent( currentMove.gameId, inferencesData ) );
 			this.logger.debug( "Published InferencesUpdatedEvent!" );
 		}
 
