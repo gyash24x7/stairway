@@ -1,7 +1,7 @@
 {
-	"name": "common-types",
+	"name": "literature-types",
 	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/common/types/src",
+	"sourceRoot": "packages/literature/types/src",
 	"projectType": "library",
 	"targets": { },
 	"tags": [ ]
