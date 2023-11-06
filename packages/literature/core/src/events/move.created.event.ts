@@ -2,7 +2,7 @@ import type { CardMappingData, GameData, Move } from "@literature/types";
 import type { IEvent, IEventHandler } from "@nestjs/cqrs";
 import { CommandBus, EventsHandler } from "@nestjs/cqrs";
 import { LoggerFactory, RealtimeService } from "@s2h/core";
-import { UpdateHandsCommand, UpdateInferencesCommand, UpdateScoreCommand, UpdateTurnCommand } from "../commands";
+import { UpdateHandsCommand, UpdateInferenceCommand, UpdateScoreCommand, UpdateTurnCommand } from "../commands";
 import { Constants, GameEvents } from "../constants";
 
 export class MoveCreatedEvent implements IEvent {
@@ -26,7 +26,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 	async handle( { move, gameData, cardMappings }: MoveCreatedEvent ) {
 		this.logger.debug( ">> handleMoveCreatedEvent" );
 
-		await this.commandBus.execute( new UpdateInferencesCommand( move, gameData.players ) );
+		await this.commandBus.execute( new UpdateInferenceCommand( move ) );
 		await this.commandBus.execute( new UpdateHandsCommand( move, cardMappings ) );
 		await this.commandBus.execute( new UpdateTurnCommand( gameData.currentTurn, move, gameData.players ) );
 		await this.commandBus.execute( new UpdateScoreCommand( move, gameData.players, gameData.teams ) );

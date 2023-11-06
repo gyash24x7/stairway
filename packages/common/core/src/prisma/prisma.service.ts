@@ -16,7 +16,8 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 			player: this.prismaClient.literaturePlayer,
 			cardMapping: this.prismaClient.literatureCardMapping,
 			team: this.prismaClient.literatureTeam,
-			move: this.prismaClient.literatureMove
+			move: this.prismaClient.literatureMove,
+			inference: this.prismaClient.literatureInference
 		};
 	}
 

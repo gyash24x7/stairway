@@ -1,4 +1,4 @@
-import type { CardInferences, GameData, PlayerSpecificData } from "@literature/types";
+import type { GameData, PlayerSpecificData } from "@literature/types";
 import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
 import { getCardSetsInHand, getPlayingCardFromId } from "@s2h/cards";
@@ -25,7 +25,7 @@ export class PlayerSpecificDataQueryHandler implements IQueryHandler<PlayerSpeci
 			where: { gameId: gameData.id, playerId }
 		} );
 
-		const { inferences, teamId, ...info } = gameData.players[ playerId ];
+		const { teamId, ...info } = gameData.players[ playerId ];
 		const hand = cardMappings.map( card => getPlayingCardFromId( card.cardId ) );
 		const cardSets = getCardSetsInHand( hand );
 
@@ -35,6 +35,6 @@ export class PlayerSpecificDataQueryHandler implements IQueryHandler<PlayerSpeci
 		}
 
 		this.logger.debug( "<< executePlayerDataQuery()" );
-		return { ...info, inferences: inferences as CardInferences, hand, cardSets, oppositeTeamId, teamId };
+		return { ...info, hand, cardSets, oppositeTeamId, teamId };
 	}
 }

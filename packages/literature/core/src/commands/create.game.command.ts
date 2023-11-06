@@ -36,8 +36,7 @@ export class CreateGameCommandHandler implements ICommandHandler<CreateGameComma
 				id: authInfo.id,
 				name: authInfo.name,
 				avatar: authInfo.avatar,
-				gameId: game.id,
-				inferences: {}
+				gameId: game.id
 			}
 		} );
 

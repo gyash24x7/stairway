@@ -33,7 +33,6 @@ export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand, Pl
 					gameId: gameData.id,
 					name: `Bot ${ i + 1 }`,
 					avatar: Constants.AVATAR_BASE_URL + `bot${ i + 1 }`,
-					inferences: {},
 					isBot: true
 				}
 			} );

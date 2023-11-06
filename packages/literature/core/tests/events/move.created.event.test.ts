@@ -3,7 +3,7 @@ import type { CommandBus } from "@nestjs/cqrs";
 import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { UpdateHandsCommand, UpdateInferencesCommand, UpdateScoreCommand, UpdateTurnCommand } from "../../src/commands";
+import { UpdateHandsCommand, UpdateInferenceCommand, UpdateScoreCommand, UpdateTurnCommand } from "../../src/commands";
 import { Constants, GameEvents } from "../../src/constants";
 import { MoveCreatedEvent, MoveCreatedEventHandler } from "../../src/events";
 import { buildCardMappingData } from "../../src/utils";
@@ -24,7 +24,7 @@ describe( "MoveCreatedEvent", () => {
 		const event = new MoveCreatedEvent( mockAskMove, mockGameData, cardMappingData );
 		await handler.handle( event );
 
-		const updateInferencesCommand = new UpdateInferencesCommand( mockAskMove, mockGameData.players );
+		const updateInferencesCommand = new UpdateInferenceCommand( mockAskMove );
 		const updateHandsCommand = new UpdateHandsCommand( mockAskMove, cardMappingData );
 		const updateScoreCommand = new UpdateScoreCommand( mockAskMove, mockGameData.players, mockGameData.teams );
 		const updateTurnCommand = new UpdateTurnCommand( mockGameData.currentTurn, mockAskMove, mockGameData.players );

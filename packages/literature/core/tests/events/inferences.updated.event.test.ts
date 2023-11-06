@@ -2,19 +2,19 @@ import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { Constants, GameEvents } from "../../src/constants";
-import { InferencesUpdatedEvent, InferencesUpdatedEventHandler } from "../../src/events";
+import { InferencesUpdatedEventHandler, InferenceUpdatedEvent } from "../../src/events";
 import { buildMockCardMappings, buildMockInferenceData } from "../mockdata";
 
 describe( "InferencesUpdatedEvent", () => {
 
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const cardMappingList = buildMockCardMappings();
-	const inferenceData = buildMockInferenceData( cardMappingList );
+	const inferenceData = buildMockInferenceData( "1", cardMappingList );
 
 	it( "should publish inferences updated message to the players", async () => {
 		const handler = new InferencesUpdatedEventHandler( mockRealtimeService );
 
-		const event = new InferencesUpdatedEvent( "1", inferenceData );
+		const event = new InferenceUpdatedEvent( "1", inferenceData );
 		await handler.handle( event );
 
 		expect( mockRealtimeService.publishMemberMessage ).toHaveBeenCalledTimes( 4 );

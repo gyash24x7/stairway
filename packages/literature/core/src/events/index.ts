@@ -1,6 +1,6 @@
 import { GameStartedEventHandler } from "./game.started.event";
 import { HandsUpdatedEventHandler } from "./hands.updated.event";
-import { InferencesUpdatedEvent } from "./inferences.updated.event";
+import { InferenceUpdatedEvent } from "./inference.updated.event";
 import { MoveCreatedEventHandler } from "./move.created.event";
 import { PlayerJoinedEventHandler } from "./player.joined.event";
 import { ScoreUpdatedEventHandler } from "./score.updated.event";
@@ -10,7 +10,7 @@ import { TurnUpdatedEventHandler } from "./turn.updated.event";
 
 export * from "./game.started.event";
 export * from "./hands.updated.event";
-export * from "./inferences.updated.event";
+export * from "./inference.updated.event";
 export * from "./move.created.event";
 export * from "./player.joined.event";
 export * from "./score.updated.event";
@@ -21,7 +21,7 @@ export * from "./turn.updated.event";
 export const eventHandlers = [
 	GameStartedEventHandler,
 	HandsUpdatedEventHandler,
-	InferencesUpdatedEvent,
+	InferenceUpdatedEvent,
 	MoveCreatedEventHandler,
 	PlayerJoinedEventHandler,
 	ScoreUpdatedEventHandler,

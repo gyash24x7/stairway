@@ -1,12 +1,4 @@
-import type {
-	CardInferences,
-	GameData,
-	Move,
-	Player,
-	PlayerSpecificData,
-	ScoreUpdate,
-	TeamData
-} from "@literature/types";
+import type { GameData, Inference, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/types";
 import { GameStatus } from "@literature/types";
 import type { PlayingCard } from "@s2h/cards";
 import { produce } from "immer";
@@ -26,7 +18,7 @@ export type GameEventHandlers = {
 	handleStatusUpdatedEvent: ( data: GameStatus ) => void;
 	handleCardCountsUpdatedEvent: ( data: Record<string, number> ) => void;
 	handleHandUpdatedEvent: ( data: PlayingCard[] ) => void;
-	handleInferencesUpdatedEvent: ( data: CardInferences ) => void;
+	handleInferencesUpdatedEvent: ( data: Inference ) => void;
 }
 
 export type GameStore = GameState & GameEventHandlers;

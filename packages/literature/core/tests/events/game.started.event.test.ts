@@ -2,7 +2,7 @@ import { GameStatus } from "@literature/types";
 import type { CommandBus, EventBus } from "@nestjs/cqrs";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { CreateInferencesCommand, UpdateStatusCommand } from "../../src/commands";
+import { CreateInferenceCommand, UpdateStatusCommand } from "../../src/commands";
 import { GameStartedEvent, GameStartedEventHandler, HandsUpdatedEvent } from "../../src/events";
 import { buildCardMappingData, buildHandData } from "../../src/utils";
 import { buildMockCardMappings, buildMockGameData } from "../mockdata";
@@ -22,7 +22,7 @@ describe( "GameStartedEvent", () => {
 		const event = new GameStartedEvent( mockGameData, cardMappingData );
 		await handler.handle( event );
 
-		const createInferencesCommand = new CreateInferencesCommand( mockGameData, hands );
+		const createInferencesCommand = new CreateInferenceCommand( mockGameData, hands );
 		const updateStatusCommand = new UpdateStatusCommand( "1", GameStatus.IN_PROGRESS );
 
 		expect( mockCommandBus.execute ).toHaveBeenCalledTimes( 2 );

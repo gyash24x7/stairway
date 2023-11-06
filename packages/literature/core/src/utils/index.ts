@@ -1,10 +1,10 @@
 import type {
-	CardInferences,
 	CardMapping,
 	CardMappingData,
 	GameData,
 	GameStatus,
 	HandData,
+	Inference,
 	Player,
 	RawGameData,
 	TeamWithMembers
@@ -63,17 +63,24 @@ export function buildGameData( data: RawGameData ): GameData {
 	};
 }
 
-export function buildDefaultCardInferences( playerIds: string[], playerId: string, cards: string[] ) {
-	const cardInferences: CardInferences = {};
+export function buildDefaultInference( playerIds: string[], playerId: string, cards: string[] ) {
+	const inference: Omit<Inference, "gameId"> = {
+		playerId,
+		activeSets: {},
+		actualCardLocations: {},
+		possibleCardLocations: {},
+		inferredCardLocations: {}
+	};
 	const defaultProbablePlayers = playerIds.filter( player => player !== playerId );
 
 	SORTED_DECK.forEach( card => {
 		if ( cards.includes( card.id ) ) {
-			cardInferences[ card.id ] = [ playerId ];
+			inference.actualCardLocations[ card.id ] = playerId;
+			inference.possibleCardLocations[ card.id ] = [ playerId ];
 		} else {
-			cardInferences[ card.id ] = defaultProbablePlayers;
+			inference.possibleCardLocations[ card.id ] = defaultProbablePlayers;
 		}
 	} );
 
-	return cardInferences;
+	return inference;
 }

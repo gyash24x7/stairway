@@ -51,8 +51,7 @@ describe( "JoinGameCommand", () => {
 				id: mockAuthInfo.id,
 				name: mockAuthInfo.name,
 				avatar: mockAuthInfo.avatar,
-				gameId: mockGame.id,
-				inferences: {}
+				gameId: mockGame.id
 			}
 		} );
 

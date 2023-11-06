@@ -2,8 +2,8 @@ import type { UserAuthInfo } from "@auth/types";
 import type {
 	AskMove,
 	CallMove,
-	CardInferences,
 	GameData,
+	Inference,
 	Player,
 	PlayerSpecificData,
 	RawGameData,
@@ -28,7 +28,7 @@ import {
 	shuffle,
 	SORTED_DECK
 } from "@s2h/cards";
-import { buildCardMappingData, buildDefaultCardInferences, buildGameData, buildHandData } from "../../src/utils";
+import { buildDefaultInference, buildGameData } from "../../src/utils";
 
 function areTeamsCreated( status: GameStatus ) {
 	return status === GameStatus.TEAMS_CREATED || status === GameStatus.IN_PROGRESS || status === GameStatus.COMPLETED;
@@ -52,8 +52,7 @@ export const mockPlayer1: Player = {
 	avatar: "https://avatar.com/john",
 	gameId: "1",
 	teamId: "1",
-	isBot: false,
-	inferences: {}
+	isBot: false
 };
 
 export const mockPlayer2: Player = {
@@ -62,8 +61,7 @@ export const mockPlayer2: Player = {
 	avatar: "https://avatar.com/jane",
 	gameId: "1",
 	teamId: "2",
-	isBot: false,
-	inferences: {}
+	isBot: false
 };
 
 export const mockPlayer3: Player = {
@@ -72,8 +70,7 @@ export const mockPlayer3: Player = {
 	avatar: "https://avatar.com/tom",
 	gameId: "1",
 	teamId: "1",
-	isBot: false,
-	inferences: {}
+	isBot: false
 };
 
 export const mockPlayer4: Player = {
@@ -82,8 +79,7 @@ export const mockPlayer4: Player = {
 	avatar: "https://avatar.com/jerry",
 	gameId: "1",
 	teamId: "2",
-	isBot: false,
-	inferences: {}
+	isBot: false
 };
 
 export const mockPlayerIds = [ mockPlayer1.id, mockPlayer2.id, mockPlayer3.id, mockPlayer4.id ];
@@ -106,8 +102,6 @@ export function buildMockRawGameData(
 		cardMappings = buildMockCardMappings();
 	}
 
-	const hands = buildHandData( buildCardMappingData( cardMappings ) );
-
 	let players: Player[] = [ mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 ];
 
 	if ( !areTeamsCreated( status ) ) {
@@ -117,19 +111,6 @@ export function buildMockRawGameData(
 			{ ...mockPlayer3, teamId: null },
 			{ ...mockPlayer4, teamId: null }
 		];
-	}
-
-	if ( isGameStarted( status ) ) {
-		players = players.map( player => {
-			return {
-				...player,
-				inferences: buildDefaultCardInferences(
-					mockPlayerIds,
-					player.id,
-					hands[ player.id ]?.map( card => card.id ) ?? []
-				)
-			};
-		} );
 	}
 
 	return {
@@ -145,12 +126,12 @@ export function buildMockRawGameData(
 	};
 }
 
-export function buildMockInferenceData( cardMappingList: CardMapping[] = [] ) {
-	const inferenceData: Record<string, CardInferences> = {};
+export function buildMockInferenceData( gameId: string, cardMappingList: CardMapping[] = [] ) {
+	const inferenceData: Record<string, Inference> = {};
 	mockPlayerIds.forEach( playerId => {
 		const hand = cardMappingList.filter( cardMapping => cardMapping.playerId === playerId )
 			.map( cardMapping => cardMapping.cardId );
-		inferenceData[ playerId ] = buildDefaultCardInferences( mockPlayerIds, playerId, hand );
+		inferenceData[ playerId ] = { gameId, ...buildDefaultInference( mockPlayerIds, playerId, hand ) };
 	} );
 
 	return inferenceData;
@@ -167,9 +148,8 @@ export function buildPlayerSpecificData( player: Player, cardMappingList: CardMa
 		.map( cardMapping => getPlayingCardFromId( cardMapping.cardId ) );
 
 	const cardSets = getCardSetsInHand( hand );
-	const inferences = buildDefaultCardInferences( mockPlayerIds, player.id, hand.map( card => card.id ) );
 
-	return { ...player, hand, cardSets, inferences };
+	return { ...player, hand, cardSets };
 }
 
 export function buildMockGameData(

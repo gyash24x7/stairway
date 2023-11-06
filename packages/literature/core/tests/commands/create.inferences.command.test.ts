@@ -3,8 +3,8 @@ import type { EventBus } from "@nestjs/cqrs";
 import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { CreateInferencesCommand, CreateInferencesCommandHandler } from "../../src/commands";
-import { InferencesUpdatedEvent } from "../../src/events";
+import { CreateInferenceCommand, CreateInferenceCommandHandler } from "../../src/commands";
+import { InferenceUpdatedEvent } from "../../src/events";
 import { buildCardMappingData, buildHandData } from "../../src/utils";
 import { buildMockCardMappings, buildMockGameData, buildMockInferenceData } from "../mockdata";
 
@@ -15,51 +15,28 @@ describe( "CreateInferencesCommand", () => {
 	const cardMappingList = buildMockCardMappings();
 	const cardMappingData = buildCardMappingData( cardMappingList );
 	const hands = buildHandData( cardMappingData );
-	const inferenceData = buildMockInferenceData( cardMappingList );
 	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED, cardMappingList );
+	const inferenceData = buildMockInferenceData( mockGameData.id, cardMappingList );
 
-	it( "should create inferences for each player and publish InferencesUpdatedEvent", async () => {
-		const mock = mockPrisma.literature.player.update;
+	it( "should create inferences for each player and publish InferenceUpdatedEvent", async () => {
+		const mock = mockPrisma.literature.inference.create;
 		Object.keys( hands ).forEach( playerId => {
-			mock.mockResolvedValueOnce( {
-				...mockGameData.players[ playerId ],
-				inferences: inferenceData[ playerId ]
-			} );
+			mock.mockResolvedValueOnce( inferenceData[ playerId ] );
 		} );
 
-		const handler = new CreateInferencesCommandHandler( mockPrisma, mockEventBus );
-		const command = new CreateInferencesCommand( mockGameData, hands );
+		const handler = new CreateInferenceCommandHandler( mockPrisma, mockEventBus );
+		const command = new CreateInferenceCommand( mockGameData, hands );
 
 		await handler.execute( command );
 
 		expect( mock ).toHaveBeenCalledTimes( 4 );
-		expect( mock ).toHaveBeenCalledWith( {
-			where: { id_gameId: { id: "1", gameId: "1" } },
-			data: {
-				inferences: inferenceData[ "1" ]
-			}
-		} );
-		expect( mock ).toHaveBeenCalledWith( {
-			where: { id_gameId: { id: "2", gameId: "1" } },
-			data: {
-				inferences: inferenceData[ "2" ]
-			}
-		} );
-		expect( mock ).toHaveBeenCalledWith( {
-			where: { id_gameId: { id: "3", gameId: "1" } },
-			data: {
-				inferences: inferenceData[ "3" ]
-			}
-		} );
-		expect( mock ).toHaveBeenCalledWith( {
-			where: { id_gameId: { id: "4", gameId: "1" } },
-			data: {
-				inferences: inferenceData[ "4" ]
-			}
-		} );
+		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "1" ] } );
+		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "2" ] } );
+		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "3" ] } );
+		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "4" ] } );
 
 		expect( mockEventBus.publish ).toHaveBeenCalledTimes( 1 );
-		const event = new InferencesUpdatedEvent( "1", inferenceData );
+		const event = new InferenceUpdatedEvent( "1", inferenceData );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 
 	} );

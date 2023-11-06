@@ -1,6 +1,7 @@
 import type {
 	LiteratureCardMapping,
 	LiteratureGame,
+	LiteratureInference,
 	LiteratureMove,
 	LiteraturePlayer,
 	LiteratureTeam
@@ -17,15 +18,24 @@ export type Team = LiteratureTeam;
 
 export type CardMapping = LiteratureCardMapping;
 
+export type RawInference = LiteratureInference;
+
+export type Inference = {
+	playerId: string;
+	gameId: string;
+	activeSets: Record<string, CardSet[]>;
+	actualCardLocations: Record<string, string>;
+	possibleCardLocations: Record<string, string[]>;
+	inferredCardLocations: Record<string, string>;
+}
+
 export type TeamWithMembers = Team & { members: string[] };
 
 export type GameWithPlayers = Game & { players: Player[] };
 
 export type PlayerData = Record<string, Player>;
 
-export type CardInferences = Record<string, string[]>;
-
-export type InferenceData = Record<string, CardInferences>;
+export type InferenceData = Record<string, Inference>;
 
 export type TeamData = Record<string, TeamWithMembers>;
 
@@ -101,7 +111,6 @@ export type PlayerSpecificData = {
 	isBot: boolean;
 	hand: PlayingCard[];
 	cardSets: CardSet[];
-	inferences: CardInferences;
 	oppositeTeamId?: string;
 }
 
