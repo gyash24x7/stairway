@@ -1,7 +1,6 @@
 import type {
 	LiteratureCardMapping,
 	LiteratureGame,
-	LiteratureInference,
 	LiteratureMove,
 	LiteraturePlayer,
 	LiteratureTeam
@@ -17,8 +16,6 @@ export type Player = LiteraturePlayer;
 export type Team = LiteratureTeam;
 
 export type CardMapping = LiteratureCardMapping;
-
-export type RawInference = LiteratureInference;
 
 export type Inference = {
 	playerId: string;

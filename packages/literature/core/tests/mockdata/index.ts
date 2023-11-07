@@ -88,6 +88,8 @@ export const mockTeamA: Team = { id: "1", name: "Team A", gameId: "1", setsWon: 
 
 export const mockTeamB: Team = { id: "2", name: "Team B", gameId: "1", setsWon: [], score: 0 };
 
+export const mockTeamIds = [ mockTeamA.id, mockTeamB.id ];
+
 export const deck = removeCardsOfRank( shuffle( SORTED_DECK ), CardRank.SEVEN );
 
 export function buildMockRawGameData(
@@ -131,7 +133,7 @@ export function buildMockInferenceData( gameId: string, cardMappingList: CardMap
 	mockPlayerIds.forEach( playerId => {
 		const hand = cardMappingList.filter( cardMapping => cardMapping.playerId === playerId )
 			.map( cardMapping => cardMapping.cardId );
-		inferenceData[ playerId ] = { gameId, ...buildDefaultInference( mockPlayerIds, playerId, hand ) };
+		inferenceData[ playerId ] = { gameId, ...buildDefaultInference( mockPlayerIds, mockTeamIds, playerId, hand ) };
 	} );
 
 	return inferenceData;

@@ -31,6 +31,7 @@ export class CreateInferenceCommandHandler implements ICommandHandler<CreateInfe
 
 				const inference = buildDefaultInference(
 					Object.keys( gameData.players ),
+					Object.keys( gameData.teams ),
 					player.id,
 					hands[ player.id ].map( card => card.id )
 				);

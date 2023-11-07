@@ -26,7 +26,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 	async handle( { move, gameData, cardMappings }: MoveCreatedEvent ) {
 		this.logger.debug( ">> handleMoveCreatedEvent" );
 
-		await this.commandBus.execute( new UpdateInferenceCommand( move ) );
+		await this.commandBus.execute( new UpdateInferenceCommand( move, gameData.players ) );
 		await this.commandBus.execute( new UpdateHandsCommand( move, cardMappings ) );
 		await this.commandBus.execute( new UpdateTurnCommand( gameData.currentTurn, move, gameData.players ) );
 		await this.commandBus.execute( new UpdateScoreCommand( move, gameData.players, gameData.teams ) );

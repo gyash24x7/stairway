@@ -63,7 +63,7 @@ export function buildGameData( data: RawGameData ): GameData {
 	};
 }
 
-export function buildDefaultInference( playerIds: string[], playerId: string, cards: string[] ) {
+export function buildDefaultInference( playerIds: string[], teamIds: string[], playerId: string, cards: string[] ) {
 	const inference: Omit<Inference, "gameId"> = {
 		playerId,
 		activeSets: {},
@@ -72,6 +72,10 @@ export function buildDefaultInference( playerIds: string[], playerId: string, ca
 		inferredCardLocations: {}
 	};
 	const defaultProbablePlayers = playerIds.filter( player => player !== playerId );
+
+	teamIds.forEach( teamId => {
+		inference.activeSets[ teamId ] = [];
+	} );
 
 	SORTED_DECK.forEach( card => {
 		if ( cards.includes( card.id ) ) {
