@@ -1,8 +1,0 @@
-version: 1.0
-
-#Specify inspection profile for code analysis
-profile:
-  name: qodana.starter
-
-#Specify Qodana linter for analysis (Applied in CI/CD pipeline)
-linter: jetbrains/qodana-js:latest

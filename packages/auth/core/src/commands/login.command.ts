@@ -48,6 +48,4 @@ export class LoginCommandHandler implements ICommandHandler<LoginCommand, AuthTo
 		this.logger.debug( "<< executeLoginCommand()" );
 		return { authInfo, token };
 	}
-
-
 }
