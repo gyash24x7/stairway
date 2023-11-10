@@ -13,7 +13,8 @@ import type {
 	TransferMove,
 	TransferTurnInput
 } from "@literature/types";
-import { ApiResponse, getRequest, postRequest, putRequest } from "@s2h/client";
+
+const BASE_URL = "http://localhost:8000/api";
 
 export const gamesPath = ( id?: string ) => `/literature/games${ !!id ? "/" + id : "" }`;
 export const createGamePath = () => gamesPath();
@@ -27,46 +28,55 @@ export const transferTurnPath = ( id: string ) => gamesPath( id ) + "/transfer-t
 export const getGameDataPath = ( id: string ) => gamesPath( id );
 export const getPlayerDataPath = ( id: string ) => gamesPath( id ) + "/player";
 
+const query = <T = any>( path: string ) => fetch( BASE_URL + path, { credentials: "include" } )
+	.then<T>( res => res.json() );
+
+const mutation = <T = any>( path: string, data?: any ) => fetch( BASE_URL + path, {
+	method: "POST",
+	credentials: "include",
+	body: !!data ? JSON.stringify( data ) : undefined
+} ).then<T>( res => res.json() );
+
 export class LiteratureClient {
 
 	async createGame( data: CreateGameInput ) {
-		return postRequest<GameData>( createGamePath(), data );
+		return mutation<GameData>( createGamePath(), data );
 	}
 
 	async joinGame( data: JoinGameInput ) {
-		return postRequest<GameData>( joinGamePath(), data );
+		return mutation<GameData>( joinGamePath(), data );
 	}
 
 	async addBots( { gameId }: { gameId: string } ) {
-		return putRequest<PlayerData>( addBotsPath( gameId ), {} );
+		return mutation<PlayerData>( addBotsPath( gameId ), {} );
 	}
 
 	async createTeams( { gameId, ...data }: CreateTeamsInput & { gameId: string } ) {
-		return putRequest<TeamData>( createTeamsPath( gameId ), data );
+		return mutation<TeamData>( createTeamsPath( gameId ), data );
 	}
 
 	async startGame( { gameId }: { gameId: string } ) {
-		return putRequest<ApiResponse>( startGamePath( gameId ), {} );
+		await mutation( startGamePath( gameId ), {} );
 	}
 
 	async askCard( { gameId, ...data }: AskCardInput & { gameId: string } ) {
-		return putRequest<AskMove>( askCardPath( gameId ), data );
+		return mutation<AskMove>( askCardPath( gameId ), data );
 	}
 
 	async callSet( { gameId, ...data }: CallSetInput & { gameId: string } ) {
-		return putRequest<CallMove>( callSetPath( gameId ), data );
+		return mutation<CallMove>( callSetPath( gameId ), data );
 	}
 
 	async transferTurn( { gameId, ...data }: TransferTurnInput & { gameId: string } ) {
-		return putRequest<TransferMove>( transferTurnPath( gameId ), data );
+		return mutation<TransferMove>( transferTurnPath( gameId ), data );
 	}
 
 	async loadGameData( { gameId }: { gameId: string } ) {
-		return getRequest<GameData>( getGameDataPath( gameId ) );
+		return query<GameData>( getGameDataPath( gameId ) );
 	}
 
 	async loadPlayerData( { gameId }: { gameId: string } ) {
-		return getRequest<PlayerSpecificData>( getPlayerDataPath( gameId ) );
+		return query<PlayerSpecificData>( getPlayerDataPath( gameId ) );
 	}
 }
 

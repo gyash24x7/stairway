@@ -29,7 +29,6 @@
 			"@literature/types": [ "packages/literature/types/src/index.ts" ],
 			"@literature/ui": [ "packages/literature/ui/src/index.ts" ],
 			"@s2h/cards": [ "packages/common/cards/src/index.ts" ],
-			"@s2h/client": [ "packages/common/client/src/index.ts" ],
 			"@s2h/core": [ "packages/common/core/src/index.ts" ],
 			"@s2h/ui": [ "packages/common/ui/src/index.ts" ]
 		},
