@@ -4,8 +4,5 @@ version: 1.0
 profile:
   name: qodana.starter
 
-#Execute command before Qodana execution (Applied in CI/CD pipeline)
-bootstrap: pnpm install && pnpm prisma generate
-
 #Specify Qodana linter for analysis (Applied in CI/CD pipeline)
 linter: jetbrains/qodana-js:latest
