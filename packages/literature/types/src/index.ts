@@ -40,6 +40,11 @@ export type CardMappingData = Record<string, string>;
 
 export type HandData = Record<string, PlayingCard[]>;
 
+export type CardsData = {
+	mappings: CardMappingData;
+	hands: HandData
+}
+
 export type CardCounts = Record<string, number>;
 
 export type ScoreUpdate = {

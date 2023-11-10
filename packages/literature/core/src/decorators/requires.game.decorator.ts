@@ -6,7 +6,7 @@ import { GameGuard } from "../guards";
 export type RequiresGameData = {
 	status?: GameStatus;
 	turn?: boolean;
-	cardMappings?: boolean;
+	cards?: boolean;
 }
 
 export const RequiresGame = ( data: RequiresGameData = {} ) => {

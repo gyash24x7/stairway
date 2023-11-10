@@ -22,7 +22,7 @@ export class BotMoveCommandHandler implements ICommandHandler<BotMoveCommand> {
 	async execute( { gameId, player }: BotMoveCommand ) {
 		this.logger.debug( ">> execute()" );
 
-		const inference = await this.prisma.literature.inference.findUnique( {
+		await this.prisma.literature.inference.findUnique( {
 			where: { gameId_playerId: { gameId, playerId: player.id } }
 		} );
 

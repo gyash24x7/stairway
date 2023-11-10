@@ -1,9 +1,9 @@
-import type { GameData, HandData, InferenceData } from "@literature/types";
+import type { GameData, HandData, Inference, InferenceData } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
+import { SORTED_DECK } from "@s2h/cards";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { InferenceUpdatedEvent } from "../events";
-import { buildDefaultInference } from "../utils";
 
 export class CreateInferenceCommand implements ICommand {
 	constructor(
@@ -27,19 +27,36 @@ export class CreateInferenceCommandHandler implements ICommandHandler<CreateInfe
 		const inferenceData: InferenceData = {};
 
 		await Promise.all(
-			Object.values( gameData.players ).map( player => {
+			Object.keys( gameData.players ).map( playerId => {
 
-				const inference = buildDefaultInference(
-					Object.keys( gameData.players ),
-					Object.keys( gameData.teams ),
-					player.id,
-					hands[ player.id ].map( card => card.id )
-				);
+				const inference: Omit<Inference, "gameId" | "playerId"> = {
+					activeSets: {},
+					actualCardLocations: {},
+					possibleCardLocations: {},
+					inferredCardLocations: {}
+				};
 
-				inferenceData[ player.id ] = { ...inference, gameId: gameData.id };
+				const defaultProbablePlayers = Object.keys( gameData.players ).filter( player => player !== playerId );
+
+				Object.keys( gameData.teams ).forEach( teamId => {
+					inference.activeSets[ teamId ] = [];
+				} );
+
+				const cards = hands[ playerId ].map( card => card.id );
+
+				SORTED_DECK.forEach( card => {
+					if ( cards.includes( card.id ) ) {
+						inference.actualCardLocations[ card.id ] = playerId;
+						inference.possibleCardLocations[ card.id ] = [ playerId ];
+					} else {
+						inference.possibleCardLocations[ card.id ] = defaultProbablePlayers;
+					}
+				} );
+
+				inferenceData[ playerId ] = { ...inference, gameId: gameData.id, playerId };
 
 				return this.prisma.literature.inference.create( {
-					data: inferenceData[ player.id ]
+					data: inferenceData[ playerId ]
 				} );
 			} )
 		);

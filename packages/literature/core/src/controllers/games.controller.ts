@@ -5,7 +5,7 @@ import type {
 	AskMove,
 	CallMove,
 	CallSetInput,
-	CardMappingData,
+	CardsData,
 	CreateGameInput,
 	CreateTeamsInput,
 	GameData,
@@ -32,7 +32,7 @@ import {
 	TransferTurnCommand
 } from "../commands";
 import { Paths } from "../constants";
-import { CardMappings, GameInfo, PlayerInfo, RequiresGame } from "../decorators";
+import { CardsInfo, GameInfo, PlayerInfo, RequiresGame } from "../decorators";
 
 @RequiresAuth()
 @Controller( Paths.BASE )
@@ -95,48 +95,48 @@ export class GamesController {
 	}
 
 	@Put( Paths.ASK_CARD )
-	@RequiresGame( { status: GameStatus.IN_PROGRESS, cardMappings: true, turn: true } )
+	@RequiresGame( { status: GameStatus.IN_PROGRESS, cards: true, turn: true } )
 	async askCard(
 		@Body() input: AskCardInput,
 		@GameInfo() gameData: GameData,
 		@PlayerInfo() playerData: PlayerSpecificData,
-		@CardMappings() cardMappings: CardMappingData
+		@CardsInfo() cardsData: CardsData
 	): Promise<AskMove> {
 		this.logger.debug( ">> askCard()" );
 		const askMove: AskMove = await this.commandBus.execute(
-			new AskCardCommand( input, gameData, playerData, cardMappings )
+			new AskCardCommand( input, gameData, playerData, cardsData )
 		);
 		this.logger.debug( "<< askCard()" );
 		return askMove;
 	}
 
 	@Put( Paths.CALL_SET )
-	@RequiresGame( { status: GameStatus.IN_PROGRESS, cardMappings: true, turn: true } )
+	@RequiresGame( { status: GameStatus.IN_PROGRESS, cards: true, turn: true } )
 	async callSet(
 		@Body() input: CallSetInput,
 		@GameInfo() gameData: GameData,
 		@PlayerInfo() playerData: PlayerSpecificData,
-		@CardMappings() cardMappings: CardMappingData
+		@CardsInfo() cardsData: CardsData
 	): Promise<CallMove> {
 		this.logger.debug( ">> callSet()" );
 		const callMove: CallMove = await this.commandBus.execute(
-			new CallSetCommand( input, gameData, playerData, cardMappings )
+			new CallSetCommand( input, gameData, playerData, cardsData )
 		);
 		this.logger.debug( "<< callSet()" );
 		return callMove;
 	}
 
 	@Put( Paths.TRANSFER_TURN )
-	@RequiresGame( { status: GameStatus.IN_PROGRESS, cardMappings: true, turn: true } )
+	@RequiresGame( { status: GameStatus.IN_PROGRESS, cards: true, turn: true } )
 	async transferTurn(
 		@Body() input: TransferTurnInput,
 		@GameInfo() gameData: GameData,
 		@PlayerInfo() playerData: PlayerSpecificData,
-		@CardMappings() cardMappings: CardMappingData
+		@CardsInfo() cardsData: CardsData
 	): Promise<TransferMove> {
 		this.logger.debug( ">> transferTurn()" );
 		const transferMove: TransferMove = await this.commandBus.execute(
-			new TransferTurnCommand( input, gameData, playerData, cardMappings )
+			new TransferTurnCommand( input, gameData, playerData, cardsData )
 		);
 		this.logger.debug( "<< transferTurn()" );
 		return transferMove;

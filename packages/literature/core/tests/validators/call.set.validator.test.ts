@@ -4,7 +4,6 @@ import { CardSet } from "@s2h/cards";
 import { describe, expect, it } from "vitest";
 import { CallSetCommand } from "../../src/commands";
 import { Messages } from "../../src/constants";
-import { buildCardMappingData } from "../../src/utils";
 import { CallSetValidator } from "../../src/validators";
 import {
 	buildMockGameData,
@@ -15,6 +14,7 @@ import {
 	mockPlayer2,
 	mockPlayerIds
 } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "CallSetValidator", () => {
 
@@ -39,9 +39,9 @@ describe( "CallSetValidator", () => {
 			}
 		};
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardsData );
 
 		expect.assertions( 2 );
 		await validator.validate( command )
@@ -72,9 +72,9 @@ describe( "CallSetValidator", () => {
 			}
 		};
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardsData );
 
 		expect.assertions( 2 );
 		await validator.validate( command )
@@ -105,9 +105,9 @@ describe( "CallSetValidator", () => {
 			}
 		};
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardsData );
 
 		expect.assertions( 2 );
 		await validator.validate( command )
@@ -128,9 +128,9 @@ describe( "CallSetValidator", () => {
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const validator = new CallSetValidator();
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		expect.assertions( 2 );
 		await validator.validate( command )
@@ -161,9 +161,9 @@ describe( "CallSetValidator", () => {
 			}
 		};
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardsData );
 
 		expect.assertions( 2 );
 		await validator.validate( command )
@@ -193,9 +193,9 @@ describe( "CallSetValidator", () => {
 			}
 		};
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( input, mockGameData, mockPlayerSpecificData, cardsData );
 
 		expect.assertions( 2 );
 		await validator.validate( command )
@@ -214,9 +214,9 @@ describe( "CallSetValidator", () => {
 		} );
 
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		const validator = new CallSetValidator();
 		const { correctCall, calledSet } = await validator.validate( command );

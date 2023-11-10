@@ -4,8 +4,8 @@ import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { PlayerSpecificDataQuery, PlayerSpecificDataQueryHandler } from "../../src/queries";
-import { buildCardMappingData, buildHandData } from "../../src/utils";
 import { buildMockCardMappings, buildMockGameData, mockAuthInfo, mockTeamA, mockTeamB } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "PlayerSpecificGameQuery", () => {
 
@@ -36,7 +36,7 @@ describe( "PlayerSpecificGameQuery", () => {
 	it( "should return the current game data for the player when teams created", async () => {
 		const cardMappings = buildMockCardMappings();
 		const cardMappingsForPlayer = cardMappings.filter( cardMapping => cardMapping.playerId === mockAuthInfo.id );
-		const hands = buildHandData( buildCardMappingData( cardMappings ) );
+		const { hands } = buildCardsData( cardMappings );
 		mockPrisma.literature.cardMapping.findMany.mockResolvedValue( cardMappingsForPlayer );
 
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappings );

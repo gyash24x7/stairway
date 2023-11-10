@@ -15,11 +15,11 @@ export class AskCardValidator implements BusinessValidator<AskCardCommand, AskCa
 
 	private readonly logger = LoggerFactory.getLogger( AskCardValidator );
 
-	async validate( { gameData, playerData, cardMappings, input }: AskCardCommand ) {
+	async validate( { gameData, playerData, cardsData, input }: AskCardCommand ) {
 		this.logger.debug( ">> validateAskCardCommand()" );
 
 		const askedPlayer = gameData.players[ input.askedFrom ];
-		const playerWithAskedCard = gameData.players[ cardMappings[ input.askedFor ] ];
+		const playerWithAskedCard = gameData.players[ cardsData.mappings[ input.askedFor ] ];
 
 		if ( !askedPlayer ) {
 			this.logger.debug(

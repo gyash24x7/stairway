@@ -3,7 +3,6 @@ import type { HttpException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import { AskCardCommand } from "../../src/commands";
 import { Messages } from "../../src/constants";
-import { buildCardMappingData } from "../../src/utils";
 import { AskCardValidator } from "../../src/validators";
 import {
 	buildMockGameData,
@@ -15,6 +14,7 @@ import {
 	mockPlayer3,
 	mockPlayerIds
 } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "AskCardValidator", () => {
 
@@ -25,7 +25,7 @@ describe( "AskCardValidator", () => {
 		return { cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" };
 	} );
 
-	const cardMappingData = buildCardMappingData( cardMappingList );
+	const cardsData = buildCardsData( cardMappingList );
 
 	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 	const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
@@ -36,7 +36,7 @@ describe( "AskCardValidator", () => {
 			{ ...mockInput, askedFrom: "5" },
 			mockGameData,
 			mockPlayerSpecificData,
-			cardMappingData
+			cardsData
 		);
 
 		expect.assertions( 2 );
@@ -52,7 +52,7 @@ describe( "AskCardValidator", () => {
 			mockInput,
 			mockGameData,
 			{ ...mockPlayerSpecificData, id: mockPlayer2.id },
-			cardMappingData
+			cardsData
 		);
 
 		expect.assertions( 2 );
@@ -68,7 +68,7 @@ describe( "AskCardValidator", () => {
 			{ ...mockInput, askedFrom: mockPlayer3.id },
 			mockGameData,
 			mockPlayerSpecificData,
-			cardMappingData
+			cardsData
 		);
 
 		expect.assertions( 2 );
@@ -80,7 +80,7 @@ describe( "AskCardValidator", () => {
 
 	it( "should return the askedPlayer and playerWithTheAskedCard when valid", async () => {
 		const validator = new AskCardValidator();
-		const command = new AskCardCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new AskCardCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 		const result = await validator.validate( command );
 
 		expect( result.askedPlayer.id ).toBe( mockPlayer2.id );

@@ -1,11 +1,11 @@
-import type { CardMappingData } from "@literature/types";
+import type { CardsData } from "@literature/types";
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import type { Response } from "express";
 import { Constants } from "../constants";
 
-export const cardMappingsDecoratorFn = ( _data: unknown, context: ExecutionContext ): CardMappingData => {
+export const cardsInfoDecoratorFn = ( _data: unknown, context: ExecutionContext ): CardsData => {
 	const res = context.switchToHttp().getResponse<Response>();
 	return res.locals[ Constants.CARD_MAPPINGS ];
 };
 
-export const CardMappings = createParamDecorator( cardMappingsDecoratorFn );
+export const CardsInfo = createParamDecorator( cardsInfoDecoratorFn );

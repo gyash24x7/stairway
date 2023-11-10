@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { AskCardCommand, AskCardCommandHandler } from "../../src/commands";
 import { MoveCreatedEvent } from "../../src/events";
-import { buildCardMappingData } from "../../src/utils";
 import type { AskCardValidator } from "../../src/validators";
 import {
 	buildMockGameData,
@@ -19,6 +18,7 @@ import {
 	mockPlayer4,
 	mockPlayerIds
 } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "AskCardCommand", () => {
 
@@ -29,7 +29,7 @@ describe( "AskCardCommand", () => {
 		return { cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" };
 	} );
 
-	const cardMappingData = buildCardMappingData( cardMappingList );
+	const cardsData = buildCardsData( cardMappingList );
 
 	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 	const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
@@ -46,7 +46,7 @@ describe( "AskCardCommand", () => {
 			{ ...mockInput, askedFrom: mockPlayer4.id },
 			mockGameData,
 			mockPlayerSpecificData,
-			cardMappingData
+			cardsData
 		);
 
 		const result = await handler.execute( command );
@@ -69,7 +69,7 @@ describe( "AskCardCommand", () => {
 
 		expect( mockValidator.validate ).toHaveBeenCalledWith( command );
 
-		const event = new MoveCreatedEvent( mockAskMove, mockGameData, cardMappingData );
+		const event = new MoveCreatedEvent( mockAskMove, mockGameData, cardsData );
 		expect( mockEventBus.publish ).toBeCalledWith( event );
 	} );
 
@@ -78,7 +78,7 @@ describe( "AskCardCommand", () => {
 		mockPrisma.literature.move.create.mockResolvedValue( mockAskMove );
 
 		const handler = new AskCardCommandHandler( mockPrisma, mockValidator, mockEventBus );
-		const command = new AskCardCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new AskCardCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 		const result = await handler.execute( command );
 
 		expect( result ).toEqual( mockAskMove );
@@ -99,7 +99,7 @@ describe( "AskCardCommand", () => {
 
 		expect( mockValidator.validate ).toHaveBeenCalledWith( command );
 
-		const event = new MoveCreatedEvent( mockAskMove, mockGameData, cardMappingData );
+		const event = new MoveCreatedEvent( mockAskMove, mockGameData, cardsData );
 		expect( mockEventBus.publish ).toBeCalledWith( event );
 	} );
 

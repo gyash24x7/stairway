@@ -7,7 +7,7 @@ import { LoggerFactory } from "@s2h/core";
 import type { Request, Response } from "express";
 import { Constants } from "../constants";
 import type { RequiresGameData } from "../decorators";
-import { CardMappingsQuery, GameDataQuery, PlayerSpecificDataQuery } from "../queries";
+import { CardsDataQuery, GameDataQuery, PlayerSpecificDataQuery } from "../queries";
 
 @Injectable()
 export class GameGuard implements CanActivate {
@@ -34,10 +34,11 @@ export class GameGuard implements CanActivate {
 			throw new ForbiddenException();
 		}
 
-		res.locals[ Constants.PLAYER_DATA ] =
-			await this.queryBus.execute( new PlayerSpecificDataQuery( game, authInfo.id ) );
+		res.locals[ Constants.PLAYER_DATA ] = await this.queryBus.execute(
+			new PlayerSpecificDataQuery( game, authInfo.id )
+		);
 
-		const { status, turn, cardMappings }: RequiresGameData = this.reflector.get(
+		const { status, turn, cards }: RequiresGameData = this.reflector.get(
 			Constants.REQUIRES_KEY,
 			context.getHandler()
 		) ?? {};
@@ -52,8 +53,10 @@ export class GameGuard implements CanActivate {
 			throw new ForbiddenException();
 		}
 
-		if ( !!cardMappings ) {
-			res.locals[ Constants.CARD_MAPPINGS ] = await this.queryBus.execute( new CardMappingsQuery( game.id ) );
+		if ( !!cards ) {
+			res.locals[ Constants.CARDS_DATA ] = await this.queryBus.execute(
+				new CardsDataQuery( game.id )
+			);
 		}
 
 		return !!game;

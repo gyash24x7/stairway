@@ -4,31 +4,31 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { CreateInferenceCommand, UpdateStatusCommand } from "../../src/commands";
 import { GameStartedEvent, GameStartedEventHandler, HandsUpdatedEvent } from "../../src/events";
-import { buildCardMappingData, buildHandData } from "../../src/utils";
 import { buildMockCardMappings, buildMockGameData } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "GameStartedEvent", () => {
 
 	const mockCommandBus = mockDeep<CommandBus>();
 	const mockEventBus = mockDeep<EventBus>();
-	const cardMappingData = buildCardMappingData( buildMockCardMappings() );
-	const hands = buildHandData( cardMappingData );
+	const cardsData = buildCardsData( buildMockCardMappings() );
 	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED );
 
 
 	it( "should create inferences, update status and publish hand updated message to the players", async () => {
 		const handler = new GameStartedEventHandler( mockCommandBus, mockEventBus );
 
-		const event = new GameStartedEvent( mockGameData, cardMappingData );
+		const event = new GameStartedEvent( mockGameData, cardsData );
 		await handler.handle( event );
 
-		const createInferencesCommand = new CreateInferenceCommand( mockGameData, hands );
+		const createInferencesCommand = new CreateInferenceCommand( mockGameData, cardsData.hands );
 		const updateStatusCommand = new UpdateStatusCommand( "1", GameStatus.IN_PROGRESS );
+		const handsUpdatedEvent = new HandsUpdatedEvent( mockGameData.id, cardsData.hands );
 
 		expect( mockCommandBus.execute ).toHaveBeenCalledTimes( 2 );
 		expect( mockCommandBus.execute ).toHaveBeenCalledWith( updateStatusCommand );
 		expect( mockCommandBus.execute ).toHaveBeenCalledWith( createInferencesCommand );
-		expect( mockEventBus.publish ).toHaveBeenCalledWith( new HandsUpdatedEvent( mockGameData.id, hands ) );
+		expect( mockEventBus.publish ).toHaveBeenCalledWith( handsUpdatedEvent );
 	} );
 
 	afterEach( () => {

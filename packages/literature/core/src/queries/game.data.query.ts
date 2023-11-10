@@ -2,7 +2,7 @@ import type { GameData } from "@literature/types";
 import type { IQuery, IQueryHandler } from "@nestjs/cqrs";
 import { QueryHandler } from "@nestjs/cqrs";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { buildGameData } from "../utils";
+import { GameDataTransformer } from "../transformers";
 
 export class GameDataQuery implements IQuery {
 	constructor( public readonly gameId: string ) {}
@@ -13,7 +13,10 @@ export class GameDataQueryHandler implements IQueryHandler<GameDataQuery, GameDa
 
 	private readonly logger = LoggerFactory.getLogger( GameDataQueryHandler );
 
-	constructor( private readonly prisma: PrismaService ) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly transformer: GameDataTransformer
+	) {}
 
 	async execute( { gameId }: GameDataQuery ) {
 		this.logger.debug( ">> executeGameDataQuery()" );
@@ -34,6 +37,6 @@ export class GameDataQueryHandler implements IQueryHandler<GameDataQuery, GameDa
 		} );
 
 		this.logger.debug( "<< executeGameDataQuery()" );
-		return buildGameData( data );
+		return this.transformer.transform( data );
 	}
 }

@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { TransferTurnCommand, TransferTurnCommandHandler } from "../../src/commands";
 import { MoveCreatedEvent } from "../../src/events";
-import { buildCardMappingData } from "../../src/utils";
 import type { TransferTurnValidator } from "../../src/validators";
 import {
 	buildMockGameData,
@@ -19,6 +18,7 @@ import {
 	mockTransferMove,
 	mockTransferTurnInput as mockInput
 } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "TransferTurnCommand", () => {
 
@@ -40,11 +40,11 @@ describe( "TransferTurnCommand", () => {
 		mockPrisma.literature.move.create.mockResolvedValue( mockTransferMove );
 		mockValidator.validate.mockResolvedValue( { transferringPlayer: mockPlayer1, receivingPlayer: mockPlayer3 } );
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const handler = new TransferTurnCommandHandler( mockPrisma, mockValidator, mockEventBus );
-		const command = new TransferTurnCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new TransferTurnCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		const result = await handler.execute( command );
 
@@ -63,7 +63,7 @@ describe( "TransferTurnCommand", () => {
 			}
 		} );
 		expect( mockEventBus.publish )
-			.toHaveBeenCalledWith( new MoveCreatedEvent( mockTransferMove, mockGameData, cardMappingData ) );
+			.toHaveBeenCalledWith( new MoveCreatedEvent( mockTransferMove, mockGameData, cardsData ) );
 	} );
 
 	afterEach( () => {

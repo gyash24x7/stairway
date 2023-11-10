@@ -5,22 +5,22 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { UpdateHandsCommand, UpdateHandsCommandHandler } from "../../src/commands";
 import { HandsUpdatedEvent } from "../../src/events";
-import { buildCardMappingData } from "../../src/utils";
 import { buildMockCardMappings, mockAskMove, mockCallMove } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "UpdateHandsCommand", () => {
 
 	const mockPrisma = mockDeep<PrismaService>();
 	const mockEventBus = mockDeep<EventBus>();
 	const cardMappingList = buildMockCardMappings();
-	const cardMappingData = buildCardMappingData( cardMappingList );
+	const cardsData = buildCardsData( cardMappingList );
 
 	it( "should transfer the card to the player who asked for it on successful ask", async () => {
-		cardMappingData[ mockAskMove.data.card ] = mockAskMove.data.from;
+		cardsData.mappings[ mockAskMove.data.card ] = mockAskMove.data.from;
 		const card = getPlayingCardFromId( mockAskMove.data.card );
 
 		const handler = new UpdateHandsCommandHandler( mockPrisma, mockEventBus );
-		const command = new UpdateHandsCommand( mockAskMove, cardMappingData );
+		const command = new UpdateHandsCommand( mockAskMove, cardsData );
 
 		const updatedHands = await handler.execute( command );
 
@@ -37,11 +37,11 @@ describe( "UpdateHandsCommand", () => {
 	} );
 
 	it( "should do nothing on unsuccessful ask", async () => {
-		cardMappingData[ mockAskMove.data.card ] = mockAskMove.data.from;
+		cardsData.mappings[ mockAskMove.data.card ] = mockAskMove.data.from;
 		const card = getPlayingCardFromId( mockAskMove.data.card );
 
 		const handler = new UpdateHandsCommandHandler( mockPrisma, mockEventBus );
-		const command = new UpdateHandsCommand( { ...mockAskMove, success: false }, cardMappingData );
+		const command = new UpdateHandsCommand( { ...mockAskMove, success: false }, cardsData );
 
 		const updatedHands = await handler.execute( command );
 
@@ -55,7 +55,7 @@ describe( "UpdateHandsCommand", () => {
 	it( "should remove the cards of that set on successful call", async () => {
 		const calledSet = mockCallMove.data.cardSet;
 		const handler = new UpdateHandsCommandHandler( mockPrisma, mockEventBus );
-		const command = new UpdateHandsCommand( mockCallMove, cardMappingData );
+		const command = new UpdateHandsCommand( mockCallMove, cardsData );
 
 		const updatedHands = await handler.execute( command );
 

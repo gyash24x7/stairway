@@ -15,7 +15,7 @@ export class CallSetValidator implements BusinessValidator<CallSetCommand, CallS
 
 	private readonly logger = LoggerFactory.getLogger( CallSetValidator );
 
-	async validate( { input: { data }, gameData, playerData, cardMappings }: CallSetCommand ) {
+	async validate( { input: { data }, gameData, playerData, cardsData }: CallSetCommand ) {
 		this.logger.debug( ">> validateCallSetCommand()" );
 		const calledCards = Object.keys( data ).map( getPlayingCardFromId );
 		const cardSets = new Set( calledCards.map( card => card.set ) );
@@ -47,10 +47,10 @@ export class CallSetValidator implements BusinessValidator<CallSetCommand, CallS
 		const [ calledSet ] = cardSets;
 		const correctCall: Record<string, string> = {};
 
-		Object.keys( cardMappings ).forEach( cardId => {
+		Object.keys( cardsData.mappings ).forEach( cardId => {
 			const card = getPlayingCardFromId( cardId );
 			if ( card.set === calledSet ) {
-				correctCall[ cardId ] = cardMappings[ cardId ];
+				correctCall[ cardId ] = cardsData.mappings[ cardId ];
 			}
 		} );
 

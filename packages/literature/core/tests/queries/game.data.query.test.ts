@@ -2,6 +2,7 @@ import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { GameDataQuery, GameDataQueryHandler } from "../../src/queries";
+import { GameDataTransformer } from "../../src/transformers";
 import {
 	deck,
 	mockAskMove,
@@ -19,6 +20,7 @@ import {
 describe( "GameDataQuery", () => {
 
 	const mockPrisma = mockDeep<PrismaService>();
+	const transformer = new GameDataTransformer();
 	const cardMappings = deck.map( ( card, index ) => {
 		return { cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" };
 	} );
@@ -33,7 +35,7 @@ describe( "GameDataQuery", () => {
 			moves: [ mockTransferMove, mockCallMove, mockAskMove ]
 		} as any );
 
-		const handler = new GameDataQueryHandler( mockPrisma );
+		const handler = new GameDataQueryHandler( mockPrisma, transformer );
 		const query = new GameDataQuery( "1" );
 
 		const result = await handler.execute( query );

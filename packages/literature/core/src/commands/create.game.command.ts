@@ -4,7 +4,7 @@ import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";
 import { generateGameCode } from "@s2h/cards";
 import { LoggerFactory, PrismaService } from "@s2h/core";
-import { buildGameData } from "../utils";
+import { GameDataTransformer } from "../transformers";
 
 export class CreateGameCommand implements ICommand {
 	constructor(
@@ -18,7 +18,10 @@ export class CreateGameCommandHandler implements ICommandHandler<CreateGameComma
 
 	private readonly logger = LoggerFactory.getLogger( CreateGameCommandHandler );
 
-	constructor( private readonly prisma: PrismaService ) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly transformer: GameDataTransformer
+	) {}
 
 	async execute( { input, authInfo }: CreateGameCommand ) {
 		this.logger.debug( ">> executeCreateGameCommand()" );
@@ -41,6 +44,6 @@ export class CreateGameCommandHandler implements ICommandHandler<CreateGameComma
 		} );
 
 		this.logger.debug( "<< executeCreateGameCommand()" );
-		return buildGameData( { ...game, players: [ player ] } );
+		return this.transformer.transform( { ...game, players: [ player ] } );
 	}
 }

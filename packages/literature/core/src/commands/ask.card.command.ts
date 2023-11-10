@@ -1,11 +1,4 @@
-import type {
-	AskCardInput,
-	AskMove,
-	AskMoveData,
-	CardMappingData,
-	GameData,
-	PlayerSpecificData
-} from "@literature/types";
+import type { AskCardInput, AskMove, AskMoveData, CardsData, GameData, PlayerSpecificData } from "@literature/types";
 import { MoveType } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
@@ -18,7 +11,7 @@ export class AskCardCommand implements ICommand {
 		public readonly input: AskCardInput,
 		public readonly gameData: GameData,
 		public readonly playerData: PlayerSpecificData,
-		public readonly cardMappings: CardMappingData
+		public readonly cardsData: CardsData
 	) {}
 }
 
@@ -36,7 +29,7 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 	async execute( command: AskCardCommand ) {
 		this.logger.debug( ">> executeAskCardCommand()" );
 
-		const { input, playerData, gameData, cardMappings } = command;
+		const { input, playerData, gameData, cardsData } = command;
 		const { playerWithAskedCard, askedPlayer } = await this.validator.validate( command );
 
 		const moveSuccess = askedPlayer.id === playerWithAskedCard.id;
@@ -58,7 +51,7 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 			}
 		} );
 
-		this.eventBus.publish( new MoveCreatedEvent( move, gameData, cardMappings ) );
+		this.eventBus.publish( new MoveCreatedEvent( move, gameData, cardsData ) );
 		this.logger.debug( "Published MoveCreatedEvent!" );
 
 		this.logger.debug( "<< executeAskCardCommand()" );

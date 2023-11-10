@@ -4,7 +4,6 @@ import type { BusinessValidator } from "@s2h/core";
 import { LoggerFactory } from "@s2h/core";
 import type { TransferTurnCommand } from "../commands";
 import { Messages } from "../constants";
-import { buildHandData } from "../utils";
 
 export type TransferTurnValidatorResponse = {
 	transferringPlayer: Player;
@@ -16,11 +15,10 @@ export class TransferTurnValidator implements BusinessValidator<TransferTurnComm
 
 	private readonly logger = LoggerFactory.getLogger( TransferTurnValidator );
 
-	async validate( { gameData, cardMappings, input, playerData }: TransferTurnCommand ) {
+	async validate( { gameData, cardsData, input, playerData }: TransferTurnCommand ) {
 		this.logger.debug( ">> validateTransferTurnCommand()" );
 
 		const [ lastMove ] = gameData.moves;
-		const hands = buildHandData( cardMappings );
 
 		if ( lastMove.type !== MoveType.CALL_SET || !lastMove.success ) {
 			this.logger.error( Messages.TRANSFER_AFTER_SUCCESSFUL_CALL );
@@ -29,7 +27,7 @@ export class TransferTurnValidator implements BusinessValidator<TransferTurnComm
 
 		const transferringPlayer = gameData.players[ playerData.id ];
 		const receivingPlayer = gameData.players[ input.transferTo ];
-		const receivingPlayerHand = hands[ input.transferTo ] ?? [];
+		const receivingPlayerHand = cardsData.hands[ input.transferTo ] ?? [];
 
 		if ( !receivingPlayer ) {
 			this.logger.error( Messages.PLAYER_NOT_PART_OF_GAME );

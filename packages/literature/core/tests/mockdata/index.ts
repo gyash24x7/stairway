@@ -28,7 +28,7 @@ import {
 	shuffle,
 	SORTED_DECK
 } from "@s2h/cards";
-import { buildDefaultInference, buildGameData } from "../../src/utils";
+import { buildDefaultInference, buildGameData } from "./utils";
 
 function areTeamsCreated( status: GameStatus ) {
 	return status === GameStatus.TEAMS_CREATED || status === GameStatus.IN_PROGRESS || status === GameStatus.COMPLETED;

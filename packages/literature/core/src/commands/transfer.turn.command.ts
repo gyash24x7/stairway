@@ -1,5 +1,5 @@
 import type {
-	CardMappingData,
+	CardsData,
 	GameData,
 	PlayerSpecificData,
 	TransferMove,
@@ -18,7 +18,7 @@ export class TransferTurnCommand implements ICommand {
 		public readonly input: TransferTurnInput,
 		public readonly gameData: GameData,
 		public readonly playerData: PlayerSpecificData,
-		public readonly cardMappings: CardMappingData
+		public readonly cardsData: CardsData
 	) {}
 }
 
@@ -36,7 +36,7 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 	async execute( command: TransferTurnCommand ) {
 		this.logger.debug( ">> executeTransferTurnCommand()" );
 
-		const { input, gameData, cardMappings } = command;
+		const { input, gameData, cardsData } = command;
 		const { transferringPlayer, receivingPlayer } = await this.validator.validate( command );
 
 		const transferMoveData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
@@ -52,7 +52,7 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 			}
 		} );
 
-		this.eventBus.publish( new MoveCreatedEvent( move, gameData, cardMappings ) );
+		this.eventBus.publish( new MoveCreatedEvent( move, gameData, cardsData ) );
 		this.logger.debug( "Published MoveCreatedEvent!" );
 
 		this.logger.debug( "<< executeTransferTurnCommand()" );

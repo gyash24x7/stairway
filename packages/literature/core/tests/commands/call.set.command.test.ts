@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { CallSetCommand, CallSetCommandHandler } from "../../src/commands";
 import { MoveCreatedEvent } from "../../src/events";
-import { buildCardMappingData } from "../../src/utils";
 import type { CallSetValidator } from "../../src/validators";
 import {
 	buildMockGameData,
@@ -18,6 +17,7 @@ import {
 	mockPlayer4,
 	mockPlayerIds
 } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "CallSetCommand", () => {
 
@@ -52,9 +52,9 @@ describe( "CallSetCommand", () => {
 			calledSet: CardSet.LOWER_CLUBS
 		} );
 
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		const handler = new CallSetCommandHandler( mockPrisma, mockValidator, mockEventBus );
 		const result = await handler.execute( command );
@@ -77,7 +77,7 @@ describe( "CallSetCommand", () => {
 
 		expect( mockValidator.validate ).toHaveBeenCalledWith( command );
 
-		const event = new MoveCreatedEvent( mockMove, mockGameData, cardMappingData );
+		const event = new MoveCreatedEvent( mockMove, mockGameData, cardsData );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 
@@ -90,9 +90,9 @@ describe( "CallSetCommand", () => {
 		} );
 
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const cardMappingData = buildCardMappingData( cardMappingList );
+		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardMappingData );
+		const command = new CallSetCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		mockPrisma.literature.move.create.mockResolvedValue( mockCallMove );
 		mockValidator.validate.mockResolvedValue( {
@@ -121,7 +121,7 @@ describe( "CallSetCommand", () => {
 
 		expect( mockValidator.validate ).toHaveBeenCalledWith( command );
 
-		const event = new MoveCreatedEvent( mockCallMove, mockGameData, cardMappingData );
+		const event = new MoveCreatedEvent( mockCallMove, mockGameData, cardsData );
 		expect( mockEventBus.publish ).toHaveBeenCalledWith( event );
 	} );
 

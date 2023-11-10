@@ -1,15 +1,15 @@
-import type { AskMoveData, CallMoveData, CardMappingData, HandData, Move } from "@literature/types";
+import type { AskMoveData, CallMoveData, CardsData, HandData, Move } from "@literature/types";
 import { MoveType } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
+import { getPlayingCardFromId } from "@s2h/cards";
 import { LoggerFactory, PrismaService } from "@s2h/core";
 import { HandsUpdatedEvent } from "../events";
-import { buildHandData } from "../utils";
 
 export class UpdateHandsCommand implements ICommand {
 	constructor(
 		public readonly currentMove: Move,
-		public readonly cardMappings: CardMappingData
+		public readonly cardsData: CardsData
 	) {}
 }
 
@@ -23,7 +23,7 @@ export class UpdateHandsCommandHandler implements ICommandHandler<UpdateHandsCom
 		private readonly eventBus: EventBus
 	) {}
 
-	async execute( { cardMappings, currentMove }: UpdateHandsCommand ) {
+	async execute( { cardsData, currentMove }: UpdateHandsCommand ) {
 		this.logger.debug( ">> executeUpdateHandsCommand()" );
 
 		let hasCardTransferHappened = false;
@@ -37,7 +37,7 @@ export class UpdateHandsCommandHandler implements ICommandHandler<UpdateHandsCom
 						data: { playerId: by }
 					} );
 
-					cardMappings[ card ] = by;
+					cardsData.mappings[ card ] = by;
 					hasCardTransferHappened = true;
 				}
 				break;
@@ -50,14 +50,23 @@ export class UpdateHandsCommandHandler implements ICommandHandler<UpdateHandsCom
 				} );
 
 				calledCards.map( cardId => {
-					delete cardMappings[ cardId ];
+					delete cardsData.mappings[ cardId ];
 				} );
 
 				hasCardTransferHappened = true;
 				break;
 		}
 
-		const updatedHands = buildHandData( cardMappings );
+		const updatedHands: HandData = {};
+		Object.keys( cardsData.mappings ).map( cardId => {
+			const playerId = cardsData.mappings[ cardId ];
+			if ( !updatedHands[ playerId ] ) {
+				updatedHands[ playerId ] = [];
+			}
+			updatedHands[ playerId ].push( getPlayingCardFromId( cardId ) );
+		} );
+
+		cardsData.hands = updatedHands;
 
 		if ( hasCardTransferHappened ) {
 			this.eventBus.publish( new HandsUpdatedEvent( currentMove.gameId, updatedHands ) );

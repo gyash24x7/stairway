@@ -1,6 +1,7 @@
 import type {
 	CardMapping,
 	CardMappingData,
+	CardsData,
 	GameData,
 	GameStatus,
 	HandData,
@@ -11,24 +12,20 @@ import type {
 } from "@literature/types";
 import { getPlayingCardFromId, SORTED_DECK } from "@s2h/cards";
 
-export function buildHandData( cardMappings: Record<string, string> ): HandData {
-	const data: HandData = {};
-	Object.keys( cardMappings ).map( cardId => {
-		const playerId = cardMappings[ cardId ];
-		if ( !data[ playerId ] ) {
-			data[ playerId ] = [];
-		}
-		data[ playerId ].push( getPlayingCardFromId( cardId ) );
-	} );
-	return data;
-}
-
-export function buildCardMappingData( cardMappings: CardMapping[] ): CardMappingData {
-	const cardMappingData: CardMappingData = {};
+export function buildCardsData( cardMappings: CardMapping[] ): CardsData {
+	const mappings: CardMappingData = {};
+	const hands: HandData = {};
 	cardMappings.forEach( cardMapping => {
-		cardMappingData[ cardMapping.cardId ] = cardMapping.playerId;
+		mappings[ cardMapping.cardId ] = cardMapping.playerId;
+
+		if ( !hands[ cardMapping.playerId ] ) {
+			hands[ cardMapping.playerId ] = [];
+		}
+
+		hands[ cardMapping.playerId ].push( getPlayingCardFromId( cardMapping.cardId ) );
 	} );
-	return cardMappingData;
+
+	return { mappings, hands };
 }
 
 export function buildGameData( data: RawGameData ): GameData {

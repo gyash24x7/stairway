@@ -1,11 +1,4 @@
-import type {
-	CallMove,
-	CallMoveData,
-	CallSetInput,
-	CardMappingData,
-	GameData,
-	PlayerSpecificData
-} from "@literature/types";
+import type { CallMove, CallMoveData, CallSetInput, CardsData, GameData, PlayerSpecificData } from "@literature/types";
 import { MoveType } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler, EventBus } from "@nestjs/cqrs";
@@ -19,7 +12,7 @@ export class CallSetCommand implements ICommand {
 		public readonly input: CallSetInput,
 		public readonly gameData: GameData,
 		public readonly playerData: PlayerSpecificData,
-		public readonly cardMappings: CardMappingData
+		public readonly cardsData: CardsData
 	) {}
 }
 
@@ -37,7 +30,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, Ca
 	async execute( command: CallSetCommand ) {
 		this.logger.debug( ">> executeCallSetCommand()" );
 
-		const { input: { data }, gameData, playerData, cardMappings } = command;
+		const { input: { data }, gameData, playerData, cardsData } = command;
 		const { correctCall, calledSet } = await this.validator.validate( command );
 
 		const callingPlayer = gameData.players[ playerData.id ]!;
@@ -71,7 +64,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, Ca
 			}
 		} );
 
-		this.eventBus.publish( new MoveCreatedEvent( move, gameData, cardMappings ) );
+		this.eventBus.publish( new MoveCreatedEvent( move, gameData, cardsData ) );
 		this.logger.debug( "Published MoveCreatedEvent!" );
 
 		this.logger.debug( "<< executeCallSetCommand()" );

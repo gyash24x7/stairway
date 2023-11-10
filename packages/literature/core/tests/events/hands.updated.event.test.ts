@@ -4,14 +4,13 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { Constants, GameEvents } from "../../src/constants";
 import { HandsUpdatedEvent, HandsUpdatedEventHandler } from "../../src/events";
-import { buildCardMappingData, buildHandData } from "../../src/utils";
 import { buildMockCardMappings, buildMockGameData } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "HandsUpdatedEvent", () => {
 
 	const mockRealtimeService = mockDeep<RealtimeService>();
-	const cardMappingData = buildCardMappingData( buildMockCardMappings() );
-	const hands = buildHandData( cardMappingData );
+	const { hands } = buildCardsData( buildMockCardMappings() );
 	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED );
 
 	it( "should publish hand updated message to the players", async () => {

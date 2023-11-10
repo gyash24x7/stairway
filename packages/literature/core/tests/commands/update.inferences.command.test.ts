@@ -29,7 +29,7 @@ describe( "UpdateInferencesCommand", () => {
 
 	it( "should updated inferences for all players on successful ask", async () => {
 		const handler = new UpdateInferenceCommandHandler( mockPrisma, mockQueryBus, mockEventBus );
-		const command = new UpdateInferenceCommand( mockAskMove );
+		const command = new UpdateInferenceCommand( mockAskMove, mockGameData.players );
 
 		const updatedInferences = await handler.execute( command );
 
@@ -51,7 +51,7 @@ describe( "UpdateInferencesCommand", () => {
 
 	it( "should update inferences for all players on unsuccessful ask", async () => {
 		const handler = new UpdateInferenceCommandHandler( mockPrisma, mockQueryBus, mockEventBus );
-		const command = new UpdateInferenceCommand( { ...mockAskMove, success: false } );
+		const command = new UpdateInferenceCommand( { ...mockAskMove, success: false }, mockGameData.players );
 
 		const updatedInferences = await handler.execute( command );
 
@@ -76,7 +76,7 @@ describe( "UpdateInferencesCommand", () => {
 
 	it( "should remove inferences for the called set for all players on call", async () => {
 		const handler = new UpdateInferenceCommandHandler( mockPrisma, mockQueryBus, mockEventBus );
-		const command = new UpdateInferenceCommand( mockCallMove );
+		const command = new UpdateInferenceCommand( mockCallMove, mockGameData.players );
 
 		const updatedInferences = await handler.execute( command );
 
@@ -107,7 +107,7 @@ describe( "UpdateInferencesCommand", () => {
 
 	it( "should do nothing if the move is a transfer move", async () => {
 		const handler = new UpdateInferenceCommandHandler( mockPrisma, mockQueryBus, mockEventBus );
-		const command = new UpdateInferenceCommand( mockTransferMove );
+		const command = new UpdateInferenceCommand( mockTransferMove, mockGameData.players );
 
 		const updatedInferences = await handler.execute( command );
 

@@ -5,16 +5,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { CreateInferenceCommand, CreateInferenceCommandHandler } from "../../src/commands";
 import { InferenceUpdatedEvent } from "../../src/events";
-import { buildCardMappingData, buildHandData } from "../../src/utils";
 import { buildMockCardMappings, buildMockGameData, buildMockInferenceData } from "../mockdata";
+import { buildCardsData } from "../mockdata/utils";
 
 describe( "CreateInferencesCommand", () => {
 
 	const mockPrisma = mockDeep<PrismaService>();
 	const mockEventBus = mockDeep<EventBus>();
 	const cardMappingList = buildMockCardMappings();
-	const cardMappingData = buildCardMappingData( cardMappingList );
-	const hands = buildHandData( cardMappingData );
+	const { hands } = buildCardsData( cardMappingList );
 	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED, cardMappingList );
 	const inferenceData = buildMockInferenceData( mockGameData.id, cardMappingList );
 
