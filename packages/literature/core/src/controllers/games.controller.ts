@@ -1,5 +1,5 @@
 import { AuthInfo, RequiresAuth } from "@auth/core";
-import type { UserAuthInfo } from "@auth/types";
+import type { UserAuthInfo } from "@auth/data";
 import type {
 	AskCardInput,
 	AskMove,

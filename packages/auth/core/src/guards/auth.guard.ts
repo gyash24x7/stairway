@@ -1,48 +1,31 @@
-import type { UserAuthInfo } from "@auth/types";
 import type { CanActivate, ExecutionContext } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { JwtService } from "@nestjs/jwt";
-import { LoggerFactory } from "@s2h/core";
-import type { Request, Response } from "express";
-
-import type { Socket } from "socket.io";
+import { LoggerFactory, PrismaService } from "@s2h/core";
+import type { Response } from "express";
 import { Constants } from "../constants";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
 	private readonly logger = LoggerFactory.getLogger( AuthGuard );
 
-	constructor(
-		private readonly jwtService: JwtService,
-		private readonly reflector: Reflector
-	) {}
+	constructor( private readonly prisma: PrismaService ) {}
 
 	async canActivate( context: ExecutionContext ) {
 		this.logger.debug( ">> canActivate()" );
 
-		const isWs = this.reflector.get<boolean>( Constants.IS_WS, context.getHandler() );
-
-		const req = context.switchToHttp().getRequest<Request>();
 		const res = context.switchToHttp().getResponse<Response>();
-		const token: string = req.cookies[ Constants.AUTH_COOKIE ];
+		const userId: string = res.locals[ Constants.AUTH_INFO_ID ];
 
-		if ( isWs ) {
-			const client: Socket = context.switchToWs().getClient();
-			this.logger.debug( "WsClient Auth: %o", client.handshake.auth );
-		}
-
-		if ( !token ) {
+		if ( !userId ) {
 			this.logger.debug( "<< canActivate()" );
 			return false;
 		}
 
-		const authInfo = await this.jwtService.verifyAsync<UserAuthInfo>( token ).catch( () => null );
+		const user = await this.prisma.user.findUnique( { where: { id: userId } } );
 
-		res.locals[ Constants.AUTH_INFO ] = authInfo;
-		res.locals[ Constants.AUTH_TOKEN ] = token;
+		res.locals[ Constants.AUTH_INFO ] = user;
 		this.logger.debug( "<< canActivate()" );
-		return !!authInfo;
+		return !!user;
 	}
 
 }

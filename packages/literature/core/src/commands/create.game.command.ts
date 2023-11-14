@@ -1,4 +1,4 @@
-import type { UserAuthInfo } from "@auth/types";
+import type { UserAuthInfo } from "@auth/data";
 import type { CreateGameInput, GameData } from "@literature/types";
 import type { ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { CommandHandler } from "@nestjs/cqrs";

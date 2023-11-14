@@ -1,28 +1,18 @@
-import { Module } from "@nestjs/common";
-import { CqrsModule } from "@nestjs/cqrs";
-import { JwtModule as NestJwtModule } from "@nestjs/jwt";
-import { PrismaModule } from "@s2h/core";
-import * as process from "process";
-import { commandHandlers } from "./commands";
+import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { AuthController } from "./controllers";
-
-const JwtModule = NestJwtModule.register( {
-	global: true,
-	secret: process.env[ "JWT_SECRET" ],
-	signOptions: {
-		expiresIn: "1d",
-		issuer: `http://${ process.env[ "AUTH_DOMAIN" ] }`,
-		algorithm: "HS256",
-		audience: process.env[ "AUTH_AUDIENCE" ]
-	}
-} );
+import { AuthMiddleware } from "./middlewares";
+import { AuthService, JwtService } from "./services";
 
 @Module( {
-	imports: [ PrismaModule, CqrsModule, JwtModule ],
+	imports: [],
 	controllers: [ AuthController ],
-	providers: [ ...commandHandlers ]
+	providers: [ AuthService, JwtService ]
 } )
-export class AuthModule {}
+export class AuthModule implements NestModule {
+	configure( consumer: MiddlewareConsumer ) {
+		consumer.apply( AuthMiddleware ).forRoutes( "*" );
+	}
+}
 
 export * from "./guards";
 export * from "./decorators";

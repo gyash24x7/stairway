@@ -23,7 +23,7 @@
 		"types": [ "node" ],
 		"paths": {
 			"@auth/core": [ "packages/auth/core/src/index.ts" ],
-			"@auth/types": [ "packages/auth/types/src/index.ts" ],
+			"@auth/data": [ "packages/auth/data/src/index.ts" ],
 			"@auth/ui": [ "packages/auth/ui/src/index.ts" ],
 			"@literature/core": [ "packages/literature/core/src/index.ts" ],
 			"@literature/types": [ "packages/literature/types/src/index.ts" ],

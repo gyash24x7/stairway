@@ -1,4 +1,4 @@
-import type { UserAuthInfo } from "@auth/types";
+import type { UserAuthInfo } from "@auth/data";
 import { createParamDecorator, ExecutionContext } from "@nestjs/common";
 import type { Response } from "express";
 import { Constants } from "../constants";

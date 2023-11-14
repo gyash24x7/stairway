@@ -1,4 +1,4 @@
-import type { UserAuthInfo } from "@auth/types";
+import type { UserAuthInfo } from "@auth/data";
 import type { GameData } from "@literature/types";
 import { BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
