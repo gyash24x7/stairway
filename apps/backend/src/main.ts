@@ -1,14 +1,15 @@
+import { AuthModule } from "@auth/core";
 import { LiteratureModule } from "@literature/core";
 import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
-import { LoggerFactory, loggerMiddleware } from "@s2h/core";
+import { LoggerFactory, loggerMiddleware, PrismaModule, RealtimeModule } from "@s2h/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-@Module( { imports: [ LiteratureModule ] } )
+@Module( { imports: [ PrismaModule, RealtimeModule, AuthModule, LiteratureModule ] } )
 export class AppModule {}
 
 async function bootstrap() {
