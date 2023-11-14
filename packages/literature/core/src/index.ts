@@ -6,12 +6,13 @@ import { commandHandlers } from "./commands";
 import { GamesController } from "./controllers";
 import { eventHandlers } from "./events";
 import { queryHandlers } from "./queries";
+import { transformers } from "./transformers";
 import { validators } from "./validators";
 
 @Module( {
 	imports: [ PrismaModule, AuthModule, CqrsModule, RealtimeModule ],
 	controllers: [ GamesController ],
-	providers: [ ...commandHandlers, ...queryHandlers, ...eventHandlers, ...validators ]
+	providers: [ ...commandHandlers, ...queryHandlers, ...eventHandlers, ...validators, ...transformers ]
 } )
 export class LiteratureModule implements OnModuleInit {
 
