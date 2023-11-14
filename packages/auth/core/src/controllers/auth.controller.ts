@@ -25,9 +25,9 @@ export class AuthController {
 
 	@Get()
 	@RequiresAuth()
-	async getAuthUser( @AuthInfo() authUser: UserAuthInfo ) {
+	async getAuthInfo( @AuthInfo() authInfo: UserAuthInfo ) {
 		this.logger.debug( ">> getAuthUser()" );
-		return authUser;
+		return authInfo;
 	}
 
 	@Delete( Paths.LOGOUT )

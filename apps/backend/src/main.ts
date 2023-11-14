@@ -9,7 +9,9 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-@Module( { imports: [ PrismaModule, RealtimeModule, AuthModule, LiteratureModule ] } )
+@Module( {
+	imports: [ PrismaModule, RealtimeModule, AuthModule, LiteratureModule ]
+} )
 export class AppModule {}
 
 async function bootstrap() {

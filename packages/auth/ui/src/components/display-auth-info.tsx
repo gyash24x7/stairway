@@ -7,7 +7,7 @@ export function DisplayAuthInfo() {
 	const authInfo = useAuthInfo();
 	const navigate = useNavigate();
 	const { execute, isLoading } = useLogoutAction();
-	const handleLogout = useCallback( () => execute( {} ).then( () => navigate( "/auth/login" ) ), [] );
+	const handleLogout = useCallback( () => execute( {} ).then( () => navigate( "/login" ) ), [] );
 
 	return (
 		<Group>

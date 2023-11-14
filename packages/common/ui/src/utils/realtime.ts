@@ -3,8 +3,8 @@ import { Manager, Socket } from "socket.io-client";
 const manager = new Manager( "ws://localhost:8001" );
 const socketMap = new Map<string, Socket>();
 
-export function initializeSocketForNamespace( namespace: string, token?: string | null ) {
-	const socket = manager.socket( "/" + namespace, { auth: { token } } );
+export function initializeSocketForNamespace( namespace: string ) {
+	const socket = manager.socket( "/" + namespace );
 	socketMap.set( namespace, socket );
 
 	socket.on( "connect", () => {

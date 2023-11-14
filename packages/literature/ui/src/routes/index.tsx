@@ -1,4 +1,4 @@
-import { PrivateLayout } from "@auth/ui";
+import { AppLayout } from "@auth/ui";
 import { ErrorPage } from "@s2h/ui";
 import { IndexRouteObject, Outlet, RouteObject } from "react-router-dom";
 import {
@@ -11,7 +11,7 @@ import { GameProvider, gameStoreLoader } from "../store";
 
 const literatureHomeRoute: IndexRouteObject = {
 	index: true,
-	element: <PrivateLayout footer={ <LiteratureHomePageFooter/> }><LiteratureHomePage/></PrivateLayout>,
+	element: <AppLayout footer={ <LiteratureHomePageFooter/> }><LiteratureHomePage/></AppLayout>,
 	errorElement: <ErrorPage/>
 };
 
@@ -19,9 +19,9 @@ const literatureGameRoute: RouteObject = {
 	path: ":gameId",
 	element: (
 		<GameProvider>
-			<PrivateLayout footer={ <LiteratureGamePageFooter/> }>
+			<AppLayout footer={ <LiteratureGamePageFooter/> }>
 				<GamePage/>
-			</PrivateLayout>
+			</AppLayout>
 		</GameProvider>
 	),
 	errorElement: <ErrorPage/>,

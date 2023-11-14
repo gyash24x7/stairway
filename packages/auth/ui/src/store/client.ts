@@ -1,44 +1,46 @@
-import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/data";
+import type { UserAuthInfo } from "@auth/data";
+import superagent from "superagent";
 
 const BASE_URL = "http://localhost:8000/api";
+const GOOGLE_CLIENT_ID = "920568500477-i0243mcdaku24c1sh07tdhr05oprh4vs.apps.googleusercontent.com";
+const GOOGLE_REDIRECT_URI = "http://localhost:8000/api/auth/callback";
 
 export class Paths {
 	public static readonly AUTH_INFO = "/auth";
-	public static readonly GET_TOKEN = "/auth/token";
-	public static readonly LOGIN = "/auth/login";
 	public static readonly LOGOUT = "/auth/logout";
-	public static readonly SIGNUP = "/auth/signup";
 }
-
-const query = <T = any>( path: string ) => fetch( BASE_URL + path, { credentials: "include" } )
-	.then<T>( res => res.json() );
-
-const mutation = <T = any>( path: string, data?: any ) => fetch( BASE_URL + path, {
-	method: "POST",
-	credentials: "include",
-	body: !!data ? JSON.stringify( data ) : undefined
-} ).then<T>( res => res.json() );
 
 export class AuthClient {
 
 	async loadAuthInfo() {
-		return query<UserAuthInfo>( Paths.AUTH_INFO ).catch( () => null );
-	}
-
-	async getToken() {
-		return query<{ token: string }>( Paths.GET_TOKEN );
-	}
-
-	async login( data: LoginInput ) {
-		return mutation<UserAuthInfo>( Paths.LOGIN, data );
+		return superagent
+			.get( BASE_URL + Paths.AUTH_INFO )
+			.withCredentials()
+			.then( res => res.body as UserAuthInfo )
+			.catch( () => null );
 	}
 
 	async logout() {
-		await mutation( Paths.LOGOUT );
+		await superagent.delete( BASE_URL + Paths.LOGOUT ).withCredentials();
 	}
 
-	async signUp( data: CreateUserInput ) {
-		await mutation( Paths.SIGNUP, data );
+	getGoogleAuthUrl() {
+		const url = new URL( "https://accounts.google.com/o/oauth2/v2/auth" );
+
+		url.searchParams.append( "redirect_uri", GOOGLE_REDIRECT_URI );
+		url.searchParams.append( "client_id", GOOGLE_CLIENT_ID );
+		url.searchParams.append( "access_type", "offline" );
+		url.searchParams.append( "response_type", "code" );
+		url.searchParams.append( "prompt", "consent" );
+		url.searchParams.append(
+			"scope",
+			[
+				"https://www.googleapis.com/auth/userinfo.profile",
+				"https://www.googleapis.com/auth/userinfo.email"
+			].join( " " )
+		);
+
+		return url.toString();
 	}
 }
 

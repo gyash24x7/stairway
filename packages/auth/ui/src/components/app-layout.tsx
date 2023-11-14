@@ -3,7 +3,7 @@ import { Logo, NavTabs } from "@s2h/ui";
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useIsLoggedIn } from "../store";
-import { privateLayoutClassnames as classnames } from "../styles";
+import { appLayoutClassnames as classnames } from "../styles";
 import { DisplayAuthInfo } from "./display-auth-info";
 
 export type PrivateLayoutProps = {
@@ -11,11 +11,11 @@ export type PrivateLayoutProps = {
 	footer?: ReactNode;
 }
 
-export function PrivateLayout( props: PrivateLayoutProps ) {
+export function AppLayout( props: PrivateLayoutProps ) {
 	const isLoggedIn = useIsLoggedIn();
 
 	if ( !isLoggedIn ) {
-		return <Navigate to={ "/auth/login" }/>;
+		return <Navigate to={ "/login" }/>;
 	}
 
 	return (

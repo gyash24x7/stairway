@@ -1,4 +1,3 @@
-import { useAuthToken } from "@auth/ui";
 import { initializeSocketForNamespace, subscribeToEvents } from "@s2h/ui";
 import type { ReactNode } from "react";
 import { Fragment, useEffect } from "react";
@@ -9,10 +8,9 @@ export function GameProvider( props: { children: ReactNode } ) {
 	const playerId = usePlayerId();
 	const gameEventHandlers = useGameEventHandlers();
 	const playerEventHandlers = usePlayerSpecificEventHandlers();
-	const authToken = useAuthToken();
 
 	useEffect( () => {
-		initializeSocketForNamespace( "literature", authToken );
+		initializeSocketForNamespace( "literature" );
 		const unsubscribe = subscribeToEvents(
 			"literature",
 			gameId,

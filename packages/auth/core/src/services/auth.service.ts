@@ -89,7 +89,7 @@ export class AuthService {
 		url.searchParams.append( "access_token", access_token );
 
 		const response: GoogleUserResult = await superagent
-			.post( url.toString() )
+			.get( url.toString() )
 			.set( "Authorization", `Bearer ${ id_token }` )
 			.then( res => res.body );
 

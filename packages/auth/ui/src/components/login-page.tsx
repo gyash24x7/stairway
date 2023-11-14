@@ -1,71 +1,35 @@
-import { Alert, Button, Flex, PasswordInput, Text, TextInput, Title } from "@mantine/core";
-import { useForm } from "@mantine/form";
-import { IconAlertCircle } from "@tabler/icons-react";
-import { Fragment } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useLoginAction } from "../store";
-import { pageClassnames as classnames } from "../styles";
-import { emailValidator, minLengthValidator } from "../utils";
+import { Box, Button, Flex, Title } from "@mantine/core";
+import { IconBrandGoogle } from "@tabler/icons-react";
+import { useCallback } from "react";
+import { Navigate } from "react-router-dom";
+import { authClient, useIsLoggedIn } from "../store";
+import { loginPageClassnames as classnames } from "../styles";
 
 export function LoginPage() {
-	const navigate = useNavigate();
-	const { getInputProps, onSubmit } = useForm( {
-		initialValues: {
-			email: "",
-			password: ""
-		},
-		validate: {
-			email: emailValidator( "Invalid Email!" ),
-			password: minLengthValidator( 7, "Password too Short!" )
-		}
-	} );
+	const isLoggedIn = useIsLoggedIn();
 
-	const { execute, isLoading, error } = useLoginAction();
+	const login = useCallback( () => {
+		window.location.href = authClient.getGoogleAuthUrl();
+	}, [] );
 
-	const handleLogin = onSubmit( input => execute( input ).then( () => navigate( "/" ) ) );
+	if ( isLoggedIn ) {
+		return <Navigate to={ "/" }/>;
+	}
 
 	return (
-		<Fragment>
-			<Title order={ 1 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
-				LOGIN
-			</Title>
-
-			<form noValidate onSubmit={ handleLogin }>
-				<TextInput
-					label={ "Email" }
-					placeholder={ "Enter your Email" }
-					size="md"
-					withAsterisk
-					{ ...getInputProps( "email" ) }
-					type={ "email" }
-				/>
-
-				<PasswordInput
-					label={ "Password" }
-					placeholder={ "Enter your Password" }
-					mt={ "md" }
-					size={ "md" }
-					withAsterisk
-					{ ...getInputProps( "password" ) }
-				/>
-
-				<Button fullWidth mt={ "xl" } size={ "md" } type={ "submit" } loading={ isLoading }>
-					Login
+		<Flex className={ classnames.wrapper } justify={ "center" } align={ "center" }>
+			<Box className={ classnames.box } p={ 30 }>
+				<img src={ "logo.png" } alt={ "logo" } className={ classnames.logo }/>
+				<Title order={ 1 } className={ classnames.title } ta={ "center" } mt={ "md" } mb={ 50 }>
+					LOGIN
+				</Title>
+				<Button
+					leftSection={ <IconBrandGoogle/> }
+					onClick={ login }
+				>
+					Login With Google
 				</Button>
-			</form>
-
-			<Flex justify={ "space-between" } mt={ 10 }>
-				<Text>Don&apos;t have an account?</Text>
-				<Link to={ "/auth/signup" }>
-					<b>Register</b>
-				</Link>
-			</Flex>
-
-			{ !!error &&
-				<Alert icon={ <IconAlertCircle/> } title="Bummer!" color="red" mt={ "md" }>
-					Something went wrong!
-				</Alert>
-			}
-		</Fragment>
+			</Box>
+		</Flex>
 	);
 }

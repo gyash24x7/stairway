@@ -2,7 +2,7 @@ import { rem, rgba } from "@mantine/core";
 import { vars } from "@s2h/ui";
 import { style } from "@vanilla-extract/css";
 
-export const privateLayoutClassnames = {
+export const appLayoutClassnames = {
 	main: style( {
 		background: vars.colors[ "gray" ][ 1 ],
 		paddingTop: 125,
@@ -38,25 +38,25 @@ export const privateLayoutClassnames = {
 	} )
 };
 
-export const publicLayoutClassnames = {
+export const loginPageClassnames = {
 	wrapper: style( {
 		height: "100vh",
-		minHeight: rem( 900 ),
 		backgroundSize: "cover",
 		backgroundImage: "url(background.jpg)"
 	} ),
 
-	form: style( {
+	box: style( {
 		display: "flex",
 		flexDirection: "column",
-		justifyContent: "center",
-		borderRightWidth: rem( 1 ),
-		borderRightStyle: "solid",
-		borderRightColor: vars.colors.gray[ 3 ],
-		height: "100vh",
-		maxWidth: rem( 450 ),
-		minWidth: rem( 400 ),
-		paddingTop: rem( 80 ),
+		alignItems: "center",
+		borderWidth: rem( 1 ),
+		borderStyle: "solid",
+		background: vars.colors.white,
+		borderColor: vars.colors.gray[ 3 ],
+		borderRadius: 10,
+		maxWidth: 450,
+		minWidth: 400,
+		paddingTop: 80,
 
 		"@media": {
 			[ vars.smallerThan( "sm" ) ]: {
@@ -71,10 +71,8 @@ export const publicLayoutClassnames = {
 		}
 	} ),
 
-	logo: style( { width: "100%", height: 200, objectFit: "contain" } )
-};
+	logo: style( { width: "100%", height: 200, objectFit: "contain" } ),
 
-export const pageClassnames = {
 	title: style( {
 		color: vars.colors.black,
 		fontFamily: vars.fontFamilyHeadings,
