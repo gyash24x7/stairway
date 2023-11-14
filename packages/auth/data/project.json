@@ -1,7 +1,7 @@
 {
-	"name": "auth-types",
+	"name": "auth-data",
 	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/common/types/src",
+	"sourceRoot": "packages/auth/data/src",
 	"projectType": "library",
 	"targets": { },
 	"tags": [ ]

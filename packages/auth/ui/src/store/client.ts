@@ -1,4 +1,4 @@
-import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
+import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/data";
 
 const BASE_URL = "http://localhost:8000/api";
 

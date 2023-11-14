@@ -1,4 +1,4 @@
-import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/types";
+import type { CreateUserInput, LoginInput, UserAuthInfo } from "@auth/data";
 import { produce } from "immer";
 import { create } from "zustand";
 import { authClient } from "./client";

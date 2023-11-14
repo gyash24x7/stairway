@@ -1,18 +1,90 @@
-import { AuthModule } from "@auth/core";
 import { Module, OnModuleInit } from "@nestjs/common";
 import { CqrsModule } from "@nestjs/cqrs";
-import { PrismaModule, RealtimeModule, RealtimeService } from "@s2h/core";
-import { commandHandlers } from "./commands";
+import { RealtimeService } from "@s2h/core";
+import {
+	AddBotsCommandHandler,
+	AskCardCommandHandler,
+	CallSetCommandHandler,
+	CreateGameCommandHandler,
+	CreateInferenceCommandHandler,
+	CreateTeamsCommandHandler,
+	JoinGameCommandHandler,
+	StartGameCommandHandler,
+	TransferTurnCommandHandler,
+	UpdateHandsCommandHandler,
+	UpdateInferenceCommandHandler,
+	UpdateScoreCommandHandler,
+	UpdateStatusCommandHandler,
+	UpdateTurnCommandHandler
+} from "./commands";
 import { GamesController } from "./controllers";
-import { eventHandlers } from "./events";
-import { queryHandlers } from "./queries";
-import { transformers } from "./transformers";
-import { validators } from "./validators";
+import {
+	GameStartedEventHandler,
+	HandsUpdatedEventHandler,
+	InferenceUpdatedEvent,
+	MoveCreatedEventHandler,
+	PlayerJoinedEventHandler,
+	ScoreUpdatedEventHandler,
+	StatusUpdatedEventHandler,
+	TeamsCreatedEventHandler,
+	TurnUpdatedEventHandler
+} from "./events";
+import {
+	CardsDataQueryHandler,
+	GameDataQueryHandler,
+	InferenceDataQueryHandler,
+	PlayerSpecificDataQueryHandler
+} from "./queries";
+import { CardsDataTransformer, GameDataTransformer } from "./transformers";
+import {
+	AddBotsValidator,
+	AskCardValidator,
+	CallSetValidator,
+	CreateTeamsValidator,
+	JoinGameValidator,
+	TransferTurnValidator
+} from "./validators";
 
 @Module( {
-	imports: [ PrismaModule, AuthModule, CqrsModule, RealtimeModule ],
+	imports: [ CqrsModule ],
 	controllers: [ GamesController ],
-	providers: [ ...commandHandlers, ...queryHandlers, ...eventHandlers, ...validators, ...transformers ]
+	providers: [
+		CreateGameCommandHandler,
+		JoinGameCommandHandler,
+		AddBotsCommandHandler,
+		CreateTeamsCommandHandler,
+		StartGameCommandHandler,
+		AskCardCommandHandler,
+		CallSetCommandHandler,
+		TransferTurnCommandHandler,
+		CreateInferenceCommandHandler,
+		UpdateHandsCommandHandler,
+		UpdateInferenceCommandHandler,
+		UpdateScoreCommandHandler,
+		UpdateStatusCommandHandler,
+		UpdateTurnCommandHandler,
+		GameDataQueryHandler,
+		PlayerSpecificDataQueryHandler,
+		CardsDataQueryHandler,
+		InferenceDataQueryHandler,
+		GameStartedEventHandler,
+		HandsUpdatedEventHandler,
+		InferenceUpdatedEvent,
+		MoveCreatedEventHandler,
+		PlayerJoinedEventHandler,
+		ScoreUpdatedEventHandler,
+		StatusUpdatedEventHandler,
+		TeamsCreatedEventHandler,
+		TurnUpdatedEventHandler,
+		AddBotsValidator,
+		AskCardValidator,
+		CallSetValidator,
+		CreateTeamsValidator,
+		JoinGameValidator,
+		TransferTurnValidator,
+		GameDataTransformer,
+		CardsDataTransformer
+	]
 } )
 export class LiteratureModule implements OnModuleInit {
 
