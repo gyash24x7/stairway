@@ -1,29 +1,33 @@
-import { AppLayout, authStoreLoader, loginRoute } from "@auth/ui";
-import { literatureRoute } from "@literature/ui";
+import { authStoreLoader } from "@auth/ui";
 import { MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
-import { ErrorPage, HomePage, HomePageFooter, theme } from "@s2h/ui";
+import { ErrorPage, theme } from "@s2h/ui";
 import { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
-import { createBrowserRouter, IndexRouteObject, Outlet, RouteObject, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Outlet, RouteObject, RouterProvider } from "react-router-dom";
+import { homeRoute } from "./pages";
+import { literatureHomeRoute } from "./pages/literature";
+import { literatureGameRoute } from "./pages/literature/game";
 
 const root = ReactDOM.createRoot( document.getElementById( "root" ) as HTMLElement );
 
-const homeRoute: IndexRouteObject = {
-	index: true,
-	element: <AppLayout footer={ <HomePageFooter/> }><HomePage/></AppLayout>,
-	errorElement: <ErrorPage/>
+export const literatureRoute: RouteObject = {
+	path: "literature",
+	element: <Outlet/>,
+	errorElement: <ErrorPage/>,
+	children: [ literatureGameRoute, literatureHomeRoute ]
 };
+
 
 const rootRoute: RouteObject = {
 	path: "/",
 	element: <Outlet/>,
 	errorElement: <ErrorPage/>,
-	children: [ loginRoute, literatureRoute, homeRoute ],
+	children: [ literatureRoute, homeRoute ],
 	loader: authStoreLoader
 };
 
-const router = createBrowserRouter( [ rootRoute ] );
+export const router = createBrowserRouter( [ rootRoute ] );
 
 root.render(
 	<StrictMode>

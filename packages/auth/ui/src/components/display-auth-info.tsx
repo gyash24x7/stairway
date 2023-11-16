@@ -1,20 +1,29 @@
+import { authClient, useAuthInfo, useIsLoggedIn, useLogoutAction } from "@auth/ui";
 import { Avatar, Button, Group } from "@mantine/core";
-import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuthInfo, useLogoutAction } from "../store";
+import { IconBrandGoogle } from "@tabler/icons-react";
+import { Fragment, useCallback } from "react";
 
 export function DisplayAuthInfo() {
+	const isLoggedIn = useIsLoggedIn();
 	const authInfo = useAuthInfo();
-	const navigate = useNavigate();
 	const { execute, isLoading } = useLogoutAction();
-	const handleLogout = useCallback( () => execute( {} ).then( () => navigate( "/login" ) ), [] );
+
+	const login = useCallback( () => {
+		window.location.href = authClient.getGoogleAuthUrl();
+	}, [] );
 
 	return (
-		<Group>
-			<Button color={ "danger" } fw={ 700 } size={ "xs" } onClick={ handleLogout } loading={ isLoading }>
-				LOGOUT
-			</Button>
-			<Avatar src={ authInfo?.avatar } size={ 48 } radius={ "50%" }/>
-		</Group>
+		<Fragment>
+			{ isLoggedIn ? (
+				<Group>
+					<Button color={ "danger" } fw={ 700 } size={ "xs" } onClick={ execute } loading={ isLoading }>
+						LOGOUT
+					</Button>
+					<Avatar src={ authInfo?.avatar } size={ 48 } radius={ "50%" }/>
+				</Group>
+			) : (
+				<Button leftSection={ <IconBrandGoogle/> } onClick={ login }>Login With Google</Button>
+			) }
+		</Fragment>
 	);
 }

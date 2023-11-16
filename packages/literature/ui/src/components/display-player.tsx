@@ -1,6 +1,6 @@
 import type { Player } from "@literature/types";
+import { useCardCounts } from "@literature/ui";
 import { Avatar, Group, Stack, Text } from "@mantine/core";
-import { useCardCounts } from "../store";
 
 export type DisplayPlayerProps = {
 	player: Player;

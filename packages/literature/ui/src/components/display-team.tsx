@@ -1,7 +1,7 @@
 import type { TeamWithMembers } from "@literature/types";
+import { usePlayers } from "@literature/ui";
 import { Flex, Title } from "@mantine/core";
 import { Card } from "@s2h/ui";
-import { usePlayers } from "../store";
 import { DisplayPlayerSmall } from "./display-player";
 
 export interface DisplayTeamProps {

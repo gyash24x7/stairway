@@ -1,10 +1,11 @@
+import { useGameCode, useGameStatus, usePlayers, useTeams } from "@literature/ui";
 import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { Card } from "@s2h/ui";
 import { IconCopy } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
-import { useGameCode, useGameStatus, usePlayers, useTeams } from "../store";
 import { gameDescriptionClassnames as classnames } from "../styles";
+import { GameCode } from "./game-code";
 
 export function GameDescription() {
 	const code = useGameCode();
@@ -49,10 +50,7 @@ export function GameDescription() {
 				</Flex>
 			) : (
 				<Flex justify={ "space-between" } align={ "center" }>
-					<Box>
-						<Text fz={ 14 } fw={ 700 } lh={ 1 }>GAME CODE</Text>
-						<Title fz={ 56 } lh={ 1 }>{ code }</Title>
-					</Box>
+					<GameCode/>
 					<IconCopy
 						width={ 40 }
 						height={ 40 }

@@ -3,7 +3,6 @@ import { CardRank, CardSet, CardSuit, PlayingCard } from "@s2h/cards";
 import { Fragment } from "react";
 import { playingCardClassnames as classnames } from "../styles";
 
-
 export interface DisplayCardProps {
 	card: PlayingCard;
 	orientation?: "horizontal" | "vertical";

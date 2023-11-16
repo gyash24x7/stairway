@@ -1,6 +1,6 @@
+import { useAddBotsAction, useGameId } from "@literature/ui";
 import { Button } from "@mantine/core";
 import { useCallback } from "react";
-import { useAddBotsAction, useGameId } from "../store";
 
 export function AddBots() {
 	const gameId = useGameId();
