@@ -5,8 +5,9 @@ import { useGameStore } from "./store";
 export async function gameStoreLoader( { params }: LoaderFunctionArgs ) {
 	const gameId = params[ "gameId" ] ?? "";
 	const initialState = useGameStore.getState();
-	initialState.gameData = await literatureClient.loadGameData( { gameId } );
-	initialState.playerData = await literatureClient.loadPlayerData( { gameId } );
+	const { gameData, playerData } = await literatureClient.loadGameData( { gameId } );
+	initialState.gameData = gameData;
+	initialState.playerData = playerData;
 	useGameStore.setState( initialState );
 	return initialState;
 }

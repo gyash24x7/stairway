@@ -9,7 +9,7 @@ export class Constants {
 }
 
 export class Paths {
-	public static readonly BASE = "literature/games";
+	public static readonly BASE = "literature";
 	public static readonly JOIN_GAME = "join";
 	public static readonly ADD_BOTS = ":gameId/add-bots";
 	public static readonly CREATE_TEAMS = ":gameId/create-teams";
