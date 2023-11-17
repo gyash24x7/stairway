@@ -7,7 +7,7 @@ import { mockClear, mockDeep } from "vitest-mock-extended";
 import { JoinGameCommand, JoinGameCommandHandler } from "../../src/commands";
 import { PlayerJoinedEvent } from "../../src/events";
 import type { JoinGameValidator } from "../../src/validators";
-import { buildMockRawGameData, mockAuthInfo, mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 } from "../mockdata";
+import { buildMockRawGameData, mockAuthUser, mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 } from "../mockdata";
 
 describe( "JoinGameCommand", () => {
 
@@ -22,7 +22,7 @@ describe( "JoinGameCommand", () => {
 		mockValidator.validate.mockResolvedValue( { game: mockGame, isUserAlreadyInGame: true } );
 
 		const commandHandler = new JoinGameCommandHandler( mockPrisma, mockValidator, mockEventBus );
-		const gameWithPlayers = await commandHandler.execute( new JoinGameCommand( mockInput, mockAuthInfo ) );
+		const gameWithPlayers = await commandHandler.execute( new JoinGameCommand( mockInput, mockAuthUser ) );
 
 		expect( gameWithPlayers.players ).toEqual( [
 			{ ...mockPlayer1, teamId: null },
@@ -44,13 +44,13 @@ describe( "JoinGameCommand", () => {
 		mockPrisma.literature.player.create.mockResolvedValue( mockPlayer1 );
 
 		const commandHandler = new JoinGameCommandHandler( mockPrisma, mockValidator, mockEventBus );
-		const gameWithPlayers = await commandHandler.execute( new JoinGameCommand( mockInput, mockAuthInfo ) );
+		const gameWithPlayers = await commandHandler.execute( new JoinGameCommand( mockInput, mockAuthUser ) );
 
 		expect( mockPrisma.literature.player.create ).toHaveBeenCalledWith( {
 			data: {
-				id: mockAuthInfo.id,
-				name: mockAuthInfo.name,
-				avatar: mockAuthInfo.avatar,
+				id: mockAuthUser.id,
+				name: mockAuthUser.name,
+				avatar: mockAuthUser.avatar,
 				gameId: mockGame.id
 			}
 		} );

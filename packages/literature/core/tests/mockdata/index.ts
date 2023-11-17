@@ -1,4 +1,3 @@
-import type { UserAuthInfo } from "@auth/data";
 import type {
 	AskMove,
 	CallMove,
@@ -7,7 +6,8 @@ import type {
 	Player,
 	PlayerSpecificData,
 	RawGameData,
-	TransferMove
+	TransferMove,
+	User
 } from "@literature/types";
 import {
 	AskCardInput,
@@ -38,12 +38,11 @@ function isGameStarted( status: GameStatus ) {
 	return status === GameStatus.IN_PROGRESS || status === GameStatus.COMPLETED;
 }
 
-export const mockAuthInfo: UserAuthInfo = {
+export const mockAuthUser: User = {
 	id: "1",
 	name: "John Doe",
 	email: "john@doe.com",
-	avatar: "https://avatar.com/john",
-	verified: true
+	avatar: "https://avatar.com/john"
 };
 
 export const mockPlayer1: Player = {
@@ -174,7 +173,7 @@ export const mockAskMove: AskMove = {
 	success: true,
 	data: {
 		from: mockAskCardInput.askedFrom,
-		by: mockAuthInfo.id,
+		by: mockAuthUser.id,
 		card: mockAskCardInput.askedFor
 	},
 	description: `${ mockPlayer1.name } asked ${ mockPlayer2.name } for ${ mockAskCardInput.askedFor } and got the card!`,

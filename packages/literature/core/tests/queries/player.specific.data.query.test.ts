@@ -4,7 +4,7 @@ import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { PlayerSpecificDataQuery, PlayerSpecificDataQueryHandler } from "../../src/queries";
-import { buildMockCardMappings, buildMockGameData, mockAuthInfo, mockTeamA, mockTeamB } from "../mockdata";
+import { buildMockCardMappings, buildMockGameData, mockAuthUser, mockTeamA, mockTeamB } from "../mockdata";
 import { buildCardsData } from "../mockdata/utils";
 
 describe( "PlayerSpecificGameQuery", () => {
@@ -16,7 +16,7 @@ describe( "PlayerSpecificGameQuery", () => {
 		mockPrisma.literature.cardMapping.findMany.mockResolvedValue( [] );
 
 		const handler = new PlayerSpecificDataQueryHandler( mockPrisma );
-		const query = new PlayerSpecificDataQuery( mockGameData, mockAuthInfo.id );
+		const query = new PlayerSpecificDataQuery( mockGameData, mockAuthUser.id );
 
 		const result = await handler.execute( query );
 		expect( result ).toEqual(
@@ -29,29 +29,29 @@ describe( "PlayerSpecificGameQuery", () => {
 		);
 
 		expect( mockPrisma.literature.cardMapping.findMany ).toHaveBeenCalledWith( {
-			where: { gameId: mockGameData.id, playerId: mockAuthInfo.id }
+			where: { gameId: mockGameData.id, playerId: mockAuthUser.id }
 		} );
 	} );
 
 	it( "should return the current game data for the player when teams created", async () => {
 		const cardMappings = buildMockCardMappings();
-		const cardMappingsForPlayer = cardMappings.filter( cardMapping => cardMapping.playerId === mockAuthInfo.id );
+		const cardMappingsForPlayer = cardMappings.filter( cardMapping => cardMapping.playerId === mockAuthUser.id );
 		const { hands } = buildCardsData( cardMappings );
 		mockPrisma.literature.cardMapping.findMany.mockResolvedValue( cardMappingsForPlayer );
 
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappings );
 		const handler = new PlayerSpecificDataQueryHandler( mockPrisma );
-		const query = new PlayerSpecificDataQuery( mockGameData, mockAuthInfo.id );
+		const query = new PlayerSpecificDataQuery( mockGameData, mockAuthUser.id );
 
 		const result = await handler.execute( query );
 
 		expect( result.teamId ).toEqual( mockTeamA.id );
 		expect( result.oppositeTeamId ).toEqual( mockTeamB.id );
-		expect( result.hand ).toEqual( hands[ mockAuthInfo.id ] );
-		expect( result.cardSets ).toEqual( getCardSetsInHand( hands[ mockAuthInfo.id ] ) );
+		expect( result.hand ).toEqual( hands[ mockAuthUser.id ] );
+		expect( result.cardSets ).toEqual( getCardSetsInHand( hands[ mockAuthUser.id ] ) );
 
 		expect( mockPrisma.literature.cardMapping.findMany ).toHaveBeenCalledWith( {
-			where: { gameId: mockGameData.id, playerId: mockAuthInfo.id }
+			where: { gameId: mockGameData.id, playerId: mockAuthUser.id }
 		} );
 	} );
 

@@ -12,7 +12,7 @@ import {
 	deck,
 	mockAskCardInput as mockInput,
 	mockAskMove,
-	mockAuthInfo,
+	mockAuthUser,
 	mockPlayer1,
 	mockPlayer2,
 	mockPlayer4,
@@ -60,7 +60,7 @@ describe( "AskCardCommand", () => {
 				success: false,
 				data: {
 					from: mockPlayer4.id,
-					by: mockAuthInfo.id,
+					by: mockAuthUser.id,
 					card: mockInput.askedFor
 				},
 				description: `${ mockPlayer1.name } asked ${ mockPlayer4.name } for ${ mockInput.askedFor } and was declined!`
@@ -90,7 +90,7 @@ describe( "AskCardCommand", () => {
 				success: true,
 				data: {
 					from: mockInput.askedFrom,
-					by: mockAuthInfo.id,
+					by: mockAuthUser.id,
 					card: mockInput.askedFor
 				},
 				description: `${ mockPlayer1.name } asked ${ mockPlayer2.name } for ${ mockInput.askedFor } and got the card!`

@@ -1,8 +1,0 @@
-{
-	"name": "auth-ui",
-	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/auth/ui/src",
-	"projectType": "library",
-	"targets": { },
-	"tags": [ ]
-}

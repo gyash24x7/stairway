@@ -1,5 +1,3 @@
-import { AuthInfo, RequiresAuth } from "@auth/core";
-import type { UserAuthInfo } from "@auth/data";
 import type {
 	AskCardInput,
 	AskMove,
@@ -15,12 +13,13 @@ import type {
 	PlayerSpecificData,
 	TeamData,
 	TransferMove,
-	TransferTurnInput
+	TransferTurnInput,
+	User
 } from "@literature/types";
 import { GameStatus } from "@literature/types";
 import { Body, Controller, Get, HttpCode, Post, Put } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
-import { LoggerFactory } from "@s2h/core";
+import { AuthUser, LoggerFactory, RequiresAuth } from "@s2h/core";
 import {
 	AddBotsCommand,
 	AskCardCommand,
@@ -45,10 +44,10 @@ export class GamesController {
 	@Post()
 	async createGame(
 		@Body() input: CreateGameInput,
-		@AuthInfo() authInfo: UserAuthInfo
+		@AuthUser() authUser: User
 	): Promise<GameData> {
 		this.logger.debug( ">> createGame()" );
-		const game: GameData = await this.commandBus.execute( new CreateGameCommand( input, authInfo ) );
+		const game: GameData = await this.commandBus.execute( new CreateGameCommand( input, authUser ) );
 		this.logger.debug( "<< createGame()" );
 		return game;
 	}
@@ -56,10 +55,10 @@ export class GamesController {
 	@Post( Paths.JOIN_GAME )
 	async joinGame(
 		@Body() input: JoinGameInput,
-		@AuthInfo() authInfo: UserAuthInfo
+		@AuthUser() authUser: User
 	): Promise<GameWithPlayers> {
 		this.logger.debug( ">> joinGame()" );
-		const game: GameWithPlayers = await this.commandBus.execute( new JoinGameCommand( input, authInfo ) );
+		const game: GameWithPlayers = await this.commandBus.execute( new JoinGameCommand( input, authUser ) );
 		this.logger.debug( "<< joinGame()" );
 		return game;
 	}

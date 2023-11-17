@@ -1,5 +1,4 @@
-import type { UserAuthInfo } from "@auth/data";
-import type { GameData } from "@literature/types";
+import type { GameData, User } from "@literature/types";
 import { BadRequestException, CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { QueryBus } from "@nestjs/cqrs";
@@ -23,19 +22,19 @@ export class GameGuard implements CanActivate {
 		const req = context.switchToHttp().getRequest<Request>();
 		const res = context.switchToHttp().getResponse<Response>();
 		const gameId: string = req.params[ "gameId" ];
-		const authInfo: UserAuthInfo = res.locals[ Constants.AUTH_INFO ];
+		const authUser: User = res.locals[ Constants.AUTH_INFO ];
 		this.logger.info( "GameId: %s", gameId );
 
 		const game: GameData = await this.queryBus.execute( new GameDataQuery( gameId ) );
 		res.locals[ Constants.GAME_DATA ] = game;
 
-		if ( !game.players[ authInfo.id ] ) {
-			this.logger.error( "Logged In User not part of this game! UserId: %s", authInfo.id );
+		if ( !game.players[ authUser.id ] ) {
+			this.logger.error( "Logged In User not part of this game! UserId: %s", authUser.id );
 			throw new ForbiddenException();
 		}
 
 		res.locals[ Constants.PLAYER_DATA ] = await this.queryBus.execute(
-			new PlayerSpecificDataQuery( game, authInfo.id )
+			new PlayerSpecificDataQuery( game, authUser.id )
 		);
 
 		const { status, turn, cards }: RequiresGameData = this.reflector.get(
@@ -48,8 +47,8 @@ export class GameGuard implements CanActivate {
 			throw new BadRequestException();
 		}
 
-		if ( !!turn && game.currentTurn !== authInfo.id ) {
-			this.logger.error( "It is not logged in User's turn! UserId: %s", authInfo.id );
+		if ( !!turn && game.currentTurn !== authUser.id ) {
+			this.logger.error( "It is not logged in User's turn! UserId: %s", authUser.id );
 			throw new ForbiddenException();
 		}
 

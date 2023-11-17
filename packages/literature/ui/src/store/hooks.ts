@@ -3,9 +3,6 @@ import { literatureClient } from "./client";
 import { useGameStore } from "./store";
 
 // Game State Hooks
-export const useGameData = () => useGameStore( state => state.gameData );
-export const usePlayerData = () => useGameStore( state => state.playerData );
-
 export const useGameId = () => useGameStore( state => state.gameData.id );
 export const usePlayers = () => useGameStore( state => state.gameData.players );
 export const useTeams = () => useGameStore( state => state.gameData.teams );

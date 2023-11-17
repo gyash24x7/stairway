@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { CreateGameCommand, CreateGameCommandHandler } from "../../src/commands";
 import { GameDataTransformer } from "../../src/transformers";
-import { mockAuthInfo, mockPlayer1 } from "../mockdata";
+import { mockAuthUser, mockPlayer1 } from "../mockdata";
 
 describe( "CreateGameCommand", () => {
 
@@ -22,7 +22,7 @@ describe( "CreateGameCommand", () => {
 		mockPrisma.literature.player.create.mockResolvedValue( mockDeep() );
 
 		const createGameCommandHandler = new CreateGameCommandHandler( mockPrisma, transformer );
-		await createGameCommandHandler.execute( new CreateGameCommand( mockInput, mockAuthInfo ) );
+		await createGameCommandHandler.execute( new CreateGameCommand( mockInput, mockAuthUser ) );
 
 		expect( mockPrisma.literature.game.create ).toHaveBeenCalledWith( {
 			data: expect.objectContaining( {

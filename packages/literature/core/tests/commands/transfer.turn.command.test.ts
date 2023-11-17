@@ -10,7 +10,7 @@ import {
 	buildMockGameData,
 	buildPlayerSpecificData,
 	deck,
-	mockAuthInfo,
+	mockAuthUser,
 	mockCallMove,
 	mockPlayer1,
 	mockPlayer3,
@@ -57,7 +57,7 @@ describe( "TransferTurnCommand", () => {
 				success: true,
 				data: {
 					to: mockInput.transferTo,
-					from: mockAuthInfo.id
+					from: mockAuthUser.id
 				},
 				description: `${ mockPlayer1.name } transferred the turn to ${ mockPlayer3.name }`
 			}

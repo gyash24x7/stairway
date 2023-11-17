@@ -1,4 +1,4 @@
-import { useGameId, useMyTeam, usePlayerData, usePlayers, useTransferTurnAction } from "@literature/ui";
+import { useGameId, useMyTeam, usePlayerId, usePlayers, useTransferTurnAction } from "@literature/ui";
 import { Button, Modal, Stack, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Fragment, useCallback, useState } from "react";
@@ -8,7 +8,7 @@ export function TransferTurn() {
 	const gameId = useGameId();
 	const myTeam = useMyTeam();
 	const players = usePlayers();
-	const { id: playerId } = usePlayerData();
+	const playerId = usePlayerId();
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ opened, { open, close } ] = useDisclosure();
