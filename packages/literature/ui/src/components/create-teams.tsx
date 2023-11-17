@@ -1,8 +1,8 @@
+import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "@literature/ui";
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { chunk, shuffle } from "@s2h/cards";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
-import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "../store";
 import { DisplayPlayerMedium } from "./display-player";
 
 

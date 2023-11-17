@@ -13,70 +13,88 @@ import type {
 	TransferMove,
 	TransferTurnInput
 } from "@literature/types";
+import superagent from "superagent";
 
-const BASE_URL = "http://localhost:8000/api";
+const BASE_URL = "http://localhost:8000/api/literature";
 
-export const gamesPath = ( id?: string ) => `/literature/games${ !!id ? "/" + id : "" }`;
-export const createGamePath = () => gamesPath();
-export const joinGamePath = () => gamesPath() + "/join";
-export const addBotsPath = ( id: string ) => gamesPath( id ) + "/add-bots";
-export const createTeamsPath = ( id: string ) => gamesPath( id ) + "/create-teams";
-export const startGamePath = ( id: string ) => gamesPath( id ) + "/start";
-export const askCardPath = ( id: string ) => gamesPath( id ) + "/ask-card";
-export const callSetPath = ( id: string ) => gamesPath( id ) + "/call-set";
-export const transferTurnPath = ( id: string ) => gamesPath( id ) + "/transfer-turn";
-export const getGameDataPath = ( id: string ) => gamesPath( id );
-export const getPlayerDataPath = ( id: string ) => gamesPath( id ) + "/player";
-
-const query = <T = any>( path: string ) => fetch( BASE_URL + path, { credentials: "include" } )
-	.then<T>( res => res.json() );
-
-const mutation = <T = any>( path: string, data?: any ) => fetch( BASE_URL + path, {
-	method: "POST",
-	credentials: "include",
-	body: !!data ? JSON.stringify( data ) : undefined
-} ).then<T>( res => res.json() );
+export class Paths {
+	public static readonly JOIN_GAME = "/join";
+	public static readonly ADD_BOTS = "/add-bots";
+	public static readonly CREATE_TEAMS = "/create-teams";
+	public static readonly START_GAME = "/start";
+	public static readonly ASK_CARD = "/ask-card";
+	public static readonly CALL_SET = "/call-set";
+	public static readonly TRANSFER_TURN = "/transfer-turn";
+}
 
 export class LiteratureClient {
 
 	async createGame( data: CreateGameInput ) {
-		return mutation<GameData>( createGamePath(), data );
+		const createGamePath = BASE_URL.concat( "" );
+		return superagent.post( createGamePath )
+			.send( data )
+			.withCredentials()
+			.then( res => res.body as GameData );
 	}
 
 	async joinGame( data: JoinGameInput ) {
-		return mutation<GameData>( joinGamePath(), data );
+		const joinGamePath = BASE_URL.concat( Paths.JOIN_GAME );
+		return superagent.post( joinGamePath )
+			.send( data )
+			.withCredentials()
+			.then( res => res.body as GameData );
 	}
 
 	async addBots( { gameId }: { gameId: string } ) {
-		return mutation<PlayerData>( addBotsPath( gameId ), {} );
+		const addBotsPath = BASE_URL.concat( "/" ).concat( gameId ).concat( Paths.ADD_BOTS );
+		return superagent.put( addBotsPath )
+			.send( {} )
+			.withCredentials()
+			.then( res => res.body as PlayerData );
 	}
 
 	async createTeams( { gameId, ...data }: CreateTeamsInput & { gameId: string } ) {
-		return mutation<TeamData>( createTeamsPath( gameId ), data );
+		const createTeamsPath = BASE_URL.concat( "/" ).concat( gameId ).concat( Paths.CREATE_TEAMS );
+		return superagent.put( createTeamsPath )
+			.send( data )
+			.withCredentials()
+			.then( res => res.body as TeamData );
 	}
 
 	async startGame( { gameId }: { gameId: string } ) {
-		await mutation( startGamePath( gameId ), {} );
+		const startGamePath = BASE_URL.concat( "/" ).concat( gameId ).concat( Paths.START_GAME );
+		await superagent.put( startGamePath ).withCredentials();
 	}
 
 	async askCard( { gameId, ...data }: AskCardInput & { gameId: string } ) {
-		return mutation<AskMove>( askCardPath( gameId ), data );
+		const askCardPath = BASE_URL.concat( "/" ).concat( gameId ).concat( Paths.ASK_CARD );
+		return superagent.put( askCardPath )
+			.send( data )
+			.withCredentials()
+			.then( res => res.body as AskMove );
 	}
 
 	async callSet( { gameId, ...data }: CallSetInput & { gameId: string } ) {
-		return mutation<CallMove>( callSetPath( gameId ), data );
+		const callSetPath = BASE_URL.concat( "/" ).concat( gameId ).concat( Paths.CALL_SET );
+		return superagent.put( callSetPath )
+			.send( data )
+			.withCredentials()
+			.then( res => res.body as CallMove );
 	}
 
 	async transferTurn( { gameId, ...data }: TransferTurnInput & { gameId: string } ) {
-		return mutation<TransferMove>( transferTurnPath( gameId ), data );
+		const transferTurnPath = BASE_URL.concat( "/" ).concat( gameId ).concat( Paths.TRANSFER_TURN );
+		return superagent.put( transferTurnPath )
+			.send( data )
+			.withCredentials()
+			.then( res => res.body as TransferMove );
 	}
 
 	async loadGameData( { gameId }: { gameId: string } ) {
-		return query<GameData>( getGameDataPath( gameId ) );
-	}
-
-	async loadPlayerData( { gameId }: { gameId: string } ) {
-		return query<PlayerSpecificData>( getPlayerDataPath( gameId ) );
+		const getGameDataPath = BASE_URL.concat( "/" ).concat( gameId );
+		return superagent.get( getGameDataPath )
+			.withCredentials()
+			.then( res => res.body as { gameData: GameData, playerData: PlayerSpecificData } );
 	}
 }
 

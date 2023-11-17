@@ -1,11 +1,7 @@
-import { Box, Button, Divider, Flex, Group, Paper, Text, Title } from "@mantine/core";
-import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useCreateGameAction } from "../store";
+import { Divider, Paper, Title } from "@mantine/core";
 import { homePageClassnames as classnames } from "../styles";
-import { JoinGame } from "./join-game";
 
-export function HomePage() {
+export function HomePageContent() {
 	return (
 		<Paper p={ "xl" } radius={ "md" } m={ 10 }>
 			<Title className={ classnames.heroText }>LITERATURE</Title>
@@ -70,33 +66,5 @@ export function HomePage() {
 				has. They may not keep any written records about the game.
 			</p>
 		</Paper>
-	);
-}
-
-export function HomePageFooter() {
-
-	const navigate = useNavigate();
-	const { isLoading, execute } = useCreateGameAction();
-
-	const handleSubmit = useCallback(
-		() => execute( { playerCount: 6 } )
-			.then( ( { id } ) => navigate( "/literature/" + id ) )
-			.catch( ( error: Error ) => alert( error.message ) ),
-		[]
-	);
-
-	return (
-		<Flex justify={ "space-between" }>
-			<Box c={ "white" }>
-				<Text fz={ 14 } fw={ 700 } lh={ 1 }>GAMES</Text>
-				<Title fz={ 56 } lh={ 1 }>LITERATURE</Title>
-			</Box>
-			<Group>
-				<Button color={ "brand" } onClick={ handleSubmit } loading={ isLoading } fw={ 700 }>
-					NEW GAME
-				</Button>
-				<JoinGame/>
-			</Group>
-		</Flex>
 	);
 }

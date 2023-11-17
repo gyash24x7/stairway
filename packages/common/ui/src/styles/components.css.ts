@@ -1,4 +1,4 @@
-import { rem } from "@mantine/core";
+import { rem, rgba } from "@mantine/core";
 import { CardSuit } from "@s2h/cards";
 import { style, styleVariants } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
@@ -136,5 +136,41 @@ export const navTabsClassnames = {
 		defaultVariants: {
 			isActive: false
 		}
+	} )
+};
+
+export const layoutClassnames = {
+	main: style( {
+		background: vars.colors[ "gray" ][ 1 ],
+		paddingTop: "125px !important",
+		paddingBottom: "220px !important",
+		minHeight: "100vh"
+	} ),
+
+	header: style( {
+		background: vars.colors.white,
+		border: "none"
+	} ),
+
+	navContainer: style( {
+		display: "flex",
+		justifyContent: "space-between",
+		flexDirection: "column"
+	} ),
+
+	footer: style( {
+		backgroundSize: "cover",
+		backgroundPosition: "center",
+		backgroundImage: "url(background.jpg)",
+		borderTopWidth: 1,
+		borderTopStyle: "solid",
+		borderTopColor: vars.colors[ "gray" ][ 3 ]
+	} ),
+
+	inner: style( {
+		paddingTop: 40,
+		paddingBottom: 40,
+		backgroundColor: rgba( vars.colors.black, 0.3 ),
+		backdropFilter: "blur(5px)"
 	} )
 };

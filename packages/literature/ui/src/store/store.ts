@@ -1,6 +1,7 @@
 import type { GameData, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/types";
 import { GameStatus } from "@literature/types";
 import type { PlayingCard } from "@s2h/cards";
+import { getCardSetsInHand } from "@s2h/cards";
 import { produce } from "immer";
 import { create } from "zustand";
 
@@ -104,6 +105,7 @@ export const useGameStore = create<GameStore>( ( set ) => {
 			set(
 				produce<GameStore>( state => {
 					state.playerData.hand = data;
+					state.playerData.cardSets = getCardSetsInHand( data );
 				} )
 			);
 		}

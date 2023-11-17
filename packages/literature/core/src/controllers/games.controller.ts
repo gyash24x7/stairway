@@ -144,15 +144,11 @@ export class GamesController {
 
 	@Get( Paths.GET_GAME )
 	@RequiresGame()
-	async getGameData( @GameInfo() gameData: GameData ): Promise<GameData> {
-		this.logger.debug( ">> getGame()" );
-		return gameData;
-	}
-
-	@Get( Paths.GET_PLAYER )
-	@RequiresGame()
-	async getPlayerData( @PlayerInfo() playerData: PlayerSpecificData ): Promise<PlayerSpecificData> {
-		this.logger.debug( ">> getPlayer()" );
-		return playerData;
+	async getGameData(
+		@GameInfo() gameData: GameData,
+		@PlayerInfo() playerData: PlayerSpecificData
+	): Promise<{ gameData: GameData, playerData: PlayerSpecificData }> {
+		this.logger.debug( ">> getGameData()" );
+		return { gameData, playerData };
 	}
 }

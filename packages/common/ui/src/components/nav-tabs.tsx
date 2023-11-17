@@ -6,7 +6,6 @@ export function NavTabs() {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 	const isLiteratureTabActive = pathname.includes( "literature" );
-	const isHomeTabActive = pathname.includes( "home" );
 
 	const activeTab = isLiteratureTabActive ? "literature" : "home";
 
@@ -16,7 +15,7 @@ export function NavTabs() {
 				<Tabs.Tab
 					value={ "home" }
 					onClick={ () => navigate( "/" ) }
-					className={ classnames.tab( { isActive: isHomeTabActive } ) }
+					className={ classnames.tab( { isActive: !isLiteratureTabActive } ) }
 				>
 					Home
 				</Tabs.Tab>
