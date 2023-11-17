@@ -6,7 +6,7 @@ import { mockClear, mockDeep } from "vitest-mock-extended";
 import { JoinGameCommand } from "../../src/commands";
 import { Messages } from "../../src/constants";
 import { JoinGameValidator } from "../../src/validators";
-import { buildMockRawGameData, mockAuthInfo, mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 } from "../mockdata";
+import { buildMockRawGameData, mockAuthUser, mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 } from "../mockdata";
 
 describe( "JoinGameValidator", () => {
 
@@ -18,7 +18,7 @@ describe( "JoinGameValidator", () => {
 		mockPrisma.literature.game.findUnique.mockResolvedValue( null );
 
 		const validator = new JoinGameValidator( mockPrisma );
-		const command = new JoinGameCommand( mockInput, mockAuthInfo );
+		const command = new JoinGameCommand( mockInput, mockAuthUser );
 
 		expect.assertions( 3 );
 		await validator.validate( command )
@@ -41,7 +41,7 @@ describe( "JoinGameValidator", () => {
 		const validator = new JoinGameValidator( mockPrisma );
 
 		expect.assertions( 3 );
-		await validator.validate( new JoinGameCommand( mockInput, { ...mockAuthInfo, id: "1" } ) )
+		await validator.validate( new JoinGameCommand( mockInput, { ...mockAuthUser, id: "1" } ) )
 			.catch( ( err: HttpException ) => {
 				expect( err.getStatus() ).toEqual( 400 );
 				expect( err.message ).toEqual( Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS );
@@ -55,7 +55,7 @@ describe( "JoinGameValidator", () => {
 	it( "should return the game and user if player already part of game", async () => {
 		mockPrisma.literature.game.findUnique.mockResolvedValue( mockGame as any );
 
-		const command = new JoinGameCommand( mockInput, mockAuthInfo );
+		const command = new JoinGameCommand( mockInput, mockAuthUser );
 		const validator = new JoinGameValidator( mockPrisma );
 		const { game, isUserAlreadyInGame } = await validator.validate( command );
 
@@ -79,7 +79,7 @@ describe( "JoinGameValidator", () => {
 			]
 		} as any );
 
-		const command = new JoinGameCommand( mockInput, mockAuthInfo );
+		const command = new JoinGameCommand( mockInput, mockAuthUser );
 		const validator = new JoinGameValidator( mockPrisma );
 		const { game, isUserAlreadyInGame } = await validator.validate( command );
 

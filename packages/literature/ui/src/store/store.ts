@@ -61,6 +61,16 @@ export const useGameStore = create<GameStore>( ( set ) => {
 			set(
 				produce<GameStore>( state => {
 					state.gameData.teams = data;
+					Object.values( data ).map( team => {
+						if ( team.members.includes( state.playerData.id ) ) {
+							state.playerData.teamId = team.id;
+						} else {
+							state.playerData.oppositeTeamId = team.id;
+						}
+						team.members.forEach( memberId => {
+							state.gameData.players[ memberId ].teamId = team.id;
+						} );
+					} );
 				} )
 			);
 		},

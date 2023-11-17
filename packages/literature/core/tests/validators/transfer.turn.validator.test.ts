@@ -8,7 +8,7 @@ import {
 	buildMockGameData,
 	buildPlayerSpecificData,
 	deck,
-	mockAuthInfo,
+	mockAuthUser,
 	mockCallMove,
 	mockPlayer1,
 	mockPlayer2,
@@ -180,7 +180,7 @@ describe( "TransferTurnValidator", () => {
 		const { transferringPlayer, receivingPlayer } = await validator.validate( command );
 
 		expect( receivingPlayer.id ).toEqual( mockInput.transferTo );
-		expect( transferringPlayer.id ).toEqual( mockAuthInfo.id );
+		expect( transferringPlayer.id ).toEqual( mockAuthUser.id );
 	} );
 
 } );

@@ -5,7 +5,6 @@ import {
 	useGameId,
 	useHand,
 	useOppositeTeam,
-	usePlayerData,
 	usePlayers
 } from "@literature/ui";
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
@@ -23,7 +22,7 @@ interface SelectCardProps {
 }
 
 function SelectCard( { set, setCard, card }: SelectCardProps ) {
-	const { hand } = usePlayerData()!;
+	const hand = useHand();
 	const combobox = useCombobox();
 
 	return (

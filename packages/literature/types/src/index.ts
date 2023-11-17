@@ -3,9 +3,12 @@ import type {
 	LiteratureGame,
 	LiteratureMove,
 	LiteraturePlayer,
-	LiteratureTeam
+	LiteratureTeam,
+	User as PrismaUser
 } from "@prisma/client";
 import type { CardSet, PlayingCard } from "@s2h/cards";
+
+export type User = PrismaUser
 
 export type Game = LiteratureGame;
 

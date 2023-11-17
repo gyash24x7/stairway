@@ -17,7 +17,7 @@ export class JoinGameValidator implements BusinessValidator<JoinGameCommand, Joi
 
 	constructor( private readonly prisma: PrismaService ) {}
 
-	async validate( { input, authInfo }: JoinGameCommand ) {
+	async validate( { input, authUser }: JoinGameCommand ) {
 		this.logger.debug( ">> validateJoinGameCommand()" );
 
 		const game = await this.prisma.literature.game.findUnique( {
@@ -32,7 +32,7 @@ export class JoinGameValidator implements BusinessValidator<JoinGameCommand, Joi
 
 		this.logger.debug( "Found Game: %o", game.players.length );
 
-		const isUserAlreadyInGame = !!game.players.find( player => player.id === authInfo.id );
+		const isUserAlreadyInGame = !!game.players.find( player => player.id === authUser.id );
 
 		if ( isUserAlreadyInGame ) {
 			this.logger.warn( "%s GameId: %s", Messages.USER_ALREADY_PART_OF_GAME, game.id );

@@ -1,6 +1,6 @@
 export class Constants {
 	public static readonly GAME_DATA = "gameData";
-	public static readonly AUTH_INFO = "authInfo";
+	public static readonly AUTH_INFO = "authUser";
 	public static readonly PLAYER_DATA = "playerData";
 	public static readonly CARDS_DATA = "cardsData";
 	public static readonly REQUIRES_KEY = "requires";
@@ -17,9 +17,7 @@ export class Paths {
 	public static readonly ASK_CARD = ":gameId/ask-card";
 	public static readonly CALL_SET = ":gameId/call-set";
 	public static readonly TRANSFER_TURN = ":gameId/transfer-turn";
-
 	public static readonly GET_GAME = ":gameId";
-	public static readonly GET_PLAYER = ":gameId/player";
 }
 
 export class GameEvents {
