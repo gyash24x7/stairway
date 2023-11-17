@@ -33,9 +33,7 @@ export class AuthService {
 		if ( !user ) {
 			this.logger.debug( "New User!" );
 			const avatar = `${ Constants.AVATAR_BASE_URL }/${ id }.svg?r=50`;
-			user = await this.prisma.user.create( {
-				data: { email, name, avatar }
-			} );
+			user = await this.prisma.user.create( { data: { email, name, avatar } } );
 		}
 
 		const accessToken = this.jwtService.sign( user.id, TokenType.ACCESS_TOKEN );
