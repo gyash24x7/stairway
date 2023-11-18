@@ -6,14 +6,31 @@ on:
       - main
   pull_request:
 
+env:
+  NX_CLOUD_DISTRIBUTED_EXECUTION: true
+  NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: 3
+  NX_BRANCH: ${{ github.event.number || github.ref_name }}
+  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+
 jobs:
   main:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Checkout [Pull Request]
+        uses: actions/checkout@v4
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Checkout [Default Branch]
+        uses: actions/checkout@v4
+        if: ${{ github.event_name != 'pull_request' }}
         with:
           fetch-depth: 0
+
+      - name: Set SHAs
+        uses: nrwl/nx-set-shas@v3
 
       - name: Install Node.js
         uses: actions/setup-node@v3
@@ -28,8 +45,7 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -42,14 +58,59 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Set SHAs
-        uses: nrwl/nx-set-shas@v3
-
       - name: Generate Prisma Client
         run: pnpm prisma generate
 
+      - name: Initialize the Nx Cloud distributed CI run
+        run: pnpm nx-cloud start-ci-run
+
       - name: Execute Tests
-        run: pnpm nx affected:test --parallel=3
+        run: pnpm nx affected --target=test --parallel --max-parallel=3
 
       - name: Execute Build
-        run: pnpm nx affected:build --parallel=3
+        run: pnpm nx affected --target=build --parallel --max-parallel=3
+
+      - name: Clean Agents
+        if: ${{ always() }}
+        run: pnpm nx-cloud stop-all-agents
+
+  agents:
+    name: Agent ${{ matrix.agent }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        agent: [ 1, 2, 3 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Start Nx Agent ${{ matrix.agent }}
+        run: npx nx-cloud start-agent
+        env:
+          NX_AGENT_NAME: ${{ matrix.agent }}

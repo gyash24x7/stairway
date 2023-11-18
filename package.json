@@ -60,6 +60,7 @@
 		"@vitejs/plugin-react-swc": "3.4.1",
 		"@vitest/coverage-istanbul": "0.34.6",
 		"nx": "17.1.2",
+		"nx-cloud": "16.5.2",
 		"postcss": "8.4.31",
 		"postcss-preset-mantine": "1.11.0",
 		"postcss-simple-vars": "7.0.1",
