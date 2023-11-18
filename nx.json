@@ -3,15 +3,6 @@
 	"workspaceLayout": {
 		"libsDir": "packages"
 	},
-	"tasksRunnerOptions": {
-		"default": {
-			"runner": "@nx/workspace/tasks-runners/default",
-			"options": {
-				"cacheableOperations": [ "build", "lint", "test", "e2e" ],
-				"cacheableDirectories": [ "node_modules" ]
-			}
-		}
-	},
 	"targetDefaults": {
 		"build": {
 			"dependsOn": [ "^build" ],
@@ -26,5 +17,6 @@
 			"!{projectRoot}/tsconfig.spec.json"
 		],
 		"sharedGlobals": [ ]
-	}
+	},
+	"nxCloudAccessToken": "NWI1ODE0YmQtMmE3NC00M2NkLWE2MGEtODhjNGFlODBiZWY5fHJlYWQtd3JpdGU="
 }
