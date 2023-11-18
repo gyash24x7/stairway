@@ -3,6 +3,15 @@
 	"workspaceLayout": {
 		"libsDir": "packages"
 	},
+	"tasksRunnerOptions": {
+		"default": {
+			"runner": "nx-cloud",
+			"options": {
+				"cacheableOperations": [ "build", "lint", "test", "e2e" ],
+				"cacheableDirectories": [ "node_modules" ]
+			}
+		}
+	},
 	"targetDefaults": {
 		"build": {
 			"dependsOn": [ "^build" ],

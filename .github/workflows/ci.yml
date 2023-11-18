@@ -29,6 +29,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set SHAs
+        uses: nrwl/nx-set-shas@v3
+
       - name: Install Node.js
         uses: actions/setup-node@v3
         with:
@@ -39,11 +42,6 @@ jobs:
         with:
           version: 8
           run_install: false
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
@@ -56,33 +54,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Set SHAs
-        uses: nrwl/nx-set-shas@v3
-
       - name: Generate Prisma Client
         run: pnpm prisma generate
 
-      - name: Check out the default branch
-        run: git branch --track main origin/main
+      - name: Initialize the Nx Cloud distributed CI run
+        run: pnpm nx-cloud start-ci-run
 
-      - name: Initialize the Nx Cloud distributed CI run and stop agents when the build tasks are done
-        run: npx nx-cloud start-ci-run --stop-agents-after=build
+      - name: Execute Tests
+        run: pnpm nx affected --target=test --parallel --max-parallel=3
 
-      - name: Run commands in parallel
-        run: |
-          pids=()
-          # list of commands to be run on agents
-          npx nx affected -t test,build --parallel=3 & 
-          pids+=($!)
-          
-          # run all commands in parallel and bail if one of them fails
-          for pid in ${pids[*]}; do
-            if ! wait $pid; then
-              exit 1
-            fi
-          done
-          
-          exit 0
+      - name: Execute Build
+        run: pnpm nx affected --target=build --parallel --max-parallel=3
+
+      - name: Clean Agents
+        if: ${{ always() }}
+        run: pnpm nx-cloud stop-all-agents
 
   agents:
     name: Agent ${{ matrix.agent }}
@@ -104,11 +90,6 @@ jobs:
         with:
           version: 8
           run_install: false
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - uses: actions/cache@v3
         name: Setup pnpm cache
