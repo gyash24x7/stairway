@@ -1,13 +1,10 @@
-import type { NestMiddleware } from "@nestjs/common";
-import { Injectable } from "@nestjs/common";
-import { LoggerFactory } from "@s2h/core";
+import { HttpException, LoggerFactory } from "@s2h/core";
 import type { NextFunction, Request, Response } from "express";
-import { accessTokenCookieOptions, Constants } from "./auth.constants";
-import { AuthService } from "./auth.service";
-import { JwtService } from "./jwt.service";
+import { accessTokenCookieOptions, Constants, Messages } from "./auth.constants";
+import { authService, AuthService } from "./auth.service";
+import { jwtService, JwtService } from "./jwt.service";
 
-@Injectable()
-export class AuthMiddleware implements NestMiddleware {
+export class AuthMiddleware {
 
 	private readonly logger = LoggerFactory.getLogger( AuthMiddleware );
 
@@ -22,28 +19,35 @@ export class AuthMiddleware implements NestMiddleware {
 		const refreshToken: string = req.cookies[ Constants.REFRESH_COOKIE ];
 
 		if ( !accessToken ) {
+			this.logger.error( "No Access Token!" );
+			throw new HttpException( 401, Messages.UNAUTHORIZED );
+		}
+
+		const response = this.jwtService.verify( accessToken );
+
+		if ( !!response.subject ) {
+			res.locals[ Constants.AUTH_USER ] = await this.authService.getAuthUser( response.subject );
 			return next();
 		}
 
-		const { subject, expired } = this.jwtService.verify( accessToken );
-
-		if ( subject ) {
-			res.locals[ Constants.AUTH_USER_ID ] = subject;
-			return next();
+		if ( !response.expired || !refreshToken ) {
+			this.logger.error( "Cannot ReIssue Access Token!" );
+			throw new HttpException( 401, Messages.UNAUTHORIZED );
 		}
 
-		if ( expired && !!refreshToken ) {
-			const newAccessToken = await this.authService.reIssueAccessToken( refreshToken );
+		const newAccessToken = await this.authService.reIssueAccessToken( refreshToken );
 
-			if ( !!newAccessToken ) {
-				res.cookie( Constants.AUTH_COOKIE, newAccessToken, accessTokenCookieOptions );
-				const { subject } = this.jwtService.verify( newAccessToken );
-				res.locals[ Constants.AUTH_USER_ID ] = subject;
-			}
-
-			return next();
+		if ( !newAccessToken ) {
+			this.logger.error( "Unknown User!" );
+			throw new HttpException( 403, Messages.UNAUTHORIZED );
 		}
+
+		res.cookie( Constants.AUTH_COOKIE, newAccessToken, accessTokenCookieOptions );
+		const { subject } = this.jwtService.verify( newAccessToken );
+		res.locals[ Constants.AUTH_USER ] = await this.authService.getAuthUser( subject! );
 
 		return next();
 	}
 }
+
+export const authMiddleware = new AuthMiddleware( authService, jwtService );

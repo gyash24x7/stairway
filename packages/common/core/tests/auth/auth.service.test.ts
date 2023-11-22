@@ -1,5 +1,4 @@
-import type { HttpException } from "@nestjs/common";
-import type { PrismaService } from "@s2h/core";
+import type { HttpException, PrismaService } from "@s2h/core";
 import superagent, { Response, SuperAgentRequest } from "superagent";
 import { afterEach, describe, expect, it, Mocked, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
@@ -160,7 +159,7 @@ describe( "AuthService", () => {
 	} );
 
 	it( "should return undefined if subject not present when re-issuing refresh token", async () => {
-		mockJwtService.verify.mockReturnValue( { valid: true, expired: false, subject: "" } );
+		mockJwtService.verify.mockReturnValue( { expired: false, subject: "" } );
 
 		const authService = new AuthService( mockPrisma, mockJwtService );
 		const newToken = await authService.reIssueAccessToken( "refreshToken" );
@@ -172,7 +171,7 @@ describe( "AuthService", () => {
 
 	it( "should return undefined if user does not exist when re-issuing refresh token", async () => {
 		mockPrisma.user.findUnique.mockResolvedValue( null );
-		mockJwtService.verify.mockReturnValue( { valid: true, expired: false, subject: "subject" } );
+		mockJwtService.verify.mockReturnValue( { expired: false, subject: "subject" } );
 
 		const authService = new AuthService( mockPrisma, mockJwtService );
 		const newToken = await authService.reIssueAccessToken( "refreshToken" );
@@ -184,7 +183,7 @@ describe( "AuthService", () => {
 
 	it( "should return new token if user is present when re-issuing refresh token", async () => {
 		mockPrisma.user.findUnique.mockResolvedValue( mockDeep() );
-		mockJwtService.verify.mockReturnValue( { valid: true, expired: false, subject: "subject" } );
+		mockJwtService.verify.mockReturnValue( { expired: false, subject: "subject" } );
 		mockJwtService.sign.mockReturnValue( "accessToken" );
 
 		const authService = new AuthService( mockPrisma, mockJwtService );

@@ -1,8 +1,7 @@
-import type { LoggerService as NestLoggerService } from "@nestjs/common";
 import type { Ogma } from "@ogma/logger";
 import { format } from "node:util";
 
-export class LoggerService implements NestLoggerService {
+export class LoggerService {
 	constructor( private readonly ogma: Ogma, private readonly scope?: string ) {}
 
 	debug( message: string, ...params: any[] ) {

@@ -1,34 +1,24 @@
-import { LiteratureModule } from "@literature/core";
-import { Module } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { AuthModule, LoggerFactory, loggerMiddleware, PrismaModule, RealtimeModule } from "@s2h/core";
+import { LoggerFactory, loggerMiddleware } from "@s2h/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import dotenv from "dotenv";
+import express from "express";
 
 dotenv.config();
 
-@Module( {
-	imports: [ PrismaModule, RealtimeModule, AuthModule, LiteratureModule ]
-} )
-export class AppModule {}
+const app = express();
 
-async function bootstrap() {
-	const logger = LoggerFactory.getLogger( AppModule );
-	const app = await NestFactory.create( AppModule, { logger } );
+app.use( bodyParser.json() );
+app.use( cors( {
+	origin: "http://localhost:3000",
+	credentials: true
+} ) );
+app.use( cookieParser() );
+app.use( loggerMiddleware() );
 
-	app.enableCors( {
-		origin: "http://localhost:3000",
-		credentials: true
-	} );
+const logger = LoggerFactory.getLogger();
 
-	app.setGlobalPrefix( "/api" );
-	app.use( bodyParser.json() );
-	app.use( cookieParser() );
-	app.use( loggerMiddleware() );
-
-	await app.listen( 8000 );
+app.listen( 8000, () => {
 	logger.info( `Stairway started on localhost:8000!` );
-}
-
-bootstrap().then();
+} );

@@ -1,5 +1,5 @@
-import type { Type } from "@nestjs/common";
 import { Ogma } from "@ogma/logger";
+import type { Type } from "../utils";
 import { LoggerService } from "./logger.service";
 
 export class LoggerFactory {

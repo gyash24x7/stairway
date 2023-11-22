@@ -1,21 +1,17 @@
-import { Controller, Delete, Get, HttpCode, HttpStatus, Query, Res } from "@nestjs/common";
-import type { User } from "@prisma/client";
 import { LoggerFactory } from "@s2h/core";
-import type { Response } from "express";
-import { accessTokenCookieOptions, Constants, Paths, refreshTokenCookieOptions } from "./auth.constants";
-import { AuthUser, RequiresAuth } from "./auth.decorators";
-import { AuthService } from "./auth.service";
+import type { Request, Response } from "express";
+import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "./auth.constants";
+import { authService, AuthService } from "./auth.service";
 
-@Controller( Paths.BASE )
 export class AuthController {
 
 	private readonly logger = LoggerFactory.getLogger( AuthController );
 
 	constructor( private readonly authService: AuthService ) {}
 
-	@Get( Paths.AUTH_CALLBACK )
-	async handleAuthCallback( @Query( "code" ) code: string, @Res() res: Response ) {
+	async handleAuthCallback( req: Request, res: Response ) {
 		this.logger.debug( ">> handleAuthCallback()" );
+		const code = req.query[ "code" ] as string;
 		const { accessToken, refreshToken } = await this.authService.handleAuthCallback( code );
 		res.cookie( Constants.AUTH_COOKIE, accessToken, accessTokenCookieOptions );
 		res.cookie( Constants.REFRESH_COOKIE, refreshToken, refreshTokenCookieOptions );
@@ -23,21 +19,20 @@ export class AuthController {
 		this.logger.debug( "<< handleAuthCallback()" );
 	}
 
-	@Get()
-	@RequiresAuth()
-	async getAuthUser( @AuthUser() authUser: User ) {
+	async getAuthUser( _req: Request, res: Response ) {
 		this.logger.debug( ">> getAuthUser()" );
-		return authUser;
+		const authUser = res.locals[ Constants.AUTH_USER ];
+		res.send( authUser );
+		this.logger.debug( "<< getAuthUser()" );
 	}
 
-	@Delete( Paths.LOGOUT )
-	@RequiresAuth()
-	@HttpCode( HttpStatus.NO_CONTENT )
-	logout( @Res() res: Response ) {
+	logout( _req: Request, res: Response ) {
 		this.logger.debug( ">> logout()" );
 		res.clearCookie( Constants.AUTH_COOKIE, accessTokenCookieOptions );
 		res.clearCookie( Constants.REFRESH_COOKIE, refreshTokenCookieOptions );
-		res.status( HttpStatus.NO_CONTENT ).send();
+		res.status( 204 ).send();
 		this.logger.debug( "<< logout()" );
 	}
 }
+
+export const authController = new AuthController( authService );

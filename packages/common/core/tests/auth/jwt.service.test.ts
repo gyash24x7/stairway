@@ -28,9 +28,9 @@ describe( "JwtService", () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 
 		const token = jwt.sign( {}, "jwtSecret", { expiresIn: 0, subject: "subject" } );
-		const { valid, expired } = jwtService.verify( token );
+		const { subject, expired } = jwtService.verify( token );
 
-		expect( valid ).toBeFalsy();
+		expect( subject ).toBeFalsy();
 		expect( expired ).toBeTruthy();
 	} );
 
@@ -38,9 +38,9 @@ describe( "JwtService", () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 		const token = jwt.sign( {}, "jwtSecret1", { expiresIn: 15 * 60, subject: "subject" } );
 
-		const { valid, expired } = jwtService.verify( token );
+		const { subject, expired } = jwtService.verify( token );
 
-		expect( valid ).toBeFalsy();
+		expect( subject ).toBeFalsy();
 		expect( expired ).toBeFalsy();
 	} );
 
@@ -48,9 +48,8 @@ describe( "JwtService", () => {
 		process.env[ "JWT_SECRET" ] = "jwtSecret";
 
 		const token = jwt.sign( {}, "jwtSecret", { expiresIn: 15 * 60, subject: "subject" } );
-		const { valid, expired, subject } = jwtService.verify( token );
+		const { expired, subject } = jwtService.verify( token );
 
-		expect( valid ).toBeTruthy();
 		expect( expired ).toBeFalsy();
 		expect( subject ).toBe( "subject" );
 	} );

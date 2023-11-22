@@ -22,6 +22,7 @@ export class Paths {
 }
 
 export class Messages {
+	public static readonly UNAUTHORIZED = "Unauthorized!";
 	public static readonly EMAIL_NOT_VERIFIED = "Email Not Verified!";
 }
 

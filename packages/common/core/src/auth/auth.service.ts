@@ -1,10 +1,9 @@
-import { ForbiddenException, Injectable } from "@nestjs/common";
-import { LoggerFactory, PrismaService } from "@s2h/core";
+import { HttpException, LoggerFactory, prismaService, PrismaService } from "@s2h/core";
 import process from "process";
 import superagent from "superagent";
 import { URL } from "url";
 import { Constants, Messages, TokenType } from "./auth.constants";
-import { JwtService } from "./jwt.service";
+import { jwtService, JwtService } from "./jwt.service";
 
 type GoogleTokenResult = {
 	access_token: string;
@@ -25,7 +24,6 @@ type GoogleUserResult = {
 	locale: string;
 }
 
-@Injectable()
 export class AuthService {
 
 	private readonly logger = LoggerFactory.getLogger( AuthService );
@@ -35,6 +33,13 @@ export class AuthService {
 		private readonly jwtService: JwtService
 	) {}
 
+	async getAuthUser( userId: string ) {
+		this.logger.debug( ">> getAuthUser()" );
+		const user = await this.prisma.user.findUnique( { where: { id: userId } } );
+		this.logger.debug( "<< getAuthUser()" );
+		return user;
+	}
+
 	async handleAuthCallback( code: string ) {
 		this.logger.debug( ">> handleAuthCallback()" );
 
@@ -43,7 +48,7 @@ export class AuthService {
 
 		if ( !verified_email ) {
 			this.logger.warn( "Email Not Verified!" );
-			throw new ForbiddenException( Messages.EMAIL_NOT_VERIFIED );
+			throw new HttpException( 403, Messages.EMAIL_NOT_VERIFIED );
 		}
 
 		let user = await this.prisma.user.findUnique( { where: { email } } );
@@ -113,3 +118,5 @@ export class AuthService {
 		return response;
 	}
 }
+
+export const authService = new AuthService( prismaService, jwtService );
