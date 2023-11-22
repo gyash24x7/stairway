@@ -3,7 +3,7 @@ import type { EventBus } from "@nestjs/cqrs";
 import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { TransferTurnCommand, TransferTurnCommandHandler } from "../../src/commands";
+import { TransferTurnCommandHandler, TransferTurnValidatorInput } from "../../src/commands";
 import { MoveCreatedEvent } from "../../src/events";
 import type { TransferTurnValidator } from "../../src/validators";
 import {
@@ -44,7 +44,7 @@ describe( "TransferTurnCommand", () => {
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const handler = new TransferTurnCommandHandler( mockPrisma, mockValidator, mockEventBus );
-		const command = new TransferTurnCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
+		const command = new TransferTurnValidatorInput( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		const result = await handler.execute( command );
 

@@ -4,7 +4,7 @@ import type { PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { JoinGameCommand } from "../../src/commands";
-import { Messages } from "../../src/constants";
+import { Messages } from "../../src/constants/literature.constants";
 import { JoinGameValidator } from "../../src/validators";
 import { buildMockRawGameData, mockAuthUser, mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4 } from "../mockdata";
 

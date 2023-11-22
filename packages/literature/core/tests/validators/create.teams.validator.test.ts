@@ -2,7 +2,7 @@ import { CreateTeamsInput, GameStatus } from "@literature/types";
 import type { HttpException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import { CreateTeamsCommand } from "../../src/commands";
-import { Messages } from "../../src/constants";
+import { Messages } from "../../src/constants/literature.constants";
 import { CreateTeamsValidator } from "../../src/validators";
 import {
 	buildMockGameData,

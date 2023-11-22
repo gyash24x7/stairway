@@ -1,8 +1,8 @@
 import { CardMapping, GameStatus } from "@literature/types";
 import type { HttpException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
-import { TransferTurnCommand } from "../../src/commands";
-import { Messages } from "../../src/constants";
+import { TransferTurnValidatorInput } from "../../src/commands";
+import { Messages } from "../../src/constants/literature.constants";
 import { TransferTurnValidator } from "../../src/validators";
 import {
 	buildMockGameData,
@@ -35,7 +35,7 @@ describe( "TransferTurnValidator", () => {
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const validator = new TransferTurnValidator();
-		const command = new TransferTurnCommand(
+		const command = new TransferTurnValidatorInput(
 			{ transferTo: mockPlayer2.id },
 			mockGameData,
 			mockPlayerSpecificData,
@@ -64,7 +64,7 @@ describe( "TransferTurnValidator", () => {
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const validator = new TransferTurnValidator();
-		const command = new TransferTurnCommand(
+		const command = new TransferTurnValidatorInput(
 			{ transferTo: mockPlayer2.id },
 			mockGameData,
 			mockPlayerSpecificData,
@@ -93,7 +93,7 @@ describe( "TransferTurnValidator", () => {
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const validator = new TransferTurnValidator();
-		const command = new TransferTurnCommand(
+		const command = new TransferTurnValidatorInput(
 			{ transferTo: "5" },
 			mockGameData,
 			mockPlayerSpecificData,
@@ -122,7 +122,7 @@ describe( "TransferTurnValidator", () => {
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const validator = new TransferTurnValidator();
-		const command = new TransferTurnCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
+		const command = new TransferTurnValidatorInput( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		expect.assertions( 2 );
 		await validator.validate( command )
@@ -146,7 +146,7 @@ describe( "TransferTurnValidator", () => {
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const validator = new TransferTurnValidator();
-		const command = new TransferTurnCommand(
+		const command = new TransferTurnValidatorInput(
 			{ transferTo: mockPlayer2.id },
 			mockGameData,
 			mockPlayerSpecificData,
@@ -175,7 +175,7 @@ describe( "TransferTurnValidator", () => {
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 		const validator = new TransferTurnValidator();
-		const command = new TransferTurnCommand( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
+		const command = new TransferTurnValidatorInput( mockInput, mockGameData, mockPlayerSpecificData, cardsData );
 
 		const { transferringPlayer, receivingPlayer } = await validator.validate( command );
 

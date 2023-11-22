@@ -2,7 +2,7 @@ import { CardMapping, GameStatus } from "@literature/types";
 import type { HttpException } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import { AskCardCommand } from "../../src/commands";
-import { Messages } from "../../src/constants";
+import { Messages } from "../../src/constants/literature.constants";
 import { AskCardValidator } from "../../src/validators";
 import {
 	buildMockGameData,

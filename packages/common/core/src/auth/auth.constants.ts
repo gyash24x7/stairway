@@ -16,7 +16,7 @@ export class TokenType {
 }
 
 export class Paths {
-	public static readonly BASE = "auth";
+	public static readonly GET_AUTH_USER = "";
 	public static readonly LOGOUT = "logout";
 	public static readonly AUTH_CALLBACK = "callback";
 }

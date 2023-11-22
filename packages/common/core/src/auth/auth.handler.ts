@@ -3,9 +3,9 @@ import type { Request, Response } from "express";
 import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "./auth.constants";
 import { authService, AuthService } from "./auth.service";
 
-export class AuthController {
+export class AuthHandler {
 
-	private readonly logger = LoggerFactory.getLogger( AuthController );
+	private readonly logger = LoggerFactory.getLogger( AuthHandler );
 
 	constructor( private readonly authService: AuthService ) {}
 
@@ -35,4 +35,4 @@ export class AuthController {
 	}
 }
 
-export const authController = new AuthController( authService );
+export const authHandler = new AuthHandler( authService );

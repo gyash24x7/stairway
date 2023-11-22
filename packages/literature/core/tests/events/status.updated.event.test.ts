@@ -2,7 +2,7 @@ import { GameStatus } from "@literature/types";
 import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { Constants, GameEvents } from "../../src/constants";
+import { Constants, GameEvents } from "../../src/constants/literature.constants";
 import { StatusUpdatedEvent, StatusUpdatedEventHandler } from "../../src/events";
 
 describe( "StatusUpdatedEvent", () => {

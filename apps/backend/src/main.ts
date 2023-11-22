@@ -1,4 +1,5 @@
-import { LoggerFactory, loggerMiddleware } from "@s2h/core";
+import { literatureRouter } from "@literature/core";
+import { authMiddleware, authRouter, LoggerFactory, loggerMiddleware } from "@s2h/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -16,6 +17,17 @@ app.use( cors( {
 } ) );
 app.use( cookieParser() );
 app.use( loggerMiddleware() );
+
+const apiRouter = express.Router();
+
+apiRouter.use( "/auth", authRouter.registerRoutes() );
+apiRouter.use(
+	"/literature",
+	( req, res, next ) => authMiddleware.use( req, res, next ),
+	literatureRouter.registerRoutes()
+);
+
+app.use( "/api", apiRouter );
 
 const logger = LoggerFactory.getLogger();
 

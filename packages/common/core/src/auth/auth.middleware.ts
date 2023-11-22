@@ -1,10 +1,10 @@
-import { HttpException, LoggerFactory } from "@s2h/core";
+import { HttpException, LoggerFactory, Middleware } from "@s2h/core";
 import type { NextFunction, Request, Response } from "express";
 import { accessTokenCookieOptions, Constants, Messages } from "./auth.constants";
 import { authService, AuthService } from "./auth.service";
 import { jwtService, JwtService } from "./jwt.service";
 
-export class AuthMiddleware {
+export class AuthMiddleware implements Middleware {
 
 	private readonly logger = LoggerFactory.getLogger( AuthMiddleware );
 

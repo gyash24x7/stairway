@@ -4,7 +4,7 @@ import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { UpdateStatusCommand } from "../../src/commands";
-import { Constants, GameEvents } from "../../src/constants";
+import { Constants, GameEvents } from "../../src/constants/literature.constants";
 import { TeamsCreatedEvent, TeamsCreatedEventHandler } from "../../src/events";
 import { mockPlayer1, mockPlayer2, mockPlayer3, mockPlayer4, mockTeamA, mockTeamB } from "../mockdata";
 

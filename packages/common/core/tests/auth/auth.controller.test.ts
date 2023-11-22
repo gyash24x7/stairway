@@ -2,7 +2,7 @@ import type { User } from "@prisma/client";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { AuthController } from "../../src";
+import { AuthHandler } from "../../src";
 import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "../../src/auth/auth.constants";
 import type { AuthService } from "../../src/auth/auth.service";
 
@@ -19,7 +19,7 @@ describe( "AuthController", () => {
 	} );
 
 	it( "should return authUser when getAuthInfo is called", async () => {
-		const controller = new AuthController( mockAuthService );
+		const controller = new AuthHandler( mockAuthService );
 		mockRes.locals[ Constants.AUTH_USER ] = mockAuthUser;
 		await controller.getAuthUser( mockReq, mockRes );
 		expect( mockRes.send ).toHaveBeenCalledWith( mockAuthUser );
@@ -33,7 +33,7 @@ describe( "AuthController", () => {
 		mockReq.query[ "code" ] = code;
 		mockAuthService.handleAuthCallback.mockResolvedValue( { accessToken, refreshToken } );
 
-		const controller = new AuthController( mockAuthService );
+		const controller = new AuthHandler( mockAuthService );
 		await controller.handleAuthCallback( mockReq, mockRes );
 
 		expect( mockAuthService.handleAuthCallback ).toHaveBeenCalledWith( code );
@@ -47,7 +47,7 @@ describe( "AuthController", () => {
 	it( "should remove all cookies when logout is called", async () => {
 		const mockRes = mockDeep<Response>();
 		mockRes.status.mockReturnValue( mockRes );
-		const controller = new AuthController( mockAuthService );
+		const controller = new AuthHandler( mockAuthService );
 
 		controller.logout( mockReq, mockRes );
 

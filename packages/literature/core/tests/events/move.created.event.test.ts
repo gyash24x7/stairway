@@ -4,7 +4,7 @@ import type { RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { UpdateHandsCommand, UpdateInferenceCommand, UpdateScoreCommand, UpdateTurnCommand } from "../../src/commands";
-import { Constants, GameEvents } from "../../src/constants";
+import { Constants, GameEvents } from "../../src/constants/literature.constants";
 import { MoveCreatedEvent, MoveCreatedEventHandler } from "../../src/events";
 import { buildMockCardMappings, buildMockGameData, mockAskMove, mockCallMove } from "../mockdata";
 import { buildCardsData } from "../mockdata/utils";

@@ -29,9 +29,6 @@ dependencies:
   '@tabler/icons-react':
     specifier: 2.42.0
     version: 2.42.0(react@18.2.0)
-  '@types/cors':
-    specifier: 2.8.17
-    version: 2.8.17
   body-parser:
     specifier: 1.20.2
     version: 1.20.2
@@ -77,9 +74,6 @@ dependencies:
   tslib:
     specifier: 2.6.2
     version: 2.6.2
-  typed-rpc:
-    specifier: 4.1.0
-    version: 4.1.0
   zustand:
     specifier: 4.4.6
     version: 4.4.6(@types/react@18.2.38)(immer@10.0.3)(react@18.2.0)
@@ -115,6 +109,9 @@ devDependencies:
   '@types/cookie-parser':
     specifier: 1.4.6
     version: 1.4.6
+  '@types/cors':
+    specifier: 2.8.17
+    version: 2.8.17
   '@types/express':
     specifier: 4.17.21
     version: 4.17.21
@@ -2730,7 +2727,6 @@ packages:
     resolution: {integrity: sha512-8CGDvrBj1zgo2qE+oS3pOCyYNqCPryMWY2bGfwA0dcfopWGgxs+78df0Rs3rc9THP4JkOhLsAa+15VdpAqkcUA==}
     dependencies:
       '@types/node': 20.9.4
-    dev: false
 
   /@types/eslint-scope@3.7.7:
     resolution: {integrity: sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg==}
@@ -7800,10 +7796,6 @@ packages:
   /typed-assert@1.0.9:
     resolution: {integrity: sha512-KNNZtayBCtmnNmbo5mG47p1XsCyrx6iVqomjcZnec/1Y5GGARaxPs6r49RnSPeUP3YjNYiU9sQHAtY4BBvnZwg==}
     dev: true
-
-  /typed-rpc@4.1.0:
-    resolution: {integrity: sha512-4ev2BjX7WWTlolRm0+CDs35qeMi4Mq2tY6zL3IWMH9KIiHKTLkEEO0OkSTGoXuCpA0iYWkOd8HxxSTiNIXNl+A==}
-    dev: false
 
   /typescript@5.3.2:
     resolution: {integrity: sha512-6l+RyNy7oAHDfxC4FzSJcz9vnjTKxrLpDG5M2Vu4SHRVNg6xzqZp6LYSR9zjqQTu8DU/f5xwxUdADOkbrIX2gQ==}

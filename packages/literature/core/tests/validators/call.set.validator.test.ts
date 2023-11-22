@@ -3,7 +3,7 @@ import type { HttpException } from "@nestjs/common";
 import { CardSet } from "@s2h/cards";
 import { describe, expect, it } from "vitest";
 import { CallSetCommand } from "../../src/commands";
-import { Messages } from "../../src/constants";
+import { Messages } from "../../src/constants/literature.constants";
 import { CallSetValidator } from "../../src/validators";
 import {
 	buildMockGameData,

@@ -143,3 +143,15 @@ export type CallSetInput = {
 export type TransferTurnInput = {
 	transferTo: string;
 }
+
+export interface ILiteratureRpcService {
+	getGameData: () => Promise<{ gameData: GameData, playerData: PlayerSpecificData }>;
+	createGame: ( input: CreateGameInput ) => Promise<GameData>;
+	joinGame: ( input: JoinGameInput ) => Promise<GameWithPlayers>;
+	addBots: () => Promise<PlayerData>;
+	createTeams: ( input: CreateTeamsInput ) => Promise<TeamData>;
+	startGame: () => Promise<void>;
+	askCard: ( input: AskCardInput ) => Promise<AskMove>;
+	callSet: ( input: CallSetInput ) => Promise<CallMove>;
+	transferTurn: ( input: TransferTurnInput ) => Promise<TransferMove>;
+}
