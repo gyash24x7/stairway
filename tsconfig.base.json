@@ -1,6 +1,6 @@
 {
 	"compileOnSave": false,
-	"extends": [ "@tsconfig/node18", "@tsconfig/strictest" ],
+	"extends": [ "@tsconfig/node20", "@tsconfig/strictest" ],
 	"compilerOptions": {
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
