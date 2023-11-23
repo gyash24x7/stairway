@@ -102,7 +102,7 @@ export class LiteratureService {
 		await this.handlePlayerJoined( game.id, newPlayer, isCapacityFull );
 
 		this.logger.debug( "<< joinGame()" );
-		return game;
+		return { ...game, players: [ ...game.players, newPlayer ] };
 	}
 
 	async addBots( gameData: GameData ) {
@@ -164,8 +164,6 @@ export class LiteratureService {
 
 	async startGame( gameData: GameData ) {
 		this.logger.debug( ">> startGame()" );
-
-		await this.validators.startGame( gameData );
 
 		let deck = shuffle( SORTED_DECK );
 		deck = removeCardsOfRank( deck, CardRank.SEVEN );
@@ -487,7 +485,7 @@ export class LiteratureService {
 			} )
 		);
 
-		await this.handleInferenceUpdated( gameData.id, inferenceData );
+		await this.handleInferencesUpdated( gameData.id, inferenceData );
 
 		this.logger.debug( "<< createInferences()" );
 		return inferenceData;
@@ -516,7 +514,7 @@ export class LiteratureService {
 				} );
 			} ) );
 
-			await this.handleInferenceUpdated( currentMove.gameId, inferences );
+			await this.handleInferencesUpdated( currentMove.gameId, inferences );
 		}
 
 		this.logger.debug( "<< updateInferences()" );
@@ -573,14 +571,14 @@ export class LiteratureService {
 		const { hands } = await this.getCardsData( gameData.id, playerId );
 
 		const { teamId, ...info } = gameData.players[ playerId ];
-		const cardSets = getCardSetsInHand( hands[ playerId ] );
+		const cardSets = getCardSetsInHand( hands[ playerId ] ?? [] );
 
 		let oppositeTeamId: string | undefined = undefined;
 		if ( !!teamId ) {
 			oppositeTeamId = Object.values( gameData.teams ).find( team => team.id !== teamId )?.id;
 		}
 
-		const data: PlayerSpecificData = { ...info, hand: hands[ playerId ], cardSets, oppositeTeamId, teamId };
+		const data: PlayerSpecificData = { ...info, hand: hands[ playerId ] ?? [], cardSets, oppositeTeamId, teamId };
 
 		this.logger.debug( "<< getPlayerSpecificData()" );
 		return data;
@@ -607,17 +605,17 @@ export class LiteratureService {
 	}
 
 	async handleGameStarted( gameData: GameData, cardsData: CardsData ) {
-		this.logger.debug( ">> handleGameStartedEvent()" );
+		this.logger.debug( ">> handleGameStarted()" );
 
 		await this.createInferences( gameData, cardsData.hands );
 		await this.updateStatus( gameData.id, GameStatus.IN_PROGRESS );
 		await this.handleHandsUpdated( gameData.id, cardsData.hands );
 
-		this.logger.debug( "<< handleGameStartedEvent()" );
+		this.logger.debug( "<< handleGameStarted()" );
 	}
 
 	async handleHandsUpdated( gameId: string, hands: HandData ) {
-		this.logger.debug( ">> handleHandsUpdatedEvent()" );
+		this.logger.debug( ">> handleHandsUpdated()" );
 
 		const cardCounts: Record<string, number> = {};
 
@@ -639,11 +637,11 @@ export class LiteratureService {
 			cardCounts
 		);
 
-		this.logger.debug( "<< handleHandsUpdatedEvent()" );
+		this.logger.debug( "<< handleHandsUpdated()" );
 	}
 
-	async handleInferenceUpdated( gameId: string, inferences: InferenceData ) {
-		this.logger.debug( ">> handleInferencesUpdatedEvent()" );
+	async handleInferencesUpdated( gameId: string, inferences: InferenceData ) {
+		this.logger.debug( ">> handleInferencesUpdated()" );
 
 		Object.keys( inferences ).map( playerId => {
 			this.realtimeService.publishMemberMessage(
@@ -655,7 +653,7 @@ export class LiteratureService {
 			);
 		} );
 
-		this.logger.debug( "<< handleInferencesUpdatedEvent()" );
+		this.logger.debug( "<< handleInferencesUpdated()" );
 	}
 
 	async handleMoveCreated( move: Move, gameData: GameData, cardsData: CardsData ) {
@@ -677,7 +675,7 @@ export class LiteratureService {
 	}
 
 	async handlePlayerJoined( gameId: string, player: Player, isCapacityFull: boolean ) {
-		this.logger.debug( ">> handlePlayerJoinedEvent()" );
+		this.logger.debug( ">> handlePlayerJoined()" );
 
 		if ( isCapacityFull ) {
 			this.logger.debug( "Player Capacity Full for Game: %s", gameId );
@@ -691,11 +689,11 @@ export class LiteratureService {
 			player
 		);
 
-		this.logger.debug( "<< handlePlayerJoinedEvent()" );
+		this.logger.debug( "<< handlePlayerJoined()" );
 	}
 
 	async handleScoreUpdated( gameId: string, teams: TeamData, scoreUpdate: ScoreUpdate ) {
-		this.logger.debug( ">> handleScoreUpdatedEvent()" );
+		this.logger.debug( ">> handleScoreUpdated()" );
 
 		const setsCompleted: CardSet[] = [ scoreUpdate.setWon ];
 		Object.values( teams ).forEach( team => {
@@ -713,11 +711,11 @@ export class LiteratureService {
 			scoreUpdate
 		);
 
-		this.logger.debug( "<< handleScoreUpdatedEvent()" );
+		this.logger.debug( "<< handleScoreUpdated()" );
 	}
 
 	async handleStatusUpdated( gameId: string, status: GameStatus ) {
-		this.logger.debug( ">> handleStatusUpdatedEvent()" );
+		this.logger.debug( ">> handleStatusUpdated()" );
 
 		this.realtimeService.publishRoomMessage(
 			Constants.LITERATURE,
@@ -726,11 +724,11 @@ export class LiteratureService {
 			status
 		);
 
-		this.logger.debug( "<< handleStatusUpdatedEvent()" );
+		this.logger.debug( "<< handleStatusUpdated()" );
 	}
 
 	async handleTeamsCreated( gameId: string, teams: TeamData ) {
-		this.logger.debug( ">> handleTeamsCreatedEvent()" );
+		this.logger.debug( ">> handleTeamsCreated()" );
 
 		await this.updateStatus( gameId, GameStatus.TEAMS_CREATED );
 
@@ -741,11 +739,11 @@ export class LiteratureService {
 			teams
 		);
 
-		this.logger.debug( "<< handleTeamsCreatedEvent()" );
+		this.logger.debug( "<< handleTeamsCreated()" );
 	}
 
 	async handleTurnUpdated( gameId: string, players: PlayerData, nextTurn: string ) {
-		this.logger.debug( ">> handleTurnUpdatedEvent()" );
+		this.logger.debug( ">> handleTurnUpdated()" );
 
 		const nextPlayer = players[ nextTurn ];
 		if ( nextPlayer.isBot ) {
@@ -759,7 +757,7 @@ export class LiteratureService {
 			nextTurn
 		);
 
-		this.logger.debug( "<< handleTurnUpdatedEvent()" );
+		this.logger.debug( "<< handleTurnUpdated()" );
 	}
 
 	private updateInferencesOnCallMove( move: CallMove, inferences: InferenceData ) {

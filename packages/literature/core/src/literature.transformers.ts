@@ -18,6 +18,15 @@ export class LiteratureTransformers {
 	gameData( data: RawGameData ) {
 		this.logger.debug( ">> transformGameData()" );
 		const teamMap: Record<string, TeamWithMembers> = {};
+
+		const cardCounts: Record<string, number> = {};
+		data.cardMappings?.forEach( cardMapping => {
+			if ( !cardCounts[ cardMapping.playerId ] ) {
+				cardCounts[ cardMapping.playerId ] = 0;
+			}
+			cardCounts[ cardMapping.playerId ]++;
+		} );
+		
 		data.teams?.forEach( team => {
 			teamMap[ team.id ] = { ...team, members: [] };
 		} );
@@ -28,14 +37,6 @@ export class LiteratureTransformers {
 			if ( !!player.teamId ) {
 				teamMap[ player.teamId ]?.members.push( player.id );
 			}
-		} );
-
-		const cardCounts: Record<string, number> = {};
-		data.cardMappings?.forEach( cardMapping => {
-			if ( !cardCounts[ cardMapping.playerId ] ) {
-				cardCounts[ cardMapping.playerId ] = 0;
-			}
-			cardCounts[ cardMapping.playerId ]++;
 		} );
 
 		this.logger.debug( "<< transformGameData()" );

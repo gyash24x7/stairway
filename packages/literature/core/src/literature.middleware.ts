@@ -16,13 +16,14 @@ export class LiteratureMiddleware implements Middleware {
 
 	constructor( private readonly literatureService: LiteratureService ) {}
 
-
 	async use( req: Request, res: Response, next: NextFunction ) {
 		this.logger.info( ">> canActivate()" );
 
 		const gameId: string = req.params[ "gameId" ];
 		const authUser: User = res.locals[ Constants.AUTH_USER ];
 		this.logger.info( "GameId: %s", gameId );
+
+		const requiredGameData: RequiredGameData = res.locals[ Constants.REQUIRED_GAME_DATA ];
 
 		const game = await this.literatureService.getGameData( gameId );
 
@@ -39,6 +40,22 @@ export class LiteratureMiddleware implements Middleware {
 		}
 
 		res.locals[ Constants.PLAYER_DATA ] = await this.literatureService.getPlayerSpecificData( game, authUser.id );
+
+		const { status, turn, cards } = requiredGameData;
+
+		if ( status && game.status !== status ) {
+			this.logger.error( "Game Status is not %s! GameId: %s", status, gameId );
+			throw new HttpException( 400 );
+		}
+
+		if ( turn && game.currentTurn !== authUser.id ) {
+			this.logger.error( "It's not your turn! GameId: %s", gameId );
+			throw new HttpException( 400 );
+		}
+
+		if ( cards ) {
+			res.locals[ Constants.CARDS_DATA ] = await this.literatureService.getCardsData( gameId );
+		}
 
 		next();
 	}

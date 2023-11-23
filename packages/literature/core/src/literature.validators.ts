@@ -3,7 +3,6 @@ import {
 	CallSetInput,
 	CardsData,
 	GameData,
-	GameStatus,
 	JoinGameInput,
 	MoveType,
 	PlayerSpecificData,
@@ -61,11 +60,6 @@ export class LiteratureValidators {
 	async addBots( gameData: GameData ) {
 		this.logger.debug( ">> validateAddBotsRequest()" );
 
-		if ( gameData.status !== GameStatus.CREATED ) {
-			this.logger.debug( "Game Present but not in correct status!" );
-			throw new HttpException( 400, Messages.INCORRECT_STATUS );
-		}
-
 		const remainingPlayers = gameData.playerCount - Object.keys( gameData.players ).length;
 
 		if ( remainingPlayers <= 0 ) {
@@ -80,11 +74,6 @@ export class LiteratureValidators {
 	async createTeams( gameData: GameData ) {
 		this.logger.debug( ">> validateCreateTeamsRequest()" );
 
-		if ( gameData.status !== GameStatus.PLAYERS_READY ) {
-			this.logger.debug( "Game Present but not in correct status!" );
-			throw new HttpException( 400, Messages.INCORRECT_STATUS );
-		}
-
 		if ( Object.keys( gameData.players ).length !== gameData.playerCount ) {
 			this.logger.error( "%s GameId: %s", Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS, gameData.id );
 			throw new HttpException( 400, Messages.GAME_DOESNT_HAVE_ENOUGH_PLAYERS );
@@ -93,21 +82,8 @@ export class LiteratureValidators {
 		this.logger.debug( "<< validateCreateTeamsRequest()" );
 	}
 
-	async startGame( gameData: GameData ) {
-		this.logger.debug( ">> validateStartGameRequest()" );
-
-		if ( gameData.status !== GameStatus.TEAMS_CREATED ) {
-			this.logger.debug( "Game Present but not in correct status!" );
-			throw new HttpException( 400, Messages.INCORRECT_STATUS );
-		}
-
-		this.logger.debug( "<< validateStartGameRequest()" );
-	}
-
 	async askCard( { gameData, playerData, cardsData, input }: MoveValidatorInput<AskCardInput> ) {
 		this.logger.debug( ">> validateAskCardRequest()" );
-
-		await this.validateMoveRequest( gameData, playerData.id );
 
 		const askedPlayer = gameData.players[ input.askedFrom ];
 		const playerWithAskedCard = gameData.players[ cardsData.mappings[ input.askedFor ] ];
@@ -138,8 +114,6 @@ export class LiteratureValidators {
 
 	async callSet( { input: { data }, gameData, playerData, cardsData }: MoveValidatorInput<CallSetInput> ) {
 		this.logger.debug( ">> validateCallSetRequest()" );
-
-		await this.validateMoveRequest( gameData, playerData.id );
 
 		const calledCards = Object.keys( data ).map( getPlayingCardFromId );
 		const cardSets = new Set( calledCards.map( card => card.set ) );
@@ -202,8 +176,6 @@ export class LiteratureValidators {
 	async transferTurn( { gameData, cardsData, input, playerData }: MoveValidatorInput<TransferTurnInput> ) {
 		this.logger.debug( ">> validateTransferTurnRequest()" );
 
-		await this.validateMoveRequest( gameData, playerData.id );
-
 		const [ lastMove ] = gameData.moves;
 
 		if ( lastMove.type !== MoveType.CALL_SET || !lastMove.success ) {
@@ -232,18 +204,6 @@ export class LiteratureValidators {
 
 		this.logger.debug( "<< validateTransferTurnRequest()" );
 		return { transferringPlayer, receivingPlayer };
-	}
-
-	private async validateMoveRequest( gameData: GameData, userId: string ) {
-		if ( gameData.status !== GameStatus.IN_PROGRESS ) {
-			this.logger.debug( "Game Present but not in correct status!" );
-			throw new HttpException( 400, Messages.INCORRECT_STATUS );
-		}
-
-		if ( gameData.currentTurn !== userId ) {
-			this.logger.error( "It is not logged in User's turn! UserId: %s", userId );
-			throw new HttpException( 400, Messages.NOT_YOUR_TURN );
-		}
 	}
 }
 

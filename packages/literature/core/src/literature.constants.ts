@@ -3,7 +3,7 @@ export class Constants {
 	public static readonly AUTH_USER = "authUser";
 	public static readonly PLAYER_DATA = "playerData";
 	public static readonly CARDS_DATA = "cardsData";
-	public static readonly REQUIRES_KEY = "requires";
+	public static readonly REQUIRED_GAME_DATA = "requiredGameData";
 	public static readonly LITERATURE = "literature";
 	public static readonly AVATAR_BASE_URL = "https://api.dicebear.com/7.x/open-peeps/svg?seed=";
 }
