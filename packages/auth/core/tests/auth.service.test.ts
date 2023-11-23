@@ -2,9 +2,9 @@ import type { HttpException, PrismaService } from "@s2h/core";
 import superagent, { Response, SuperAgentRequest } from "superagent";
 import { afterEach, describe, expect, it, Mocked, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { Messages, TokenType } from "../../src/auth/auth.constants";
-import { AuthService } from "../../src/auth/auth.service";
-import type { JwtService } from "../../src/auth/jwt.service";
+import { Messages, TokenType } from "../src/auth.constants";
+import { AuthService } from "../src/auth.service";
+import type { JwtService } from "../src/jwt.service";
 
 vi.mock( "superagent" );
 const mockedSuperagent = superagent as Mocked<typeof superagent>;

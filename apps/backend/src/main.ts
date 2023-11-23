@@ -1,5 +1,6 @@
+import { authMiddleware, authRouter } from "@auth/core";
 import { literatureRouter } from "@literature/core";
-import { authMiddleware, authRouter, LoggerFactory, loggerMiddleware } from "@s2h/core";
+import { LoggerFactory, loggerMiddleware } from "@s2h/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";

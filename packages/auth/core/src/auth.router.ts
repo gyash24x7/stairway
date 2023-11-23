@@ -1,4 +1,4 @@
-import { ApiRouter } from "../utils";
+import { ApiRouter } from "@s2h/core";
 import { Paths } from "./auth.constants";
 import type { AuthHandler } from "./auth.handler";
 import { authHandler } from "./auth.handler";

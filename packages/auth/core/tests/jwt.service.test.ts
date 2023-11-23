@@ -1,6 +1,6 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { describe, expect, it } from "vitest";
-import { JwtService } from "../../src/auth/jwt.service";
+import { JwtService } from "../src/jwt.service";
 
 describe( "JwtService", () => {
 

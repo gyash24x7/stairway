@@ -2,8 +2,8 @@ import { green, yellow } from "colorette";
 import type { Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import { mockDeep } from "vitest-mock-extended";
-import { LoggerFactory, loggerMiddleware } from "../../src";
-import type { LoggerService } from "../../src/logger/logger.service";
+import { LoggerFactory, loggerMiddleware } from "../src";
+import type { LoggerService } from "../src/logger.service";
 
 describe( "Logger Middleware", () => {
 	const mockRequest = mockDeep<Request>();

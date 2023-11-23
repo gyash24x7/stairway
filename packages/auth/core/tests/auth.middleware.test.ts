@@ -3,10 +3,10 @@ import type { HttpException } from "@s2h/core";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { AuthMiddleware } from "../../src";
-import { Constants, Messages } from "../../src/auth/auth.constants";
-import type { AuthService } from "../../src/auth/auth.service";
-import type { JwtService } from "../../src/auth/jwt.service";
+import { AuthMiddleware } from "../src";
+import { Constants, Messages } from "../src/auth.constants";
+import type { AuthService } from "../src/auth.service";
+import type { JwtService } from "../src/jwt.service";
 
 describe( "AuthMiddleware", () => {
 
