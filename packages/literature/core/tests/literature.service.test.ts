@@ -43,7 +43,7 @@ import {
 	mockTeamB,
 	mockTransferMove,
 	mockTransferTurnInput
-} from "./mock-utils.js";
+} from "./mock-utils";
 
 describe( "LiteratureService::askCard", () => {
 	const mockInput = mockAskCardInput;

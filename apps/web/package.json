@@ -6,9 +6,9 @@
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"scripts": {
-		"dev": "vite",
-		"build": "vite build",
-		"start": "vite preview"
+		"dev": "rsbuild dev --open",
+		"build": "rsbuild build",
+		"preview": "rsbuild preview"
 	},
 	"dependencies": {
 		"@auth/store": "workspace:*",
@@ -23,12 +23,10 @@
 	},
 	"devDependencies": {
 		"@common/tsconfig": "workspace:*",
+		"@rsbuild/core": "0.1.2",
+		"@rsbuild/plugin-react": "0.1.2",
 		"@types/react": "18.2.38",
 		"@types/react-dom": "18.2.17",
-		"@vanilla-extract/css": "1.14.0",
-		"@vanilla-extract/recipes": "0.5.1",
-		"@vanilla-extract/vite-plugin": "3.9.2",
-		"@vitejs/plugin-react-swc": "3.5.0",
 		"postcss": "8.4.31",
 		"postcss-preset-mantine": "1.11.0",
 		"postcss-simple-vars": "7.0.1"

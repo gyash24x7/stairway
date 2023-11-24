@@ -1,6 +1,5 @@
 import { generateColors } from "@mantine/colors-generator";
 import { createTheme } from "@mantine/core";
-import { themeToVars } from "@mantine/vanilla-extract";
 
 export const theme = createTheme( {
 	colors: {
@@ -17,5 +16,3 @@ export const theme = createTheme( {
 		fontWeight: "600"
 	}
 } );
-
-export const vars = themeToVars( theme );

@@ -1,0 +1,117 @@
+.application-card {
+	background-image: url("background.jpg");
+	background-position: center;
+	background-size: cover;
+	border-radius: 0.75rem;
+	color: var(--mantine-color-white);
+	height: 20rem;
+	width: 20rem;
+}
+
+.error-page-root {
+	padding-bottom: 5rem;
+	padding-top: 5rem;
+}
+
+.error-page-label {
+	color: var(--mantine-color-gray-2);
+	font-size: 15rem;
+	font-weight: 900;
+	margin-bottom: calc(var(--mantine-spacing-xl) * 1.5);
+	text-align: center;
+}
+
+.error-page-title {
+	font-family: var(--mantine-font-family-headings);
+	font-size: 2.5rem;
+	font-weight: 900;
+	text-align: center;
+}
+
+.error-page-description {
+	margin: var(--mantine-spacing-xl) auto calc(var(--mantine-spacing-xl) * 1.5);
+	max-width: 30rem;
+}
+
+.playing-card-wrapper {
+	border: 0.125rem solid var(--mantine-color-gray-4);
+	border-radius: 0.25rem;
+	font-family: var(--mantine-font-family-headings);
+	font-size: 3rem;
+	min-width: 5rem;
+	padding-left: 0.5rem;
+	padding-right: 0.5rem;
+}
+
+.playing-card-color-red {
+	color: var(--mantine-color-danger-6);
+}
+
+.playing-card-color-black {
+	color: var(--mantine-color-gray-8);
+}
+
+.card-root {
+	background: var(--mantine-color-white);
+	border: 0.125rem solid var(--mantine-color-gray-3);
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	width: 100%;
+}
+
+.card-root-stretch {
+	flex: 1;
+}
+
+.nav-tabs-list::before {
+	display: none;
+}
+
+.nav-tab {
+	background-color: transparent;
+	border-bottom-width: 0;
+	font-weight: 700;
+	height: 2.5rem;
+	position: relative;
+	text-transform: uppercase;
+
+	&:hover {
+		background-color: var(--mantine-color-gray-1);
+	}
+}
+
+.nav-tab-active {
+	background-color: var(--mantine-color-gray-1);
+}
+
+.layout-main {
+	background: var(--mantine-color-gray-1);
+	min-height: 100vh;
+	padding-bottom: 14rem;
+	padding-top: 8rem;
+}
+
+.layout-header {
+	background: var(--mantine-color-white);
+	border: none;
+}
+
+.layout-nav-container {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.layout-footer {
+	background-image: url("background.jpg");
+	background-position: center;
+	background-size: cover;
+	border-top: 0.125rem solid var(--mantine-color-gray-3);
+}
+
+.layout-inner {
+	backdrop-filter: blur(0.25rem);
+	background-color: rgba(0, 0, 0, 0.3);
+	padding-bottom: 2.5rem;
+	padding-top: 2.5rem;
+}

@@ -1,6 +1,6 @@
 import { Box, Button, Flex, Text, Title } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import { applicationCardClassnames as classnames } from "../styles";
+import classnames from "../styles/components.module.css";
 
 export interface ApplicationCardProps {
 	category: string;
@@ -12,7 +12,7 @@ export function ApplicationCard( props: ApplicationCardProps ) {
 	const navigate = useNavigate();
 
 	return (
-		<Flex direction={ "column" } justify={ "space-between" } className={ classnames.card } p={ 30 }>
+		<Flex direction={ "column" } justify={ "space-between" } className={ classnames[ "applicationCard" ] } p={ 30 }>
 			<Box>
 				<Text fz={ 14 } fw={ 700 } lh={ 1 }>{ props.category.toUpperCase() }</Text>
 				<Title fz={ 56 } lh={ 1 }>{ props.name.toUpperCase() }</Title>

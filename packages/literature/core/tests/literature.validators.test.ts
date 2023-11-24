@@ -22,7 +22,7 @@ import {
 	mockPlayerIds,
 	mockTransferMove,
 	mockTransferTurnInput as mockInput
-} from "./mock-utils.js";
+} from "./mock-utils";
 
 const mockPrisma = mockDeep<PrismaService>();
 

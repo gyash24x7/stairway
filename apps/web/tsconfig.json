@@ -7,7 +7,7 @@
 		"moduleResolution": "bundler",
 		"jsx": "react-jsx"
 	},
-	"include": [ "src", "vite.config.ts" ],
+	"include": [ "src", "vite.config.mts" ],
 	"exclude": [
 		"src/**/*.stories.tsx",
 		"**/*.stories.ts",

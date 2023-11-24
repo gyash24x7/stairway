@@ -1,10 +1,10 @@
 import { Divider, Paper, Title } from "@mantine/core";
-import { homePageClassnames as classnames } from "../styles";
+import classnames from "../styles/components.module.css";
 
 export function HomePageContent() {
 	return (
 		<Paper p={ "xl" } radius={ "md" } m={ 10 }>
-			<Title className={ classnames.heroText }>LITERATURE</Title>
+			<Title className={ classnames[ "heroText" ] }>LITERATURE</Title>
 			<p>
 				Literature is a card game for 6 or 8 players in two teams using a shortened version of the standard
 				52-card pack. The game is sometimes called Fish or Canadian Fish, after the similar Go Fish, or Russian

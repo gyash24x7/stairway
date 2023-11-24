@@ -1,0 +1,19 @@
+.copy-icon {
+	border-radius: 0.5rem;
+	cursor: pointer;
+	padding: 0.25rem;
+
+	&:hover {
+		background: var(--mantine-color-gray-4);
+	}
+}
+
+.team-box {
+	flex: 1;
+}
+
+.hero-text {
+	color: var(--mantine-color-black);
+	font-size: 4rem;
+	font-weight: 900;
+}

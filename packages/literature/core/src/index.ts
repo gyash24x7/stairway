@@ -1,1 +1,1 @@
-export * from "./literature.router.js";
+export * from "./literature.router";

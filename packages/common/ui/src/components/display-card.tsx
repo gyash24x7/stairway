@@ -1,7 +1,7 @@
 import { CardRank, CardSet, CardSuit, PlayingCard } from "@common/cards";
 import { Flex, Group, Title } from "@mantine/core";
 import { Fragment } from "react";
-import { playingCardClassnames as classnames } from "../styles";
+import classnames from "../styles/components.module.css";
 
 export interface DisplayCardProps {
 	card: PlayingCard;
@@ -23,11 +23,14 @@ export const rankTextMap: Record<CardRank, string> = {
 export function DisplayCardSet( { cardSet }: { cardSet: CardSet } ) {
 	const cardSetPosition = cardSet.split( " " )[ 0 ];
 	const cardSuit = cardSet.split( " " )[ 1 ] as CardSuit;
+	const cardColorClassname = cardSuit === CardSuit.HEARTS || cardSuit === CardSuit.DIAMONDS
+		? classnames[ "playingCardColorRed" ]
+		: classnames[ "playingCardColorBlack" ];
 
 	return (
-		<div className={ classnames.wrapper }>
+		<div className={ classnames[ "playingCardWrapper" ] }>
 			<Group gap={ "xs" }>
-				<Title className={ classnames.cardColor[ cardSuit ] }>{ cardSetPosition }</Title>
+				<Title className={ cardColorClassname }>{ cardSetPosition }</Title>
 				<img src={ suitSrcMap[ cardSuit ] } alt={ cardSet } width={ 32 } height={ 32 }/>
 			</Group>
 		</div>
@@ -35,18 +38,22 @@ export function DisplayCardSet( { cardSet }: { cardSet: CardSet } ) {
 }
 
 export function DisplayCard( { card, orientation }: DisplayCardProps ) {
+	const cardColorClassname = card.suit === CardSuit.HEARTS || card.suit === CardSuit.DIAMONDS
+		? classnames[ "playingCardColorRed" ]
+		: classnames[ "playingCardColorBlack" ];
+
 	return (
 		<Fragment>
 			{ orientation === "horizontal" ? (
-				<Flex className={ classnames.wrapper } gap={ 20 } align={ "center" }>
-					<div className={ classnames.cardColor[ card.suit ] }>
+				<Flex className={ classnames[ "playingCardWrapper" ] } gap={ 20 } align={ "center" }>
+					<div className={ cardColorClassname }>
 						{ rankTextMap[ card.rank ] }
 					</div>
 					<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 32 } height={ 32 }/>
 				</Flex>
 			) : (
-				<div className={ classnames.wrapper }>
-					<div className={ classnames.cardColor[ card.suit ] }>
+				<div className={ classnames[ "playingCardWrapper" ] }>
+					<div className={ cardColorClassname }>
 						{ rankTextMap[ card.rank ] }
 					</div>
 					<img src={ suitSrcMap[ card.suit ] } alt={ card.id } width={ 32 } height={ 32 }/>

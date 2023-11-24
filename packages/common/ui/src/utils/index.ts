@@ -1,1 +1,1 @@
-export * from "./realtime.js";
+export * from "./realtime";

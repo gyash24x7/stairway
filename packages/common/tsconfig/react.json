@@ -5,6 +5,7 @@
 		"lib": [ "DOM", "DOM.Iterable", "ESNext" ],
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"jsx": "react-jsx"
+		"jsx": "react-jsx",
+		"types": [ "vite/client" ]
 	}
 }
