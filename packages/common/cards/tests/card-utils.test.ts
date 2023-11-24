@@ -13,7 +13,7 @@ import {
 	shuffle,
 	sortCards,
 	SORTED_DECK
-} from "../src";
+} from "../src/index.js";
 
 test( "Method::Shuffle should shuffle the elements in the array", () => {
 	const arr = [ 0, 1, 2, 3, 4, 5 ];

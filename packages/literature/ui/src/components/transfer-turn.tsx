@@ -2,7 +2,7 @@ import { useGameId, useMyTeam, usePlayerId, usePlayers, useTransferTurnAction } 
 import { Button, Modal, Stack, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Fragment, useCallback, useState } from "react";
-import { SelectPlayer } from "./select-player";
+import { SelectPlayer } from "./select-player.js";
 
 export function TransferTurn() {
 	const gameId = useGameId();

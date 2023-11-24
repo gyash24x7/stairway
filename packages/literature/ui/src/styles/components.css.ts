@@ -1,4 +1,4 @@
-import { vars } from "@s2h/ui";
+import { vars } from "@common/ui";
 import { style } from "@vanilla-extract/css";
 
 export const gameDescriptionClassnames = {

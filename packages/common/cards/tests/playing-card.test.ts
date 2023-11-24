@@ -1,5 +1,5 @@
-import { CardRank, CardSuit, getPlayingCardFromId, getPlayingCardFromRankAndSuit } from "@s2h/cards";
 import { expect, test } from "vitest";
+import { CardRank, CardSuit, getPlayingCardFromId, getPlayingCardFromRankAndSuit } from "../src/index.js";
 
 test( "Method:GetPlayingCardFromId should return a playing card from a valid id", () => {
 	const card = getPlayingCardFromId( "AceOfHearts" );

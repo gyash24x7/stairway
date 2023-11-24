@@ -1,3 +1,5 @@
+import { getPlayingCardFromId, isCardSetInHand } from "@common/cards";
+import { HttpException, LoggerFactory, prismaService, PrismaService } from "@common/core";
 import {
 	AskCardInput,
 	CallSetInput,
@@ -9,9 +11,7 @@ import {
 	TransferTurnInput,
 	User
 } from "@literature/types";
-import { getPlayingCardFromId, isCardSetInHand } from "@s2h/cards";
-import { HttpException, LoggerFactory, prismaService, PrismaService } from "@s2h/core";
-import { Messages } from "./literature.constants";
+import { Messages } from "./literature.constants.js";
 
 type MoveValidatorInput<I extends AskCardInput | CallSetInput | TransferTurnInput> = {
 	input: I;

@@ -1,7 +1,7 @@
 import type { Player } from "@literature/types";
 import { Combobox, useCombobox } from "@mantine/core";
 import type { Dispatch, SetStateAction } from "react";
-import { DisplayPlayerMedium } from "./display-player";
+import { DisplayPlayerMedium } from "./display-player.js";
 
 export interface SelectPlayerProps {
 	options: Player[];

@@ -2,10 +2,10 @@ import type { User } from "@prisma/client";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { AuthMiddleware } from "../src";
-import { Constants, Messages } from "../src/auth.constants";
-import type { AuthService } from "../src/auth.service";
-import type { JwtService } from "../src/jwt.service";
+import { Constants, Messages } from "../src/auth.constants.js";
+import type { AuthService } from "../src/auth.service.js";
+import { AuthMiddleware } from "../src/index.js";
+import type { JwtService } from "../src/jwt.service.js";
 
 describe( "AuthMiddleware", () => {
 

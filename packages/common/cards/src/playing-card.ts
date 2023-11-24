@@ -1,4 +1,4 @@
-import { CardRank, CardSet, CardSuit, UPPER_CARD_RANKS } from "./card-const";
+import { CardRank, CardSet, CardSuit, UPPER_CARD_RANKS } from "./card-const.js";
 
 export type PlayingCard = {
 	id: string;

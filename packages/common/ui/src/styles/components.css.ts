@@ -1,8 +1,8 @@
+import { CardSuit } from "@common/cards";
 import { rem, rgba } from "@mantine/core";
-import { CardSuit } from "@s2h/cards";
 import { style, styleVariants } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
-import { vars } from "./theme";
+import { vars } from "./theme.js";
 
 export const applicationCardClassnames = {
 	card: style( {

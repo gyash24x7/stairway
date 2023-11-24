@@ -1,4 +1,4 @@
-import { LoggerFactory } from "@s2h/core";
+import { LoggerFactory } from "@common/core";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 export class JwtService {

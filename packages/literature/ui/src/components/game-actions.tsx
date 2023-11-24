@@ -1,13 +1,13 @@
 import { useCurrentTurn, useGameStatus, useMoves, usePlayerId, usePlayers } from "@literature/store";
 import { GameStatus, MoveType } from "@literature/types";
 import { Box, Flex, Group, Text } from "@mantine/core";
-import { AddBots } from "./add-bots";
-import { AskCard } from "./ask-card";
-import { CallSet } from "./call-set";
-import { CreateTeams } from "./create-teams";
-import { PreviousMoves } from "./previous-moves";
-import { StartGame } from "./start-game";
-import { TransferTurn } from "./transfer-turn";
+import { AddBots } from "./add-bots.js";
+import { AskCard } from "./ask-card.js";
+import { CallSet } from "./call-set.js";
+import { CreateTeams } from "./create-teams.js";
+import { PreviousMoves } from "./previous-moves.js";
+import { StartGame } from "./start-game.js";
+import { TransferTurn } from "./transfer-turn.js";
 
 export function GameActions() {
 	const status = useGameStatus();

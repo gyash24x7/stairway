@@ -1,3 +1,4 @@
+import { ApiRouter } from "@common/core";
 import type {
 	AskCardInput,
 	CallSetInput,
@@ -11,13 +12,12 @@ import type {
 	User
 } from "@literature/types";
 import { GameStatus } from "@literature/types";
-import { ApiRouter } from "@s2h/core";
 import type { NextFunction, Request, Response } from "express";
-import { Constants, Paths } from "./literature.constants";
-import type { LiteratureMiddleware } from "./literature.middleware";
-import { literatureMiddleware } from "./literature.middleware";
-import type { LiteratureService } from "./literature.service";
-import { literatureService } from "./literature.service";
+import { Constants, Paths } from "./literature.constants.js";
+import type { LiteratureMiddleware } from "./literature.middleware.js";
+import { literatureMiddleware } from "./literature.middleware.js";
+import type { LiteratureService } from "./literature.service.js";
+import { literatureService } from "./literature.service.js";
 
 export type LiteratureContext<I = undefined> = {
 	input: I;

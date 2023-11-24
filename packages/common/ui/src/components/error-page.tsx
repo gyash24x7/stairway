@@ -1,5 +1,5 @@
 import { Button, Container, Group, Text, Title } from "@mantine/core";
-import { errorPageClassnames as classnames } from "../styles";
+import { errorPageClassnames as classnames } from "../styles/index.js";
 
 export function ErrorPage() {
 	return (

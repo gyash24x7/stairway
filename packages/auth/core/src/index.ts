@@ -1,2 +1,2 @@
-export * from "./auth.middleware";
-export * from "./auth.router";
+export * from "./auth.middleware.js";
+export * from "./auth.router.js";

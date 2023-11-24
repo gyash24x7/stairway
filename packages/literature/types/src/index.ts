@@ -1,3 +1,4 @@
+import type { CardSet, PlayingCard } from "@common/cards";
 import type {
 	LiteratureCardMapping,
 	LiteratureGame,
@@ -6,7 +7,6 @@ import type {
 	LiteratureTeam,
 	User as PrismaUser
 } from "@prisma/client";
-import type { CardSet, PlayingCard } from "@s2h/cards";
 
 export type User = PrismaUser
 

@@ -1,5 +1,5 @@
 import type { Namespace, Server } from "socket.io";
-import { LoggerFactory } from "./logger.factory";
+import { LoggerFactory } from "./logger.factory.js";
 
 export class RealtimeService {
 

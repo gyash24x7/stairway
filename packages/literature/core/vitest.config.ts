@@ -1,9 +1,7 @@
-import { nxViteTsPaths } from "@nx/vite/plugins/nx-tsconfig-paths.plugin";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig( {
 	cacheDir: "../../../node_modules/.vite/literature/core",
-	plugins: [ nxViteTsPaths() ],
 	test: {
 		globals: true,
 		coverage: {

@@ -1,3 +1,5 @@
+import { CARD_SETS, CardSet, getCardSetsInHand, getPlayingCardFromId } from "@common/cards";
+import type { PrismaService, RealtimeService } from "@common/core";
 import {
 	CardMapping,
 	CreateGameInput,
@@ -12,15 +14,15 @@ import {
 	ScoreUpdate,
 	TeamData
 } from "@literature/types";
-import { CARD_SETS, CardSet, getCardSetsInHand, getPlayingCardFromId } from "@s2h/cards";
-import type { PrismaService, RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { Constants, GameEvents } from "../src/literature.constants";
-import { LiteratureService } from "../src/literature.service";
-import type { LiteratureTransformers } from "../src/literature.transformers";
-import type { LiteratureValidators } from "../src/literature.validators";
+import { Constants, GameEvents } from "../src/literature.constants.js";
+import { LiteratureService } from "../src/literature.service.js";
+import type { LiteratureTransformers } from "../src/literature.transformers.js";
+import type { LiteratureValidators } from "../src/literature.validators.js";
 import {
+	buildCardsData,
+	buildGameData,
 	buildMockCardMappings,
 	buildMockGameData,
 	buildMockInferenceData,
@@ -41,8 +43,7 @@ import {
 	mockTeamB,
 	mockTransferMove,
 	mockTransferTurnInput
-} from "./mockdata";
-import { buildCardsData, buildGameData } from "./mockdata/utils";
+} from "./mock-utils.js";
 
 describe( "LiteratureService::askCard", () => {
 	const mockInput = mockAskCardInput;

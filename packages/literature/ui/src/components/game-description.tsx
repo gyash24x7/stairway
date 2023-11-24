@@ -1,11 +1,11 @@
+import { Card } from "@common/ui";
 import { useGameCode, useGameStatus, usePlayers, useTeams } from "@literature/store";
 import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
-import { Card } from "@s2h/ui";
 import { IconCopy } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
-import { gameDescriptionClassnames as classnames } from "../styles";
-import { GameCode } from "./game-code";
+import { gameDescriptionClassnames as classnames } from "../styles/index.js";
+import { GameCode } from "./game-code.js";
 
 export function GameDescription() {
 	const code = useGameCode();

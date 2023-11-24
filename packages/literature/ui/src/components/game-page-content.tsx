@@ -1,10 +1,10 @@
+import { Banner, DisplayHand } from "@common/ui";
 import { useGameStatus, useHand, usePlayers } from "@literature/store";
 import { GameStatus } from "@literature/types";
 import { Flex, Grid } from "@mantine/core";
-import { Banner, DisplayHand } from "@s2h/ui";
-import { GameCompleted } from "./game-completed";
-import { GameDescription } from "./game-description";
-import { PlayerLobby } from "./player-lobby";
+import { GameCompleted } from "./game-completed.js";
+import { GameDescription } from "./game-description.js";
+import { PlayerLobby } from "./player-lobby.js";
 
 function getBannerMessage( status: GameStatus ) {
 	switch ( status ) {

@@ -1,6 +1,6 @@
-import { authClient } from "./client";
-import type { AuthState } from "./store";
-import { useAuthStore } from "./store";
+import { authClient } from "./client.js";
+import type { AuthState } from "./store.js";
+import { useAuthStore } from "./store.js";
 
 export async function authStoreLoader() {
 	const initialState: AuthState = { isLoggedIn: false, authUser: null };

@@ -1,10 +1,10 @@
 import { useIsLoggedIn } from "@auth/store";
+import { AppFooter, AppHeader, AppMain, ErrorPage } from "@common/ui";
 import { CreateGame, HomePageContent, JoinGame } from "@literature/ui";
 import { AppShell, Box, Group, Text, Title } from "@mantine/core";
-import { AppFooter, AppHeader, AppMain, ErrorPage } from "@s2h/ui";
 import { Fragment } from "react";
 import type { IndexRouteObject } from "react-router-dom";
-import { DisplayAuthUser } from "../../components/display-auth-user";
+import { DisplayAuthUser } from "../../components/display-auth-user.js";
 
 export function HomePage() {
 	const isLoggedIn = useIsLoggedIn();

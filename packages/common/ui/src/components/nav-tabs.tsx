@@ -1,6 +1,6 @@
 import { Tabs } from "@mantine/core";
 import { useLocation, useNavigate } from "react-router-dom";
-import { navTabsClassnames as classnames } from "../styles";
+import { navTabsClassnames as classnames } from "../styles/index.js";
 
 export function NavTabs() {
 	const navigate = useNavigate();

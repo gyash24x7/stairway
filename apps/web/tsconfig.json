@@ -1,13 +1,13 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "../../tsconfig.base.json",
+	"extends": "@common/tsconfig/react.json",
 	"compilerOptions": {
 		"lib": [ "DOM", "DOM.Iterable", "ESNext" ],
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"jsx": "react-jsx"
 	},
-	"include": [ "src" ],
+	"include": [ "src", "vite.config.ts" ],
 	"exclude": [
 		"src/**/*.stories.tsx",
 		"**/*.stories.ts",

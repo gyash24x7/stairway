@@ -1,4 +1,4 @@
-import { getPlayingCardFromRankAndSuit, PlayingCard } from "./playing-card";
+import { getPlayingCardFromRankAndSuit, PlayingCard } from "./playing-card.js";
 
 export enum CardRank {
 	ACE = "Ace",

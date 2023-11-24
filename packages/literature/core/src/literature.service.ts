@@ -1,3 +1,15 @@
+import {
+	CardRank,
+	CardSet,
+	cardSetMap,
+	generateGameCode,
+	getCardSetsInHand,
+	getPlayingCardFromId,
+	removeCardsOfRank,
+	shuffle,
+	SORTED_DECK
+} from "@common/cards";
+import { LoggerFactory, prismaService, PrismaService, realtimeService, RealtimeService } from "@common/core";
 import type {
 	AskCardInput,
 	AskMove,
@@ -28,23 +40,11 @@ import {
 	MoveType,
 	TransferMoveData
 } from "@literature/types";
-import {
-	CardRank,
-	CardSet,
-	cardSetMap,
-	generateGameCode,
-	getCardSetsInHand,
-	getPlayingCardFromId,
-	removeCardsOfRank,
-	shuffle,
-	SORTED_DECK
-} from "@s2h/cards";
-import { LoggerFactory, prismaService, PrismaService, realtimeService, RealtimeService } from "@s2h/core";
-import { Constants, GameEvents } from "./literature.constants";
-import type { LiteratureTransformers } from "./literature.transformers";
-import { literatureTransformers } from "./literature.transformers";
-import type { LiteratureValidators } from "./literature.validators";
-import { literatureValidators } from "./literature.validators";
+import { Constants, GameEvents } from "./literature.constants.js";
+import type { LiteratureTransformers } from "./literature.transformers.js";
+import { literatureTransformers } from "./literature.transformers.js";
+import type { LiteratureValidators } from "./literature.validators.js";
+import { literatureValidators } from "./literature.validators.js";
 
 export class LiteratureService {
 

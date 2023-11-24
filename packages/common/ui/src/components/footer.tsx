@@ -1,6 +1,6 @@
 import { AppShell, Container, Flex } from "@mantine/core";
 import type { ReactNode } from "react";
-import { layoutClassnames as classnames } from "../styles";
+import { layoutClassnames as classnames } from "../styles/index.js";
 
 export function AppFooter( props: { children: ReactNode } ) {
 	return (

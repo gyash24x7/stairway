@@ -1,7 +1,7 @@
-import { LoggerFactory } from "@s2h/core";
+import { LoggerFactory } from "@common/core";
 import type { Request, Response } from "express";
-import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "./auth.constants";
-import { authService, AuthService } from "./auth.service";
+import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "./auth.constants.js";
+import { authService, AuthService } from "./auth.service.js";
 
 export class AuthHandler {
 

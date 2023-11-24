@@ -1,3 +1,3 @@
-export * from "./card-const";
-export * from "./playing-card";
-export * from "./card-utils";
+export * from "./card-const.js";
+export * from "./playing-card.js";
+export * from "./card-utils.js";

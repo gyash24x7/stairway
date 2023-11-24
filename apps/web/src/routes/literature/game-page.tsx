@@ -1,3 +1,4 @@
+import { AppFooter, AppHeader, AppMain, ErrorPage, initializeSocketForNamespace, subscribeToEvents } from "@common/ui";
 import {
 	gameStoreLoader,
 	useGameEventHandlers,
@@ -7,10 +8,9 @@ import {
 } from "@literature/store";
 import { GameActions, GameCode, GamePageContent } from "@literature/ui";
 import { AppShell } from "@mantine/core";
-import { AppFooter, AppHeader, AppMain, ErrorPage, initializeSocketForNamespace, subscribeToEvents } from "@s2h/ui";
 import { useEffect } from "react";
 import type { RouteObject } from "react-router-dom";
-import { DisplayAuthUser } from "../../components/display-auth-user";
+import { DisplayAuthUser } from "../../components/display-auth-user.js";
 
 export function GamePage() {
 	const gameId = useGameId();

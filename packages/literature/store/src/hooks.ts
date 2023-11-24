@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { literatureClient } from "./client";
-import { useGameStore } from "./store";
+import { literatureClient } from "./client.js";
+import { useGameStore } from "./store.js";
 
 // Game State Hooks
 export const useGameId = () => useGameStore( state => state.gameData.id );

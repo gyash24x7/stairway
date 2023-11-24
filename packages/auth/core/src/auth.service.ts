@@ -1,9 +1,9 @@
-import { HttpException, LoggerFactory, prismaService, PrismaService } from "@s2h/core";
+import { HttpException, LoggerFactory, prismaService, PrismaService } from "@common/core";
 import process from "process";
 import superagent from "superagent";
 import { URL } from "url";
-import { Constants, Messages, TokenType } from "./auth.constants";
-import { jwtService, JwtService } from "./jwt.service";
+import { Constants, Messages, TokenType } from "./auth.constants.js";
+import { jwtService, JwtService } from "./jwt.service.js";
 
 type GoogleTokenResult = {
 	access_token: string;

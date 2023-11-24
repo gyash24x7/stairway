@@ -1,0 +1,24 @@
+{
+	"name": "@auth/store",
+	"private": true,
+	"version": "1.0.0",
+	"description": "",
+	"type": "module",
+	"main": "src/index.ts",
+	"module": "src/index.ts",
+	"types": "src/index.ts",
+	"dependencies": {
+		"immer": "10.0.3",
+		"react": "18.2.0",
+		"superagent": "8.1.2",
+		"zustand": "4.4.6"
+	},
+	"devDependencies": {
+		"@common/tsconfig": "workspace:*",
+		"@types/react": "18.2.38",
+		"@types/superagent": "4.1.22"
+	},
+	"keywords": [ ],
+	"author": "",
+	"license": "ISC"
+}

@@ -1,2 +1,2 @@
-export * from "./theme";
-export * from "./components.css";
+export * from "./theme.js";
+export * from "./components.css.js";
