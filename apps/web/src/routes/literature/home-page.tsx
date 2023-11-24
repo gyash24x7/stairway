@@ -1,14 +1,19 @@
+import { useIsLoggedIn } from "@auth/store";
+import { CreateGame, HomePageContent, JoinGame } from "@literature/ui";
 import { AppShell, Box, Group, Text, Title } from "@mantine/core";
-import { AppFooter, AppHeader, AppMain, useIsLoggedIn } from "@s2h/ui";
+import { AppFooter, AppHeader, AppMain, ErrorPage } from "@s2h/ui";
 import { Fragment } from "react";
-import { CreateGame, HomePageContent, JoinGame } from "../components";
+import type { IndexRouteObject } from "react-router-dom";
+import { DisplayAuthUser } from "../../components/display-auth-user";
 
 export function HomePage() {
 	const isLoggedIn = useIsLoggedIn();
 
 	return (
 		<AppShell>
-			<AppHeader/>
+			<AppHeader>
+				<DisplayAuthUser/>
+			</AppHeader>
 			<AppMain>
 				<HomePageContent/>
 			</AppMain>
@@ -31,3 +36,9 @@ export function HomePage() {
 		</AppShell>
 	);
 }
+
+export const literatureHomeRoute: IndexRouteObject = {
+	index: true,
+	element: <HomePage/>,
+	errorElement: <ErrorPage/>
+};

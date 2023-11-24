@@ -1,8 +1,16 @@
+import {
+	gameStoreLoader,
+	useGameEventHandlers,
+	useGameId,
+	usePlayerId,
+	usePlayerSpecificEventHandlers
+} from "@literature/store";
+import { GameActions, GameCode, GamePageContent } from "@literature/ui";
 import { AppShell } from "@mantine/core";
-import { AppFooter, AppHeader, AppMain, initializeSocketForNamespace, subscribeToEvents } from "@s2h/ui";
+import { AppFooter, AppHeader, AppMain, ErrorPage, initializeSocketForNamespace, subscribeToEvents } from "@s2h/ui";
 import { useEffect } from "react";
-import { GameActions, GameCode, GamePageContent } from "../components";
-import { useGameEventHandlers, useGameId, usePlayerId, usePlayerSpecificEventHandlers } from "../store";
+import type { RouteObject } from "react-router-dom";
+import { DisplayAuthUser } from "../../components/display-auth-user";
 
 export function GamePage() {
 	const gameId = useGameId();
@@ -22,10 +30,12 @@ export function GamePage() {
 
 		return () => unsubscribe();
 	}, [] );
-	
+
 	return (
 		<AppShell>
-			<AppHeader/>
+			<AppHeader>
+				<DisplayAuthUser/>
+			</AppHeader>
 			<AppMain>
 				<GamePageContent/>
 			</AppMain>
@@ -36,3 +46,10 @@ export function GamePage() {
 		</AppShell>
 	);
 }
+
+export const literatureGameRoute: RouteObject = {
+	path: ":gameId",
+	element: <GamePage/>,
+	errorElement: <ErrorPage/>,
+	loader: gameStoreLoader
+};

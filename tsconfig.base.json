@@ -23,7 +23,9 @@
 		"types": [ "node" ],
 		"paths": {
 			"@auth/core": [ "packages/auth/core/src/index.ts" ],
+			"@auth/store": [ "packages/auth/store/src/index.ts" ],
 			"@literature/core": [ "packages/literature/core/src/index.ts" ],
+			"@literature/store": [ "packages/literature/store/src/index.ts" ],
 			"@literature/types": [ "packages/literature/types/src/index.ts" ],
 			"@literature/ui": [ "packages/literature/ui/src/index.ts" ],
 			"@s2h/cards": [ "packages/common/cards/src/index.ts" ],

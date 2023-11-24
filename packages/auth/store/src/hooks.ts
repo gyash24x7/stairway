@@ -1,4 +1,10 @@
 import { useCallback, useState } from "react";
+import { useAuthStore } from "./store";
+
+// Auth State Hooks
+export const useAuthUser = () => useAuthStore( state => state.authUser );
+export const useIsLoggedIn = () => useAuthStore( state => state.isLoggedIn );
+export const useLogout = () => useAuthStore( state => state.logout );
 
 export const useAction = <R, I = any>( action: ( input: I ) => Promise<R> ) => {
 	const [ isLoading, setIsLoading ] = useState( false );
@@ -23,4 +29,10 @@ export const useAction = <R, I = any>( action: ( input: I ) => Promise<R> ) => {
 	);
 
 	return { isLoading, error, data, execute };
+};
+
+// Auth Action Hooks
+export const useLogoutAction = () => {
+	const logout = useLogout();
+	return useAction( logout );
 };

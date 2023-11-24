@@ -1,7 +1,7 @@
+import { authClient, useAuthUser, useIsLoggedIn, useLogoutAction } from "@auth/store";
 import { Avatar, Button, Group } from "@mantine/core";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { Fragment, useCallback } from "react";
-import { authClient, useAuthUser, useIsLoggedIn, useLogoutAction } from "../store";
 
 export function DisplayAuthUser() {
 	const isLoggedIn = useIsLoggedIn();

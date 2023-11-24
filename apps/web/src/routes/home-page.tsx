@@ -1,10 +1,14 @@
 import { AppShell, Flex, Group, Title } from "@mantine/core";
-import { AppFooter, AppHeader, ApplicationCard, AppMain } from "../components";
+import { AppFooter, AppHeader, ApplicationCard, AppMain, ErrorPage } from "@s2h/ui";
+import type { IndexRouteObject } from "react-router-dom";
+import { DisplayAuthUser } from "../components/display-auth-user";
 
 export function HomePage() {
 	return (
 		<AppShell>
-			<AppHeader/>
+			<AppHeader>
+				<DisplayAuthUser/>
+			</AppHeader>
 			<AppMain>
 				<Flex gap={ 10 } p={ 10 }>
 					<ApplicationCard category={ "Games" } name={ "Literature" } path={ "/literature" }/>
@@ -19,3 +23,9 @@ export function HomePage() {
 		</AppShell>
 	);
 }
+
+export const homeRoute: IndexRouteObject = {
+	index: true,
+	element: <HomePage/>,
+	errorElement: <ErrorPage/>
+};
