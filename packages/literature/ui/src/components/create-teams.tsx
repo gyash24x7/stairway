@@ -3,7 +3,7 @@ import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "@li
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
-import { DisplayPlayerMedium } from "./display-player.js";
+import { DisplayPlayerMedium } from "./display-player";
 
 
 export function CreateTeams() {

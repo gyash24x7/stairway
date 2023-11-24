@@ -1,9 +1,9 @@
 import { ApiRouter } from "@common/core";
-import { Paths } from "./auth.constants.js";
-import type { AuthHandler } from "./auth.handler.js";
-import { authHandler } from "./auth.handler.js";
-import type { AuthMiddleware } from "./auth.middleware.js";
-import { authMiddleware } from "./auth.middleware.js";
+import { Paths } from "./auth.constants";
+import type { AuthHandler } from "./auth.handler";
+import { authHandler } from "./auth.handler";
+import type { AuthMiddleware } from "./auth.middleware";
+import { authMiddleware } from "./auth.middleware";
 
 export class AuthRouter extends ApiRouter {
 

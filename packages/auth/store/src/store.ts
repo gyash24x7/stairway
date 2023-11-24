@@ -1,7 +1,7 @@
 import type { User } from "@prisma/client";
 import { produce } from "immer";
 import { create } from "zustand";
-import { authClient } from "./client.js";
+import { authClient } from "./client";
 
 export type AuthState = {
 	isLoggedIn: boolean;

@@ -1,7 +1,7 @@
 import { AppFooter, AppHeader, ApplicationCard, AppMain, ErrorPage } from "@common/ui";
 import { AppShell, Flex, Group, Title } from "@mantine/core";
 import type { IndexRouteObject } from "react-router-dom";
-import { DisplayAuthUser } from "../components/display-auth-user.js";
+import { DisplayAuthUser } from "../components/display-auth-user";
 
 export function HomePage() {
 	return (

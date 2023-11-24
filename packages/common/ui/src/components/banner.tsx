@@ -1,5 +1,5 @@
 import { Group, Loader, Text } from "@mantine/core";
-import { Card } from "./card.js";
+import { Card } from "./card";
 
 export interface BannerProps {
 	isLoading?: boolean;

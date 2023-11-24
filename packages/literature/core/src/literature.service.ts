@@ -40,11 +40,11 @@ import {
 	MoveType,
 	TransferMoveData
 } from "@literature/types";
-import { Constants, GameEvents } from "./literature.constants.js";
-import type { LiteratureTransformers } from "./literature.transformers.js";
-import { literatureTransformers } from "./literature.transformers.js";
-import type { LiteratureValidators } from "./literature.validators.js";
-import { literatureValidators } from "./literature.validators.js";
+import { Constants, GameEvents } from "./literature.constants";
+import type { LiteratureTransformers } from "./literature.transformers";
+import { literatureTransformers } from "./literature.transformers";
+import type { LiteratureValidators } from "./literature.validators";
+import { literatureValidators } from "./literature.validators";
 
 export class LiteratureService {
 

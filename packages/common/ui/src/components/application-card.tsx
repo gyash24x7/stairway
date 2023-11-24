@@ -1,6 +1,6 @@
 import { Box, Button, Flex, Text, Title } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
-import { applicationCardClassnames as classnames } from "../styles/index.js";
+import { applicationCardClassnames as classnames } from "../styles";
 
 export interface ApplicationCardProps {
 	category: string;

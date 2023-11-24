@@ -1,7 +1,7 @@
 import { type PlayingCard, sortCards } from "@common/cards";
 import { Flex, Title } from "@mantine/core";
-import { Card } from "./card.js";
-import { DisplayCard } from "./display-card.js";
+import { Card } from "./card";
+import { DisplayCard } from "./display-card";
 
 export interface DisplayHandProps {
 	hand: PlayingCard[];

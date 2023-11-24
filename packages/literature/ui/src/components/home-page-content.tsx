@@ -1,5 +1,5 @@
 import { Divider, Paper, Title } from "@mantine/core";
-import { homePageClassnames as classnames } from "../styles/index.js";
+import { homePageClassnames as classnames } from "../styles";
 
 export function HomePageContent() {
 	return (

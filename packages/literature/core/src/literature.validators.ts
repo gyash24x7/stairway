@@ -11,7 +11,7 @@ import {
 	TransferTurnInput,
 	User
 } from "@literature/types";
-import { Messages } from "./literature.constants.js";
+import { Messages } from "./literature.constants";
 
 type MoveValidatorInput<I extends AskCardInput | CallSetInput | TransferTurnInput> = {
 	input: I;

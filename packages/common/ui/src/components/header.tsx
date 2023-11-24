@@ -1,8 +1,8 @@
 import { AppShell, Container, Flex } from "@mantine/core";
 import type { ReactNode } from "react";
-import { layoutClassnames as classnames } from "../styles/index.js";
-import { Logo } from "./logo.js";
-import { NavTabs } from "./nav-tabs.js";
+import { layoutClassnames as classnames } from "../styles";
+import { Logo } from "./logo";
+import { NavTabs } from "./nav-tabs";
 
 export function AppHeader( props: { children: ReactNode } ) {
 	return (

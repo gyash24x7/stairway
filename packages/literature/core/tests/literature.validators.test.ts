@@ -3,8 +3,8 @@ import type { HttpException, PrismaService } from "@common/core";
 import { CallSetInput, CardMapping, GameStatus, JoinGameInput } from "@literature/types";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { Messages } from "../src/literature.constants.js";
-import { LiteratureValidators } from "../src/literature.validators.js";
+import { Messages } from "../src/literature.constants";
+import { LiteratureValidators } from "../src/literature.validators";
 import {
 	buildCardsData,
 	buildMockGameData,
@@ -335,7 +335,12 @@ describe( "LiteratureValidators::callSet", () => {
 
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const input = { input: mockCallSetInput, gameData: mockGameData, cardsData, playerData: mockPlayerSpecificData };
+		const input = {
+			input: mockCallSetInput,
+			gameData: mockGameData,
+			cardsData,
+			playerData: mockPlayerSpecificData
+		};
 
 		expect.assertions( 2 );
 		await validators.callSet( input )
@@ -421,7 +426,12 @@ describe( "LiteratureValidators::callSet", () => {
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const input = { input: mockCallSetInput, gameData: mockGameData, cardsData, playerData: mockPlayerSpecificData };
+		const input = {
+			input: mockCallSetInput,
+			gameData: mockGameData,
+			cardsData,
+			playerData: mockPlayerSpecificData
+		};
 
 		const validators = new LiteratureValidators( mockPrisma );
 		const { correctCall, calledSet } = await validators.callSet( input );

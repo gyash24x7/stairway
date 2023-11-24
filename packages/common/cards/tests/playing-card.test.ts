@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { CardRank, CardSuit, getPlayingCardFromId, getPlayingCardFromRankAndSuit } from "../src/index.js";
+import { CardRank, CardSuit, getPlayingCardFromId, getPlayingCardFromRankAndSuit } from "../src";
 
 test( "Method:GetPlayingCardFromId should return a playing card from a valid id", () => {
 	const card = getPlayingCardFromId( "AceOfHearts" );

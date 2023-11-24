@@ -2,9 +2,9 @@ import type { User } from "@prisma/client";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "../src/auth.constants.js";
-import { AuthHandler } from "../src/auth.handler.js";
-import type { AuthService } from "../src/auth.service.js";
+import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "../src/auth.constants";
+import { AuthHandler } from "../src/auth.handler";
+import type { AuthService } from "../src/auth.service";
 
 describe( "AuthController", () => {
 

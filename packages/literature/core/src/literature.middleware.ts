@@ -1,9 +1,9 @@
 import { HttpException, LoggerFactory, Middleware } from "@common/core";
 import type { GameStatus, User } from "@literature/types";
 import type { NextFunction, Request, Response } from "express";
-import { Constants } from "./literature.constants.js";
-import type { LiteratureService } from "./literature.service.js";
-import { literatureService } from "./literature.service.js";
+import { Constants } from "./literature.constants";
+import type { LiteratureService } from "./literature.service";
+import { literatureService } from "./literature.service";
 
 export type RequiredGameData = {
 	status?: GameStatus;

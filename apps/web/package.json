@@ -3,12 +3,12 @@
 	"private": true,
 	"version": "1.0.0",
 	"description": "",
-	"type": "module",
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build"
+		"build": "vite build",
+		"start": "vite preview"
 	},
 	"dependencies": {
 		"@auth/store": "workspace:*",
@@ -25,6 +25,8 @@
 		"@common/tsconfig": "workspace:*",
 		"@types/react": "18.2.38",
 		"@types/react-dom": "18.2.17",
+		"@vanilla-extract/css": "1.14.0",
+		"@vanilla-extract/recipes": "0.5.1",
 		"@vanilla-extract/vite-plugin": "3.9.2",
 		"@vitejs/plugin-react-swc": "3.5.0",
 		"postcss": "8.4.31",

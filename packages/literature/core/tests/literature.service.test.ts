@@ -16,10 +16,10 @@ import {
 } from "@literature/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { Constants, GameEvents } from "../src/literature.constants.js";
-import { LiteratureService } from "../src/literature.service.js";
-import type { LiteratureTransformers } from "../src/literature.transformers.js";
-import type { LiteratureValidators } from "../src/literature.validators.js";
+import { Constants, GameEvents } from "../src/literature.constants";
+import { LiteratureService } from "../src/literature.service";
+import type { LiteratureTransformers } from "../src/literature.transformers";
+import type { LiteratureValidators } from "../src/literature.validators";
 import {
 	buildCardsData,
 	buildGameData,
@@ -575,7 +575,10 @@ describe( "LiteratureService::transferTurn", () => {
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList, [ mockCallMove ] );
 
 		mockPrisma.literature.move.create.mockResolvedValue( mockTransferMove );
-		mockValidators.transferTurn.mockResolvedValue( { transferringPlayer: mockPlayer1, receivingPlayer: mockPlayer3 } );
+		mockValidators.transferTurn.mockResolvedValue( {
+			transferringPlayer: mockPlayer1,
+			receivingPlayer: mockPlayer3
+		} );
 
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );

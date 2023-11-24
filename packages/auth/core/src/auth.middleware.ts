@@ -1,8 +1,8 @@
 import { LoggerFactory, Middleware } from "@common/core";
 import type { NextFunction, Request, Response } from "express";
-import { accessTokenCookieOptions, Constants, Messages } from "./auth.constants.js";
-import { authService, AuthService } from "./auth.service.js";
-import { jwtService, JwtService } from "./jwt.service.js";
+import { accessTokenCookieOptions, Constants, Messages } from "./auth.constants";
+import { authService, AuthService } from "./auth.service";
+import { jwtService, JwtService } from "./jwt.service";
 
 export class AuthMiddleware implements Middleware {
 

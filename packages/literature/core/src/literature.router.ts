@@ -13,11 +13,11 @@ import type {
 } from "@literature/types";
 import { GameStatus } from "@literature/types";
 import type { NextFunction, Request, Response } from "express";
-import { Constants, Paths } from "./literature.constants.js";
-import type { LiteratureMiddleware } from "./literature.middleware.js";
-import { literatureMiddleware } from "./literature.middleware.js";
-import type { LiteratureService } from "./literature.service.js";
-import { literatureService } from "./literature.service.js";
+import { Constants, Paths } from "./literature.constants";
+import type { LiteratureMiddleware } from "./literature.middleware";
+import { literatureMiddleware } from "./literature.middleware";
+import type { LiteratureService } from "./literature.service";
+import { literatureService } from "./literature.service";
 
 export type LiteratureContext<I = undefined> = {
 	input: I;

@@ -4,7 +4,7 @@ import { CreateGame, HomePageContent, JoinGame } from "@literature/ui";
 import { AppShell, Box, Group, Text, Title } from "@mantine/core";
 import { Fragment } from "react";
 import type { IndexRouteObject } from "react-router-dom";
-import { DisplayAuthUser } from "../../components/display-auth-user.js";
+import { DisplayAuthUser } from "../../components/display-auth-user";
 
 export function HomePage() {
 	const isLoggedIn = useIsLoggedIn();

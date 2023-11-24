@@ -1,5 +1,5 @@
-import { literatureClient } from "./client.js";
-import { useGameStore } from "./store.js";
+import { literatureClient } from "./client";
+import { useGameStore } from "./store";
 
 export async function gameStoreLoader( { params }: { params: Record<string, string | undefined> } ) {
 	const gameId = params[ "gameId" ] ?? "";

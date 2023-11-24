@@ -1,7 +1,7 @@
 import type { Ogma } from "@ogma/logger";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
-import { LoggerService } from "../src/logger.service.js";
+import { LoggerService } from "../src/logger.service";
 
 describe( "Logger Service", () => {
 	let mockOgma = mockDeep<Ogma>();

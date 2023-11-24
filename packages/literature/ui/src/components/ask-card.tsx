@@ -12,8 +12,8 @@ import {
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Dispatch, Fragment, SetStateAction, useCallback, useMemo, useState } from "react";
-import { SelectCardSet } from "./select-card-set.js";
-import { SelectPlayer } from "./select-player.js";
+import { SelectCardSet } from "./select-card-set";
+import { SelectPlayer } from "./select-player";
 
 interface SelectCardProps {
 	set: CardSet;

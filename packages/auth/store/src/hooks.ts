@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useAuthStore } from "./store.js";
+import { useAuthStore } from "./store";
 
 // Auth State Hooks
 export const useAuthUser = () => useAuthStore( state => state.authUser );

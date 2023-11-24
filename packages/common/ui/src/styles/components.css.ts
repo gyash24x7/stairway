@@ -2,7 +2,7 @@ import { CardSuit } from "@common/cards";
 import { rem, rgba } from "@mantine/core";
 import { style, styleVariants } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
-import { vars } from "./theme.js";
+import { vars } from "./theme";
 
 export const applicationCardClassnames = {
 	card: style( {
@@ -12,7 +12,7 @@ export const applicationCardClassnames = {
 		color: vars.colors.white,
 		backgroundSize: "cover",
 		backgroundPosition: "center",
-		backgroundImage: "url(background.jpg)"
+		backgroundImage: "url(/background.jpg)"
 	} )
 };
 
@@ -161,7 +161,7 @@ export const layoutClassnames = {
 	footer: style( {
 		backgroundSize: "cover",
 		backgroundPosition: "center",
-		backgroundImage: "url(background.jpg)",
+		backgroundImage: "url(/background.jpg)",
 		borderTopWidth: 1,
 		borderTopStyle: "solid",
 		borderTopColor: vars.colors[ "gray" ][ 3 ]

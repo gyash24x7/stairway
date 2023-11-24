@@ -10,7 +10,7 @@ import { GameActions, GameCode, GamePageContent } from "@literature/ui";
 import { AppShell } from "@mantine/core";
 import { useEffect } from "react";
 import type { RouteObject } from "react-router-dom";
-import { DisplayAuthUser } from "../../components/display-auth-user.js";
+import { DisplayAuthUser } from "../../components/display-auth-user";
 
 export function GamePage() {
 	const gameId = useGameId();
