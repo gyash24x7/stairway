@@ -8,7 +8,6 @@ import { literatureService } from "./literature.service";
 export type RequiredGameData = {
 	status?: GameStatus;
 	turn?: boolean;
-	cards?: boolean;
 }
 
 export class LiteratureMiddleware implements Middleware {
@@ -23,7 +22,7 @@ export class LiteratureMiddleware implements Middleware {
 		const authUser: User = res.locals[ Constants.AUTH_USER ];
 		this.logger.info( "GameId: %s", gameId );
 
-		const requiredGameData: RequiredGameData = res.locals[ Constants.REQUIRED_GAME_DATA ];
+		const requiredGameData: RequiredGameData | undefined = res.locals[ Constants.REQUIRED_GAME_DATA ];
 
 		const game = await this.literatureService.getGameData( gameId );
 
@@ -41,20 +40,23 @@ export class LiteratureMiddleware implements Middleware {
 
 		res.locals[ Constants.PLAYER_DATA ] = await this.literatureService.getPlayerSpecificData( game, authUser.id );
 
-		const { status, turn, cards } = requiredGameData;
+		if ( requiredGameData ) {
 
-		if ( status && game.status !== status ) {
-			this.logger.error( "Game Status is not %s! GameId: %s", status, gameId );
-			throw new HttpException( 400 );
-		}
+			const { status, turn } = requiredGameData;
 
-		if ( turn && game.currentTurn !== authUser.id ) {
-			this.logger.error( "It's not your turn! GameId: %s", gameId );
-			throw new HttpException( 400 );
-		}
+			if ( status && game.status !== status ) {
+				this.logger.error( "Game Status is not %s! GameId: %s", status, gameId );
+				throw new HttpException( 400 );
+			}
 
-		if ( cards ) {
-			res.locals[ Constants.CARDS_DATA ] = await this.literatureService.getCardsData( gameId );
+			if ( turn && game.currentTurn !== authUser.id ) {
+				this.logger.error( "It's not your turn! GameId: %s", gameId );
+				throw new HttpException( 400 );
+			}
+
+			if ( turn ) {
+				res.locals[ Constants.CARDS_DATA ] = await this.literatureService.getCardsData( gameId );
+			}
 		}
 
 		next();

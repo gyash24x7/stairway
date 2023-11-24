@@ -1,4 +1,4 @@
-import { useCreateGameAction } from "@literature/ui";
+import { useCreateGameAction } from "@literature/store";
 import { Button } from "@mantine/core";
 import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";

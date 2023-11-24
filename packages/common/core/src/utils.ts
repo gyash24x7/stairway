@@ -6,7 +6,7 @@ export interface Type<T = any> extends Function {
 }
 
 export interface Middleware {
-	use: ( req: Request, res: Response, next: NextFunction ) => Promise<void>;
+	use: ( req: Request, res: Response, next: NextFunction ) => Promise<any>;
 }
 
 export abstract class ApiRouter {

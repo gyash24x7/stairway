@@ -1,28 +1,16 @@
-import type { Namespace } from "socket.io";
-import { Server } from "socket.io";
+import type { Namespace, Server } from "socket.io";
 import { LoggerFactory } from "./logger.factory";
 
 export class RealtimeService {
 
 	private readonly logger = LoggerFactory.getLogger( RealtimeService );
 
-	private readonly io: Server;
 	private readonly namespaces: Map<string, Namespace> = new Map();
 
-	constructor() {
-		this.io = new Server( 8001, {
-			cors: {
-				origin: [ "http://localhost:3000" ],
-				allowedHeaders: [ "Authorization" ],
-				credentials: true
-			}
-		} );
-	}
-
-	registerNamespace( namespace: string ) {
+	registerNamespace( io: Server, namespace: string ) {
 		this.logger.debug( ">> registerNamespace()" );
 		this.logger.debug( "Registering Namespace for %s", namespace );
-		const ns = this.io.of( namespace.toLowerCase() );
+		const ns = io.of( namespace.toLowerCase() );
 
 		ns.on( "connection", socket => {
 			this.logger.debug( "New Client Connected!" );
@@ -49,12 +37,6 @@ export class RealtimeService {
 		this.logger.debug( "<< registerNamespace()" );
 	}
 
-	onModuleDestroy() {
-		this.namespaces.forEach( namespace => {
-			namespace.disconnectSockets();
-		} );
-	}
-
 	publishMemberMessage( namespace: string, gameId: string, playerId: string, event: string, data: any ) {
 		const eventKey = event.concat( ":" ).concat( playerId );
 		const ns = this.namespaces.get( namespace )!;
@@ -68,3 +50,5 @@ export class RealtimeService {
 		this.logger.debug( "Published Room Message to %s", gameId );
 	}
 }
+
+export const realtimeService = new RealtimeService();

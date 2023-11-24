@@ -1,4 +1,4 @@
-import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "@literature/ui";
+import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "@literature/store";
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { chunk, shuffle } from "@s2h/cards";

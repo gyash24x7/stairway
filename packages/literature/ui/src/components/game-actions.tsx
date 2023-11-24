@@ -1,5 +1,5 @@
+import { useCurrentTurn, useGameStatus, useMoves, usePlayerId, usePlayers } from "@literature/store";
 import { GameStatus, MoveType } from "@literature/types";
-import { useCurrentTurn, useGameStatus, useMoves, usePlayerId, usePlayers } from "@literature/ui";
 import { Box, Flex, Group, Text } from "@mantine/core";
 import { AddBots } from "./add-bots";
 import { AskCard } from "./ask-card";

@@ -1,4 +1,4 @@
-import { useCallSetAction, useCardSetsInHand, useGameId, useMyTeam, usePlayers } from "@literature/ui";
+import { useCallSetAction, useCardSetsInHand, useGameId, useMyTeam, usePlayers } from "@literature/store";
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { CardSet, cardSetMap, getPlayingCardFromId } from "@s2h/cards";

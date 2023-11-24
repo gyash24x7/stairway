@@ -1,4 +1,4 @@
-import { HttpException, LoggerFactory, Middleware } from "@s2h/core";
+import { LoggerFactory, Middleware } from "@s2h/core";
 import type { NextFunction, Request, Response } from "express";
 import { accessTokenCookieOptions, Constants, Messages } from "./auth.constants";
 import { authService, AuthService } from "./auth.service";
@@ -20,7 +20,7 @@ export class AuthMiddleware implements Middleware {
 
 		if ( !accessToken ) {
 			this.logger.error( "No Access Token!" );
-			throw new HttpException( 401, Messages.UNAUTHORIZED );
+			return res.status( 401 ).send( Messages.UNAUTHORIZED );
 		}
 
 		const response = this.jwtService.verify( accessToken );
@@ -32,14 +32,14 @@ export class AuthMiddleware implements Middleware {
 
 		if ( !response.expired || !refreshToken ) {
 			this.logger.error( "Cannot ReIssue Access Token!" );
-			throw new HttpException( 401, Messages.UNAUTHORIZED );
+			return res.status( 401 ).send( Messages.UNAUTHORIZED );
 		}
 
 		const newAccessToken = await this.authService.reIssueAccessToken( refreshToken );
 
 		if ( !newAccessToken ) {
 			this.logger.error( "Unknown User!" );
-			throw new HttpException( 403, Messages.UNAUTHORIZED );
+			return res.status( 403 ).send( Messages.UNAUTHORIZED );
 		}
 
 		res.cookie( Constants.AUTH_COOKIE, newAccessToken, accessTokenCookieOptions );

@@ -6,7 +6,7 @@ import {
 	useHand,
 	useOppositeTeam,
 	usePlayers
-} from "@literature/ui";
+} from "@literature/store";
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { CardSet, getAskableCardsOfSet, getCardsOfSet, getPlayingCardFromId } from "@s2h/cards";

@@ -10,14 +10,14 @@ export class Constants {
 
 export class Paths {
 	public static readonly CREATE_GAME = "";
-	public static readonly JOIN_GAME = "join";
-	public static readonly ADD_BOTS = ":gameId/add-bots";
-	public static readonly CREATE_TEAMS = ":gameId/create-teams";
-	public static readonly START_GAME = ":gameId/start";
-	public static readonly ASK_CARD = ":gameId/ask-card";
-	public static readonly CALL_SET = ":gameId/call-set";
-	public static readonly TRANSFER_TURN = ":gameId/transfer-turn";
-	public static readonly GET_GAME = ":gameId";
+	public static readonly JOIN_GAME = "/join";
+	public static readonly ADD_BOTS = "/:gameId/add-bots";
+	public static readonly CREATE_TEAMS = "/:gameId/create-teams";
+	public static readonly START_GAME = "/:gameId/start";
+	public static readonly ASK_CARD = "/:gameId/ask-card";
+	public static readonly CALL_SET = "/:gameId/call-set";
+	public static readonly TRANSFER_TURN = "/:gameId/transfer-turn";
+	public static readonly GET_GAME = "/:gameId";
 }
 
 export class GameEvents {

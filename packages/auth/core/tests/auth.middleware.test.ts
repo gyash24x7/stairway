@@ -1,5 +1,4 @@
 import type { User } from "@prisma/client";
-import type { HttpException } from "@s2h/core";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
@@ -24,6 +23,7 @@ describe( "AuthMiddleware", () => {
 	const mockAuthService = mockDeep<AuthService>();
 
 	beforeEach( () => {
+		mockRes.status.mockReturnValue( mockRes );
 		mockRes.locals[ Constants.AUTH_USER ] = undefined;
 	} );
 
@@ -32,13 +32,12 @@ describe( "AuthMiddleware", () => {
 		mockReq.cookies[ Constants.REFRESH_COOKIE ] = undefined;
 
 		const middleware = new AuthMiddleware( mockAuthService, mockJwtService );
+		await middleware.use( mockReq, mockRes, mockNextFn );
 
-		expect.assertions( 3 );
-		await middleware.use( mockReq, mockRes, mockNextFn ).catch( ( e: HttpException ) => {
-			expect( e.getStatus() ).toBe( 401 );
-			expect( e.message ).toBe( Messages.UNAUTHORIZED );
-			expect( mockRes.locals[ Constants.AUTH_USER ] ).toBeUndefined();
-		} );
+		expect( mockRes.status ).toHaveBeenCalledWith( 401 );
+		expect( mockRes.send ).toHaveBeenCalledWith( Messages.UNAUTHORIZED );
+		expect( mockRes.locals[ Constants.AUTH_USER ] ).toBeUndefined();
+
 	} );
 
 	it( "should read access token and call next with the user id set in locals", async () => {
@@ -62,13 +61,12 @@ describe( "AuthMiddleware", () => {
 
 		const middleware = new AuthMiddleware( mockAuthService, mockJwtService );
 
-		expect.assertions( 4 );
-		await middleware.use( mockReq, mockRes, mockNextFn ).catch( ( e: HttpException ) => {
-			expect( e.getStatus() ).toBe( 401 );
-			expect( e.message ).toBe( Messages.UNAUTHORIZED );
-			expect( mockJwtService.verify ).toHaveBeenCalledWith( accessToken );
-			expect( mockRes.locals[ Constants.AUTH_USER ] ).toBeUndefined();
-		} );
+		await middleware.use( mockReq, mockRes, mockNextFn );
+
+		expect( mockRes.status ).toHaveBeenCalledWith( 401 );
+		expect( mockRes.send ).toHaveBeenCalledWith( Messages.UNAUTHORIZED );
+		expect( mockJwtService.verify ).toHaveBeenCalledWith( accessToken );
+		expect( mockRes.locals[ Constants.AUTH_USER ] ).toBeUndefined();
 	} );
 
 	it( "should throw error when access token is expired but new access token is not issued", async () => {
@@ -79,14 +77,14 @@ describe( "AuthMiddleware", () => {
 
 		const middleware = new AuthMiddleware( mockAuthService, mockJwtService );
 
-		expect.assertions( 5 );
-		await middleware.use( mockReq, mockRes, mockNextFn ).catch( ( e: HttpException ) => {
-			expect( e.getStatus() ).toBe( 403 );
-			expect( e.message ).toBe( Messages.UNAUTHORIZED );
-			expect( mockRes.locals[ Constants.AUTH_USER_ID ] ).toBeUndefined();
-			expect( mockJwtService.verify ).toHaveBeenCalledWith( accessToken );
-			expect( mockAuthService.reIssueAccessToken ).toHaveBeenCalledWith( refreshToken );
-		} );
+		await middleware.use( mockReq, mockRes, mockNextFn );
+
+
+		expect( mockRes.status ).toHaveBeenCalledWith( 403 );
+		expect( mockRes.send ).toHaveBeenCalledWith( Messages.UNAUTHORIZED );
+		expect( mockRes.locals[ Constants.AUTH_USER_ID ] ).toBeUndefined();
+		expect( mockJwtService.verify ).toHaveBeenCalledWith( accessToken );
+		expect( mockAuthService.reIssueAccessToken ).toHaveBeenCalledWith( refreshToken );
 	} );
 
 	it( "should re-issue access token and set auth user when access token is expired", async () => {

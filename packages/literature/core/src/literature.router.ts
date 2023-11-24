@@ -10,8 +10,9 @@ import type {
 	TransferTurnInput,
 	User
 } from "@literature/types";
+import { GameStatus } from "@literature/types";
 import { ApiRouter } from "@s2h/core";
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import { Constants, Paths } from "./literature.constants";
 import type { LiteratureMiddleware } from "./literature.middleware";
 import { literatureMiddleware } from "./literature.middleware";
@@ -56,16 +57,19 @@ export class LiteratureRouter extends ApiRouter {
 
 		this.router.get(
 			Paths.GET_GAME,
-			( req, res, next ) => this.literatureMiddleware.use( req, res, next ),
+			( req: Request, res: Response, next: NextFunction ) => this.literatureMiddleware.use( req, res, next ),
 			async ( req, res ) => {
-				const { gameData } = this.getContext( req, res );
-				res.send( gameData );
+				const { gameData, playerData } = this.getContext( req, res );
+				res.send( { gameData, playerData } );
 			}
 		);
 
 		this.router.put(
 			Paths.ADD_BOTS,
-			( req, res, next ) => this.literatureMiddleware.use( req, res, next ),
+			async ( req: Request, res: Response, next: NextFunction ) => {
+				res.locals[ Constants.REQUIRED_GAME_DATA ] = { status: GameStatus.CREATED };
+				await this.literatureMiddleware.use( req, res, next );
+			},
 			async ( req, res ) => {
 				const { gameData } = this.getContext( req, res );
 				const responseBody = await this.literatureService.addBots( gameData! );
@@ -75,7 +79,10 @@ export class LiteratureRouter extends ApiRouter {
 
 		this.router.put(
 			Paths.CREATE_TEAMS,
-			( req, res, next ) => this.literatureMiddleware.use( req, res, next ),
+			async ( req: Request, res: Response, next: NextFunction ) => {
+				res.locals[ Constants.REQUIRED_GAME_DATA ] = { status: GameStatus.PLAYERS_READY };
+				await this.literatureMiddleware.use( req, res, next );
+			},
 			async ( req, res ) => {
 				const { input, gameData } = this.getContext<CreateTeamsInput>( req, res );
 				const responseBody = await this.literatureService.createTeams( input, gameData! );
@@ -85,7 +92,10 @@ export class LiteratureRouter extends ApiRouter {
 
 		this.router.put(
 			Paths.START_GAME,
-			( req, res, next ) => this.literatureMiddleware.use( req, res, next ),
+			async ( req: Request, res: Response, next: NextFunction ) => {
+				res.locals[ Constants.REQUIRED_GAME_DATA ] = { status: GameStatus.TEAMS_CREATED };
+				await this.literatureMiddleware.use( req, res, next );
+			},
 			async ( req, res ) => {
 				const { gameData } = this.getContext( req, res );
 				const responseBody = await this.literatureService.startGame( gameData! );
@@ -95,7 +105,10 @@ export class LiteratureRouter extends ApiRouter {
 
 		this.router.put(
 			Paths.ASK_CARD,
-			( req, res, next ) => this.literatureMiddleware.use( req, res, next ),
+			async ( req: Request, res: Response, next: NextFunction ) => {
+				res.locals[ Constants.REQUIRED_GAME_DATA ] = { status: GameStatus.IN_PROGRESS, turn: true };
+				await this.literatureMiddleware.use( req, res, next );
+			},
 			async ( req, res ) => {
 				const { input, playerData, gameData } = this.getContext<AskCardInput>( req, res );
 				const responseBody = await this.literatureService.askCard( input, gameData!, playerData! );
@@ -105,7 +118,10 @@ export class LiteratureRouter extends ApiRouter {
 
 		this.router.put(
 			Paths.CALL_SET,
-			( req, res, next ) => this.literatureMiddleware.use( req, res, next ),
+			async ( req: Request, res: Response, next: NextFunction ) => {
+				res.locals[ Constants.REQUIRED_GAME_DATA ] = { status: GameStatus.IN_PROGRESS, turn: true };
+				await this.literatureMiddleware.use( req, res, next );
+			},
 			async ( req, res ) => {
 				const { input, playerData, gameData } = this.getContext<CallSetInput>( req, res );
 				const responseBody = await this.literatureService.callSet( input, gameData!, playerData! );
@@ -115,7 +131,10 @@ export class LiteratureRouter extends ApiRouter {
 
 		this.router.put(
 			Paths.TRANSFER_TURN,
-			( req, res, next ) => this.literatureMiddleware.use( req, res, next ),
+			async ( req: Request, res: Response, next: NextFunction ) => {
+				res.locals[ Constants.REQUIRED_GAME_DATA ] = { status: GameStatus.IN_PROGRESS, turn: true };
+				await this.literatureMiddleware.use( req, res, next );
+			},
 			async ( req, res ) => {
 				const { input, playerData, gameData } = this.getContext<TransferTurnInput>( req, res );
 				const responseBody = await this.literatureService.transferTurn( input, gameData!, playerData! );

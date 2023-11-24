@@ -1,4 +1,4 @@
-import { useGameCode } from "@literature/ui";
+import { useGameCode } from "@literature/store";
 import { Box, Text, Title } from "@mantine/core";
 
 export function GameCode() {

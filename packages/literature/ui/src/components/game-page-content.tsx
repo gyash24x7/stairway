@@ -1,7 +1,7 @@
+import { useGameStatus, useHand, usePlayers } from "@literature/store";
 import { GameStatus } from "@literature/types";
 import { Flex, Grid } from "@mantine/core";
 import { Banner, DisplayHand } from "@s2h/ui";
-import { useGameStatus, useHand, usePlayers } from "../store";
 import { GameCompleted } from "./game-completed";
 import { GameDescription } from "./game-description";
 import { PlayerLobby } from "./player-lobby";

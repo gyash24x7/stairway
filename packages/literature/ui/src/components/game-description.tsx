@@ -1,4 +1,4 @@
-import { useGameCode, useGameStatus, usePlayers, useTeams } from "@literature/ui";
+import { useGameCode, useGameStatus, usePlayers, useTeams } from "@literature/store";
 import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { Card } from "@s2h/ui";

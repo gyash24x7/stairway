@@ -39,7 +39,7 @@ import {
 	shuffle,
 	SORTED_DECK
 } from "@s2h/cards";
-import { LoggerFactory, prismaService, PrismaService, RealtimeService } from "@s2h/core";
+import { LoggerFactory, prismaService, PrismaService, realtimeService, RealtimeService } from "@s2h/core";
 import { Constants, GameEvents } from "./literature.constants";
 import type { LiteratureTransformers } from "./literature.transformers";
 import { literatureTransformers } from "./literature.transformers";
@@ -831,7 +831,7 @@ export class LiteratureService {
 
 export const literatureService = new LiteratureService(
 	prismaService,
-	new RealtimeService(),
+	realtimeService,
 	literatureValidators,
 	literatureTransformers
 );

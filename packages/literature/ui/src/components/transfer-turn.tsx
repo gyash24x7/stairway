@@ -1,4 +1,4 @@
-import { useGameId, useMyTeam, usePlayerId, usePlayers, useTransferTurnAction } from "@literature/ui";
+import { useGameId, useMyTeam, usePlayerId, usePlayers, useTransferTurnAction } from "@literature/store";
 import { Button, Modal, Stack, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Fragment, useCallback, useState } from "react";
