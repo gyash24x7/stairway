@@ -1,4 +1,4 @@
-import { useAddBotsAction, useGameId } from "@literature/ui";
+import { useAddBotsAction, useGameId } from "@literature/store";
 import { Button } from "@mantine/core";
 import { useCallback } from "react";
 

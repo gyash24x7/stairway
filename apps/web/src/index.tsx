@@ -1,21 +1,14 @@
-import { literatureRoute } from "@literature/ui";
 import { MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
-import { authStoreLoader, homeRoute, theme } from "@s2h/ui";
+import { theme } from "@s2h/ui";
 import { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
-import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { rootRoute } from "./routes";
 
 const root = ReactDOM.createRoot( document.getElementById( "root" ) as HTMLElement );
 
-export const router = createBrowserRouter( [
-	{
-		path: "/",
-		element: <Outlet/>,
-		children: [ literatureRoute, homeRoute ],
-		loader: authStoreLoader
-	}
-] );
+export const router = createBrowserRouter( [ rootRoute ] );
 
 root.render(
 	<StrictMode>

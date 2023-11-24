@@ -1,4 +1,4 @@
-import { useJoinGameAction } from "@literature/ui";
+import { useJoinGameAction } from "@literature/store";
 import { Button, Modal, Stack, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";

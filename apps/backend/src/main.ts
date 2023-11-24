@@ -1,34 +1,50 @@
-import { LiteratureModule } from "@literature/core";
-import { Module } from "@nestjs/common";
-import { NestFactory } from "@nestjs/core";
-import { AuthModule, LoggerFactory, loggerMiddleware, PrismaModule, RealtimeModule } from "@s2h/core";
+import { authMiddleware, authRouter } from "@auth/core";
+import { literatureRouter } from "@literature/core";
+import { LoggerFactory, loggerMiddleware, realtimeService } from "@s2h/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import dotenv from "dotenv";
+import express from "express";
+import * as http from "http";
+import { Server } from "socket.io";
 
 dotenv.config();
 
-@Module( {
-	imports: [ PrismaModule, RealtimeModule, AuthModule, LiteratureModule ]
-} )
-export class AppModule {}
+const app = express();
 
-async function bootstrap() {
-	const logger = LoggerFactory.getLogger( AppModule );
-	const app = await NestFactory.create( AppModule, { logger } );
-
-	app.enableCors( {
-		origin: "http://localhost:3000",
+const httpServer = http.createServer( app );
+const io = new Server( httpServer, {
+	cors: {
+		origin: [ "http://localhost:3000" ],
+		allowedHeaders: [ "Authorization" ],
 		credentials: true
-	} );
+	}
+} );
 
-	app.setGlobalPrefix( "/api" );
-	app.use( bodyParser.json() );
-	app.use( cookieParser() );
-	app.use( loggerMiddleware() );
+app.use( bodyParser.json() );
+app.use( cors( {
+	origin: "http://localhost:3000",
+	credentials: true
+} ) );
+app.use( cookieParser() );
+app.use( loggerMiddleware() );
 
-	await app.listen( 8000 );
+const apiRouter = express.Router();
+
+apiRouter.use( "/auth", authRouter.registerRoutes() );
+apiRouter.use(
+	"/literature",
+	( req, res, next ) => authMiddleware.use( req, res, next ),
+	literatureRouter.registerRoutes()
+);
+
+app.use( "/api", apiRouter );
+
+const logger = LoggerFactory.getLogger();
+
+realtimeService.registerNamespace( io, "literature" );
+
+httpServer.listen( 8000, () => {
 	logger.info( `Stairway started on localhost:8000!` );
-}
-
-bootstrap().then();
+} );
