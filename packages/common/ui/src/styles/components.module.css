@@ -1,5 +1,4 @@
 .application-card {
-	background-image: url("background.jpg");
 	background-position: center;
 	background-size: cover;
 	border-radius: 0.75rem;
@@ -103,7 +102,6 @@
 }
 
 .layout-footer {
-	background-image: url("background.jpg");
 	background-position: center;
 	background-size: cover;
 	border-top: 0.125rem solid var(--mantine-color-gray-3);
