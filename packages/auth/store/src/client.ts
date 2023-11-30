@@ -1,5 +1,5 @@
 import type { User } from "@prisma/client";
-import superagent from "superagent";
+import ky from "ky";
 
 const BASE_URL = "http://localhost:8000/api";
 const GOOGLE_CLIENT_ID = "920568500477-i0243mcdaku24c1sh07tdhr05oprh4vs.apps.googleusercontent.com";
@@ -13,15 +13,13 @@ export class Paths {
 export class AuthClient {
 
 	async loadAuthUser() {
-		return superagent
-			.get( BASE_URL + Paths.AUTH_USER )
-			.withCredentials()
-			.then( res => res.body as User )
-			.catch( () => null );
+		const getAuthUserPath = BASE_URL.concat( Paths.AUTH_USER );
+		return ky.get( getAuthUserPath, { credentials: "include" } ).json<User>().catch( () => null );
 	}
 
 	async logout() {
-		await superagent.delete( BASE_URL + Paths.LOGOUT ).withCredentials();
+		const logoutPath = BASE_URL.concat( Paths.LOGOUT );
+		await ky.delete( logoutPath, { credentials: "include" } ).json();
 	}
 
 	getGoogleAuthUrl() {

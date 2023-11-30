@@ -1,6 +1,7 @@
 import { Tabs } from "@mantine/core";
+import { clsx } from "clsx";
 import { useLocation, useNavigate } from "react-router-dom";
-import { navTabsClassnames as classnames } from "../styles";
+import classnames from "../styles/components.module.css";
 
 export function NavTabs() {
 	const navigate = useNavigate();
@@ -11,18 +12,18 @@ export function NavTabs() {
 
 	return (
 		<Tabs value={ activeTab }>
-			<Tabs.List className={ classnames.tabsList }>
+			<Tabs.List className={ classnames[ "navTabsList" ] }>
 				<Tabs.Tab
 					value={ "home" }
 					onClick={ () => navigate( "/" ) }
-					className={ classnames.tab( { isActive: !isLiteratureTabActive } ) }
+					className={ clsx( classnames[ "navTab" ], !isLiteratureTabActive && classnames[ "navTabActive" ] ) }
 				>
 					Home
 				</Tabs.Tab>
 				<Tabs.Tab
 					value={ "literature" }
 					onClick={ () => navigate( "/literature" ) }
-					className={ classnames.tab( { isActive: isLiteratureTabActive } ) }
+					className={ clsx( classnames[ "navTab" ], isLiteratureTabActive && classnames[ "navTabActive" ] ) }
 				>
 					Literature
 				</Tabs.Tab>

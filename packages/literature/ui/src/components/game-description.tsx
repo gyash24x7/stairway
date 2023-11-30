@@ -1,10 +1,10 @@
+import { Card } from "@common/ui";
 import { useGameCode, useGameStatus, usePlayers, useTeams } from "@literature/store";
 import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
-import { Card } from "@s2h/ui";
 import { IconCopy } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
-import { gameDescriptionClassnames as classnames } from "../styles";
+import classnames from "../styles/components.module.css";
 import { GameCode } from "./game-code";
 
 export function GameDescription() {
@@ -28,7 +28,7 @@ export function GameDescription() {
 		<Card>
 			{ displayTeams ? (
 				<Flex justify={ "space-between" } gap={ 20 }>
-					<Box className={ classnames.teamBox } ta={ "right" }>
+					<Box className={ classnames[ "teamBox" ] } ta={ "right" }>
 						<Title>{ teamList[ 0 ].name }</Title>
 						<Text fw={ 700 } c={ "dimmed" }>
 							{ teamList[ 0 ].members
@@ -38,7 +38,7 @@ export function GameDescription() {
 						</Text>
 					</Box>
 					<Title>{ teamList[ 0 ].score }&nbsp;-&nbsp;{ teamList[ 1 ].score }</Title>
-					<Box className={ classnames.teamBox }>
+					<Box className={ classnames[ "teamBox" ] }>
 						<Title>{ teamList[ 1 ].name }</Title>
 						<Text fw={ 700 } c={ "dimmed" }>
 							{ teamList[ 1 ].members
@@ -54,7 +54,7 @@ export function GameDescription() {
 					<IconCopy
 						width={ 40 }
 						height={ 40 }
-						className={ classnames.copyIcon }
+						className={ classnames[ "copyIcon" ] }
 						onClick={ copyCode }
 					/>
 				</Flex>

@@ -1,4 +1,4 @@
-import { HttpException, LoggerFactory, prismaService, PrismaService } from "@s2h/core";
+import { HttpException, LoggerFactory, prismaService, PrismaService } from "@common/core";
 import process from "process";
 import superagent from "superagent";
 import { URL } from "url";

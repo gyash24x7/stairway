@@ -1,4 +1,4 @@
-import { LoggerFactory, Middleware } from "@s2h/core";
+import { LoggerFactory, Middleware } from "@common/core";
 import type { NextFunction, Request, Response } from "express";
 import { accessTokenCookieOptions, Constants, Messages } from "./auth.constants";
 import { authService, AuthService } from "./auth.service";

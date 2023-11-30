@@ -1,12 +1,12 @@
 import { Button, Container, Group, Text, Title } from "@mantine/core";
-import { errorPageClassnames as classnames } from "../styles";
+import classnames from "../styles/components.module.css";
 
 export function ErrorPage() {
 	return (
-		<Container className={ classnames.root }>
-			<div className={ classnames.label }>404</div>
-			<Title className={ classnames.title }>You have found a secret place.</Title>
-			<Text c="dimmed" size="lg" ta="center" className={ classnames.description }>
+		<Container className={ classnames[ "errorPageRoot" ] }>
+			<div className={ classnames[ "errorPageLabel" ] }>404</div>
+			<Title className={ classnames[ "errorPageTitle" ] }>You have found a secret place.</Title>
+			<Text c="dimmed" size="lg" ta="center" className={ classnames[ "errorPageDescription" ] }>
 				Unfortunately, this is only a 404 page. You may have mistyped the address, or the page has
 				been moved to another URL.
 			</Text>

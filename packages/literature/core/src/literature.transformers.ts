@@ -1,3 +1,5 @@
+import { getPlayingCardFromId } from "@common/cards";
+import { LoggerFactory } from "@common/core";
 import type {
 	CardMapping,
 	CardMappingData,
@@ -8,8 +10,6 @@ import type {
 	RawGameData,
 	TeamWithMembers
 } from "@literature/types";
-import { getPlayingCardFromId } from "@s2h/cards";
-import { LoggerFactory } from "@s2h/core";
 
 export class LiteratureTransformers {
 
@@ -26,7 +26,7 @@ export class LiteratureTransformers {
 			}
 			cardCounts[ cardMapping.playerId ]++;
 		} );
-		
+
 		data.teams?.forEach( team => {
 			teamMap[ team.id ] = { ...team, members: [] };
 		} );

@@ -1,3 +1,4 @@
+import { ApiRouter } from "@common/core";
 import type {
 	AskCardInput,
 	CallSetInput,
@@ -11,7 +12,6 @@ import type {
 	User
 } from "@literature/types";
 import { GameStatus } from "@literature/types";
-import { ApiRouter } from "@s2h/core";
 import type { NextFunction, Request, Response } from "express";
 import { Constants, Paths } from "./literature.constants";
 import type { LiteratureMiddleware } from "./literature.middleware";

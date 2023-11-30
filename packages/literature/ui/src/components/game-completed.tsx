@@ -1,6 +1,6 @@
+import { Card } from "@common/ui";
 import { useMyTeam, useOppositeTeam } from "@literature/store";
 import { Stack, Title } from "@mantine/core";
-import { Card } from "@s2h/ui";
 import { IconCircleCheck } from "@tabler/icons-react";
 
 export function GameCompleted() {

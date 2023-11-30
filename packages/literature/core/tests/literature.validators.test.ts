@@ -1,11 +1,12 @@
+import { CardSet } from "@common/cards";
+import type { HttpException, PrismaService } from "@common/core";
 import { CallSetInput, CardMapping, GameStatus, JoinGameInput } from "@literature/types";
-import { CardSet } from "@s2h/cards";
-import type { HttpException, PrismaService } from "@s2h/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { Messages } from "../src/literature.constants";
 import { LiteratureValidators } from "../src/literature.validators";
 import {
+	buildCardsData,
 	buildMockGameData,
 	buildMockRawGameData,
 	buildPlayerSpecificData,
@@ -21,8 +22,7 @@ import {
 	mockPlayerIds,
 	mockTransferMove,
 	mockTransferTurnInput as mockInput
-} from "./mockdata";
-import { buildCardsData } from "./mockdata/utils";
+} from "./mock-utils";
 
 const mockPrisma = mockDeep<PrismaService>();
 
@@ -335,7 +335,12 @@ describe( "LiteratureValidators::callSet", () => {
 
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const input = { input: mockCallSetInput, gameData: mockGameData, cardsData, playerData: mockPlayerSpecificData };
+		const input = {
+			input: mockCallSetInput,
+			gameData: mockGameData,
+			cardsData,
+			playerData: mockPlayerSpecificData
+		};
 
 		expect.assertions( 2 );
 		await validators.callSet( input )
@@ -421,7 +426,12 @@ describe( "LiteratureValidators::callSet", () => {
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
-		const input = { input: mockCallSetInput, gameData: mockGameData, cardsData, playerData: mockPlayerSpecificData };
+		const input = {
+			input: mockCallSetInput,
+			gameData: mockGameData,
+			cardsData,
+			playerData: mockPlayerSpecificData
+		};
 
 		const validators = new LiteratureValidators( mockPrisma );
 		const { correctCall, calledSet } = await validators.callSet( input );

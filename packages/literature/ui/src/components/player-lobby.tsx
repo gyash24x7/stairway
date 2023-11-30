@@ -1,6 +1,6 @@
+import { Card } from "@common/ui";
 import type { Player } from "@literature/types";
 import { Title } from "@mantine/core";
-import { Card } from "@s2h/ui";
 import { DisplayPlayerSmall } from "./display-player";
 
 export interface PlayerLobbyProps {

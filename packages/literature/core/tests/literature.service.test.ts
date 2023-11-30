@@ -1,3 +1,5 @@
+import { CARD_SETS, CardSet, getCardSetsInHand, getPlayingCardFromId } from "@common/cards";
+import type { PrismaService, RealtimeService } from "@common/core";
 import {
 	CardMapping,
 	CreateGameInput,
@@ -12,8 +14,6 @@ import {
 	ScoreUpdate,
 	TeamData
 } from "@literature/types";
-import { CARD_SETS, CardSet, getCardSetsInHand, getPlayingCardFromId } from "@s2h/cards";
-import type { PrismaService, RealtimeService } from "@s2h/core";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { Constants, GameEvents } from "../src/literature.constants";
@@ -21,6 +21,8 @@ import { LiteratureService } from "../src/literature.service";
 import type { LiteratureTransformers } from "../src/literature.transformers";
 import type { LiteratureValidators } from "../src/literature.validators";
 import {
+	buildCardsData,
+	buildGameData,
 	buildMockCardMappings,
 	buildMockGameData,
 	buildMockInferenceData,
@@ -41,8 +43,7 @@ import {
 	mockTeamB,
 	mockTransferMove,
 	mockTransferTurnInput
-} from "./mockdata";
-import { buildCardsData, buildGameData } from "./mockdata/utils";
+} from "./mock-utils";
 
 describe( "LiteratureService::askCard", () => {
 	const mockInput = mockAskCardInput;
@@ -574,7 +575,10 @@ describe( "LiteratureService::transferTurn", () => {
 		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList, [ mockCallMove ] );
 
 		mockPrisma.literature.move.create.mockResolvedValue( mockTransferMove );
-		mockValidators.transferTurn.mockResolvedValue( { transferringPlayer: mockPlayer1, receivingPlayer: mockPlayer3 } );
+		mockValidators.transferTurn.mockResolvedValue( {
+			transferringPlayer: mockPlayer1,
+			receivingPlayer: mockPlayer3
+		} );
 
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );

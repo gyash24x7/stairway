@@ -1,8 +1,8 @@
+import { CardSet, cardSetMap, getPlayingCardFromId } from "@common/cards";
+import { DisplayCard } from "@common/ui";
 import { useCallSetAction, useCardSetsInHand, useGameId, useMyTeam, usePlayers } from "@literature/store";
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { CardSet, cardSetMap, getPlayingCardFromId } from "@s2h/cards";
-import { DisplayCard } from "@s2h/ui";
 import { IconArrowBigRight } from "@tabler/icons-react";
 import { Fragment, useCallback, useState } from "react";
 import { DisplayPlayerVertical } from "./display-player";

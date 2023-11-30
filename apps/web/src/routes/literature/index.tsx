@@ -1,4 +1,4 @@
-import { ErrorPage } from "@s2h/ui";
+import { ErrorPage } from "@common/ui";
 import { Outlet, RouteObject } from "react-router-dom";
 import { literatureGameRoute } from "./game-page";
 import { literatureHomeRoute } from "./home-page";

@@ -1,5 +1,5 @@
+import { type PlayingCard, sortCards } from "@common/cards";
 import { Flex, Title } from "@mantine/core";
-import { type PlayingCard, sortCards } from "@s2h/cards";
 import { Card } from "./card";
 import { DisplayCard } from "./display-card";
 

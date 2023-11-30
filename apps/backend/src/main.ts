@@ -1,6 +1,6 @@
 import { authMiddleware, authRouter } from "@auth/core";
+import { LoggerFactory, realtimeService } from "@common/core";
 import { literatureRouter } from "@literature/core";
-import { LoggerFactory, loggerMiddleware, realtimeService } from "@s2h/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -28,7 +28,6 @@ app.use( cors( {
 	credentials: true
 } ) );
 app.use( cookieParser() );
-app.use( loggerMiddleware() );
 
 const apiRouter = express.Router();
 

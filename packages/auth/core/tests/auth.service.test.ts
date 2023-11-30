@@ -1,4 +1,4 @@
-import type { HttpException, PrismaService } from "@s2h/core";
+import type { HttpException, PrismaService } from "@common/core";
 import superagent, { Response, SuperAgentRequest } from "superagent";
 import { afterEach, describe, expect, it, Mocked, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
