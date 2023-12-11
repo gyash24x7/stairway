@@ -1,11 +1,11 @@
 import { Card } from "@common/ui";
 import { usePlayers } from "@literature/store";
-import type { TeamWithMembers } from "@literature/types";
+import type { Team } from "@literature/types";
 import { Flex, Title } from "@mantine/core";
 import { DisplayPlayerSmall } from "./display-player";
 
 export interface DisplayTeamProps {
-	team: TeamWithMembers;
+	team: Team;
 	displayCardCount?: boolean;
 }
 
@@ -18,7 +18,7 @@ export function DisplayTeam( { displayCardCount, team }: DisplayTeamProps ) {
 				<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>Team { team.name }</Title>
 				<Title order={ 4 } fz={ "24px" } pb={ 8 } pr={ 8 }>{ team.score }</Title>
 			</Flex>
-			{ team.members.map( memberId => (
+			{ team.memberIds.map( memberId => (
 				<DisplayPlayerSmall
 					key={ memberId }
 					player={ players[ memberId ] }

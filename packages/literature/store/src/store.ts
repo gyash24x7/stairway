@@ -1,7 +1,6 @@
 import type { PlayingCard } from "@common/cards";
 import { getCardSetsInHand } from "@common/cards";
-import type { GameData, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/types";
-import { GameStatus } from "@literature/types";
+import type { GameData, GameStatus, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/types";
 import { produce } from "immer";
 import { create } from "zustand";
 
@@ -29,7 +28,7 @@ const defaultGameData: GameData = {
 	teams: {},
 	moves: [],
 	currentTurn: "",
-	status: GameStatus.CREATED,
+	status: "CREATED",
 	cardCounts: {},
 	code: "",
 	playerCount: 2
@@ -62,12 +61,12 @@ export const useGameStore = create<GameStore>( ( set ) => {
 				produce<GameStore>( state => {
 					state.gameData.teams = data;
 					Object.values( data ).map( team => {
-						if ( team.members.includes( state.playerData.id ) ) {
+						if ( team.memberIds.includes( state.playerData.id ) ) {
 							state.playerData.teamId = team.id;
 						} else {
 							state.playerData.oppositeTeamId = team.id;
 						}
-						team.members.forEach( memberId => {
+						team.memberIds.forEach( memberId => {
 							state.gameData.players[ memberId ].teamId = team.id;
 						} );
 					} );

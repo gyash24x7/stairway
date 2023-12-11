@@ -1,12 +1,12 @@
 import { getPlayingCardFromId, isCardSetInHand } from "@common/cards";
-import { HttpException, LoggerFactory, prismaService, PrismaService } from "@common/core";
-import {
+import { HttpException, LoggerFactory } from "@common/core";
+import type { LiteratureRepository } from "@common/data";
+import type {
 	AskCardInput,
 	CallSetInput,
 	CardsData,
 	GameData,
 	JoinGameInput,
-	MoveType,
 	PlayerSpecificData,
 	TransferTurnInput,
 	User
@@ -24,15 +24,12 @@ export class LiteratureValidators {
 
 	private readonly logger = LoggerFactory.getLogger( LiteratureValidators );
 
-	constructor( private readonly prisma: PrismaService ) {}
+	constructor( private readonly repository: LiteratureRepository ) {}
 
 	async joinGame( { input, authUser }: { input: JoinGameInput; authUser: User; } ) {
 		this.logger.debug( ">> validateJoinGameRequest()" );
 
-		const game = await this.prisma.literature.game.findUnique( {
-			where: { code: input.code },
-			include: { players: true }
-		} );
+		const game = await this.repository.getGameByCode( input.code );
 
 		if ( !game ) {
 			this.logger.error( Messages.GAME_NOT_FOUND );
@@ -178,7 +175,7 @@ export class LiteratureValidators {
 
 		const [ lastMove ] = gameData.moves;
 
-		if ( lastMove.type !== MoveType.CALL_SET || !lastMove.success ) {
+		if ( lastMove.type !== "CALL_SET" || !lastMove.success ) {
 			this.logger.error( Messages.TRANSFER_AFTER_SUCCESSFUL_CALL );
 			throw new HttpException( 400, Messages.TRANSFER_AFTER_SUCCESSFUL_CALL );
 		}
@@ -206,5 +203,3 @@ export class LiteratureValidators {
 		return { transferringPlayer, receivingPlayer };
 	}
 }
-
-export const literatureValidators = new LiteratureValidators( prismaService );

@@ -5,7 +5,6 @@ export class Constants {
 	public static readonly CARDS_DATA = "cardsData";
 	public static readonly REQUIRED_GAME_DATA = "requiredGameData";
 	public static readonly LITERATURE = "literature";
-	public static readonly AVATAR_BASE_URL = "https://api.dicebear.com/7.x/open-peeps/svg?seed=";
 }
 
 export class Paths {
@@ -35,8 +34,6 @@ export class GameEvents {
 
 export class Messages {
 	public static readonly GAME_NOT_FOUND = "Game Not Found!";
-	public static readonly INCORRECT_STATUS = "Game in incorrect status!";
-	public static readonly NOT_YOUR_TURN = "It's not your turn!";
 	public static readonly GAME_ALREADY_HAS_REQUIRED_PLAYERS = "The Game already has required players!";
 	public static readonly GAME_DOESNT_HAVE_ENOUGH_PLAYERS = "The Game doesn't have enough players!";
 	public static readonly USER_ALREADY_PART_OF_GAME = "The User is already part of the Game!";

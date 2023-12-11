@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@common/cards": "workspace:*",
 		"@common/core": "workspace:*",
+		"@common/data": "workspace:*",
 		"@literature/types": "workspace:*"
 	},
 	"devDependencies": {

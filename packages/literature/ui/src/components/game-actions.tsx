@@ -1,5 +1,4 @@
 import { useCurrentTurn, useGameStatus, useMoves, usePlayerId, usePlayers } from "@literature/store";
-import { GameStatus, MoveType } from "@literature/types";
 import { Box, Flex, Group, Text } from "@mantine/core";
 import { AddBots } from "./add-bots";
 import { AskCard } from "./ask-card";
@@ -18,10 +17,10 @@ export function GameActions() {
 
 	return (
 		<Flex justify={ "end" }>
-			{ status === GameStatus.CREATED && id === currentTurn && <AddBots/> }
-			{ status === GameStatus.PLAYERS_READY && id === currentTurn && <CreateTeams/> }
-			{ status === GameStatus.TEAMS_CREATED && id === currentTurn && <StartGame/> }
-			{ status === GameStatus.IN_PROGRESS && (
+			{ status === "CREATED" && id === currentTurn && <AddBots/> }
+			{ status === "PLAYERS_READY" && id === currentTurn && <CreateTeams/> }
+			{ status === "TEAMS_CREATED" && id === currentTurn && <StartGame/> }
+			{ status === "IN_PROGRESS" && (
 				<Box>
 					<Text ta={ "right" } style={ { flex: 1 } } fw={ 700 } fz={ 20 }>
 						IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
@@ -31,7 +30,7 @@ export function GameActions() {
 							<PreviousMoves/>
 							<AskCard/>
 							<CallSet/>
-							{ !!moves[ 0 ] && moves[ 0 ].type === MoveType.CALL_SET && moves[ 0 ].success && (
+							{ !!moves[ 0 ] && moves[ 0 ].type === "CALL_SET" && moves[ 0 ].success && (
 								<TransferTurn/>
 							) }
 						</Group>

@@ -39,7 +39,7 @@ export function TransferTurn() {
 					<SelectPlayer
 						player={ selectedPlayer }
 						setPlayer={ setSelectedPlayer }
-						options={ myTeam?.members.filter( memberId => memberId !== playerId )
+						options={ myTeam?.memberIds.filter( memberId => memberId !== playerId )
 							.map( memberId => players[ memberId ] ) ?? [] }
 					/>
 					<Button disabled={ !selectedPlayer } onClick={ handleSubmit } loading={ isLoading }>

@@ -50,5 +50,3 @@ export class RealtimeService {
 		this.logger.debug( "Published Room Message to %s", gameId );
 	}
 }
-
-export const realtimeService = new RealtimeService();

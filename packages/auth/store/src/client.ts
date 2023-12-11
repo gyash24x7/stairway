@@ -1,9 +1,15 @@
-import type { User } from "@prisma/client";
 import ky from "ky";
 
 const BASE_URL = "http://localhost:8000/api";
 const GOOGLE_CLIENT_ID = "920568500477-i0243mcdaku24c1sh07tdhr05oprh4vs.apps.googleusercontent.com";
 const GOOGLE_REDIRECT_URI = "http://localhost:8000/api/auth/callback";
+
+export type User = {
+	id: string;
+	name: string;
+	email: string;
+	avatar: string;
+}
 
 export class Paths {
 	public static readonly AUTH_USER = "/auth";

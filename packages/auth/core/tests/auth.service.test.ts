@@ -1,4 +1,5 @@
-import type { HttpException, PrismaService } from "@common/core";
+import type { HttpException } from "@common/core";
+import type { AuthRepository } from "@common/data";
 import superagent, { Response, SuperAgentRequest } from "superagent";
 import { afterEach, describe, expect, it, Mocked, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
@@ -24,7 +25,7 @@ describe( "AuthService", () => {
 		locale: "locale"
 	};
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<AuthRepository>();
 	const mockJwtService = mockDeep<JwtService>();
 	const mockUser = {
 		id: "someId",
@@ -46,12 +47,12 @@ describe( "AuthService", () => {
 		getGoogleUserRequest.set.mockResolvedValue( getGoogleUserResponse );
 		mockedSuperagent.get.mockReturnValue( getGoogleUserRequest );
 
-		mockPrisma.user.findUnique.mockResolvedValue( null );
-		mockPrisma.user.create.mockResolvedValue( mockUser );
+		mockRepository.getUserByEmail.mockResolvedValue( undefined );
+		mockRepository.createUser.mockResolvedValue( mockUser );
 
 		mockJwtService.sign.mockReturnValueOnce( accessToken ).mockReturnValueOnce( refreshToken );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 		const response = await authService.handleAuthCallback( "MOCK_AUTH_CODE" );
 
 		expect( response.accessToken ).toBe( accessToken );
@@ -60,13 +61,10 @@ describe( "AuthService", () => {
 		expect( getGoogleTokenRequest.set ).toHaveBeenCalledWith( "Content-Type", "application/x-www-form-urlencoded" );
 		expect( mockedSuperagent.get ).toHaveBeenCalledWith( expect.stringMatching( /MOCK_ACCESS_TOKEN/ ) );
 		expect( getGoogleUserRequest.set ).toHaveBeenCalledWith( "Authorization", `Bearer ${ idToken }` );
-		expect( mockPrisma.user.findUnique ).toHaveBeenCalledWith( { where: { email: googleUserResult.email } } );
-		expect( mockPrisma.user.create ).toHaveBeenCalledWith( {
-			data: {
-				name: googleUserResult.name,
-				email: googleUserResult.email,
-				avatar: expect.stringContaining( googleUserResult.id )
-			}
+		expect( mockRepository.getUserByEmail ).toHaveBeenCalledWith( googleUserResult.email );
+		expect( mockRepository.createUser ).toHaveBeenCalledWith( {
+			name: googleUserResult.name,
+			email: googleUserResult.email
 		} );
 	} );
 
@@ -83,10 +81,10 @@ describe( "AuthService", () => {
 		getGoogleUserRequest.set.mockResolvedValue( getGoogleUserResponse );
 		mockedSuperagent.get.mockReturnValue( getGoogleUserRequest );
 
-		mockPrisma.user.findUnique.mockResolvedValue( mockUser );
+		mockRepository.getUserByEmail.mockResolvedValue( mockUser );
 		mockJwtService.sign.mockReturnValueOnce( accessToken ).mockReturnValueOnce( refreshToken );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 		const response = await authService.handleAuthCallback( "MOCK_AUTH_CODE" );
 
 		expect( response.accessToken ).toBe( accessToken );
@@ -95,8 +93,8 @@ describe( "AuthService", () => {
 		expect( getGoogleTokenRequest.set ).toHaveBeenCalledWith( "Content-Type", "application/x-www-form-urlencoded" );
 		expect( mockedSuperagent.get ).toHaveBeenCalledWith( expect.stringMatching( /MOCK_ACCESS_TOKEN/ ) );
 		expect( getGoogleUserRequest.set ).toHaveBeenCalledWith( "Authorization", `Bearer ${ idToken }` );
-		expect( mockPrisma.user.findUnique ).toHaveBeenCalledWith( { where: { email: googleUserResult.email } } );
-		expect( mockPrisma.user.create ).toHaveBeenCalledTimes( 0 );
+		expect( mockRepository.getUserByEmail ).toHaveBeenCalledWith( googleUserResult.email );
+		expect( mockRepository.createUser ).toHaveBeenCalledTimes( 0 );
 	} );
 
 	it( "should handle authorization code callback from google when email not verified", async () => {
@@ -112,7 +110,7 @@ describe( "AuthService", () => {
 		getGoogleUserRequest.set.mockResolvedValue( getGoogleUserResponse );
 		mockedSuperagent.get.mockReturnValue( getGoogleUserRequest );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 
 		expect.assertions( 6 );
 		await authService.handleAuthCallback( "MOCK_AUTH_CODE" ).catch( ( e: HttpException ) => {
@@ -134,7 +132,7 @@ describe( "AuthService", () => {
 		mockSuperagentRequest.set.mockResolvedValue( mockSuperagentResponse );
 		mockedSuperagent.post.mockReturnValue( mockSuperagentRequest );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 		const data = await authService.getGoogleToken( "MOCK_AUTH_CODE" );
 
 		expect( data.access_token ).toBe( accessToken );
@@ -150,7 +148,7 @@ describe( "AuthService", () => {
 		mockSuperagentRequest.set.mockResolvedValue( mockSuperagentResponse );
 		mockedSuperagent.get.mockReturnValue( mockSuperagentRequest );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 		const data = await authService.getGoogleUser( accessToken, idToken );
 
 		expect( data ).toEqual( googleUserResult );
@@ -161,42 +159,42 @@ describe( "AuthService", () => {
 	it( "should return undefined if subject not present when re-issuing refresh token", async () => {
 		mockJwtService.verify.mockReturnValue( { expired: false, subject: "" } );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 		const newToken = await authService.reIssueAccessToken( "refreshToken" );
 
 		expect( newToken ).toBeUndefined();
 		expect( mockJwtService.verify ).toHaveBeenCalledWith( "refreshToken" );
-		expect( mockPrisma.user.findUnique ).toHaveBeenCalledTimes( 0 );
+		expect( mockRepository.getUserById ).toHaveBeenCalledTimes( 0 );
 	} );
 
 	it( "should return undefined if user does not exist when re-issuing refresh token", async () => {
-		mockPrisma.user.findUnique.mockResolvedValue( null );
+		mockRepository.getUserById.mockResolvedValue( undefined );
 		mockJwtService.verify.mockReturnValue( { expired: false, subject: "subject" } );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 		const newToken = await authService.reIssueAccessToken( "refreshToken" );
 
 		expect( newToken ).toBeUndefined();
 		expect( mockJwtService.verify ).toHaveBeenCalledWith( "refreshToken" );
-		expect( mockPrisma.user.findUnique ).toHaveBeenCalledWith( { where: { id: "subject" } } );
+		expect( mockRepository.getUserById ).toHaveBeenCalledWith( "subject" );
 	} );
 
 	it( "should return new token if user is present when re-issuing refresh token", async () => {
-		mockPrisma.user.findUnique.mockResolvedValue( mockDeep() );
+		mockRepository.getUserById.mockResolvedValue( mockDeep() );
 		mockJwtService.verify.mockReturnValue( { expired: false, subject: "subject" } );
 		mockJwtService.sign.mockReturnValue( "accessToken" );
 
-		const authService = new AuthService( mockPrisma, mockJwtService );
+		const authService = new AuthService( mockRepository, mockJwtService );
 		const newToken = await authService.reIssueAccessToken( "refreshToken" );
 
 		expect( newToken ).toBeDefined();
 		expect( mockJwtService.verify ).toHaveBeenCalledWith( "refreshToken" );
-		expect( mockPrisma.user.findUnique ).toHaveBeenCalledWith( { where: { id: "subject" } } );
+		expect( mockRepository.getUserById ).toHaveBeenCalledWith( "subject" );
 		expect( mockJwtService.sign ).toHaveBeenCalledWith( "subject", TokenType.ACCESS_TOKEN );
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockJwtService );
 		mockClear( mockedSuperagent );
 	} );
