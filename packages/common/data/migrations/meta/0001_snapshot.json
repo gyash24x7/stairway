@@ -1,380 +1,380 @@
 {
-  "id": "4a632622-f69a-4566-8e2c-079cc58bfabb",
-  "prevId": "613651ae-2ee6-4a55-984b-fae361ccb5e7",
-  "version": "5",
-  "dialect": "pg",
-  "tables": {
-    "users": {
-      "name": "users",
-      "schema": "auth",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "avatar": {
-          "name": "avatar",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "card_mappings": {
-      "name": "card_mappings",
-      "schema": "literature",
-      "columns": {
-        "card_id": {
-          "name": "card_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "player_id": {
-          "name": "player_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "game_id": {
-          "name": "game_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "card_mappings_game_id_games_id_fk": {
-          "name": "card_mappings_game_id_games_id_fk",
-          "tableFrom": "card_mappings",
-          "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "card_mappings_card_id_game_id_pk": {
-          "name": "card_mappings_card_id_game_id_pk",
-          "columns": [
-            "card_id",
-            "game_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {}
-    },
-    "games": {
-      "name": "games",
-      "schema": "literature",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "code": {
-          "name": "code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "literature_game_status",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'CREATED'"
-        },
-        "player_count": {
-          "name": "player_count",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 6
-        },
-        "current_turn": {
-          "name": "current_turn",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "games_code_unique": {
-          "name": "games_code_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "code"
-          ]
-        }
-      }
-    },
-    "moves": {
-      "name": "moves",
-      "schema": "literature",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "game_id": {
-          "name": "game_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "timestamp": {
-          "name": "timestamp",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "move_type": {
-          "name": "move_type",
-          "type": "literature_move_type",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "success": {
-          "name": "success",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "data": {
-          "name": "data",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "moves_game_id_games_id_fk": {
-          "name": "moves_game_id_games_id_fk",
-          "tableFrom": "moves",
-          "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    },
-    "players": {
-      "name": "players",
-      "schema": "literature",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "avatar": {
-          "name": "avatar",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "game_id": {
-          "name": "game_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "team_id": {
-          "name": "team_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_bot": {
-          "name": "is_bot",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "players_game_id_games_id_fk": {
-          "name": "players_game_id_games_id_fk",
-          "tableFrom": "players",
-          "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "players_team_id_teams_id_fk": {
-          "name": "players_team_id_teams_id_fk",
-          "tableFrom": "players",
-          "tableTo": "teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "players_id_game_id_pk": {
-          "name": "players_id_game_id_pk",
-          "columns": [
-            "id",
-            "game_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {}
-    },
-    "teams": {
-      "name": "teams",
-      "schema": "literature",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "game_id": {
-          "name": "game_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "score": {
-          "name": "score",
-          "type": "smallint",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "sets_won": {
-          "name": "sets_won",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "member_ids": {
-          "name": "member_ids",
-          "type": "json",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "teams_game_id_games_id_fk": {
-          "name": "teams_game_id_games_id_fk",
-          "tableFrom": "teams",
-          "tableTo": "games",
-          "columnsFrom": [
-            "game_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
-    }
-  },
-  "enums": {
-    "literature_game_status": {
-      "name": "literature_game_status",
-      "values": {
-        "CREATED": "CREATED",
-        "PLAYERS_READY": "PLAYERS_READY",
-        "TEAMS_CREATED": "TEAMS_CREATED",
-        "IN_PROGRESS": "IN_PROGRESS",
-        "COMPLETED": "COMPLETED"
-      }
-    },
-    "literature_move_type": {
-      "name": "literature_move_type",
-      "values": {
-        "ASK_CARD": "ASK_CARD",
-        "CALL_SET": "CALL_SET",
-        "TRANSFER_TURN": "TRANSFER_TURN"
-      }
-    }
-  },
-  "schemas": {
-    "auth": "auth",
-    "literature": "literature"
-  },
-  "_meta": {
-    "schemas": {},
-    "tables": {},
-    "columns": {}
-  }
+	"id": "4a632622-f69a-4566-8e2c-079cc58bfabb",
+	"prevId": "613651ae-2ee6-4a55-984b-fae361ccb5e7",
+	"version": "5",
+	"dialect": "pg",
+	"tables": {
+		"users": {
+			"name": "users",
+			"schema": "auth",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"email": {
+					"name": "email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"avatar": {
+					"name": "avatar",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": { },
+			"foreignKeys": { },
+			"compositePrimaryKeys": { },
+			"uniqueConstraints": { }
+		},
+		"card_mappings": {
+			"name": "card_mappings",
+			"schema": "literature",
+			"columns": {
+				"card_id": {
+					"name": "card_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"player_id": {
+					"name": "player_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"game_id": {
+					"name": "game_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": { },
+			"foreignKeys": {
+				"card_mappings_game_id_games_id_fk": {
+					"name": "card_mappings_game_id_games_id_fk",
+					"tableFrom": "card_mappings",
+					"tableTo": "games",
+					"columnsFrom": [
+						"game_id"
+					],
+					"columnsTo": [
+						"id"
+					],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"card_mappings_card_id_game_id_pk": {
+					"name": "card_mappings_card_id_game_id_pk",
+					"columns": [
+						"card_id",
+						"game_id"
+					]
+				}
+			},
+			"uniqueConstraints": { }
+		},
+		"games": {
+			"name": "games",
+			"schema": "literature",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"code": {
+					"name": "code",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"status": {
+					"name": "status",
+					"type": "literature_game_status",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'CREATED'"
+				},
+				"player_count": {
+					"name": "player_count",
+					"type": "smallint",
+					"primaryKey": false,
+					"notNull": true,
+					"default": 6
+				},
+				"current_turn": {
+					"name": "current_turn",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": { },
+			"foreignKeys": { },
+			"compositePrimaryKeys": { },
+			"uniqueConstraints": {
+				"games_code_unique": {
+					"name": "games_code_unique",
+					"nullsNotDistinct": false,
+					"columns": [
+						"code"
+					]
+				}
+			}
+		},
+		"moves": {
+			"name": "moves",
+			"schema": "literature",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"game_id": {
+					"name": "game_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"timestamp": {
+					"name": "timestamp",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"move_type": {
+					"name": "move_type",
+					"type": "literature_move_type",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"description": {
+					"name": "description",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"success": {
+					"name": "success",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"data": {
+					"name": "data",
+					"type": "json",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": { },
+			"foreignKeys": {
+				"moves_game_id_games_id_fk": {
+					"name": "moves_game_id_games_id_fk",
+					"tableFrom": "moves",
+					"tableTo": "games",
+					"columnsFrom": [
+						"game_id"
+					],
+					"columnsTo": [
+						"id"
+					],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": { },
+			"uniqueConstraints": { }
+		},
+		"players": {
+			"name": "players",
+			"schema": "literature",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"avatar": {
+					"name": "avatar",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"game_id": {
+					"name": "game_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"team_id": {
+					"name": "team_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"is_bot": {
+					"name": "is_bot",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": true,
+					"default": false
+				}
+			},
+			"indexes": { },
+			"foreignKeys": {
+				"players_game_id_games_id_fk": {
+					"name": "players_game_id_games_id_fk",
+					"tableFrom": "players",
+					"tableTo": "games",
+					"columnsFrom": [
+						"game_id"
+					],
+					"columnsTo": [
+						"id"
+					],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"players_team_id_teams_id_fk": {
+					"name": "players_team_id_teams_id_fk",
+					"tableFrom": "players",
+					"tableTo": "teams",
+					"columnsFrom": [
+						"team_id"
+					],
+					"columnsTo": [
+						"id"
+					],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"players_id_game_id_pk": {
+					"name": "players_id_game_id_pk",
+					"columns": [
+						"id",
+						"game_id"
+					]
+				}
+			},
+			"uniqueConstraints": { }
+		},
+		"teams": {
+			"name": "teams",
+			"schema": "literature",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"game_id": {
+					"name": "game_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"score": {
+					"name": "score",
+					"type": "smallint",
+					"primaryKey": false,
+					"notNull": true,
+					"default": 0
+				},
+				"sets_won": {
+					"name": "sets_won",
+					"type": "json",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"member_ids": {
+					"name": "member_ids",
+					"type": "json",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": { },
+			"foreignKeys": {
+				"teams_game_id_games_id_fk": {
+					"name": "teams_game_id_games_id_fk",
+					"tableFrom": "teams",
+					"tableTo": "games",
+					"columnsFrom": [
+						"game_id"
+					],
+					"columnsTo": [
+						"id"
+					],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": { },
+			"uniqueConstraints": { }
+		}
+	},
+	"enums": {
+		"literature_game_status": {
+			"name": "literature_game_status",
+			"values": {
+				"CREATED": "CREATED",
+				"PLAYERS_READY": "PLAYERS_READY",
+				"TEAMS_CREATED": "TEAMS_CREATED",
+				"IN_PROGRESS": "IN_PROGRESS",
+				"COMPLETED": "COMPLETED"
+			}
+		},
+		"literature_move_type": {
+			"name": "literature_move_type",
+			"values": {
+				"ASK_CARD": "ASK_CARD",
+				"CALL_SET": "CALL_SET",
+				"TRANSFER_TURN": "TRANSFER_TURN"
+			}
+		}
+	},
+	"schemas": {
+		"auth": "auth",
+		"literature": "literature"
+	},
+	"_meta": {
+		"schemas": { },
+		"tables": { },
+		"columns": { }
+	}
 }

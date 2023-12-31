@@ -20,7 +20,7 @@
 		"@common/tsconfig": "workspace:*",
 		"drizzle-kit": "0.20.9"
 	},
-	"keywords": [],
+	"keywords": [ ],
 	"author": "",
 	"license": "ISC"
 }

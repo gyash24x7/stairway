@@ -33,7 +33,7 @@
 		"postcss-preset-mantine": "1.12.2",
 		"postcss-simple-vars": "7.0.1"
 	},
-	"keywords": [],
+	"keywords": [ ],
 	"author": "",
 	"license": "ISC"
 }
