@@ -13,14 +13,14 @@
 	"dependencies": {
 		"@paralleldrive/cuid2": "2.2.2",
 		"dotenv": "16.3.1",
-		"drizzle-orm": "0.29.1",
+		"drizzle-orm": "0.29.2",
 		"postgres": "3.4.3"
 	},
 	"devDependencies": {
 		"@common/tsconfig": "workspace:*",
-		"drizzle-kit": "0.20.6"
+		"drizzle-kit": "0.20.9"
 	},
-	"keywords": [ ],
+	"keywords": [],
 	"author": "",
 	"license": "ISC"
 }
