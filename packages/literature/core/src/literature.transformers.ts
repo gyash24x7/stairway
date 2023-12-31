@@ -4,6 +4,7 @@ import type {
 	CardMapping,
 	CardMappingData,
 	CardsData,
+	GameData,
 	GameStatus,
 	HandData,
 	Player,
@@ -15,7 +16,7 @@ export class LiteratureTransformers {
 
 	private readonly logger = LoggerFactory.getLogger( LiteratureTransformers );
 
-	gameData( data: RawGameData ) {
+	gameData( data: RawGameData ): GameData {
 		this.logger.debug( ">> transformGameData()" );
 		const teamMap: Record<string, Team> = {};
 
@@ -66,5 +67,3 @@ export class LiteratureTransformers {
 		return { mappings, hands };
 	}
 }
-
-export const literatureTransformers = new LiteratureTransformers();

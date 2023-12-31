@@ -62,7 +62,8 @@ export function AskCard() {
 	}, [ cardSets, hand ] );
 
 	const oppositeTeamMembersWithCards = useMemo( () => {
-		return oppositeTeam?.members.map( memberId => players[ memberId ] )
+		console.log( oppositeTeam );
+		return oppositeTeam?.memberIds.map( memberId => players[ memberId ] )
 			.filter( member => !!cardCounts[ member.id ] ) ?? [];
 	}, [ oppositeTeam, cardCounts, players ] );
 

@@ -87,4 +87,13 @@ export class LiteratureRepository {
 	async updateTeamScore( teamId: string, score: number ) {
 		await this.db.update( teams ).set( { score } ).where( eq( teams.id, teamId ) );
 	}
+
+	async assignTeamsToPlayers( teamData: Record<string, typeof teams.$inferSelect> ) {
+		await Promise.all(
+			Object.keys( teamData ).map( teamId => {
+				const playerIds = teamData[ teamId ].memberIds;
+				return this.db.update( players ).set( { teamId } ).where( inArray( players.id, playerIds ) );
+			} )
+		);
+	}
 }

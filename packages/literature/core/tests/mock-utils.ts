@@ -16,6 +16,7 @@ import type {
 	CardMappingData,
 	CardsData,
 	GameData,
+	GameStatus,
 	HandData,
 	Inference,
 	Move,
@@ -23,19 +24,17 @@ import type {
 	PlayerSpecificData,
 	RawGameData,
 	Team,
-	TeamWithMembers,
 	TransferMove,
 	TransferTurnInput,
 	User
 } from "@literature/types";
-import { GameStatus, MoveType } from "@literature/types";
 
 function areTeamsCreated( status: GameStatus ) {
-	return status === GameStatus.TEAMS_CREATED || status === GameStatus.IN_PROGRESS || status === GameStatus.COMPLETED;
+	return status === "TEAMS_CREATED" || status === "IN_PROGRESS" || status === "COMPLETED";
 }
 
 function isGameStarted( status: GameStatus ) {
-	return status === GameStatus.IN_PROGRESS || status === GameStatus.COMPLETED;
+	return status === "IN_PROGRESS" || status === "COMPLETED";
 }
 
 export const mockAuthUser: User = {
@@ -83,9 +82,23 @@ export const mockPlayer4: Player = {
 
 export const mockPlayerIds = [ mockPlayer1.id, mockPlayer2.id, mockPlayer3.id, mockPlayer4.id ];
 
-export const mockTeamA: Team = { id: "1", name: "Team A", gameId: "1", setsWon: [], score: 0 };
+export const mockTeamA: Team = {
+	id: "1",
+	name: "Team A",
+	gameId: "1",
+	setsWon: [],
+	score: 0,
+	memberIds: [ mockPlayer1.id, mockPlayer3.id ]
+};
 
-export const mockTeamB: Team = { id: "2", name: "Team B", gameId: "1", setsWon: [], score: 0 };
+export const mockTeamB: Team = {
+	id: "2",
+	name: "Team B",
+	gameId: "1",
+	setsWon: [],
+	score: 0,
+	memberIds: [ mockPlayer2.id, mockPlayer4.id ]
+};
 
 export const mockTeamIds = [ mockTeamA.id, mockTeamB.id ];
 
@@ -168,7 +181,7 @@ export const mockAskCardInput: AskCardInput = {
 
 export const mockAskMove: AskMove = {
 	id: "1",
-	type: MoveType.ASK_CARD,
+	type: "ASK_CARD",
 	gameId: "1",
 	success: true,
 	data: {
@@ -193,7 +206,7 @@ export const mockCallSetInput: CallSetInput = {
 
 export const mockCallMove: CallMove = {
 	id: "1",
-	type: MoveType.CALL_SET,
+	type: "CALL_SET",
 	gameId: "1",
 	success: true,
 	data: {
@@ -212,7 +225,7 @@ export const mockTransferTurnInput: TransferTurnInput = {
 
 export const mockTransferMove: TransferMove = {
 	id: "2",
-	type: MoveType.TRANSFER_TURN,
+	type: "TRANSFER_TURN",
 	gameId: "1",
 	success: true,
 	data: {
@@ -240,16 +253,16 @@ export function buildCardsData( cardMappings: CardMapping[] ): CardsData {
 }
 
 export function buildGameData( data: RawGameData ): GameData {
-	const teamMap: Record<string, TeamWithMembers> = {};
+	const teamMap: Record<string, Team> = {};
 	data.teams?.forEach( team => {
-		teamMap[ team.id ] = { ...team, members: [] };
+		teamMap[ team.id ] = { ...team, memberIds: [] };
 	} );
 
 	const playerMap: Record<string, Player> = {};
 	data.players.forEach( player => {
 		playerMap[ player.id ] = player;
 		if ( !!player.teamId ) {
-			teamMap[ player.teamId ]?.members.push( player.id );
+			teamMap[ player.teamId ]?.memberIds.push( player.id );
 		}
 	} );
 

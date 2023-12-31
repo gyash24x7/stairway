@@ -1,3 +1,10 @@
+import "@fontsource/montserrat/400.css";
+import "@fontsource/montserrat/600.css";
+import "@fontsource/montserrat/800.css";
+import "@fontsource/saira-extra-condensed/300.css";
+import "@fontsource/saira-extra-condensed/600.css";
+import "@fontsource/saira-extra-condensed/900.css";
+
 import { theme } from "@common/ui";
 import { MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";

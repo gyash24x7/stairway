@@ -1,5 +1,5 @@
-import { Banner, DisplayHand } from "@common/ui";
-import { useGameStatus, useHand, usePlayers } from "@literature/store";
+import { Banner, Card, DisplayHand } from "@common/ui";
+import { useGameStatus, useHand, useMoves, usePlayers } from "@literature/store";
 import type { GameStatus } from "@literature/types";
 import { Flex, Grid } from "@mantine/core";
 import { GameCompleted } from "./game-completed";
@@ -25,6 +25,7 @@ export function GamePageContent() {
 	const status = useGameStatus();
 	const players = usePlayers();
 	const hand = useHand();
+	const [ move ] = useMoves();
 
 	return (
 		<Grid p={ 10 } gutter={ 10 }>
@@ -42,8 +43,11 @@ export function GamePageContent() {
 				</Flex>
 			</Grid.Col>
 			<Grid.Col span={ 8 }>
-				{ status === "IN_PROGRESS" && <DisplayHand hand={ hand }/> }
-				{ status === "COMPLETED" && <GameCompleted/> }
+				<Flex direction={ "column" } gap={ 10 }>
+					{ status === "IN_PROGRESS" && <DisplayHand hand={ hand }/> }
+					{ status === "IN_PROGRESS" && <Card>{ move.description }</Card> }
+					{ status === "COMPLETED" && <GameCompleted/> }
+				</Flex>
 			</Grid.Col>
 		</Grid>
 	);

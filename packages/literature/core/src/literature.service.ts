@@ -23,7 +23,6 @@ import type {
 	GameData,
 	GameStatus,
 	HandData,
-	Inference,
 	InferenceData,
 	JoinGameInput,
 	Move,
@@ -123,7 +122,6 @@ export class LiteratureService {
 
 		await this.validators.createTeams( gameData );
 
-
 		const [ teamA, teamB ] = await this.repository.createTeams(
 			Object.keys( input.data ).map( name => {
 				return { name, gameId: gameData.id, memberIds: input.data[ name ] };
@@ -131,6 +129,8 @@ export class LiteratureService {
 		);
 
 		const teamData: TeamData = { [ teamA.id ]: teamA, [ teamB.id ]: teamB };
+
+		await this.repository.assignTeamsToPlayers( teamData );
 
 		await this.handleTeamsCreated( gameData.id, teamData );
 		this.logger.debug( "Published TeamsCreatedEvent!" );
@@ -383,7 +383,7 @@ export class LiteratureService {
 
 		const scoreUpdate: ScoreUpdate = {
 			teamId: teams[ winningTeamId ].id,
-			score: teams[ winningTeamId ].score,
+			score: teams[ winningTeamId ].score + 1,
 			setWon: cardSet as CardSet
 		};
 
@@ -391,78 +391,6 @@ export class LiteratureService {
 
 		this.logger.debug( "<< updateScore()" );
 		return scoreUpdate;
-	}
-
-	async createInferences( gameData: GameData, hands: HandData ) {
-		this.logger.debug( ">> createInferences()" );
-
-		const inferenceData: InferenceData = {};
-
-		Object.keys( gameData.players ).map( playerId => {
-
-			const inference: Omit<Inference, "gameId" | "playerId"> = {
-				activeSets: {},
-				actualCardLocations: {},
-				possibleCardLocations: {},
-				inferredCardLocations: {}
-			};
-
-			const defaultProbablePlayers = Object.keys( gameData.players ).filter( player => player !== playerId );
-
-			Object.keys( gameData.teams ).forEach( teamId => {
-				inference.activeSets[ teamId ] = [];
-			} );
-
-			const cards = hands[ playerId ].map( card => card.id );
-
-			SORTED_DECK.forEach( card => {
-				if ( cards.includes( card.id ) ) {
-					inference.actualCardLocations[ card.id ] = playerId;
-					inference.possibleCardLocations[ card.id ] = [ playerId ];
-				} else {
-					inference.possibleCardLocations[ card.id ] = defaultProbablePlayers;
-				}
-			} );
-
-			inferenceData[ playerId ] = { ...inference, gameId: gameData.id, playerId };
-
-			// TODO: Insert Inferences in Cache
-		} );
-
-		await this.handleInferencesUpdated( gameData.id, inferenceData );
-
-		this.logger.debug( "<< createInferences()" );
-		return inferenceData;
-	}
-
-	async updateInferences( currentMove: Move, players: PlayerData ) {
-		this.logger.debug( ">> updateInferences()" );
-
-		let inferences = await this.getInferenceData( currentMove.gameId );
-
-		switch ( currentMove.type ) {
-			case "ASK_CARD":
-				inferences = this.updateInferencesOnAskMove( currentMove as AskMove, inferences, players );
-				break;
-
-			case "CALL_SET":
-				inferences = this.updateInferencesOnCallMove( currentMove as CallMove, inferences );
-				break;
-		}
-
-		if ( currentMove.type !== "TRANSFER_TURN" ) {
-			// TODO: Update Inferences to Cache
-			await this.handleInferencesUpdated( currentMove.gameId, inferences );
-		}
-
-		this.logger.debug( "<< updateInferences()" );
-		return inferences;
-	}
-
-	async executeBotMove( _gameId: string, _player: Player ) {
-		this.logger.debug( ">> executeBotMove()" );
-		// TODO: Execute Bot Move
-		this.logger.debug( "<< executeBotMove()" );
 	}
 
 	async getCardsData( gameId: string, playerId?: string ) {
@@ -503,26 +431,10 @@ export class LiteratureService {
 		return data;
 	}
 
-	async getInferenceData( _gameId: string ) {
-		this.logger.debug( ">> getInferenceData()" );
-
-		// TODO: Get Inferences From Cache
-		const inferences: Inference[] = [];
-
-		const inferenceData: InferenceData = {};
-		inferences.forEach( inference => {
-			inferenceData[ inference.playerId ] = inference;
-		} );
-
-		this.logger.debug( "<< getInferenceData()" );
-		return inferenceData;
-	}
-
 	// MERGE
 	async handleGameStarted( gameData: GameData, cardsData: CardsData ) {
 		this.logger.debug( ">> handleGameStarted()" );
 
-		await this.createInferences( gameData, cardsData.hands );
 		await this.updateStatus( gameData.id, "IN_PROGRESS" );
 		await this.handleHandsUpdated( gameData.id, cardsData.hands );
 
@@ -574,7 +486,6 @@ export class LiteratureService {
 	async handleMoveCreated( move: Move, gameData: GameData, cardsData: CardsData ) {
 		this.logger.debug( ">> handleMoveCreatedEvent" );
 
-		await this.updateInferences( move, gameData.players );
 		await this.updateHands( move, cardsData );
 		await this.updateTurn( gameData.currentTurn, move, gameData.players );
 		await this.updateScore( move, gameData.players, gameData.teams );
@@ -616,16 +527,16 @@ export class LiteratureService {
 			setsCompleted.push( ...team.setsWon as CardSet[] );
 		} );
 
-		if ( setsCompleted.length === 8 ) {
-			await this.updateStatus( gameId, "COMPLETED" );
-		}
-
 		this.realtimeService.publishRoomMessage(
 			Constants.LITERATURE,
 			gameId,
 			GameEvents.SCORE_UPDATED,
 			scoreUpdate
 		);
+
+		if ( setsCompleted.length === 8 ) {
+			await this.updateStatus( gameId, "COMPLETED" );
+		}
 
 		this.logger.debug( "<< handleScoreUpdated()" );
 	}
@@ -677,73 +588,5 @@ export class LiteratureService {
 		);
 
 		this.logger.debug( "<< handleTurnUpdated()" );
-	}
-
-	private updateInferencesOnCallMove( move: CallMove, inferences: InferenceData ) {
-		Object.keys( inferences ).map( playerId => {
-			const {
-				actualCardLocations,
-				possibleCardLocations,
-				inferredCardLocations,
-				activeSets
-			} = inferences[ playerId ];
-
-			Object.keys( move.data.correctCall ).map( card => {
-				delete actualCardLocations[ card ];
-				delete possibleCardLocations[ card ];
-				delete inferredCardLocations[ card ];
-			} );
-
-			Object.keys( activeSets ).forEach( teamId => {
-				const activeSetsSet = new Set( activeSets[ teamId ] );
-				activeSetsSet.delete( move.data.cardSet as CardSet );
-				activeSets[ teamId ] = Array.from( activeSetsSet );
-			} );
-
-			inferences[ playerId ] = {
-				...inferences[ playerId ],
-				activeSets,
-				actualCardLocations,
-				possibleCardLocations,
-				inferredCardLocations
-			};
-		} );
-
-		return inferences;
-	}
-
-	private updateInferencesOnAskMove( move: AskMove, inferences: InferenceData, players: PlayerData ) {
-		Object.keys( inferences ).map( playerId => {
-			const {
-				actualCardLocations,
-				possibleCardLocations,
-				inferredCardLocations,
-				activeSets
-			} = inferences[ playerId ];
-
-			if ( move.success ) {
-				actualCardLocations[ move.data.card ] = move.data.by;
-				possibleCardLocations[ move.data.card ] = [ move.data.by ];
-			} else {
-				possibleCardLocations[ move.data.card ] = possibleCardLocations[ move.data.card ]
-					.filter( playerId => playerId !== move.data.from && playerId !== move.data.by );
-			}
-
-			const teamId = players[ move.data.by ].teamId!;
-			const { set } = getPlayingCardFromId( move.data.card );
-			const activeSetsSet = new Set( activeSets[ teamId ] );
-			activeSetsSet.add( set );
-			activeSets[ teamId ] = Array.from( activeSetsSet );
-
-			inferences[ playerId ] = {
-				...inferences[ playerId ],
-				activeSets,
-				actualCardLocations,
-				possibleCardLocations,
-				inferredCardLocations
-			};
-		} );
-
-		return inferences;
 	}
 }

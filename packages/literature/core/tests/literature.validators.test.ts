@@ -1,6 +1,7 @@
 import { CardSet } from "@common/cards";
-import type { HttpException, PrismaService } from "@common/core";
-import { CallSetInput, CardMapping, GameStatus, JoinGameInput } from "@literature/types";
+import type { HttpException } from "@common/core";
+import type { LiteratureRepository } from "@common/data";
+import type { CallSetInput, CardMapping, JoinGameInput } from "@literature/types";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { Messages } from "../src/literature.constants";
@@ -24,55 +25,49 @@ import {
 	mockTransferTurnInput as mockInput
 } from "./mock-utils";
 
-const mockPrisma = mockDeep<PrismaService>();
+const mockRepository = mockDeep<LiteratureRepository>();
 
 describe( "LiteratureValidators::joinGame", () => {
 
 	const mockInput: JoinGameInput = { code: "BCDEDIT" };
-	const mockGame = buildMockRawGameData( GameStatus.CREATED );
+	const mockGame = buildMockRawGameData( "CREATED" );
 
 	it( "should throw error if game not there", async () => {
-		mockPrisma.literature.game.findUnique.mockResolvedValue( null );
+		mockRepository.getGameByCode.mockResolvedValue( undefined );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = { input: mockInput, authUser: mockAuthUser };
 
 		expect.assertions( 3 );
 		await validators.joinGame( input ).catch( ( err: HttpException ) => {
 			expect( err.getStatus() ).toEqual( 404 );
 			expect( err.message ).toEqual( Messages.GAME_NOT_FOUND );
-			expect( mockPrisma.literature.game.findUnique ).toHaveBeenCalledWith( {
-				where: { code: mockInput.code },
-				include: { players: true }
-			} );
+			expect( mockRepository.getGameByCode ).toHaveBeenCalledWith( mockInput.code );
 		} );
 	} );
 
 	it( "should throw error if game has enough players", async () => {
-		mockPrisma.literature.game.findUnique.mockResolvedValue( {
+		mockRepository.getGameByCode.mockResolvedValue( {
 			...mockGame,
 			players: [ mockPlayer2, mockPlayer3, mockPlayer4, { ...mockPlayer1, id: "5" } ]
-		} as any );
+		} );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = { input: mockInput, authUser: { ...mockAuthUser, id: "1" } };
 
 		expect.assertions( 3 );
 		await validators.joinGame( input ).catch( ( err: HttpException ) => {
 			expect( err.getStatus() ).toEqual( 400 );
 			expect( err.message ).toEqual( Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS );
-			expect( mockPrisma.literature.game.findUnique ).toHaveBeenCalledWith( {
-				where: { code: mockInput.code },
-				include: { players: true }
-			} );
+			expect( mockRepository.getGameByCode ).toHaveBeenCalledWith( mockInput.code );
 		} );
 	} );
 
 	it( "should return the game and user if player already part of game", async () => {
-		mockPrisma.literature.game.findUnique.mockResolvedValue( mockGame as any );
+		mockRepository.getGameByCode.mockResolvedValue( mockGame );
 
 		const input = { input: mockInput, authUser: mockAuthUser };
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const { game, isUserAlreadyInGame } = await validators.joinGame( input );
 
 		expect( isUserAlreadyInGame ).toBeTruthy();
@@ -82,10 +77,11 @@ describe( "LiteratureValidators::joinGame", () => {
 			{ ...mockPlayer3, teamId: null },
 			{ ...mockPlayer4, teamId: null }
 		] );
+		expect( mockRepository.getGameByCode ).toHaveBeenCalledWith( mockInput.code );
 	} );
 
 	it( "should return the game and even if user is not part of game", async () => {
-		mockPrisma.literature.game.findUnique.mockResolvedValue( {
+		mockRepository.getGameByCode.mockResolvedValue( {
 			...mockGame,
 			playerCount: 6,
 			players: [
@@ -93,10 +89,10 @@ describe( "LiteratureValidators::joinGame", () => {
 				{ ...mockPlayer3, teamId: null },
 				{ ...mockPlayer4, teamId: null }
 			]
-		} as any );
+		} );
 
 		const input = { input: mockInput, authUser: mockAuthUser };
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const { game, isUserAlreadyInGame } = await validators.joinGame( input );
 
 		expect( isUserAlreadyInGame ).toBeFalsy();
@@ -105,20 +101,21 @@ describe( "LiteratureValidators::joinGame", () => {
 			{ ...mockPlayer3, teamId: null },
 			{ ...mockPlayer4, teamId: null }
 		] );
+		expect( mockRepository.getGameByCode ).toHaveBeenCalledWith( mockInput.code );
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 	} );
 
 } );
 
 describe( "LiteratureValidators::createTeams", () => {
 
-	const mockGameData = buildMockGameData( GameStatus.PLAYERS_READY );
+	const mockGameData = buildMockGameData( "PLAYERS_READY" );
 
 	it( "should throw error if playerCount is less than required", async () => {
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 
 		expect.assertions( 2 );
 		validators.createTeams( { ...mockGameData, playerCount: 6 } ).catch( ( err: HttpException ) => {
@@ -128,7 +125,7 @@ describe( "LiteratureValidators::createTeams", () => {
 	} );
 
 	it( "should do nothing if valid", async () => {
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		expect.assertions( 0 );
 		await validators.createTeams( mockGameData );
 	} );
@@ -145,11 +142,11 @@ describe( "LiteratureValidators::askCard", () => {
 
 	const cardsData = buildCardsData( cardMappingList );
 
-	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
+	const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
 	const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
 	it( "should throw error if asked player is not part of game", async () => {
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			gameData: mockGameData,
 			playerData: mockPlayerSpecificData,
@@ -165,7 +162,7 @@ describe( "LiteratureValidators::askCard", () => {
 	} );
 
 	it( "should throw error if asked card is with current player ", async () => {
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			gameData: { ...mockGameData, currentTurn: mockPlayer2.id },
 			playerData: { ...mockPlayerSpecificData, id: mockPlayer2.id },
@@ -181,7 +178,7 @@ describe( "LiteratureValidators::askCard", () => {
 	} );
 
 	it( "should throw error if asked player from same team", async () => {
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			gameData: mockGameData,
 			playerData: mockPlayerSpecificData,
@@ -197,7 +194,7 @@ describe( "LiteratureValidators::askCard", () => {
 	} );
 
 	it( "should return the askedPlayer and playerWithTheAskedCard when valid", async () => {
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			gameData: mockGameData,
 			playerData: mockPlayerSpecificData,
@@ -212,7 +209,6 @@ describe( "LiteratureValidators::askCard", () => {
 	} );
 } );
 
-
 describe( "LiteratureValidators::callSet", () => {
 
 	it( "should throw error if unknown players are mentioned in call", async () => {
@@ -225,8 +221,8 @@ describe( "LiteratureValidators::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const validators = new LiteratureValidators( mockPrisma );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
+		const validators = new LiteratureValidators( mockRepository );
 		const callSetInput: CallSetInput = {
 			data: {
 				AceOfClubs: "1",
@@ -260,8 +256,8 @@ describe( "LiteratureValidators::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const validators = new LiteratureValidators( mockPrisma );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
+		const validators = new LiteratureValidators( mockRepository );
 		const callSetInput: CallSetInput = {
 			data: {
 				AceOfClubs: "3",
@@ -295,8 +291,8 @@ describe( "LiteratureValidators::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const validators = new LiteratureValidators( mockPrisma );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
+		const validators = new LiteratureValidators( mockRepository );
 		const callSetInput: CallSetInput = {
 			data: {
 				AceOfClubs: "1",
@@ -330,8 +326,8 @@ describe( "LiteratureValidators::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const validators = new LiteratureValidators( mockPrisma );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
+		const validators = new LiteratureValidators( mockRepository );
 
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
@@ -358,8 +354,8 @@ describe( "LiteratureValidators::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const validators = new LiteratureValidators( mockPrisma );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
+		const validators = new LiteratureValidators( mockRepository );
 		const callSetInput: CallSetInput = {
 			data: {
 				AceOfClubs: "1",
@@ -391,8 +387,8 @@ describe( "LiteratureValidators::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
-		const validators = new LiteratureValidators( mockPrisma );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
+		const validators = new LiteratureValidators( mockRepository );
 		const callSetInput: CallSetInput = {
 			data: {
 				AceOfClubs: "1",
@@ -423,7 +419,7 @@ describe( "LiteratureValidators::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 		const input = {
@@ -433,7 +429,7 @@ describe( "LiteratureValidators::callSet", () => {
 			playerData: mockPlayerSpecificData
 		};
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const { correctCall, calledSet } = await validators.callSet( input );
 
 		expect( correctCall ).toEqual( mockCallSetInput.data );
@@ -448,16 +444,11 @@ describe( "LiteratureValidators::transferTurn", () => {
 			{ cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" }
 		) );
 
-		const mockGameData = buildMockGameData(
-			GameStatus.IN_PROGRESS,
-			cardMappingList,
-			[ mockTransferMove ]
-		);
-
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList, [ mockTransferMove ] );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			input: { transferTo: mockPlayer2.id },
 			cardsData,
@@ -477,8 +468,9 @@ describe( "LiteratureValidators::transferTurn", () => {
 		const cardMappingList: CardMapping[] = deck.map( ( card, index ) => (
 			{ cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" }
 		) );
+
 		const mockGameData = buildMockGameData(
-			GameStatus.IN_PROGRESS,
+			"IN_PROGRESS",
 			cardMappingList,
 			[ { ...mockCallMove, success: false } ]
 		);
@@ -486,7 +478,7 @@ describe( "LiteratureValidators::transferTurn", () => {
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			input: { transferTo: mockPlayer2.id },
 			cardsData,
@@ -506,16 +498,12 @@ describe( "LiteratureValidators::transferTurn", () => {
 		const cardMappingList: CardMapping[] = deck.map( ( card, index ) => (
 			{ cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" }
 		) );
-		const mockGameData = buildMockGameData(
-			GameStatus.IN_PROGRESS,
-			cardMappingList,
-			[ mockCallMove ]
-		);
 
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList, [ mockCallMove ] );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			input: { transferTo: "5" },
 			cardsData,
@@ -535,16 +523,12 @@ describe( "LiteratureValidators::transferTurn", () => {
 		const cardMappingList: CardMapping[] = deck.map( ( card, index ) => (
 			{ cardId: card.id, playerId: [ "1", "2", "4" ][ index % 3 ], gameId: "1" }
 		) );
-		const mockGameData = buildMockGameData(
-			GameStatus.IN_PROGRESS,
-			cardMappingList,
-			[ mockCallMove ]
-		);
 
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList, [ mockCallMove ] );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = { input: mockInput, cardsData, gameData: mockGameData, playerData: mockPlayerSpecificData };
 
 		expect.assertions( 2 );
@@ -559,16 +543,12 @@ describe( "LiteratureValidators::transferTurn", () => {
 		const cardMappingList: CardMapping[] = deck.map( ( card, index ) => (
 			{ cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" }
 		) );
-		const mockGameData = buildMockGameData(
-			GameStatus.IN_PROGRESS,
-			cardMappingList,
-			[ mockCallMove ]
-		);
 
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList, [ mockCallMove ] );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = {
 			input: { transferTo: mockPlayer2.id },
 			cardsData,
@@ -588,16 +568,12 @@ describe( "LiteratureValidators::transferTurn", () => {
 		const cardMappingList: CardMapping[] = deck.map( ( card, index ) => (
 			{ cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" }
 		) );
-		const mockGameData = buildMockGameData(
-			GameStatus.IN_PROGRESS,
-			cardMappingList,
-			[ mockCallMove ]
-		);
 
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList, [ mockCallMove ] );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const validators = new LiteratureValidators( mockPrisma );
+		const validators = new LiteratureValidators( mockRepository );
 		const input = { input: mockInput, cardsData, gameData: mockGameData, playerData: mockPlayerSpecificData };
 
 		const { transferringPlayer, receivingPlayer } = await validators.transferTurn( input );

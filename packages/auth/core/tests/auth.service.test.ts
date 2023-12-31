@@ -34,6 +34,14 @@ describe( "AuthService", () => {
 		avatar: "someAvatar"
 	};
 
+	it( "should return authUser when getAuthUser is called", async () => {
+		mockRepository.getUserById.mockResolvedValue( mockUser );
+		const authService = new AuthService( mockRepository, mockJwtService );
+		const response = await authService.getAuthUser( mockUser.id );
+		expect( response ).toEqual( mockUser );
+		expect( mockRepository.getUserById ).toHaveBeenCalledWith( mockUser.id );
+	} );
+
 	it( "should handle authorization code callback from google when new user with verified email", async () => {
 		const getGoogleTokenRequest = mockDeep<SuperAgentRequest>();
 		const getGoogleTokenResponse = mockDeep<Response>();

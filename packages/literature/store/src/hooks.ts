@@ -27,6 +27,7 @@ export const useMyTeam = () => useGameStore( state => {
 
 export const useOppositeTeam = () => useGameStore( state => {
 	const { playerData, gameData } = state;
+	console.log( playerData );
 	if ( !playerData.oppositeTeamId ) {
 		return undefined;
 	}
