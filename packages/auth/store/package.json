@@ -16,7 +16,7 @@
 		"@common/tsconfig": "workspace:*",
 		"@types/react": "18.2.46"
 	},
-	"keywords": [],
+	"keywords": [ ],
 	"author": "",
 	"license": "ISC"
 }
