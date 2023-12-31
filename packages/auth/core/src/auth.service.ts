@@ -1,9 +1,10 @@
-import { HttpException, LoggerFactory, prismaService, PrismaService } from "@common/core";
+import { HttpException, LoggerFactory } from "@common/core";
+import type { AuthRepository } from "@common/data";
 import process from "process";
 import superagent from "superagent";
 import { URL } from "url";
 import { Constants, Messages, TokenType } from "./auth.constants";
-import { jwtService, JwtService } from "./jwt.service";
+import type { JwtService } from "./jwt.service";
 
 type GoogleTokenResult = {
 	access_token: string;
@@ -29,13 +30,13 @@ export class AuthService {
 	private readonly logger = LoggerFactory.getLogger( AuthService );
 
 	constructor(
-		private readonly prisma: PrismaService,
+		private readonly repository: AuthRepository,
 		private readonly jwtService: JwtService
 	) {}
 
 	async getAuthUser( userId: string ) {
 		this.logger.debug( ">> getAuthUser()" );
-		const user = await this.prisma.user.findUnique( { where: { id: userId } } );
+		const user = await this.repository.getUserById( userId );
 		this.logger.debug( "<< getAuthUser()" );
 		return user;
 	}
@@ -44,19 +45,18 @@ export class AuthService {
 		this.logger.debug( ">> handleAuthCallback()" );
 
 		const { access_token, id_token } = await this.getGoogleToken( code );
-		const { verified_email, email, name, id } = await this.getGoogleUser( access_token, id_token );
+		const { verified_email, email, name } = await this.getGoogleUser( access_token, id_token );
 
 		if ( !verified_email ) {
 			this.logger.warn( "Email Not Verified!" );
 			throw new HttpException( 403, Messages.EMAIL_NOT_VERIFIED );
 		}
 
-		let user = await this.prisma.user.findUnique( { where: { email } } );
+		let user = await this.repository.getUserByEmail( email );
 
 		if ( !user ) {
 			this.logger.debug( "New User!" );
-			const avatar = `${ Constants.AVATAR_BASE_URL }/${ id }.svg?r=50`;
-			user = await this.prisma.user.create( { data: { email, name, avatar } } );
+			user = await this.repository.createUser( { name, email } );
 		}
 
 		const accessToken = this.jwtService.sign( user.id, TokenType.ACCESS_TOKEN );
@@ -74,7 +74,7 @@ export class AuthService {
 			return;
 		}
 
-		const user = await this.prisma.user.findUnique( { where: { id: subject } } );
+		const user = await this.repository.getUserById( subject );
 
 		if ( !user ) {
 			return;
@@ -118,5 +118,3 @@ export class AuthService {
 		return response;
 	}
 }
-
-export const authService = new AuthService( prismaService, jwtService );

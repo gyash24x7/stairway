@@ -1,15 +1,14 @@
 import { CARD_SETS, CardSet, getCardSetsInHand, getPlayingCardFromId } from "@common/cards";
-import type { PrismaService, RealtimeService } from "@common/core";
-import {
+import type { RealtimeService } from "@common/core";
+import type { LiteratureRepository } from "@common/data";
+import type {
 	CardMapping,
 	CreateGameInput,
 	CreateTeamsInput,
 	Game,
 	GameData,
-	GameStatus,
 	JoinGameInput,
 	Move,
-	MoveType,
 	Player,
 	ScoreUpdate,
 	TeamData
@@ -57,10 +56,10 @@ describe( "LiteratureService::askCard", () => {
 
 	const cardsData = buildCardsData( cardMappingList );
 
-	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
+	const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
 	const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -68,9 +67,9 @@ describe( "LiteratureService::askCard", () => {
 	it( "should transfer the turn to asked player when asked incorrectly and create ask move", async () => {
 		const askMove = { ...mockAskMove, data: { ...mockAskMove.data as any, from: mockPlayer4.id } };
 		mockValidators.askCard.mockResolvedValue( { askedPlayer: mockPlayer4, playerWithAskedCard: mockPlayer1 } );
-		mockPrisma.literature.move.create.mockResolvedValue( askMove );
+		mockRepository.createMove.mockResolvedValue( askMove );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const moveCreatedSpy = vi.spyOn( service, "handleMoveCreated" ).mockImplementation( async () => {} );
 		const getCardsDataSpy = vi.spyOn( service, "getCardsData" ).mockResolvedValue( cardsData );
 
@@ -81,19 +80,17 @@ describe( "LiteratureService::askCard", () => {
 		);
 
 		expect( result ).toEqual( askMove );
-		expect( mockPrisma.literature.move.create ).toBeCalledTimes( 1 );
-		expect( mockPrisma.literature.move.create ).toBeCalledWith( {
+		expect( mockRepository.createMove ).toBeCalledTimes( 1 );
+		expect( mockRepository.createMove ).toBeCalledWith( {
+			type: "ASK_CARD",
+			gameId: mockGameData.id,
+			success: false,
 			data: {
-				type: MoveType.ASK_CARD,
-				gameId: mockGameData.id,
-				success: false,
-				data: {
-					from: mockPlayer4.id,
-					by: mockAuthUser.id,
-					card: mockInput.askedFor
-				},
-				description: `${ mockPlayer1.name } asked ${ mockPlayer4.name } for ${ mockInput.askedFor } and was declined!`
-			}
+				from: mockPlayer4.id,
+				by: mockAuthUser.id,
+				card: mockInput.askedFor
+			},
+			description: `${ mockPlayer1.name } asked ${ mockPlayer4.name } for ${ mockInput.askedFor } and was declined!`
 		} );
 
 		expect( mockValidators.askCard ).toHaveBeenCalledWith( {
@@ -109,28 +106,26 @@ describe( "LiteratureService::askCard", () => {
 
 	it( "should transfer the card to the asking player when asked correctly and create ask move", async () => {
 		mockValidators.askCard.mockResolvedValue( { askedPlayer: mockPlayer2, playerWithAskedCard: mockPlayer2 } );
-		mockPrisma.literature.move.create.mockResolvedValue( mockAskMove );
+		mockRepository.createMove.mockResolvedValue( mockAskMove );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const moveCreatedSpy = vi.spyOn( service, "handleMoveCreated" ).mockImplementation( async () => {} );
 		const getCardsDataSpy = vi.spyOn( service, "getCardsData" ).mockResolvedValue( cardsData );
 
 		const result = await service.askCard( mockInput, mockGameData, mockPlayerSpecificData );
 
 		expect( result ).toEqual( mockAskMove );
-		expect( mockPrisma.literature.move.create ).toBeCalledTimes( 1 );
-		expect( mockPrisma.literature.move.create ).toBeCalledWith( {
+		expect( mockRepository.createMove ).toBeCalledTimes( 1 );
+		expect( mockRepository.createMove ).toBeCalledWith( {
+			type: "ASK_CARD",
+			gameId: mockGameData.id,
+			success: true,
 			data: {
-				type: MoveType.ASK_CARD,
-				gameId: mockGameData.id,
-				success: true,
-				data: {
-					from: mockInput.askedFrom,
-					by: mockAuthUser.id,
-					card: mockInput.askedFor
-				},
-				description: `${ mockPlayer1.name } asked ${ mockPlayer2.name } for ${ mockInput.askedFor } and got the card!`
-			}
+				from: mockInput.askedFrom,
+				by: mockAuthUser.id,
+				card: mockInput.askedFor
+			},
+			description: `${ mockPlayer1.name } asked ${ mockPlayer2.name } for ${ mockInput.askedFor } and got the card!`
 		} );
 
 		expect( mockValidators.askCard ).toHaveBeenCalledWith( {
@@ -145,7 +140,7 @@ describe( "LiteratureService::askCard", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -157,7 +152,7 @@ describe( "LiteratureService::callSet", () => {
 
 	const mockInput = mockCallSetInput;
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -175,7 +170,7 @@ describe( "LiteratureService::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
 		const mockMove: Move = {
 			...mockCallMove,
 			success: false,
@@ -183,7 +178,7 @@ describe( "LiteratureService::callSet", () => {
 			description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } incorrectly!`
 		};
 
-		mockPrisma.literature.move.create.mockResolvedValue( mockMove );
+		mockRepository.createMove.mockResolvedValue( mockMove );
 		mockValidators.callSet.mockResolvedValue( {
 			correctCall: { ...mockInput.data, SixOfClubs: mockPlayer4.id },
 			calledSet: CardSet.LOWER_CLUBS
@@ -192,25 +187,23 @@ describe( "LiteratureService::callSet", () => {
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const moveCreatedSpy = vi.spyOn( service, "handleMoveCreated" ).mockImplementation( async () => {} );
 		const getCardsDataSpy = vi.spyOn( service, "getCardsData" ).mockResolvedValue( cardsData );
 
 		const result = await service.callSet( mockInput, mockGameData, mockPlayerSpecificData );
 
 		expect( result ).toEqual( mockMove );
-		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
+		expect( mockRepository.createMove ).toHaveBeenCalledWith( {
+			gameId: mockGameData.id,
+			type: "CALL_SET",
+			success: false,
+			description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } incorrectly!`,
 			data: {
-				gameId: mockGameData.id,
-				type: MoveType.CALL_SET,
-				success: false,
-				description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } incorrectly!`,
-				data: {
-					by: mockPlayer1.id,
-					cardSet: CardSet.LOWER_CLUBS,
-					actualCall: mockInput.data,
-					correctCall: { ...mockInput.data, SixOfClubs: mockPlayer4.id }
-				}
+				by: mockPlayer1.id,
+				cardSet: CardSet.LOWER_CLUBS,
+				actualCall: mockInput.data,
+				correctCall: { ...mockInput.data, SixOfClubs: mockPlayer4.id }
 			}
 		} );
 
@@ -233,35 +226,33 @@ describe( "LiteratureService::callSet", () => {
 			return { cardId: card.id, playerId, gameId: "1" };
 		} );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList );
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		mockPrisma.literature.move.create.mockResolvedValue( mockCallMove );
+		mockRepository.createMove.mockResolvedValue( mockCallMove );
 		mockValidators.callSet.mockResolvedValue( {
 			correctCall: mockInput.data,
 			calledSet: CardSet.LOWER_CLUBS
 		} );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const moveCreatedSpy = vi.spyOn( service, "handleMoveCreated" ).mockImplementation( async () => {} );
 		const getCardsDataSpy = vi.spyOn( service, "getCardsData" ).mockResolvedValue( cardsData );
 
 		const result = await service.callSet( mockInput, mockGameData, mockPlayerSpecificData );
 
 		expect( result ).toEqual( mockCallMove );
-		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
+		expect( mockRepository.createMove ).toHaveBeenCalledWith( {
+			gameId: mockGameData.id,
+			type: "CALL_SET",
+			success: true,
+			description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } correctly!`,
 			data: {
-				gameId: mockGameData.id,
-				type: MoveType.CALL_SET,
-				success: true,
-				description: `${ mockPlayer1.name } called ${ CardSet.LOWER_CLUBS } correctly!`,
-				data: {
-					by: mockPlayer1.id,
-					cardSet: CardSet.LOWER_CLUBS,
-					actualCall: mockInput.data,
-					correctCall: mockInput.data
-				}
+				by: mockPlayer1.id,
+				cardSet: CardSet.LOWER_CLUBS,
+				actualCall: mockInput.data,
+				correctCall: mockInput.data
 			}
 		} );
 
@@ -276,7 +267,7 @@ describe( "LiteratureService::callSet", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -289,7 +280,7 @@ describe( "LiteratureService::createGame", () => {
 		playerCount: 4
 	};
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -301,12 +292,12 @@ describe( "LiteratureService::createGame", () => {
 	mockGameData.id = "game123";
 
 	it( "should create a new game and add the logged in player", async () => {
-		mockPrisma.literature.game.create.mockResolvedValue( mockGame );
-		mockPrisma.literature.player.create.mockResolvedValue( mockNewPlayer );
+		mockRepository.createGame.mockResolvedValue( mockGame );
+		mockRepository.createPlayer.mockResolvedValue( mockNewPlayer );
 		mockTransformers.gameData.mockReturnValue( mockGameData );
 
 		const service = new LiteratureService(
-			mockPrisma,
+			mockRepository,
 			mockRealtimeService,
 			mockValidators,
 			mockTransformers
@@ -316,70 +307,32 @@ describe( "LiteratureService::createGame", () => {
 
 		expect( result.id ).toEqual( mockGame.id );
 
-		expect( mockPrisma.literature.game.create ).toHaveBeenCalledWith( {
-			data: expect.objectContaining( {
+		expect( mockRepository.createGame ).toHaveBeenCalledWith(
+			expect.objectContaining( {
 				playerCount: 4,
 				currentTurn: mockPlayer1.id
 			} )
-		} );
+		);
 
-		expect( mockPrisma.literature.player.create ).toHaveBeenCalledWith( {
-			data: expect.objectContaining( {
+		expect( mockRepository.createPlayer ).toHaveBeenCalledWith(
+			expect.objectContaining( {
 				id: mockPlayer1.id,
 				gameId: "game123"
 			} )
-		} );
+		);
 
-		expect( mockTransformers.gameData ).toHaveBeenCalledWith( { ...mockGame, players: [ mockNewPlayer ] } );
+		expect( mockTransformers.gameData ).toHaveBeenCalledWith( {
+			...mockGame,
+			players: [ mockNewPlayer ],
+			cardMappings: [],
+			teams: [],
+			moves: []
+		} );
 	} );
 
 
 	afterEach( () => {
-		mockClear( mockPrisma );
-		mockClear( mockRealtimeService );
-		mockClear( mockValidators );
-		mockClear( mockTransformers );
-	} );
-} );
-
-describe( "LiteratureService::createInferences", () => {
-
-	const mockPrisma = mockDeep<PrismaService>();
-	const mockRealtimeService = mockDeep<RealtimeService>();
-	const mockValidators = mockDeep<LiteratureValidators>();
-	const mockTransformers = mockDeep<LiteratureTransformers>();
-
-	const cardMappingList = buildMockCardMappings();
-	const { hands } = buildCardsData( cardMappingList );
-	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED, cardMappingList );
-	const inferenceData = buildMockInferenceData( mockGameData.id, cardMappingList );
-
-	it( "should create inferences for each player and publish InferenceUpdatedEvent", async () => {
-		const mock = mockPrisma.literature.inference.create;
-		Object.keys( hands ).forEach( playerId => {
-			mock.mockResolvedValueOnce( inferenceData[ playerId ] );
-		} );
-
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		const inferencesUpdatedSpy = vi.spyOn( service, "handleInferencesUpdated" )
-			.mockImplementation( async () => {} );
-
-		const result = await service.createInferences( mockGameData, hands );
-
-		expect( result ).toEqual( inferenceData );
-
-		expect( mock ).toHaveBeenCalledTimes( 4 );
-		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "1" ] } );
-		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "2" ] } );
-		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "3" ] } );
-		expect( mock ).toHaveBeenCalledWith( { data: inferenceData[ "4" ] } );
-
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledTimes( 1 );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledWith( mockGameData.id, inferenceData );
-	} );
-
-	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -394,59 +347,38 @@ describe( "LiteratureService::createTeams", () => {
 		}
 	};
 
-	const mockGameData = buildMockGameData( GameStatus.PLAYERS_READY );
+	const mockGameData = buildMockGameData( "PLAYERS_READY" );
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	it( "should create teams and assign teams to players", async () => {
-		mockPrisma.literature.team.create.mockResolvedValueOnce( mockTeamA ).mockResolvedValueOnce( mockTeamB );
+		mockRepository.createTeams.mockResolvedValueOnce( [ mockTeamA, mockTeamB ] );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const teamsCreatedSpy = vi.spyOn( service, "handleTeamsCreated" ).mockImplementation( async () => {} );
 
 		const result = await service.createTeams( mockInput, mockGameData );
 
 		expect( result ).toEqual( {
-			[ mockTeamA.id ]: { ...mockTeamA, members: mockInput.data[ mockTeamA.name ] },
-			[ mockTeamB.id ]: { ...mockTeamB, members: mockInput.data[ mockTeamB.name ] }
+			[ mockTeamA.id ]: { ...mockTeamA, memberIds: mockInput.data[ mockTeamA.name ] },
+			[ mockTeamB.id ]: { ...mockTeamB, memberIds: mockInput.data[ mockTeamB.name ] }
 		} );
 
-		expect( mockPrisma.literature.team.create ).toHaveBeenCalledTimes( 2 );
-		expect( mockPrisma.literature.team.create ).toHaveBeenCalledWith( {
-			data: {
-				name: "Team A",
-				gameId: "1",
-				members: {
-					connect: [
-						{ id_gameId: { id: "1", gameId: "1" } },
-						{ id_gameId: { id: "3", gameId: "1" } }
-					]
-				}
-			}
-		} );
-
-		expect( mockPrisma.literature.team.create ).toHaveBeenCalledWith( {
-			data: {
-				name: "Team B",
-				gameId: "1",
-				members: {
-					connect: [
-						{ id_gameId: { id: "2", gameId: "1" } },
-						{ id_gameId: { id: "4", gameId: "1" } }
-					]
-				}
-			}
-		} );
+		expect( mockRepository.createTeams ).toHaveBeenCalledTimes( 1 );
+		expect( mockRepository.createTeams ).toHaveBeenCalledWith( [
+			{ name: "Team A", gameId: "1", memberIds: [ "1", "3" ] },
+			{ name: "Team B", gameId: "1", memberIds: [ "2", "4" ] }
+		] );
 
 		expect( teamsCreatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( teamsCreatedSpy ).toHaveBeenCalledWith( mockGameData.id, result );
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -455,9 +387,9 @@ describe( "LiteratureService::createTeams", () => {
 
 describe( "LiteratureService::joinGame", () => {
 	const mockInput: JoinGameInput = { code: "BCDEDIT" };
-	const mockGame = buildMockRawGameData( GameStatus.CREATED );
+	const mockGame = buildMockRawGameData( "CREATED" );
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -465,7 +397,7 @@ describe( "LiteratureService::joinGame", () => {
 	it( "should return game if user already part of game", async () => {
 		mockValidators.joinGame.mockResolvedValue( { game: mockGame, isUserAlreadyInGame: true } );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const playerJoinedSpy = vi.spyOn( service, "handlePlayerJoined" ).mockImplementation( async () => {} );
 
 		const gameWithPlayers = await service.joinGame( mockInput, mockAuthUser );
@@ -488,20 +420,17 @@ describe( "LiteratureService::joinGame", () => {
 			},
 			isUserAlreadyInGame: false
 		} );
-		mockPrisma.literature.player.create.mockResolvedValue( mockPlayer1 );
+		mockRepository.createPlayer.mockResolvedValue( mockPlayer1 );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const playerJoinedSpy = vi.spyOn( service, "handlePlayerJoined" ).mockImplementation( async () => {} );
 
 		const gameWithPlayers = await service.joinGame( mockInput, mockAuthUser );
 
-		expect( mockPrisma.literature.player.create ).toHaveBeenCalledWith( {
-			data: {
-				id: mockAuthUser.id,
-				name: mockAuthUser.name,
-				avatar: mockAuthUser.avatar,
-				gameId: mockGame.id
-			}
+		expect( mockRepository.createPlayer ).toHaveBeenCalledWith( {
+			id: mockAuthUser.id,
+			name: mockAuthUser.name,
+			gameId: mockGame.id
 		} );
 		expect( mockValidators.joinGame ).toHaveBeenCalledWith( { input: mockInput, authUser: mockAuthUser } );
 		expect( gameWithPlayers.players ).toEqual( [ mockPlayer2, mockPlayer4, mockPlayer3, mockPlayer1 ] );
@@ -510,7 +439,7 @@ describe( "LiteratureService::joinGame", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -518,15 +447,15 @@ describe( "LiteratureService::joinGame", () => {
 } );
 
 describe( "LiteratureService::startGame", () => {
-	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED );
+	const mockGameData = buildMockGameData( "TEAMS_CREATED" );
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	it( "should create card mappings and start the game", async () => {
-		const mock = mockPrisma.literature.cardMapping.create;
+
 		const cardMappingList: CardMapping[] = [];
 		deck.forEach( ( card, index ) => {
 			const cardMapping = {
@@ -534,25 +463,26 @@ describe( "LiteratureService::startGame", () => {
 				gameId: mockGameData.id,
 				playerId: mockPlayerIds[ index % mockGameData.playerCount ]
 			};
-			mock.mockResolvedValueOnce( cardMapping );
 			cardMappingList.push( cardMapping );
 		} );
+
+		mockRepository.createCardMappings.mockResolvedValue( cardMappingList );
 
 		const cardsData = buildCardsData( cardMappingList );
 		mockTransformers.cardsData.mockReturnValue( cardsData );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const gameStartedSpy = vi.spyOn( service, "handleGameStarted" ).mockImplementation( async () => {} );
 		await service.startGame( mockGameData );
 
-		expect( mock ).toHaveBeenCalledTimes( deck.length );
+		expect( mockRepository.createCardMappings ).toHaveBeenCalledTimes( 1 );
 		expect( mockTransformers.cardsData ).toHaveBeenCalledWith( cardMappingList );
 		expect( gameStartedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( gameStartedSpy ).toHaveBeenCalledWith( mockGameData, cardsData );
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -562,7 +492,7 @@ describe( "LiteratureService::startGame", () => {
 describe( "LiteratureService::transferTurn", () => {
 
 	const mockInput = mockTransferTurnInput;
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -572,9 +502,9 @@ describe( "LiteratureService::transferTurn", () => {
 			{ cardId: card.id, playerId: mockPlayerIds[ index % 4 ], gameId: "1" }
 		) );
 
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList, [ mockCallMove ] );
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList, [ mockCallMove ] );
 
-		mockPrisma.literature.move.create.mockResolvedValue( mockTransferMove );
+		mockRepository.createMove.mockResolvedValue( mockTransferMove );
 		mockValidators.transferTurn.mockResolvedValue( {
 			transferringPlayer: mockPlayer1,
 			receivingPlayer: mockPlayer3
@@ -583,25 +513,23 @@ describe( "LiteratureService::transferTurn", () => {
 		const cardsData = buildCardsData( cardMappingList );
 		const mockPlayerSpecificData = buildPlayerSpecificData( mockPlayer1, cardMappingList );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const moveCreatedSpy = vi.spyOn( service, "handleMoveCreated" ).mockImplementation( async () => {} );
 		const getCardsDataSpy = vi.spyOn( service, "getCardsData" ).mockResolvedValue( cardsData );
 
 		const result = await service.transferTurn( mockInput, mockGameData, mockPlayerSpecificData );
 
 		expect( result ).toEqual( mockTransferMove );
-		expect( mockPrisma.literature.move.create ).toHaveBeenCalledTimes( 1 );
-		expect( mockPrisma.literature.move.create ).toHaveBeenCalledWith( {
+		expect( mockRepository.createMove ).toHaveBeenCalledTimes( 1 );
+		expect( mockRepository.createMove ).toHaveBeenCalledWith( {
+			gameId: mockGameData.id,
+			type: "TRANSFER_TURN",
+			success: true,
 			data: {
-				gameId: mockGameData.id,
-				type: MoveType.TRANSFER_TURN,
-				success: true,
-				data: {
-					to: mockInput.transferTo,
-					from: mockAuthUser.id
-				},
-				description: `${ mockPlayer1.name } transferred the turn to ${ mockPlayer3.name }`
-			}
+				to: mockInput.transferTo,
+				from: mockAuthUser.id
+			},
+			description: `${ mockPlayer1.name } transferred the turn to ${ mockPlayer3.name }`
 		} );
 		expect( mockValidators.transferTurn ).toHaveBeenCalledWith( {
 			input: mockInput,
@@ -614,7 +542,7 @@ describe( "LiteratureService::transferTurn", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -623,7 +551,7 @@ describe( "LiteratureService::transferTurn", () => {
 
 describe( "LiteratureService::updateHands", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -635,7 +563,7 @@ describe( "LiteratureService::updateHands", () => {
 		cardsData.mappings[ mockAskMove.data.card ] = mockAskMove.data.from;
 		const card = getPlayingCardFromId( mockAskMove.data.card );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const handsUpdatedSpy = vi.spyOn( service, "handleHandsUpdated" ).mockImplementation( async () => {} );
 
 		const updatedHands = await service.updateHands( mockAskMove, cardsData );
@@ -643,10 +571,11 @@ describe( "LiteratureService::updateHands", () => {
 		expect( updatedHands[ mockAskMove.data.by ] ).toContainEqual( card );
 		expect( updatedHands[ mockAskMove.data.from ] ).not.toContainEqual( card );
 
-		expect( mockPrisma.literature.cardMapping.update ).toHaveBeenCalledWith( {
-			where: { cardId_gameId: { gameId: mockAskMove.gameId, cardId: mockAskMove.data.card } },
-			data: { playerId: mockAskMove.data.by }
-		} );
+		expect( mockRepository.updateCardMapping ).toHaveBeenCalledWith(
+			mockAskMove.data.card,
+			mockAskMove.gameId,
+			mockAskMove.data.by
+		);
 		expect( handsUpdatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( handsUpdatedSpy ).toHaveBeenCalledWith( mockAskMove.gameId, updatedHands );
 	} );
@@ -655,7 +584,7 @@ describe( "LiteratureService::updateHands", () => {
 		cardsData.mappings[ mockAskMove.data.card ] = mockAskMove.data.from;
 		const card = getPlayingCardFromId( mockAskMove.data.card );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const handsUpdatedSpy = vi.spyOn( service, "handleHandsUpdated" ).mockImplementation( async () => {} );
 
 		const updatedHands = await service.updateHands( { ...mockAskMove, success: false }, cardsData );
@@ -663,13 +592,13 @@ describe( "LiteratureService::updateHands", () => {
 		expect( updatedHands[ mockAskMove.data.by ] ).not.toContainEqual( card );
 		expect( updatedHands[ mockAskMove.data.from ] ).toContainEqual( card );
 
-		expect( mockPrisma.literature.cardMapping.update ).toHaveBeenCalledTimes( 0 );
+		expect( mockRepository.updateCardMapping ).toHaveBeenCalledTimes( 0 );
 		expect( handsUpdatedSpy ).toHaveBeenCalledTimes( 0 );
 	} );
 
 	it( "should remove the cards of that set on successful call", async () => {
 		const calledSet = mockCallMove.data.cardSet;
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const handsUpdatedSpy = vi.spyOn( service, "handleHandsUpdated" ).mockImplementation( async () => {} );
 
 		const updatedHands = await service.updateHands( mockCallMove, cardsData );
@@ -678,130 +607,14 @@ describe( "LiteratureService::updateHands", () => {
 		const calledCards = Object.keys( mockCallMove.data.correctCall );
 
 		expect( allCardsOfCalledSet ).toHaveLength( 0 );
-		expect( mockPrisma.literature.cardMapping.deleteMany ).toHaveBeenCalledWith( {
-			where: { cardId: { in: calledCards } }
-		} );
+		expect( mockRepository.deleteCardMappings ).toHaveBeenCalledWith( calledCards, mockCallMove.gameId );
 		expect( handsUpdatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( handsUpdatedSpy ).toHaveBeenCalledWith( mockCallMove.gameId, updatedHands );
 
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
-		mockClear( mockRealtimeService );
-		mockClear( mockValidators );
-		mockClear( mockTransformers );
-	} );
-} );
-
-describe( "LiteratureService::updateInferences", () => {
-
-	const mockPrisma = mockDeep<PrismaService>();
-	const mockRealtimeService = mockDeep<RealtimeService>();
-	const mockValidators = mockDeep<LiteratureValidators>();
-	const mockTransformers = mockDeep<LiteratureTransformers>();
-
-	const mockCardMappingList = buildMockCardMappings();
-	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, mockCardMappingList );
-	const mockInferenceData = buildMockInferenceData( mockGameData.id, mockCardMappingList );
-
-	it( "should updated inferences for all players on successful ask", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		const inferenceDataSpy = vi.spyOn( service, "getInferenceData" ).mockResolvedValue( mockInferenceData );
-		const inferencesUpdatedSpy = vi.spyOn( service, "handleInferencesUpdated" )
-			.mockImplementation( async () => {} );
-
-		const updatedInferences = await service.updateInferences( mockAskMove, mockGameData.players );
-
-		expect( inferenceDataSpy ).toHaveBeenCalledWith( mockGameData.id );
-		expect( mockPrisma.literature.inference.update ).toHaveBeenCalledTimes( mockGameData.playerCount );
-		Object.keys( mockGameData.players ).map( playerId => {
-			const { actualCardLocations } = updatedInferences[ playerId ];
-			expect( actualCardLocations[ mockAskMove.data.card ] ).toEqual( mockAskMove.data.by );
-			expect( mockPrisma.literature.inference.update ).toHaveBeenCalledWith( {
-				where: { gameId_playerId: { playerId, gameId: mockAskMove.gameId } },
-				data: updatedInferences[ playerId ]
-			} );
-		} );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledTimes( 1 );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledWith( mockAskMove.gameId, updatedInferences );
-	} );
-
-	it( "should update inferences for all players on unsuccessful ask", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		const inferenceDataSpy = vi.spyOn( service, "getInferenceData" ).mockResolvedValue( mockInferenceData );
-		const inferencesUpdatedSpy = vi.spyOn( service, "handleInferencesUpdated" )
-			.mockImplementation( async () => {} );
-
-		const updatedInferences = await service.updateInferences(
-			{ ...mockAskMove, success: false },
-			mockGameData.players
-		);
-
-		expect( inferenceDataSpy ).toHaveBeenCalledWith( mockGameData.id );
-		expect( mockPrisma.literature.inference.update ).toHaveBeenCalledTimes( mockGameData.playerCount );
-		Object.keys( mockGameData.players ).map( playerId => {
-			const { possibleCardLocations } = updatedInferences[ playerId ];
-			if ( !!possibleCardLocations[ mockAskMove.data.card ] ) {
-				expect( possibleCardLocations[ mockAskMove.data.card ] ).not.toContainEqual( mockAskMove.data.by );
-				expect( possibleCardLocations[ mockAskMove.data.card ] ).not.toContainEqual( mockAskMove.data.from );
-			}
-			expect( mockPrisma.literature.inference.update ).toHaveBeenCalledWith( {
-				where: { gameId_playerId: { playerId, gameId: mockAskMove.gameId } },
-				data: updatedInferences[ playerId ]
-			} );
-		} );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledTimes( 1 );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledWith( mockAskMove.gameId, updatedInferences );
-	} );
-
-	it( "should remove inferences for the called set for all players on call", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		const inferenceDataSpy = vi.spyOn( service, "getInferenceData" ).mockResolvedValue( mockInferenceData );
-		const inferencesUpdatedSpy = vi.spyOn( service, "handleInferencesUpdated" )
-			.mockImplementation( async () => {} );
-
-		const updatedInferences = await service.updateInferences( mockCallMove, mockGameData.players );
-
-		const cardsOfCalledSetInInference = Object.values( updatedInferences )
-			.flatMap( inference => [
-				...Object.keys( inference.possibleCardLocations ),
-				...Object.keys( inference.actualCardLocations ),
-				...Object.keys( inference.inferredCardLocations )
-			] )
-			.map( getPlayingCardFromId )
-			.filter( card => card.set === mockCallMove.data.cardSet );
-
-		expect( inferenceDataSpy ).toHaveBeenCalledWith( mockGameData.id );
-		expect( cardsOfCalledSetInInference ).toHaveLength( 0 );
-		expect( mockPrisma.literature.inference.update ).toHaveBeenCalledTimes( mockGameData.playerCount );
-
-		Object.keys( mockGameData.players ).map( playerId => {
-			expect( mockPrisma.literature.inference.update ).toHaveBeenCalledWith( {
-				where: { gameId_playerId: { playerId, gameId: mockAskMove.gameId } },
-				data: updatedInferences[ playerId ]
-			} );
-		} );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledTimes( 1 );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledWith( mockAskMove.gameId, updatedInferences );
-	} );
-
-	it( "should do nothing if the move is a transfer move", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		const inferenceDataSpy = vi.spyOn( service, "getInferenceData" ).mockResolvedValue( mockInferenceData );
-		const inferencesUpdatedSpy = vi.spyOn( service, "handleInferencesUpdated" )
-			.mockImplementation( async () => {} );
-
-		const updatedInferences = await service.updateInferences( mockTransferMove, mockGameData.players );
-
-		expect( inferenceDataSpy ).toHaveBeenCalledTimes( 1 );
-		expect( updatedInferences ).toEqual( mockInferenceData );
-		expect( mockPrisma.literature.player.update ).toHaveBeenCalledTimes( 0 );
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledTimes( 0 );
-	} );
-
-	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -810,28 +623,25 @@ describe( "LiteratureService::updateInferences", () => {
 
 describe( "LiteratureService::updateStatus", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	it( "should update game status and publish StatusUpdatedEvent", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const statusUpdatedSpy = vi.spyOn( service, "handleStatusUpdated" ).mockImplementation( async () => {} );
 
-		await service.updateStatus( "1", GameStatus.TEAMS_CREATED );
+		await service.updateStatus( "1", "TEAMS_CREATED" );
 
-		expect( mockPrisma.literature.game.update ).toHaveBeenCalledTimes( 1 );
-		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
-			where: { id: "1" },
-			data: { status: GameStatus.TEAMS_CREATED }
-		} );
+		expect( mockRepository.updateGameStatus ).toHaveBeenCalledTimes( 1 );
+		expect( mockRepository.updateGameStatus ).toHaveBeenCalledWith( "1", "TEAMS_CREATED" );
 		expect( statusUpdatedSpy ).toHaveBeenCalledTimes( 1 );
-		expect( statusUpdatedSpy ).toHaveBeenCalledWith( "1", GameStatus.TEAMS_CREATED );
+		expect( statusUpdatedSpy ).toHaveBeenCalledWith( "1", "TEAMS_CREATED" );
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -840,26 +650,25 @@ describe( "LiteratureService::updateStatus", () => {
 
 describe( "LiteratureService::updateScore", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
-	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS );
+	const mockGameData = buildMockGameData( "IN_PROGRESS" );
 
 	it( "should not update score if currentMove is not valid", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const scoreUpdatedSpy = vi.spyOn( service, "handleScoreUpdated" ).mockImplementation( async () => {} );
 
 		const scoreUpdate = await service.updateScore( mockAskMove, mockGameData.players, mockGameData.teams );
 		expect( scoreUpdate ).toBeUndefined();
-		expect( mockPrisma.literature.team.update ).toHaveBeenCalledTimes( 0 );
+		expect( mockRepository.updateTeamScore ).toHaveBeenCalledTimes( 0 );
 		expect( scoreUpdatedSpy ).toHaveBeenCalledTimes( 0 );
 	} );
 
 	it( "should update score of opposing team if currentMove is not successful", async () => {
-		mockPrisma.literature.team.update.mockResolvedValue( { ...mockTeamB, score: 1 } );
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const scoreUpdatedSpy = vi.spyOn( service, "handleScoreUpdated" ).mockImplementation( async () => {} );
 
 		const scoreUpdate = await service.updateScore(
@@ -872,41 +681,28 @@ describe( "LiteratureService::updateScore", () => {
 		expect( scoreUpdate?.score ).toEqual( 1 );
 		expect( scoreUpdate?.setWon ).toEqual( CardSet.LOWER_CLUBS );
 
-		expect( mockPrisma.literature.team.update ).toHaveBeenCalledWith( {
-			where: { id: mockTeamB.id },
-			data: {
-				score: { increment: 1 },
-				setsWon: { push: CardSet.LOWER_CLUBS }
-			}
-		} );
+		expect( mockRepository.updateTeamScore ).toHaveBeenCalledWith( mockTeamB.id, mockTeamB.score + 1 );
 		expect( scoreUpdatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( scoreUpdatedSpy ).toHaveBeenCalledWith( mockGameData.id, mockGameData.teams, scoreUpdate! );
 	} );
 
 	it( "should update score of the team if currentMove is successful", async () => {
-		mockPrisma.literature.team.update.mockResolvedValue( { ...mockTeamA, score: 4 } );
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const scoreUpdatedSpy = vi.spyOn( service, "handleScoreUpdated" ).mockImplementation( async () => {} );
 
 		const scoreUpdate = await service.updateScore( mockCallMove, mockGameData.players, mockGameData.teams );
 
 		expect( scoreUpdate?.teamId ).toEqual( mockTeamA.id );
-		expect( scoreUpdate?.score ).toEqual( 4 );
+		expect( scoreUpdate?.score ).toEqual( 1 );
 		expect( scoreUpdate?.setWon ).toEqual( CardSet.LOWER_CLUBS );
 
-		expect( mockPrisma.literature.team.update ).toHaveBeenCalledWith( {
-			where: { id: mockTeamA.id },
-			data: {
-				score: { increment: 1 },
-				setsWon: { push: CardSet.LOWER_CLUBS }
-			}
-		} );
+		expect( mockRepository.updateTeamScore ).toHaveBeenCalledWith( mockTeamA.id, mockTeamA.score + 1 );
 		expect( scoreUpdatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( scoreUpdatedSpy ).toHaveBeenCalledWith( mockGameData.id, mockGameData.teams, scoreUpdate! );
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -915,26 +711,26 @@ describe( "LiteratureService::updateScore", () => {
 
 describe( "LiteratureService::updateTurn", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
-	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS );
+	const mockGameData = buildMockGameData( "IN_PROGRESS" );
 
 	it( "should do nothing on a successful ask", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const turnUpdatedSpy = vi.spyOn( service, "handleTurnUpdated" ).mockImplementation( async () => {} );
 
 		const updatedTurn = await service.updateTurn( mockGameData.currentTurn, mockAskMove, mockGameData.players );
 
 		expect( updatedTurn ).toEqual( mockAskMove.data.by );
-		expect( mockPrisma.literature.game.update ).toHaveBeenCalledTimes( 0 );
+		expect( mockRepository.updateCurrentTurn ).toHaveBeenCalledTimes( 0 );
 		expect( turnUpdatedSpy ).toHaveBeenCalledTimes( 0 );
 	} );
 
 	it( "should update turn to asked player on unsuccessful ask", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const turnUpdatedSpy = vi.spyOn( service, "handleTurnUpdated" ).mockImplementation( async () => {} );
 
 		const updatedTurn = await service.updateTurn(
@@ -944,27 +740,24 @@ describe( "LiteratureService::updateTurn", () => {
 		);
 
 		expect( updatedTurn ).toEqual( mockAskMove.data.from );
-		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
-			where: { id: mockAskMove.gameId },
-			data: { currentTurn: updatedTurn }
-		} );
+		expect( mockRepository.updateCurrentTurn ).toHaveBeenCalledWith( mockAskMove.gameId, updatedTurn );
 		expect( turnUpdatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( turnUpdatedSpy ).toHaveBeenCalledWith( mockAskMove.gameId, mockGameData.players, updatedTurn );
 	} );
 
 	it( "should do nothing on successful call", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const turnUpdatedSpy = vi.spyOn( service, "handleTurnUpdated" ).mockImplementation( async () => {} );
 		const updatedTurn = await service.updateTurn( mockGameData.currentTurn, mockCallMove, mockGameData.players );
 
 		expect( updatedTurn ).toEqual( mockCallMove.data.by );
-		expect( mockPrisma.literature.game.update ).toHaveBeenCalledTimes( 0 );
+		expect( mockRepository.updateCurrentTurn ).toHaveBeenCalledTimes( 0 );
 		expect( turnUpdatedSpy ).toHaveBeenCalledTimes( 0 );
 	} );
 
 	it( "should update turn to random player of opposite team on unsuccessful call", async () => {
 		const callingPlayer = mockGameData.players[ mockCallMove.data.by ];
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const turnUpdatedSpy = vi.spyOn( service, "handleTurnUpdated" ).mockImplementation( async () => {} );
 		const updatedTurn = await service.updateTurn(
 			mockGameData.currentTurn,
@@ -974,16 +767,13 @@ describe( "LiteratureService::updateTurn", () => {
 
 		const receivedPlayer = mockGameData.players[ updatedTurn ];
 		expect( receivedPlayer.teamId ).not.toEqual( callingPlayer.teamId );
-		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
-			where: { id: mockCallMove.gameId },
-			data: { currentTurn: updatedTurn }
-		} );
+		expect( mockRepository.updateCurrentTurn ).toHaveBeenCalledWith( mockCallMove.gameId, updatedTurn );
 		expect( turnUpdatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( turnUpdatedSpy ).toHaveBeenCalledWith( mockCallMove.gameId, mockGameData.players, updatedTurn );
 	} );
 
 	it( "should update turn to mentioned player on transfer turn", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const turnUpdatedSpy = vi.spyOn( service, "handleTurnUpdated" ).mockImplementation( async () => {} );
 
 		const updatedTurn = await service.updateTurn(
@@ -993,26 +783,22 @@ describe( "LiteratureService::updateTurn", () => {
 		);
 
 		expect( updatedTurn ).toEqual( mockTransferMove.data.to );
-		expect( mockPrisma.literature.game.update ).toHaveBeenCalledWith( {
-			where: { id: mockAskMove.gameId },
-			data: { currentTurn: updatedTurn }
-		} );
+		expect( mockRepository.updateCurrentTurn ).toHaveBeenCalledWith( mockAskMove.gameId, updatedTurn );
 		expect( turnUpdatedSpy ).toHaveBeenCalledTimes( 1 );
 		expect( turnUpdatedSpy ).toHaveBeenCalledWith( mockAskMove.gameId, mockGameData.players, updatedTurn );
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
 	} );
 } );
 
-
 describe( "LiteratureService::getCardsData", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -1020,10 +806,10 @@ describe( "LiteratureService::getCardsData", () => {
 	const cardMappings = buildMockCardMappings();
 
 	it( "should fetch card player mappings", async () => {
-		mockPrisma.literature.cardMapping.findMany.mockResolvedValue( cardMappings );
+		mockRepository.getCardMappings.mockResolvedValue( cardMappings );
 		mockTransformers.cardsData.mockReturnValue( buildCardsData( cardMappings ) );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const result = await service.getCardsData( "1" );
 
 		const randomIndex = Math.floor( Math.random() * deck.length );
@@ -1036,7 +822,7 @@ describe( "LiteratureService::getCardsData", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1045,7 +831,7 @@ describe( "LiteratureService::getCardsData", () => {
 
 describe( "LiteratureService::getGameData", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -1054,18 +840,18 @@ describe( "LiteratureService::getGameData", () => {
 	const mockMoves = [ mockTransferMove, mockCallMove, mockAskMove ];
 
 	it( "should fetch aggregated game data", async () => {
-		const rawGameData = buildMockRawGameData( GameStatus.IN_PROGRESS, cardMappings, mockMoves );
-		mockPrisma.literature.game.findUnique.mockResolvedValue( rawGameData as any );
+		const rawGameData = buildMockRawGameData( "IN_PROGRESS", cardMappings, mockMoves );
+		mockRepository.getGameById.mockResolvedValue( rawGameData as any );
 		mockTransformers.gameData.mockReturnValue( buildGameData( rawGameData ) );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const result = await service.getGameData( "1" );
 
 		expect( result?.id ).toEqual( "1" );
 		expect( result?.status ).toEqual( "IN_PROGRESS" );
 		expect( result?.teams ).toEqual( {
-			[ mockTeamA.id ]: { ...mockTeamA, members: [ mockPlayer1.id, mockPlayer3.id ] },
-			[ mockTeamB.id ]: { ...mockTeamB, members: [ mockPlayer2.id, mockPlayer4.id ] }
+			[ mockTeamA.id ]: { ...mockTeamA, memberIds: [ mockPlayer1.id, mockPlayer3.id ] },
+			[ mockTeamB.id ]: { ...mockTeamB, memberIds: [ mockPlayer2.id, mockPlayer4.id ] }
 		} );
 		expect( result?.players ).toEqual( {
 			[ mockPlayer1.id ]: mockPlayer1,
@@ -1078,7 +864,7 @@ describe( "LiteratureService::getGameData", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1087,7 +873,7 @@ describe( "LiteratureService::getGameData", () => {
 
 describe( "LiteratureService::getPlayerSpecificData", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -1096,9 +882,9 @@ describe( "LiteratureService::getPlayerSpecificData", () => {
 	const { hands } = buildCardsData( cardMappings );
 
 	it( "should return the current game data for the player when teams not created", async () => {
-		const mockGameData = buildMockGameData( GameStatus.PLAYERS_READY );
+		const mockGameData = buildMockGameData( "PLAYERS_READY" );
 
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const cardsDataSpy = vi.spyOn( service, "getCardsData" ).mockResolvedValue( buildCardsData( [] ) );
 
 		const result = await service.getPlayerSpecificData( mockGameData, mockAuthUser.id );
@@ -1117,11 +903,10 @@ describe( "LiteratureService::getPlayerSpecificData", () => {
 
 	it( "should return the current game data for the player when teams created", async () => {
 		const cardMappingsForPlayer = cardMappings.filter( cardMapping => cardMapping.playerId === mockAuthUser.id );
-		const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappings );
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		const cardsDataSpy = vi.spyOn( service, "getCardsData" ).mockResolvedValue(
-			buildCardsData( cardMappingsForPlayer )
-		);
+		const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappings );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
+		const cardsDataSpy = vi.spyOn( service, "getCardsData" )
+			.mockResolvedValue( buildCardsData( cardMappingsForPlayer ) );
 
 		const result = await service.getPlayerSpecificData( mockGameData, mockAuthUser.id );
 
@@ -1135,7 +920,7 @@ describe( "LiteratureService::getPlayerSpecificData", () => {
 
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1144,31 +929,29 @@ describe( "LiteratureService::getPlayerSpecificData", () => {
 
 describe( "LiteratureService::handleGameStarted", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	const cardsData = buildCardsData( buildMockCardMappings() );
-	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED );
+	const mockGameData = buildMockGameData( "TEAMS_CREATED" );
 
 
-	it( "should create inferences, update status and publish hand updated message to the players", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		const createInferencesSpy = vi.spyOn( service, "createInferences" ).mockResolvedValue( mockDeep() );
+	it( "should update status and publish hand updated message to the players", async () => {
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const updateStatusSpy = vi.spyOn( service, "updateStatus" ).mockResolvedValue( mockDeep() );
 		const handsUpdatedSpy = vi.spyOn( service, "handleHandsUpdated" ).mockImplementation( async () => {} );
 
 		await service.handleGameStarted( mockGameData, cardsData );
 
-		expect( createInferencesSpy ).toHaveBeenCalledWith( mockGameData, cardsData.hands );
-		expect( updateStatusSpy ).toHaveBeenCalledWith( mockGameData.id, GameStatus.IN_PROGRESS );
+		expect( updateStatusSpy ).toHaveBeenCalledWith( mockGameData.id, "IN_PROGRESS" );
 		expect( handsUpdatedSpy ).toHaveBeenCalledWith( mockGameData.id, cardsData.hands );
 	} );
 
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1177,16 +960,16 @@ describe( "LiteratureService::handleGameStarted", () => {
 
 describe( "LiteratureService::handleHandsUpdated", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	const { hands } = buildCardsData( buildMockCardMappings() );
-	const mockGameData = buildMockGameData( GameStatus.TEAMS_CREATED );
+	const mockGameData = buildMockGameData( "TEAMS_CREATED" );
 
 	it( "should publish hand updated message to the players", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 
 		await service.handleHandsUpdated( mockGameData.id, hands );
 
@@ -1228,7 +1011,7 @@ describe( "LiteratureService::handleHandsUpdated", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1237,7 +1020,7 @@ describe( "LiteratureService::handleHandsUpdated", () => {
 
 describe( "LiteratureService::handleInferencesUpdated", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
@@ -1246,7 +1029,7 @@ describe( "LiteratureService::handleInferencesUpdated", () => {
 	const inferenceData = buildMockInferenceData( "1", cardMappingList );
 
 	it( "should publish inferences updated message to the players", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 
 		await service.handleInferencesUpdated( "1", inferenceData );
 
@@ -1283,7 +1066,7 @@ describe( "LiteratureService::handleInferencesUpdated", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1292,26 +1075,24 @@ describe( "LiteratureService::handleInferencesUpdated", () => {
 
 describe( "LiteratureService::handleMoveCreated", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	const cardMappingList = buildMockCardMappings();
 	const cardsData = buildCardsData( cardMappingList );
-	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS, cardMappingList, [ mockCallMove ] );
+	const mockGameData = buildMockGameData( "IN_PROGRESS", cardMappingList, [ mockCallMove ] );
 
 
 	it( "should update hands, inferences, score and turn when move created", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const handsUpdatedSpy = vi.spyOn( service, "updateHands" ).mockResolvedValue( cardsData.hands );
-		const inferencesUpdatedSpy = vi.spyOn( service, "updateInferences" ).mockResolvedValue( mockDeep() );
 		const scoreUpdatedSpy = vi.spyOn( service, "updateScore" ).mockResolvedValue( mockDeep() );
 		const turnUpdatedSpy = vi.spyOn( service, "updateTurn" ).mockResolvedValue( mockDeep() );
 
 		await service.handleMoveCreated( mockAskMove, mockGameData, cardsData );
 
-		expect( inferencesUpdatedSpy ).toHaveBeenCalledWith( mockAskMove, mockGameData.players );
 		expect( handsUpdatedSpy ).toHaveBeenCalledWith( mockAskMove, cardsData );
 		expect( scoreUpdatedSpy ).toHaveBeenCalledWith( mockAskMove, mockGameData.players, mockGameData.teams );
 		expect( turnUpdatedSpy ).toHaveBeenCalledWith( mockGameData.currentTurn, mockAskMove, mockGameData.players );
@@ -1325,7 +1106,7 @@ describe( "LiteratureService::handleMoveCreated", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1334,15 +1115,14 @@ describe( "LiteratureService::handleMoveCreated", () => {
 
 describe( "LiteratureService::handlePlayerJoined", () => {
 
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	it( "should publish Player joined event to the game room", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		await service.handlePlayerJoined( "1", mockPlayer1, false );
-
 
 		expect( mockRealtimeService.publishRoomMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
@@ -1353,13 +1133,12 @@ describe( "LiteratureService::handlePlayerJoined", () => {
 	} );
 
 	it( "should publish Player joined event to the game room", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const updateStatusSpy = vi.spyOn( service, "updateStatus" ).mockResolvedValue( mockDeep() );
 
 		await service.handlePlayerJoined( "1", mockPlayer1, true );
 
-
-		expect( updateStatusSpy ).toHaveBeenCalledWith( "1", GameStatus.PLAYERS_READY );
+		expect( updateStatusSpy ).toHaveBeenCalledWith( "1", "PLAYERS_READY" );
 		expect( mockRealtimeService.publishRoomMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
@@ -1369,7 +1148,7 @@ describe( "LiteratureService::handlePlayerJoined", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1377,13 +1156,12 @@ describe( "LiteratureService::handlePlayerJoined", () => {
 } );
 
 describe( "LiteratureService::handleScoreUpdated", () => {
-
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
-	const mockGameData = buildMockGameData( GameStatus.IN_PROGRESS );
+	const mockGameData = buildMockGameData( "IN_PROGRESS" );
 	const mockScoreUpdate: ScoreUpdate = {
 		teamId: mockTeamA.id,
 		score: 6,
@@ -1391,7 +1169,7 @@ describe( "LiteratureService::handleScoreUpdated", () => {
 	};
 
 	it( "should publish Score Update event to the game room", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		await service.handleScoreUpdated( mockGameData.id, mockGameData.teams, mockScoreUpdate );
 
 		expect( mockRealtimeService.publishRoomMessage ).toHaveBeenCalledWith(
@@ -1404,12 +1182,12 @@ describe( "LiteratureService::handleScoreUpdated", () => {
 
 	it( "should publish score updated event to the game room and complete game if all sets done", async () => {
 		mockGameData.teams[ mockTeamA.id ].setsWon = [ ...CARD_SETS.slice( 1 ) ];
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const updateStatusSpy = vi.spyOn( service, "updateStatus" ).mockResolvedValue( mockDeep() );
 
 		await service.handleScoreUpdated( mockGameData.id, mockGameData.teams, mockScoreUpdate );
 
-		expect( updateStatusSpy ).toHaveBeenCalledWith( "1", GameStatus.COMPLETED );
+		expect( updateStatusSpy ).toHaveBeenCalledWith( "1", "COMPLETED" );
 		expect( mockRealtimeService.publishRoomMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
@@ -1419,7 +1197,7 @@ describe( "LiteratureService::handleScoreUpdated", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1427,27 +1205,26 @@ describe( "LiteratureService::handleScoreUpdated", () => {
 } );
 
 describe( "LiteratureService::handleStatusUpdated", () => {
-
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	it( "should publish status updated event to the room", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
-		await service.handleStatusUpdated( "1", GameStatus.IN_PROGRESS );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
+		await service.handleStatusUpdated( "1", "IN_PROGRESS" );
 
 
 		expect( mockRealtimeService.publishRoomMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
 			GameEvents.STATUS_UPDATED,
-			GameStatus.IN_PROGRESS
+			"IN_PROGRESS"
 		);
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1455,23 +1232,22 @@ describe( "LiteratureService::handleStatusUpdated", () => {
 } );
 
 describe( "LiteratureService::handleTeamsCreated", () => {
-
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	const teamData: TeamData = {
-		[ mockTeamA.id ]: { ...mockTeamA, members: [ mockPlayer1.id, mockPlayer3.id ] },
-		[ mockTeamB.id ]: { ...mockTeamB, members: [ mockPlayer2.id, mockPlayer4.id ] }
+		[ mockTeamA.id ]: { ...mockTeamA, memberIds: [ mockPlayer1.id, mockPlayer3.id ] },
+		[ mockTeamB.id ]: { ...mockTeamB, memberIds: [ mockPlayer2.id, mockPlayer4.id ] }
 	};
 
 	it( "should publish teams created message to the room", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		const updateStatusSpy = vi.spyOn( service, "updateStatus" ).mockResolvedValue( mockDeep() );
 		await service.handleTeamsCreated( "1", teamData );
 
-		expect( updateStatusSpy ).toHaveBeenCalledWith( "1", GameStatus.TEAMS_CREATED );
+		expect( updateStatusSpy ).toHaveBeenCalledWith( "1", "TEAMS_CREATED" );
 		expect( mockRealtimeService.publishRoomMessage ).toHaveBeenCalledWith(
 			Constants.LITERATURE,
 			"1",
@@ -1481,7 +1257,7 @@ describe( "LiteratureService::handleTeamsCreated", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );
@@ -1489,14 +1265,13 @@ describe( "LiteratureService::handleTeamsCreated", () => {
 } );
 
 describe( "LiteratureService::handleTurnUpdated", () => {
-
-	const mockPrisma = mockDeep<PrismaService>();
+	const mockRepository = mockDeep<LiteratureRepository>();
 	const mockRealtimeService = mockDeep<RealtimeService>();
 	const mockValidators = mockDeep<LiteratureValidators>();
 	const mockTransformers = mockDeep<LiteratureTransformers>();
 
 	it( "should publish turn updated event to the room", async () => {
-		const service = new LiteratureService( mockPrisma, mockRealtimeService, mockValidators, mockTransformers );
+		const service = new LiteratureService( mockRepository, mockRealtimeService, mockValidators, mockTransformers );
 		await service.handleTurnUpdated( "1", { "2": mockPlayer1 }, "2" );
 
 		expect( mockRealtimeService.publishRoomMessage ).toHaveBeenCalledWith(
@@ -1508,7 +1283,7 @@ describe( "LiteratureService::handleTurnUpdated", () => {
 	} );
 
 	afterEach( () => {
-		mockClear( mockPrisma );
+		mockClear( mockRepository );
 		mockClear( mockRealtimeService );
 		mockClear( mockValidators );
 		mockClear( mockTransformers );

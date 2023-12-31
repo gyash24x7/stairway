@@ -1,6 +1,6 @@
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
-import { boolean, json, pgEnum, pgSchema, primaryKey, smallint, text } from "drizzle-orm/pg-core";
+import { boolean, json, pgEnum, pgSchema, primaryKey, smallint, text, timestamp } from "drizzle-orm/pg-core";
 
 export const schema = pgSchema( "literature" );
 
@@ -13,7 +13,8 @@ export const players = schema.table(
 		name: text( "name" ).notNull(),
 		avatar: text( "avatar" ).notNull().$default( () => AVATAR_BASE_URL.concat( createId() ).concat( ".svg?r=50" ) ),
 		gameId: text( "game_id" ).notNull().references( () => games.id ),
-		teamId: text( "team_id" ).references( () => teams.id )
+		teamId: text( "team_id" ).references( () => teams.id ),
+		isBot: boolean( "is_bot" ).notNull().default( false )
 	},
 	( table ) => {
 		return {
@@ -85,12 +86,18 @@ export const cardMappingRelations = relations( cardMappings, ( { one } ) => {
 export const moveTypeEnum = pgEnum( "literature_move_type", [ "ASK_CARD", "CALL_SET", "TRANSFER_TURN" ] );
 
 export type AskMoveData = { from: string, by: string, card: string };
-export type CallMoveData = { cardSet: string, actualCall: Record<string, string>, correctCall: Record<string, string> }
-export type TransferMoveData = { to: string };
+export type CallMoveData = {
+	by: string,
+	cardSet: string,
+	actualCall: Record<string, string>,
+	correctCall: Record<string, string>
+}
+export type TransferMoveData = { to: string, from: string };
 
 export const moves = schema.table( "moves", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
 	gameId: text( "game_id" ).notNull().references( () => games.id ),
+	timestamp: timestamp( "timestamp" ).notNull().$default( () => new Date() ),
 	type: moveTypeEnum( "move_type" ).notNull(),
 	description: text( "description" ).notNull(),
 	success: boolean( "success" ).notNull(),

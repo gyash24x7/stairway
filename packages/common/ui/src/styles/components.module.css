@@ -1,4 +1,5 @@
 .application-card {
+	background-image: url("../assets/background.jpg");
 	background-position: center;
 	background-size: cover;
 	border-radius: 0.75rem;
@@ -33,13 +34,18 @@
 }
 
 .playing-card-wrapper {
+	background: #544A7D;
+	background: -webkit-linear-gradient(135deg, #FFD452D0, #544A7DD0);
+	background: linear-gradient(135deg, #FFD452D0, #544A7DD0);
 	border: 0.125rem solid var(--mantine-color-gray-4);
 	border-radius: 0.25rem;
 	font-family: var(--mantine-font-family-headings);
 	font-size: 3rem;
+	font-weight: 900;
 	min-width: 5rem;
 	padding-left: 0.5rem;
 	padding-right: 0.5rem;
+
 }
 
 .playing-card-color-red {
@@ -102,6 +108,7 @@
 }
 
 .layout-footer {
+	background-image: url("../assets/background.jpg");
 	background-position: center;
 	background-size: cover;
 	border-top: 0.125rem solid var(--mantine-color-gray-3);

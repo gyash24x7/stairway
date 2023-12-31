@@ -10,7 +10,7 @@ export function GameCompleted() {
 	return (
 		<Card>
 			<Stack gap={ "xxl" } justify={ "center" } align={ "center" } w={ "100%" } h={ "100%" }>
-				<IconCircleCheck width={ "50%" } height={ "50%" }/>
+				<IconCircleCheck width={ "25%" } height={ "25%" }/>
 				<Title>Game Completed</Title>
 				{ myTeam!.score > oppositeTeam!.score && (
 					<Title>Team { myTeam?.name } Won!</Title>

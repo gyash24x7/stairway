@@ -1,8 +1,8 @@
 import { LoggerFactory, Middleware } from "@common/core";
 import type { NextFunction, Request, Response } from "express";
 import { accessTokenCookieOptions, Constants, Messages } from "./auth.constants";
-import { authService, AuthService } from "./auth.service";
-import { jwtService, JwtService } from "./jwt.service";
+import type { AuthService } from "./auth.service";
+import type { JwtService } from "./jwt.service";
 
 export class AuthMiddleware implements Middleware {
 
@@ -49,5 +49,3 @@ export class AuthMiddleware implements Middleware {
 		return next();
 	}
 }
-
-export const authMiddleware = new AuthMiddleware( authService, jwtService );

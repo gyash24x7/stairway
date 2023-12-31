@@ -49,9 +49,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Generate Prisma Client
-        run: pnpm prisma generate
-
       - name: Execute Tests
         run: pnpm run test
 

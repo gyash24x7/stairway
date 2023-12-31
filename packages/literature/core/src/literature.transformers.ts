@@ -4,20 +4,21 @@ import type {
 	CardMapping,
 	CardMappingData,
 	CardsData,
+	GameData,
 	GameStatus,
 	HandData,
 	Player,
 	RawGameData,
-	TeamWithMembers
+	Team
 } from "@literature/types";
 
 export class LiteratureTransformers {
 
 	private readonly logger = LoggerFactory.getLogger( LiteratureTransformers );
 
-	gameData( data: RawGameData ) {
+	gameData( data: RawGameData ): GameData {
 		this.logger.debug( ">> transformGameData()" );
-		const teamMap: Record<string, TeamWithMembers> = {};
+		const teamMap: Record<string, Team> = {};
 
 		const cardCounts: Record<string, number> = {};
 		data.cardMappings?.forEach( cardMapping => {
@@ -28,15 +29,12 @@ export class LiteratureTransformers {
 		} );
 
 		data.teams?.forEach( team => {
-			teamMap[ team.id ] = { ...team, members: [] };
+			teamMap[ team.id ] = team;
 		} );
 
 		const playerMap: Record<string, Player> = {};
 		data.players.forEach( player => {
 			playerMap[ player.id ] = player;
-			if ( !!player.teamId ) {
-				teamMap[ player.teamId ]?.members.push( player.id );
-			}
 		} );
 
 		this.logger.debug( "<< transformGameData()" );
@@ -69,5 +67,3 @@ export class LiteratureTransformers {
 		return { mappings, hands };
 	}
 }
-
-export const literatureTransformers = new LiteratureTransformers();

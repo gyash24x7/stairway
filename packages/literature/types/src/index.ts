@@ -1,35 +1,54 @@
 import type { CardSet, PlayingCard } from "@common/cards";
-import type {
-	LiteratureCardMapping,
-	LiteratureGame,
-	LiteratureMove,
-	LiteraturePlayer,
-	LiteratureTeam,
-	User as PrismaUser
-} from "@prisma/client";
 
-export type User = PrismaUser
+export type User = {
+	id: string;
+	name: string;
+	email: string;
+	avatar: string;
+}
 
-export type Game = LiteratureGame;
+export type Player = {
+	id: string;
+	name: string;
+	avatar: string;
+	gameId: string;
+	isBot: boolean;
+	teamId: string | null;
+}
 
-export type Move = LiteratureMove;
+export type Team = {
+	id: string;
+	gameId: string;
+	name: string;
+	score: number;
+	setsWon: string[];
+	memberIds: string[];
+}
 
-export type Player = LiteraturePlayer;
-
-export type Team = LiteratureTeam;
-
-export type CardMapping = LiteratureCardMapping;
+export type CardMapping = {
+	cardId: string;
+	playerId: string;
+	gameId: string;
+}
 
 export type Inference = {
 	playerId: string;
 	gameId: string;
-	activeSets: Record<string, CardSet[]>;
+	activeSets: Record<string, string[]>;
 	actualCardLocations: Record<string, string>;
 	possibleCardLocations: Record<string, string[]>;
 	inferredCardLocations: Record<string, string>;
 }
 
-export type TeamWithMembers = Team & { members: string[] };
+export type GameStatus = "CREATED" | "PLAYERS_READY" | "TEAMS_CREATED" | "IN_PROGRESS" | "COMPLETED";
+
+export type Game = {
+	id: string;
+	code: string;
+	status: GameStatus;
+	playerCount: number;
+	currentTurn: string;
+}
 
 export type GameWithPlayers = Game & { players: Player[] };
 
@@ -37,7 +56,7 @@ export type PlayerData = Record<string, Player>;
 
 export type InferenceData = Record<string, Inference>;
 
-export type TeamData = Record<string, TeamWithMembers>;
+export type TeamData = Record<string, Team>;
 
 export type CardMappingData = Record<string, string>;
 
@@ -56,20 +75,6 @@ export type ScoreUpdate = {
 	setWon: CardSet;
 }
 
-export enum GameStatus {
-	CREATED = "CREATED",
-	PLAYERS_READY = "PLAYERS_READY",
-	TEAMS_CREATED = "TEAMS_CREATED",
-	IN_PROGRESS = "IN_PROGRESS",
-	COMPLETED = "COMPLETED"
-}
-
-export enum MoveType {
-	ASK_CARD = "ASK_CARD",
-	CALL_SET = "CALL_SET",
-	TRANSFER_TURN = "TRANSFER_TURN"
-}
-
 export type AskMoveData = {
 	from: string;
 	by: string;
@@ -78,7 +83,7 @@ export type AskMoveData = {
 
 export type CallMoveData = {
 	by: string;
-	cardSet: CardSet;
+	cardSet: string;
 	actualCall: Record<string, string>;
 	correctCall: Record<string, string>;
 }
@@ -88,13 +93,30 @@ export type TransferMoveData = {
 	to: string;
 }
 
-export type AskMove = Move & { data: AskMoveData };
+export type MoveType = "ASK_CARD" | "CALL_SET" | "TRANSFER_TURN";
 
-export type CallMove = Move & { data: CallMoveData };
+export type Move = {
+	id: string;
+	gameId: string;
+	timestamp: Date;
+	type: MoveType;
+	description: string;
+	success: boolean;
+	data: AskMoveData | CallMoveData | TransferMoveData;
+}
 
-export type TransferMove = Move & { data: TransferMoveData };
+export type AskMove = Omit<Move, "data"> & { data: AskMoveData };
 
-export type RawGameData = Game & { players: Player[], teams?: Team[], cardMappings?: CardMapping[], moves?: Move[] }
+export type CallMove = Omit<Move, "data"> & { data: CallMoveData };
+
+export type TransferMove = Omit<Move, "data"> & { data: TransferMoveData };
+
+export type RawGameData = Game & {
+	players: Player[],
+	teams: Team[],
+	cardMappings: CardMapping[],
+	moves: Move[]
+}
 
 export type GameData = {
 	id: string;
@@ -142,16 +164,4 @@ export type CallSetInput = {
 
 export type TransferTurnInput = {
 	transferTo: string;
-}
-
-export interface ILiteratureRpcService {
-	getGameData: () => Promise<{ gameData: GameData, playerData: PlayerSpecificData }>;
-	createGame: ( input: CreateGameInput ) => Promise<GameData>;
-	joinGame: ( input: JoinGameInput ) => Promise<GameWithPlayers>;
-	addBots: () => Promise<PlayerData>;
-	createTeams: ( input: CreateTeamsInput ) => Promise<TeamData>;
-	startGame: () => Promise<void>;
-	askCard: ( input: AskCardInput ) => Promise<AskMove>;
-	callSet: ( input: CallSetInput ) => Promise<CallMove>;
-	transferTurn: ( input: TransferTurnInput ) => Promise<TransferMove>;
 }

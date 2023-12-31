@@ -1,7 +1,7 @@
 import { LoggerFactory } from "@common/core";
 import type { Request, Response } from "express";
 import { accessTokenCookieOptions, Constants, refreshTokenCookieOptions } from "./auth.constants";
-import { authService, AuthService } from "./auth.service";
+import type { AuthService } from "./auth.service";
 
 export class AuthHandler {
 
@@ -34,5 +34,3 @@ export class AuthHandler {
 		this.logger.debug( "<< logout()" );
 	}
 }
-
-export const authHandler = new AuthHandler( authService );

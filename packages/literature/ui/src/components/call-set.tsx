@@ -74,7 +74,7 @@ export function CallSet() {
 	);
 
 	const openModalForPlayer = useCallback( ( index: number ) => async () => {
-		const teamMemberIds = team!.members;
+		const teamMemberIds = team!.memberIds;
 		const playerId = teamMemberIds[ index ];
 
 		if ( index < teamMemberIds.length ) {
@@ -120,7 +120,7 @@ export function CallSet() {
 						</Button>
 					</Stack>
 				) }
-				{ team?.members.map( ( memberId, index ) => {
+				{ team?.memberIds.map( ( memberId, index ) => {
 					if ( paneState === memberId ) {
 						return (
 							<Stack key={ memberId }>
@@ -158,7 +158,7 @@ export function CallSet() {
 						</Flex>
 						<Group>
 							<Button
-								onClick={ openModalForPlayer( team?.members.length ?? 1 - 1 ) }
+								onClick={ openModalForPlayer( team?.memberIds.length ?? 1 - 1 ) }
 								fw={ 700 }
 							>
 								BACK

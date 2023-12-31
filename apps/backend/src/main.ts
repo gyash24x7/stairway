@@ -1,6 +1,7 @@
-import { authMiddleware, authRouter } from "@auth/core";
-import { LoggerFactory, realtimeService } from "@common/core";
-import { literatureRouter } from "@literature/core";
+import { initializeAuthModule } from "@auth/core";
+import { LoggerFactory, RealtimeService } from "@common/core";
+import { createDatabaseClient } from "@common/data";
+import { initializeLiteratureModule } from "@literature/core";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -29,19 +30,22 @@ app.use( cors( {
 } ) );
 app.use( cookieParser() );
 
-const apiRouter = express.Router();
+const dbClient = createDatabaseClient();
+const realtimeService = new RealtimeService();
 
-apiRouter.use( "/auth", authRouter.registerRoutes() );
-apiRouter.use(
-	"/literature",
-	( req, res, next ) => authMiddleware.use( req, res, next ),
-	literatureRouter.registerRoutes()
-);
+const apiRouter = express.Router();
+const authRouter = express.Router();
+const literatureRouter = express.Router();
+
+const { authMiddleware } = initializeAuthModule( dbClient, authRouter );
+apiRouter.use( "/auth", authRouter );
+
+initializeLiteratureModule( dbClient, realtimeService, literatureRouter );
+apiRouter.use( "/literature", ( req, res, next ) => authMiddleware.use( req, res, next ), literatureRouter );
 
 app.use( "/api", apiRouter );
 
 const logger = LoggerFactory.getLogger();
-
 realtimeService.registerNamespace( io, "literature" );
 
 httpServer.listen( 8000, () => {

@@ -73,7 +73,7 @@ export class LiteratureClient {
 
 	async loadGameData( { gameId }: { gameId: string } ) {
 		const getGameDataPath = BASE_URL.concat( "/" ).concat( gameId );
-		return ky.put( getGameDataPath, { credentials: "include" } ).json<GameDataResponse>();
+		return ky.get( getGameDataPath, { credentials: "include" } ).json<GameDataResponse>();
 	}
 }
 

@@ -31,7 +31,7 @@ export function GameDescription() {
 					<Box className={ classnames[ "teamBox" ] } ta={ "right" }>
 						<Title>{ teamList[ 0 ].name }</Title>
 						<Text fw={ 700 } c={ "dimmed" }>
-							{ teamList[ 0 ].members
+							{ teamList[ 0 ].memberIds
 								.map( member => players[ member ].name.toUpperCase() )
 								.join( ", " )
 							}
@@ -41,7 +41,7 @@ export function GameDescription() {
 					<Box className={ classnames[ "teamBox" ] }>
 						<Title>{ teamList[ 1 ].name }</Title>
 						<Text fw={ 700 } c={ "dimmed" }>
-							{ teamList[ 1 ].members
+							{ teamList[ 1 ].memberIds
 								.map( member => players[ member ].name.toUpperCase() )
 								.join( ", " )
 							}
