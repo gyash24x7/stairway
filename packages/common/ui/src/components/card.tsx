@@ -1,7 +1,6 @@
 import { Box } from "@mantine/core";
-import { clsx } from "clsx";
 import type { ReactNode } from "react";
-import classnames from "../styles/components.module.css";
+import { cardClassnames as classnames } from "../styles/components.css";
 
 export type CardProps = {
 	children: ReactNode;
@@ -10,7 +9,7 @@ export type CardProps = {
 
 export function Card( { stretch, children }: CardProps ) {
 	return (
-		<Box className={ clsx( classnames[ "cardRoot" ], stretch && classnames[ "cardRootStretch" ] ) }>
+		<Box className={ classnames.root( { stretch } ) }>
 			{ children }
 		</Box>
 	);
