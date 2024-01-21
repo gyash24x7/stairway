@@ -6,9 +6,9 @@
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"scripts": {
-		"dev": "rsbuild dev",
-		"build": "rsbuild build",
-		"start": "rsbuild preview"
+		"dev": "vite dev",
+		"build": "vite build",
+		"start": "vite preview"
 	},
 	"dependencies": {
 		"@auth/store": "workspace:*",
@@ -17,23 +17,25 @@
 		"@fontsource/saira-extra-condensed": "5.0.18",
 		"@literature/store": "workspace:*",
 		"@literature/ui": "workspace:*",
-		"@mantine/core": "7.3.2",
-		"@tabler/icons-react": "2.44.0",
+		"@mantine/core": "7.4.2",
+		"@tabler/icons-react": "2.46.0",
+		"@tanstack/react-router": "1.8.3",
 		"react": "18.2.0",
 		"react-dom": "18.2.0",
-		"react-router-dom": "6.21.1"
+		"react-router-dom": "6.21.3"
 	},
 	"devDependencies": {
 		"@common/tsconfig": "workspace:*",
-		"@rsbuild/core": "0.2.13",
-		"@rsbuild/plugin-react": "0.2.13",
-		"@types/react": "18.2.46",
+		"@types/react": "18.2.48",
 		"@types/react-dom": "18.2.18",
-		"postcss": "8.4.32",
-		"postcss-preset-mantine": "1.12.2",
-		"postcss-simple-vars": "7.0.1"
+		"@vanilla-extract/vite-plugin": "3.9.4",
+		"@vitejs/plugin-react-swc": "3.5.0",
+		"postcss": "8.4.33",
+		"postcss-preset-mantine": "1.12.3",
+		"postcss-simple-vars": "7.0.1",
+		"vite": "5.0.12"
 	},
-	"keywords": [ ],
+	"keywords": [],
 	"author": "",
 	"license": "ISC"
 }
