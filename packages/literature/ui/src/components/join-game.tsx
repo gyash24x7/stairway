@@ -1,11 +1,9 @@
 import { useJoinGameAction } from "@literature/store";
-import { Button, Modal, Stack, TextInput } from "@mantine/core";
+import { Button, Modal, Stack, TextInput, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 export function JoinGame() {
-	const navigate = useNavigate();
 	const [ code, setCode ] = useState( "" );
 	const [ opened, { open, close } ] = useDisclosure( false );
 
@@ -13,7 +11,6 @@ export function JoinGame() {
 
 	const handleSubmit = useCallback(
 		() => execute( { code } )
-			.then( ( { id } ) => navigate( `/literature/${ id }` ) )
 			.catch( ( error: Error ) => alert( error.message ) ),
 		[ code ]
 	);
@@ -26,7 +23,7 @@ export function JoinGame() {
 	return (
 		<Fragment>
 			<Button color={ "warning" } onClick={ open } fw={ 700 }>JOIN GAME</Button>
-			<Modal opened={ opened } onClose={ close } title={ "Join Game" } centered>
+			<Modal opened={ opened } onClose={ close } title={ <Title order={ 3 }>Join Game</Title> } centered>
 				<Stack>
 					<TextInput
 						name={ "code" }

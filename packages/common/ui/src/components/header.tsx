@@ -1,16 +1,14 @@
 import { AppShell, Container, Flex } from "@mantine/core";
-import type { ReactNode } from "react";
-import classnames from "../styles/components.module.css";
+import { layoutClassnames as classnames } from "../styles/components.css";
 import { Logo } from "./logo";
 import { NavTabs } from "./nav-tabs";
 
-export function AppHeader( props: { children: ReactNode } ) {
+export function AppHeader() {
 	return (
-		<AppShell.Header className={ classnames[ "layoutHeader" ] }>
-			<Container size={ "md" } className={ classnames[ "layoutNavContainer" ] }>
+		<AppShell.Header className={ classnames.header }>
+			<Container size={ "md" } className={ classnames.navContainer }>
 				<Flex justify={ "space-between" } align={ "center" }>
 					<Logo/>
-					{ props.children }
 				</Flex>
 				<NavTabs/>
 			</Container>

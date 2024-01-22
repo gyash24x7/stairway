@@ -1,21 +1,22 @@
-import "@fontsource/montserrat/400.css";
-import "@fontsource/montserrat/600.css";
-import "@fontsource/montserrat/800.css";
-import "@fontsource/saira-extra-condensed/300.css";
-import "@fontsource/saira-extra-condensed/600.css";
-import "@fontsource/saira-extra-condensed/900.css";
-
-import { theme } from "@common/ui";
+import { homeRoute, rootRoute, theme } from "@common/ui";
+import { literatureRouteTree } from "@literature/ui";
 import { MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
+import { Router, RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { rootRoute } from "./routes";
+
+const routeTree = rootRoute.addChildren( [ homeRoute, literatureRouteTree ] );
+
+export const router = new Router( { routeTree } );
+
+declare module "@tanstack/react-router" {
+	interface Register {
+		router: typeof router;
+	}
+}
 
 const root = ReactDOM.createRoot( document.getElementById( "root" ) as HTMLElement );
-
-export const router = createBrowserRouter( [ rootRoute ] );
 
 root.render(
 	<StrictMode>

@@ -1,29 +1,28 @@
 import { Tabs } from "@mantine/core";
-import { clsx } from "clsx";
-import { useLocation, useNavigate } from "react-router-dom";
-import classnames from "../styles/components.module.css";
+import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { navTabsClassnames as classnames } from "../styles/components.css";
 
 export function NavTabs() {
 	const navigate = useNavigate();
-	const { pathname } = useLocation();
-	const isLiteratureTabActive = pathname.includes( "literature" );
-
-	const activeTab = isLiteratureTabActive ? "literature" : "home";
+	const [ activeTab, setActiveTab ] = useState<string | null>(
+		window.location.pathname === "/" ? "home" : window.location.pathname.split( "/" )[ 1 ]
+	);
 
 	return (
-		<Tabs value={ activeTab }>
-			<Tabs.List className={ classnames[ "navTabsList" ] }>
+		<Tabs value={ activeTab } onChange={ setActiveTab }>
+			<Tabs.List className={ classnames.tabsList }>
 				<Tabs.Tab
 					value={ "home" }
-					onClick={ () => navigate( "/" ) }
-					className={ clsx( classnames[ "navTab" ], !isLiteratureTabActive && classnames[ "navTabActive" ] ) }
+					onClick={ () => navigate( { to: "/" } ) }
+					className={ classnames.tab( { isActive: activeTab === "home" } ) }
 				>
 					Home
 				</Tabs.Tab>
 				<Tabs.Tab
 					value={ "literature" }
-					onClick={ () => navigate( "/literature" ) }
-					className={ clsx( classnames[ "navTab" ], isLiteratureTabActive && classnames[ "navTabActive" ] ) }
+					onClick={ () => navigate( { to: "/literature" } ) }
+					className={ classnames.tab( { isActive: activeTab === "literature" } ) }
 				>
 					Literature
 				</Tabs.Tab>

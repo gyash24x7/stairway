@@ -1,9 +1,9 @@
 import { Manager, Socket } from "socket.io-client";
 
-const manager = new Manager( "ws://localhost:8000" );
 const socketMap = new Map<string, Socket>();
 
 export function initializeSocketForNamespace( namespace: string ) {
+	const manager = new Manager( "ws://localhost:8000" );
 	const socket = manager.socket( "/" + namespace );
 	socketMap.set( namespace, socket );
 

@@ -11,17 +11,18 @@
 		"@common/ui": "workspace:*",
 		"@literature/store": "workspace:*",
 		"@literature/types": "workspace:*",
-		"@mantine/core": "7.3.2",
-		"@mantine/hooks": "7.3.2",
-		"@tabler/icons-react": "2.44.0",
+		"@mantine/core": "7.4.2",
+		"@mantine/hooks": "7.4.2",
+		"@tabler/icons-react": "2.46.0",
+		"@tanstack/react-router": "1.8.3",
 		"react": "18.2.0",
-		"react-router-dom": "6.21.1"
+		"react-router-dom": "6.21.3"
 	},
 	"devDependencies": {
 		"@common/tsconfig": "workspace:*",
-		"@types/react": "18.2.46"
+		"@types/react": "18.2.48"
 	},
-	"keywords": [ ],
+	"keywords": [],
 	"author": "",
 	"license": "ISC"
 }

@@ -1,5 +1,6 @@
 import { generateColors } from "@mantine/colors-generator";
 import { createTheme } from "@mantine/core";
+import { themeToVars } from "@mantine/vanilla-extract";
 
 export const theme = createTheme( {
 	colors: {
@@ -10,9 +11,11 @@ export const theme = createTheme( {
 		alt: generateColors( "#5243AA" ),
 		info: generateColors( "#00B8D9" )
 	},
-	fontFamily: "Montserrat",
+	fontFamily: "Open Sans",
 	headings: {
-		fontFamily: "Saira Extra Condensed",
+		fontFamily: "Fjalla One",
 		fontWeight: "600"
 	}
 } );
+
+export const vars = themeToVars( theme );
