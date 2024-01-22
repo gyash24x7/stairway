@@ -1,12 +1,14 @@
+import type { CardSet } from "@common/cards";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
 import { boolean, json, pgEnum, pgSchema, primaryKey, smallint, text, timestamp } from "drizzle-orm/pg-core";
+import type { AskMoveData, CallMoveData, TransferMoveData } from "./literature.types";
 
-export const schema = pgSchema( "literature" );
+export const literatureSchema = pgSchema( "literature" );
 
 const AVATAR_BASE_URL = "https://api.dicebear.com/7.x/open-peeps/svg?seed=";
 
-export const players = schema.table(
+export const players = literatureSchema.table(
 	"players",
 	{
 		id: text( "id" ).$default( () => createId() ).notNull(),
@@ -37,12 +39,12 @@ export const playerRelations = relations( players, ( { one, many } ) => {
 	};
 } );
 
-export const teams = schema.table( "teams", {
+export const teams = literatureSchema.table( "teams", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
 	gameId: text( "game_id" ).notNull().references( () => games.id ),
 	name: text( "name" ).notNull(),
 	score: smallint( "score" ).notNull().default( 0 ),
-	setsWon: json( "sets_won" ).notNull().$default( () => [] ).$type<string[]>(),
+	setsWon: json( "sets_won" ).notNull().$default( () => [] ).$type<CardSet[]>(),
 	memberIds: json( "member_ids" ).notNull().$default( () => [] ).$type<string[]>()
 } );
 
@@ -56,7 +58,7 @@ export const teamRelations = relations( teams, ( { many, one } ) => {
 	};
 } );
 
-export const cardMappings = schema.table(
+export const cardMappings = literatureSchema.table(
 	"card_mappings",
 	{
 		cardId: text( "card_id" ).notNull(),
@@ -83,18 +85,10 @@ export const cardMappingRelations = relations( cardMappings, ( { one } ) => {
 	};
 } );
 
-export const moveTypeEnum = pgEnum( "literature_move_type", [ "ASK_CARD", "CALL_SET", "TRANSFER_TURN" ] );
+export const moveTypes = [ "ASK_CARD", "CALL_SET", "TRANSFER_TURN" ] as const;
+export const moveTypeEnum = pgEnum( "literature_move_type", moveTypes );
 
-export type AskMoveData = { from: string, by: string, card: string };
-export type CallMoveData = {
-	by: string,
-	cardSet: string,
-	actualCall: Record<string, string>,
-	correctCall: Record<string, string>
-}
-export type TransferMoveData = { to: string, from: string };
-
-export const moves = schema.table( "moves", {
+export const moves = literatureSchema.table( "moves", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
 	gameId: text( "game_id" ).notNull().references( () => games.id ),
 	timestamp: timestamp( "timestamp" ).notNull().$default( () => new Date() ),
@@ -113,13 +107,8 @@ export const moveRelations = relations( moves, ( { one } ) => {
 	};
 } );
 
-export const gameStatusEnum = pgEnum( "literature_game_status", [
-	"CREATED",
-	"PLAYERS_READY",
-	"TEAMS_CREATED",
-	"IN_PROGRESS",
-	"COMPLETED"
-] );
+export const gameStatuses = [ "CREATED", "PLAYERS_READY", "TEAMS_CREATED", "IN_PROGRESS", "COMPLETED" ] as const;
+export const gameStatusEnum = pgEnum( "literature_game_status", gameStatuses );
 
 function generateGameCode() {
 	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -130,7 +119,7 @@ function generateGameCode() {
 	return result;
 }
 
-export const games = schema.table( "games", {
+export const games = literatureSchema.table( "games", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
 	code: text( "code" ).unique().$default( () => generateGameCode() ).notNull(),
 	status: gameStatusEnum( "status" ).notNull().default( "CREATED" ),
@@ -138,7 +127,7 @@ export const games = schema.table( "games", {
 	currentTurn: text( "current_turn" ).notNull()
 } );
 
-export const gameRelation = relations( games, ( { many } ) => {
+export const gameRelations = relations( games, ( { many } ) => {
 	return {
 		players: many( players ),
 		teams: many( teams ),
@@ -146,7 +135,4 @@ export const gameRelation = relations( games, ( { many } ) => {
 		cardMappings: many( cardMappings )
 	};
 } );
-
-
-
 
