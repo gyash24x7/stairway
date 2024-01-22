@@ -1,4 +1,4 @@
-import type { Player } from "@literature/types";
+import type { Player } from "@literature/data";
 import { Combobox, useCombobox } from "@mantine/core";
 import type { Dispatch, SetStateAction } from "react";
 import { DisplayPlayerMedium } from "./display-player";

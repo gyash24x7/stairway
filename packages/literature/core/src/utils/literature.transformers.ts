@@ -10,13 +10,15 @@ import type {
 	Player,
 	RawGameData,
 	Team
-} from "@literature/types";
+} from "@literature/data";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class LiteratureTransformers {
 
 	private readonly logger = LoggerFactory.getLogger( LiteratureTransformers );
 
-	gameData( data: RawGameData ): GameData {
+	transformGameData( data: RawGameData ): GameData {
 		this.logger.debug( ">> transformGameData()" );
 		const teamMap: Record<string, Team> = {};
 
@@ -48,7 +50,7 @@ export class LiteratureTransformers {
 		};
 	}
 
-	cardsData( cardMappings: CardMapping[] ): CardsData {
+	transformCardsData( cardMappings: CardMapping[] ): CardsData {
 		this.logger.debug( ">> transformCardMappings()" );
 
 		const mappings: CardMappingData = {};
@@ -67,3 +69,4 @@ export class LiteratureTransformers {
 		return { mappings, hands };
 	}
 }
+

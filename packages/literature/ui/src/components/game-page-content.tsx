@@ -1,6 +1,6 @@
 import { Banner, Card, DisplayHand } from "@common/ui";
+import type { GameStatus } from "@literature/data";
 import { useGameStatus, useHand, useMoves, usePlayers } from "@literature/store";
-import type { GameStatus } from "@literature/types";
 import { Flex, Grid } from "@mantine/core";
 import { GameCompleted } from "./game-completed";
 import { GameDescription } from "./game-description";

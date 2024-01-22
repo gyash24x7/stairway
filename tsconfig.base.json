@@ -7,6 +7,7 @@
 		"target": "ESNext",
 		"resolveJsonModule": true,
 		"useDefineForClassFields": true,
+		"noFallthroughCasesInSwitch": false,
 		"verbatimModuleSyntax": false,
 		"exactOptionalPropertyTypes": false,
 		"strictPropertyInitialization": false,

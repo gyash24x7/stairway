@@ -1,6 +1,6 @@
 import type { PlayingCard } from "@common/cards";
 import { getCardSetsInHand } from "@common/cards";
-import type { GameData, GameStatus, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/types";
+import type { GameData, GameStatus, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/data";
 import { produce } from "immer";
 import { create } from "zustand";
 

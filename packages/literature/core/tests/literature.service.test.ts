@@ -12,7 +12,7 @@ import type {
 	Player,
 	ScoreUpdate,
 	TeamData
-} from "@literature/types";
+} from "@literature/data";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { Constants, GameEvents } from "../src/literature.constants";

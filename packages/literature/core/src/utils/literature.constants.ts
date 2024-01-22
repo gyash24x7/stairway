@@ -7,18 +7,6 @@ export class Constants {
 	public static readonly LITERATURE = "literature";
 }
 
-export class Paths {
-	public static readonly CREATE_GAME = "";
-	public static readonly JOIN_GAME = "/join";
-	public static readonly ADD_BOTS = "/:gameId/add-bots";
-	public static readonly CREATE_TEAMS = "/:gameId/create-teams";
-	public static readonly START_GAME = "/:gameId/start";
-	public static readonly ASK_CARD = "/:gameId/ask-card";
-	public static readonly CALL_SET = "/:gameId/call-set";
-	public static readonly TRANSFER_TURN = "/:gameId/transfer-turn";
-	public static readonly GET_GAME = "/:gameId";
-}
-
 export class GameEvents {
 	public static readonly PLAYER_JOINED = "player-joined";
 	public static readonly TEAMS_CREATED = "teams-created";
@@ -34,6 +22,8 @@ export class GameEvents {
 
 export class Messages {
 	public static readonly GAME_NOT_FOUND = "Game Not Found!";
+	public static readonly INCORRECT_STATUS = "Game is in incorrect status!";
+	public static readonly PLAYER_OUT_OF_TURN = "It is not your turn!";
 	public static readonly GAME_ALREADY_HAS_REQUIRED_PLAYERS = "The Game already has required players!";
 	public static readonly GAME_DOESNT_HAVE_ENOUGH_PLAYERS = "The Game doesn't have enough players!";
 	public static readonly USER_ALREADY_PART_OF_GAME = "The User is already part of the Game!";

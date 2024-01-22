@@ -12,7 +12,7 @@ import type {
 	TeamData,
 	TransferMove,
 	TransferTurnInput
-} from "@literature/types";
+} from "@literature/data";
 import ky from "ky";
 
 const BASE_URL = "http://localhost:8000/api/literature";

@@ -27,7 +27,7 @@ import type {
 	TransferMove,
 	TransferTurnInput,
 	User
-} from "@literature/types";
+} from "@literature/data";
 
 function areTeamsCreated( status: GameStatus ) {
 	return status === "TEAMS_CREATED" || status === "IN_PROGRESS" || status === "COMPLETED";

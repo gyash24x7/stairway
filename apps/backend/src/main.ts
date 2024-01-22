@@ -1,46 +1,32 @@
-import { initializeAuthModule } from "@auth/core";
-import { LoggerFactory, RealtimeService } from "@common/core";
-import { createDatabaseClient } from "@common/data";
-import { initializeLiteratureModule } from "@literature/core";
+import { LoggerFactory, PostgresModule } from "@common/core";
+import { LiteratureModule } from "@literature/core";
+import { Module } from "@nestjs/common";
+import { NestFactory } from "@nestjs/core";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
-import express from "express";
-import * as http from "http";
-import { Server } from "socket.io";
 
 dotenv.config();
 
-const app = express();
+@Module( {
+	imports: [ PostgresModule, LiteratureModule ]
+} )
+class AppModule {}
 
-const httpServer = http.createServer( app );
-const io = new Server( httpServer, {
-	cors: {
-		origin: [ "http://localhost:3000" ],
-		allowedHeaders: [ "Authorization" ],
+async function bootstrap() {
+	const app = await NestFactory.create( AppModule );
+
+	app.use( bodyParser.json() );
+
+	app.enableCors( {
+		origin: "http://localhost:3000",
 		credentials: true
-	}
-} );
+	} );
 
-app.use( bodyParser.json() );
+	app.setGlobalPrefix( "api" );
 
-const dbClient = createDatabaseClient();
-const realtimeService = new RealtimeService();
+	const logger = LoggerFactory.getLogger( AppModule );
+	await app.listen( 8000 );
+	logger.log( `Stairway started on localhost:8000!` );
+}
 
-const apiRouter = express.Router();
-const authRouter = express.Router();
-const literatureRouter = express.Router();
-
-const { authMiddleware } = initializeAuthModule( dbClient, authRouter );
-apiRouter.use( "/auth", authRouter );
-
-initializeLiteratureModule( dbClient, realtimeService, literatureRouter );
-apiRouter.use( "/literature", ( req, res, next ) => authMiddleware.use( req, res, next ), literatureRouter );
-
-app.use( "/api", apiRouter );
-
-const logger = LoggerFactory.getLogger();
-realtimeService.registerNamespace( io, "literature" );
-
-httpServer.listen( 8000, () => {
-	logger.info( `Stairway started on localhost:8000!` );
-} );
+bootstrap().then();

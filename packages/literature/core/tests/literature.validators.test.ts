@@ -1,7 +1,7 @@
 import { CardSet } from "@common/cards";
 import type { HttpException } from "@common/core";
 import type { LiteratureRepository } from "@common/data";
-import type { CallSetInput, CardMapping, JoinGameInput } from "@literature/types";
+import type { CallSetInput, CardMapping, JoinGameInput } from "@literature/data";
 import { afterEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";
 import { Messages } from "../src/literature.constants";
