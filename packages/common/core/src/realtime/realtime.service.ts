@@ -1,6 +1,8 @@
+import { Injectable } from "@nestjs/common";
 import type { Namespace, Server } from "socket.io";
-import { LoggerFactory } from "./logger.factory";
+import { LoggerFactory } from "../logger";
 
+@Injectable()
 export class RealtimeService {
 
 	private readonly logger = LoggerFactory.getLogger( RealtimeService );
