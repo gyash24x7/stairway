@@ -1,0 +1,17 @@
+{
+	"name": "literature-core",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "packages/literature/core/src",
+	"projectType": "library",
+	"targets": {
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": [ "{projectRoot}/coverage/**" ],
+			"options": {
+				"config": "packages/literature/core/vitest.config.mts",
+				"passWithNoTests": true
+			}
+		}
+	},
+	"tags": [ ]
+}

@@ -33,3 +33,10 @@ export function initializeAuthModule( dbClient: PostgresClient, router: Router )
 
 	return { authMiddleware };
 }
+
+export type User = {
+	id: string;
+	name: string;
+	email: string;
+	avatar: string;
+}

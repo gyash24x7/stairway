@@ -3,8 +3,6 @@ import { LoggerFactory, RealtimeService } from "@common/core";
 import { createDatabaseClient } from "@common/data";
 import { initializeLiteratureModule } from "@literature/core";
 import bodyParser from "body-parser";
-import cookieParser from "cookie-parser";
-import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import * as http from "http";
@@ -24,11 +22,6 @@ const io = new Server( httpServer, {
 } );
 
 app.use( bodyParser.json() );
-app.use( cors( {
-	origin: "http://localhost:3000",
-	credentials: true
-} ) );
-app.use( cookieParser() );
 
 const dbClient = createDatabaseClient();
 const realtimeService = new RealtimeService();

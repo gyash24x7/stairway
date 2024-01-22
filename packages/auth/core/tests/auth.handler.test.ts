@@ -1,4 +1,4 @@
-import type { User } from "@prisma/client";
+import type { User } from "@auth/core";
 import type { Request, Response } from "express";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { mockClear, mockDeep } from "vitest-mock-extended";

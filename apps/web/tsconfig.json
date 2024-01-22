@@ -1,18 +1,12 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "@common/tsconfig/react.json",
+	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"lib": [ "DOM", "DOM.Iterable", "ESNext" ],
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"jsx": "react-jsx"
+		"jsx": "react-jsx",
+		"types": [ "vite/client" ]
 	},
-	"include": [ "src", "vite.config.mts" ],
-	"exclude": [
-		"src/**/*.stories.tsx",
-		"**/*.stories.ts",
-		"**/*.stories.js",
-		"**/*.stories.jsx",
-		"**/*.stories.tsx"
-	]
+	"include": [ "src", "tests" ]
 }
