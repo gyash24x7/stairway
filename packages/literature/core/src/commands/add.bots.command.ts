@@ -10,7 +10,7 @@ export class AddBotsCommand implements ICommand {
 }
 
 @CommandHandler( AddBotsCommand )
-export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand> {
+export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand, PlayerData> {
 
 	private readonly logger = LoggerFactory.getLogger( AddBotsCommandHandler );
 

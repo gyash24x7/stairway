@@ -1,8 +1,8 @@
 import { Card } from "@common/ui";
-import { useMoves } from "@literature/store";
 import { Button, Flex, Modal, Stack, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Fragment } from "react";
+import { useMoves } from "../store";
 
 export function PreviousMoves() {
 	const moves = useMoves();

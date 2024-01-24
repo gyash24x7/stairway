@@ -1,7 +1,7 @@
 import { LoggerFactory } from "@common/core";
 import type { Player } from "@literature/data";
 import { EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
-import { LiteratureService } from "../utils";
+import { GameEvents, LiteratureGateway, LiteratureService } from "../utils";
 
 export class PlayerJoinedEvent implements IEvent {
 	constructor(
@@ -15,7 +15,10 @@ export class PlayerJoinedEventHandler implements IEventHandler<PlayerJoinedEvent
 
 	private readonly logger = LoggerFactory.getLogger( PlayerJoinedEventHandler );
 
-	constructor( private readonly service: LiteratureService ) {}
+	constructor(
+		private readonly service: LiteratureService,
+		private readonly gateway: LiteratureGateway
+	) {}
 
 	async handle( { isCapacityFull, player }: PlayerJoinedEvent ) {
 		this.logger.debug( ">> handlePlayerJoinedEvent()" );
@@ -25,12 +28,7 @@ export class PlayerJoinedEventHandler implements IEventHandler<PlayerJoinedEvent
 			await this.service.updateGameStatus( player.gameId, "PLAYERS_READY" );
 		}
 
-		// realtimeService.publishRoomMessage(
-		// 	Constants.LITERATURE,
-		// 	gameId,
-		// 	GameEvents.PLAYER_JOINED,
-		// 	player
-		// );
+		this.gateway.publishGameEvent( player.gameId, GameEvents.PLAYER_JOINED, player );
 
 		this.logger.debug( "<< handlePlayerJoinedEvent()" );
 	}

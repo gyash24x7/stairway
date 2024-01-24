@@ -16,7 +16,7 @@ export class CallSetCommand implements ICommand {
 }
 
 @CommandHandler( CallSetCommand )
-export class CallSetCommandHandler implements ICommandHandler<CallSetCommand> {
+export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, CallMove> {
 
 	private readonly logger = LoggerFactory.getLogger( CallSetCommandHandler );
 

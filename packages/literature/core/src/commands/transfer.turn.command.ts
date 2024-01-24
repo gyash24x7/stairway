@@ -22,7 +22,7 @@ export class TransferTurnCommand implements ICommand {
 }
 
 @CommandHandler( TransferTurnCommand )
-export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnCommand> {
+export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnCommand, TransferMove> {
 
 	private readonly logger = LoggerFactory.getLogger( TransferTurnCommandHandler );
 

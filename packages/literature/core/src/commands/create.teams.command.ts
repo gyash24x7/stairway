@@ -13,7 +13,7 @@ export class CreateTeamsCommand implements ICommand {
 }
 
 @CommandHandler( CreateTeamsCommand )
-export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCommand> {
+export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCommand, TeamData> {
 
 	private readonly logger = LoggerFactory.getLogger( CreateTeamsCommandHandler );
 

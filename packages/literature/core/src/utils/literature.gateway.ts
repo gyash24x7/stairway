@@ -3,21 +3,28 @@ import { type OnGatewayConnection, WebSocketGateway, WebSocketServer } from "@ne
 import { Server, type Socket } from "socket.io";
 import { Constants } from "./literature.constants";
 
-@WebSocketGateway( { namespace: Constants.LITERATURE } )
+@WebSocketGateway( {
+	namespace: Constants.LITERATURE,
+	cors: {
+		origin: "http://localhost:3000",
+		credentials: true
+	}
+} )
 export class LiteratureGateway implements OnGatewayConnection {
 
 	@WebSocketServer() private server: Server;
 
 	private readonly logger = LoggerFactory.getLogger( LiteratureGateway );
 
-	publishMemberMessage( gameId: string, playerId: string, event: string, data: any ) {
-		const eventKey = event.concat( ":" ).concat( playerId );
+	publishPlayerEvent( gameId: string, playerId: string, event: string, data: any ) {
+		const eventKey = gameId.concat( ":" ).concat( playerId ).concat( ":" ).concat( event );
 		this.server.to( gameId ).emit( eventKey, data );
 		this.logger.debug( "Published Direct Message to %s", eventKey );
 	}
 
-	publishRoomMessage( gameId: string, event: string, data: any ) {
-		this.server.to( gameId ).emit( event, data );
+	publishGameEvent( gameId: string, event: string, data: any ) {
+		const eventKey = gameId.concat( ":" ).concat( event );
+		this.server.to( gameId ).emit( eventKey, data );
 		this.logger.debug( "Published Room Message to %s", gameId );
 	}
 
@@ -28,6 +35,7 @@ export class LiteratureGateway implements OnGatewayConnection {
 		socket.on( "join-room", ( gameId: string ) => {
 			this.logger.debug( "Joining Room: %s", gameId );
 			socket.join( gameId );
+			this.logger.debug( this.server );
 		} );
 
 		socket.on( "leave-room", ( gameId: string ) => {

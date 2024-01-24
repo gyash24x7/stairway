@@ -1,7 +1,8 @@
-import { AppFooter, AppMain, initializeSocketForNamespace, subscribeToEvents } from "@common/ui";
-import { useGameEventHandlers, useGameId, usePlayerId, usePlayerSpecificEventHandlers } from "@literature/store";
+import { AppFooter, AppMain, initializeSocket } from "@common/ui";
 import { Fragment, useEffect } from "react";
+import { io } from "socket.io-client";
 import { GameActions, GameCode, GamePageContent } from "../components";
+import { useGameEventHandlers, useGameId, usePlayerId, usePlayerSpecificEventHandlers } from "../store";
 
 export function GamePage() {
 	const gameId = useGameId();
@@ -10,15 +11,8 @@ export function GamePage() {
 	const playerEventHandlers = usePlayerSpecificEventHandlers();
 
 	useEffect( () => {
-		initializeSocketForNamespace( "literature" );
-		const unsubscribe = subscribeToEvents(
-			"literature",
-			gameId,
-			playerId,
-			gameEventHandlers,
-			playerEventHandlers
-		);
-
+		const socket = io( `http://localhost:8000/literature` );
+		const unsubscribe = initializeSocket( socket, gameId, playerId, gameEventHandlers, playerEventHandlers );
 		return () => unsubscribe();
 	}, [] );
 

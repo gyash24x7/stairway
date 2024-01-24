@@ -13,7 +13,7 @@ import type {
 	TransferMoveData
 } from "@literature/data";
 import { EventBus, EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
-import { LiteratureService } from "../utils";
+import { GameEvents, LiteratureGateway, LiteratureService } from "../utils";
 import { GameCompletedEvent } from "./game.completed.event";
 import { HandsUpdatedEvent } from "./hands.updated.event";
 import { TurnUpdatedEvent } from "./turn.updated.event";
@@ -33,7 +33,8 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 
 	constructor(
 		private readonly service: LiteratureService,
-		private readonly eventBus: EventBus
+		private readonly eventBus: EventBus,
+		private readonly gateway: LiteratureGateway
 	) {}
 
 	async handle( { move, cardsData, gameData }: MoveCreatedEvent ) {
@@ -43,12 +44,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 		await this.updateTurn( gameData!.currentTurn, move, gameData!.players );
 		await this.updateScore( move, gameData!.players, gameData!.teams );
 
-		// realtimeService.publishRoomMessage(
-		// 	Constants.LITERATURE,
-		// 	gameId,
-		// 	GameEvents.MOVE_CREATED,
-		// 	move
-		// );
+		this.gateway.publishGameEvent( move.gameId, GameEvents.MOVE_CREATED, move );
 
 		this.logger.debug( "<< handleMoveCreatedEvent()" );
 	}
@@ -169,12 +165,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			setsCompleted.push( ...team.setsWon as CardSet[] );
 		} );
 
-		// realtimeService.publishRoomMessage(
-		// 	Constants.LITERATURE,
-		// 	currentMove.gameId,
-		// 	GameEvents.SCORE_UPDATED,
-		// 	scoreUpdate
-		// );
+		this.gateway.publishGameEvent( currentMove.gameId, GameEvents.SCORE_UPDATED, scoreUpdate );
 
 		if ( setsCompleted.length === 8 ) {
 			await this.service.updateGameStatus( currentMove.gameId, "COMPLETED" );

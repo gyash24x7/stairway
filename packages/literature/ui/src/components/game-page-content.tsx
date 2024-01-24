@@ -1,7 +1,7 @@
 import { Banner, Card, DisplayHand } from "@common/ui";
 import type { GameStatus } from "@literature/data";
-import { useGameStatus, useHand, useMoves, usePlayers } from "@literature/store";
 import { Flex, Grid } from "@mantine/core";
+import { useGameStatus, useHand, useMoves, usePlayers } from "../store";
 import { GameCompleted } from "./game-completed";
 import { GameDescription } from "./game-description";
 import { PlayerLobby } from "./player-lobby";
@@ -45,7 +45,7 @@ export function GamePageContent() {
 			<Grid.Col span={ 8 }>
 				<Flex direction={ "column" } gap={ 10 }>
 					{ status === "IN_PROGRESS" && <DisplayHand hand={ hand }/> }
-					{ status === "IN_PROGRESS" && <Card>{ move.description }</Card> }
+					{ status === "IN_PROGRESS" && !!move && <Card>{ move.description }</Card> }
 					{ status === "COMPLETED" && <GameCompleted/> }
 				</Flex>
 			</Grid.Col>

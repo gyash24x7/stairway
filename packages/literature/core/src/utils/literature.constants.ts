@@ -10,11 +10,13 @@ export class Constants {
 export class GameEvents {
 	public static readonly PLAYER_JOINED = "player-joined";
 	public static readonly TEAMS_CREATED = "teams-created";
+	public static readonly GAME_STARTED = "game-started";
 	public static readonly MOVE_CREATED = "move-created";
 	public static readonly TURN_UPDATED = "turn-updated";
 	public static readonly SCORE_UPDATED = "score-updated";
 	public static readonly STATUS_UPDATED = "status-updated";
 	public static readonly CARD_COUNT_UPDATED = "card-count-updated";
+	public static readonly GAME_COMPLETED = "game-completed";
 	// Player Specific Events
 	public static readonly HAND_UPDATED = "hand-updated";
 	public static readonly INFERENCES_UPDATED = "inferences-updated";

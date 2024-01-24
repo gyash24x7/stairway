@@ -1,6 +1,7 @@
 import { LoggerFactory } from "@common/core";
 import type { HandData } from "@literature/data";
 import { EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
+import { GameEvents, LiteratureGateway } from "../utils";
 
 export class HandsUpdatedEvent implements IEvent {
 	constructor(
@@ -14,7 +15,7 @@ export class HandsUpdatedEventHandler implements IEventHandler<HandsUpdatedEvent
 
 	private readonly logger = LoggerFactory.getLogger( HandsUpdatedEventHandler );
 
-	constructor() {}
+	constructor( private readonly gateway: LiteratureGateway ) {}
 
 	async handle( { gameId, hands }: HandsUpdatedEvent ) {
 		this.logger.debug( ">> handleHandsUpdated()" );
@@ -24,21 +25,10 @@ export class HandsUpdatedEventHandler implements IEventHandler<HandsUpdatedEvent
 
 		Object.keys( hands ).map( playerId => {
 			cardCounts[ playerId ] = hands[ playerId ].length;
-			// realtimeService.publishMemberMessage(
-			// 	Constants.LITERATURE,
-			// 	gameId,
-			// 	playerId,
-			// 	GameEvents.HAND_UPDATED,
-			// 	hands[ playerId ]
-			// );
+			this.gateway.publishPlayerEvent( gameId, playerId, GameEvents.HAND_UPDATED, hands[ playerId ] );
 		} );
 
-		// realtimeService.publishRoomMessage(
-		// 	Constants.LITERATURE,
-		// 	gameId,
-		// 	GameEvents.CARD_COUNT_UPDATED,
-		// 	cardCounts
-		// );
+		this.gateway.publishGameEvent( gameId, GameEvents.CARD_COUNT_UPDATED, cardCounts );
 
 		this.logger.debug( "<< handleHandsUpdated()" );
 	}

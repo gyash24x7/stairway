@@ -1,9 +1,9 @@
 import { Card } from "@common/ui";
-import { useGameCode, useGameStatus, usePlayers, useTeams } from "@literature/store";
 import { Box, Flex, Text, Title } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { IconCopy } from "@tabler/icons-react";
 import { useCallback, useMemo } from "react";
+import { useGameCode, useGameStatus, usePlayers, useTeams } from "../store";
 import { GameCode } from "./game-code";
 
 export function GameDescription() {

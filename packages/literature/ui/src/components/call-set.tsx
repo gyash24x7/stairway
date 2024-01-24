@@ -1,10 +1,10 @@
 import { CardSet, cardSetMap, getPlayingCardFromId } from "@common/cards";
 import { DisplayCard } from "@common/ui";
-import { useCallSetAction, useCardSetsInHand, useGameId, useMyTeam, usePlayers } from "@literature/store";
 import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconArrowBigRight } from "@tabler/icons-react";
 import { Fragment, useCallback, useState } from "react";
+import { useCallSetAction, useCardSetsInHand, useGameId, useMyTeam, usePlayers } from "../store";
 import { DisplayPlayerVertical } from "./display-player";
 import { SelectCardSet } from "./select-card-set";
 
@@ -51,7 +51,7 @@ export function CallSet() {
 	const [ modalTitle, setModalTitle ] = useState( "Select Card Set to Call" );
 	const [ paneState, setPaneState ] = useState( "SET" );
 
-	const { execute, isLoading } = useCallSetAction();
+	const { mutateAsync, isPending } = useCallSetAction();
 
 	const handleCardSetSelect = useCallback( ( value: string ) => {
 		const cardSet: CardSet = value as CardSet;
@@ -67,7 +67,7 @@ export function CallSet() {
 	}, [] );
 
 	const handleConfirm = useCallback(
-		() => execute( { data: cardMap, gameId } )
+		() => mutateAsync( { data: cardMap, gameId } )
 			.catch( e => alert( e.message ) )
 			.then( closeModal ),
 		[ cardMap, gameId ]
@@ -165,7 +165,7 @@ export function CallSet() {
 							</Button>
 							<Button
 								onClick={ handleConfirm }
-								loading={ isLoading }
+								loading={ isPending }
 								disabled={ Object.keys( cardMap ).length !== 6 }
 								fw={ 700 }
 							>

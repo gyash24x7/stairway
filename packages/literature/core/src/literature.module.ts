@@ -1,4 +1,4 @@
-import { TrpcModule, type User } from "@common/core";
+import { AuthMiddleware, TrpcModule, type User } from "@common/core";
 import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
 import { CqrsModule } from "@nestjs/cqrs";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -23,6 +23,7 @@ import {
 } from "./events";
 import { CardsDataQueryHandler, GameDataQueryHandler, PlayerDataQueryHandler } from "./queries";
 import { Constants, LiteratureMiddlewares, LiteratureRouter, LiteratureService, LiteratureTransformers } from "./utils";
+import { LiteratureGateway } from "./utils/literature.gateway";
 
 const commandHandlers = [
 	AddBotsCommandHandler,
@@ -35,7 +36,13 @@ const commandHandlers = [
 	TransferTurnCommandHandler
 ];
 
-const utilities = [ LiteratureMiddlewares, LiteratureRouter, LiteratureService, LiteratureTransformers ];
+const utilities = [
+	LiteratureGateway,
+	LiteratureMiddlewares,
+	LiteratureRouter,
+	LiteratureService,
+	LiteratureTransformers
+];
 
 const queryHandlers = [ GameDataQueryHandler, CardsDataQueryHandler, PlayerDataQueryHandler ];
 
@@ -58,7 +65,7 @@ export class LiteratureModule implements NestModule {
 	constructor( private readonly router: LiteratureRouter ) {}
 
 	configure( consumer: MiddlewareConsumer ) {
-		consumer.apply( this.trpcMiddleware() ).forRoutes( "/literature" );
+		consumer.apply( AuthMiddleware, this.trpcMiddleware() ).forRoutes( "/literature" );
 	}
 
 	trpcMiddleware() {

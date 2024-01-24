@@ -1,7 +1,7 @@
 import type { CardSet } from "@common/cards";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
-import { boolean, json, pgEnum, pgSchema, primaryKey, smallint, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, json, pgEnum, pgSchema, primaryKey, smallint, text } from "drizzle-orm/pg-core";
 import type { AskMoveData, CallMoveData, TransferMoveData } from "./literature.types";
 
 export const literatureSchema = pgSchema( "literature" );
@@ -91,7 +91,7 @@ export const moveTypeEnum = pgEnum( "literature_move_type", moveTypes );
 export const moves = literatureSchema.table( "moves", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
 	gameId: text( "game_id" ).notNull().references( () => games.id ),
-	timestamp: timestamp( "timestamp" ).notNull().$default( () => new Date() ),
+	timestamp: text( "timestamp" ).notNull().$default( () => new Date().toISOString() ),
 	type: moveTypeEnum( "move_type" ).notNull(),
 	description: text( "description" ).notNull(),
 	success: boolean( "success" ).notNull(),

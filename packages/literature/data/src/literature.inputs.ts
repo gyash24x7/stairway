@@ -13,30 +13,30 @@ export const joinGameInputSchema = z.object( {
 
 export type CreateTeamsInput = z.infer<typeof createTeamsInputSchema>;
 export const createTeamsInputSchema = z.object( {
-	gameId: z.string().cuid2(),
-	data: z.record( z.string().cuid2().array() )
+	gameId: z.string(),
+	data: z.record( z.string().array() )
 } );
 
 export type AskCardInput = z.infer<typeof askCardInputSchema>;
 export const askCardInputSchema = z.object( {
-	gameId: z.string().cuid2(),
-	from: z.string().cuid2(),
+	gameId: z.string(),
+	from: z.string(),
 	for: z.string()
 } );
 
 export type CallSetInput = z.infer<typeof callSetInputSchema>;
 export const callSetInputSchema = z.object( {
-	gameId: z.string().cuid2(),
-	data: z.record( z.string(), z.string().cuid2() )
+	gameId: z.string(),
+	data: z.record( z.string(), z.string() )
 } );
 
 export type TransferTurnInput = z.infer<typeof transferTurnInputSchema>;
 export const transferTurnInputSchema = z.object( {
-	gameId: z.string().cuid2(),
-	transferTo: z.string().cuid2()
+	gameId: z.string(),
+	transferTo: z.string()
 } );
 
 export type GameIdInput = z.infer<typeof gameIdInputSchema>;
 export const gameIdInputSchema = z.object( {
-	gameId: z.string().cuid2()
+	gameId: z.string()
 } );

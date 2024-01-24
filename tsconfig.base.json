@@ -23,8 +23,6 @@
 		"skipLibCheck": true,
 		"baseUrl": "./",
 		"paths": {
-			"@auth/core": [ "packages/auth/core/src/index.ts" ],
-			"@auth/store": [ "packages/auth/store/src/index.ts" ],
 			"@common/cards": [ "packages/common/cards/src/index.ts" ],
 			"@common/core": [ "packages/common/core/src/index.ts" ],
 			"@common/ui": [ "packages/common/ui/src/index.ts" ],

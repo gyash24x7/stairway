@@ -1,7 +1,7 @@
-import { useGameId, useMyTeam, usePlayerId, usePlayers, useTransferTurnAction } from "@literature/store";
 import { Button, Modal, Stack, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Fragment, useCallback, useState } from "react";
+import { useGameId, useMyTeam, usePlayerId, usePlayers, useTransferTurnAction } from "../store";
 import { SelectPlayer } from "./select-player";
 
 export function TransferTurn() {
@@ -12,7 +12,7 @@ export function TransferTurn() {
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ opened, { open, close } ] = useDisclosure();
-	const { execute, isLoading } = useTransferTurnAction();
+	const { mutateAsync, isPending } = useTransferTurnAction();
 
 	const closeModal = useCallback( () => {
 		setSelectedPlayer( undefined );
@@ -20,7 +20,7 @@ export function TransferTurn() {
 	}, [] );
 
 	const handleSubmit = useCallback(
-		() => execute( { transferTo: selectedPlayer!, gameId } )
+		() => mutateAsync( { transferTo: selectedPlayer!, gameId } )
 			.catch( error => alert( error.message ) )
 			.finally( closeModal ),
 		[ selectedPlayer, gameId ]
@@ -42,7 +42,7 @@ export function TransferTurn() {
 						options={ myTeam?.memberIds.filter( memberId => memberId !== playerId )
 							.map( memberId => players[ memberId ] ) ?? [] }
 					/>
-					<Button disabled={ !selectedPlayer } onClick={ handleSubmit } loading={ isLoading }>
+					<Button disabled={ !selectedPlayer } onClick={ handleSubmit } loading={ isPending }>
 						Transfer Turn
 					</Button>
 				</Stack>

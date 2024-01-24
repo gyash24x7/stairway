@@ -6,7 +6,7 @@ import { create } from "zustand";
 
 export type GameState = {
 	gameData: GameData;
-	playerData: PlayerSpecificData;
+	playerSpecificData: PlayerSpecificData;
 }
 
 export type GameEventHandlers = {
@@ -48,7 +48,7 @@ const defaultPlayerData: PlayerSpecificData = {
 export const useGameStore = create<GameStore>( ( set ) => {
 	return {
 		gameData: defaultGameData,
-		playerData: defaultPlayerData,
+		playerSpecificData: defaultPlayerData,
 		handlePlayerJoinedEvent: ( data ) => {
 			set(
 				produce<GameStore>( state => {
@@ -61,10 +61,10 @@ export const useGameStore = create<GameStore>( ( set ) => {
 				produce<GameStore>( state => {
 					state.gameData.teams = data;
 					Object.values( data ).map( team => {
-						if ( team.memberIds.includes( state.playerData.id ) ) {
-							state.playerData.teamId = team.id;
+						if ( team.memberIds.includes( state.playerSpecificData.id ) ) {
+							state.playerSpecificData.teamId = team.id;
 						} else {
-							state.playerData.oppositeTeamId = team.id;
+							state.playerSpecificData.oppositeTeamId = team.id;
 						}
 						team.memberIds.forEach( memberId => {
 							state.gameData.players[ memberId ].teamId = team.id;
@@ -113,8 +113,8 @@ export const useGameStore = create<GameStore>( ( set ) => {
 		handleHandUpdatedEvent: ( data ) => {
 			set(
 				produce<GameStore>( state => {
-					state.playerData.hand = data;
-					state.playerData.cardSets = getCardSetsInHand( data );
+					state.playerSpecificData.hand = data;
+					state.playerSpecificData.cardSets = getCardSetsInHand( data );
 				} )
 			);
 		}

@@ -1,4 +1,4 @@
-import { LoggerFactory, PostgresModule } from "@common/core";
+import { AuthModule, LoggerFactory, PostgresModule } from "@common/core";
 import { LiteratureModule } from "@literature/core";
 import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
@@ -8,7 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 @Module( {
-	imports: [ PostgresModule, LiteratureModule ]
+	imports: [ PostgresModule, AuthModule, LiteratureModule ]
 } )
 class AppModule {}
 

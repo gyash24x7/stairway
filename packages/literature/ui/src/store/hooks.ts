@@ -1,5 +1,4 @@
-import { useCallback, useState } from "react";
-import { literatureClient } from "./client";
+import { trpc } from "./client";
 import { useGameStore } from "./store";
 
 // Game State Hooks
@@ -13,28 +12,25 @@ export const useCardCounts = () => useGameStore( state => state.gameData.cardCou
 export const usePlayerCount = () => useGameStore( state => state.gameData.playerCount );
 export const useGameCode = () => useGameStore( state => state.gameData.code );
 
-export const usePlayerId = () => useGameStore( state => state.playerData.id );
-export const useHand = () => useGameStore( state => state.playerData.hand );
-export const useCardSetsInHand = () => useGameStore( state => state.playerData.cardSets );
+export const usePlayerId = () => useGameStore( state => state.playerSpecificData.id );
+export const useHand = () => useGameStore( state => state.playerSpecificData.hand );
+export const useCardSetsInHand = () => useGameStore( state => state.playerSpecificData.cardSets );
 
 export const useMyTeam = () => useGameStore( state => {
-	const { playerData, gameData } = state;
-	if ( !playerData.teamId ) {
+	const { playerSpecificData, gameData } = state;
+	if ( !playerSpecificData.teamId ) {
 		return undefined;
 	}
-	return gameData.teams[ playerData.teamId ];
+	return gameData.teams[ playerSpecificData.teamId ];
 } );
 
 export const useOppositeTeam = () => useGameStore( state => {
-	const { playerData, gameData } = state;
-	console.log( playerData );
-	if ( !playerData.oppositeTeamId ) {
+	const { playerSpecificData, gameData } = state;
+	if ( !playerSpecificData.oppositeTeamId ) {
 		return undefined;
 	}
-	return gameData.teams[ playerData.oppositeTeamId ];
+	return gameData.teams[ playerSpecificData.oppositeTeamId ];
 } );
-
-// Game Event Handler Hooks
 
 const GameEvents = {
 	PLAYER_JOINED: "player-joined",
@@ -69,37 +65,12 @@ export const usePlayerSpecificEventHandlers = () => useGameStore( state => {
 	};
 } );
 
-const useAction = <R, I = any>( action: ( input: I ) => Promise<R> ) => {
-	const [ isLoading, setIsLoading ] = useState( false );
-	const [ error, setError ] = useState<string>();
-	const [ data, setData ] = useState<R>();
-
-	const execute = useCallback(
-		async ( input: I ) => {
-			setIsLoading( true );
-			return action( input )
-				.then( data => {
-					setData( data );
-					return data;
-				} )
-				.catch( e => {
-					setError( e.message );
-					throw e;
-				} )
-				.finally( () => setIsLoading( false ) );
-		},
-		[ action ]
-	);
-
-	return { isLoading, error, data, execute };
-};
-
 // Game Action Hooks
-export const useCreateGameAction = () => useAction( literatureClient.createGame );
-export const useJoinGameAction = () => useAction( literatureClient.joinGame );
-export const useAddBotsAction = () => useAction( literatureClient.addBots );
-export const useStartGameAction = () => useAction( literatureClient.startGame );
-export const useCreateTeamsAction = () => useAction( literatureClient.createTeams );
-export const useAskCardAction = () => useAction( literatureClient.askCard );
-export const useCallSetAction = () => useAction( literatureClient.callSet );
-export const useTransferTurnAction = () => useAction( literatureClient.transferTurn );
+export const useCreateGameAction = trpc.createGame.useMutation;
+export const useJoinGameAction = trpc.joinGame.useMutation;
+export const useAddBotsAction = trpc.addBots.useMutation;
+export const useCreateTeamsAction = trpc.createTeams.useMutation;
+export const useStartGameAction = trpc.startGame.useMutation;
+export const useAskCardAction = trpc.askCard.useMutation;
+export const useCallSetAction = trpc.callSet.useMutation;
+export const useTransferTurnAction = trpc.transferTurn.useMutation;

@@ -1,12 +1,23 @@
 import { ErrorPage, rootRoute } from "@common/ui";
-import { gameStoreLoader } from "@literature/store";
+import { useQueryClient } from "@tanstack/react-query";
 import { Outlet, Route } from "@tanstack/react-router";
 import { GamePage, HomePage } from "../pages";
+import { gameStoreLoader, literatureClient, trpc } from "../store";
+
+function LiteratureLayout() {
+	const queryClient = useQueryClient();
+
+	return (
+		<trpc.Provider client={ literatureClient } queryClient={ queryClient }>
+			<Outlet/>
+		</trpc.Provider>
+	);
+}
 
 export const literatureRoute = new Route( {
 	path: "literature",
 	getParentRoute: () => rootRoute,
-	component: () => <Outlet/>,
+	component: () => <LiteratureLayout/>,
 	errorComponent: () => <ErrorPage/>
 } );
 
@@ -22,7 +33,7 @@ export const literatureGameRoute = new Route( {
 	getParentRoute: () => literatureRoute,
 	component: () => <GamePage/>,
 	errorComponent: () => <ErrorPage/>,
-	loader: ( { params } ) => gameStoreLoader( { params } )
+	loader: ( { params } ) => gameStoreLoader( params.gameId )
 } );
 
 export const literatureRouteTree = literatureRoute.addChildren( [ literatureHomeRoute, literatureGameRoute ] );

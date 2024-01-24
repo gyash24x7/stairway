@@ -1,5 +1,5 @@
 import { LoggerFactory } from "@common/core";
-import type { CreateGameInput, User } from "@literature/data";
+import type { CreateGameInput, GameData, User } from "@literature/data";
 import { CommandHandler, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { LiteratureService, LiteratureTransformers } from "../utils";
 
@@ -11,7 +11,7 @@ export class CreateGameCommand implements ICommand {
 }
 
 @CommandHandler( CreateGameCommand )
-export class CreateGameCommandHandler implements ICommandHandler<CreateGameCommand> {
+export class CreateGameCommandHandler implements ICommandHandler<CreateGameCommand, GameData> {
 
 	private readonly logger = LoggerFactory.getLogger( CreateGameCommandHandler );
 

@@ -1,61 +1,61 @@
-import { Manager, Socket } from "socket.io-client";
+import type { Socket } from "socket.io-client";
 
-const socketMap = new Map<string, Socket>();
-
-export function initializeSocketForNamespace( namespace: string ) {
-	const manager = new Manager( "ws://localhost:8000" );
-	const socket = manager.socket( "/" + namespace );
-	socketMap.set( namespace, socket );
-
-	socket.on( "connect", () => {
-		console.log( "WebSocket connection established!" );
-	} );
-}
-
-export function subscribeToEvents(
-	namespace: string,
+export function initializeSocket(
+	socket: Socket,
 	roomId: string,
 	memberId: string,
 	roomEventsMap?: Record<string, ( data?: any ) => void>,
 	memberEventsMap?: Record<string, ( data?: any ) => void>
 ) {
-	const socket = socketMap.get( namespace );
-	if ( !socket ) {
-		throw new Error( "Socket not initialized for namespace: " + namespace );
-	}
 
-	socket.emit( "join-room", roomId );
+	socket.on( "connect", () => {
+		console.log( "WebSocket connection established!" );
 
-	socket.on( "disconnect", () => {
-		console.log( "WebSocket connection closed!" );
+		socket.emit( "join-room", roomId );
+
+		socket.on( "disconnect", () => {
+			console.log( "WebSocket connection closed!" );
+		} );
+
+		if ( roomEventsMap ) {
+			Object.keys( roomEventsMap ).forEach( event => {
+				const eventKey = `${ roomId }:${ event }`;
+				socket?.on( eventKey, ( data ) => {
+					console.log( "Event Received ", eventKey, data );
+					roomEventsMap[ event ]( data );
+				} );
+				console.log( "Subscribed to ", eventKey );
+			} );
+		}
+
+		if ( memberEventsMap ) {
+			Object.keys( memberEventsMap ).forEach( event => {
+				const eventKey = `${ roomId }:${ memberId }:${ event }`;
+				socket?.on( eventKey, ( data ) => {
+					console.log( "Event Received ", eventKey, data );
+					memberEventsMap[ event ]( data );
+				} );
+				console.log( "Subscribed to ", eventKey );
+			} );
+		}
 	} );
-
-	if ( roomEventsMap ) {
-		Object.keys( roomEventsMap ).forEach( event => {
-			socket?.on( event, roomEventsMap[ event ] );
-		} );
-	}
-
-	if ( memberEventsMap ) {
-		Object.keys( memberEventsMap ).forEach( event => {
-			const eventKey = event.concat( ":" ).concat( memberId );
-			socket?.on( eventKey, memberEventsMap[ event ] );
-		} );
-	}
 
 	return () => {
 		socket.emit( "leave-room", roomId );
 
 		if ( roomEventsMap ) {
 			Object.keys( roomEventsMap ).forEach( event => {
-				socket.off( event, roomEventsMap[ event ] );
+				const eventKey = `${ roomId }:${ event }`;
+				socket.off( eventKey, roomEventsMap[ event ] );
+				console.log( "Unsubscribed from ", eventKey );
 			} );
 		}
 
 		if ( memberEventsMap ) {
 			Object.keys( memberEventsMap ).forEach( event => {
-				const eventKey = event.concat( ":" ).concat( memberId );
+				const eventKey = `${ roomId }:${ memberId }:${ event }`;
 				socket.off( eventKey, memberEventsMap[ event ] );
+				console.log( "Unsubscribed from ", eventKey );
 			} );
 		}
 	};

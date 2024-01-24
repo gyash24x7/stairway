@@ -1,5 +1,5 @@
-import { useGameCode } from "@literature/store";
 import { Box, Text, Title } from "@mantine/core";
+import { useGameCode } from "../store";
 
 export function GameCode() {
 	const code = useGameCode();

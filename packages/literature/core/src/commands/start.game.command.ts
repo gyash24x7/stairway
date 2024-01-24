@@ -10,7 +10,7 @@ export class StartGameCommand implements ICommand {
 }
 
 @CommandHandler( StartGameCommand )
-export class StartGameCommandHandler implements ICommandHandler<StartGameCommand> {
+export class StartGameCommandHandler implements ICommandHandler<StartGameCommand, GameData> {
 
 	private readonly logger = LoggerFactory.getLogger( StartGameCommandHandler );
 
@@ -40,7 +40,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 		const cardsData = this.transformers.transformCardsData( cardMappings );
 
 		this.eventBus.publish( new GameStartedEvent( gameData, cardsData ) );
-		this.logger.debug( "Published GameStartedEvent!", cardsData );
+		this.logger.debug( "Published GameStartedEvent!" );
 
 		this.logger.debug( "<< startGame()" );
 		return { ...gameData, status: "IN_PROGRESS" as const };

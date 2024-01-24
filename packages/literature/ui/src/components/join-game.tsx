@@ -1,16 +1,20 @@
-import { useJoinGameAction } from "@literature/store";
 import { Button, Modal, Stack, TextInput, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useNavigate } from "@tanstack/react-router";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
+import type { literatureRouteTree } from "../routes";
+import { useJoinGameAction } from "../store";
 
 export function JoinGame() {
+	const navigate = useNavigate<typeof literatureRouteTree>();
 	const [ code, setCode ] = useState( "" );
 	const [ opened, { open, close } ] = useDisclosure( false );
 
-	const { execute, isLoading } = useJoinGameAction();
+	const { mutateAsync, isPending } = useJoinGameAction();
 
 	const handleSubmit = useCallback(
-		() => execute( { code } )
+		() => mutateAsync( { code } )
+			.then( ( data ) => navigate( { to: "/literature/$gameId", params: { gameId: data.id } } ) )
 			.catch( ( error: Error ) => alert( error.message ) ),
 		[ code ]
 	);
@@ -31,7 +35,7 @@ export function JoinGame() {
 						onChange={ handleCodeChange }
 						placeholder={ "Enter the Game Code" }
 					/>
-					<Button color={ "brand" } fullWidth onClick={ handleSubmit } loading={ isLoading } fw={ 700 }>
+					<Button color={ "brand" } fullWidth onClick={ handleSubmit } loading={ isPending } fw={ 700 }>
 						JOIN GAME
 					</Button>
 				</Stack>

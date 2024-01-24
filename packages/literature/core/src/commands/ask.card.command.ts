@@ -15,7 +15,7 @@ export class AskCardCommand implements ICommand {
 }
 
 @CommandHandler( AskCardCommand )
-export class AskCardCommandHandler implements ICommandHandler<AskCardCommand> {
+export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, AskMove> {
 
 	private readonly logger = LoggerFactory.getLogger( AskCardCommandHandler );
 

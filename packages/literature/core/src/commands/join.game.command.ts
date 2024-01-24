@@ -13,7 +13,7 @@ export class JoinGameCommand implements ICommand {
 }
 
 @CommandHandler( JoinGameCommand )
-export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand> {
+export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, Game> {
 
 	private readonly logger = LoggerFactory.getLogger( JoinGameCommandHandler );
 
