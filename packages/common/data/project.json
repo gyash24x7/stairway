@@ -1,8 +1,0 @@
-{
-	"name": "common-data",
-	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/common/data/src",
-	"projectType": "library",
-	"targets": { },
-	"tags": [ ]
-}

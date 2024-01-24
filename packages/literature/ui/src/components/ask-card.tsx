@@ -1,5 +1,8 @@
 import { CardSet, getAskableCardsOfSet, getCardsOfSet, getPlayingCardFromId } from "@common/cards";
 import { DisplayCard } from "@common/ui";
+import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { Dispatch, Fragment, SetStateAction, useCallback, useMemo, useState } from "react";
 import {
 	useAskCardAction,
 	useCardCounts,
@@ -8,10 +11,7 @@ import {
 	useHand,
 	useOppositeTeam,
 	usePlayers
-} from "@literature/store";
-import { Button, Combobox, Flex, Group, Modal, Stack, Title, useCombobox } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { Dispatch, Fragment, SetStateAction, useCallback, useMemo, useState } from "react";
+} from "../store";
 import { SelectCardSet } from "./select-card-set";
 import { SelectPlayer } from "./select-player";
 
@@ -80,12 +80,12 @@ export function AskCard() {
 		setPaneState( "SET" );
 	}, [] );
 
-	const { execute, isLoading } = useAskCardAction();
+	const { mutateAsync, isPending } = useAskCardAction();
 
 	const handleCardSetSelection = useCallback( ( cardSet: string ) => setSelectedCardSet( cardSet as CardSet ), [] );
 
 	const handleConfirm = useCallback(
-		() => execute( { askedFor: selectedCard!, askedFrom: selectedPlayer!, gameId } )
+		() => mutateAsync( { for: selectedCard!, from: selectedPlayer!, gameId } )
 			.catch( e => alert( e.message ) )
 			.finally( closeModal ),
 		[ selectedCard, selectedPlayer, gameId ]
@@ -156,7 +156,7 @@ export function AskCard() {
 						</Title>
 						<Group>
 							<Button onClick={ openSelectPlayerModal } fw={ 700 }>BACK</Button>
-							<Button onClick={ handleConfirm } loading={ isLoading } fw={ 700 }>
+							<Button onClick={ handleConfirm } loading={ isPending } fw={ 700 }>
 								ASK CARD
 							</Button>
 						</Group>

@@ -1,7 +1,7 @@
 import { Card } from "@common/ui";
-import { useMyTeam, useOppositeTeam } from "@literature/store";
 import { Stack, Title } from "@mantine/core";
 import { IconCircleCheck } from "@tabler/icons-react";
+import { useMyTeam, useOppositeTeam } from "../store";
 
 export function GameCompleted() {
 	const oppositeTeam = useOppositeTeam();

@@ -1,8 +1,8 @@
 import { chunk, shuffle } from "@common/cards";
-import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "@literature/store";
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
+import { useCreateTeamsAction, useGameId, usePlayerCount, usePlayers } from "../store";
 import { DisplayPlayerMedium } from "./display-player";
 
 
@@ -32,10 +32,10 @@ export function CreateTeams() {
 		} );
 	}, [ teamAName, teamBName, players, playerCount ] );
 
-	const { execute, isLoading } = useCreateTeamsAction();
+	const { mutateAsync, isPending } = useCreateTeamsAction();
 
 	const handleSubmit = useCallback(
-		() => execute( { data: teamMemberData, gameId } ),
+		() => mutateAsync( { data: teamMemberData, gameId } ),
 		[ teamMemberData, gameId ]
 	);
 
@@ -68,7 +68,7 @@ export function CreateTeams() {
 						</Stack>
 					) ) }
 
-					<Button onClick={ handleSubmit } loading={ isLoading } fw={ 700 }>
+					<Button onClick={ handleSubmit } loading={ isPending } fw={ 700 }>
 						CREATE TEAMS
 					</Button>
 				</Stack>

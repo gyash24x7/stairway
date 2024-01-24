@@ -1,15 +1,15 @@
-import { useGameId, useStartGameAction } from "@literature/store";
 import { Button } from "@mantine/core";
 import { useCallback } from "react";
+import { useGameId, useStartGameAction } from "../store";
 
 export function StartGame() {
 	const gameId = useGameId();
-	const { execute, isLoading } = useStartGameAction();
+	const { mutateAsync, isPending } = useStartGameAction();
 
 	const handleSubmit = useCallback(
-		() => execute( { gameId } ).catch( ( error ) => alert( error.message ) ),
+		() => mutateAsync( { gameId } ).catch( ( error ) => alert( error.message ) ),
 		[ gameId ]
 	);
 
-	return <Button color={ "brand" } loading={ isLoading } onClick={ handleSubmit } fw={ 700 }>START GAME</Button>;
+	return <Button color={ "brand" } loading={ isPending } onClick={ handleSubmit } fw={ 700 }>START GAME</Button>;
 }

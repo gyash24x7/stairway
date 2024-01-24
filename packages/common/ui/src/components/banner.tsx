@@ -11,7 +11,7 @@ export function Banner( { message, isLoading }: BannerProps ) {
 		<Card>
 			<Group>
 				{ isLoading && <Loader size={ "sm" }/> }
-				<Text fw={ 600 }>{ message }</Text>
+				<Text fw={ 700 }>{ message }</Text>
 			</Group>
 		</Card>
 	);

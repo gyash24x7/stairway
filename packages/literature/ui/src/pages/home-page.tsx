@@ -1,3 +1,4 @@
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { AppFooter, AppMain } from "@common/ui";
 import { Box, Group, Text, Title } from "@mantine/core";
 import { Fragment } from "react";
@@ -15,13 +16,13 @@ export function HomePage() {
 					<Title fz={ 56 } lh={ 1 }>LITERATURE</Title>
 				</Box>
 				<Group>
-					<div>
+					<SignedIn>
 						<CreateGame/>
 						<JoinGame/>
-					</div>
-					<div>
+					</SignedIn>
+					<SignedOut>
 						<Title>Login to Play!</Title>
-					</div>
+					</SignedOut>
 				</Group>
 			</AppFooter>
 		</Fragment>

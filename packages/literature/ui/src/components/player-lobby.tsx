@@ -1,5 +1,5 @@
 import { Card } from "@common/ui";
-import type { Player } from "@literature/types";
+import type { Player } from "@literature/data";
 import { Title } from "@mantine/core";
 import { DisplayPlayerSmall } from "./display-player";
 
