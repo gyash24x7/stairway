@@ -1,0 +1,8 @@
+{
+	"name": "wordle-ui",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "packages/wordle/ui/src",
+	"projectType": "library",
+	"targets": { },
+	"tags": [ ]
+}

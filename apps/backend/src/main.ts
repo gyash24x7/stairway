@@ -2,13 +2,14 @@ import { AuthModule, LoggerFactory, PostgresModule } from "@common/core";
 import { LiteratureModule } from "@literature/core";
 import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { WordleModule } from "@wordle/core";
 import bodyParser from "body-parser";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 @Module( {
-	imports: [ PostgresModule, AuthModule, LiteratureModule ]
+	imports: [ PostgresModule, AuthModule, LiteratureModule, WordleModule ]
 } )
 class AppModule {}
 

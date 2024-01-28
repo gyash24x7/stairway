@@ -24,12 +24,31 @@ function LiteratureApplicationCard() {
 	);
 }
 
+function WordleApplicationCard() {
+	return (
+		<Flex direction={ "column" } justify={ "space-between" } className={ classnames.card } p={ 30 }>
+			<Box>
+				<Text fz={ 14 } fw={ 700 } lh={ 1 }>GAMES</Text>
+				<Title fz={ 56 } lh={ 1 }>WORDLE</Title>
+			</Box>
+			<Box>
+				<Link to={ "/wordle" }>
+					<Button color={ "brand" } fw={ 700 }>
+						PLAY
+					</Button>
+				</Link>
+			</Box>
+		</Flex>
+	);
+}
+
 export function HomePage() {
 	return (
 		<Fragment>
 			<AppMain>
 				<Flex gap={ 10 } p={ 10 }>
 					<LiteratureApplicationCard/>
+					<WordleApplicationCard/>
 				</Flex>
 			</AppMain>
 			<AppFooter>

@@ -85,7 +85,8 @@ export const cardClassnames = {
 		variants: {
 			stretch: {
 				true: {
-					flex: 1
+					flex: 1,
+					height: "100%"
 				}
 			}
 		},
