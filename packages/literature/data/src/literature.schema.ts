@@ -8,14 +8,14 @@ export const literatureSchema = pgSchema( "literature" );
 
 const AVATAR_BASE_URL = "https://api.dicebear.com/7.x/open-peeps/svg?seed=";
 
-export const players = literatureSchema.table(
-	"players",
+export const literaturePlayers = literatureSchema.table(
+	"literature_players",
 	{
 		id: text( "id" ).$default( () => createId() ).notNull(),
 		name: text( "name" ).notNull(),
 		avatar: text( "avatar" ).notNull().$default( () => AVATAR_BASE_URL.concat( createId() ).concat( ".svg?r=50" ) ),
-		gameId: text( "game_id" ).notNull().references( () => games.id ),
-		teamId: text( "team_id" ).references( () => teams.id ),
+		gameId: text( "game_id" ).notNull().references( () => literatureGames.id ),
+		teamId: text( "team_id" ).references( () => literatureTeams.id ),
 		isBot: boolean( "is_bot" ).notNull().default( false )
 	},
 	( table ) => {
@@ -25,45 +25,45 @@ export const players = literatureSchema.table(
 	}
 );
 
-export const playerRelations = relations( players, ( { one, many } ) => {
+export const literaturePlayerRelations = relations( literaturePlayers, ( { one, many } ) => {
 	return {
-		game: one( games, {
-			fields: [ players.gameId ],
-			references: [ games.id ]
+		game: one( literatureGames, {
+			fields: [ literaturePlayers.gameId ],
+			references: [ literatureGames.id ]
 		} ),
-		team: one( teams, {
-			fields: [ players.teamId ],
-			references: [ teams.id ]
+		team: one( literatureTeams, {
+			fields: [ literaturePlayers.teamId ],
+			references: [ literatureTeams.id ]
 		} ),
-		cardMappings: many( cardMappings )
+		cardMappings: many( literatureCardMappings )
 	};
 } );
 
-export const teams = literatureSchema.table( "teams", {
+export const literatureTeams = literatureSchema.table( "literature_teams", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
-	gameId: text( "game_id" ).notNull().references( () => games.id ),
+	gameId: text( "game_id" ).notNull().references( () => literatureGames.id ),
 	name: text( "name" ).notNull(),
 	score: smallint( "score" ).notNull().default( 0 ),
 	setsWon: json( "sets_won" ).notNull().$default( () => [] ).$type<CardSet[]>(),
 	memberIds: json( "member_ids" ).notNull().$default( () => [] ).$type<string[]>()
 } );
 
-export const teamRelations = relations( teams, ( { many, one } ) => {
+export const literatureTeamRelations = relations( literatureTeams, ( { many, one } ) => {
 	return {
-		game: one( games, {
-			fields: [ teams.gameId ],
-			references: [ games.id ]
+		game: one( literatureGames, {
+			fields: [ literatureTeams.gameId ],
+			references: [ literatureGames.id ]
 		} ),
-		members: many( players )
+		members: many( literaturePlayers )
 	};
 } );
 
-export const cardMappings = literatureSchema.table(
-	"card_mappings",
+export const literatureCardMappings = literatureSchema.table(
+	"literature_card_mappings",
 	{
 		cardId: text( "card_id" ).notNull(),
 		playerId: text( "player_id" ).notNull(),
-		gameId: text( "game_id" ).notNull().references( () => games.id )
+		gameId: text( "game_id" ).notNull().references( () => literatureGames.id )
 	},
 	table => {
 		return {
@@ -72,43 +72,49 @@ export const cardMappings = literatureSchema.table(
 	}
 );
 
-export const cardMappingRelations = relations( cardMappings, ( { one } ) => {
+export const literatureCardMappingRelations = relations( literatureCardMappings, ( { one } ) => {
 	return {
-		game: one( games, {
-			fields: [ cardMappings.gameId ],
-			references: [ games.id ]
+		game: one( literatureGames, {
+			fields: [ literatureCardMappings.gameId ],
+			references: [ literatureGames.id ]
 		} ),
-		player: one( players, {
-			fields: [ cardMappings.playerId, cardMappings.gameId ],
-			references: [ players.id, players.gameId ]
+		player: one( literaturePlayers, {
+			fields: [ literatureCardMappings.playerId, literatureCardMappings.gameId ],
+			references: [ literaturePlayers.id, literaturePlayers.gameId ]
 		} )
 	};
 } );
 
-export const moveTypes = [ "ASK_CARD", "CALL_SET", "TRANSFER_TURN" ] as const;
-export const moveTypeEnum = pgEnum( "literature_move_type", moveTypes );
+export const literatureMoveTypes = [ "ASK_CARD", "CALL_SET", "TRANSFER_TURN" ] as const;
+export const literatureMoveTypeEnum = pgEnum( "literature_move_type", literatureMoveTypes );
 
-export const moves = literatureSchema.table( "moves", {
+export const literatureMoves = literatureSchema.table( "literature_moves", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
-	gameId: text( "game_id" ).notNull().references( () => games.id ),
+	gameId: text( "game_id" ).notNull().references( () => literatureGames.id ),
 	timestamp: text( "timestamp" ).notNull().$default( () => new Date().toISOString() ),
-	type: moveTypeEnum( "move_type" ).notNull(),
+	type: literatureMoveTypeEnum( "move_type" ).notNull(),
 	description: text( "description" ).notNull(),
 	success: boolean( "success" ).notNull(),
 	data: json( "data" ).notNull().$type<AskMoveData | CallMoveData | TransferMoveData>()
 } );
 
-export const moveRelations = relations( moves, ( { one } ) => {
+export const literatureMoveRelations = relations( literatureMoves, ( { one } ) => {
 	return {
-		game: one( games, {
-			fields: [ moves.gameId ],
-			references: [ games.id ]
+		game: one( literatureGames, {
+			fields: [ literatureMoves.gameId ],
+			references: [ literatureGames.id ]
 		} )
 	};
 } );
 
-export const gameStatuses = [ "CREATED", "PLAYERS_READY", "TEAMS_CREATED", "IN_PROGRESS", "COMPLETED" ] as const;
-export const gameStatusEnum = pgEnum( "literature_game_status", gameStatuses );
+export const literatureGameStatuses = [
+	"CREATED",
+	"PLAYERS_READY",
+	"TEAMS_CREATED",
+	"IN_PROGRESS",
+	"COMPLETED"
+] as const;
+export const literatureGameStatusEnum = pgEnum( "literature_game_status", literatureGameStatuses );
 
 function generateGameCode() {
 	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -119,20 +125,20 @@ function generateGameCode() {
 	return result;
 }
 
-export const games = literatureSchema.table( "games", {
+export const literatureGames = literatureSchema.table( "literature_games", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
 	code: text( "code" ).unique().$default( () => generateGameCode() ).notNull(),
-	status: gameStatusEnum( "status" ).notNull().default( "CREATED" ),
+	status: literatureGameStatusEnum( "status" ).notNull().default( "CREATED" ),
 	playerCount: smallint( "player_count" ).notNull().default( 6 ),
 	currentTurn: text( "current_turn" ).notNull()
 } );
 
-export const gameRelations = relations( games, ( { many } ) => {
+export const literatureGameRelations = relations( literatureGames, ( { many } ) => {
 	return {
-		players: many( players ),
-		teams: many( teams ),
-		moves: many( moves ),
-		cardMappings: many( cardMappings )
+		players: many( literaturePlayers ),
+		teams: many( literatureTeams ),
+		moves: many( literatureMoves ),
+		cardMappings: many( literatureCardMappings )
 	};
 } );
 

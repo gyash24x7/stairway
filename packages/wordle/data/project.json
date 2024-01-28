@@ -1,7 +1,7 @@
 {
-	"name": "literature-data",
+	"name": "wordle-data",
 	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/literature/data/src",
+	"sourceRoot": "packages/wordle/data/src",
 	"projectType": "library",
 	"targets": { },
 	"tags": [ ]

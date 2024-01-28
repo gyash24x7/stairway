@@ -1,12 +1,19 @@
 import type { CardSet, PlayingCard } from "@common/cards";
-import type { cardMappings, games, gameStatuses, moves, players, teams } from "./literature.schema";
+import type {
+	literatureCardMappings,
+	literatureGames,
+	literatureGameStatuses,
+	literatureMoves,
+	literaturePlayers,
+	literatureTeams
+} from "./literature.schema";
 
 export type User = { id: string, name: string };
-export type Player = typeof players.$inferSelect;
-export type Team = typeof teams.$inferSelect;
-export type CardMapping = typeof cardMappings.$inferSelect;
-export type Game = typeof games.$inferSelect;
-export type Move = typeof moves.$inferSelect;
+export type Player = typeof literaturePlayers.$inferSelect;
+export type Team = typeof literatureTeams.$inferSelect;
+export type CardMapping = typeof literatureCardMappings.$inferSelect;
+export type Game = typeof literatureGames.$inferSelect;
+export type Move = typeof literatureMoves.$inferSelect;
 export type Inference = {
 	playerId: string;
 	gameId: string;
@@ -46,7 +53,7 @@ export type RawGameData = Game & {
 	moves?: Move[]
 }
 
-export type GameStatus = typeof gameStatuses[number];
+export type GameStatus = typeof literatureGameStatuses[number];
 
 export type GameData = {
 	id: string;

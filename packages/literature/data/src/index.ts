@@ -12,10 +12,10 @@ export function createLiteratureDrizzleClient( postgresClient: Sql ) {
 
 export type LiteratureDrizzleClient = ReturnType<typeof createLiteratureDrizzleClient>;
 
-export const players = schema.players;
-export const teams = schema.teams;
-export const cardMappings = schema.cardMappings;
-export const moves = schema.moves;
-export const games = schema.games;
+export const players = schema.literaturePlayers;
+export const teams = schema.literatureTeams;
+export const cardMappings = schema.literatureCardMappings;
+export const moves = schema.literatureMoves;
+export const games = schema.literatureGames;
 
 export { eq, inArray, and };
