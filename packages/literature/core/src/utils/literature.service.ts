@@ -25,7 +25,7 @@ export class LiteratureService {
 	}
 
 	async getGameById( id: string ) {
-		return this.db.query.games.findFirst( {
+		return this.db.query.literatureGames.findFirst( {
 			where: eq( games.id, id ),
 			with: {
 				players: true,
@@ -40,7 +40,7 @@ export class LiteratureService {
 	}
 
 	async getGameByCode( code: string ) {
-		return this.db!.query.games.findFirst( {
+		return this.db!.query.literatureGames.findFirst( {
 			where: eq( games.code, code ),
 			with: { players: true }
 		} );
@@ -61,11 +61,11 @@ export class LiteratureService {
 	}
 
 	async getCardMappingsForGame( gameId: string ) {
-		return this.db.query.cardMappings.findMany( { where: eq( cardMappings.gameId, gameId ) } );
+		return this.db.query.literatureCardMappings.findMany( { where: eq( cardMappings.gameId, gameId ) } );
 	}
 
 	async getCardMappingsForPlayer( gameId: string, playerId: string ) {
-		return this.db.query.cardMappings.findMany( {
+		return this.db.query.literatureCardMappings.findMany( {
 			where: and(
 				eq( cardMappings.gameId, gameId ),
 				eq( cardMappings.playerId, playerId )

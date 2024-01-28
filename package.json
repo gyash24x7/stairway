@@ -3,6 +3,8 @@
 	"private": true,
 	"main": "src/index.ts",
 	"scripts": {
+		"generate": "drizzle-kit generate:pg",
+		"apply": "node scripts/apply-migrations.mjs",
 		"test": "nx run-many --target=test",
 		"build": "nx run-many --target=build",
 		"dev": "nx run-many --target=serve",

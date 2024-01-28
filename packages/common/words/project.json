@@ -1,0 +1,17 @@
+{
+	"name": "common-words",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "packages/common/words/src",
+	"projectType": "library",
+	"targets": {
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": [ "{projectRoot}/coverage/**" ],
+			"options": {
+				"config": "packages/common/words/vitest.config.mts",
+				"passWithNoTests": true
+			}
+		}
+	},
+	"tags": [ ]
+}

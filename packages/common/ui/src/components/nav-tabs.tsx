@@ -26,6 +26,13 @@ export function NavTabs() {
 				>
 					Literature
 				</Tabs.Tab>
+				<Tabs.Tab
+					value={ "wordle" }
+					onClick={ () => navigate( { to: "/wordle" } ) }
+					className={ classnames.tab( { isActive: activeTab === "wordle" } ) }
+				>
+					Wordle
+				</Tabs.Tab>
 			</Tabs.List>
 		</Tabs>
 	);
