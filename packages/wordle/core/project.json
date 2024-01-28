@@ -1,0 +1,17 @@
+{
+	"name": "wordle-core",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "packages/wordle/core/src",
+	"projectType": "library",
+	"targets": {
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": [ "{projectRoot}/coverage/**" ],
+			"options": {
+				"config": "packages/wordle/core/vitest.config.mts",
+				"passWithNoTests": true
+			}
+		}
+	},
+	"tags": [ ]
+}
