@@ -1,5 +1,5 @@
-import { LoggerFactory } from "@common/core";
-import type { CreateGameInput, GameData, User } from "@literature/data";
+import { LoggerFactory, type User } from "@common/core";
+import type { CreateGameInput, GameData } from "@literature/data";
 import { CommandHandler, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { LiteratureService, LiteratureTransformers } from "../utils";
 
@@ -20,11 +20,11 @@ export class CreateGameCommandHandler implements ICommandHandler<CreateGameComma
 		private readonly transformers: LiteratureTransformers
 	) {}
 
-	async execute( { input: { playerCount }, authUser: { id, name } }: CreateGameCommand ) {
+	async execute( { input: { playerCount }, authUser: { id, name, avatar } }: CreateGameCommand ) {
 		this.logger.log( ">> createGame()" );
 
 		const game = await this.service.createGame( { playerCount, currentTurn: id } );
-		const player = await this.service.createPlayer( { id, name, gameId: game.id } );
+		const player = await this.service.createPlayer( { id, name, gameId: game.id, avatar } );
 		const gameData = this.transformers.transformGameData( { ...game, players: [ player ] } );
 
 		this.logger.debug( "<< createGame()" );

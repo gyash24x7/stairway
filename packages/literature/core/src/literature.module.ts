@@ -22,8 +22,14 @@ import {
 	TurnUpdatedEventHandler
 } from "./events";
 import { CardsDataQueryHandler, GameDataQueryHandler, PlayerDataQueryHandler } from "./queries";
-import { Constants, LiteratureMiddlewares, LiteratureRouter, LiteratureService, LiteratureTransformers } from "./utils";
-import { LiteratureGateway } from "./utils/literature.gateway";
+import {
+	Constants,
+	LiteratureGateway,
+	LiteratureMiddlewares,
+	LiteratureRouter,
+	LiteratureService,
+	LiteratureTransformers
+} from "./utils";
 
 const commandHandlers = [
 	AddBotsCommandHandler,

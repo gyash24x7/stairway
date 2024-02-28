@@ -1,5 +1,5 @@
-import { LoggerFactory } from "@common/core";
-import type { Game, JoinGameInput, User } from "@literature/data";
+import { LoggerFactory, type User } from "@common/core";
+import type { Game, JoinGameInput } from "@literature/data";
 import { CommandHandler, EventBus, ICommand, type ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { PlayerJoinedEvent } from "../events";

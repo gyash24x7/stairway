@@ -1,5 +1,6 @@
 import { AppShell } from "@mantine/core";
 import { Outlet, RootRoute, Route } from "@tanstack/react-router";
+import { authStoreLoader } from "../auth";
 import { AppHeader, ErrorPage, HomePage } from "../components";
 
 function RootLayout() {
@@ -12,7 +13,8 @@ function RootLayout() {
 }
 
 export const rootRoute = new RootRoute( {
-	component: () => <RootLayout/>
+	component: () => <RootLayout/>,
+	loader: authStoreLoader
 } );
 
 export const homeRoute = new Route( {

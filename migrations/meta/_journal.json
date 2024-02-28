@@ -1,20 +1,27 @@
 {
-  "version": "5",
-  "dialect": "pg",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "5",
-      "when": 1706332511888,
-      "tag": "0000_glorious_giant_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1706406882411,
-      "tag": "0001_yielding_blur",
-      "breakpoints": true
-    }
-  ]
+	"version": "5",
+	"dialect": "pg",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "5",
+			"when": 1706332511888,
+			"tag": "0000_glorious_giant_man",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "5",
+			"when": 1706406882411,
+			"tag": "0001_yielding_blur",
+			"breakpoints": true
+		},
+		{
+			"idx": 2,
+			"version": "5",
+			"when": 1708789640720,
+			"tag": "0002_wet_juggernaut",
+			"breakpoints": true
+		}
+	]
 }

@@ -1,10 +1,10 @@
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
-import { AppFooter, AppMain } from "@common/ui";
+import { AppFooter, AppMain, useIsLoggedIn } from "@common/ui";
 import { Box, Group, Text, Title } from "@mantine/core";
 import { Fragment } from "react";
 import { CreateGame, HomePageContent, JoinGame } from "../components";
 
 export function HomePage() {
+	const isLoggedIn = useIsLoggedIn();
 	return (
 		<Fragment>
 			<AppMain>
@@ -16,13 +16,15 @@ export function HomePage() {
 					<Title fz={ 56 } lh={ 1 }>LITERATURE</Title>
 				</Box>
 				<Group>
-					<SignedIn>
-						<CreateGame/>
-						<JoinGame/>
-					</SignedIn>
-					<SignedOut>
-						<Title>Login to Play!</Title>
-					</SignedOut>
+					{ isLoggedIn
+						? (
+							<Fragment>
+								<CreateGame/>
+								<JoinGame/>
+							</Fragment>
+						)
+						: <Title>Login to Play!</Title>
+					}
 				</Group>
 			</AppFooter>
 		</Fragment>
