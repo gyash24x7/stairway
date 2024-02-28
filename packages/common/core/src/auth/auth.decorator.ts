@@ -1,6 +1,6 @@
 import { createParamDecorator, type ExecutionContext } from "@nestjs/common";
-import type { User } from "@supabase/supabase-js";
 import type { Response } from "express";
+import type { User } from "./auth.utils";
 
 export const AuthInfo = createParamDecorator(
 	( _: unknown, context: ExecutionContext ): User => {
