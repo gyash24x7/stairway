@@ -8,7 +8,6 @@ import type {
 	literatureTeams
 } from "./literature.schema";
 
-export type User = { id: string, name: string };
 export type Player = typeof literaturePlayers.$inferSelect;
 export type Team = typeof literatureTeams.$inferSelect;
 export type CardMapping = typeof literatureCardMappings.$inferSelect;

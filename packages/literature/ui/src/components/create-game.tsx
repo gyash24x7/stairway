@@ -1,11 +1,10 @@
 import { Button } from "@mantine/core";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
-import type { literatureRouteTree } from "../routes";
 import { useCreateGameAction } from "../store";
 
 export function CreateGame() {
-	const navigate = useNavigate<typeof literatureRouteTree>();
+	const navigate = useNavigate();
 	const { isPending, mutateAsync } = useCreateGameAction();
 
 	const handleSubmit = useCallback(

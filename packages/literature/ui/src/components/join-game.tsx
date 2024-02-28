@@ -2,11 +2,10 @@ import { Button, Modal, Stack, TextInput, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useNavigate } from "@tanstack/react-router";
 import { ChangeEvent, Fragment, useCallback, useState } from "react";
-import type { literatureRouteTree } from "../routes";
 import { useJoinGameAction } from "../store";
 
 export function JoinGame() {
-	const navigate = useNavigate<typeof literatureRouteTree>();
+	const navigate = useNavigate();
 	const [ code, setCode ] = useState( "" );
 	const [ opened, { open, close } ] = useDisclosure( false );
 

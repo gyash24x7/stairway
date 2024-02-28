@@ -11,6 +11,7 @@ export default defineConfig( {
 			reportsDirectory: "coverage"
 		},
 		environment: "node",
-		include: [ "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}" ]
+		include: [ "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}" ],
+		passWithNoTests: true
 	}
 } );

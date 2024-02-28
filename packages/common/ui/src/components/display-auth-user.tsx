@@ -1,26 +1,29 @@
-import { SignedIn, SignedOut, SignInButton, SignOutButton, useUser } from "@clerk/clerk-react";
 import { Avatar, Button, Group } from "@mantine/core";
-import { Fragment } from "react";
+import { IconBrandGoogle } from "@tabler/icons-react";
+import { Fragment, useCallback } from "react";
+import { authClient, useAuthUser, useIsLoggedIn, useLogoutAction } from "../auth";
 
 export function DisplayAuthUser() {
-	const { user } = useUser();
+	const isLoggedIn = useIsLoggedIn();
+	const authUser = useAuthUser();
+	const { execute, isLoading } = useLogoutAction();
+
+	const login = useCallback( () => {
+		window.location.href = authClient.getGoogleAuthUrl();
+	}, [] );
+
 	return (
 		<Fragment>
-			<SignedIn>
+			{ isLoggedIn ? (
 				<Group>
-					<SignOutButton>
-						<Button color={ "danger" } fw={ 700 } size={ "sm" }>
-							LOGOUT
-						</Button>
-					</SignOutButton>
-					<Avatar src={ user?.imageUrl } size={ 48 } radius={ "50%" }/>
+					<Button color={ "danger" } fw={ 700 } size={ "xs" } onClick={ execute } loading={ isLoading }>
+						LOGOUT
+					</Button>
+					<Avatar src={ authUser?.avatar } size={ 48 } radius={ "50%" }/>
 				</Group>
-			</SignedIn>
-			<SignedOut>
-				<SignInButton>
-					<Button fw={ 700 } size={ "sm" }>LOGIN</Button>
-				</SignInButton>
-			</SignedOut>
+			) : (
+				<Button leftSection={ <IconBrandGoogle/> } onClick={ login }>Login With Google</Button>
+			) }
 		</Fragment>
 	);
 }

@@ -1,7 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { initTRPC } from "@trpc/server";
-
-export type User = { id: string, name: string };
+import type { User } from "../auth";
 
 export type AuthContext = { authUser: User };
 
