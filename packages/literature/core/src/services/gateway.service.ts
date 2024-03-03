@@ -35,7 +35,6 @@ export class GatewayService implements OnGatewayConnection {
 		socket.on( "join-room", ( gameId: string ) => {
 			this.logger.debug( "Joining Room: %s", gameId );
 			socket.join( gameId );
-			this.logger.debug( this.server );
 		} );
 
 		socket.on( "leave-room", ( gameId: string ) => {

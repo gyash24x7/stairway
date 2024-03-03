@@ -5,7 +5,7 @@ import { QueryBus } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import type { MiddlewareFunction } from "@trpc/server/unstable-core-do-not-import";
 import { CardsDataQuery, GameDataQuery, PlayerDataQuery } from "../queries";
-import { Messages } from "./literature.constants";
+import { Messages } from "../utils";
 
 type ContextWithGameData = AuthContext & { gameData: GameData, playerSpecificData: PlayerSpecificData };
 type LiteratureContext = ContextWithGameData & { cardsData: CardsData };
