@@ -1,7 +1,8 @@
 import { LoggerFactory } from "@common/core";
 import type { TeamData } from "@literature/data";
 import { EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
-import { GameEvents, LiteratureGateway, LiteratureService } from "../utils";
+import { DatabaseService, GatewayService } from "../services";
+import { GameEvents } from "../utils";
 
 export class TeamsCreatedEvent implements IEvent {
 	constructor(
@@ -16,14 +17,14 @@ export class TeamsCreatedEventHandler implements IEventHandler<TeamsCreatedEvent
 	private readonly logger = LoggerFactory.getLogger( TeamsCreatedEventHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
-		private readonly gateway: LiteratureGateway
+		private readonly db: DatabaseService,
+		private readonly gateway: GatewayService
 	) {}
 
 	async handle( { gameId, teams }: TeamsCreatedEvent ) {
 		this.logger.debug( ">> handleTeamsCreatedEvent()" );
 
-		await this.service.updateGameStatus( gameId, "TEAMS_CREATED" );
+		await this.db.updateGameStatus( gameId, "TEAMS_CREATED" );
 
 		this.gateway.publishGameEvent( gameId, GameEvents.TEAMS_CREATED, teams );
 

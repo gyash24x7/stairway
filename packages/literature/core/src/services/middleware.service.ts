@@ -5,7 +5,7 @@ import { QueryBus } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import type { MiddlewareFunction } from "@trpc/server/unstable-core-do-not-import";
 import { CardsDataQuery, GameDataQuery, PlayerDataQuery } from "../queries";
-import { Messages } from "./literature.constants";
+import { Messages } from "../utils";
 
 type ContextWithGameData = AuthContext & { gameData: GameData, playerSpecificData: PlayerSpecificData };
 type LiteratureContext = ContextWithGameData & { cardsData: CardsData };
@@ -13,9 +13,9 @@ type RequiredGameData = { status?: GameStatus, turn?: true };
 type MiddlewareFn<CtxIn, CtxOut> = MiddlewareFunction<CtxIn, any, CtxIn, CtxOut, any>;
 
 @Injectable()
-export class LiteratureMiddlewares {
+export class MiddlewareService {
 
-	private readonly logger = LoggerFactory.getLogger( LiteratureMiddlewares );
+	private readonly logger = LoggerFactory.getLogger( MiddlewareService );
 
 	constructor( private readonly queryBus: QueryBus ) {}
 

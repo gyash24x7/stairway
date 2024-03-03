@@ -3,7 +3,8 @@ import type { CreateTeamsInput, GameData, TeamData } from "@literature/data";
 import { CommandHandler, EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { TeamsCreatedEvent } from "../events";
-import { LiteratureService, Messages } from "../utils";
+import { DatabaseService } from "../services";
+import { Messages } from "../utils";
 
 export class CreateTeamsCommand implements ICommand {
 	constructor(
@@ -18,7 +19,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 	private readonly logger = LoggerFactory.getLogger( CreateTeamsCommandHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -28,7 +29,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 		await this.validate( command );
 		const { input, gameData } = command;
 
-		const [ teamA, teamB ] = await this.service.createTeams(
+		const [ teamA, teamB ] = await this.db.createTeams(
 			Object.keys( input.data ).map( name => {
 				return { name, gameId: gameData.id, memberIds: input.data[ name ] };
 			} )
@@ -36,7 +37,7 @@ export class CreateTeamsCommandHandler implements ICommandHandler<CreateTeamsCom
 
 		const teamData: TeamData = { [ teamA.id ]: teamA, [ teamB.id ]: teamB };
 
-		await this.service.assignTeamsToPlayers( teamData );
+		await this.db.assignTeamsToPlayers( teamData );
 
 		const event = new TeamsCreatedEvent( teamData, gameData.id );
 		this.eventBus.publish( event );

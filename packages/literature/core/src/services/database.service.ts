@@ -15,7 +15,7 @@ import {
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
-export class LiteratureService {
+export class DatabaseService {
 
 	private db: LiteratureDrizzleClient;
 

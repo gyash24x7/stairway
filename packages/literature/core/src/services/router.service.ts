@@ -27,15 +27,15 @@ import {
 	StartGameCommand,
 	TransferTurnCommand
 } from "../commands";
-import { LiteratureMiddlewares } from "./literature.middlewares";
+import { MiddlewareService } from "./middleware.service";
 
 @Injectable()
-export class LiteratureRouter {
+export class RouterService {
 
 	constructor(
 		private readonly trpc: TrpcService,
 		private readonly commandBus: CommandBus,
-		private readonly middlewares: LiteratureMiddlewares
+		private readonly middlewares: MiddlewareService
 	) {}
 
 	router() {

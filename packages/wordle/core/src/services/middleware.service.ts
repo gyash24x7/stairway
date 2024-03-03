@@ -5,15 +5,15 @@ import { TRPCError } from "@trpc/server";
 import type { MiddlewareFunction } from "@trpc/server/unstable-core-do-not-import";
 import type { Game, GameIdInput } from "@wordle/data";
 import { GameDataQuery } from "../queries";
-import { Messages } from "./wordle.constants";
+import { Messages } from "../utils";
 
 type WordleContext = AuthContext & { gameData: Game, }
 type MiddlewareFn<CtxIn, CtxOut> = MiddlewareFunction<CtxIn, any, CtxIn, CtxOut, any>;
 
 @Injectable()
-export class WordleMiddlewares {
+export class MiddlewareService {
 
-	private readonly logger = LoggerFactory.getLogger( WordleMiddlewares );
+	private readonly logger = LoggerFactory.getLogger( MiddlewareService );
 
 	constructor( private readonly queryBus: QueryBus ) {}
 

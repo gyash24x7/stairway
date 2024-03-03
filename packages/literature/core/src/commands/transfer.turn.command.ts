@@ -10,7 +10,8 @@ import type {
 import { CommandHandler, EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { MoveCreatedEvent } from "../events";
-import { LiteratureService, Messages } from "../utils";
+import { DatabaseService } from "../services";
+import { Messages } from "../utils";
 
 export class TransferTurnCommand implements ICommand {
 	constructor(
@@ -27,7 +28,7 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 	private readonly logger = LoggerFactory.getLogger( TransferTurnCommandHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -40,7 +41,7 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 		const transferMoveData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
 		const description = `${ transferringPlayer.name } transferred the turn to ${ receivingPlayer.name }`;
 
-		const move = await this.service.createMove( {
+		const move = await this.db.createMove( {
 			gameId: gameData.id,
 			type: "TRANSFER_TURN",
 			success: true,

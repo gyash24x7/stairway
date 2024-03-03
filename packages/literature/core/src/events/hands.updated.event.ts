@@ -1,7 +1,8 @@
 import { LoggerFactory } from "@common/core";
 import type { HandData } from "@literature/data";
 import { EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
-import { GameEvents, LiteratureGateway } from "../utils";
+import { GatewayService } from "../services";
+import { GameEvents } from "../utils";
 
 export class HandsUpdatedEvent implements IEvent {
 	constructor(
@@ -15,7 +16,7 @@ export class HandsUpdatedEventHandler implements IEventHandler<HandsUpdatedEvent
 
 	private readonly logger = LoggerFactory.getLogger( HandsUpdatedEventHandler );
 
-	constructor( private readonly gateway: LiteratureGateway ) {}
+	constructor( private readonly gateway: GatewayService ) {}
 
 	async handle( { gameId, hands }: HandsUpdatedEvent ) {
 		this.logger.debug( ">> handleHandsUpdated()" );

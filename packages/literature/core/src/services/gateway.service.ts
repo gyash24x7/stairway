@@ -1,7 +1,7 @@
 import { LoggerFactory } from "@common/core";
 import { type OnGatewayConnection, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, type Socket } from "socket.io";
-import { Constants } from "./literature.constants";
+import { Constants } from "../utils";
 
 @WebSocketGateway( {
 	namespace: Constants.LITERATURE,
@@ -10,11 +10,11 @@ import { Constants } from "./literature.constants";
 		credentials: true
 	}
 } )
-export class LiteratureGateway implements OnGatewayConnection {
+export class GatewayService implements OnGatewayConnection {
 
 	@WebSocketServer() private server: Server;
 
-	private readonly logger = LoggerFactory.getLogger( LiteratureGateway );
+	private readonly logger = LoggerFactory.getLogger( GatewayService );
 
 	publishPlayerEvent( gameId: string, playerId: string, event: string, data: any ) {
 		const eventKey = gameId.concat( ":" ).concat( playerId ).concat( ":" ).concat( event );
@@ -35,7 +35,6 @@ export class LiteratureGateway implements OnGatewayConnection {
 		socket.on( "join-room", ( gameId: string ) => {
 			this.logger.debug( "Joining Room: %s", gameId );
 			socket.join( gameId );
-			this.logger.debug( this.server );
 		} );
 
 		socket.on( "leave-room", ( gameId: string ) => {

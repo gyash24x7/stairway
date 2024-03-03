@@ -4,19 +4,20 @@ import { CqrsModule } from "@nestjs/cqrs";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { CreateGameCommandHandler, MakeGuessCommandHandler } from "./commands";
 import { GameDataQueryHandler } from "./queries";
-import { Constants, WordleMiddlewares, WordleRouter, WordleService } from "./utils";
+import { DatabaseService, MiddlewareService, RouterService } from "./services";
+import { Constants } from "./utils";
 
 const commandHandlers = [ CreateGameCommandHandler, MakeGuessCommandHandler ];
-const utilities = [ WordleMiddlewares, WordleRouter, WordleService ];
+const services = [ MiddlewareService, RouterService, DatabaseService ];
 const queryHandlers = [ GameDataQueryHandler ];
 
 @Module( {
 	imports: [ TrpcModule, CqrsModule ],
-	providers: [ ...utilities, ...commandHandlers, ...queryHandlers ]
+	providers: [ ...services, ...commandHandlers, ...queryHandlers ]
 } )
 export class WordleModule implements NestModule {
 
-	constructor( private readonly router: WordleRouter ) {}
+	constructor( private readonly router: RouterService ) {}
 
 	configure( consumer: MiddlewareConsumer ) {
 		consumer.apply( AuthMiddleware, this.trpcMiddleware() ).forRoutes( "/wordle" );
@@ -33,4 +34,4 @@ export class WordleModule implements NestModule {
 	}
 }
 
-export type Router = ReturnType<WordleRouter["router"]>;
+export type Router = ReturnType<RouterService["router"]>;

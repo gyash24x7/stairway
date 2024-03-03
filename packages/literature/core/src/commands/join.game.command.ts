@@ -3,7 +3,8 @@ import type { Game, JoinGameInput } from "@literature/data";
 import { CommandHandler, EventBus, ICommand, type ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { PlayerJoinedEvent } from "../events";
-import { LiteratureService, Messages } from "../utils";
+import { DatabaseService } from "../services";
+import { Messages } from "../utils";
 
 export class JoinGameCommand implements ICommand {
 	constructor(
@@ -18,7 +19,7 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 	private readonly logger = LoggerFactory.getLogger( JoinGameCommandHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -31,7 +32,7 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 		}
 
 		const { authUser } = command;
-		const newPlayer = await this.service.createPlayer( {
+		const newPlayer = await this.db.createPlayer( {
 			id: authUser.id,
 			name: authUser.name,
 			gameId: game.id
@@ -47,7 +48,7 @@ export class JoinGameCommandHandler implements ICommandHandler<JoinGameCommand, 
 	async validate( { input, authUser }: JoinGameCommand ) {
 		this.logger.debug( ">> validateJoinGameRequest()" );
 
-		const game = await this.service.getGameByCode( input.code );
+		const game = await this.db.getGameByCode( input.code );
 
 		if ( !game ) {
 			this.logger.error( Messages.GAME_NOT_FOUND );

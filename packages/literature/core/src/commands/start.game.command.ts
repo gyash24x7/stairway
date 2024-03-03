@@ -3,7 +3,8 @@ import { LoggerFactory } from "@common/core";
 import type { GameData } from "@literature/data";
 import { CommandHandler, EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { GameStartedEvent } from "../events";
-import { LiteratureService, LiteratureTransformers } from "../utils";
+import { DatabaseService } from "../services";
+import { transformCardsData } from "../utils";
 
 export class StartGameCommand implements ICommand {
 	constructor( public readonly gameData: GameData ) {}
@@ -15,8 +16,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 	private readonly logger = LoggerFactory.getLogger( StartGameCommandHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
-		private readonly transformers: LiteratureTransformers,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -27,7 +27,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 		deck = removeCardsOfRank( deck, CardRank.SEVEN );
 		const playerIds = Object.keys( gameData.players );
 
-		const cardMappings = await this.service.createCardMappings(
+		const cardMappings = await this.db.createCardMappings(
 			deck.map( ( card, index ) => {
 				return {
 					cardId: card.id,
@@ -37,7 +37,7 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 			} )
 		);
 
-		const cardsData = this.transformers.transformCardsData( cardMappings );
+		const cardsData = transformCardsData( cardMappings );
 
 		this.eventBus.publish( new GameStartedEvent( gameData, cardsData ) );
 		this.logger.debug( "Published GameStartedEvent!" );

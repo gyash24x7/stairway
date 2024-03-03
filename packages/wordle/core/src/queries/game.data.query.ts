@@ -1,7 +1,7 @@
 import { LoggerFactory } from "@common/core";
 import { type IQuery, IQueryHandler, QueryHandler } from "@nestjs/cqrs";
 import type { Game } from "@wordle/data";
-import { WordleService } from "../utils";
+import { DatabaseService } from "../services";
 
 export class GameDataQuery implements IQuery {
 	constructor( public readonly gameId: string ) {}
@@ -12,12 +12,12 @@ export class GameDataQueryHandler implements IQueryHandler<GameDataQuery, Game |
 
 	private readonly logger = LoggerFactory.getLogger( GameDataQueryHandler );
 
-	constructor( private readonly service: WordleService ) {}
+	constructor( private readonly db: DatabaseService ) {}
 
 	async execute( { gameId }: GameDataQuery ) {
 		this.logger.debug( ">> getGameData()" );
 
-		const data = await this.service.getGameById( gameId );
+		const data = await this.db.getGameById( gameId );
 
 		this.logger.debug( "<< getGameData()" );
 		return data;
