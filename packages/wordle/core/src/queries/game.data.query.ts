@@ -17,7 +17,7 @@ export class GameDataQueryHandler implements IQueryHandler<GameDataQuery, Game |
 	async execute( { gameId }: GameDataQuery ) {
 		this.logger.debug( ">> getGameData()" );
 
-		const data = await this.service.getGameById( gameId );
+		const data = await this.db.getGameById( gameId );
 
 		this.logger.debug( "<< getGameData()" );
 		return data;

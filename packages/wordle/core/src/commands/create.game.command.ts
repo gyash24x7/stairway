@@ -26,7 +26,7 @@ export class CreateGameCommandHandler implements ICommandHandler<CreateGameComma
 			words.push( dictionary[ Math.floor( Math.random() * dictionary.length ) ] );
 		}
 
-		const game = await this.service.createGame( { playerId: id, wordLength, wordCount, words } );
+		const game = await this.db.createGame( { playerId: id, wordLength, wordCount, words } );
 
 		this.logger.debug( "<< createGame()" );
 		return game;

@@ -3,7 +3,8 @@ import type { GameData, PlayerData } from "@literature/data";
 import { CommandHandler, EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { PlayerJoinedEvent } from "../events";
-import { LiteratureService, Messages } from "../utils";
+import { DatabaseService } from "../services";
+import { Messages } from "../utils";
 
 export class AddBotsCommand implements ICommand {
 	constructor( public readonly gameData: GameData ) {}
@@ -15,7 +16,7 @@ export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand, Pl
 	private readonly logger = LoggerFactory.getLogger( AddBotsCommandHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -40,7 +41,7 @@ export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand, Pl
 		const botCount = await this.validate( gameData! );
 
 		for ( let i = 0; i < botCount; i++ ) {
-			const bot = await this.service.createPlayer( {
+			const bot = await this.db.createPlayer( {
 				gameId: gameData.id,
 				name: `Bot ${ i + 1 }`,
 				isBot: true

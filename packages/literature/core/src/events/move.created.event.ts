@@ -13,7 +13,8 @@ import type {
 	TransferMoveData
 } from "@literature/data";
 import { EventBus, EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
-import { GameEvents, LiteratureGateway, LiteratureService } from "../utils";
+import { DatabaseService, GatewayService } from "../services";
+import { GameEvents } from "../utils";
 import { GameCompletedEvent } from "./game.completed.event";
 import { HandsUpdatedEvent } from "./hands.updated.event";
 import { TurnUpdatedEvent } from "./turn.updated.event";
@@ -32,9 +33,9 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 	private readonly logger = LoggerFactory.getLogger( MoveCreatedEventHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus,
-		private readonly gateway: LiteratureGateway
+		private readonly gateway: GatewayService
 	) {}
 
 	async handle( { move, cardsData, gameData }: MoveCreatedEvent ) {
@@ -80,7 +81,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 		}
 
 		if ( nextTurn !== currentTurn ) {
-			await this.service.updateCurrentTurn( currentMove.gameId, nextTurn );
+			await this.db.updateCurrentTurn( currentMove.gameId, nextTurn );
 			this.eventBus.publish( new TurnUpdatedEvent( currentMove.gameId, players, nextTurn ) );
 			this.logger.debug( "Published TurnUpdatedEvent!" );
 		}
@@ -98,7 +99,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			case "ASK_CARD":
 				const { card, by } = currentMove.data as AskMoveData;
 				if ( currentMove.success ) {
-					await this.service.updateCardMapping( card, currentMove.gameId, by );
+					await this.db.updateCardMapping( card, currentMove.gameId, by );
 					cardsData.mappings[ card ] = by;
 					hasCardTransferHappened = true;
 				}
@@ -107,7 +108,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			case "CALL_SET":
 				const { correctCall } = currentMove.data as CallMoveData;
 				const calledCards = Object.keys( correctCall );
-				await this.service.deleteCardMappings( calledCards, currentMove.gameId );
+				await this.db.deleteCardMappings( calledCards, currentMove.gameId );
 				calledCards.map( cardId => {
 					delete cardsData.mappings[ cardId ];
 				} );
@@ -152,7 +153,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			winningTeamId = player.teamId!;
 		}
 
-		await this.service.updateTeamScore( winningTeamId, teams[ winningTeamId ].score + 1 );
+		await this.db.updateTeamScore( winningTeamId, teams[ winningTeamId ].score + 1 );
 
 		const scoreUpdate: ScoreUpdate = {
 			teamId: teams[ winningTeamId ].id,
@@ -168,7 +169,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 		this.gateway.publishGameEvent( currentMove.gameId, GameEvents.SCORE_UPDATED, scoreUpdate );
 
 		if ( setsCompleted.length === 8 ) {
-			await this.service.updateGameStatus( currentMove.gameId, "COMPLETED" );
+			await this.db.updateGameStatus( currentMove.gameId, "COMPLETED" );
 			this.eventBus.publish( new GameCompletedEvent( currentMove.gameId ) );
 		}
 

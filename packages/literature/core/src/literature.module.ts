@@ -22,14 +22,8 @@ import {
 	TurnUpdatedEventHandler
 } from "./events";
 import { CardsDataQueryHandler, GameDataQueryHandler, PlayerDataQueryHandler } from "./queries";
-import {
-	Constants,
-	LiteratureGateway,
-	LiteratureMiddlewares,
-	LiteratureRouter,
-	LiteratureService,
-	LiteratureTransformers
-} from "./utils";
+import { DatabaseService, GatewayService, MiddlewareService, RouterService } from "./services";
+import { Constants } from "./utils";
 
 const commandHandlers = [
 	AddBotsCommandHandler,
@@ -42,13 +36,7 @@ const commandHandlers = [
 	TransferTurnCommandHandler
 ];
 
-const utilities = [
-	LiteratureGateway,
-	LiteratureMiddlewares,
-	LiteratureRouter,
-	LiteratureService,
-	LiteratureTransformers
-];
+const services = [ GatewayService, MiddlewareService, RouterService, DatabaseService ];
 
 const queryHandlers = [ GameDataQueryHandler, CardsDataQueryHandler, PlayerDataQueryHandler ];
 
@@ -64,11 +52,11 @@ const eventHandlers = [
 
 @Module( {
 	imports: [ TrpcModule, CqrsModule ],
-	providers: [ ...utilities, ...commandHandlers, ...queryHandlers, ...eventHandlers ]
+	providers: [ ...services, ...commandHandlers, ...queryHandlers, ...eventHandlers ]
 } )
 export class LiteratureModule implements NestModule {
 
-	constructor( private readonly router: LiteratureRouter ) {}
+	constructor( private readonly router: RouterService ) {}
 
 	configure( consumer: MiddlewareConsumer ) {
 		consumer.apply( AuthMiddleware, this.trpcMiddleware() ).forRoutes( "/literature" );
@@ -85,4 +73,4 @@ export class LiteratureModule implements NestModule {
 	}
 }
 
-export type Router = ReturnType<LiteratureRouter["router"]>;
+export type Router = ReturnType<RouterService["router"]>;

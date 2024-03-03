@@ -13,9 +13,9 @@ type RequiredGameData = { status?: GameStatus, turn?: true };
 type MiddlewareFn<CtxIn, CtxOut> = MiddlewareFunction<CtxIn, any, CtxIn, CtxOut, any>;
 
 @Injectable()
-export class LiteratureMiddlewares {
+export class MiddlewareService {
 
-	private readonly logger = LoggerFactory.getLogger( LiteratureMiddlewares );
+	private readonly logger = LoggerFactory.getLogger( MiddlewareService );
 
 	constructor( private readonly queryBus: QueryBus ) {}
 

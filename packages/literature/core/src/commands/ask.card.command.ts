@@ -3,7 +3,8 @@ import type { AskCardInput, AskMove, AskMoveData, CardsData, GameData, PlayerSpe
 import { CommandHandler, EventBus, ICommand, type ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { MoveCreatedEvent } from "../events";
-import { LiteratureService, Messages } from "../utils";
+import { DatabaseService } from "../services";
+import { Messages } from "../utils";
 
 export class AskCardCommand implements ICommand {
 	constructor(
@@ -20,7 +21,7 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 	private readonly logger = LoggerFactory.getLogger( AskCardCommandHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -35,7 +36,7 @@ export class AskCardCommandHandler implements ICommandHandler<AskCardCommand, As
 		const description = `${ playerData.name } asked ${ askedPlayer.name } for ${ input.for } and ${ receivedString }`;
 		const askMoveData: AskMoveData = { from: input.from, by: playerData.id, card: input.for };
 
-		const move = await this.service.createMove( {
+		const move = await this.db.createMove( {
 			type: "ASK_CARD",
 			gameId: gameData.id,
 			success: moveSuccess,

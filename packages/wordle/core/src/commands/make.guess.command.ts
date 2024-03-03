@@ -30,7 +30,7 @@ export class MakeGuessCommandHandler implements ICommandHandler<MakeGuessCommand
 
 		gameData.guesses.push( input.guess );
 
-		const [ game ] = await this.service.updateGame( gameData.id, gameData.guesses, gameData.completedWords );
+		const [ game ] = await this.db.updateGame( gameData.id, gameData.guesses, gameData.completedWords );
 
 		this.logger.debug( "<< makeGuess()" );
 		return game;

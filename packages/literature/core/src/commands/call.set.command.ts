@@ -4,7 +4,8 @@ import type { CallMove, CallMoveData, CallSetInput, CardsData, GameData, PlayerS
 import { CommandHandler, EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { MoveCreatedEvent } from "../events";
-import { LiteratureService, Messages } from "../utils";
+import { DatabaseService } from "../services";
+import { Messages } from "../utils";
 
 export class CallSetCommand implements ICommand {
 	constructor(
@@ -21,7 +22,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, Ca
 	private readonly logger = LoggerFactory.getLogger( CallSetCommandHandler );
 
 	constructor(
-		private readonly service: LiteratureService,
+		private readonly db: DatabaseService,
 		private readonly eventBus: EventBus
 	) {}
 
@@ -52,7 +53,7 @@ export class CallSetCommandHandler implements ICommandHandler<CallSetCommand, Ca
 			correctCall
 		};
 
-		const move = await this.service.createMove( {
+		const move = await this.db.createMove( {
 			gameId: gameData.id,
 			type: "CALL_SET",
 			success,

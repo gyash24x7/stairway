@@ -1,7 +1,8 @@
 import { LoggerFactory } from "@common/core";
 import type { CardsData } from "@literature/data";
 import { IQuery, IQueryHandler, QueryHandler } from "@nestjs/cqrs";
-import { LiteratureService, LiteratureTransformers } from "../utils";
+import { DatabaseService } from "../services";
+import { transformCardsData } from "../utils";
 
 export class CardsDataQuery implements IQuery {
 	constructor(
@@ -15,19 +16,16 @@ export class CardsDataQueryHandler implements IQueryHandler<CardsDataQuery, Card
 
 	private readonly logger = LoggerFactory.getLogger( CardsDataQueryHandler );
 
-	constructor(
-		private readonly service: LiteratureService,
-		private readonly transformers: LiteratureTransformers
-	) {}
+	constructor( private readonly db: DatabaseService ) {}
 
 	async execute( { gameId, playerId }: CardsDataQuery ) {
 		this.logger.debug( ">> getCardsData()" );
 
 		const cardMappings = !!playerId
-			? await this.service.getCardMappingsForPlayer( gameId, playerId )
-			: await this.service.getCardMappingsForGame( gameId );
+			? await this.db.getCardMappingsForPlayer( gameId, playerId )
+			: await this.db.getCardMappingsForGame( gameId );
 
-		const cardsData = this.transformers.transformCardsData( cardMappings );
+		const cardsData = transformCardsData( cardMappings );
 
 		this.logger.debug( "<< getCardsData()" );
 		return cardsData;
