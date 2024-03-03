@@ -3,15 +3,15 @@ import { Injectable } from "@nestjs/common";
 import { CommandBus } from "@nestjs/cqrs";
 import { createGameInputSchema, type Game, gameIdInputSchema, makeGuessInputSchema } from "@wordle/data";
 import { CreateGameCommand, MakeGuessCommand } from "../commands";
-import { WordleMiddlewares } from "./wordle.middlewares";
+import { MiddlewareService } from "./middleware.service";
 
 @Injectable()
-export class WordleRouter {
+export class RouterService {
 
 	constructor(
 		private readonly trpc: TrpcService,
 		private readonly commandBus: CommandBus,
-		private readonly middlewares: WordleMiddlewares
+		private readonly middlewares: MiddlewareService
 	) {}
 
 	router() {

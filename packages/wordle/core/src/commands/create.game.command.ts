@@ -2,7 +2,7 @@ import { LoggerFactory, type User } from "@common/core";
 import { dictionary } from "@common/words";
 import { CommandHandler, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import type { CreateGameInput, Game } from "@wordle/data";
-import { WordleService } from "../utils";
+import { DatabaseService } from "../services";
 
 export class CreateGameCommand implements ICommand {
 	constructor(
@@ -16,7 +16,7 @@ export class CreateGameCommandHandler implements ICommandHandler<CreateGameComma
 
 	private readonly logger = LoggerFactory.getLogger( CreateGameCommandHandler );
 
-	constructor( private readonly service: WordleService ) {}
+	constructor( private readonly db: DatabaseService ) {}
 
 	async execute( { input: { wordCount = 1, wordLength }, authUser: { id } }: CreateGameCommand ) {
 		this.logger.log( ">> createGame()" );

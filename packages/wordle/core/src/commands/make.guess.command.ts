@@ -3,7 +3,8 @@ import { dictionary } from "@common/words";
 import { CommandHandler, ICommand, type ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import type { Game, MakeGuessInput } from "@wordle/data";
-import { Messages, WordleService } from "../utils";
+import { DatabaseService } from "../services";
+import { Messages } from "../utils";
 
 export class MakeGuessCommand implements ICommand {
 	constructor(
@@ -17,7 +18,7 @@ export class MakeGuessCommandHandler implements ICommandHandler<MakeGuessCommand
 
 	private readonly logger = LoggerFactory.getLogger( MakeGuessCommandHandler );
 
-	constructor( private readonly service: WordleService ) {}
+	constructor( private readonly db: DatabaseService ) {}
 
 	async execute( command: MakeGuessCommand ): Promise<Game> {
 		this.logger.debug( ">> makeGuess()" );
@@ -40,13 +41,13 @@ export class MakeGuessCommandHandler implements ICommandHandler<MakeGuessCommand
 		this.logger.debug( ">> validateMakeGuessRequest()" );
 		this.logger.debug( JSON.stringify( gameData ) );
 		if ( gameData.guesses.length >= gameData.wordLength + gameData.wordCount ) {
-			this.logger.error( "%s GameId: %s", Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS, gameData.id );
-			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.GAME_ALREADY_HAS_REQUIRED_PLAYERS } );
+			this.logger.error( "%s GameId: %s", Messages.GUESSES_EXHAUSTED, gameData.id );
+			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.GUESSES_EXHAUSTED } );
 		}
 
 		if ( !dictionary.includes( input.guess ) ) {
-			this.logger.error( "%s GameId: %s", Messages.NO_CARDS_WITH_RECEIVING_PLAYER, gameData.id );
-			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.NO_CARDS_WITH_RECEIVING_PLAYER } );
+			this.logger.error( "%s GameId: %s", Messages.INVALID_GUESS, gameData.id );
+			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INVALID_GUESS } );
 		}
 
 		this.logger.debug( "<< validateMakeGuessRequest()" );

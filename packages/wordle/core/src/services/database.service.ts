@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { createWordleDrizzleClient, eq, games, type WordleDrizzleClient } from "@wordle/data";
 
 @Injectable()
-export class WordleService {
+export class DatabaseService {
 
 	private db: WordleDrizzleClient;
 
