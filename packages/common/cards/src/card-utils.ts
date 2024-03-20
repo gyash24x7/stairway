@@ -22,15 +22,6 @@ export function chunk<T>( arr: T[], size: number ): T[][] {
 	return chunks;
 }
 
-export function generateGameCode() {
-	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	let result = "";
-	for ( let i = 0; i < 6; i++ ) {
-		result += chars[ Math.floor( Math.random() * 36 ) ];
-	}
-	return result;
-}
-
 export function removeCardsOfRank( cards: PlayingCard[], rank: CardRank ) {
 	return cards.filter( card => card.rank !== rank );
 }

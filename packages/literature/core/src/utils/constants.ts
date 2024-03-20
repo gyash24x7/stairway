@@ -1,25 +1,21 @@
 export class Constants {
-	public static readonly GAME_DATA = "gameData";
 	public static readonly AUTH_USER = "authUser";
-	public static readonly PLAYER_DATA = "playerData";
-	public static readonly CARDS_DATA = "cardsData";
-	public static readonly REQUIRED_GAME_DATA = "requiredGameData";
 	public static readonly LITERATURE = "literature";
+	public static readonly MAX_ASK_WEIGHT = 720;
 }
 
 export class GameEvents {
 	public static readonly PLAYER_JOINED = "player-joined";
 	public static readonly TEAMS_CREATED = "teams-created";
-	public static readonly GAME_STARTED = "game-started";
+	public static readonly STATUS_UPDATED = "status-updated";
 	public static readonly MOVE_CREATED = "move-created";
 	public static readonly TURN_UPDATED = "turn-updated";
 	public static readonly SCORE_UPDATED = "score-updated";
-	public static readonly STATUS_UPDATED = "status-updated";
 	public static readonly CARD_COUNT_UPDATED = "card-count-updated";
 	public static readonly GAME_COMPLETED = "game-completed";
 	// Player Specific Events
 	public static readonly HAND_UPDATED = "hand-updated";
-	public static readonly INFERENCES_UPDATED = "inferences-updated";
+	public static readonly CARD_LOCATIONS_UPDATED = "card-locations-updated";
 }
 
 export class Messages {

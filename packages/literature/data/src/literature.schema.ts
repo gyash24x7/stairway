@@ -1,7 +1,7 @@
 import type { CardSet } from "@common/cards";
 import { createId } from "@paralleldrive/cuid2";
 import { relations } from "drizzle-orm";
-import { boolean, json, pgEnum, pgSchema, primaryKey, smallint, text } from "drizzle-orm/pg-core";
+import { boolean, integer, json, pgEnum, pgSchema, primaryKey, smallint, text } from "drizzle-orm/pg-core";
 import type { AskMoveData, CallMoveData, TransferMoveData } from "./literature.types";
 
 export const literatureSchema = pgSchema( "literature" );
@@ -85,12 +85,29 @@ export const literatureCardMappingRelations = relations( literatureCardMappings,
 	};
 } );
 
+export const literatureCardLocations = literatureSchema.table(
+	"literature_card_locations",
+	{
+		gameId: text( "game_id" ).notNull(),
+		playerId: text( "player_id" ).notNull(),
+		cardId: text( "card_id" ).notNull(),
+		playerIds: json( "player_ids" ).$type<string[]>().notNull(),
+		weight: integer( "weight" ).notNull()
+	},
+	table => {
+		return {
+			pk: primaryKey( { columns: [ table.gameId, table.playerId, table.cardId ] } )
+		};
+	}
+);
+
 export const literatureMoveTypes = [ "ASK_CARD", "CALL_SET", "TRANSFER_TURN" ] as const;
 export const literatureMoveTypeEnum = pgEnum( "literature_move_type", literatureMoveTypes );
 
 export const literatureMoves = literatureSchema.table( "literature_moves", {
 	id: text( "id" ).$default( () => createId() ).primaryKey(),
 	gameId: text( "game_id" ).notNull().references( () => literatureGames.id ),
+	playerId: text( "player_id" ).notNull(),
 	timestamp: text( "timestamp" ).notNull().$default( () => new Date().toISOString() ),
 	type: literatureMoveTypeEnum( "move_type" ).notNull(),
 	description: text( "description" ).notNull(),

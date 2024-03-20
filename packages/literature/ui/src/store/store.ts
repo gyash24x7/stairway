@@ -1,12 +1,12 @@
 import type { PlayingCard } from "@common/cards";
-import { getCardSetsInHand } from "@common/cards";
-import type { GameData, GameStatus, Move, Player, PlayerSpecificData, ScoreUpdate, TeamData } from "@literature/data";
+import type { CardLocation, GameData, GameStatus, Move, Player, ScoreUpdate, TeamData } from "@literature/data";
 import { produce } from "immer";
 import { create } from "zustand";
 
 export type GameState = {
 	gameData: GameData;
-	playerSpecificData: PlayerSpecificData;
+	hand: PlayingCard[];
+	cardLocations: CardLocation[];
 }
 
 export type GameEventHandlers = {
@@ -18,6 +18,7 @@ export type GameEventHandlers = {
 	handleStatusUpdatedEvent: ( data: GameStatus ) => void;
 	handleCardCountsUpdatedEvent: ( data: Record<string, number> ) => void;
 	handleHandUpdatedEvent: ( data: PlayingCard[] ) => void;
+	handleCardLocationsUpdatedEvent: ( data: CardLocation[] ) => void;
 }
 
 export type GameStore = GameState & GameEventHandlers;
@@ -34,21 +35,11 @@ const defaultGameData: GameData = {
 	playerCount: 2
 };
 
-const defaultPlayerData: PlayerSpecificData = {
-	id: "",
-	name: "",
-	avatar: "",
-	isBot: false,
-	teamId: "",
-	oppositeTeamId: "",
-	hand: [],
-	cardSets: []
-};
-
 export const useGameStore = create<GameStore>( ( set ) => {
 	return {
 		gameData: defaultGameData,
-		playerSpecificData: defaultPlayerData,
+		hand: [],
+		cardLocations: [],
 		handlePlayerJoinedEvent: ( data ) => {
 			set(
 				produce<GameStore>( state => {
@@ -61,11 +52,6 @@ export const useGameStore = create<GameStore>( ( set ) => {
 				produce<GameStore>( state => {
 					state.gameData.teams = data;
 					Object.values( data ).map( team => {
-						if ( team.memberIds.includes( state.playerSpecificData.id ) ) {
-							state.playerSpecificData.teamId = team.id;
-						} else {
-							state.playerSpecificData.oppositeTeamId = team.id;
-						}
 						team.memberIds.forEach( memberId => {
 							state.gameData.players[ memberId ].teamId = team.id;
 						} );
@@ -113,8 +99,14 @@ export const useGameStore = create<GameStore>( ( set ) => {
 		handleHandUpdatedEvent: ( data ) => {
 			set(
 				produce<GameStore>( state => {
-					state.playerSpecificData.hand = data;
-					state.playerSpecificData.cardSets = getCardSetsInHand( data );
+					state.hand = data;
+				} )
+			);
+		},
+		handleCardLocationsUpdatedEvent: ( data ) => {
+			set(
+				produce<GameStore>( state => {
+					state.cardLocations = data;
 				} )
 			);
 		}

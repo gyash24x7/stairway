@@ -27,6 +27,7 @@ export class PlayerJoinedEventHandler implements IEventHandler<PlayerJoinedEvent
 		if ( isCapacityFull ) {
 			this.logger.debug( "Player Capacity Full for Game: %s", player.gameId );
 			await this.db.updateGameStatus( player.gameId, "PLAYERS_READY" );
+			this.gateway.publishGameEvent( player.gameId, GameEvents.STATUS_UPDATED, "PLAYERS_READY" );
 		}
 
 		this.gateway.publishGameEvent( player.gameId, GameEvents.PLAYER_JOINED, player );

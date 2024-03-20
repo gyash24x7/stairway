@@ -1,9 +1,11 @@
 import { Box, Flex, Group, Text } from "@mantine/core";
+import { Fragment } from "react";
 import { useCurrentTurn, useGameStatus, useMoves, usePlayerId, usePlayers } from "../store";
 import { AddBots } from "./add-bots";
 import { AskCard } from "./ask-card";
 import { CallSet } from "./call-set";
 import { CreateTeams } from "./create-teams";
+import { ExecuteBotMove } from "./execute-bot-move";
 import { PreviousMoves } from "./previous-moves";
 import { StartGame } from "./start-game";
 import { TransferTurn } from "./transfer-turn";
@@ -25,16 +27,18 @@ export function GameActions() {
 					<Text ta={ "right" } style={ { flex: 1 } } fw={ 700 } fz={ 20 }>
 						IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
 					</Text>
-					{ currentTurn === id && (
-						<Group>
-							<PreviousMoves/>
-							<AskCard/>
-							<CallSet/>
-							{ !!moves[ 0 ] && moves[ 0 ].type === "CALL_SET" && moves[ 0 ].success && (
-								<TransferTurn/>
-							) }
-						</Group>
-					) }
+					<Group>
+						<PreviousMoves/>
+						{ currentTurn === id ? (
+							<Fragment>
+								<AskCard/>
+								<CallSet/>
+								{ !!moves[ 0 ] && moves[ 0 ].type === "CALL_SET" && moves[ 0 ].success && (
+									<TransferTurn/>
+								) }
+							</Fragment>
+						) : <ExecuteBotMove/> }
+					</Group>
 				</Box>
 			) }
 		</Flex>

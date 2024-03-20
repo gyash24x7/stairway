@@ -1,15 +1,9 @@
 import { LoggerFactory } from "@common/core";
-import type {
-	CardsData,
-	GameData,
-	PlayerSpecificData,
-	TransferMove,
-	TransferMoveData,
-	TransferTurnInput
-} from "@literature/data";
-import { CommandHandler, EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
+import type { CardsData, GameData, TransferMove, TransferMoveData, TransferTurnInput } from "@literature/data";
+import { CommandHandler, EventBus, ICommand, ICommandHandler, QueryBus } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import { MoveCreatedEvent } from "../events";
+import { CardsDataQuery } from "../queries";
 import { DatabaseService } from "../services";
 import { Messages } from "../utils";
 
@@ -17,8 +11,7 @@ export class TransferTurnCommand implements ICommand {
 	constructor(
 		public readonly input: TransferTurnInput,
 		public readonly gameData: GameData,
-		public readonly playerData: PlayerSpecificData,
-		public readonly cardsData: CardsData
+		public readonly currentPlayer: string
 	) {}
 }
 
@@ -29,20 +22,22 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 
 	constructor(
 		private readonly db: DatabaseService,
+		private readonly queryBus: QueryBus,
 		private readonly eventBus: EventBus
 	) {}
 
 	async execute( command: TransferTurnCommand ) {
 		this.logger.debug( ">> transferTurn()" );
 
-		const { transferringPlayer, receivingPlayer } = await this.validate( command );
-		const { input, gameData, cardsData } = command;
+		const { transferringPlayer, receivingPlayer, cardsData } = await this.validate( command );
+		const { input, gameData } = command;
 
 		const transferMoveData: TransferMoveData = { to: input.transferTo, from: transferringPlayer.id };
 		const description = `${ transferringPlayer.name } transferred the turn to ${ receivingPlayer.name }`;
 
 		const move = await this.db.createMove( {
 			gameId: gameData.id,
+			playerId: transferringPlayer.id,
 			type: "TRANSFER_TURN",
 			success: true,
 			data: transferMoveData,
@@ -56,9 +51,11 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 		return move as TransferMove;
 	};
 
-	async validate( { gameData, cardsData, input, playerData }: TransferTurnCommand ) {
+	async validate( { gameData, input, currentPlayer }: TransferTurnCommand ) {
 		this.logger.debug( ">> validateTransferTurnRequest()" );
 
+		const cardsDataQuery = new CardsDataQuery( gameData.id );
+		const cardsData: CardsData = await this.queryBus.execute( cardsDataQuery );
 		const [ lastMove ] = gameData.moves;
 
 		if ( lastMove.type !== "CALL_SET" || !lastMove.success ) {
@@ -66,7 +63,7 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 			throw new TRPCError( { code: "BAD_REQUEST", message: Messages.TRANSFER_AFTER_SUCCESSFUL_CALL } );
 		}
 
-		const transferringPlayer = gameData.players[ playerData.id ];
+		const transferringPlayer = gameData.players[ currentPlayer ];
 		const receivingPlayer = gameData.players[ input.transferTo ];
 		const receivingPlayerHand = cardsData.hands[ input.transferTo ] ?? [];
 
@@ -86,6 +83,6 @@ export class TransferTurnCommandHandler implements ICommandHandler<TransferTurnC
 		}
 
 		this.logger.debug( "<< validateTransferTurnRequest()" );
-		return { transferringPlayer, receivingPlayer };
+		return { transferringPlayer, receivingPlayer, cardsData };
 	}
 }

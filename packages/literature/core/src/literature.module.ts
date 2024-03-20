@@ -8,20 +8,22 @@ import {
 	CallSetCommandHandler,
 	CreateGameCommandHandler,
 	CreateTeamsCommandHandler,
+	ExecuteBotMoveCommandHandler,
 	JoinGameCommandHandler,
 	StartGameCommandHandler,
-	TransferTurnCommandHandler
+	TransferTurnCommandHandler,
+	UpdateCardLocationsCommandHandler
 } from "./commands";
 import {
+	CardLocationsUpdatedEventHandler,
 	GameCompletedEventHandler,
-	GameStartedEventHandler,
 	HandsUpdatedEventHandler,
 	MoveCreatedEventHandler,
 	PlayerJoinedEventHandler,
 	TeamsCreatedEventHandler,
 	TurnUpdatedEventHandler
 } from "./events";
-import { CardsDataQueryHandler, GameDataQueryHandler, PlayerDataQueryHandler } from "./queries";
+import { CardLocationsDataQueryHandler, CardsDataQueryHandler, GameDataQueryHandler } from "./queries";
 import { DatabaseService, GatewayService, MiddlewareService, RouterService } from "./services";
 import { Constants } from "./utils";
 
@@ -33,21 +35,23 @@ const commandHandlers = [
 	CreateTeamsCommandHandler,
 	JoinGameCommandHandler,
 	StartGameCommandHandler,
-	TransferTurnCommandHandler
+	TransferTurnCommandHandler,
+	UpdateCardLocationsCommandHandler,
+	ExecuteBotMoveCommandHandler
 ];
 
 const services = [ GatewayService, MiddlewareService, RouterService, DatabaseService ];
 
-const queryHandlers = [ GameDataQueryHandler, CardsDataQueryHandler, PlayerDataQueryHandler ];
+const queryHandlers = [ GameDataQueryHandler, CardsDataQueryHandler, CardLocationsDataQueryHandler ];
 
 const eventHandlers = [
 	GameCompletedEventHandler,
-	GameStartedEventHandler,
 	HandsUpdatedEventHandler,
 	MoveCreatedEventHandler,
 	PlayerJoinedEventHandler,
 	TeamsCreatedEventHandler,
-	TurnUpdatedEventHandler
+	TurnUpdatedEventHandler,
+	CardLocationsUpdatedEventHandler
 ];
 
 @Module( {

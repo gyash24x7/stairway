@@ -103,7 +103,7 @@ export function AskCard() {
 			<Modal
 				opened={ opened }
 				onClose={ closeModal }
-				title={ <Title order={ 2 }>Ask Card</Title> }
+				title={ "Ask Card" }
 				size={ "lg" }
 				centered
 			>

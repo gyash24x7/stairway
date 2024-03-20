@@ -25,6 +25,7 @@ export class TeamsCreatedEventHandler implements IEventHandler<TeamsCreatedEvent
 		this.logger.debug( ">> handleTeamsCreatedEvent()" );
 
 		await this.db.updateGameStatus( gameId, "TEAMS_CREATED" );
+		this.gateway.publishGameEvent( gameId, GameEvents.STATUS_UPDATED, "TEAMS_CREATED" );
 
 		this.gateway.publishGameEvent( gameId, GameEvents.TEAMS_CREATED, teams );
 
