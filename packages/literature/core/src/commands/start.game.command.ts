@@ -55,11 +55,15 @@ export class StartGameCommandHandler implements ICommandHandler<StartGameCommand
 			const otherPlayerIds = playerIds.filter( id => id !== playerId );
 			const cardsWithPlayer = cardsData.hands[ playerId ].map( card => card.id );
 
-			const cardLocationsForPlayer = deck.filter( c => !cardsWithPlayer.includes( c.id ) )
-				.map( c => {
-					const weight = Constants.MAX_ASK_WEIGHT / otherPlayerIds.length;
-					return { gameId: gameData.id, cardId: c.id, playerId, playerIds: otherPlayerIds, weight };
-				} );
+			const cardLocationsForPlayer = deck.map( c => {
+
+				if ( cardsWithPlayer.includes( c.id ) ) {
+					return { gameId: gameData.id, cardId: c.id, playerId, playerIds: [ playerId ], weight: 0 };
+				}
+
+				const weight = Constants.MAX_ASK_WEIGHT / otherPlayerIds.length;
+				return { gameId: gameData.id, cardId: c.id, playerId, playerIds: otherPlayerIds, weight };
+			} );
 
 			cardLocations.push( ...cardLocationsForPlayer );
 			cardLocationsData[ playerId ] = cardLocationsForPlayer;

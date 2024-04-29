@@ -107,6 +107,9 @@ dependencies:
   tslib:
     specifier: 2.6.2
     version: 2.6.2
+  unique-names-generator:
+    specifier: 4.7.1
+    version: 4.7.1
   zod:
     specifier: 3.22.4
     version: 3.22.4
@@ -2345,6 +2348,23 @@ packages:
       - nx
     dev: true
 
+  /@nrwl/js@18.0.8(@swc-node/register@1.9.0)(@swc/core@1.4.8)(@types/node@20.11.28)(nx@18.0.8)(typescript@5.3.3):
+    resolution: {integrity: sha512-5VWvJD7zWFFEVfVFpKj5NQQVn9YBiNALIcHtq1A6/GEe/SrWGjTwyeK+5uVSYegTR8BXX2SpBaE53bOunWuTrQ==}
+    dependencies:
+      '@nx/js': 18.0.8(@swc-node/register@1.9.0)(@swc/core@1.4.8)(@types/node@20.11.28)(nx@18.0.8)(typescript@5.3.3)
+    transitivePeerDependencies:
+      - '@babel/traverse'
+      - '@swc-node/register'
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - debug
+      - nx
+      - supports-color
+      - typescript
+      - verdaccio
+    dev: true
+
   /@nrwl/js@18.0.8(@swc-node/register@1.9.0)(@swc/core@1.4.8)(@types/node@20.11.28)(nx@18.0.8)(typescript@5.4.2):
     resolution: {integrity: sha512-5VWvJD7zWFFEVfVFpKj5NQQVn9YBiNALIcHtq1A6/GEe/SrWGjTwyeK+5uVSYegTR8BXX2SpBaE53bOunWuTrQ==}
     dependencies:
@@ -2540,7 +2560,7 @@ packages:
       '@babel/preset-env': 7.24.0(@babel/core@7.24.0)
       '@babel/preset-typescript': 7.23.3(@babel/core@7.24.0)
       '@babel/runtime': 7.24.0
-      '@nrwl/js': 18.0.8(@swc-node/register@1.9.0)(@swc/core@1.4.8)(@types/node@20.11.28)(nx@18.0.8)(typescript@5.4.2)
+      '@nrwl/js': 18.0.8(@swc-node/register@1.9.0)(@swc/core@1.4.8)(@types/node@20.11.28)(nx@18.0.8)(typescript@5.3.3)
       '@nx/devkit': 18.0.8(nx@18.0.8)
       '@nx/workspace': 18.0.8(@swc-node/register@1.9.0)(@swc/core@1.4.8)
       '@phenomnomnominal/tsquery': 5.0.1(typescript@5.3.3)
@@ -9425,6 +9445,11 @@ packages:
     dependencies:
       qs: 6.12.0
     dev: true
+
+  /unique-names-generator@4.7.1:
+    resolution: {integrity: sha512-lMx9dX+KRmG8sq6gulYYpKWZc9RlGsgBR6aoO8Qsm3qvkSJ+3rAymr+TnV8EDMrIrwuFJ4kruzMWM/OpYzPoow==}
+    engines: {node: '>=8'}
+    dev: false
 
   /universalify@2.0.1:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}

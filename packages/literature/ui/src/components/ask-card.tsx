@@ -56,7 +56,7 @@ export function AskCard() {
 
 	const askableCardSets = useMemo( () => {
 		return cardSets.filter( cardSet => {
-			const cards = getCardsOfSet( hand, cardSet );
+			const cards = getCardsOfSet( cardSet, hand );
 			return cards.length !== 6;
 		} );
 	}, [ cardSets, hand ] );

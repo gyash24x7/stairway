@@ -4,9 +4,7 @@ import type { PlayingCard } from "./playing-card";
 
 export function shuffle<T>( arr: T[] ): T[] {
 	return arr
-		.map( value => {
-			return { value, sort: Math.random() };
-		} )
+		.map( value => ( { value, sort: Math.random() } ) )
 		.sort( ( a, b ) => a.sort - b.sort )
 		.map( ( { value } ) => value );
 }
@@ -43,7 +41,7 @@ export function getCardSetsInHand( cards: PlayingCard[] ): CardSet[] {
 	return Array.from( new Set( cards.map( card => card.set ) ) );
 }
 
-export function getCardsOfSet( cards: PlayingCard[], set: CardSet ): PlayingCard[] {
+export function getCardsOfSet( set: CardSet, cards: PlayingCard[] = SORTED_DECK ): PlayingCard[] {
 	return cards.filter( card => card.set === set );
 }
 

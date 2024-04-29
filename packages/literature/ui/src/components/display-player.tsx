@@ -14,7 +14,7 @@ export function DisplayPlayerSmall( { player, displayCardCount }: DisplayPlayerP
 			<Avatar size={ 28 } src={ player.avatar }/>
 			<Text fz={ 16 } fw={ 700 } lh={ 2 }>{ player.name.toUpperCase() }</Text>
 			{ !!displayCardCount && Object.values( cardCounts ).some( count => count > 0 ) && (
-				<Text ta={ "right" } style={ { flex: 1 } } fz={ 14 }>{ cardCounts[ player.id ] } Cards</Text>
+				<Text ta={ "right" } style={ { flex: 1 } } fz={ 14 }>{ cardCounts[ player.id ] ?? 0 } Cards</Text>
 			) }
 		</Group>
 	);

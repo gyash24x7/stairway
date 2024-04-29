@@ -156,20 +156,23 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			winningTeamId = player.teamId!;
 		}
 
-		await this.db.updateTeamScore( winningTeamId, teams[ winningTeamId ].score + 1 );
+		teams[ winningTeamId ].setsWon.push( cardSet as CardSet );
+		teams[ winningTeamId ].score++;
+		await this.db.updateTeamScore( winningTeamId, teams[ winningTeamId ].score, teams[ winningTeamId ].setsWon );
 
 		const scoreUpdate: ScoreUpdate = {
 			teamId: teams[ winningTeamId ].id,
-			score: teams[ winningTeamId ].score + 1,
+			score: teams[ winningTeamId ].score,
 			setWon: cardSet as CardSet
 		};
 
-		const setsCompleted: CardSet[] = [ scoreUpdate.setWon ];
+		const setsCompleted: CardSet[] = [];
 		Object.values( teams ).forEach( team => {
 			setsCompleted.push( ...team.setsWon as CardSet[] );
 		} );
 
 		this.gateway.publishGameEvent( currentMove.gameId, GameEvents.SCORE_UPDATED, scoreUpdate );
+		this.logger.debug( "SetsCompleted: %o", setsCompleted );
 
 		if ( setsCompleted.length === 8 ) {
 			await this.db.updateGameStatus( currentMove.gameId, "COMPLETED" );

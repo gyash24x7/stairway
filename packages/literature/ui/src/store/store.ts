@@ -19,6 +19,7 @@ export type GameEventHandlers = {
 	handleCardCountsUpdatedEvent: ( data: Record<string, number> ) => void;
 	handleHandUpdatedEvent: ( data: PlayingCard[] ) => void;
 	handleCardLocationsUpdatedEvent: ( data: CardLocation[] ) => void;
+	handleGameCompletedEvent: () => void;
 }
 
 export type GameStore = GameState & GameEventHandlers;
@@ -107,6 +108,13 @@ export const useGameStore = create<GameStore>( ( set ) => {
 			set(
 				produce<GameStore>( state => {
 					state.cardLocations = data;
+				} )
+			);
+		},
+		handleGameCompletedEvent: () => {
+			set(
+				produce<GameStore>( state => {
+					state.gameData.status = "COMPLETED";
 				} )
 			);
 		}

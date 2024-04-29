@@ -69,19 +69,22 @@ export class UpdateCardLocationsCommandHandler implements ICommandHandler<Update
 			}
 
 			cardLocationsData[ playerId ] = cardLocations.toSpliced( index, 1 );
-
 			const cardLocation = cardLocations[ index ];
-			cardLocation.playerIds = cardLocation.playerIds.filter( p => p !== move.data.by && p !== move.data.from );
-			cardLocation.weight = Constants.MAX_ASK_WEIGHT / cardLocation.playerIds.length;
 
 			if ( move.success ) {
-				await this.db.deleteCardLocationForPlayer( move.gameId, playerId, move.data.card );
-
+				cardLocation.weight = move.data.by === playerId ? 0 : Constants.MAX_ASK_WEIGHT;
+				cardLocation.playerIds = [ move.data.by ];
 			} else {
-				await this.db.updateCardLocationForPlayer( cardLocation );
+				cardLocation.playerIds = cardLocation.playerIds.filter(
+					p => p !== move.data.by && p !== move.data.from
+				);
+				cardLocation.weight = Constants.MAX_ASK_WEIGHT / cardLocation.playerIds.length;
 			}
 
+			await this.db.updateCardLocationForPlayer( cardLocation );
+
 			cardLocationsData[ playerId ].push( cardLocation );
+			cardLocationsData[ playerId ].sort( ( a, b ) => b.weight - a.weight );
 		}
 
 		return cardLocationsData;

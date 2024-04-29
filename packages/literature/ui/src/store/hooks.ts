@@ -18,7 +18,7 @@ export const usePlayerId = () => {
 	const authUser = useAuthUser();
 	return authUser!.id;
 };
-export const useHand = () => useGameStore( state => state.hand );
+export const useHand = () => useGameStore( state => state.hand ?? [] );
 export const useCardSetsInHand = () => {
 	const hand = useHand();
 	return getCardSetsInHand( hand );
@@ -43,7 +43,8 @@ const GameEvents = {
 	TURN_UPDATED: "turn-updated",
 	SCORE_UPDATED: "score-updated",
 	STATUS_UPDATED: "status-updated",
-	CARD_COUNT_UPDATED: "card-count-updated"
+	CARD_COUNT_UPDATED: "card-count-updated",
+	GAME_COMPLETED: "game-completed"
 };
 
 const PlayerSpecificEvents = {
@@ -59,7 +60,8 @@ export const useGameEventHandlers = () => useGameStore( state => {
 		[ GameEvents.TURN_UPDATED ]: state.handleTurnUpdatedEvent,
 		[ GameEvents.SCORE_UPDATED ]: state.handleScoreUpdatedEvent,
 		[ GameEvents.STATUS_UPDATED ]: state.handleStatusUpdatedEvent,
-		[ GameEvents.CARD_COUNT_UPDATED ]: state.handleCardCountsUpdatedEvent
+		[ GameEvents.CARD_COUNT_UPDATED ]: state.handleCardCountsUpdatedEvent,
+		[ GameEvents.GAME_COMPLETED ]: state.handleGameCompletedEvent
 	};
 } );
 

@@ -1,3 +1,4 @@
+import type { CardSet } from "@common/cards";
 import { PostgresClientFactory } from "@common/core";
 import {
 	and,
@@ -103,8 +104,8 @@ export class DatabaseService {
 			.where( and( eq( cardMappings.gameId, gameId ), inArray( cardMappings.cardId, cardIds ) ) );
 	}
 
-	async updateTeamScore( teamId: string, score: number ) {
-		await this.db.update( teams ).set( { score } ).where( eq( teams.id, teamId ) );
+	async updateTeamScore( teamId: string, score: number, setsWon: CardSet[] ) {
+		await this.db.update( teams ).set( { score, setsWon } ).where( eq( teams.id, teamId ) );
 	}
 
 	async assignTeamsToPlayers( teamData: Record<string, typeof teams.$inferSelect> ) {

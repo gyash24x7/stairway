@@ -79,8 +79,8 @@ export const guessBlockClassnames = {
 	} ),
 	guessLetter: recipe( {
 		base: {
-			width: 64,
-			height: 64,
+			width: 48,
+			height: 48,
 			textTransform: "uppercase",
 			borderWidth: 2,
 			borderStyle: "solid",
