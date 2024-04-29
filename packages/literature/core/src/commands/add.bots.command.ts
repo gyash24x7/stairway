@@ -2,6 +2,7 @@ import { LoggerFactory } from "@common/core";
 import type { GameData, PlayerData } from "@literature/data";
 import { CommandHandler, EventBus, ICommand, ICommandHandler } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
+import { type Config, names, uniqueNamesGenerator } from "unique-names-generator";
 import { PlayerJoinedEvent } from "../events";
 import { DatabaseService } from "../services";
 import { Messages } from "../utils";
@@ -14,6 +15,12 @@ export class AddBotsCommand implements ICommand {
 export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand, PlayerData> {
 
 	private readonly logger = LoggerFactory.getLogger( AddBotsCommandHandler );
+
+	private readonly namesConfig: Config = {
+		dictionaries: [ names ],
+		separator: " ",
+		length: 1
+	};
 
 	constructor(
 		private readonly db: DatabaseService,
@@ -43,7 +50,7 @@ export class AddBotsCommandHandler implements ICommandHandler<AddBotsCommand, Pl
 		for ( let i = 0; i < botCount; i++ ) {
 			const bot = await this.db.createPlayer( {
 				gameId: gameData.id,
-				name: `Bot ${ i + 1 }`,
+				name: uniqueNamesGenerator( this.namesConfig ),
 				isBot: true
 			} );
 

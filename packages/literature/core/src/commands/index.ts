@@ -6,3 +6,5 @@ export * from "./create.teams.command";
 export * from "./join.game.command";
 export * from "./start.game.command";
 export * from "./transfer.turn.command";
+export * from "./update.card.locations.command";
+export * from "./execute.bot.move.command";

@@ -8,7 +8,7 @@ export function CreateGame() {
 	const { isPending, mutateAsync } = useCreateGameAction();
 
 	const handleSubmit = useCallback(
-		() => mutateAsync( { playerCount: 2 } )
+		() => mutateAsync( { playerCount: 6 } )
 			.then( ( data ) => navigate( { to: "/literature/$gameId", params: { gameId: data.id } } ) )
 			.catch( ( error: Error ) => alert( error.message ) ),
 		[]

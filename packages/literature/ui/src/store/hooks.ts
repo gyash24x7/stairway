@@ -1,3 +1,5 @@
+import { getCardSetsInHand } from "@common/cards";
+import { useAuthUser } from "@common/ui";
 import { trpc } from "./client";
 import { useGameStore } from "./store";
 
@@ -12,25 +14,27 @@ export const useCardCounts = () => useGameStore( state => state.gameData.cardCou
 export const usePlayerCount = () => useGameStore( state => state.gameData.playerCount );
 export const useGameCode = () => useGameStore( state => state.gameData.code );
 
-export const usePlayerId = () => useGameStore( state => state.playerSpecificData.id );
-export const useHand = () => useGameStore( state => state.playerSpecificData.hand );
-export const useCardSetsInHand = () => useGameStore( state => state.playerSpecificData.cardSets );
+export const usePlayerId = () => {
+	const authUser = useAuthUser();
+	return authUser!.id;
+};
+export const useHand = () => useGameStore( state => state.hand ?? [] );
+export const useCardSetsInHand = () => {
+	const hand = useHand();
+	return getCardSetsInHand( hand );
+};
 
-export const useMyTeam = () => useGameStore( state => {
-	const { playerSpecificData, gameData } = state;
-	if ( !playerSpecificData.teamId ) {
-		return undefined;
-	}
-	return gameData.teams[ playerSpecificData.teamId ];
-} );
+export const useMyTeam = () => {
+	const authUser = useAuthUser();
+	return useGameStore( ( { gameData } ) => Object.values( gameData.teams )
+		.find( team => team.memberIds.includes( authUser!.id ) ) );
+};
 
-export const useOppositeTeam = () => useGameStore( state => {
-	const { playerSpecificData, gameData } = state;
-	if ( !playerSpecificData.oppositeTeamId ) {
-		return undefined;
-	}
-	return gameData.teams[ playerSpecificData.oppositeTeamId ];
-} );
+export const useOppositeTeam = () => {
+	const authUser = useAuthUser();
+	return useGameStore( ( { gameData } ) => Object.values( gameData.teams )
+		.find( team => !team.memberIds.includes( authUser!.id ) ) );
+};
 
 const GameEvents = {
 	PLAYER_JOINED: "player-joined",
@@ -39,12 +43,13 @@ const GameEvents = {
 	TURN_UPDATED: "turn-updated",
 	SCORE_UPDATED: "score-updated",
 	STATUS_UPDATED: "status-updated",
-	CARD_COUNT_UPDATED: "card-count-updated"
+	CARD_COUNT_UPDATED: "card-count-updated",
+	GAME_COMPLETED: "game-completed"
 };
 
 const PlayerSpecificEvents = {
 	HAND_UPDATED: "hand-updated",
-	INFERENCES_UPDATED: "inferences-updated"
+	CARD_LOCATIONS_UPDATED: "card-locations-updated"
 };
 
 export const useGameEventHandlers = () => useGameStore( state => {
@@ -55,13 +60,15 @@ export const useGameEventHandlers = () => useGameStore( state => {
 		[ GameEvents.TURN_UPDATED ]: state.handleTurnUpdatedEvent,
 		[ GameEvents.SCORE_UPDATED ]: state.handleScoreUpdatedEvent,
 		[ GameEvents.STATUS_UPDATED ]: state.handleStatusUpdatedEvent,
-		[ GameEvents.CARD_COUNT_UPDATED ]: state.handleCardCountsUpdatedEvent
+		[ GameEvents.CARD_COUNT_UPDATED ]: state.handleCardCountsUpdatedEvent,
+		[ GameEvents.GAME_COMPLETED ]: state.handleGameCompletedEvent
 	};
 } );
 
 export const usePlayerSpecificEventHandlers = () => useGameStore( state => {
 	return {
-		[ PlayerSpecificEvents.HAND_UPDATED ]: state.handleHandUpdatedEvent
+		[ PlayerSpecificEvents.HAND_UPDATED ]: state.handleHandUpdatedEvent,
+		[ PlayerSpecificEvents.CARD_LOCATIONS_UPDATED ]: state.handleCardLocationsUpdatedEvent
 	};
 } );
 
@@ -74,3 +81,4 @@ export const useStartGameAction = trpc.startGame.useMutation;
 export const useAskCardAction = trpc.askCard.useMutation;
 export const useCallSetAction = trpc.callSet.useMutation;
 export const useTransferTurnAction = trpc.transferTurn.useMutation;
+export const useExecuteBotMoveMutation = trpc.executeBotMove.useMutation;

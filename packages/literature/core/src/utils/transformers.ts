@@ -1,5 +1,7 @@
 import { getPlayingCardFromId } from "@common/cards";
 import type {
+	CardLocation,
+	CardLocationsData,
 	CardMapping,
 	CardMappingData,
 	CardsData,
@@ -58,3 +60,16 @@ export function transformCardsData( cardMappings: CardMapping[] ): CardsData {
 	return { mappings, hands };
 }
 
+export function transformCardLocationsData( cardLocations: CardLocation[] ) {
+	const cardLocationsData: CardLocationsData = {};
+
+	for ( const cardLocation of cardLocations ) {
+		if ( !cardLocationsData[ cardLocation.playerId ] ) {
+			cardLocationsData[ cardLocation.playerId ] = [];
+		}
+
+		cardLocationsData[ cardLocation.playerId ].push( cardLocation );
+	}
+
+	return cardLocationsData;
+}

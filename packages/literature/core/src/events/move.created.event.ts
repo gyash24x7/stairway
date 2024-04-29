@@ -12,7 +12,8 @@ import type {
 	TeamData,
 	TransferMoveData
 } from "@literature/data";
-import { EventBus, EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
+import { CommandBus, EventBus, EventsHandler, type IEvent, IEventHandler } from "@nestjs/cqrs";
+import { UpdateCardLocationsCommand } from "../commands";
 import { DatabaseService, GatewayService } from "../services";
 import { GameEvents } from "../utils";
 import { GameCompletedEvent } from "./game.completed.event";
@@ -34,6 +35,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 
 	constructor(
 		private readonly db: DatabaseService,
+		private readonly commandBus: CommandBus,
 		private readonly eventBus: EventBus,
 		private readonly gateway: GatewayService
 	) {}
@@ -41,16 +43,17 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 	async handle( { move, cardsData, gameData }: MoveCreatedEvent ) {
 		this.logger.debug( ">> handleMoveCreatedEvent()" );
 
-		await this.updateHands( move, cardsData! );
-		await this.updateTurn( gameData!.currentTurn, move, gameData!.players );
-		await this.updateScore( move, gameData!.players, gameData!.teams );
+		await this.updateHands( move, cardsData );
+		await this.updateTurn( move, gameData );
+		await this.updateScore( move, gameData.players, gameData.teams );
+		await this.updateCardLocations( move, gameData );
 
 		this.gateway.publishGameEvent( move.gameId, GameEvents.MOVE_CREATED, move );
 
 		this.logger.debug( "<< handleMoveCreatedEvent()" );
 	}
 
-	private async updateTurn( currentTurn: string, currentMove: Move, players: PlayerData ) {
+	private async updateTurn( currentMove: Move, gameData: GameData ) {
 		this.logger.debug( ">> updateTurn()" );
 		let nextTurn: string;
 
@@ -65,8 +68,8 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			case "CALL_SET": {
 				this.logger.debug( "CurrentMoveType is CALL_SET!" );
 				const { by } = currentMove.data as CallMoveData;
-				const currentTeam = players[ by ].teamId;
-				const [ player ] = shuffle( Object.values( players )
+				const currentTeam = gameData.players[ by ].teamId;
+				const [ player ] = shuffle( Object.values( gameData.players )
 					.filter( player => player.teamId !== currentTeam ) );
 				nextTurn = !currentMove.success ? player.id : by;
 				break;
@@ -80,9 +83,9 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			}
 		}
 
-		if ( nextTurn !== currentTurn ) {
+		if ( nextTurn !== gameData.currentTurn ) {
 			await this.db.updateCurrentTurn( currentMove.gameId, nextTurn );
-			this.eventBus.publish( new TurnUpdatedEvent( currentMove.gameId, players, nextTurn ) );
+			this.eventBus.publish( new TurnUpdatedEvent( gameData, nextTurn ) );
 			this.logger.debug( "Published TurnUpdatedEvent!" );
 		}
 
@@ -153,20 +156,23 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			winningTeamId = player.teamId!;
 		}
 
-		await this.db.updateTeamScore( winningTeamId, teams[ winningTeamId ].score + 1 );
+		teams[ winningTeamId ].setsWon.push( cardSet as CardSet );
+		teams[ winningTeamId ].score++;
+		await this.db.updateTeamScore( winningTeamId, teams[ winningTeamId ].score, teams[ winningTeamId ].setsWon );
 
 		const scoreUpdate: ScoreUpdate = {
 			teamId: teams[ winningTeamId ].id,
-			score: teams[ winningTeamId ].score + 1,
+			score: teams[ winningTeamId ].score,
 			setWon: cardSet as CardSet
 		};
 
-		const setsCompleted: CardSet[] = [ scoreUpdate.setWon ];
+		const setsCompleted: CardSet[] = [];
 		Object.values( teams ).forEach( team => {
 			setsCompleted.push( ...team.setsWon as CardSet[] );
 		} );
 
 		this.gateway.publishGameEvent( currentMove.gameId, GameEvents.SCORE_UPDATED, scoreUpdate );
+		this.logger.debug( "SetsCompleted: %o", setsCompleted );
 
 		if ( setsCompleted.length === 8 ) {
 			await this.db.updateGameStatus( currentMove.gameId, "COMPLETED" );
@@ -176,4 +182,13 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 		this.logger.debug( "<< updateScore()" );
 		return scoreUpdate;
 	};
+
+	private async updateCardLocations( move: Move, gameData: GameData ) {
+		this.logger.debug( ">> updateCardLocations()" );
+
+		const command = new UpdateCardLocationsCommand( move, gameData );
+		await this.commandBus.execute( command );
+
+		this.logger.debug( "<< updateCardLocations()" );
+	}
 }

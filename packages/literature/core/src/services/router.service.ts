@@ -4,6 +4,8 @@ import {
 	type AskMove,
 	type CallMove,
 	callSetInputSchema,
+	type CardLocationsData,
+	type CardsData,
 	createGameInputSchema,
 	createTeamsInputSchema,
 	type Game,
@@ -16,17 +18,19 @@ import {
 	transferTurnInputSchema
 } from "@literature/data";
 import { Injectable } from "@nestjs/common";
-import { CommandBus } from "@nestjs/cqrs";
+import { CommandBus, QueryBus } from "@nestjs/cqrs";
 import {
 	AddBotsCommand,
 	AskCardCommand,
 	CallSetCommand,
 	CreateGameCommand,
 	CreateTeamsCommand,
+	ExecuteBotMoveCommand,
 	JoinGameCommand,
 	StartGameCommand,
 	TransferTurnCommand
 } from "../commands";
+import { CardLocationsDataQuery, CardsDataQuery } from "../queries";
 import { MiddlewareService } from "./middleware.service";
 
 @Injectable()
@@ -34,6 +38,7 @@ export class RouterService {
 
 	constructor(
 		private readonly trpc: TrpcService,
+		private readonly queryBus: QueryBus,
 		private readonly commandBus: CommandBus,
 		private readonly middlewares: MiddlewareService
 	) {}
@@ -57,8 +62,14 @@ export class RouterService {
 			getGameData: this.trpc.procedure
 				.input( gameIdInputSchema )
 				.use( this.middlewares.gameAndPlayerData() )
-				.query( ( { ctx: { gameData, playerSpecificData } } ) => {
-					return { gameData, playerSpecificData };
+				.query( async ( { ctx: { gameData, authUser } } ) => {
+					const cardsDataQuery = new CardsDataQuery( gameData.id, authUser.id );
+					const cardsData: CardsData = await this.queryBus.execute( cardsDataQuery );
+
+					const cardLocationsDataQuery = new CardLocationsDataQuery( gameData.id, authUser.id );
+					const cardLocationsData: CardLocationsData = await this.queryBus.execute( cardLocationsDataQuery );
+
+					return { gameData, cardsData, cardLocationsData };
 				} ),
 
 			addBots: this.trpc.procedure
@@ -74,7 +85,7 @@ export class RouterService {
 				.use( this.middlewares.gameAndPlayerData() )
 				.use( this.middlewares.validateStatusAndTurn( { status: "PLAYERS_READY" } ) )
 				.mutation( ( { input, ctx: { gameData } } ) => {
-					const command = new CreateTeamsCommand( input, gameData! );
+					const command = new CreateTeamsCommand( input, gameData );
 					return this.commandBus.execute<CreateTeamsCommand, TeamData>( command );
 				} ),
 
@@ -83,7 +94,7 @@ export class RouterService {
 				.use( this.middlewares.gameAndPlayerData() )
 				.use( this.middlewares.validateStatusAndTurn( { status: "TEAMS_CREATED" } ) )
 				.mutation( ( { ctx: { gameData } } ) => {
-					const command = new StartGameCommand( gameData! );
+					const command = new StartGameCommand( gameData );
 					return this.commandBus.execute<StartGameCommand, GameData>( command );
 				} ),
 
@@ -91,9 +102,8 @@ export class RouterService {
 				.input( askCardInputSchema )
 				.use( this.middlewares.gameAndPlayerData() )
 				.use( this.middlewares.validateStatusAndTurn( { status: "IN_PROGRESS", turn: true } ) )
-				.use( this.middlewares.cardsData() )
-				.mutation( ( { input, ctx: { gameData, playerSpecificData, cardsData } } ) => {
-					const command = new AskCardCommand( input, gameData!, playerSpecificData!, cardsData! );
+				.mutation( ( { input, ctx: { gameData, authUser } } ) => {
+					const command = new AskCardCommand( input, gameData, authUser.id );
 					return this.commandBus.execute<AskCardCommand, AskMove>( command );
 				} ),
 
@@ -101,9 +111,8 @@ export class RouterService {
 				.input( callSetInputSchema )
 				.use( this.middlewares.gameAndPlayerData() )
 				.use( this.middlewares.validateStatusAndTurn( { status: "IN_PROGRESS", turn: true } ) )
-				.use( this.middlewares.cardsData() )
-				.mutation( ( { input, ctx: { gameData, playerSpecificData, cardsData } } ) => {
-					const command = new CallSetCommand( input, gameData, playerSpecificData, cardsData );
+				.mutation( ( { input, ctx: { gameData, authUser } } ) => {
+					const command = new CallSetCommand( input, gameData, authUser.id );
 					return this.commandBus.execute<CallSetCommand, CallMove>( command );
 				} ),
 
@@ -111,10 +120,18 @@ export class RouterService {
 				.input( transferTurnInputSchema )
 				.use( this.middlewares.gameAndPlayerData() )
 				.use( this.middlewares.validateStatusAndTurn( { status: "IN_PROGRESS", turn: true } ) )
-				.use( this.middlewares.cardsData() )
-				.mutation( ( { input, ctx: { gameData, playerSpecificData, cardsData } } ) => {
-					const command = new TransferTurnCommand( input, gameData, playerSpecificData, cardsData );
+				.mutation( ( { input, ctx: { gameData, authUser } } ) => {
+					const command = new TransferTurnCommand( input, gameData, authUser.id );
 					return this.commandBus.execute<TransferTurnCommand, TransferMove>( command );
+				} ),
+
+			executeBotMove: this.trpc.procedure
+				.input( gameIdInputSchema )
+				.use( this.middlewares.gameAndPlayerData() )
+				.use( this.middlewares.validateStatusAndTurn( { status: "IN_PROGRESS" } ) )
+				.mutation( ( { ctx: { gameData } } ) => {
+					const command = new ExecuteBotMoveCommand( gameData, gameData.currentTurn );
+					return this.commandBus.execute<ExecuteBotMoveCommand, AskMove>( command );
 				} )
 		} );
 	}

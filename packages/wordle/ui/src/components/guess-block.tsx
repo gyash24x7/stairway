@@ -8,7 +8,7 @@ export function GuessBlocks( props: { guessBlocks: PositionData[][] } ) {
 		<Flex gap={ "md" } key={ i }>
 			<Flex gap={ "md" } flex={ 1 }>
 				{ guessBlock.map( ( { letter, state }, index ) => (
-					<Box className={ guessBlockClassnames.guessLetter( { state } ) } fz={ 32 } key={ index }>
+					<Box className={ guessBlockClassnames.guessLetter( { state } ) } fz={ 24 } key={ index }>
 						{ letter }
 					</Box>
 				) ) }

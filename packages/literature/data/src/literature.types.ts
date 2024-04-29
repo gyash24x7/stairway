@@ -1,5 +1,6 @@
 import type { CardSet, PlayingCard } from "@common/cards";
 import type {
+	literatureCardLocations,
 	literatureCardMappings,
 	literatureGames,
 	literatureGameStatuses,
@@ -13,21 +14,13 @@ export type Team = typeof literatureTeams.$inferSelect;
 export type CardMapping = typeof literatureCardMappings.$inferSelect;
 export type Game = typeof literatureGames.$inferSelect;
 export type Move = typeof literatureMoves.$inferSelect;
-export type Inference = {
-	playerId: string;
-	gameId: string;
-	activeSets: Record<string, string[]>;
-	actualCardLocations: Record<string, string>;
-	possibleCardLocations: Record<string, string[]>;
-	inferredCardLocations: Record<string, string>;
-}
+export type CardLocation = typeof literatureCardLocations.$inferSelect
 
-export type GameWithPlayers = Game & { players: Player[] };
 export type PlayerData = Record<string, Player>;
 export type TeamData = Record<string, Team>;
 export type CardMappingData = Record<string, string>;
 export type HandData = Record<string, PlayingCard[]>;
-export type InferenceData = Record<string, Inference>;
+export type CardLocationsData = Record<string, CardLocation[]>;
 export type CardsData = { mappings: CardMappingData; hands: HandData }
 export type CardCounts = Record<string, number>;
 export type ScoreUpdate = { teamId: string; score: number; setWon: CardSet; }
@@ -64,15 +57,4 @@ export type GameData = {
 	teams: TeamData;
 	cardCounts: CardCounts;
 	moves: Move[];
-}
-
-export type PlayerSpecificData = {
-	id: string;
-	name: string;
-	avatar: string;
-	teamId?: string | null;
-	isBot: boolean;
-	hand: PlayingCard[];
-	cardSets: CardSet[];
-	oppositeTeamId?: string;
 }

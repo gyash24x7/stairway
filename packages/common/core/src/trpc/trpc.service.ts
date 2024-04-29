@@ -9,4 +9,5 @@ export class TrpcService {
 	private t = initTRPC.context<AuthContext>().create();
 	procedure = this.t.procedure;
 	router = this.t.router;
+	createCallerFactory = this.t.createCallerFactory;
 }

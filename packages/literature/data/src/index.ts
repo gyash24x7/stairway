@@ -1,4 +1,3 @@
-import { and, eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import type { Sql } from "postgres";
 import * as schema from "./literature.schema";
@@ -17,5 +16,6 @@ export const teams = schema.literatureTeams;
 export const cardMappings = schema.literatureCardMappings;
 export const moves = schema.literatureMoves;
 export const games = schema.literatureGames;
+export const cardLocations = schema.literatureCardLocations;
 
-export { eq, inArray, and };
+export * from "drizzle-orm";

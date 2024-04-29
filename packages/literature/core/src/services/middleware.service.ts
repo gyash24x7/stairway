@@ -1,14 +1,13 @@
 import { type AuthContext, LoggerFactory } from "@common/core";
-import type { CardsData, GameData, GameIdInput, GameStatus, PlayerSpecificData } from "@literature/data";
+import type { GameData, GameIdInput, GameStatus } from "@literature/data";
 import { Injectable } from "@nestjs/common";
 import { QueryBus } from "@nestjs/cqrs";
 import { TRPCError } from "@trpc/server";
 import type { MiddlewareFunction } from "@trpc/server/unstable-core-do-not-import";
-import { CardsDataQuery, GameDataQuery, PlayerDataQuery } from "../queries";
+import { GameDataQuery } from "../queries";
 import { Messages } from "../utils";
 
-type ContextWithGameData = AuthContext & { gameData: GameData, playerSpecificData: PlayerSpecificData };
-type LiteratureContext = ContextWithGameData & { cardsData: CardsData };
+export type LiteratureContext = AuthContext & { gameData: GameData };
 type RequiredGameData = { status?: GameStatus, turn?: true };
 type MiddlewareFn<CtxIn, CtxOut> = MiddlewareFunction<CtxIn, any, CtxIn, CtxOut, any>;
 
@@ -19,7 +18,7 @@ export class MiddlewareService {
 
 	constructor( private readonly queryBus: QueryBus ) {}
 
-	gameAndPlayerData(): MiddlewareFn<AuthContext, ContextWithGameData> {
+	gameAndPlayerData(): MiddlewareFn<AuthContext, LiteratureContext> {
 		return async opts => {
 			const { gameId } = await opts.getRawInput() as GameIdInput;
 			const { authUser } = opts.ctx;
@@ -36,23 +35,11 @@ export class MiddlewareService {
 				throw new TRPCError( { code: "FORBIDDEN", message: Messages.PLAYER_NOT_PART_OF_GAME } );
 			}
 
-			const playerDataQuery = new PlayerDataQuery( authUser.id, gameData );
-			const playerSpecificData: PlayerSpecificData = await this.queryBus.execute( playerDataQuery );
-
-			return opts.next( { ctx: { authUser, gameData, playerSpecificData } } );
+			return opts.next( { ctx: { authUser, gameData } } );
 		};
 	}
 
-	cardsData(): MiddlewareFn<ContextWithGameData, LiteratureContext> {
-		return async opts => {
-			const { gameData, ...rest } = opts.ctx;
-			const cardsDataQuery = new CardsDataQuery( gameData.id );
-			const cardsData = await this.queryBus.execute( cardsDataQuery );
-			return opts.next( { ctx: { ...rest, gameData, cardsData } } );
-		};
-	}
-
-	validateStatusAndTurn( data: RequiredGameData ): MiddlewareFn<ContextWithGameData, ContextWithGameData> {
+	validateStatusAndTurn( data: RequiredGameData ): MiddlewareFn<LiteratureContext, LiteratureContext> {
 		return async ( { ctx, next } ) => {
 			if ( !!data.status && ctx.gameData.status !== data.status ) {
 				this.logger.error( "Game Status is not %s! GameId: %s", data.status, ctx.gameData.id );

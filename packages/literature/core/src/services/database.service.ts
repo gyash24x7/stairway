@@ -1,8 +1,11 @@
+import type { CardSet } from "@common/cards";
 import { PostgresClientFactory } from "@common/core";
 import {
 	and,
+	cardLocations,
 	cardMappings,
 	createLiteratureDrizzleClient,
+	desc,
 	eq,
 	games,
 	type GameStatus,
@@ -101,8 +104,8 @@ export class DatabaseService {
 			.where( and( eq( cardMappings.gameId, gameId ), inArray( cardMappings.cardId, cardIds ) ) );
 	}
 
-	async updateTeamScore( teamId: string, score: number ) {
-		await this.db.update( teams ).set( { score } ).where( eq( teams.id, teamId ) );
+	async updateTeamScore( teamId: string, score: number, setsWon: CardSet[] ) {
+		await this.db.update( teams ).set( { score, setsWon } ).where( eq( teams.id, teamId ) );
 	}
 
 	async assignTeamsToPlayers( teamData: Record<string, typeof teams.$inferSelect> ) {
@@ -111,6 +114,54 @@ export class DatabaseService {
 				const playerIds = teamData[ teamId ].memberIds;
 				return this.db.update( players ).set( { teamId } ).where( inArray( players.id, playerIds ) );
 			} )
+		);
+	}
+
+	async getCardLocationsForPlayer( gameId: string, playerId: string ) {
+		return this.db.select().from( cardLocations )
+			.where( and(
+				eq( cardLocations.gameId, gameId ),
+				eq( cardLocations.playerId, playerId )
+			) )
+			.orderBy( desc( cardLocations.weight ) );
+	}
+
+	async getCardLocationsForGame( gameId: string ) {
+		return this.db.select().from( cardLocations )
+			.where( eq( cardLocations.gameId, gameId ) )
+			.orderBy( desc( cardLocations.weight ) );
+	}
+
+	async createCardLocations( input: typeof cardLocations.$inferInsert[] ) {
+		await this.db.insert( cardLocations ).values( input ).returning();
+	}
+
+	async deleteCardLocationForPlayer( gameId: string, playerId: string, cardId: string ) {
+		await this.db.delete( cardLocations ).where(
+			and(
+				eq( cardLocations.gameId, gameId ),
+				eq( cardLocations.playerId, playerId ),
+				eq( cardLocations.cardId, cardId )
+			)
+		);
+	}
+
+	async deleteCardLocationForCards( gameId: string, cardIds: string[] ) {
+		await this.db.delete( cardLocations ).where(
+			and(
+				eq( cardLocations.gameId, gameId ),
+				inArray( cardLocations.cardId, cardIds )
+			)
+		);
+	}
+
+	async updateCardLocationForPlayer( input: typeof cardLocations.$inferInsert ) {
+		await this.db.update( cardLocations ).set( input ).where(
+			and(
+				eq( cardLocations.gameId, input.gameId ),
+				eq( cardLocations.playerId, input.playerId ),
+				eq( cardLocations.cardId, input.cardId )
+			)
 		);
 	}
 }
