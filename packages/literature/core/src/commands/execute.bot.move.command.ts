@@ -6,7 +6,8 @@ import {
 	getCardsOfSet,
 	getPlayingCardFromId,
 	type PlayingCard,
-	removeCardsOfRank
+	removeCardsOfRank,
+	shuffle
 } from "@common/cards";
 import { LoggerFactory } from "@common/core";
 import type {
@@ -28,6 +29,15 @@ import { Constants } from "../utils";
 import { AskCardCommand } from "./ask.card.command";
 import { CallSetCommand } from "./call.set.command";
 import { TransferTurnCommand } from "./transfer.turn.command";
+
+// TODO:
+// Auto execute bot move
+// Infer card of other player by what is asked and previous moves
+// Prefer recently asked card set when a tie
+
+// Animation
+// Improve Display Player
+
 
 export class ExecuteBotMoveCommand implements ICommand {
 	constructor(
@@ -141,12 +151,12 @@ export class ExecuteBotMoveCommandHandler implements ICommandHandler<ExecuteBotM
 			.map( player => player.id );
 
 		const weightedTransfers = myTeamMembers.map( transferTo => {
-			return { weight: 720 / myTeamMembers.length, transferTo };
+			return { weight: 720 / myTeamMembers.length + gameData.cardCounts[ transferTo ], transferTo };
 		} );
 
 		this.logger.debug( "Weighted Transfers: %o", weightedTransfers );
 
-		return weightedTransfers;
+		return weightedTransfers.toSorted( ( a, b ) => b.weight - a.weight );
 	}
 
 	canCardSetBeCalled(
@@ -161,7 +171,7 @@ export class ExecuteBotMoveCommandHandler implements ICommandHandler<ExecuteBotM
 			.filter( player => player.teamId !== teamId )
 			.map( player => player.id );
 
-		const cardsOfSet = removeCardsOfRank( getCardsOfSet( cardSet ), CardRank.SEVEN );
+		const cardsOfSet = shuffle( removeCardsOfRank( getCardsOfSet( cardSet ), CardRank.SEVEN ) );
 		const cardPossibilityMap: Record<string, string[]> = {};
 
 		let isCardSetWithUs = true;
@@ -205,7 +215,7 @@ export class ExecuteBotMoveCommandHandler implements ICommandHandler<ExecuteBotM
 		const weightedCalls: WeightedCall[] = [];
 
 		for ( const cardSet of cardSetsInGame ) {
-			const cardsOfSet = removeCardsOfRank( getCardsOfSet( cardSet ), CardRank.SEVEN );
+			const cardsOfSet = shuffle( removeCardsOfRank( getCardsOfSet( cardSet ), CardRank.SEVEN ) );
 			const [ canCardSetBeCalled, cardPossibilityMap ] =
 				this.canCardSetBeCalled( gameData, currentPlayer, cardSet, cardLocations, hand );
 
@@ -226,12 +236,8 @@ export class ExecuteBotMoveCommandHandler implements ICommandHandler<ExecuteBotM
 				const callablePlayersForCard = cardPossibilityMap[ card.id ]
 					.filter( playerId => gameData.cardCounts[ playerId ] > 0 );
 
-				if ( callablePlayersForCard.length === 1 ) {
-					callData[ card.id ] = callablePlayersForCard[ 0 ];
-				} else {
-					const randIdx = Math.floor( Math.random() * callablePlayersForCard.length );
-					callData[ card.id ] = callablePlayersForCard[ randIdx ];
-				}
+				const randIdx = Math.floor( Math.random() * callablePlayersForCard.length );
+				callData[ card.id ] = callablePlayersForCard[ randIdx ];
 			}
 
 			weightedCalls.push( { callData, weight, cardSet } );
@@ -263,7 +269,7 @@ export class ExecuteBotMoveCommandHandler implements ICommandHandler<ExecuteBotM
 				continue;
 			}
 
-			const cardsOfSet = getAskableCardsOfSet( hand, cardSet );
+			const cardsOfSet = shuffle( getAskableCardsOfSet( hand, cardSet ) );
 			weightedAskMap[ cardSet ] = [];
 
 			for ( const card of cardsOfSet ) {
@@ -281,7 +287,7 @@ export class ExecuteBotMoveCommandHandler implements ICommandHandler<ExecuteBotM
 						return { cardId: card.id, playerId, weight };
 					} );
 
-				weightedAskMap[ cardSet ].push( ...possibleAsks );
+				weightedAskMap[ cardSet ].push( ...shuffle( possibleAsks ) );
 			}
 
 			weightedAskMap[ cardSet ].sort( ( a, b ) => b.weight - a.weight );

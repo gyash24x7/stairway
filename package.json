@@ -6,9 +6,9 @@
 		"generate": "drizzle-kit generate:pg",
 		"apply": "node scripts/apply-migrations.mjs",
 		"test": "nx run-many --target=test",
-		"build": "nx run-many --target=build",
+		"build": "nx run-many --target=build --configuration=production",
 		"dev": "nx run-many --target=serve",
-		"start": "nx run-many --target=start"
+		"start": "nx run-many --target=serve --configuration=production"
 	},
 	"dependencies": {
 		"@mantine/colors-generator": "7.8.1",
