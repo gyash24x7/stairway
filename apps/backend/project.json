@@ -25,9 +25,9 @@
 		"serve": {
 			"executor": "@nx/js:node",
 			"defaultConfiguration": "development",
-			"inspect": false,
 			"options": {
-				"buildTarget": "backend:build"
+				"buildTarget": "backend:build",
+				"inspect": false
 			},
 			"configurations": {
 				"development": {
