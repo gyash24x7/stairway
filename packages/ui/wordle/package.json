@@ -1,0 +1,18 @@
+{
+	"name": "@wordle/ui",
+	"type": "module",
+	"main": "src/index.ts",
+	"module": "src/index.ts",
+	"types": "src/index.ts",
+	"dependencies": {
+		"@gluestack-ui/themed": "1.1.32",
+		"@trpc/react-query": "11.0.0-rc.436",
+		"@shared/ui": "workspace:*",
+		"expo-router": "3.5.17",
+		"immer": "10.1.1",
+		"lucide-react-native": "0.400.0",
+		"react": "18.3.1",
+		"zustand": "4.5.4"
+	},
+	"devDependencies": { }
+}

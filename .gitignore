@@ -1,58 +1,83 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# Dependencies
 node_modules
 .pnp
 .pnp.js
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage
+
+# Turbo
+.turbo
+
+# Vercel
+.vercel
+
+# Build Outputs
+.next/
+out/
+build
+dist
+
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Misc
+.DS_Store
+*.pem
+
+.solid
+.output
+.netlify
+netlify
+.vinxi
+
+# Environment
+.env*.local
+
+# dependencies
+/node_modules
 
 # IDEs and editors
 /.idea
 .project
 .classpath
-.c9/
 *.launch
 .settings/
-*.sublime-workspace
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
+# Temp
+gitignore
 
 # System Files
-.DS_Store
 Thumbs.db
-.env
 
-# Next.js
-.next
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-keys
-.private.key
-.public.key.pem
-keys.json
+# dependencies
+/.pnp
+.yarn/install-state.gz
 
-dist
-.solid
-.output
-.vercel
-.netlify
-netlify
-.turbo
-/.nx
+# testing
+/coverage
 
-coverage
-out
-generated
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
