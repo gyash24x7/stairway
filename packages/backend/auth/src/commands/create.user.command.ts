@@ -23,8 +23,11 @@ export class CreateUserCommandHandler implements ICommandHandler<CreateUserComma
 
 	async execute( { input }: CreateUserCommand ) {
 		this.logger.debug( ">> executeCreateUserCommand()" );
+		this.logger.debug( "DB_URL: %s", process.env[ "DATABASE_URL" ] );
 
-		const existingUser = await this.repository.getUserByEmail( input.email );
+		const existingUser = await this.repository.getUserByEmail( input.email ).catch( err => {
+			this.logger.error( "Error: %s", err.message );
+		} );
 		if ( existingUser ) {
 			this.logger.error( "User with email %s already exists!", input.email );
 			throw new TRPCError( { code: "CONFLICT", message: "User already exists!" } );

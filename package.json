@@ -3,10 +3,11 @@
 	"private": true,
 	"scripts": {
 		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
-		"build": "turbo build",
-		"start": "turbo start",
-		"build:web": "turbo build:web",
-		"start:web": "turbo start:web"
+		"build": "bun run migrate && turbo build",
+		"start": "turbo start --parallel",
+		"start:backend": "turbo start --filter=@stairway/backend",
+		"start:web": "turbo start --filter=@stairway/app",
+		"build:web": "turbo build --filter=@stairway/app"
 	},
 	"devDependencies": {
 		"@tsconfig/bun": "1.0.6",

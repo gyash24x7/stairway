@@ -6,13 +6,9 @@
 			"dependsOn": [ "^build" ]
 		},
 		"start": {
+			"dependsOn": [ "build" ],
 			"cache": false,
 			"persistent": true
-		},
-		"start:web": {
-			"cache": false,
-			"persistent": true
-		},
-		"build:web": { }
+		}
 	}
 }
