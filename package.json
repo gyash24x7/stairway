@@ -5,6 +5,7 @@
 		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
 		"build": "bun run migrate && turbo build",
 		"start": "turbo start --parallel",
+		"build:backend": "turbo build --filter=@stairway/backend",
 		"start:backend": "turbo start --filter=@stairway/backend",
 		"start:web": "turbo start --filter=@stairway/app",
 		"build:web": "turbo build --filter=@stairway/app"
