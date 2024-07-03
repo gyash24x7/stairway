@@ -1,14 +1,11 @@
 {
-	"name": "stairway",
+	"name": "@stairway/app",
 	"main": "expo-router/entry",
 	"version": "1.0.0",
 	"scripts": {
 		"dev": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start",
-		"android": "expo start --android",
-		"ios": "expo start --ios",
-		"web": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start --web",
-		"build:web": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo export -p web",
-		"start:web": "bunx serve dist --single"
+		"build": "EXPO_USE_METRO_WORKSPACE_ROOT=1 expo export -p web",
+		"start": "bunx serve dist --single"
 	},
 	"dependencies": {
 		"@auth/ui": "workspace:*",
