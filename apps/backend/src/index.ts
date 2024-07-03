@@ -1,12 +1,12 @@
 import { AuthModule } from "@backend/auth";
 import { LiteratureModule } from "@backend/literature";
-import { LoggerFactory, PostgresModule } from "@backend/utils";
+import { HealthModule, LoggerFactory, PostgresModule } from "@backend/utils";
 import { WordleModule } from "@backend/wordle";
 import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 
 @Module( {
-	imports: [ PostgresModule, AuthModule, WordleModule, LiteratureModule ]
+	imports: [ HealthModule, PostgresModule, AuthModule, WordleModule, LiteratureModule ]
 } )
 class AppModule {}
 
