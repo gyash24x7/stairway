@@ -5,7 +5,11 @@
 		"build": {
 			"dependsOn": [ "^build" ]
 		},
-		"dev": {
+		"start": {
+			"cache": false,
+			"persistent": true
+		},
+		"web": {
 			"cache": false,
 			"persistent": true
 		}

@@ -6,7 +6,7 @@ import { Constants } from "./literature.constants.ts";
 @WebSocketGateway( {
 	namespace: Constants.LITERATURE,
 	cors: {
-		origin: "http://localhost:8081",
+		origin: "https://stairway.yashgupta.me",
 		credentials: true
 	}
 } )
