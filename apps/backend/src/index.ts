@@ -11,11 +11,13 @@ import { NestFactory } from "@nestjs/core";
 class AppModule {}
 
 const app = await NestFactory.create( AppModule );
+const host = process.env[ "HOST" ] || "localhost";
+const port = process.env[ "PORT" ] || "8000";
 
 app.enableCors();
 
 app.setGlobalPrefix( "api" );
 
 const logger = LoggerFactory.getLogger( AppModule );
-await app.listen( 8000 );
-logger.log( `Stairway started on localhost:8000!` );
+await app.listen( port );
+logger.log( `Stairway started on ${ host }:${ port }!` );
