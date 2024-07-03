@@ -7,7 +7,7 @@ CREATE SCHEMA "literature";
 DO
 $$
     BEGIN
-        CREATE TYPE "lit_game_status" AS ENUM ('CREATED', 'PLAYERS_READY', 'TEAMS_CREATED', 'IN_PROGRESS', 'COMPLETED');
+        CREATE TYPE "public"."lit_game_status" AS ENUM ('CREATED', 'PLAYERS_READY', 'TEAMS_CREATED', 'IN_PROGRESS', 'COMPLETED');
     EXCEPTION
         WHEN duplicate_object THEN null;
     END
@@ -16,11 +16,12 @@ $$;
 DO
 $$
     BEGIN
-        CREATE TYPE "lit_move_type" AS ENUM ('ASK_CARD', 'CALL_SET', 'TRANSFER_TURN');
+        CREATE TYPE "public"."lit_move_type" AS ENUM ('ASK_CARD', 'CALL_SET', 'TRANSFER_TURN');
     EXCEPTION
         WHEN duplicate_object THEN null;
     END
 $$;
+
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "auth"."tokens"
 (

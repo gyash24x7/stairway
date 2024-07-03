@@ -1,6 +1,7 @@
 import type { Config } from "drizzle-kit";
 
 export default {
+	dialect: "postgresql",
 	schema: [
 		"packages/backend/auth/src/auth.schema.ts",
 		"packages/backend/wordle/src/wordle.schema.ts",

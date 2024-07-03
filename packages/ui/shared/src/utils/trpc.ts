@@ -13,7 +13,7 @@ export const queryClient = new QueryClient( {
 	}
 } );
 
-const BASE_URL = "http://192.168.0.132:8000/api";
+const BASE_URL = "https://stairway-backend-production.up.railway.app/api";
 
 export const trpcLink = ( app: "auth" | "literature" | "wordle" ) => {
 	return httpLink( {

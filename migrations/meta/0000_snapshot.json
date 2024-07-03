@@ -1,10 +1,10 @@
 {
-	"id": "f95fcfb8-9633-4064-b82d-5f0de446b6c6",
+	"id": "8b586512-811b-4da2-b9c1-7cca775f57be",
 	"prevId": "00000000-0000-0000-0000-000000000000",
-	"version": "5",
-	"dialect": "pg",
+	"version": "7",
+	"dialect": "postgresql",
 	"tables": {
-		"tokens": {
+		"auth.tokens": {
 			"name": "tokens",
 			"schema": "auth",
 			"columns": {
@@ -26,7 +26,7 @@
 			"compositePrimaryKeys": { },
 			"uniqueConstraints": { }
 		},
-		"users": {
+		"auth.users": {
 			"name": "users",
 			"schema": "auth",
 			"columns": {
@@ -94,7 +94,7 @@
 				}
 			}
 		},
-		"wdl_games": {
+		"wordle.wdl_games": {
 			"name": "wdl_games",
 			"schema": "wordle",
 			"columns": {
@@ -150,7 +150,7 @@
 			"compositePrimaryKeys": { },
 			"uniqueConstraints": { }
 		},
-		"lit_card_locations": {
+		"literature.lit_card_locations": {
 			"name": "lit_card_locations",
 			"schema": "literature",
 			"columns": {
@@ -199,7 +199,7 @@
 			},
 			"uniqueConstraints": { }
 		},
-		"lit_card_mappings": {
+		"literature.lit_card_mappings": {
 			"name": "lit_card_mappings",
 			"schema": "literature",
 			"columns": {
@@ -250,7 +250,7 @@
 			},
 			"uniqueConstraints": { }
 		},
-		"lit_games": {
+		"literature.lit_games": {
 			"name": "lit_games",
 			"schema": "literature",
 			"columns": {
@@ -269,6 +269,7 @@
 				"status": {
 					"name": "status",
 					"type": "lit_game_status",
+					"typeSchema": "public",
 					"primaryKey": false,
 					"notNull": true,
 					"default": "'CREATED'"
@@ -300,7 +301,7 @@
 				}
 			}
 		},
-		"lit_moves": {
+		"literature.lit_moves": {
 			"name": "lit_moves",
 			"schema": "literature",
 			"columns": {
@@ -331,6 +332,7 @@
 				"move_type": {
 					"name": "move_type",
 					"type": "lit_move_type",
+					"typeSchema": "public",
 					"primaryKey": false,
 					"notNull": true
 				},
@@ -373,7 +375,7 @@
 			"compositePrimaryKeys": { },
 			"uniqueConstraints": { }
 		},
-		"lit_players": {
+		"literature.lit_players": {
 			"name": "lit_players",
 			"schema": "literature",
 			"columns": {
@@ -457,7 +459,7 @@
 			},
 			"uniqueConstraints": { }
 		},
-		"lit_teams": {
+		"literature.lit_teams": {
 			"name": "lit_teams",
 			"schema": "literature",
 			"columns": {
@@ -521,23 +523,25 @@
 		}
 	},
 	"enums": {
-		"lit_game_status": {
+		"public.lit_game_status": {
 			"name": "lit_game_status",
-			"values": {
-				"CREATED": "CREATED",
-				"PLAYERS_READY": "PLAYERS_READY",
-				"TEAMS_CREATED": "TEAMS_CREATED",
-				"IN_PROGRESS": "IN_PROGRESS",
-				"COMPLETED": "COMPLETED"
-			}
+			"schema": "public",
+			"values": [
+				"CREATED",
+				"PLAYERS_READY",
+				"TEAMS_CREATED",
+				"IN_PROGRESS",
+				"COMPLETED"
+			]
 		},
-		"lit_move_type": {
+		"public.lit_move_type": {
 			"name": "lit_move_type",
-			"values": {
-				"ASK_CARD": "ASK_CARD",
-				"CALL_SET": "CALL_SET",
-				"TRANSFER_TURN": "TRANSFER_TURN"
-			}
+			"schema": "public",
+			"values": [
+				"ASK_CARD",
+				"CALL_SET",
+				"TRANSFER_TURN"
+			]
 		}
 	},
 	"schemas": {

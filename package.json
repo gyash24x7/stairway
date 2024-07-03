@@ -2,9 +2,9 @@
 	"name": "stairway",
 	"private": true,
 	"scripts": {
-		"migrate": "drizzle-kit generate:pg && bun run scripts/apply-migrations.ts",
+		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
 		"build": "turbo build",
-		"dev": "turbo dev"
+		"start": "turbo start"
 	},
 	"devDependencies": {
 		"@tsconfig/bun": "1.0.6",

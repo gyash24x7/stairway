@@ -59,7 +59,7 @@ function GamePageContent() {
 	);
 
 	useEffect( () => {
-		const socket = io( `http://192.168.0.132:8000/literature` );
+		const socket = io( `https://stairway-backend-production.up.railway.app/literature` );
 		const unsubscribe = initializeSocket( socket, gameId, playerId, gameEventHandlers, playerEventHandlers );
 		return () => unsubscribe();
 	}, [ gameId, playerId ] );
