@@ -9,9 +9,10 @@
 			"cache": false,
 			"persistent": true
 		},
-		"web": {
+		"start:web": {
 			"cache": false,
 			"persistent": true
-		}
+		},
+		"build:web": { }
 	}
 }

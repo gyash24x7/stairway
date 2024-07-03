@@ -4,7 +4,9 @@
 	"scripts": {
 		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
 		"build": "turbo build",
-		"start": "turbo start"
+		"start": "turbo start",
+		"build:web": "turbo build:web",
+		"start:web": "turbo start:web"
 	},
 	"devDependencies": {
 		"@tsconfig/bun": "1.0.6",
