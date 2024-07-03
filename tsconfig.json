@@ -1,0 +1,9 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"esModuleInterop": true,
+		"noUncheckedIndexedAccess": false
+	},
+	"include": [ "scripts", "drizzle.config.ts" ]
+}

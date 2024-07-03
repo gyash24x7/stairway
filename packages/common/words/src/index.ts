@@ -1,5 +1,5 @@
 export type LetterState = "correct" | "wrongPlace" | "wrong" | "empty";
-import dictionary from "./dictionary";
+import dictionary from "./dictionary.ts";
 
 export function getAvailableLetters( guesses: string[] ) {
 	let letters = "abcdefghijklmnopqrstuvwxyz".split( "" );

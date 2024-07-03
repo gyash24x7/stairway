@@ -1,0 +1,21 @@
+{
+	"name": "@stairway/backend",
+	"type": "module",
+	"module": "src/index.ts",
+	"types": "src/index.ts",
+	"scripts": {
+		"dev": "bun run src/index.ts"
+	},
+	"dependencies": {
+		"@backend/auth": "workspace:*",
+		"@backend/literature": "workspace:*",
+		"@backend/utils": "workspace:*",
+		"@backend/wordle": "workspace:*",
+		"@nestjs/common": "10.3.10",
+		"@nestjs/core": "10.3.10",
+		"@nestjs/platform-express": "10.3.10",
+		"@nestjs/platform-socket.io": "10.3.10",
+		"reflect-metadata": "0.2.2",
+		"rxjs": "7.8.1"
+	}
+}

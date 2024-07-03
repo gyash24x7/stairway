@@ -1,8 +1,0 @@
-{
-	"name": "wordle-data",
-	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/wordle/data/src",
-	"projectType": "library",
-	"targets": { },
-	"tags": [ ]
-}
