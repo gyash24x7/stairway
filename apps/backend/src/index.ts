@@ -11,7 +11,7 @@ import { NestFactory } from "@nestjs/core";
 class AppModule {}
 
 const logger = LoggerFactory.getLogger( AppModule );
-logger.debug("Env Vars: %o", process.env); 
+logger.debug("Env Vars: %o", Bun.env); 
 
 const app = await NestFactory.create( AppModule );
 const host = process.env[ "HOST" ] || "localhost";
