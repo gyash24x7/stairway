@@ -2,10 +2,11 @@
 	"name": "stairway",
 	"private": true,
 	"scripts": {
+		"load:env": "bun run scripts/load-env.ts",
 		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
 		"build": "bun run migrate && turbo build",
 		"start": "turbo start --parallel",
-		"build:backend": "turbo build --filter=@stairway/backend",
+		"build:backend": "bun run load:env",
 		"start:backend": "turbo start --filter=@stairway/backend",
 		"start:web": "turbo start --filter=@stairway/app",
 		"build:web": "turbo build --filter=@stairway/app"
@@ -18,7 +19,7 @@
 		"turbo": "2.0.6",
 		"typescript": "5.5.3"
 	},
-	"packageManager": "bun@1.0.36",
+	"packageManager": "bun@1.1.18",
 	"workspaces": [
 		"apps/*",
 		"packages/common/*",
