@@ -1,12 +1,20 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": [ "../../../tsconfig.json" ],
+	"extends": [
+		"@tsconfig/bun",
+		"@tsconfig/strictest"
+	],
 	"compilerOptions": {
 		"esModuleInterop": true,
 		"noUncheckedIndexedAccess": false,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true
 	},
-	"include": [ "src" ],
-	"exclude": [ "node_modules", "tmp" ]
+	"include": [
+		"src"
+	],
+	"exclude": [
+		"node_modules",
+		"tmp"
+	]
 }

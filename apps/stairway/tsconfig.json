@@ -1,12 +1,22 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": [ "expo/tsconfig.base", "@tsconfig/strictest" ],
+	"extends": [
+		"expo/tsconfig.base",
+		"@tsconfig/strictest"
+	],
 	"compilerOptions": {
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
 		"paths": {
-			"@/*": [ "./src/*" ]
+			"@/*": [
+				"./src/*"
+			]
 		}
 	},
-	"include": [ "**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts" ]
+	"include": [
+		"**/*.ts",
+		"**/*.tsx",
+		".expo/types/**/*.ts",
+		"expo-env.d.ts"
+	]
 }

@@ -1,13 +1,20 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"extends": [
+		"@tsconfig/bun",
+		"@tsconfig/strictest"
+	],
 	"compilerOptions": {
 		"target": "es5",
-		"lib": [ "dom", "dom.iterable", "esnext" ],
+		"lib": [
+			"dom",
+			"dom.iterable",
+			"esnext"
+		],
 		"module": "esnext",
 		"jsx": "react-native",
 		"exactOptionalPropertyTypes": false,
-		"noUncheckedIndexedAccess": false
+		"noUncheckedIndexedAccess": false,
 	},
 	"include": [
 		"src",
