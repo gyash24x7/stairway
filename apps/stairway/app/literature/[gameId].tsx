@@ -59,7 +59,7 @@ function GamePageContent() {
 	);
 
 	useEffect( () => {
-		const socket = io( `https://stairway-backend-production.up.railway.app/literature` );
+		const socket = io( `${ process.env[ "EXPO_PUBLIC_BACKEND_URL" ] }/literature` );
 		const unsubscribe = initializeSocket( socket, gameId, playerId, gameEventHandlers, playerEventHandlers );
 		return () => unsubscribe();
 	}, [ gameId, playerId ] );
@@ -88,10 +88,8 @@ function GamePageContent() {
 					<HStack gap={ "$3" }>
 						<AskCard/>
 						<CallSet/>
+						{ isLastMoveSuccessfulCall && <TransferTurn/> }
 					</HStack>
-				) }
-				{ status === "IN_PROGRESS" && isLastMoveSuccessfulCall && playerId === currentTurn && (
-					<TransferTurn/>
 				) }
 				{ status === "IN_PROGRESS" && (
 					<HStack gap={ "$3" }>

@@ -13,7 +13,7 @@ export const queryClient = new QueryClient( {
 	}
 } );
 
-const BASE_URL = "https://stairway-backend-production.up.railway.app/api";
+const BASE_URL = `${ process.env[ "EXPO_PUBLIC_BACKEND_URL" ] }/api`;
 
 export const trpcLink = ( app: "auth" | "literature" | "wordle" ) => {
 	return httpLink( {

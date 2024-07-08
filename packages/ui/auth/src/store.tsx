@@ -46,6 +46,7 @@ export const authTrpcClient = AuthTrpc.createClient( { links: [ trpcLink( "auth"
 
 export const useLoginMutation = () => AuthTrpc.login.useMutation();
 export const useSignUpMutation = () => AuthTrpc.createUser.useMutation();
+export const useVerificationMutation = () => AuthTrpc.verifyUser.useMutation()
 export const useAuthInfoQuery = () => AuthTrpc.authInfo.useQuery();
 
 export const AuthProvider = ( props: PropsWithChildren ) => {

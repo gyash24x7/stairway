@@ -8,6 +8,7 @@
 		"@nestjs/common": "10.3.10",
 		"@trpc/server": "11.0.0-rc.436",
 		"jsonwebtoken": "9.0.2",
+		"node-mailjet": "6.0.5",
 		"postgres": "3.4.4"
 	},
 	"devDependencies": {
