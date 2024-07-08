@@ -5,12 +5,14 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { AuthRepository } from "./auth.repository.ts";
 import { AuthRouter } from "./auth.router.ts";
 import { CreateUserCommandHandler, LoginCommandHandler, VerifyUserCommandHandler } from "./commands";
+import { UserCreatedEventHandler } from "./events";
 
 const commandHandlers = [ CreateUserCommandHandler, VerifyUserCommandHandler, LoginCommandHandler ];
+const eventHandlers = [ UserCreatedEventHandler ];
 
 @Module( {
 	imports: [ TrpcModule, CqrsModule ],
-	providers: [ AuthRepository, AuthRouter, ...commandHandlers ]
+	providers: [ AuthRepository, AuthRouter, ...commandHandlers, ...eventHandlers ]
 } )
 export class AuthModule implements NestModule {
 
