@@ -17,15 +17,6 @@ import { AskCardCommand, type AskCardInput } from "./ask.card.command";
 import { CallSetCommand, type CallSetInput } from "./call.set.command";
 import { TransferTurnCommand, type TransferTurnInput } from "./transfer.turn.command";
 
-// TODO:
-// Auto execute bot move
-// Infer card of other player by what is asked and previous moves
-// Prefer recently asked card set when a tie
-
-// Animation
-// Improve Display Player
-
-
 export class ExecuteBotMoveCommand implements ICommand {
 	constructor(
 		public readonly gameData: GameData,
