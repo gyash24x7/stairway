@@ -5,10 +5,10 @@
 		"load:env:backend": "bun run scripts/load-env.ts backend",
 		"load:env:app": "bun run scripts/load-env.ts app",
 		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
-		"build": "bun run migrate && turbo build",
-		"start": "turbo start --parallel",
 		"build:backend": "bun run load:env:backend",
+		"dev:backend": "turbo dev --filter=@stairway/backend",
 		"start:backend": "turbo start --filter=@stairway/backend",
+		"dev:web": "turbo dev --filter=@stairway/app",
 		"start:web": "turbo start --filter=@stairway/app",
 		"build:web": "bun run load:env:app && turbo build --filter=@stairway/app"
 	},

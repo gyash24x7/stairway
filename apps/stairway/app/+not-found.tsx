@@ -1,15 +1,14 @@
-import { Box, SafeAreaView, Text } from "@gluestack-ui/themed";
-import { Stack } from "expo-router";
+import { Box, Button, SafeAreaView, Text } from "@gluestack-ui/themed";
+import { router } from "expo-router";
 
 export default function NotFoundScreen() {
+	const goHome = () => router.replace( "/" )
+
 	return (
-		<>
-			<Stack.Screen options={ { title: "Oops!" } }/>
-			<SafeAreaView>
-				<Box width="100%" justifyContent="center" alignItems="center">
-					<Text>Open up App.js to start working on your app! Yahoo!</Text>
-				</Box>
-			</SafeAreaView>
-		</>
+		<SafeAreaView>
+			<Box width="100%" justifyContent="center" alignItems="center" p={ "$5" }>
+				<Text>You've reached an unknown location</Text>
+			</Box>
+		</SafeAreaView>
 	);
 }

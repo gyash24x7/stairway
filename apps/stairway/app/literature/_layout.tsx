@@ -1,7 +1,5 @@
 import { useIsLoggedIn } from "@auth/ui";
-import { SafeAreaView, StatusBar } from "@gluestack-ui/themed";
 import { LiteratureTrpcProvider } from "@literature/ui";
-import { Navbar } from "@shared/ui";
 import { Redirect, Slot } from "expo-router";
 
 export default function LiteratureLayout() {
@@ -12,12 +10,8 @@ export default function LiteratureLayout() {
 	}
 
 	return (
-		<SafeAreaView>
-			<StatusBar barStyle={ "dark-content" }/>
-			<Navbar/>
-			<LiteratureTrpcProvider>
-				<Slot/>
-			</LiteratureTrpcProvider>
-		</SafeAreaView>
+		<LiteratureTrpcProvider>
+			<Slot/>
+		</LiteratureTrpcProvider>
 	);
 }

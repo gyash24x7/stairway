@@ -2,8 +2,8 @@ import { AuthProvider } from "@auth/ui";
 import { FjallaOne_400Regular } from "@expo-google-fonts/fjalla-one";
 import { OpenSans_400Regular, OpenSans_800ExtraBold } from "@expo-google-fonts/open-sans";
 import { config } from "@gluestack-ui/config";
-import { GluestackUIProvider } from "@gluestack-ui/themed";
-import { queryClient } from "@shared/ui";
+import { GluestackUIProvider, KeyboardAvoidingView, SafeAreaView, ScrollView, StatusBar } from "@gluestack-ui/themed";
+import { Navbar, queryClient } from "@shared/ui";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import { Slot } from "expo-router";
@@ -35,7 +35,15 @@ export default function RootLayout() {
 		<GluestackUIProvider config={ config }>
 			<QueryClientProvider client={ queryClient }>
 				<AuthProvider>
-					<Slot/>
+					<StatusBar barStyle={ "dark-content" }/>
+					<Navbar/>
+					<ScrollView>
+						<SafeAreaView>
+							<KeyboardAvoidingView>
+								<Slot/>
+							</KeyboardAvoidingView>
+						</SafeAreaView>
+					</ScrollView>
 				</AuthProvider>
 			</QueryClientProvider>
 		</GluestackUIProvider>
