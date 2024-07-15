@@ -17,9 +17,8 @@ import type {
 	TeamData,
 	TransferMoveData
 } from "../literature.types.ts";
-import { GameCompletedEvent } from "./game.completed.event";
-import { HandsUpdatedEvent } from "./hands.updated.event";
-import { TurnUpdatedEvent } from "./turn.updated.event";
+import { GameCompletedEvent } from "./game.completed.event.ts";
+import { HandsUpdatedEvent } from "./hands.updated.event.ts";
 
 export class MoveCreatedEvent implements IEvent {
 	constructor(
@@ -44,8 +43,8 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 	async handle( { move, cardsData, gameData }: MoveCreatedEvent ) {
 		this.logger.debug( ">> handleMoveCreatedEvent()" );
 
-		await this.updateHands( move, cardsData );
-		await this.updateTurn( move, gameData );
+		await this.updateHands( move, gameData, cardsData );
+		await this.updateTurn( move, gameData, cardsData );
 		await this.updateScore( move, gameData.players, gameData.teams );
 		await this.updateCardLocations( move, gameData );
 
@@ -54,7 +53,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 		this.logger.debug( "<< handleMoveCreatedEvent()" );
 	}
 
-	private async updateTurn( currentMove: Move, gameData: GameData ) {
+	private async updateTurn( currentMove: Move, gameData: GameData, cardsData: CardsData ) {
 		this.logger.debug( ">> updateTurn()" );
 		let nextTurn: string;
 
@@ -69,10 +68,31 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 			case "CALL_SET": {
 				this.logger.debug( "CurrentMoveType is CALL_SET!" );
 				const { by } = currentMove.data as CallMoveData;
-				const currentTeam = gameData.players[ by ].teamId;
-				const [ player ] = shuffle( Object.values( gameData.players )
-					.filter( player => player.teamId !== currentTeam ) );
-				nextTurn = !currentMove.success ? player.id : by;
+				const currentPlayer = gameData.players[ by ];
+				const playersWithCards = shuffle( Object.values( gameData.players )
+					.filter( player => !cardsData.hands[ player.id ].isEmpty() ) );
+
+				const oppositeTeamPlayersWithCards = playersWithCards.filter( player => player.teamId !== currentPlayer.teamId );
+				const teamPlayersWithCards = playersWithCards.filter( player => player.teamId === currentPlayer.teamId );
+
+				if ( currentMove.success ) {
+					if ( !cardsData.hands[ currentPlayer.id ].isEmpty() ) {
+						nextTurn = currentPlayer.id;
+					} else {
+						if ( teamPlayersWithCards.length !== 0 ) {
+							nextTurn = teamPlayersWithCards[ 0 ].id;
+						} else {
+							nextTurn = oppositeTeamPlayersWithCards[ 0 ].id;
+						}
+					}
+				} else {
+					if ( oppositeTeamPlayersWithCards.length !== 0 ) {
+						nextTurn = oppositeTeamPlayersWithCards[ 0 ].id;
+					} else {
+						nextTurn = currentPlayer.id;
+					}
+				}
+
 				break;
 			}
 
@@ -86,7 +106,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 
 		if ( nextTurn !== gameData.currentTurn ) {
 			await this.repository.updateCurrentTurn( currentMove.gameId, nextTurn );
-			this.eventBus.publish( new TurnUpdatedEvent( gameData, nextTurn ) );
+			this.gateway.publishGameEvent( gameData.id, GameEvents.TURN_UPDATED, nextTurn );
 			this.logger.debug( "Published TurnUpdatedEvent!" );
 		}
 
@@ -94,7 +114,7 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 		return nextTurn;
 	};
 
-	private async updateHands( currentMove: Move, cardsData: CardsData ) {
+	private async updateHands( currentMove: Move, gameData: GameData, cardsData: CardsData ) {
 		this.logger.debug( ">> updateHands()" );
 
 		let hasCardTransferHappened = false;
@@ -122,11 +142,12 @@ export class MoveCreatedEventHandler implements IEventHandler<MoveCreatedEvent> 
 		}
 
 		const updatedHands: HandData = {};
+		Object.keys( gameData.players ).forEach( playerId => {
+			updatedHands[ playerId ] = CardHand.empty();
+		} );
+
 		Object.keys( cardsData.mappings ).map( cardId => {
 			const playerId = cardsData.mappings[ cardId ];
-			if ( !updatedHands[ playerId ] ) {
-				updatedHands[ playerId ] = CardHand.from( [] );
-			}
 			updatedHands[ playerId ].cards.push( PlayingCard.fromId( cardId ) );
 		} );
 

@@ -199,7 +199,7 @@ export const AskCard = () => {
 			<Button flex={ 1 } onPress={ openModal }>
 				<ButtonText size={ "sm" }>ASK CARD</ButtonText>
 			</Button>
-			<Modal isOpen={ showModal } onClose={ closeModal } finalFocusRef={ ref }>
+			<Modal isOpen={ showModal } onClose={ closeModal } finalFocusRef={ ref } size={"lg"}>
 				<ModalBackdrop/>
 				{ paneState === "SET" && (
 					<SelectCardSetModalContent

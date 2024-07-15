@@ -88,7 +88,7 @@ export const cardMappingRelations = relations( cardMappings, ( { one } ) => {
 export const cardLocations = literatureSchema.table(
 	"lit_card_locations",
 	{
-		gameId: text( "game_id" ).notNull(),
+		gameId: text( "game_id" ).notNull().references( () => games.id ),
 		playerId: text( "player_id" ).notNull(),
 		cardId: text( "card_id" ).notNull(),
 		playerIds: json( "player_ids" ).$type<string[]>().notNull(),

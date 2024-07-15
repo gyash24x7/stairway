@@ -47,7 +47,7 @@ export const TransferTurn = () => {
 	return (
 		<Fragment>
 			<Button flex={ 1 } onPress={ openModal }>
-				<ButtonText>TRANSFER TURN</ButtonText>
+				<ButtonText size={ "sm" }>TRANSFER TURN</ButtonText>
 			</Button>
 			<Modal isOpen={ showModal } onClose={ closeModal } finalFocusRef={ ref }>
 				<ModalBackdrop/>
