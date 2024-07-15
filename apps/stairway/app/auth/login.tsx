@@ -6,7 +6,7 @@ export default function LoginScreen() {
 	return (
 		<VStack width={ "100%" } height={ "100%" } justifyContent={ "center" } p={ "$10" } gap={ "$5" }>
 			<Center mb={ "$10" }>
-				<Heading size={ "2xl" } fontFamily={ "sansBold" } fontWeight={ "$bold" }>SIGN UP</Heading>
+				<Heading size={ "2xl" } fontFamily={ "sansBold" } fontWeight={ "$bold" }>LOG IN</Heading>
 			</Center>
 			<LoginForm/>
 			<Box flexDirection={ "row" } justifyContent={ "space-between" } alignItems={ "center" }>

@@ -22,6 +22,14 @@ export class CardHand {
 		return new CardHand( cards );
 	}
 
+	static empty() {
+		return new CardHand( [] )
+	}
+
+	isEmpty() {
+		return this.cards.length === 0;
+	}
+
 	isCardSetInHand( set: CardSet ) {
 		return this.sets.has( set );
 	}

@@ -35,14 +35,14 @@ export default function RootLayout() {
 		<GluestackUIProvider config={ config }>
 			<QueryClientProvider client={ queryClient }>
 				<AuthProvider>
-					<StatusBar barStyle={ "dark-content" }/>
-					<Navbar/>
-					<ScrollView>
-						<SafeAreaView>
-							<KeyboardAvoidingView>
-								<Slot/>
-							</KeyboardAvoidingView>
-						</SafeAreaView>
+					<SafeAreaView>
+						<StatusBar barStyle={ "dark-content" }/>
+						<Navbar/>
+					</SafeAreaView>
+					<ScrollView h={"100%"}>
+						<KeyboardAvoidingView>
+							<Slot/>
+						</KeyboardAvoidingView>
 					</ScrollView>
 				</AuthProvider>
 			</QueryClientProvider>
