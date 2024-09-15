@@ -1,7 +1,0 @@
-{
-	"name": "@common/words",
-	"type": "module",
-	"main": "src/index.ts",
-	"module": "src/index.ts",
-	"types": "src/index.ts"
-}
