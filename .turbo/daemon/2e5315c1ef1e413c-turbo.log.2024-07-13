@@ -1,0 +1,33 @@
+2024-07-13T15:08:17.600615Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps/stairway/expo-env.d.ts")}
+2024-07-13T15:08:17.600677Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@stairway/app"), path: AnchoredSystemPathBuf("apps/stairway") }}))
+2024-07-13T15:08:17.700606Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps/stairway/expo-env.d.ts"), AnchoredSystemPathBuf("apps/stairway/.expo/types/router.d.ts")}
+2024-07-13T15:08:17.700650Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@stairway/app"), path: AnchoredSystemPathBuf("apps/stairway") }}))
+2024-07-13T15:08:17.700706Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2024-07-13T15:10:09.900801Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("apps/stairway/.expo/types/router.d.ts"), AnchoredSystemPathBuf("apps/stairway/expo-env.d.ts")}
+2024-07-13T15:10:09.900892Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@stairway/app"), path: AnchoredSystemPathBuf("apps/stairway") }}))
+2024-07-13T15:10:09.901026Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2024-07-13T15:13:44.724021Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:13:44.726557Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:13:46.003507Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:13:46.003521Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:14:40.606989Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:14:40.607058Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:14:40.702631Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:14:40.702644Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:14:40.702701Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2024-07-13T15:14:45.902728Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:14:45.902745Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:14:46.004104Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:14:46.004121Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:14:46.032288Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2024-07-13T15:14:48.704982Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:14:48.704995Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:14:48.803146Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:14:48.803159Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:14:48.803225Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2024-07-13T15:14:53.003013Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:14:53.003033Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:19:02.410366Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:19:02.410427Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-13T15:21:24.808742Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/events/move.created.event.ts")}
+2024-07-13T15:21:24.808798Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))

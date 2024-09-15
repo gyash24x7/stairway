@@ -1,0 +1,48 @@
+2024-07-15T08:48:36.800058Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/package.json")}
+2024-07-15T08:48:36.800123Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:49:43.102860Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/package.json")}
+2024-07-15T08:49:43.103561Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:49:52.500685Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf(".lockb-c40b94e3d81dc123.tmp"), AnchoredSystemPathBuf("bun.lockb")}
+2024-07-15T08:49:52.500697Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Root, path: AnchoredSystemPathBuf("") }}))
+2024-07-15T08:50:23.200540Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/actor/game.actor.ts"), AnchoredSystemPathBuf("packages/backend/literature/src/actor")}
+2024-07-15T08:50:23.200556Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:50:34.901268Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/actor"), AnchoredSystemPathBuf("packages/backend/literature/src/tarant")}
+2024-07-15T08:50:34.901285Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:51:05.501215Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:51:05.501229Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:51:12.100063Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:51:12.100076Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:51:48.300603Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:51:48.300617Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:52:04.609083Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:52:04.609102Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:52:04.701270Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:52:04.701302Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:52:04.701397Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2024-07-15T08:52:11.495619Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:52:11.495631Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:52:49.873469Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:52:49.873487Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:52:49.973007Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:52:49.973026Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:52:49.973111Z  WARN turborepo_lib::package_changes_watcher: hashes are the same, no need to rerun
+2024-07-15T08:56:15.674595Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:56:15.674644Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T08:56:53.375487Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T08:56:53.375506Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T09:55:59.259436Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T09:55:59.259479Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T09:56:54.758632Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T09:56:54.758693Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T09:58:26.459443Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T09:58:26.459459Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T09:59:40.857524Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/command.handlers.ts")}
+2024-07-15T09:59:40.857545Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T10:01:44.155989Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/command.handlers.ts")}
+2024-07-15T10:01:44.156006Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T10:11:53.960630Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T10:11:53.961455Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T10:11:57.653967Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/src/tarant/command.handlers.ts"), AnchoredSystemPathBuf("packages/backend/literature/src/tarant"), AnchoredSystemPathBuf("packages/backend/literature/src/tarant/game.actor.ts")}
+2024-07-15T10:11:57.654057Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
+2024-07-15T10:12:04.852523Z  WARN turborepo_lib::package_changes_watcher: changed_files: {AnchoredSystemPathBuf("packages/backend/literature/package.json")}
+2024-07-15T10:12:04.852545Z  WARN turborepo_lib::package_changes_watcher: changed_packages: Ok(Some({WorkspacePackage { name: Other("@backend/literature"), path: AnchoredSystemPathBuf("packages/backend/literature") }}))
