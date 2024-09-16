@@ -1,20 +1,20 @@
-import { Button, ButtonSpinner, ButtonText } from "@gluestack-ui/themed";
-import { router } from "expo-router";
-import { useCreateGameMutation } from "../store";
+"use client";
 
-export const CreateGame = () => {
-	const { mutateAsync, isPending } = useCreateGameMutation();
-	const handleSubmit = async () => mutateAsync( { playerCount: 6 } )
-		.then( ( data ) => {
-			router.replace( `/literature/${ data.id }` );
-		} )
-		.catch( e => {
-			console.log( e );
-		} );
+import { Button, Spinner } from "@base/ui";
+import { redirect } from "next/navigation";
+import { useServerAction } from "zsa-react";
+import { createGameAction } from "../actions";
+
+export function CreateGame() {
+	const { isPending, execute } = useServerAction( createGameAction, {
+		onSuccess( { data } ) {
+			redirect( `/literature/${ data.id }` );
+		}
+	} );
 
 	return (
-		<Button flex={ 1 } onPress={ handleSubmit }>
-			{ isPending ? <ButtonSpinner px={ "$5" }/> : <ButtonText>CREATE GAME</ButtonText> }
+		<Button onClick={ () => execute( { playerCount: 6 } ) }>
+			{ isPending ? <Spinner/> : "CREATE GAME" }
 		</Button>
 	);
-};
+}

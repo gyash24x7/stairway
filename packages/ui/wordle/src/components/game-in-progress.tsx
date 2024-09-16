@@ -1,24 +1,24 @@
-import { Box, HStack, VStack } from "@gluestack-ui/themed";
-import React, { Fragment } from "react";
+"use client";
+
 import { useGameWords, useGuessBlockMap } from "../store";
-import { GuessBlocks } from "./guess-blocks";
-import { Keyboard } from "./keyboard";
+import { GuessBlocks } from "./guess-blocks.tsx";
+import { Keyboard } from "./keyboard.tsx";
 
 export function GameInProgress() {
 	const words = useGameWords();
 	const guessBlockMap = useGuessBlockMap();
 	return (
-		<Fragment>
-			<HStack gap={ "$3" } justifyContent={ "center" } flexWrap={ "wrap" }>
+		<div>
+			<div className={ "flex gap-5 justify-center flex-wrap" }>
 				{ words.map( word => (
-					<VStack gap={ "$1" } justifyContent={ "center" } alignItems={ "center" } key={ word }>
+					<div className={ "flex flex-col gap-3 p-2 justify-center items-center" } key={ word }>
 						<GuessBlocks guessBlocks={ guessBlockMap[ word ] }/>
-					</VStack>
+					</div>
 				) ) }
-			</HStack>
-			<Box p={ "$5" }>
+			</div>
+			<div className={ "p-5" }>
 				<Keyboard/>
-			</Box>
-		</Fragment>
+			</div>
+		</div>
 	);
 }

@@ -1,6 +1,8 @@
-import type { CardSet } from "@common/cards";
-import { HStack, Pressable } from "@gluestack-ui/themed";
-import { DisplayCardSet } from "@shared/ui";
+"use client";
+
+import { cn } from "@base/ui";
+import { CardSet } from "@stairway/cards";
+import { DisplayCardSet } from "./display-card";
 
 export type SelectCardSetProps = {
 	cardSet?: CardSet;
@@ -9,18 +11,17 @@ export type SelectCardSetProps = {
 }
 
 export function SelectCardSet( { cardSetOptions, handleSelection, cardSet }: SelectCardSetProps ) {
-
 	return (
-		<HStack gap={ "$3" } flexWrap={ "wrap" }>
+		<div className={ "flex gap-3 flex-wrap" }>
 			{ cardSetOptions.map( ( item ) => (
-				<Pressable
+				<div
 					key={ item }
-					onPress={ () => handleSelection( cardSet === item ? undefined : item ) }
-					bg={ cardSet === item ? "$blue100" : "$backgroundLight50" }
+					onClick={ () => handleSelection( cardSet === item ? undefined : item ) }
+					className={ cn( cardSet === item ? "bg-blue-100" : "bg-gray-50", "cursor-pointer" ) }
 				>
 					<DisplayCardSet cardSet={ item }/>
-				</Pressable>
+				</div>
 			) ) }
-		</HStack>
+		</div>
 	);
 }

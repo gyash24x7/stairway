@@ -1,0 +1,8 @@
+{
+	"name": "@literature/api",
+	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "packages/api/literature/src",
+	"projectType": "library",
+	"tags": [ ],
+	"targets": { }
+}

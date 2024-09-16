@@ -1,17 +1,19 @@
-import type { LetterState, PositionData } from "@common/words";
-import { Box, Center, HStack, Text } from "@gluestack-ui/themed";
+"use client";
+
+import { cn } from "@base/ui";
+import type { LetterState, PositionData } from "@stairway/words";
 import { useGameGuesses, useIsValidGuessLength, useIsValidWord } from "../store";
 
 function getBlockColor( state: LetterState ) {
 	switch ( state ) {
 		case "correct":
-			return "$green500";
+			return "bg-green-500";
 		case "empty":
-			return "$white";
+			return "bg-white";
 		case "wrong":
-			return "$trueGray500";
+			return "bg-gray-500";
 		case "wrongPlace":
-			return "$amber500";
+			return "bg-amber-500";
 	}
 }
 
@@ -21,40 +23,35 @@ export function GuessBlocks( props: { guessBlocks: PositionData[][] } ) {
 	const guesses = useGameGuesses();
 
 	return props.guessBlocks.map( ( guessBlock, i ) => (
-		<HStack gap={ "$1" } key={ i }>
+		<div className={ "flex gap-3" } key={ i }>
 			{ guessBlock.map( ( { letter, state }, index ) => (
-				<Center
+				<div
 					key={ index }
-					backgroundColor={ getBlockColor( state ) }
-					borderColor={ isValidGuessLength && !isValidWord && i === guesses.length
-						? "$red200"
-						: "$borderDark100" }
-					w={ "$8" }
-					h={ "$8" }
-					borderWidth={ 2 }
-					borderRadius={ "$sm" }
+					className={ cn(
+						isValidGuessLength && !isValidWord && i === guesses.length ? "border-red" : "",
+						getBlockColor( state ),
+						"w-12 h-12 border-2 rounded-sm flex items-center justify-center"
+					) }
 				>
-					<Text size={ "2xl" }>{ letter?.toUpperCase() }</Text>
-				</Center>
+					<p className={ "text-2xl text-black font-bold" }>{ letter?.toUpperCase() }</p>
+				</div>
 			) ) }
-		</HStack>
+		</div>
 	) );
 }
 
 export function GuessDiagramBlocks( props: { guessBlocks: PositionData[][] } ) {
 	return props.guessBlocks.map( ( guessBlock, i ) => (
-		<HStack gap={ "$1" } key={ i }>
+		<div className={ "flex gap-3" } key={ i }>
 			{ guessBlock.map( ( { state }, index ) => (
-				<Box
+				<div
 					key={ index }
-					backgroundColor={ getBlockColor( state ) }
-					borderColor={ "$borderDark100" }
-					w={ "$6" }
-					h={ "$6" }
-					borderWidth={ 1 }
-					borderRadius={ "$sm" }
+					className={ cn(
+						getBlockColor( state ),
+						"w-8 h-8 border-1 rounded-sm flex items-center justify-center"
+					) }
 				/>
 			) ) }
-		</HStack>
+		</div>
 	) );
 }

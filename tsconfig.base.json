@@ -1,0 +1,28 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/node20", "@tsconfig/strictest" ],
+	"compileOnSave": false,
+	"compilerOptions": {
+		"rootDir": ".",
+		"noEmit": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"allowImportingTsExtensions": true,
+		"noUncheckedIndexedAccess": false,
+		"exactOptionalPropertyTypes": false,
+		"baseUrl": ".",
+		"paths": {
+			"@auth/api": [ "packages/api/auth/src/index.ts" ],
+			"@base/ui": [ "packages/ui/base/src/index.ts" ],
+			"@literature/api": [ "packages/api/literature/src/index.ts" ],
+			"@literature/ui": [ "packages/ui/literature/src/index.ts" ],
+			"@main/ui": [ "packages/ui/main/src/index.ts" ],
+			"@shared/api": [ "packages/api/shared/src/index.ts" ],
+			"@stairway/cards": [ "packages/cards/src/index.ts" ],
+			"@stairway/words": [ "packages/words/src/index.ts" ],
+			"@wordle/api": [ "packages/api/wordle/src/index.ts" ],
+			"@wordle/ui": [ "packages/ui/wordle/src/index.ts" ]
+		}
+	},
+	"exclude": [ "node_modules", "tmp" ]
+}

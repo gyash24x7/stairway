@@ -1,141 +1,108 @@
-import type { Player } from "@backend/literature/src/literature.types.ts";
-import { CardSet, PlayingCard } from "@common/cards";
-import {
-	Button,
-	ButtonSpinner,
-	ButtonText,
-	Heading,
-	HStack,
-	Icon,
-	Modal,
-	ModalBackdrop,
-	ModalBody,
-	ModalCloseButton,
-	ModalContent,
-	ModalFooter,
-	ModalHeader
-} from "@gluestack-ui/themed";
-import { X } from "lucide-react-native";
-import { Fragment, type PropsWithChildren, useCallback, useMemo, useRef, useState } from "react";
-import {
-	useAskCardMutation,
-	useCardCounts,
-	useCardSetsInHand,
-	useGameId,
-	useHand,
-	useOppositeTeam,
-	usePlayers
-} from "../store";
-import { SelectCard, type SelectCardProps } from "./select-card";
-import { SelectCardSet, type SelectCardSetProps } from "./select-card-set";
-import { SelectPlayer, type SelectPlayerProps } from "./select-player";
+"use client";
 
-type PaneState = "SET" | "CARD" | "PLAYER" | "CONFIRM"
-type UpdatePaneStateProp = {
-	updatePaneState: ( state: PaneState ) => () => void;
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, Spinner } from "@base/ui";
+import { Player } from "@literature/api";
+import { CardSet, PlayingCard } from "@stairway/cards";
+import { defineStepper } from "@stepperize/react";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import { useServerAction } from "zsa-react";
+import { askCardAction } from "../actions";
+import { useCardCounts, useCardSetsInHand, useGameId, useHand, useOppositeTeam, usePlayers } from "../store";
+import { SelectCard, SelectCardProps } from "./select-card";
+import { SelectCardSet, SelectCardSetProps } from "./select-card-set";
+import { SelectPlayer, SelectPlayerProps } from "./select-player";
+
+type StepperProps = {
+	next?: () => void;
+	back?: () => void;
 }
 
-const AskCardModalHeader = ( props: PropsWithChildren ) => (
-	<ModalHeader>
-		<Heading size={ "lg" }>{ props.children }</Heading>
-		<ModalCloseButton>
-			<Icon as={ X }/>
-		</ModalCloseButton>
-	</ModalHeader>
-);
-
-const SelectCardSetModalContent = ( { updatePaneState, ...props }: SelectCardSetProps & UpdatePaneStateProp ) => (
-	<ModalContent>
-		<AskCardModalHeader>Select CardSet to Ask</AskCardModalHeader>
-		<ModalBody>
+const SelectCardSetModalContent = ( { next, ...props }: SelectCardSetProps & StepperProps ) => (
+	<Fragment>
+		<DialogHeader>
+			<DialogTitle>Select CardSet to Ask</DialogTitle>
+		</DialogHeader>
+		<div>
 			<SelectCardSet { ...props } />
-		</ModalBody>
-		<ModalFooter>
-			<Button flex={ 1 } onPress={ updatePaneState( "CARD" ) } isDisabled={ !props.cardSet }>
-				<ButtonText>SELECT CARD SET</ButtonText>
+		</div>
+		<DialogFooter>
+			<Button className={ "w-full" } onClick={ next } disabled={ !props.cardSet }>
+				SELECT CARD SET
 			</Button>
-		</ModalFooter>
-	</ModalContent>
+		</DialogFooter>
+	</Fragment>
 );
 
-const SelectCardModalContent = ( { updatePaneState, ...props }: SelectCardProps & UpdatePaneStateProp ) => (
-	<ModalContent>
-		<AskCardModalHeader>Select Card to Ask</AskCardModalHeader>
-		<ModalBody>
+const SelectCardModalContent = ( { next, back, ...props }: SelectCardProps & StepperProps ) => (
+	<Fragment>
+		<DialogHeader>
+			<DialogTitle>Select Card to Ask</DialogTitle>
+		</DialogHeader>
+		<div>
 			<SelectCard { ...props } />
-		</ModalBody>
-		<ModalFooter>
-			<HStack gap={ "$3" } width={ "100%" }>
-				<Button flex={ 1 } onPress={ updatePaneState( "SET" ) }>
-					<ButtonText>BACK</ButtonText>
+		</div>
+		<DialogFooter>
+			<div className={ "w-full flex gap-3" }>
+				<Button className={ "w-full" } onClick={ back }>
+					BACK
 				</Button>
-				<Button
-					flex={ 1 }
-					onPress={ updatePaneState( "PLAYER" ) }
-					isDisabled={ props.selectedCards.length === 0 }
-				>
-					<ButtonText>SELECT CARD</ButtonText>
+				<Button className={ "w-full" } onClick={ next } disabled={ props.selectedCards.length === 0 }>
+					SELECT CARD
 				</Button>
-			</HStack>
-		</ModalFooter>
-	</ModalContent>
+			</div>
+		</DialogFooter>
+	</Fragment>
 );
 
-const SelectPlayerModalContent = ( { updatePaneState, ...props }: SelectPlayerProps & UpdatePaneStateProp ) => (
-	<ModalContent>
-		<ModalHeader>
-			<Heading size={ "lg" }>Select Player to Ask</Heading>
-			<ModalCloseButton>
-				<Icon as={ X }/>
-			</ModalCloseButton>
-		</ModalHeader>
-		<ModalBody>
+const SelectPlayerModalContent = ( { next, back, ...props }: SelectPlayerProps & StepperProps ) => (
+	<Fragment>
+		<DialogHeader>
+			<DialogTitle>Select Player to Ask</DialogTitle>
+		</DialogHeader>
+		<div>
 			<SelectPlayer { ...props }/>
-		</ModalBody>
-		<ModalFooter>
-			<HStack gap={ "$3" } width={ "100%" }>
-				<Button flex={ 1 } onPress={ updatePaneState( "CARD" ) }>
-					<ButtonText>BACK</ButtonText>
+		</div>
+		<DialogFooter>
+			<div className={ "w-full flex gap-3" }>
+				<Button className={ "w-full" } onClick={ back }>
+					BACK
 				</Button>
-				<Button flex={ 1 } onPress={ updatePaneState( "CONFIRM" ) } isDisabled={ !props.player }>
-					<ButtonText>SELECT PLAYER</ButtonText>
+				<Button className={ "w-full" } onClick={ next } disabled={ !props.player }>
+					SELECT PLAYER
 				</Button>
-			</HStack>
-		</ModalFooter>
-	</ModalContent>
+			</div>
+		</DialogFooter>
+	</Fragment>
 );
 
 type ConfirmAskProps = {
+	isPending?: boolean;
 	selectedPlayer: Player;
 	selectedCard: PlayingCard;
 	handleSubmit: VoidFunction;
-	isPending: boolean;
 }
 
-const ConfirmAskModalContent = ( props: ConfirmAskProps & UpdatePaneStateProp ) => (
-	<ModalContent>
-		<ModalHeader>
-			<Heading size={ "lg" }>Confirm</Heading>
-			<ModalCloseButton>
-				<Icon as={ X }/>
-			</ModalCloseButton>
-		</ModalHeader>
-		<ModalBody>
-			<Heading>
+const ConfirmAskModalContent = ( props: ConfirmAskProps & StepperProps ) => (
+	<Fragment>
+		<DialogHeader>
+			<DialogTitle>Confirm</DialogTitle>
+		</DialogHeader>
+		<div>
+			<h2>
 				Ask { props.selectedPlayer.name } for { props.selectedCard.displayString }
-			</Heading>
-		</ModalBody>
-		<ModalFooter>
-			<HStack gap={ "$3" } width={ "100%" }>
-				<Button flex={ 1 } onPress={ props.updatePaneState( "PLAYER" ) }>
-					<ButtonText>BACK</ButtonText>
+			</h2>
+		</div>
+		<DialogFooter>
+			<div className={ "w-full flex gap-3" }>
+				<Button className={ "w-full" } onClick={ props.back }>
+					BACK
 				</Button>
-				<Button flex={ 1 } onPress={ props.handleSubmit }>
-					{ props.isPending ? <ButtonSpinner px={ "$5" }/> : <ButtonText>ASK CARD</ButtonText> }
+				<Button className={ "w-full" } onClick={ props.handleSubmit }>
+					{ props.isPending ? <Spinner/> : "ASK CARD" }
 				</Button>
-			</HStack>
-		</ModalFooter>
-	</ModalContent>
+			</div>
+		</DialogFooter>
+	</Fragment>
 );
 
 export const AskCard = () => {
@@ -149,9 +116,11 @@ export const AskCard = () => {
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
 	const [ selectedCard, setSelectedCard ] = useState<string>();
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
+	const [ open, setOpen ] = useState( false );
 
-	const [ showModal, setShowModal ] = useState( false );
-	const [ paneState, setPaneState ] = useState<PaneState>( "SET" );
+	const openDialog = useCallback( () => {
+		setOpen( true );
+	}, [] );
 
 	const askableCardSets = useMemo( () => {
 		return Array.from( cardSets ).filter( cardSet => {
@@ -165,77 +134,74 @@ export const AskCard = () => {
 			.filter( member => !!cardCounts[ member.id ] ) ?? [];
 	}, [ oppositeTeam, cardCounts, players ] );
 
-	const openModal = useCallback( () => {
-		setPaneState( "SET" );
-		setShowModal( true );
-	}, [] );
-
 	const closeModal = useCallback( () => {
-		setShowModal( false );
 		setSelectedCardSet( undefined );
 		setSelectedCard( undefined );
 		setSelectedPlayer( undefined );
-		setPaneState( "SET" );
+		stepper.reset();
+		setOpen( false );
 	}, [] );
 
-	const ref = useRef( null );
 	const handleCardSetSelection = useCallback(
 		( cardSet?: string ) => setSelectedCardSet( cardSet as CardSet | undefined ),
 		[]
 	);
 
-	const { mutateAsync, isPending } = useAskCardMutation();
-	const handleSubmit = useCallback(
-		() => mutateAsync( { for: selectedCard!, from: selectedPlayer!, gameId } )
-			.catch( e => alert( e.message ) )
-			.finally( closeModal ),
-		[ selectedCard, selectedPlayer, gameId ]
-	);
+	const stepper = useStepper();
 
-	const updatePaneState = ( paneState: PaneState ) => () => setPaneState( paneState );
+	const { isPending, execute } = useServerAction( askCardAction, {
+		onFinish: () => closeModal()
+	} );
 
 	return (
-		<Fragment>
-			<Button flex={ 1 } onPress={ openModal }>
-				<ButtonText size={ "sm" }>ASK CARD</ButtonText>
-			</Button>
-			<Modal isOpen={ showModal } onClose={ closeModal } finalFocusRef={ ref } size={"lg"}>
-				<ModalBackdrop/>
-				{ paneState === "SET" && (
+		<Dialog open={ open } onOpenChange={ setOpen }>
+			<Button onClick={ openDialog }>ASK CARD</Button>
+			<DialogContent>
+				{ stepper.when( "SET", () => (
 					<SelectCardSetModalContent
 						cardSet={ selectedCardSet }
 						cardSetOptions={ askableCardSets }
 						handleSelection={ handleCardSetSelection }
-						updatePaneState={ updatePaneState }
+						next={ stepper.next }
+						back={ stepper.prev }
 					/>
-				) }
-				{ paneState === "CARD" && !!selectedCardSet && (
+				) ) }
+				{ stepper.when( "CARD", () => (
 					<SelectCardModalContent
-						cards={ hand.getAskableCardsOfSet( selectedCardSet ) }
+						cards={ hand.getAskableCardsOfSet( selectedCardSet! ) }
 						selectedCards={ !selectedCard ? [] : [ selectedCard ] }
 						onSelect={ ( cardId ) => setSelectedCard( cardId ) }
 						onDeselect={ () => setSelectedCard( undefined ) }
-						updatePaneState={ updatePaneState }
+						next={ stepper.next }
+						back={ stepper.prev }
 					/>
-				) }
-				{ paneState === "PLAYER" && !!selectedCard && !!selectedCardSet && (
+				) ) }
+				{ stepper.when( "PLAYER", () => (
 					<SelectPlayerModalContent
 						player={ selectedPlayer }
 						options={ oppositeTeamMembersWithCards }
 						setPlayer={ setSelectedPlayer }
-						updatePaneState={ updatePaneState }
+						next={ stepper.next }
+						back={ stepper.prev }
 					/>
-				) }
-				{ paneState === "CONFIRM" && !!selectedPlayer && !!selectedCard && !!selectedCardSet && (
+				) ) }
+				{ stepper.when( "CONFIRM", () => (
 					<ConfirmAskModalContent
+						isPending={ isPending }
 						selectedPlayer={ players[ selectedPlayer! ] }
 						selectedCard={ PlayingCard.fromId( selectedCard! ) }
-						handleSubmit={ handleSubmit }
-						isPending={ isPending }
-						updatePaneState={ updatePaneState }
+						handleSubmit={ () => execute( { gameId, from: selectedPlayer!, for: selectedCard! } ) }
+						back={ stepper.prev }
 					/>
-				) }
-			</Modal>
-		</Fragment>
+				) ) }
+			</DialogContent>
+		</Dialog>
 	);
 };
+
+const { useStepper } = defineStepper(
+	{ id: "SET", title: "Select Card Set" },
+	{ id: "CARD", title: "Select Card" },
+	{ id: "PLAYER", title: "Select Player" },
+	{ id: "CONFIRM", title: "Confirm Ask" }
+);

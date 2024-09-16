@@ -1,17 +1,20 @@
-import { Button, ButtonSpinner, ButtonText } from "@gluestack-ui/themed";
-import { router } from "expo-router";
-import { useCreateGameAction } from "../store";
+"use client";
+
+import { Button, Spinner } from "@base/ui";
+import { redirect } from "next/navigation";
+import { useServerAction } from "zsa-react";
+import { createGameAction } from "../actions";
 
 export function CreateGame() {
-	const { isPending, mutateAsync } = useCreateGameAction();
-
-	const handleSubmit = () => mutateAsync( { wordCount: 4, wordLength: 5 } )
-		.then( ( data ) => router.replace( `/wordle/${ data.id }` ) )
-		.catch( ( error: Error ) => alert( error.message ) );
+	const { isPending, execute } = useServerAction( createGameAction, {
+		onSuccess( { data } ) {
+			redirect( `/wordle/${ data.id }` );
+		}
+	} );
 
 	return (
-		<Button onPress={ handleSubmit }>
-			{ isPending ? <ButtonSpinner px={ "$5" }/> : <ButtonText>CREATE GAME</ButtonText> }
+		<Button onClick={ () => execute( { wordCount: 4 } ) }>
+			{ isPending ? <Spinner/> : "CREATE GAME" }
 		</Button>
 	);
 }

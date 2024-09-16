@@ -1,6 +1,9 @@
-import { PlayingCard } from "@common/cards";
-import { HStack, Pressable, ScrollView } from "@gluestack-ui/themed";
-import { DisplayCard } from "@shared/ui";
+"use client";
+
+import { cn } from "@base/ui";
+import { PlayingCard } from "@stairway/cards";
+import React from "react";
+import { DisplayCard } from "./display-card";
 
 export type SelectCardProps = {
 	cards: PlayingCard[];
@@ -20,18 +23,19 @@ export function SelectCard( { cards, onSelect, onDeselect, selectedCards }: Sele
 	};
 
 	return (
-		<ScrollView horizontal>
-			<HStack gap={ "$3" }>
-				{ cards.map( ( card ) => (
-					<Pressable
-						key={ card.id }
-						onPress={ () => handleCardClick( card.id ) }
-						bg={ selectedCards.includes( card.id ) ? "$blue100" : "$backgroundLight50" }
-					>
-						<DisplayCard card={ card }/>
-					</Pressable>
-				) ) }
-			</HStack>
-		</ScrollView>
+		<div className={ "flex gap-3" }>
+			{ cards.map( ( card ) => (
+				<div
+					key={ card.id }
+					onClick={ () => handleCardClick( card.id ) }
+					className={ cn(
+						selectedCards.includes( card.id ) ? "bg-blue-100" : "bg-gray-100",
+						"cursor-pointer"
+					) }
+				>
+					<DisplayCard rank={ card.rank } suit={ card.suit }/>
+				</div>
+			) ) }
+		</div>
 	);
 }

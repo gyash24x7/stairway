@@ -1,72 +1,57 @@
+"use client";
+
 import {
 	Button,
-	ButtonSpinner,
-	ButtonText,
-	Heading,
-	Icon,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
 	Input,
-	InputField,
-	Modal,
-	ModalBackdrop,
-	ModalBody,
-	ModalCloseButton,
-	ModalContent,
-	ModalFooter,
-	ModalHeader
-} from "@gluestack-ui/themed";
-import { router } from "expo-router";
-import { X } from "lucide-react-native";
-import { Fragment, useRef, useState } from "react";
-import { useJoinGameMutation } from "../store";
+	Spinner
+} from "@base/ui";
+import { EnterIcon } from "@radix-ui/react-icons";
+import { redirect } from "next/navigation";
+import { Fragment, useState } from "react";
+import { useServerAction } from "zsa-react";
+import { joinGameAction } from "../actions";
 
-export const JoinGame = () => {
+export function JoinGame() {
 	const [ code, setCode ] = useState( "" );
-	const [ showModal, setShowModal ] = useState( false );
-	const ref = useRef( null );
-
-	const openModal = () => setShowModal( true );
-	const closeModal = () => setShowModal( false );
-
-	const { mutateAsync, isPending } = useJoinGameMutation();
-	const handleSubmit = async () => mutateAsync( { code: code.toUpperCase() } )
-		.then( ( data ) => {
-			router.replace( `/literature/${ data.id }` );
-		} )
-		.catch( e => {
-			console.log( e );
-		} );
+	const { isPending, execute } = useServerAction( joinGameAction, {
+		onSuccess( { data } ) {
+			redirect( `/literature/${ data }` );
+		}
+	} );
 
 	return (
-		<Fragment>
-			<Button flex={ 1 } onPress={ openModal }>
-				<ButtonText>JOIN GAME</ButtonText>
-			</Button>
-			<Modal isOpen={ showModal } onClose={ closeModal } finalFocusRef={ ref }>
-				<ModalBackdrop/>
-				<ModalContent>
-					<ModalHeader>
-						<Heading size="lg">Join Game</Heading>
-						<ModalCloseButton>
-							<Icon as={ X }/>
-						</ModalCloseButton>
-					</ModalHeader>
-					<ModalBody>
-						<Input>
-							<InputField
-								type="text"
-								placeholder="Enter Game Code"
-								value={ code }
-								onChangeText={ setCode }
-							/>
-						</Input>
-					</ModalBody>
-					<ModalFooter>
-						<Button flex={ 1 } onPress={ handleSubmit }>
-							{ isPending ? <ButtonSpinner px={ "$5" }/> : <ButtonText>JOIN GAME</ButtonText> }
-						</Button>
-					</ModalFooter>
-				</ModalContent>
-			</Modal>
-		</Fragment>
+		<Dialog>
+			<DialogTrigger className={ "font-bold" }>
+				JOIN GAME
+			</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle className={ "text-xl" }>Join Game</DialogTitle>
+				</DialogHeader>
+				<div>
+					<Input name={ "code" } placeholder={ "Enter Game Code" } value={ code }
+						   onChange={ ( e ) => setCode( e.target.value ) }/>
+				</div>
+				<DialogFooter>
+					<Button onClick={ () => execute( { code } ) }>
+						{ isPending
+							? <Spinner/>
+							: (
+								<Fragment>
+									<EnterIcon className={ "mr-2" }/>
+									<Fragment>JOIN GAME</Fragment>
+								</Fragment>
+							)
+						}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
-};
+}

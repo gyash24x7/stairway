@@ -1,5 +1,7 @@
-import type { Player } from "@backend/literature";
-import { HStack, Pressable } from "@gluestack-ui/themed";
+"use client";
+
+import { cn } from "@base/ui";
+import type { Player } from "@literature/api";
 import type { Dispatch, SetStateAction } from "react";
 import { DisplayPlayer } from "./display-player";
 
@@ -12,17 +14,19 @@ export type SelectPlayerProps = {
 export function SelectPlayer( { setPlayer, player, options }: SelectPlayerProps ) {
 
 	return (
-		<HStack gap={ "$3" } flexWrap={ "wrap" }>
+		<div className={ "flex gap-3 flex-wrap" }>
 			{ options.map( ( item ) => (
-				<Pressable
+				<div
 					key={ item.id }
-					onPress={ () => setPlayer( player === item.id ? undefined : item.id ) }
-					bg={ player === item.id ? "$blue100" : "$backgroundLight50" }
-					borderRadius={ 2 }
+					onClick={ () => setPlayer( player === item.id ? undefined : item.id ) }
+					className={ cn(
+						player === item.id ? "bg-blue-100" : "bg-gray-50",
+						"cursor-pointer border-2 rounded-md"
+					) }
 				>
 					<DisplayPlayer player={ item }/>
-				</Pressable>
+				</div>
 			) ) }
-		</HStack>
+		</div>
 	);
 }

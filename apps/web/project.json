@@ -1,0 +1,13 @@
+{
+	"name": "web",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "apps/web",
+	"projectType": "application",
+	"tags": [ ],
+	"targets": {
+		"serve": {
+			"dependsOn": [ "build" ],
+			"command": "node apps/web/server/main.mjs"
+		}
+	}
+}

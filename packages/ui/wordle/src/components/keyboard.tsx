@@ -1,13 +1,15 @@
-import { HStack, Pressable, Text, VStack } from "@gluestack-ui/themed";
-import { Delete, LogIn } from "lucide-react-native";
+"use client";
+
+import { EnterIcon, ResetIcon } from "@radix-ui/react-icons";
 import { useMemo } from "react";
+import { useServerAction } from "zsa-react";
+import { makeGuessAction } from "../actions";
 import {
 	useAvailableLetters,
 	useBackspaceCurrentGuess,
 	useCurrentGuess,
 	useGameId,
 	useIsValidWord,
-	useMakeGuessMutation,
 	useResetCurrentGuess,
 	useUpdateCurrentGuess,
 	useUpdateGameData
@@ -27,7 +29,6 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 	const resetCurrentGuess = useResetCurrentGuess();
 	const updateGameData = useUpdateGameData();
 	const availableLetters = useAvailableLetters();
-	const { mutateAsync } = useMakeGuessMutation( { onSuccess: updateGameData } );
 	const isValidWord = useIsValidWord();
 
 	const isLetterAvailable = useMemo(
@@ -35,76 +36,57 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 		[ letter, availableLetters ]
 	);
 
-	const onLetterClick = () => {
-		updateCurrentGuess( letter );
-	};
-
-	const onBackspaceClick = () => {
-		backspaceCurrentGuess();
-	};
-
-	const onEnterClick = async () => {
-		if ( isValidWord ) {
-			await mutateAsync( { gameId, guess: currentGuess.join( "" ) } );
-		}
-		resetCurrentGuess();
-	};
+	const { execute } = useServerAction( makeGuessAction, {
+		onSuccess: ( { data } ) => updateGameData( data ),
+		onFinish: () => resetCurrentGuess()
+	} );
 
 	if ( letter === "enter" ) {
 		return (
-			<Pressable
-				onPress={ onEnterClick }
-				justifyContent={ "center" }
-				w={ "$12" }
-				h={ "$12" }
-				alignItems={ "center" }
-				borderRadius={ "$md" }
-				backgroundColor={ "$green500" }
+			<div
+				className={ "w-12 h-12 flex justify-center items-center rounded-md bg-green cursor-pointer" }
+				onClick={ async () => {
+					if ( isValidWord ) {
+						await execute( { gameId, guess: currentGuess.join( "" ) } );
+					}
+				} }
 			>
-				<LogIn/>
-			</Pressable>
+				<EnterIcon className={ "w-8 h-8" }/>
+			</div>
 		);
 	}
 
 	if ( letter === "back" ) {
 		return (
-			<Pressable
-				onPress={ onBackspaceClick }
-				justifyContent={ "center" }
-				w={ "$12" }
-				h={ "$12" }
-				alignItems={ "center" }
-				borderRadius={ "$md" }
-				backgroundColor={ "$amber500" }
+			<div
+				className={ "w-12 h-12 flex justify-center items-center rounded-md bg-amber cursor-pointer" }
+				onClick={ () => backspaceCurrentGuess() }
 			>
-				<Delete/>
-			</Pressable>
+				<ResetIcon className={ "w-8 h-8" }/>
+			</div>
 		);
 	}
 
+
 	return (
-		<Pressable
-			onPress={ onLetterClick }
-			justifyContent={ "center" }
-			w={ "$8" }
-			h={ "$12" }
-			alignItems={ "center" }
-			borderRadius={ "$md" }
-			backgroundColor={ isLetterAvailable ? "$trueGray600" : "$trueGray900" }
+		<div
+			className={ "w-12 h-12 flex justify-center items-center rounded-md cursor-pointer" }
+			onClick={ () => updateCurrentGuess( letter ) }
+			style={ { backgroundColor: isLetterAvailable ? "#808080" : "#333333" } }
 		>
-			<Text color={ "$white" }>{ letter.toUpperCase() }</Text>
-		</Pressable>
+			<p className={ "text-white text-lg" }>{ letter.toUpperCase() }</p>
+		</div>
 	);
 }
 
 export function Keyboard() {
 	return (
-		<VStack gap={ "$1" } alignItems={ "center" }>
+		<div className={ "flex flex-col gap-3 items-center" }>
 			{ LINES.map( ( line ) => (
-				<HStack gap={ "$1" } key={ line.join( "" ) }>
+				<div className={ "flex gap-3" } key={ line.join( "" ) }>
 					{ line.map( ( letter ) => <KeyboardKey letter={ letter } key={ letter }/> ) }
-				</HStack>
+				</div>
 			) ) }
-		</VStack>
+		</div>
 	);
 }
