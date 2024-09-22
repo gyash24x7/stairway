@@ -2,9 +2,10 @@
 	"name": "stairway",
 	"private": true,
 	"scripts": {
+		"load:env": "bun run scripts/load-env.ts",
 		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
 		"dev": "turbo dev",
-		"build": "bun run migrate && turbo build",
+		"build": "bun run migrate && bun run load:env && turbo build",
 		"start": "turbo start"
 	},
 	"devDependencies": {
