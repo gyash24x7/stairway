@@ -1,4 +1,4 @@
-import { Button, cn } from "@base/ui";
+import { Button, cn } from "@base/components";
 import { Link } from "@tanstack/react-router";
 
 export type ApplicationCardProps = {

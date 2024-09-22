@@ -1,3 +1,4 @@
+import { initializeSocket } from "@/utils/socket.ts";
 import {
 	AddBots,
 	AskCardDialog,
@@ -7,12 +8,12 @@ import {
 	DisplayTeams,
 	ExecuteBotMove,
 	GameCode,
-	initializeSocket,
-	literature,
 	PlayerLobby,
 	PreviousAsks,
 	StartGame,
-	TransferTurnDialog,
+	TransferTurnDialog
+} from "@literature/components";
+import {
 	useCurrentTurn,
 	useGameEventHandlers,
 	useGameId,
@@ -23,11 +24,11 @@ import {
 	usePlayerId,
 	usePlayers,
 	usePlayerSpecificEventHandlers
-} from "@literature/ui";
+} from "@literature/store";
 import { CardHand } from "@stairway/cards";
+import { client, WS_URL } from "@stairway/clients/literature";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
-import { io } from "socket.io-client";
 
 export const Route = createFileRoute( "/literature/$gameId" )( {
 	beforeLoad: ( { context } ) => {
@@ -36,7 +37,7 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 		}
 	},
 	loader: async ( { params: { gameId } } ) => {
-		const data = await literature.getGameData.query( { gameId } );
+		const data = await client.getGameData.query( { gameId } );
 		useGameStore.setState( state => ( { ...state, data: { ...data, hand: CardHand.from( data.hand ) } } ) );
 		return data;
 	},
@@ -57,8 +58,7 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 		);
 
 		useEffect( () => {
-			const socket = io( "http://localhost:8000/literature" );
-			const unsubscribe = initializeSocket( socket, gameId, playerId, gameEventHandlers, playerEventHandlers );
+			const unsubscribe = initializeSocket( WS_URL, gameId, playerId, gameEventHandlers, playerEventHandlers );
 			return () => unsubscribe();
 		}, [] );
 

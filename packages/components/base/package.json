@@ -1,0 +1,22 @@
+{
+	"name": "@base/components",
+	"main": "src/index.ts",
+	"module": "src/index.ts",
+	"types": "src/index.ts",
+	"type": "module",
+	"dependencies": {
+		"@radix-ui/react-avatar": "1.1.0",
+		"@radix-ui/react-dialog": "1.1.1",
+		"@radix-ui/react-icons": "1.3.0",
+		"@radix-ui/react-label": "2.1.0",
+		"@radix-ui/react-popover": "1.1.1",
+		"@radix-ui/react-separator": "1.1.0",
+		"@radix-ui/react-slot": "1.1.0",
+		"class-variance-authority": "0.7.0",
+		"clsx": "2.1.1",
+		"cmdk": "1.0.0",
+		"sonner": "1.5.0",
+		"tailwind-merge": "2.5.2",
+		"vaul": "0.9.3"
+	}
+}

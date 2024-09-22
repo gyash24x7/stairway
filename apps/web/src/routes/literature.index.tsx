@@ -1,5 +1,5 @@
-import { Separator } from "@base/ui";
-import { CreateGame, JoinGameDialog } from "@literature/ui";
+import { Separator } from "@base/components";
+import { CreateGame, JoinGameDialog } from "@literature/components";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute( "/literature/" )( {

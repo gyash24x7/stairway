@@ -3,6 +3,8 @@ import { LoggerFactory } from "@shared/api";
 import type { Request, Response } from "express";
 import { AuthService } from "./auth.service.ts";
 
+const FRONTEND_URL = Bun.env[ "FRONTEND_URL" ] ?? "http://localhost:3000";
+
 const cookieOptions = {
 	domain: "localhost",
 	path: "/",
@@ -61,7 +63,7 @@ export class AuthController {
 		}
 
 		this.logger.debug( "<< authCallback()" );
-		return { url: "http://localhost:3000", status };
+		return { url: FRONTEND_URL, status };
 	}
 
 	@Get( "user" )

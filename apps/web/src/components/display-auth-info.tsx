@@ -1,5 +1,5 @@
-import type { UserAuthInfo } from "@auth/api";
-import { Avatar, AvatarImage } from "@base/ui";
+import { Avatar, AvatarImage } from "@base/components";
+import type { UserAuthInfo } from "@stairway/clients/auth";
 
 export const DisplayAuthInfo = ( props: { authInfo?: UserAuthInfo | null } ) => {
 	return (

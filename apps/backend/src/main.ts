@@ -18,13 +18,11 @@ class AppModule {}
 const logger = LoggerFactory.getLogger( AppModule );
 
 const app = await NestFactory.create( AppModule );
-const host = Bun.env[ "HOST" ] || "localhost";
-const port = Bun.env[ "PORT" ] || "8000";
+const host = Bun.env[ "HOST" ] ?? "localhost";
+const port = Bun.env[ "PORT" ] ?? "8000";
+const FRONTEND_URL = Bun.env[ "FRONTEND_URL" ] ?? "http://localhost:3000";
 
-app.enableCors( {
-	origin: "http://localhost:3000",
-	credentials: true
-} );
+app.enableCors( { origin: FRONTEND_URL, credentials: true } );
 app.setGlobalPrefix( "api" );
 app.use( cookieParser() );
 

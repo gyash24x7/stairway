@@ -1,6 +1,6 @@
-import { Separator } from "@base/ui";
+import { Separator } from "@base/components";
 import { createFileRoute } from "@tanstack/react-router";
-import { CreateGame } from "@wordle/ui";
+import { CreateGame } from "@wordle/components";
 
 export const Route = createFileRoute( "/wordle/" )( {
 	component: () => {
