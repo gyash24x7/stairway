@@ -1,12 +1,13 @@
 import { io } from "socket.io-client";
 
 export function initializeSocket(
-	url: string,
+	path: string,
 	roomId: string,
 	memberId: string,
 	roomEventsMap?: Record<string, ( data?: any ) => void>,
 	memberEventsMap?: Record<string, ( data?: any ) => void>
 ) {
+	const url = process.env.NODE_ENV === "development" ? "http://localhost:8000".concat( path ) : path;
 	const socket = io( url );
 
 	socket.on( "connect", () => {

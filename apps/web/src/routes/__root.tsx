@@ -4,7 +4,11 @@ import { Separator } from "@base/components";
 import type { UserAuthInfo } from "@stairway/clients/auth";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 
-export const Route = createRootRouteWithContext<{ authInfo?: UserAuthInfo }>()( {
+type RouterContext = {
+	authInfo: UserAuthInfo | null;
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()( {
 	component: () => {
 		const { authInfo } = Route.useRouteContext();
 		return (

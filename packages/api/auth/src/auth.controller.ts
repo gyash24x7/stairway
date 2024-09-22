@@ -45,8 +45,6 @@ export class AuthController {
 	) {
 		this.logger.debug( ">> authCallback()" );
 
-		this.logger.debug( "Cookies: %o", req.cookies );
-
 		const storedState = req.cookies[ "google_oauth_state" ];
 		const codeVerifier = req.cookies[ "google_code_verifier" ];
 
@@ -63,7 +61,7 @@ export class AuthController {
 		}
 
 		this.logger.debug( "<< authCallback()" );
-		return { url: FRONTEND_URL, status };
+		return { url: Bun.env.NODE_ENV === "production" ? "/" : FRONTEND_URL, status };
 	}
 
 	@Get( "user" )

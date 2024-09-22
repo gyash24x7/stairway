@@ -1,7 +1,7 @@
 import { Avatar, AvatarImage } from "@base/components";
 import type { UserAuthInfo } from "@stairway/clients/auth";
 
-export const DisplayAuthInfo = ( props: { authInfo?: UserAuthInfo | null } ) => {
+export const DisplayAuthInfo = ( props: { authInfo: UserAuthInfo | null } ) => {
 	return (
 		<div className={ "flex gap-3 items-center" }>
 			{ props.authInfo && (

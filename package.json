@@ -1,14 +1,11 @@
 {
-	"name": "my-turborepo",
+	"name": "stairway",
 	"private": true,
 	"scripts": {
 		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
-		"build:web": "turbo build --filter=@stairway/web",
-		"build:backend": "bun run migrate",
-		"dev:web": "turbo dev --filter=@stairway/web",
-		"dev:backend": "turbo dev --filter=@stairway/backend",
-		"start:web": "turbo start --filter=@stairway/web",
-		"start:backend": "turbo start --filter=@stairway/backend"
+		"dev": "turbo dev",
+		"build": "bun run migrate && turbo build",
+		"start": "turbo start"
 	},
 	"devDependencies": {
 		"@tsconfig/bun": "1.0.7",

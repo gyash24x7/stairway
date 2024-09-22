@@ -1,10 +1,12 @@
 import { httpBatchLink } from "@trpc/client";
 
-export const BACKEND_URL = process.env[ "BACKEND_URL" ] ?? "http://localhost:8000";
+const baseUrl = process.env.NODE_ENV === "development"
+	? "http://localhost:8000/api"
+	: "/api";
 
 export function createHttpLink( path: string ) {
 	return httpBatchLink( {
-		url: `${ BACKEND_URL }/api/${ path }`,
+		url: `${ baseUrl }/${ path }`,
 		fetch: ( input, init ) => fetch( input, { ...init, credentials: "include" } )
 	} );
 }

@@ -4,8 +4,7 @@
 	"version": "1.0.0",
 	"scripts": {
 		"dev": "rsbuild dev",
-		"build": "rsbuild build",
-		"start": "rsbuild preview"
+		"build": "rsbuild build"
 	},
 	"dependencies": {
 		"@base/components": "workspace:*",
