@@ -1,6 +1,3 @@
-"use client";
-
-import { cn, fjallaOne } from "@base/ui";
 import { useGameWords, useGuessBlockMap } from "../store";
 import { CreateGame } from "./create-game.tsx";
 import { GuessDiagramBlocks } from "./guess-blocks.tsx";
@@ -11,7 +8,7 @@ export function GameCompleted() {
 
 	return (
 		<div className={ "flex flex-col gap-12 items-center" }>
-			<h1 className={ cn( "text-4xl", fjallaOne.className ) }>Game Completed</h1>
+			<h1 className={ "text-4xl font-fjalla" }>Game Completed</h1>
 			<div className={ "flex gap-5 justify-center flex-wrap" }>
 				{ words.map( word => (
 					<div className={ "flex flex-col gap-3 justify-center items-center" } key={ word }>

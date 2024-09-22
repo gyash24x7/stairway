@@ -1,7 +1,5 @@
-"use client";
-
-import { useHand } from "../store";
-import { DisplayCard } from "./display-card";
+import { useHand } from "../store.ts";
+import { DisplayCard } from "./display-card.tsx";
 
 export const DisplayHand = () => {
 	const hand = useHand();

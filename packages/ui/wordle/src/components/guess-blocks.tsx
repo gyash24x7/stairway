@@ -1,8 +1,6 @@
-"use client";
-
 import { cn } from "@base/ui";
 import type { LetterState, PositionData } from "@stairway/words";
-import { useGameGuesses, useIsValidGuessLength, useIsValidWord } from "../store";
+import { useGameGuesses, useIsValidGuessLength, useIsValidWord } from "../store.ts";
 
 function getBlockColor( state: LetterState ) {
 	switch ( state ) {

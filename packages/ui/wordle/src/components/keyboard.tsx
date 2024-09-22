@@ -1,9 +1,7 @@
-"use client";
-
 import { EnterIcon, ResetIcon } from "@radix-ui/react-icons";
+import { useMutation } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useServerAction } from "zsa-react";
-import { makeGuessAction } from "../actions";
+import { wordle } from "../client.ts";
 import {
 	useAvailableLetters,
 	useBackspaceCurrentGuess,
@@ -22,60 +20,60 @@ const LINES = [
 ];
 
 export function KeyboardKey( { letter }: { letter: string } ) {
-	const gameId = useGameId();
-	const currentGuess = useCurrentGuess();
 	const updateCurrentGuess = useUpdateCurrentGuess();
 	const backspaceCurrentGuess = useBackspaceCurrentGuess();
-	const resetCurrentGuess = useResetCurrentGuess();
-	const updateGameData = useUpdateGameData();
 	const availableLetters = useAvailableLetters();
 	const isValidWord = useIsValidWord();
+	const gameId = useGameId();
+	const currentGuess = useCurrentGuess();
+	const resetCurrentGuess = useResetCurrentGuess();
+	const updateGameData = useUpdateGameData();
 
 	const isLetterAvailable = useMemo(
 		() => letter.length !== 1 || availableLetters.includes( letter ),
 		[ letter, availableLetters ]
 	);
 
-	const { execute } = useServerAction( makeGuessAction, {
-		onSuccess: ( { data } ) => updateGameData( data ),
-		onFinish: () => resetCurrentGuess()
+	const { mutate, isPending } = useMutation( {
+		mutationFn: wordle.makeGuess.mutate,
+		onSuccess: ( data ) => {
+			updateGameData( data );
+			resetCurrentGuess();
+		}
 	} );
 
 	if ( letter === "enter" ) {
 		return (
-			<div
+			<button
+				onClick={ () => mutate( { gameId, guess: currentGuess.join( "" ) } ) }
 				className={ "w-12 h-12 flex justify-center items-center rounded-md bg-green cursor-pointer" }
-				onClick={ async () => {
-					if ( isValidWord ) {
-						await execute( { gameId, guess: currentGuess.join( "" ) } );
-					}
-				} }
+				disabled={ !isValidWord || isPending }
 			>
 				<EnterIcon className={ "w-8 h-8" }/>
-			</div>
+			</button>
 		);
 	}
 
 	if ( letter === "back" ) {
 		return (
-			<div
+			<button
 				className={ "w-12 h-12 flex justify-center items-center rounded-md bg-amber cursor-pointer" }
 				onClick={ () => backspaceCurrentGuess() }
 			>
 				<ResetIcon className={ "w-8 h-8" }/>
-			</div>
+			</button>
 		);
 	}
 
 
 	return (
-		<div
+		<button
 			className={ "w-12 h-12 flex justify-center items-center rounded-md cursor-pointer" }
 			onClick={ () => updateCurrentGuess( letter ) }
 			style={ { backgroundColor: isLetterAvailable ? "#808080" : "#333333" } }
 		>
 			<p className={ "text-white text-lg" }>{ letter.toUpperCase() }</p>
-		</div>
+		</button>
 	);
 }
 

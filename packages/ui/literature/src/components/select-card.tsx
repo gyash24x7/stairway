@@ -1,9 +1,7 @@
-"use client";
-
 import { cn } from "@base/ui";
 import { PlayingCard } from "@stairway/cards";
 import React from "react";
-import { DisplayCard } from "./display-card";
+import { DisplayCard } from "./display-card.tsx";
 
 export type SelectCardProps = {
 	cards: PlayingCard[];

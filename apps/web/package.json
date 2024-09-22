@@ -1,0 +1,35 @@
+{
+	"name": "@stairway/web",
+	"private": true,
+	"version": "1.0.0",
+	"scripts": {
+		"generate": "tsr generate",
+		"dev": "rsbuild dev",
+		"build": "rsbuild build",
+		"start": "rsbuild preview"
+	},
+	"dependencies": {
+		"@base/ui": "workspace:*",
+		"@fontsource/bungee-spice": "5.1.0",
+		"@fontsource/fjalla-one": "5.1.0",
+		"@fontsource/montserrat": "5.1.0",
+		"@literature/ui": "workspace:*",
+		"@tanstack/react-query": "5.56.2",
+		"@tanstack/react-router": "1.58.3",
+		"@trpc/client": "11.0.0-rc.502",
+		"@wordle/ui": "workspace:*",
+		"react": "18.3.1",
+		"react-dom": "18.3.1"
+	},
+	"devDependencies": {
+		"@rsbuild/core": "1.0.5",
+		"@rsbuild/plugin-react": "1.0.2",
+		"@tanstack/router-cli": "1.58.1",
+		"@tanstack/router-devtools": "1.58.3",
+		"@tanstack/router-plugin": "1.58.4",
+		"@types/react": "18.3.7",
+		"@types/react-dom": "18.3.0",
+		"tailwindcss": "3.4.12",
+		"tailwindcss-animate": "1.0.7"
+	}
+}

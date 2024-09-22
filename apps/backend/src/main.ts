@@ -3,7 +3,7 @@ import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { HealthModule, LoggerFactory, PostgresModule } from "@shared/api";
 import { WordleModule } from "@wordle/api";
-import dotenv from "dotenv";
+import cookieParser from "cookie-parser";
 
 @Module( {
 	imports: [
@@ -15,21 +15,18 @@ import dotenv from "dotenv";
 } )
 class AppModule {}
 
-dotenv.config();
-
 const logger = LoggerFactory.getLogger( AppModule );
 
-async function bootstrap() {
-	const app = await NestFactory.create( AppModule );
-	const host = process.env[ "HOST" ] || "localhost";
-	const port = process.env[ "PORT" ] || "8000";
+const app = await NestFactory.create( AppModule );
+const host = Bun.env[ "HOST" ] || "localhost";
+const port = Bun.env[ "PORT" ] || "8000";
 
-	app.enableCors();
+app.enableCors( {
+	origin: "http://localhost:3000",
+	credentials: true
+} );
+app.setGlobalPrefix( "api" );
+app.use( cookieParser() );
 
-	app.setGlobalPrefix( "api" );
-
-	await app.listen( port );
-	logger.log( `Stairway started on ${ host }:${ port }!` );
-}
-
-bootstrap().then();
+await app.listen( port );
+logger.log( `Stairway started on ${ host }:${ port }!` );

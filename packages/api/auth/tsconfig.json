@@ -1,10 +1,12 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "../../../tsconfig.base.json",
+	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
 	"compilerOptions": {
-		"module": "esnext",
-		"moduleResolution": "bundler"
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"allowImportingTsExtensions": true,
+		"noUncheckedIndexedAccess": false,
+		"exactOptionalPropertyTypes": false
 	},
-	"include": [ "src" ],
 	"exclude": [ "node_modules", "tmp" ]
 }

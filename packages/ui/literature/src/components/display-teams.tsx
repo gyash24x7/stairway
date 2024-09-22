@@ -1,9 +1,6 @@
-"use client";
-
-import { cn, fjallaOne } from "@base/ui";
 import { useMemo } from "react";
-import { useCardCounts, usePlayers, useTeams } from "../store";
-import { DisplayPlayerWithCardCount } from "./display-player";
+import { useCardCounts, usePlayers, useTeams } from "../store.ts";
+import { DisplayPlayerWithCardCount } from "./display-player.tsx";
 
 export const DisplayTeams = () => {
 	const players = usePlayers();
@@ -15,15 +12,15 @@ export const DisplayTeams = () => {
 		<div className={ "flex flex-col border-2 border-gray-300 rounded-md" }>
 			<div className={ "flex border-b-2 border-b-gray-300" }>
 				<div className={ "flex-1 p-3 flex items-center justify-center" }>
-					<h2 className={ cn( "text-4xl", fjallaOne.className ) }>{ teamList[ 0 ]?.name.toUpperCase() }</h2>
+					<h2 className={ "text-4xl font-fjalla" }>{ teamList[ 0 ]?.name.toUpperCase() }</h2>
 				</div>
 				<div className={ "p-3" }>
-					<h2 className={ cn( "text-6xl", fjallaOne.className ) }>
+					<h2 className={ "text-6xl font-fjalla" }>
 						{ teamList[ 0 ]?.score } - { teamList[ 1 ]?.score }
 					</h2>
 				</div>
 				<div className={ "flex-1 p-3 flex items-center justify-center" }>
-					<h2 className={ cn( "text-4xl", fjallaOne.className ) }>{ teamList[ 1 ]?.name.toUpperCase() }</h2>
+					<h2 className={ "text-4xl font-fjalla" }>{ teamList[ 1 ]?.name.toUpperCase() }</h2>
 				</div>
 			</div>
 			<div className={ "flex" }>

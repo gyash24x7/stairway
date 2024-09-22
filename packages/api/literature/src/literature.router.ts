@@ -1,36 +1,21 @@
 import { Injectable } from "@nestjs/common";
-import { CommandBus, QueryBus } from "@nestjs/cqrs";
-import { type AuthContext, LoggerFactory, type MiddlewareFn, TrpcService, type UserAuthInfo } from "@shared/api";
+import { LoggerFactory, TrpcService } from "@shared/api";
+import { CardHand } from "@stairway/cards";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
-import {
-	AddBotsCommand,
-	AskCardCommand,
-	CallSetCommand,
-	CreateGameCommand,
-	CreateTeamsCommand,
-	ExecuteBotMoveCommand,
-	JoinGameCommand,
-	StartGameCommand,
-	TransferTurnCommand
-} from "./commands";
 import { Messages } from "./literature.constants.ts";
-import type {
-	AskMove,
-	CallMove,
-	CardLocationsData,
-	CardsData,
-	Game,
-	GameData,
-	GameStatus,
-	PlayerData,
-	TeamData,
-	TransferMove
-} from "./literature.types.ts";
-import { CardLocationsDataQuery, CardsDataQuery, GameDataQuery } from "./queries";
+import {
+	askCardInputSchema,
+	callSetInputSchema,
+	createGameInputSchema,
+	createTeamsInputSchema,
+	gameIdInputSchema,
+	joinGameInputSchema,
+	transferTurnInputSchema
+} from "./literature.inputs.ts";
+import { LiteratureMutations } from "./literature.mutations.ts";
+import { LiteratureQueries } from "./literature.queries.ts";
+import type { GameStatus } from "./literature.types.ts";
 
-export type LiteratureContext = { gameData: GameData, authInfo: UserAuthInfo };
-type RequiredGameData = { status?: GameStatus, turn?: true };
 
 @Injectable()
 export class LiteratureRouter {
@@ -39,151 +24,100 @@ export class LiteratureRouter {
 
 	constructor(
 		private readonly trpc: TrpcService,
-		private readonly queryBus: QueryBus,
-		private readonly commandBus: CommandBus
+		private readonly queries: LiteratureQueries,
+		private readonly mutations: LiteratureMutations
 	) {}
-
-	createContext() {
-		return this.trpc.createContextFn;
-	}
 
 	router() {
 		return this.trpc.router( {
-			createGame: this.trpc.authenticatedProcedure
-				.input( z.object( { playerCount: z.number().positive().multipleOf( 2 ).lte( 8 ).optional() } ) )
-				.mutation( ( { input, ctx: { authInfo } } ) => {
-					const command = new CreateGameCommand( input, authInfo );
-					return this.commandBus.execute<CreateGameCommand, GameData>( command );
-				} ),
+			createGame: this.trpc.procedure.input( createGameInputSchema )
+				.mutation( ( { input, ctx } ) => this.mutations.createGame( input, ctx ) ),
 
-			joinGame: this.trpc.authenticatedProcedure
-				.input( z.object( { code: z.string().length( 6 ) } ) )
-				.mutation( ( { input, ctx: { authInfo } } ) => {
-					const command = new JoinGameCommand( input, authInfo );
-					return this.commandBus.execute<JoinGameCommand, Game>( command );
-				} ),
+			joinGame: this.trpc.procedure.input( joinGameInputSchema )
+				.mutation( ( { input, ctx } ) => this.mutations.joinGame( input, ctx ) ),
 
-			getGameData: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string() } ) )
+			getGameData: this.trpc.procedure.input( gameIdInputSchema )
+				.use( this.gameDataMiddleware( { isGameDataQuery: true } ) )
+				.query( ( { ctx: { authInfo, ...rest } } ) => ( { ...rest, playerId: authInfo.id } ) ),
+
+			getPreviousAsks: this.trpc.procedure.input( gameIdInputSchema )
 				.use( this.gameDataMiddleware() )
-				.query( async ( { ctx: { gameData, authInfo } } ) => {
-					const cardsDataQuery = new CardsDataQuery( gameData.id, authInfo.id );
-					const cardsData: CardsData = await this.queryBus.execute( cardsDataQuery );
+				.query( ( { ctx } ) => this.queries.getPreviousAsks( ctx.game.id ) ),
 
-					const cardLocationsDataQuery = new CardLocationsDataQuery( gameData.id, authInfo.id );
-					const cardLocationsData: CardLocationsData = await this.queryBus.execute( cardLocationsDataQuery );
+			addBots: this.trpc.procedure.input( gameIdInputSchema )
+				.use( this.gameDataMiddleware( { status: "CREATED" } ) )
+				.mutation( ( { ctx } ) => this.mutations.addBots( ctx ) ),
 
-					return {
-						gameData,
-						playerId: authInfo.id,
-						hand: cardsData.hands[ authInfo.id ]?.serialize(),
-						cardLocations: cardLocationsData[ authInfo.id ]
-					};
-				} ),
+			createTeams: this.trpc.procedure.input( createTeamsInputSchema )
+				.use( this.gameDataMiddleware( { status: "PLAYERS_READY" } ) )
+				.mutation( ( { input, ctx } ) => this.mutations.createTeams( input, ctx ) ),
 
-			addBots: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string() } ) )
-				.use( this.gameDataMiddleware() )
-				.mutation( ( { ctx: { gameData } } ) => {
-					const command = new AddBotsCommand( gameData );
-					return this.commandBus.execute<AddBotsCommand, PlayerData>( command );
-				} ),
+			startGame: this.trpc.procedure.input( gameIdInputSchema )
+				.use( this.gameDataMiddleware( { status: "TEAMS_CREATED" } ) )
+				.mutation( ( { ctx } ) => this.mutations.startGame( ctx ) ),
 
-			createTeams: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string(), data: z.record( z.string().array() ) } ) )
-				.use( this.gameDataMiddleware() )
-				.use( this.validationMiddleware( { status: "PLAYERS_READY" } ) )
-				.mutation( ( { input, ctx: { gameData } } ) => {
-					const command = new CreateTeamsCommand( input, gameData );
-					return this.commandBus.execute<CreateTeamsCommand, TeamData>( command );
-				} ),
+			askCard: this.trpc.procedure.input( askCardInputSchema )
+				.use( this.gameDataMiddleware( { status: "IN_PROGRESS", turn: true } ) )
+				.mutation( ( { input, ctx } ) => this.mutations.askCard( input, ctx ) ),
 
-			startGame: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string() } ) )
-				.use( this.gameDataMiddleware() )
-				.use( this.validationMiddleware( { status: "TEAMS_CREATED" } ) )
-				.mutation( ( { ctx: { gameData } } ) => {
-					const command = new StartGameCommand( gameData );
-					return this.commandBus.execute<StartGameCommand, GameData>( command );
-				} ),
+			callSet: this.trpc.procedure.input( callSetInputSchema )
+				.use( this.gameDataMiddleware( { status: "IN_PROGRESS", turn: true } ) )
+				.mutation( ( { input, ctx } ) => this.mutations.callSet( input, ctx ) ),
 
-			askCard: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string(), from: z.string(), for: z.string() } ) )
-				.use( this.gameDataMiddleware() )
-				.use( this.validationMiddleware( { status: "IN_PROGRESS", turn: true } ) )
-				.mutation( ( { input, ctx: { gameData, authInfo } } ) => {
-					const command = new AskCardCommand( input, gameData, authInfo.id );
-					return this.commandBus.execute<AskCardCommand, AskMove>( command );
-				} ),
+			transferTurn: this.trpc.procedure.input( transferTurnInputSchema )
+				.use( this.gameDataMiddleware( { status: "IN_PROGRESS", turn: true } ) )
+				.mutation( ( { input, ctx } ) => this.mutations.transferTurn( input, ctx ) ),
 
-			callSet: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string(), data: z.record( z.string(), z.string() ) } ) )
-				.use( this.gameDataMiddleware() )
-				.use( this.validationMiddleware( { status: "IN_PROGRESS", turn: true } ) )
-				.mutation( ( { input, ctx: { gameData, authInfo } } ) => {
-					const command = new CallSetCommand( input, gameData, authInfo.id );
-					return this.commandBus.execute<CallSetCommand, CallMove>( command );
-				} ),
-
-			transferTurn: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string(), transferTo: z.string() } ) )
-				.use( this.gameDataMiddleware() )
-				.use( this.validationMiddleware( { status: "IN_PROGRESS", turn: true } ) )
-				.mutation( ( { input, ctx: { gameData, authInfo } } ) => {
-					const command = new TransferTurnCommand( input, gameData, authInfo.id );
-					return this.commandBus.execute<TransferTurnCommand, TransferMove>( command );
-				} ),
-
-			executeBotMove: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string() } ) )
-				.use( this.gameDataMiddleware() )
-				.use( this.validationMiddleware( { status: "IN_PROGRESS" } ) )
-				.mutation( ( { ctx: { gameData } } ) => {
-					const command = new ExecuteBotMoveCommand( gameData, gameData.currentTurn );
-					return this.commandBus.execute<ExecuteBotMoveCommand, AskMove>( command );
-				} )
+			executeBotMove: this.trpc.procedure.input( gameIdInputSchema )
+				.use( this.gameDataMiddleware( { status: "IN_PROGRESS" } ) )
+				.mutation( ( { ctx } ) => this.mutations.executeBotMove( ctx ) )
 		} );
 	}
 
-	gameDataMiddleware(): MiddlewareFn<AuthContext, LiteratureContext> {
-		return async opts => {
+	gameDataMiddleware( data?: { status?: GameStatus, turn?: true, isGameDataQuery?: true } ) {
+		return this.trpc.middleware( async opts => {
 			const { authInfo } = opts.ctx;
-			if ( !authInfo ) {
-				this.logger.error( "Unauthorized!" );
-				throw new TRPCError( { code: "UNAUTHORIZED" } );
-			}
-
 			const { gameId } = await opts.getRawInput() as { gameId: string };
-			const gameDataQuery = new GameDataQuery( gameId );
-			const gameData: GameData | undefined = await this.queryBus.execute( gameDataQuery );
+			const { game, players, teams } = await this.queries.getGameData( gameId );
 
-			if ( !gameData ) {
-				this.logger.error( "Game Not Found! UserId: %s, GameId: %s", authInfo.id, gameId );
-				throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
-			}
-
-			if ( !gameData.players[ authInfo.id ] ) {
+			if ( !players[ authInfo.id ] ) {
 				this.logger.error( "Logged In User not part of this game! UserId: %s", authInfo.id );
 				throw new TRPCError( { code: "FORBIDDEN", message: Messages.PLAYER_NOT_PART_OF_GAME } );
 			}
 
-			return opts.next( { ctx: { authInfo, gameData } } );
-		};
-	}
-
-	validationMiddleware( data: RequiredGameData ): MiddlewareFn<LiteratureContext, LiteratureContext> {
-		return async ( { ctx, next } ) => {
-			if ( !!data.status && ctx.gameData.status !== data.status ) {
-				this.logger.error( "Game Status is not %s! GameId: %s", data.status, ctx.gameData.id );
+			if ( !!data?.status && game.status !== data.status ) {
+				this.logger.error( "Game Status is not %s! GameId: %s", data.status, game.id );
 				throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INCORRECT_STATUS } );
 			}
 
-			if ( !!data.turn && ctx.gameData.currentTurn !== ctx.authInfo.id ) {
-				this.logger.error( "It's not your turn! GameId: %s", ctx.gameData.id );
+			if ( !!data?.turn && game.currentTurn !== authInfo.id ) {
+				this.logger.error( "It's not your turn! GameId: %s", game.id );
 				throw new TRPCError( { code: "BAD_REQUEST", message: Messages.PLAYER_OUT_OF_TURN } );
 			}
 
-			return next( { ctx } );
-		};
+			const cardCounts = game.status === "IN_PROGRESS"
+				? await this.queries.getCardCounts( game.id, players )
+				: {};
+
+			const hand = data?.isGameDataQuery
+				? await this.queries.getPlayerHand( game.id, authInfo.id )
+				: CardHand.empty();
+
+			const lastMoveData = data?.isGameDataQuery
+				? await this.queries.getLastMoveData( game.lastMoveId )
+				: undefined;
+
+			return opts.next( {
+				ctx: {
+					authInfo,
+					game,
+					players,
+					teams,
+					cardCounts,
+					hand: hand.serialize(),
+					lastMoveData
+				}
+			} );
+		} );
 	}
 }

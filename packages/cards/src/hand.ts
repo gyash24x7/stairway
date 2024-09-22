@@ -26,8 +26,8 @@ export class CardHand {
 		return this.cards.map( card => card.id );
 	}
 
-	static from( cards: PlayingCard[] ) {
-		return new CardHand( cards );
+	static from( cards: IPlayingCard[] ) {
+		return new CardHand( cards.map( PlayingCard.from ) );
 	}
 
 	static empty() {
@@ -69,6 +69,10 @@ export class CardHand {
 
 	removeCard( cardId: string ) {
 		this.cards = this.cards.filter( card => card.id !== cardId );
+	}
+
+	removeCards( cardIds: string[] ) {
+		this.cards = this.cards.filter( card => !cardIds.includes( card.id ) );
 	}
 
 	sorted() {

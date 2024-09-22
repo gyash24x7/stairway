@@ -1,13 +1,10 @@
-"use client";
-
 import { calculatePositions, dictionary, getAvailableLetters, type PositionData } from "@stairway/words";
 import type { Game } from "@wordle/api";
 import { produce } from "immer";
-import { createContext, useContext } from "react";
-import { createStore, StoreApi, useStore } from "zustand";
+import { create } from "zustand";
 
 export type GameStore = {
-	gameData: Game;
+	game: Game;
 	currentGuess: string[];
 	backspaceCurrentGuess: () => void;
 	updateCurrentGuess: ( guess: string ) => void;
@@ -15,8 +12,16 @@ export type GameStore = {
 	updateGameData: ( data: Game ) => void;
 };
 
-export const createGameStore = ( gameData: Game ) => createStore<GameStore>( ( set ) => ( {
-	gameData,
+export const useGameStore = create<GameStore>( ( set ) => ( {
+	game: {
+		id: "",
+		playerId: "",
+		wordLength: 0,
+		wordCount: 0,
+		words: [],
+		guesses: [],
+		completedWords: []
+	},
 	currentGuess: [],
 	backspaceCurrentGuess: () => {
 		set(
@@ -28,7 +33,7 @@ export const createGameStore = ( gameData: Game ) => createStore<GameStore>( ( s
 	updateCurrentGuess: ( letter: string ) => {
 		set(
 			produce<GameStore>( state => {
-				if ( state.currentGuess.length < state.gameData.wordLength ) {
+				if ( state.currentGuess.length < state.game.wordLength ) {
 					state.currentGuess.push( letter );
 				}
 			} )
@@ -44,48 +49,37 @@ export const createGameStore = ( gameData: Game ) => createStore<GameStore>( ( s
 	updateGameData: ( data ) => {
 		set(
 			produce<GameStore>( state => {
-				state.gameData = data;
+				state.game = data;
 			} )
 		);
 	}
 } ) );
 
-export const GameStoreContext = createContext<StoreApi<GameStore> | undefined>( undefined );
-
-export const useGameStore = <T>( selector: ( store: GameStore ) => T ) => {
-	const gameStoreContext = useContext( GameStoreContext );
-	if ( !gameStoreContext ) {
-		throw new Error( "useGameStore to be used from inside the provider!" );
-	}
-
-	return useStore( gameStoreContext, selector );
-};
-
 // Game State Hooks
-export const useGameWords = () => useGameStore( state => state.gameData.words );
-export const useGameGuesses = () => useGameStore( state => state.gameData.guesses );
+export const useGameWords = () => useGameStore( state => state.game.words );
+export const useGameGuesses = () => useGameStore( state => state.game.guesses );
 export const useIsGameCompleted = () => useGameStore( state => {
-	const areAllWordsCompleted = state.gameData.words.length === state.gameData.completedWords.length;
-	const areAllGuessesCompleted = state.gameData.guesses.length ===
-		state.gameData.words.length + state.gameData.wordLength;
+	const areAllWordsCompleted = state.game.words.length === state.game.completedWords.length;
+	const areAllGuessesCompleted = state.game.guesses.length ===
+		state.game.words.length + state.game.wordLength;
 	return areAllGuessesCompleted || areAllWordsCompleted;
 } );
 
-export const useAvailableLetters = () => useGameStore( state => getAvailableLetters( state.gameData.guesses ) );
+export const useAvailableLetters = () => useGameStore( state => getAvailableLetters( state.game.guesses ) );
 
-export const useGuessBlockMap = () => useGameStore( ( { gameData, currentGuess } ) => {
+export const useGuessBlockMap = () => useGameStore( ( { game, currentGuess } ) => {
 	const map: Record<string, PositionData[][]> = {};
-	gameData.words.forEach( word => {
-		const completedIndex = gameData.guesses.indexOf( word );
-		map[ word ] = new Array( gameData.wordLength + gameData.wordCount ).fill( 0 ).map(
-			( _, i ) => i < gameData.guesses.length
-				? calculatePositions( word, gameData.guesses[ i ], completedIndex !== -1 && i > completedIndex )
-				: new Array( gameData.wordLength ).fill( 0 ).map( ( _, index ) => {
+	game.words.forEach( word => {
+		const completedIndex = game.guesses.indexOf( word );
+		map[ word ] = new Array( game.wordLength + game.wordCount ).fill( 0 ).map(
+			( _, i ) => i < game.guesses.length
+				? calculatePositions( word, game.guesses[ i ], completedIndex !== -1 && i > completedIndex )
+				: new Array( game.wordLength ).fill( 0 ).map( ( _, index ) => {
 					if ( completedIndex > -1 ) {
 						return { letter: "", state: "empty", index };
 					}
 
-					if ( i === gameData.guesses.length ) {
+					if ( i === game.guesses.length ) {
 						return { letter: currentGuess[ index ], state: "empty", index };
 					}
 
@@ -96,7 +90,7 @@ export const useGuessBlockMap = () => useGameStore( ( { gameData, currentGuess }
 	return map;
 } );
 
-export const useGameId = () => useGameStore( state => state.gameData.id );
+export const useGameId = () => useGameStore( state => state.game.id );
 export const useCurrentGuess = () => useGameStore( state => state.currentGuess );
 export const useBackspaceCurrentGuess = () => useGameStore( state => state.backspaceCurrentGuess );
 export const useResetCurrentGuess = () => useGameStore( state => state.resetCurrentGuess );
@@ -104,5 +98,5 @@ export const useUpdateCurrentGuess = () => useGameStore( state => state.updateCu
 export const useIsValidWord = () => useGameStore( state => dictionary.includes( state.currentGuess.join( "" ) ) );
 export const useUpdateGameData = () => useGameStore( state => state.updateGameData );
 export const useIsValidGuessLength = () => useGameStore(
-	state => state.currentGuess.length === state.gameData.wordLength
+	state => state.currentGuess.length === state.game.wordLength
 );

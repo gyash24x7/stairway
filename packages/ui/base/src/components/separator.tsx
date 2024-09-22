@@ -1,5 +1,3 @@
-"use client";
-
 import { Root } from "@radix-ui/react-separator";
 import { ComponentPropsWithoutRef, ElementRef, forwardRef } from "react";
 import { cn } from "../utils";

@@ -1,15 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { CommandBus, QueryBus } from "@nestjs/cqrs";
-import { type AuthContext, LoggerFactory, type MiddlewareFn, TrpcService, type UserAuthInfo } from "@shared/api";
+import { LoggerFactory, TrpcService } from "@shared/api";
 import { TRPCError } from "@trpc/server";
-import { z } from "zod";
-import { CreateGameCommand, MakeGuessCommand } from "./commands";
-import { GameDataQuery } from "./queries";
 import { Messages } from "./wordle.constants.ts";
-import type { Game } from "./wordle.schema.ts";
-
-type GameIdInput = { gameId: string };
-type WordleContext = { gameData: Game, authInfo: UserAuthInfo }
+import { createGameInputSchema, type GameIdInput, gameIdInputSchema, makeGuessInputSchema } from "./wordle.inputs.ts";
+import { WordleMutations } from "./wordle.mutations.ts";
+import { WordleQueries } from "./wordle.queries.ts";
 
 @Injectable()
 export class WordleRouter {
@@ -18,68 +13,47 @@ export class WordleRouter {
 
 	constructor(
 		private readonly trpc: TrpcService,
-		private readonly queryBus: QueryBus,
-		private readonly commandBus: CommandBus
+		private readonly queries: WordleQueries,
+		private readonly mutations: WordleMutations
 	) {}
-
-	createContext() {
-		return this.trpc.createContextFn;
-	}
 
 	router() {
 		return this.trpc.router( {
-			createGame: this.trpc.authenticatedProcedure
-				.input( z.object( { wordCount: z.number().optional(), wordLength: z.number().optional() } ) )
-				.mutation( ( { input, ctx: { authInfo } } ) => {
-					const command = new CreateGameCommand( input, authInfo );
-					return this.commandBus.execute<CreateGameCommand, Game>( command );
-				} ),
+			createGame: this.trpc.procedure.input( createGameInputSchema )
+				.mutation( ( { input, ctx } ) => this.mutations.createGame( input, ctx ) ),
 
-			makeGuess: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string().cuid2(), guess: z.string() } ) )
-				.use( this.gameDataMiddleware() )
-				.use( this.validationMiddleware() )
-				.mutation( ( { input, ctx: { gameData } } ) => {
-					const command = new MakeGuessCommand( input, gameData );
-					return this.commandBus.execute<MakeGuessCommand, Game>( command );
-				} ),
+			makeGuess: this.trpc.procedure.input( makeGuessInputSchema )
+				.use( this.gameDataMiddleware( true ) )
+				.mutation( ( { input, ctx } ) => this.mutations.makeGuess( input, ctx.game ) ),
 
-			getGame: this.trpc.authenticatedProcedure
-				.input( z.object( { gameId: z.string().cuid2() } ) )
+			getGame: this.trpc.procedure.input( gameIdInputSchema )
 				.use( this.gameDataMiddleware() )
-				.query( ( { ctx: { gameData } } ) => gameData )
+				.query( ( { ctx: { game } } ) => game )
 		} );
 	}
 
-	gameDataMiddleware(): MiddlewareFn<AuthContext, WordleContext> {
-		return async opts => {
+	gameDataMiddleware( requireInProgress?: true ) {
+		return this.trpc.middleware( async opts => {
 			const { gameId } = await opts.getRawInput() as GameIdInput;
 			const { authInfo } = opts.ctx;
-			const gameDataQuery = new GameDataQuery( gameId );
-			const gameData: Game | undefined = await this.queryBus.execute( gameDataQuery );
+			const game = await this.queries.getGameDate( gameId );
 
-			if ( !gameData ) {
+			if ( !game ) {
 				this.logger.error( "Game Not Found! UserId: %s", authInfo.id );
 				throw new TRPCError( { code: "NOT_FOUND", message: Messages.GAME_NOT_FOUND } );
 			}
 
-			if ( gameData.playerId !== authInfo.id ) {
+			if ( game.playerId !== authInfo.id ) {
 				this.logger.error( "Logged In User is not playing this game! UserId: %s", authInfo.id );
 				throw new TRPCError( { code: "FORBIDDEN", message: Messages.PLAYER_NOT_PART_OF_GAME } );
 			}
 
-			return opts.next( { ctx: { authInfo, gameData } } );
-		};
-	}
-
-	validationMiddleware(): MiddlewareFn<WordleContext, WordleContext> {
-		return async ( { ctx, next } ) => {
-			if ( ctx.gameData.completedWords.length === ctx.gameData.words.length ) {
-				this.logger.error( "Game Status is incorrect! GameId: %s", ctx.gameData.id );
+			if ( requireInProgress && game.completedWords.length === game.words.length ) {
+				this.logger.error( "Game Status is incorrect! GameId: %s", game.id );
 				throw new TRPCError( { code: "BAD_REQUEST", message: Messages.INCORRECT_STATUS } );
 			}
 
-			return next( { ctx } );
-		};
+			return opts.next( { ctx: { authInfo, game } } );
+		} );
 	}
 }
