@@ -4,7 +4,8 @@
 	"module": "src/main.ts",
 	"type": "module",
 	"scripts": {
-		"dev": "bun run --watch src/main.ts"
+		"dev": "bun run --watch src/main.ts",
+		"start": "NODE_ENV=production bun run src/main.ts"
 	},
 	"dependencies": {
 		"@nestjs/common": "10.4.3",

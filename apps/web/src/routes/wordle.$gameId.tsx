@@ -1,5 +1,7 @@
+import { client } from "@stairway/clients/wordle";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { GameCompleted, GameInProgress, useGameStore, useIsGameCompleted, wordle } from "@wordle/ui";
+import { GameCompleted, GameInProgress } from "@wordle/components";
+import { useGameStore, useIsGameCompleted } from "@wordle/store";
 
 export const Route = createFileRoute( "/wordle/$gameId" )( {
 	beforeLoad: ( { context } ) => {
@@ -8,7 +10,7 @@ export const Route = createFileRoute( "/wordle/$gameId" )( {
 		}
 	},
 	loader: async ( { params: { gameId } } ) => {
-		const game = await wordle.getGame.query( { gameId } );
+		const game = await client.getGame.query( { gameId } );
 		useGameStore.setState( state => ( { ...state, game } ) );
 		return game;
 	},

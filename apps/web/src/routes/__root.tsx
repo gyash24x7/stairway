@@ -1,9 +1,8 @@
 import { DisplayAuthInfo } from "@/components/display-auth-info.tsx";
 import { Navbar } from "@/components/navbar.tsx";
-import type { UserAuthInfo } from "@auth/api";
-import { Separator } from "@base/ui";
+import { Separator } from "@base/components";
+import type { UserAuthInfo } from "@stairway/clients/auth";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 
 export const Route = createRootRouteWithContext<{ authInfo?: UserAuthInfo }>()( {
 	component: () => {
@@ -20,7 +19,6 @@ export const Route = createRootRouteWithContext<{ authInfo?: UserAuthInfo }>()( 
 				<Navbar authInfo={ authInfo }/>
 				<Separator className={ "mb-10" }/>
 				<Outlet/>
-				<TanStackRouterDevtools/>
 			</main>
 		);
 	}

@@ -1,5 +1,5 @@
-import type { UserAuthInfo } from "@auth/api";
-import { Spinner } from "@base/ui";
+import { Spinner } from "@base/components";
+import { client } from "@stairway/clients/auth";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
 import React from "react";
@@ -21,20 +21,10 @@ declare module "@tanstack/react-router" {
 	}
 }
 
-const fetchAuthInfo = async () => {
-	const res = await fetch( "http://localhost:8000/api/auth/user", { credentials: "include" } );
-	if ( res.status === 200 ) {
-		const authInfo: UserAuthInfo | undefined = await res.json().catch();
-		return authInfo;
-	}
-
-	return undefined;
-};
-
 const App = () => {
 	const { data, isPending, isError, error } = useQuery( {
 		queryKey: [ "user" ],
-		queryFn: () => fetchAuthInfo()
+		queryFn: () => client.fetchAuthInfo()
 	} );
 
 	if ( isPending ) {

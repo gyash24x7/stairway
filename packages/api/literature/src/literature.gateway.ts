@@ -3,10 +3,12 @@ import { LoggerFactory } from "@shared/api";
 import { Server, type Socket } from "socket.io";
 import { Constants } from "./literature.constants.ts";
 
+const FRONTEND_URL = Bun.env[ "FRONTEND_URL" ] ?? "http://localhost:3000";
+
 @WebSocketGateway( {
 	namespace: Constants.LITERATURE,
 	cors: {
-		origin: "http://localhost:3000",
+		origin: FRONTEND_URL,
 		credentials: true
 	}
 } )

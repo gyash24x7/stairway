@@ -1,29 +1,22 @@
-import { UserAuthInfo } from "@auth/api";
-import { Button, Spinner } from "@base/ui";
+import { Button, Spinner } from "@base/components";
 import { EnterIcon, ExitIcon, HomeIcon } from "@radix-ui/react-icons";
+import { client, LOGIN_URL, type UserAuthInfo } from "@stairway/clients/auth";
 import { useMutation } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { Fragment } from "react";
-
-const logout = async () => {
-	await fetch(
-		"http://localhost:8000/api/auth/logout",
-		{ method: "DELETE", credentials: "include" }
-	).then( res => res.json() );
-};
 
 export const Navbar = ( { authInfo }: { authInfo?: UserAuthInfo } ) => {
 	const router = useRouter();
 
 	const { mutate, isPending } = useMutation( {
-		mutationFn: () => logout(),
+		mutationFn: () => client.logout(),
 		onSuccess: () => router.invalidate()
 	} );
 
 	return (
 		<div className="p-2 flex gap-3 text-lg flex-row-reverse items-center">
 			{ !authInfo && (
-				<a href={ "http://localhost:8000/api/auth/login" }>
+				<a href={ LOGIN_URL }>
 					<Button variant={ "ghost" } className={ "font-bold flex gap-2 items-center" }>
 						<Fragment>LOGIN</Fragment>
 						<EnterIcon fontWeight={ "bold" } className={ "w-4 h-4" }/>
