@@ -1,8 +1,6 @@
-"use client";
-
 import { cn } from "@base/ui";
 import { CardSet } from "@stairway/cards";
-import { DisplayCardSet } from "./display-card";
+import { DisplayCardSet } from "./display-card.tsx";
 
 export type SelectCardSetProps = {
 	cardSet?: CardSet;

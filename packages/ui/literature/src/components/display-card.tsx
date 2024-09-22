@@ -1,6 +1,4 @@
-"use client";
-
-import { cn, fjallaOne } from "@base/ui";
+import { cn } from "@base/ui";
 import type { CardRank, CardSet, CardSuit } from "@stairway/cards";
 
 export interface DisplayCardProps {
@@ -42,7 +40,7 @@ export const DisplayCardSet = ( { cardSet }: { cardSet: CardSet } ) => {
 
 export const DisplayCard = ( { rank, suit }: DisplayCardProps ) => (
 	<div className={ "border-2 py-4 px-3 rounded-md border-gray-300 flex flex-col gap-2 items-center w-20" }>
-		<h1 className={ cn( isRed( suit ) ? "text-red-600" : "text-gray-800", "text-4xl mb-2", fjallaOne.className ) }>
+		<h1 className={ cn( isRed( suit ) ? "text-red-600" : "text-gray-800", "text-4xl mb-2 font-fjalla" ) }>
 			{ rankTextMap[ rank ] }
 		</h1>
 		<img src={ suitSrcMap[ suit ] } alt={ "" } width={ 32 } height={ 32 } className={ "mb-2" }/>

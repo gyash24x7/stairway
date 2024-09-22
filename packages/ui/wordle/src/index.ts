@@ -1,3 +1,3 @@
 export * from "./components";
-export * from "./actions";
-export * from "./store";
+export * from "./client.ts";
+export * from "./store.ts";

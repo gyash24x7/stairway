@@ -1,5 +1,3 @@
-"use client";
-
 import { ComponentProps, ComponentPropsWithoutRef, ElementRef, forwardRef, HTMLAttributes } from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "../utils";

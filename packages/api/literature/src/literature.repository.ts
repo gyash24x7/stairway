@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { PostgresClientFactory } from "@shared/api";
-import type { CardSet } from "@stairway/cards";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import * as schema from "./literature.schema.ts";
@@ -19,15 +18,7 @@ export class LiteratureRepository {
 	async getGameById( id: string ) {
 		return this.db.query.games.findFirst( {
 			where: eq( schema.games.id, id ),
-			with: {
-				players: true,
-				moves: {
-					limit: 5,
-					orderBy: ( moves, { desc } ) => [ desc( moves.timestamp ) ]
-				},
-				cardMappings: true,
-				teams: true
-			}
+			with: { players: true, teams: true }
 		} );
 	}
 
@@ -65,13 +56,78 @@ export class LiteratureRepository {
 		} );
 	}
 
+	async getCardMappingForCard( gameId: string, cardId: string ) {
+		return this.db.query.cardMappings.findFirst( {
+			where: and(
+				eq( schema.cardMappings.gameId, gameId ),
+				eq( schema.cardMappings.cardId, cardId )
+			)
+		} );
+	}
+
+	async getCardMappingsForCards( gameId: string, cardIds: string[] ) {
+		return this.db.query.cardMappings.findMany( {
+			where: and(
+				eq( schema.cardMappings.gameId, gameId ),
+				inArray( schema.cardMappings.cardId, cardIds )
+			)
+		} );
+	}
+
+	async getCardLocationsForPlayer( gameId: string, playerId: string ) {
+		return this.db.select().from( schema.cardLocations )
+			.where( and(
+				eq( schema.cardLocations.gameId, gameId ),
+				eq( schema.cardLocations.playerId, playerId )
+			) )
+			.orderBy( desc( schema.cardLocations.weight ) );
+	}
+
+	async getCardLocationsForCard( gameId: string, cardId: string ) {
+		return this.db.select().from( schema.cardLocations )
+			.where( and(
+				eq( schema.cardLocations.gameId, gameId ),
+				eq( schema.cardLocations.cardId, cardId )
+			) )
+			.orderBy( desc( schema.cardLocations.weight ) );
+	}
+
+	async getAskMoves( gameId: string ) {
+		return this.db.select().from( schema.asks )
+			.where( eq( schema.asks.gameId, gameId ) )
+			.orderBy( desc( schema.asks.timestamp ) )
+			.limit( 5 );
+	}
+
+	async getAskMove( moveId: string ) {
+		return this.db.query.asks.findFirst( { where: eq( schema.asks.id, moveId ) } );
+	}
+
+	async getCallMove( moveId: string ) {
+		return this.db.query.calls.findFirst( { where: eq( schema.calls.id, moveId ) } );
+	}
+
+	async getTransferMove( moveId: string ) {
+		return this.db.query.transfers.findFirst( { where: eq( schema.transfers.id, moveId ) } );
+	}
+
 	async createCardMappings( input: typeof schema.cardMappings.$inferInsert[] ) {
 		return this.db.insert( schema.cardMappings ).values( input ).returning();
 	}
 
-	async createMove( input: typeof schema.moves.$inferInsert ) {
-		const [ move ] = await this.db.insert( schema.moves ).values( input ).returning();
-		return move;
+	async createAsk( input: typeof schema.asks.$inferInsert ) {
+		const [ ask ] = await this.db.insert( schema.asks ).values( input ).returning();
+		return ask;
+	}
+
+	async createCall( input: typeof schema.calls.$inferInsert ) {
+		const [ call ] = await this.db.insert( schema.calls ).values( input ).returning();
+		return call;
+	}
+
+	async createTransfer( input: typeof schema.transfers.$inferInsert ) {
+		const [ transfer ] = await this.db.insert( schema.transfers ).values( input ).returning();
+		return transfer;
 	}
 
 	async updateGameStatus( gameId: string, status: GameStatus ) {
@@ -80,6 +136,10 @@ export class LiteratureRepository {
 
 	async updateCurrentTurn( gameId: string, currentTurn: string ) {
 		await this.db.update( schema.games ).set( { currentTurn } ).where( eq( schema.games.id, gameId ) );
+	}
+
+	async updateLastMove( gameId: string, lastMoveId: string ) {
+		await this.db.update( schema.games ).set( { lastMoveId } ).where( eq( schema.games.id, gameId ) );
 	}
 
 	async updateCardMapping( cardId: string, gameId: string, playerId: string ) {
@@ -91,7 +151,7 @@ export class LiteratureRepository {
 			) );
 	}
 
-	async deleteCardMappings( cardIds: string[], gameId: string ) {
+	async deleteCardMappings( gameId: string, cardIds: string[] ) {
 		await this.db.delete( schema.cardMappings )
 			.where( and(
 				eq( schema.cardMappings.gameId, gameId ),
@@ -99,7 +159,7 @@ export class LiteratureRepository {
 			) );
 	}
 
-	async updateTeamScore( teamId: string, score: number, setsWon: CardSet[] ) {
+	async updateTeamScore( teamId: string, score: number, setsWon: string[] ) {
 		await this.db.update( schema.teams ).set( { score, setsWon } ).where( eq( schema.teams.id, teamId ) );
 	}
 
@@ -114,33 +174,8 @@ export class LiteratureRepository {
 		);
 	}
 
-	async getCardLocationsForPlayer( gameId: string, playerId: string ) {
-		return this.db.select().from( schema.cardLocations )
-			.where( and(
-				eq( schema.cardLocations.gameId, gameId ),
-				eq( schema.cardLocations.playerId, playerId )
-			) )
-			.orderBy( desc( schema.cardLocations.weight ) );
-	}
-
-	async getCardLocationsForGame( gameId: string ) {
-		return this.db.select().from( schema.cardLocations )
-			.where( eq( schema.cardLocations.gameId, gameId ) )
-			.orderBy( desc( schema.cardLocations.weight ) );
-	}
-
 	async createCardLocations( input: typeof schema.cardLocations.$inferInsert[] ) {
 		await this.db.insert( schema.cardLocations ).values( input ).returning();
-	}
-
-	async deleteCardLocationForPlayer( gameId: string, playerId: string, cardId: string ) {
-		await this.db.delete( schema.cardLocations ).where(
-			and(
-				eq( schema.cardLocations.gameId, gameId ),
-				eq( schema.cardLocations.playerId, playerId ),
-				eq( schema.cardLocations.cardId, cardId )
-			)
-		);
 	}
 
 	async deleteCardLocationForCards( gameId: string, cardIds: string[] ) {
@@ -152,12 +187,16 @@ export class LiteratureRepository {
 		);
 	}
 
-	async updateCardLocationForPlayer( input: typeof schema.cardLocations.$inferInsert ) {
-		await this.db.update( schema.cardLocations ).set( input ).where(
-			and(
-				eq( schema.cardLocations.gameId, input.gameId ),
-				eq( schema.cardLocations.playerId, input.playerId ),
-				eq( schema.cardLocations.cardId, input.cardId )
+	async updateCardLocations( inputs: typeof schema.cardLocations.$inferInsert[] ) {
+		await Promise.all(
+			inputs.map( input =>
+				this.db.update( schema.cardLocations ).set( input ).where(
+					and(
+						eq( schema.cardLocations.gameId, input.gameId ),
+						eq( schema.cardLocations.playerId, input.playerId ),
+						eq( schema.cardLocations.cardId, input.cardId )
+					)
+				)
 			)
 		);
 	}

@@ -1,3 +1,5 @@
+import { type Config, names } from "unique-names-generator";
+
 export class Constants {
 	public static readonly AUTH_USER = "authInfo";
 	public static readonly LITERATURE = "literature";
@@ -8,14 +10,15 @@ export class GameEvents {
 	public static readonly PLAYER_JOINED = "player-joined";
 	public static readonly TEAMS_CREATED = "teams-created";
 	public static readonly STATUS_UPDATED = "status-updated";
-	public static readonly MOVE_CREATED = "move-created";
+	public static readonly CARD_ASKED = "card-asked";
+	public static readonly SET_CALLED = "set-called";
 	public static readonly TURN_UPDATED = "turn-updated";
+	public static readonly TURN_TRANSFERRED = "turn-transferred";
 	public static readonly SCORE_UPDATED = "score-updated";
 	public static readonly CARD_COUNT_UPDATED = "card-count-updated";
 	public static readonly GAME_COMPLETED = "game-completed";
 	// Player Specific Events
-	public static readonly HAND_UPDATED = "hand-updated";
-	public static readonly CARD_LOCATIONS_UPDATED = "card-locations-updated";
+	public static readonly CARDS_DEALT = "cards-dealt";
 }
 
 export class Messages {
@@ -36,4 +39,11 @@ export class Messages {
 	public static readonly TRANSFER_AFTER_SUCCESSFUL_CALL = "Turn can only be transferred after a successful call!";
 	public static readonly NO_CARDS_WITH_RECEIVING_PLAYER = "Turn can only be transferred to a player with cards!";
 	public static readonly TRANSFER_TO_OPPONENT_TEAM = "Turn can only be transferred to member of your team!";
+	public static readonly CARD_NOT_PART_OF_GAME = "Card Not Part of Game!";
 }
+
+export const namesConfig: Config = {
+	dictionaries: [ names ],
+	separator: " ",
+	length: 1
+};

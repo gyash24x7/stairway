@@ -1,5 +1,3 @@
-"use client";
-
 import { useGameWords, useGuessBlockMap } from "../store";
 import { GuessBlocks } from "./guess-blocks.tsx";
 import { Keyboard } from "./keyboard.tsx";

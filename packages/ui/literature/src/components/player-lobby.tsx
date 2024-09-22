@@ -1,7 +1,5 @@
-"use client";
-
-import { usePlayers } from "../store";
-import { DisplayPlayer } from "./display-player";
+import { usePlayers } from "../store.ts";
+import { DisplayPlayer } from "./display-player.tsx";
 
 export const PlayerLobby = () => {
 	const players = usePlayers();

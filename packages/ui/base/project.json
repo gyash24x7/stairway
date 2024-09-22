@@ -1,8 +1,0 @@
-{
-	"name": "@base/ui",
-	"$schema": "../../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "packages/ui/base",
-	"projectType": "library",
-	"tags": [ ],
-	"targets": { }
-}

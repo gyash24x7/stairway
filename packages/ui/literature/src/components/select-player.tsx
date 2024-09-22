@@ -1,9 +1,7 @@
-"use client";
-
 import { cn } from "@base/ui";
 import type { Player } from "@literature/api";
 import type { Dispatch, SetStateAction } from "react";
-import { DisplayPlayer } from "./display-player";
+import { DisplayPlayer } from "./display-player.tsx";
 
 export type SelectPlayerProps = {
 	options: Player[];

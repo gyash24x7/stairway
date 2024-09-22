@@ -1,4 +1,4 @@
 export * from "./components";
-export * from "./actions";
-export * from "./socket";
-export * from "./store";
+export * from "./client.ts";
+export * from "./socket.ts";
+export * from "./store.ts";
