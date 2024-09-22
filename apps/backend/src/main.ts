@@ -23,6 +23,7 @@ const StaticModule = ServeStaticModule.forRoot( {
 class AppModule {}
 
 const logger = LoggerFactory.getLogger( AppModule );
+logger.debug( "Env: %o", Bun.env );
 
 const app = await NestFactory.create( AppModule );
 const host = Bun.env[ "HOST" ] ?? "localhost";
