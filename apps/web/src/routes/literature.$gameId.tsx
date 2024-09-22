@@ -26,7 +26,7 @@ import {
 	usePlayerSpecificEventHandlers
 } from "@literature/store";
 import { CardHand } from "@stairway/cards";
-import { client, WS_URL } from "@stairway/clients/literature";
+import { client } from "@stairway/clients/literature";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 
@@ -58,7 +58,13 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 		);
 
 		useEffect( () => {
-			const unsubscribe = initializeSocket( WS_URL, gameId, playerId, gameEventHandlers, playerEventHandlers );
+			const unsubscribe = initializeSocket(
+				"/literature",
+				gameId,
+				playerId,
+				gameEventHandlers,
+				playerEventHandlers
+			);
 			return () => unsubscribe();
 		}, [] );
 

@@ -1,16 +1,20 @@
 import { Button, Spinner } from "@base/components";
 import { EnterIcon, ExitIcon, HomeIcon } from "@radix-ui/react-icons";
-import { client, LOGIN_URL, type UserAuthInfo } from "@stairway/clients/auth";
+import { client, type UserAuthInfo } from "@stairway/clients/auth";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Fragment } from "react";
 
-export const Navbar = ( { authInfo }: { authInfo?: UserAuthInfo } ) => {
-	const router = useRouter();
+const LOGIN_URL = process.env.NODE_ENV === "development"
+	? "http://localhost:8000/api/auth/login"
+	: "/api/auth/login";
 
+export const Navbar = ( { authInfo }: { authInfo: UserAuthInfo | null } ) => {
 	const { mutate, isPending } = useMutation( {
 		mutationFn: () => client.logout(),
-		onSuccess: () => router.invalidate()
+		onSuccess: () => {
+			window.location.href = "/";
+		}
 	} );
 
 	return (

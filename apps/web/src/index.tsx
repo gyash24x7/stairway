@@ -6,14 +6,14 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen.ts";
 
-import "@fontsource/bungee-spice/400.css";
-import "@fontsource/fjalla-one/400.css";
-import "@fontsource/montserrat/500.css";
-import "@fontsource/montserrat/700.css";
-import "@fontsource/montserrat/900.css";
+import "@fontsource/bungee-spice/latin-400.css";
+import "@fontsource/fjalla-one/latin-400.css";
+import "@fontsource/montserrat/latin-500.css";
+import "@fontsource/montserrat/latin-700.css";
+import "@fontsource/montserrat/latin-900.css";
 import "./styles.css";
 
-const router = createRouter( { routeTree } );
+const router = createRouter( { routeTree, context: { authInfo: null } } );
 
 declare module "@tanstack/react-router" {
 	interface Register {

@@ -1,12 +1,19 @@
 import { LiteratureModule } from "@literature/api";
 import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
+import { ServeStaticModule } from "@nestjs/serve-static";
 import { HealthModule, LoggerFactory, PostgresModule } from "@shared/api";
 import { WordleModule } from "@wordle/api";
 import cookieParser from "cookie-parser";
+import path from "node:path";
+
+const StaticModule = ServeStaticModule.forRoot( {
+	rootPath: path.join( process.cwd(), "..", "web", "dist" )
+} );
 
 @Module( {
 	imports: [
+		StaticModule,
 		HealthModule,
 		PostgresModule,
 		WordleModule,

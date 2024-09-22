@@ -1,20 +1,25 @@
 import type { UserAuthInfo } from "@auth/api";
-import { BACKEND_URL } from "./utils.ts";
 
-export const LOGIN_URL = `${ BACKEND_URL }/api/auth/login`;
+const authInfoUrl = process.env.NODE_ENV === "development"
+	? "http://localhost:8000/api/auth/user"
+	: "/api/auth/user";
+
+const logoutUrl = process.env.NODE_ENV === "development"
+	? "http://localhost:8000/api/auth/logout"
+	: "/api/auth/logout";
 
 export const client = {
 	fetchAuthInfo: async () => {
-		const res = await fetch( `${ BACKEND_URL }/api/auth/user`, { credentials: "include" } );
+		const res = await fetch( authInfoUrl, { credentials: "include" } );
 		if ( res.status === 200 ) {
-			const authInfo: UserAuthInfo | undefined = await res.json().catch();
+			const authInfo: UserAuthInfo = await res.json();
 			return authInfo;
 		}
 
-		return undefined;
+		return null;
 	},
 	logout: async () => {
-		await fetch( `${ BACKEND_URL }/api/auth/logout`, { method: "DELETE", credentials: "include" } );
+		await fetch( logoutUrl, { method: "DELETE", credentials: "include" } );
 	}
 };
 
