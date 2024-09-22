@@ -6,7 +6,7 @@ import { AuthService } from "./auth.service.ts";
 const FRONTEND_URL = Bun.env[ "FRONTEND_URL" ] ?? "http://localhost:3000";
 
 const cookieOptions = {
-	domain: "localhost",
+	domain: Bun.env[ "NODE_ENV" ] === "production" ? "stairway.yashgupta.me" : "localhost",
 	path: "/",
 	secure: Bun.env[ "NODE_ENV" ] === "production",
 	httpOnly: true,
