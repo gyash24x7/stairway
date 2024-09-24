@@ -95,16 +95,23 @@ export class LiteratureRepository {
 	async getAskMoves( gameId: string ) {
 		return this.db.select().from( schema.asks )
 			.where( eq( schema.asks.gameId, gameId ) )
-			.orderBy( desc( schema.asks.timestamp ) )
-			.limit( 5 );
+			.orderBy( desc( schema.asks.timestamp ) );
 	}
 
 	async getAskMove( moveId: string ) {
 		return this.db.query.asks.findFirst( { where: eq( schema.asks.id, moveId ) } );
 	}
 
+	async getCallMoves( gameId: string ) {
+		return this.db.query.calls.findMany( { where: eq( schema.calls.gameId, gameId ) } );
+	}
+	
 	async getCallMove( moveId: string ) {
 		return this.db.query.calls.findFirst( { where: eq( schema.calls.id, moveId ) } );
+	}
+
+	async getTransferMoves( gameId: string ) {
+		return this.db.query.transfers.findMany( { where: eq( schema.transfers.gameId, gameId ) } );
 	}
 
 	async getTransferMove( moveId: string ) {

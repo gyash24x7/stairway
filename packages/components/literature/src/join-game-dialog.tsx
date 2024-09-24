@@ -1,4 +1,13 @@
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, Input } from "@base/components";
+import {
+	Button,
+	Drawer,
+	DrawerContent,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+	DrawerTrigger,
+	Input
+} from "@base/components";
 import { useState } from "react";
 import { JoinGame } from "./game-actions.tsx";
 
@@ -6,26 +15,28 @@ export function JoinGameDialog() {
 	const [ code, setCode ] = useState( "" );
 
 	return (
-		<Dialog>
-			<DialogTrigger className={ "font-bold" }>
-				JOIN GAME
-			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle className={ "text-xl" }>Join Game</DialogTitle>
-				</DialogHeader>
-				<div>
-					<Input
-						name={ "code" }
-						placeholder={ "Enter Game Code" }
-						value={ code }
-						onChange={ ( e ) => setCode( e.target.value ) }
-					/>
+		<Drawer>
+			<DrawerTrigger asChild>
+				<Button variant={ "secondary" }>JOIN GAME</Button>
+			</DrawerTrigger>
+			<DrawerContent>
+				<div className={ "mx-auto w-full max-w-sm" }>
+					<DrawerHeader>
+						<DrawerTitle className={ "text-xl text-center" }>Join Game</DrawerTitle>
+					</DrawerHeader>
+					<div className={ "px-4" }>
+						<Input
+							name={ "code" }
+							placeholder={ "Enter Game Code" }
+							value={ code }
+							onChange={ ( e ) => setCode( e.target.value ) }
+						/>
+					</div>
+					<DrawerFooter>
+						<JoinGame code={ code }/>
+					</DrawerFooter>
 				</div>
-				<DialogFooter>
-					<JoinGame code={ code }/>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 }

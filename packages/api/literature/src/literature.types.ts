@@ -43,3 +43,23 @@ export type GameData = {
 
 export type LiteratureGameData = { game: Game; players: PlayerData; teams: TeamData; cardCounts: CardCounts }
 export type LiteratureContext = AuthContext & LiteratureGameData;
+
+export type PlayerMetrics = {
+	playerId: string;
+	totalAsks: number;
+	successfulAsks: number;
+	totalCalls: number;
+	successfulCalls: number;
+	totalTransfers: number;
+}
+
+export type TeamMetrics = {
+	teamId: string;
+	score: number;
+	setsWon: string[];
+}
+
+export type Metrics = {
+	player: PlayerMetrics[];
+	team: TeamMetrics[];
+}

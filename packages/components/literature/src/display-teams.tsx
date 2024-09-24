@@ -1,46 +1,24 @@
-import { useCardCounts, usePlayers, useTeams } from "@literature/store";
+import { usePlayers, useTeams } from "@literature/store";
 import { useMemo } from "react";
-import { DisplayPlayerWithCardCount } from "./display-player.tsx";
+import { DisplayScore } from "./display-score.tsx";
 
 export const DisplayTeams = () => {
 	const players = usePlayers();
 	const teams = useTeams();
-	const cardCounts = useCardCounts();
-	const teamList = useMemo( () => Object.values( teams ), [ teams ] );
+	const teamList = useMemo(
+		() => Object.values( teams ).toSorted( ( a, b ) => a.id.localeCompare( b.id ) ),
+		[ teams ]
+	);
 
 	return (
-		<div className={ "flex flex-col border-2 border-gray-300 rounded-md" }>
-			<div className={ "flex border-b-2 border-b-gray-300" }>
-				<div className={ "flex-1 p-3 flex items-center justify-center" }>
-					<h2 className={ "text-4xl font-fjalla" }>{ teamList[ 0 ]?.name.toUpperCase() }</h2>
-				</div>
-				<div className={ "p-3" }>
-					<h2 className={ "text-6xl font-fjalla" }>
-						{ teamList[ 0 ]?.score } - { teamList[ 1 ]?.score }
-					</h2>
-				</div>
-				<div className={ "flex-1 p-3 flex items-center justify-center" }>
-					<h2 className={ "text-4xl font-fjalla" }>{ teamList[ 1 ]?.name.toUpperCase() }</h2>
-				</div>
-			</div>
+		<div className={ "flex flex-col border-2 rounded-md" }>
+			<DisplayScore team1={ teamList[ 0 ] } team2={ teamList[ 1 ] }/>
 			<div className={ "flex" }>
-				<div className={ "w-full py-2 border-r-2 border-r-gray-300 flex flex-wrap" }>
-					{ teamList[ 0 ]?.memberIds.map( playerId => (
-						<DisplayPlayerWithCardCount
-							player={ players[ playerId ] }
-							key={ playerId }
-							cardCount={ cardCounts[ playerId ] }
-						/>
-					) ) }
+				<div className={ "w-full p-2 border-r-2 text-xs lg:text-md text-left" }>
+					{ teamList[ 0 ]?.memberIds.map( playerId => players[ playerId ].name ).join( ", " ) }
 				</div>
-				<div className={ "w-full py-2 flex flex-wrap" }>
-					{ teamList[ 1 ]?.memberIds.map( playerId => (
-						<DisplayPlayerWithCardCount
-							player={ players[ playerId ] }
-							key={ playerId }
-							cardCount={ cardCounts[ playerId ] }
-						/>
-					) ) }
+				<div className={ "w-full p-2 text-xs lg:text-md text-right" }>
+					{ teamList[ 1 ]?.memberIds.map( playerId => players[ playerId ].name ).join( ", " ) }
 				</div>
 			</div>
 		</div>

@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@base/components";
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
 import { useCardSetsInHand, useGameId, useMyTeam, usePlayers } from "@literature/store";
 import { CardSet, cardSetMap, PlayingCard } from "@stairway/cards";
 import { defineStepper } from "@stepperize/react";
@@ -9,11 +9,11 @@ import { SelectCard } from "./select-card.tsx";
 
 const ActionModal = ( props: { title: string; content: ReactNode; footer: ReactNode; } ) => (
 	<Fragment>
-		<DialogHeader>
-			<DialogTitle>{ props.title }</DialogTitle>
-		</DialogHeader>
-		<div>{ props.content }</div>
-		<DialogFooter>{ props.footer }</DialogFooter>
+		<DrawerHeader>
+			<DrawerTitle className={ "text-center" }>{ props.title }</DrawerTitle>
+		</DrawerHeader>
+		<div className={ "px-4" }>{ props.content }</div>
+		<DrawerFooter>{ props.footer }</DrawerFooter>
 	</Fragment>
 );
 
@@ -33,17 +33,17 @@ export const CallSetDialog = () => {
 	const [ cardOptions, setCardOptions ] = useState<string[]>( [] );
 	const [ cardMap, setCardMap ] = useState<Record<string, string>>( {} );
 
-	const [ showDialog, setShowDialog ] = useState( false );
+	const [ showDrawer, setShowDrawer ] = useState( false );
 
-	const openDialog = useCallback( () => {
-		setShowDialog( true );
+	const openDrawer = useCallback( () => {
+		setShowDrawer( true );
 	}, [] );
 
-	const closeDialog = useCallback( () => {
+	const closeDrawer = useCallback( () => {
 		setSelectedCardSet( undefined );
 		setCardOptions( [] );
 		setCardMap( {} );
-		setShowDialog( false );
+		setShowDrawer( false );
 	}, [] );
 
 	const handleCardSetSelect = useCallback( ( value?: string ) => {
@@ -78,74 +78,78 @@ export const CallSetDialog = () => {
 
 
 	return (
-		<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
-			<Button onClick={ openDialog }>CALL SET</Button>
-			<DialogContent>
-				{ stepper.when( "SET", () => (
-					<ActionModal
-						title={ "Select Card Set to Call" }
-						content={
-							<SelectCardSet
-								cardSet={ selectedCardSet }
-								handleSelection={ handleCardSetSelect }
-								cardSetOptions={ Array.from( cardSets ) }
-							/>
-						}
-						footer={
-							<Button onClick={ stepper.next } disabled={ !selectedCardSet }>
-								SELECT CARD SET
-							</Button>
-						}
-					/>
-				) ) }
-				{ stepper.when( "LOCATIONS", () => (
-					<ActionModal
-						title={ "Select Card Locations" }
-						content={
-							<div className={ "flex flex-col gap-3 overflow-x-scroll" }>
-								{ team!.memberIds.map( playerId => players[ playerId ] ).map( player => (
-									<Fragment key={ player.id }>
-										<h1>Cards With { player.name }</h1>
-										<SelectCard
-											cards={ cardOptions.map( PlayingCard.fromId ) }
-											selectedCards={ getCardsForPlayers( player.id ) }
-											onSelect={ handleCardSelectForPlayer( player.id ) }
-											onDeselect={ handleCardDeSelectForPlayer }
-										/>
-									</Fragment>
-								) ) }
-							</div>
-						}
-						footer={
-							<div className={ "flex gap-3" }>
-								<Button onClick={ stepper.prev }>BACK</Button>
-								<Button onClick={ stepper.next }>NEXT</Button>
-							</div>
-						}
-					/>
-				) ) }
-				{ stepper.when( "CONFIRM", () => (
-					<ActionModal
-						title={ `Confirm Call for ${ selectedCardSet }` }
-						content={
-							<div className={ "flex flex-col gap-3" }>
-								{ Object.keys( cardMap ).map( cardId => (
-									<h3 key={ cardId }>
-										{ PlayingCard.fromId( cardId ).displayString } is
-										with { players[ cardMap[ cardId ] ].name }
-									</h3>
-								) ) }
-							</div>
-						}
-						footer={
-							<div className={ "w-full flex gap-3" }>
-								<Button onClick={ stepper.prev }>BACK</Button>
-								<CallSet gameId={ gameId } data={ cardMap } onSubmit={ closeDialog }/>
-							</div>
-						}
-					/>
-				) ) }
-			</DialogContent>
-		</Dialog>
+		<Drawer open={ showDrawer } onOpenChange={ setShowDrawer }>
+			<Button onClick={ openDrawer } className={ "flex-1 max-w-lg" }>CALL SET</Button>
+			<DrawerContent>
+				<div className={ "mx-auto w-full max-w-lg" }>
+					{ stepper.when( "SET", () => (
+						<ActionModal
+							title={ "Select Card Set to Call" }
+							content={
+								<SelectCardSet
+									cardSet={ selectedCardSet }
+									handleSelection={ handleCardSetSelect }
+									cardSetOptions={ Array.from( cardSets ) }
+								/>
+							}
+							footer={
+								<Button onClick={ stepper.next } disabled={ !selectedCardSet }>
+									SELECT CARD SET
+								</Button>
+							}
+						/>
+					) ) }
+					{ stepper.when( "LOCATIONS", () => (
+						<ActionModal
+							title={ "Select Card Locations" }
+							content={
+								<div className={ "flex flex-col gap-3" }>
+									{ team!.memberIds.map( playerId => players[ playerId ] ).map( player => (
+										<Fragment key={ player.id }>
+											<h1>Cards With { player.name }</h1>
+											<div className={ "overflow-x-scroll" }>
+												<SelectCard
+													cards={ cardOptions.map( PlayingCard.fromId ) }
+													selectedCards={ getCardsForPlayers( player.id ) }
+													onSelect={ handleCardSelectForPlayer( player.id ) }
+													onDeselect={ handleCardDeSelectForPlayer }
+												/>
+											</div>
+										</Fragment>
+									) ) }
+								</div>
+							}
+							footer={
+								<div className={ "flex gap-3" }>
+									<Button onClick={ stepper.prev } className={ "flex-1" }>BACK</Button>
+									<Button onClick={ stepper.next } className={ "flex-1" }>NEXT</Button>
+								</div>
+							}
+						/>
+					) ) }
+					{ stepper.when( "CONFIRM", () => (
+						<ActionModal
+							title={ `Confirm Call for ${ selectedCardSet }` }
+							content={
+								<div className={ "flex flex-col gap-3" }>
+									{ Object.keys( cardMap ).map( cardId => (
+										<h3 key={ cardId } className={ "text-center" }>
+											{ PlayingCard.fromId( cardId ).displayString } is
+											with { players[ cardMap[ cardId ] ].name }
+										</h3>
+									) ) }
+								</div>
+							}
+							footer={
+								<div className={ "w-full flex gap-3" }>
+									<Button onClick={ stepper.prev } className={ "flex-1" }>BACK</Button>
+									<CallSet gameId={ gameId } data={ cardMap } onSubmit={ closeDrawer }/>
+								</div>
+							}
+						/>
+					) ) }
+				</div>
+			</DrawerContent>
+		</Drawer>
 	);
 };

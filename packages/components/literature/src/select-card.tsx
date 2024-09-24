@@ -27,8 +27,8 @@ export function SelectCard( { cards, onSelect, onDeselect, selectedCards }: Sele
 					key={ card.id }
 					onClick={ () => handleCardClick( card.id ) }
 					className={ cn(
-						selectedCards.includes( card.id ) ? "bg-blue-100" : "bg-gray-100",
-						"cursor-pointer"
+						selectedCards.includes( card.id ) ? "bg-accent" : "bg-background",
+						"cursor-pointer rounded-md"
 					) }
 				>
 					<DisplayCard rank={ card.rank } suit={ card.suit }/>

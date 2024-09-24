@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { LoggerFactory } from "@shared/api";
 import { CardHand } from "@stairway/cards";
 import { LiteratureRepository } from "./literature.repository.ts";
-import type { CardCounts, PlayerData, TeamData } from "./literature.types.ts";
+import type { CardCounts, Game, Metrics, PlayerData, TeamData } from "./literature.types.ts";
 
 @Injectable()
 export class LiteratureQueries {
@@ -84,6 +84,44 @@ export class LiteratureQueries {
 		this.logger.debug( ">> getPreviousAsks()" );
 		const asks = await this.repository.getAskMoves( gameId );
 		this.logger.debug( "<< getPreviousAsks()" );
-		return asks;
+		return asks.slice( 0, 5 );
+	}
+
+	async getMetrics( game: Game, players: PlayerData, teams: TeamData ) {
+		this.logger.debug( ">> getMetrics()" );
+
+		const asks = await this.repository.getAskMoves( game.id );
+		const calls = await this.repository.getCallMoves( game.id );
+		const transfers = await this.repository.getTransferMoves( game.id );
+
+		const metrics: Metrics = { player: [], team: [] };
+
+		for ( const playerId of Object.keys( players ) ) {
+			const asksByPlayer = asks.filter( ask => ask.playerId === playerId );
+			const successfulAsks = asksByPlayer.filter( ask => ask.success );
+			const callsByPlayer = calls.filter( call => call.playerId === playerId );
+			const successfulCalls = callsByPlayer.filter( call => call.success );
+			const transfersByPlayer = transfers.filter( transfer => transfer.playerId === playerId );
+
+			metrics.player.push( {
+				playerId,
+				totalAsks: asksByPlayer.length,
+				successfulAsks: successfulAsks.length,
+				totalCalls: callsByPlayer.length,
+				successfulCalls: successfulCalls.length,
+				totalTransfers: transfersByPlayer.length
+			} );
+		}
+
+		for ( const teamId of Object.keys( teams ) ) {
+			metrics.team.push( {
+				teamId,
+				score: teams[ teamId ].score,
+				setsWon: teams[ teamId ].setsWon
+			} );
+		}
+
+		this.logger.debug( "<< getMetrics()" );
+		return metrics;
 	}
 }

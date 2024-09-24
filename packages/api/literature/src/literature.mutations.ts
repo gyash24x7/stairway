@@ -261,6 +261,14 @@ export class LiteratureMutations {
 			correctCall
 		} );
 
+		const calledCards = Object.keys( correctCall );
+		await this.repository.deleteCardMappings( game.id, calledCards );
+		await this.repository.deleteCardLocationForCards( game.id, calledCards );
+
+		Object.values( correctCall ).forEach( playerId => {
+			cardCounts[ playerId ]--;
+		} );
+
 		let winningTeamId = callingPlayer.teamId!;
 
 		if ( !success ) {
@@ -328,14 +336,6 @@ export class LiteratureMutations {
 				this.logger.debug( "Published TurnUpdatedEvent!" );
 			}
 		}
-
-		const calledCards = Object.keys( correctCall );
-		await this.repository.deleteCardMappings( game.id, calledCards );
-		await this.repository.deleteCardLocationForCards( game.id, calledCards );
-
-		Object.values( correctCall ).forEach( playerId => {
-			cardCounts[ playerId ]--;
-		} );
 
 		await this.repository.updateLastMove( game.id, call.id );
 		this.gateway.publishGameEvent( game.id, GameEvents.SET_CALLED, call );

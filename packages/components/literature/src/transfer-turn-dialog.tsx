@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTrigger } from "@base/components";
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
 import { useCardCounts, useGameId, useMyTeam, usePlayerId, usePlayers } from "@literature/store";
 import { useMemo, useState } from "react";
 import { TransferTurn } from "./game-actions.tsx";
@@ -12,38 +12,38 @@ export const TransferTurnDialog = () => {
 	const cardCounts = useCardCounts();
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
-	const [ showDialog, setShowDialog ] = useState( false );
+	const [ showDrawer, setShowDrawer ] = useState( false );
 
 	const myTeamMembersWithCards = useMemo( () => {
 		return myTeam?.memberIds.map( memberId => players[ memberId ] )
 			.filter( member => !!cardCounts[ member.id ] && member.id !== playerId ) ?? [];
 	}, [ myTeam, cardCounts, players ] );
 
-	const openDialog = () => setShowDialog( true );
-	const closeDialog = () => setShowDialog( false );
+	const openDrawer = () => setShowDrawer( true );
+	const closeDrawer = () => setShowDrawer( false );
 
 	return (
-		<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
-			<DialogTrigger>
-				<Button className={ "w-full" } onClick={ openDialog }>
-					TRANSFER TURN
-				</Button>
-			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<h1>Transfer Turn</h1>
-				</DialogHeader>
-				<div>
-					<SelectPlayer
-						options={ myTeamMembersWithCards }
-						setPlayer={ setSelectedPlayer }
-						player={ selectedPlayer }
-					/>
+		<Drawer open={ showDrawer } onOpenChange={ setShowDrawer }>
+			<Button className={ "flex-1 max-w-lg" } onClick={ openDrawer }>
+				TRANSFER TURN
+			</Button>
+			<DrawerContent>
+				<div className={ "mx-auto w-full max-w-lg" }>
+					<DrawerHeader>
+						<DrawerTitle className={ "text-center" }>Transfer Turn</DrawerTitle>
+					</DrawerHeader>
+					<div className={ "px-4" }>
+						<SelectPlayer
+							options={ myTeamMembersWithCards }
+							setPlayer={ setSelectedPlayer }
+							player={ selectedPlayer }
+						/>
+					</div>
+					<DrawerFooter>
+						<TransferTurn gameId={ gameId } transferTo={ selectedPlayer! } onSubmit={ closeDrawer }/>
+					</DrawerFooter>
 				</div>
-				<DialogFooter>
-					<TransferTurn gameId={ gameId } transferTo={ selectedPlayer! } onSubmit={ closeDialog }/>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 };

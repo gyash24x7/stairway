@@ -13,4 +13,5 @@ export * from "./separator.tsx";
 export * from "./sheet.tsx";
 export * from "./sonner.tsx";
 export * from "./spinner.tsx";
+export * from "./table.tsx";
 export * from "./cn.ts";

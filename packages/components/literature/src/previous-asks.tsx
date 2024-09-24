@@ -2,11 +2,11 @@ import {
 	Alert,
 	AlertTitle,
 	Button,
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
+	Drawer,
+	DrawerContent,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
 	Spinner
 } from "@base/components";
 import { useGameId } from "@literature/store";
@@ -16,30 +16,36 @@ import { useState } from "react";
 
 export function PreviousAsks() {
 	const gameId = useGameId();
-	const [ showDialog, setShowDialog ] = useState( false );
+	const [ showDrawer, setShowDrawer ] = useState( false );
 	const { data, isPending } = useQuery( {
 		queryKey: [ "asks", gameId ],
 		queryFn: () => client.getPreviousAsks.query( { gameId } )
 	} );
 
+	const openDrawer = () => setShowDrawer( true );
+
 	return (
-		<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
-			<Button onClick={ () => setShowDialog( true ) }>PREVIOUS ASKS</Button>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Previous Asks</DialogTitle>
-				</DialogHeader>
-				<div className={ "flex flex-col gap-3" }>
-					{ isPending || !data ? <Spinner/> : (
-						data.map( move => (
-							<Alert key={ move.id }>
-								<AlertTitle>{ move.description }</AlertTitle>
-							</Alert>
-						) )
-					) }
+		<Drawer open={ showDrawer } onOpenChange={ setShowDrawer }>
+			<Button onClick={ openDrawer } className={ "flex-1 max-w-lg" }>
+				PREVIOUS ASKS
+			</Button>
+			<DrawerContent>
+				<div className={ "mx-auto w-full max-w-lg" }>
+					<DrawerHeader>
+						<DrawerTitle className={ "text-center" }>Previous Asks</DrawerTitle>
+					</DrawerHeader>
+					<div className={ "flex flex-col gap-3 px-4" }>
+						{ isPending || !data ? <Spinner/> : (
+							data.map( move => (
+								<Alert key={ move.id } className={ "bg-accent" }>
+									<AlertTitle>{ move.description }</AlertTitle>
+								</Alert>
+							) )
+						) }
+					</div>
+					<DrawerFooter/>
 				</div>
-				<DialogFooter/>
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 }
