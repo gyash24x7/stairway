@@ -8,6 +8,11 @@ const config = {
 	],
 	prefix: "",
 	theme: {
+		fontWeight: {
+			normal: "500",
+			semibold: "700",
+			bold: "900"
+		},
 		fontFamily: {
 			fjalla: [ "Fjalla One", "serif" ],
 			body: [ "Montserrat", "sans-serif" ],

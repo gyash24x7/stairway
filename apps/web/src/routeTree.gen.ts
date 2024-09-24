@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as SettingsImport } from './routes/settings'
 import { Route as IndexImport } from './routes/index'
 import { Route as WordleIndexImport } from './routes/wordle.index'
 import { Route as LiteratureIndexImport } from './routes/literature.index'
@@ -18,6 +19,11 @@ import { Route as WordleGameIdImport } from './routes/wordle.$gameId'
 import { Route as LiteratureGameIdImport } from './routes/literature.$gameId'
 
 // Create/Update Routes
+
+const SettingsRoute = SettingsImport.update({
+  path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   path: '/',
@@ -55,6 +61,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
     '/literature/$gameId': {
       id: '/literature/$gameId'
       path: '/literature/$gameId'
@@ -90,6 +103,7 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/literature/$gameId': typeof LiteratureGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/literature': typeof LiteratureIndexRoute
@@ -98,6 +112,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/literature/$gameId': typeof LiteratureGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/literature': typeof LiteratureIndexRoute
@@ -107,6 +122,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/literature/$gameId': typeof LiteratureGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/literature/': typeof LiteratureIndexRoute
@@ -117,6 +133,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/settings'
     | '/literature/$gameId'
     | '/wordle/$gameId'
     | '/literature'
@@ -124,6 +141,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/settings'
     | '/literature/$gameId'
     | '/wordle/$gameId'
     | '/literature'
@@ -131,6 +149,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/settings'
     | '/literature/$gameId'
     | '/wordle/$gameId'
     | '/literature/'
@@ -140,6 +159,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SettingsRoute: typeof SettingsRoute
   LiteratureGameIdRoute: typeof LiteratureGameIdRoute
   WordleGameIdRoute: typeof WordleGameIdRoute
   LiteratureIndexRoute: typeof LiteratureIndexRoute
@@ -148,6 +168,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SettingsRoute: SettingsRoute,
   LiteratureGameIdRoute: LiteratureGameIdRoute,
   WordleGameIdRoute: WordleGameIdRoute,
   LiteratureIndexRoute: LiteratureIndexRoute,
@@ -167,6 +188,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/settings",
         "/literature/$gameId",
         "/wordle/$gameId",
         "/literature/",
@@ -175,6 +197,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/settings": {
+      "filePath": "settings.tsx"
     },
     "/literature/$gameId": {
       "filePath": "literature.$gameId.tsx"

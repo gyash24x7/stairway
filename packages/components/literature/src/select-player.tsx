@@ -1,7 +1,7 @@
 import { cn } from "@base/components";
 import type { Player } from "@stairway/clients/literature";
 import type { Dispatch, SetStateAction } from "react";
-import { DisplayPlayer } from "./display-player.tsx";
+import { DisplayPlayerVertical } from "./display-player.tsx";
 
 export type SelectPlayerProps = {
 	options: Player[];
@@ -18,11 +18,11 @@ export function SelectPlayer( { setPlayer, player, options }: SelectPlayerProps 
 					key={ item.id }
 					onClick={ () => setPlayer( player === item.id ? undefined : item.id ) }
 					className={ cn(
-						player === item.id ? "bg-blue-100" : "bg-gray-50",
-						"cursor-pointer border-2 rounded-md"
+						player === item.id ? "bg-accent" : "bg-background",
+						"cursor-pointer border-2 rounded-md flex justify-center flex-1"
 					) }
 				>
-					<DisplayPlayer player={ item }/>
+					<DisplayPlayerVertical player={ item }/>
 				</div>
 			) ) }
 		</div>

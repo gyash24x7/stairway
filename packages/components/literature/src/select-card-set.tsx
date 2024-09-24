@@ -15,7 +15,10 @@ export function SelectCardSet( { cardSetOptions, handleSelection, cardSet }: Sel
 				<div
 					key={ item }
 					onClick={ () => handleSelection( cardSet === item ? undefined : item ) }
-					className={ cn( cardSet === item ? "bg-blue-100" : "bg-gray-50", "cursor-pointer" ) }
+					className={ cn(
+						cardSet === item ? "bg-accent" : "bg-background",
+						"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center"
+					) }
 				>
 					<DisplayCardSet cardSet={ item }/>
 				</div>

@@ -1,3 +1,4 @@
+import { cn } from "@base/components";
 import { EnterIcon, ResetIcon } from "@radix-ui/react-icons";
 import { client } from "@stairway/clients/wordle";
 import { useMutation } from "@tanstack/react-query";
@@ -46,10 +47,13 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 		return (
 			<button
 				onClick={ () => mutate( { gameId, guess: currentGuess.join( "" ) } ) }
-				className={ "w-12 h-12 flex justify-center items-center rounded-md bg-green cursor-pointer" }
+				className={ cn(
+					"p-2 rounded bg-green-500 text-center text-sm font-medium",
+					"transition-all duration-100 ease-in-out col-span-2"
+				) }
 				disabled={ !isValidWord || isPending }
 			>
-				<EnterIcon className={ "w-8 h-8" }/>
+				<EnterIcon className={ "w-6 h-6" }/>
 			</button>
 		);
 	}
@@ -57,10 +61,13 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 	if ( letter === "back" ) {
 		return (
 			<button
-				className={ "w-12 h-12 flex justify-center items-center rounded-md bg-amber cursor-pointer" }
+				className={ cn(
+					"p-2 rounded bg-amber-500 text-center text-sm font-medium",
+					"transition-all duration-100 ease-in-out col-span-2"
+				) }
 				onClick={ () => backspaceCurrentGuess() }
 			>
-				<ResetIcon className={ "w-8 h-8" }/>
+				<ResetIcon className={ "w-6 h-6" }/>
 			</button>
 		);
 	}
@@ -68,20 +75,23 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 
 	return (
 		<button
-			className={ "w-12 h-12 flex justify-center items-center rounded-md cursor-pointer" }
+			className={ cn(
+				"p-2 rounded bg-background text-center text-sm font-medium",
+				"transition-all duration-100 ease-in-out",
+				isLetterAvailable ? "bg-background" : "bg-gray-800"
+			) }
 			onClick={ () => updateCurrentGuess( letter ) }
-			style={ { backgroundColor: isLetterAvailable ? "#808080" : "#333333" } }
 		>
-			<p className={ "text-white text-lg" }>{ letter.toUpperCase() }</p>
+			<p className={ cn( "text-lg", !isLetterAvailable && "text-white" ) }>{ letter.toUpperCase() }</p>
 		</button>
 	);
 }
 
 export function Keyboard() {
 	return (
-		<div className={ "flex flex-col gap-3 items-center" }>
+		<div className={ "flex flex-col gap-2 items-center" }>
 			{ LINES.map( ( line ) => (
-				<div className={ "flex gap-3" } key={ line.join( "" ) }>
+				<div className={ "flex gap-2" } key={ line.join( "" ) }>
 					{ line.map( ( letter ) => <KeyboardKey letter={ letter } key={ letter }/> ) }
 				</div>
 			) ) }

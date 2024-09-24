@@ -7,7 +7,7 @@ export const Route = createFileRoute( "/literature/" )( {
 		const { authInfo } = Route.useRouteContext();
 		return (
 			<div className={ "flex gap-5 flex-col mt-2" }>
-				<h2 className={ "text-3xl font-fjalla" }>LITERATURE</h2>
+				<h2 className={ "text-4xl font-fjalla" }>LITERATURE</h2>
 				<p>
 					Literature is a card game for 6 or 8 players in two teams using a
 					shortened version of the standard 52-card pack. The game is sometimes
@@ -22,10 +22,10 @@ export const Route = createFileRoute( "/literature/" )( {
 						<JoinGameDialog/>
 					</div>
 				) : (
-					<h2 className={ "font-fjalla" }>Login to Play!</h2>
+					<h2 className={ "text-2xl font-semibold" }>Login to Play!</h2>
 				) }
 				<Separator className={ "my-5" }/>
-				<h2 className={ "text-xl font-bold" }>RULES</h2>
+				<h2 className={ "text-xl font-semibold" }>RULES</h2>
 				<p className={ "mb-5" }>
 					The game is played by six or eight players in two teams. Six is best
 					and is standard in the Canadian game. Players sit in alternating

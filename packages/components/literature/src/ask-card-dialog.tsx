@@ -1,21 +1,21 @@
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@base/components";
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
 import { useCardCounts, useCardSetsInHand, useGameId, useHand, useOppositeTeam, usePlayers } from "@literature/store";
 import { CardSet, PlayingCard } from "@stairway/cards";
 import { defineStepper } from "@stepperize/react";
-import { Fragment, ReactNode, useCallback, useMemo, useState } from "react";
+import { ReactNode, useCallback, useMemo, useState } from "react";
 import { AskCard } from "./game-actions.tsx";
 import { SelectCardSet } from "./select-card-set.tsx";
 import { SelectCard } from "./select-card.tsx";
 import { SelectPlayer } from "./select-player.tsx";
 
-const ActionModal = ( props: { title: string; content: ReactNode; footer: ReactNode; } ) => (
-	<Fragment>
-		<DialogHeader>
-			<DialogTitle>{ props.title }</DialogTitle>
-		</DialogHeader>
-		<div>{ props.content }</div>
-		<DialogFooter>{ props.footer }</DialogFooter>
-	</Fragment>
+const ActionModal = ( props: { title: string; content?: ReactNode; footer: ReactNode; } ) => (
+	<div className={ "mx-auto w-full max-w-lg" }>
+		<DrawerHeader>
+			<DrawerTitle className={ "text-center" }>{ props.title }</DrawerTitle>
+		</DrawerHeader>
+		<div className={ "px-4" }>{ props.content }</div>
+		<DrawerFooter>{ props.footer }</DrawerFooter>
+	</div>
 );
 
 const { useStepper } = defineStepper(
@@ -38,7 +38,7 @@ export const AskCardDialog = () => {
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ open, setOpen ] = useState( false );
 
-	const openDialog = useCallback( () => {
+	const openDrawer = useCallback( () => {
 		setOpen( true );
 	}, [] );
 
@@ -48,6 +48,9 @@ export const AskCardDialog = () => {
 			return cards.length !== 6;
 		} );
 	}, [ cardSets, hand ] );
+
+	console.log( askableCardSets );
+	console.log( hand );
 
 	const oppositeTeamMembersWithCards = useMemo( () => {
 		return oppositeTeam?.memberIds.map( memberId => players[ memberId ] )
@@ -70,9 +73,9 @@ export const AskCardDialog = () => {
 	const stepper = useStepper();
 
 	return (
-		<Dialog open={ open } onOpenChange={ setOpen }>
-			<Button onClick={ openDialog }>ASK CARD</Button>
-			<DialogContent>
+		<Drawer open={ open } onOpenChange={ setOpen }>
+			<Button onClick={ openDrawer } className={ "flex-1 max-w-lg" }>ASK CARD</Button>
+			<DrawerContent>
 				{ stepper.when( "SET", () => (
 					<ActionModal
 						title={ "Select CardSet to Ask" }
@@ -84,7 +87,7 @@ export const AskCardDialog = () => {
 							/>
 						}
 						footer={
-							<Button className={ "w-full" } onClick={ stepper.next } disabled={ !selectedCardSet }>
+							<Button className={ "flex-1" } onClick={ stepper.next } disabled={ !selectedCardSet }>
 								SELECT CARD SET
 							</Button>
 						}
@@ -103,8 +106,8 @@ export const AskCardDialog = () => {
 						}
 						footer={
 							<div className={ "w-full flex gap-3" }>
-								<Button onClick={ stepper.prev }>BACK</Button>
-								<Button onClick={ stepper.next } disabled={ !selectedCard }>
+								<Button onClick={ stepper.prev } className={ "flex-1" }>BACK</Button>
+								<Button onClick={ stepper.next } disabled={ !selectedCard } className={ "flex-1" }>
 									SELECT CARD
 								</Button>
 							</div>
@@ -123,21 +126,20 @@ export const AskCardDialog = () => {
 						}
 						footer={
 							<div className={ "w-full flex gap-3" }>
-								<Button onClick={ stepper.prev }>BACK</Button>
-								<Button onClick={ stepper.next } disabled={ !selectedPlayer }>SELECT PLAYER</Button>
+								<Button onClick={ stepper.prev } className={ "flex-1" }>BACK</Button>
+								<Button onClick={ stepper.next } disabled={ !selectedPlayer } className={ "flex-1" }>
+									SELECT PLAYER
+								</Button>
 							</div>
 						}
 					/>
 				) ) }
 				{ stepper.when( "CONFIRM", () => (
 					<ActionModal
-						title={ "Confirm Ask" }
-						content={
-							<h2>Ask { players[ selectedPlayer! ].name } for { PlayingCard.fromId( selectedCard! ).displayString }</h2>
-						}
+						title={ `Ask ${ players[ selectedPlayer! ].name } for ${ PlayingCard.fromId( selectedCard! ).displayString }` }
 						footer={
 							<div className={ "w-full flex gap-3" }>
-								<Button onClick={ stepper.prev }>BACK</Button>
+								<Button onClick={ stepper.prev } className={ "flex-1" }>BACK</Button>
 								<AskCard
 									gameId={ gameId }
 									from={ selectedPlayer! }
@@ -148,7 +150,7 @@ export const AskCardDialog = () => {
 						}
 					/>
 				) ) }
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 };

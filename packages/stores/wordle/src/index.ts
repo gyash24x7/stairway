@@ -91,6 +91,7 @@ export const useGuessBlockMap = () => useGameStore( ( { game, currentGuess } ) =
 } );
 
 export const useGameId = () => useGameStore( state => state.game.id );
+export const useCompletedWords = () => useGameStore( state => state.game.completedWords );
 export const useCurrentGuess = () => useGameStore( state => state.currentGuess );
 export const useBackspaceCurrentGuess = () => useGameStore( state => state.backspaceCurrentGuess );
 export const useResetCurrentGuess = () => useGameStore( state => state.resetCurrentGuess );

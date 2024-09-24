@@ -13,7 +13,10 @@ export function CreateGame() {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { playerCount: 6 } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { playerCount: 6 } ) }
+			disabled={ isPending }
+		>
 			{ isPending ? <Spinner/> : "CREATE GAME" }
 		</Button>
 	);
@@ -27,7 +30,11 @@ export function JoinGame( { code }: { code: string } ) {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { code } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { code } ) }
+			disabled={ isPending }
+			className={ "w-full" }
+		>
 			{ isPending ? <Spinner/> : "JOIN GAME" }
 		</Button>
 	);
@@ -39,7 +46,11 @@ export const AddBots = ( { gameId }: GameIdProps ) => {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { gameId } ) }
+			disabled={ isPending }
+			className={ "flex-1 max-w-lg" }
+		>
 			{ isPending ? <Spinner/> : "ADD BOTS" }
 		</Button>
 	);
@@ -57,7 +68,10 @@ export function CreateTeams( { gameId, data, onSubmit }: CreateTeamsProps ) {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId, data } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { gameId, data } ) }
+			disabled={ isPending }
+		>
 			{ isPending ? <Spinner/> : "CREATE TEAMS" }
 		</Button>
 	);
@@ -69,7 +83,11 @@ export const StartGame = ( { gameId }: GameIdProps ) => {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { gameId } ) }
+			disabled={ isPending }
+			className={ "flex-1 max-w-lg" }
+		>
 			{ isPending ? <Spinner/> : "START GAME" }
 		</Button>
 	);
@@ -85,7 +103,11 @@ export const ExecuteBotMove = ( { gameId }: GameIdProps ) => {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { gameId } ) }
+			disabled={ isPending }
+			className={ "flex-1 max-w-lg" }
+		>
 			{ isPending ? <Spinner/> : "EXECUTE BOT MOVE" }
 		</Button>
 	);
@@ -108,7 +130,11 @@ export function AskCard( { gameId, card, from, onSubmit }: AskCardProps ) {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId, card, from } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { gameId, card, from } ) }
+			disabled={ isPending }
+			className={ "flex-1" }
+		>
 			{ isPending ? <Spinner/> : "ASK CARD" }
 		</Button>
 	);
@@ -130,7 +156,11 @@ export function CallSet( { gameId, data, onSubmit }: CallSetProps ) {
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId, data } ) } disabled={ isPending }>
+		<Button
+			onClick={ () => mutate( { gameId, data } ) }
+			disabled={ isPending }
+			className={ "flex-1" }
+		>
 			{ isPending ? <Spinner/> : "CALL SET" }
 		</Button>
 	);

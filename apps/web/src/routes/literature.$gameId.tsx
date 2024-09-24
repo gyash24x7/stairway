@@ -1,25 +1,12 @@
 import { initializeSocket } from "@/utils/socket.ts";
+import { DisplayHand, DisplayPlayerVertical, DisplayTeams, GameCode, GameCompleted } from "@literature/components";
+import { ActionPanel } from "@literature/components/src/action-panel.tsx";
 import {
-	AddBots,
-	AskCardDialog,
-	CallSetDialog,
-	CreateTeamsDialog,
-	DisplayHand,
-	DisplayTeams,
-	ExecuteBotMove,
-	GameCode,
-	PlayerLobby,
-	PreviousAsks,
-	StartGame,
-	TransferTurnDialog
-} from "@literature/components";
-import {
-	useCurrentTurn,
+	useCardCounts,
 	useGameEventHandlers,
 	useGameId,
 	useGameStatus,
 	useGameStore,
-	useIsLastMoveSuccessfulCall,
 	useLastMove,
 	usePlayerId,
 	usePlayers,
@@ -43,14 +30,13 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 	},
 	component: () => {
 		const status = useGameStatus();
-		const currentTurn = useCurrentTurn();
 		const playerId = usePlayerId();
-		const players = usePlayers();
 		const lastMove = useLastMove();
 		const gameId = useGameId();
 		const gameEventHandlers = useGameEventHandlers();
 		const playerEventHandlers = usePlayerSpecificEventHandlers();
-		const isLastMoveSuccessfulCall = useIsLastMoveSuccessfulCall();
+		const players = usePlayers();
+		const cardCounts = useCardCounts();
 
 		const areTeamsCreated = useMemo(
 			() => status === "TEAMS_CREATED" || status === "IN_PROGRESS" || status === "COMPLETED",
@@ -71,48 +57,29 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 		return (
 			<div className={ `flex flex-col gap-3` }>
 				<GameCode/>
-				<div className={ "flex flex-col gap-3 justify-between" }>
-					{ !areTeamsCreated ? <PlayerLobby/> : <DisplayTeams/> }
-					{ status === "IN_PROGRESS" && <DisplayHand/> }
+				<div className={ "flex flex-col gap-3 justify-between mb-52" }>
+					{ areTeamsCreated && <DisplayTeams/> }
+					<div className={ "flex items-center gap-2 flex-wrap py-2" }>
+						{ Object.values( players ).toSorted( ( a, b ) => a.teamId?.localeCompare( b?.teamId ?? "" ) ??
+							0 ).map( player => (
+							<DisplayPlayerVertical
+								player={ player }
+								key={ player.id }
+								cardCount={ cardCounts[ player.id ] }
+								withBg
+								withCardCount
+							/>
+						) ) }
+					</div>
 					{ status === "IN_PROGRESS" && !!lastMove && (
-						<div className={ "p-3 border-2 border-gray-300 rounded-md" }>
+						<div className={ "p-3 border-2 rounded-md" }>
 							<p>{ lastMove.description }</p>
 						</div>
 					) }
-					{ status === "IN_PROGRESS" && (
-						<div className={ "p-3 border-2 border-gray-300 rounded-md" }>
-							<p className={ "text-xl font-bold" }>
-								IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
-							</p>
-						</div>
-					) }
-					<div className={ "flex flex-col gap-3" }>
-						{ status === "CREATED" && playerId === currentTurn && <AddBots gameId={ gameId }/> }
-						{ status === "PLAYERS_READY" && playerId === currentTurn && <CreateTeamsDialog/> }
-						{ status === "TEAMS_CREATED" && playerId === currentTurn && <StartGame gameId={ gameId }/> }
-						{ status === "IN_PROGRESS" && playerId === currentTurn && (
-							<div className={ "flex gap-3" }>
-								<AskCardDialog/>
-								<CallSetDialog/>
-								{ isLastMoveSuccessfulCall && <TransferTurnDialog/> }
-							</div>
-						) }
-						{ status === "IN_PROGRESS" && (
-							<div className={ "flex gap-3" }>
-								{ players[ currentTurn ].isBot && <ExecuteBotMove gameId={ gameId }/> }
-								<PreviousAsks/>
-							</div>
-						) }
-						{ status === "COMPLETED" && (
-							<div
-								className={ "p-3 border-2 border-gray-300 rounded-md flex justify-center items-center" }>
-								<p className={ "font-bold text-6xl text-green-600" }>
-									Game Completed
-								</p>
-							</div>
-						) }
-					</div>
+					{ status === "IN_PROGRESS" && <DisplayHand/> }
+					{ status === "COMPLETED" && <GameCompleted/> }
 				</div>
+				{ status !== "COMPLETED" && <ActionPanel/> }
 			</div>
 		);
 	}

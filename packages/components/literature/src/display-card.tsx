@@ -13,6 +13,13 @@ export const suitSrcMap: Record<CardSuit, string> = {
 	Diamonds: "https://res.cloudinary.com/gyuapstha/image/upload/v1659599981/suits/diamonds.png"
 };
 
+export const suitIconMap: Record<CardSuit, string> = {
+	Clubs: "♣",
+	Spades: "♠",
+	Hearts: "♥",
+	Diamonds: "♦"
+};
+
 export const rankTextMap: Record<CardRank, string> = {
 	Ace: "A", Two: "2", Ten: "10", Three: "3", Five: "5", Four: "4", Seven: "7", Six: "6",
 	Eight: "8", Nine: "9", Jack: "J", Queen: "Q", King: "K"
@@ -27,22 +34,27 @@ export const DisplayCardSet = ( { cardSet }: { cardSet: CardSet } ) => {
 	const cardSuit = cardSet.split( " " )[ 1 ] as CardSuit;
 
 	return (
-		<div className={ "border-2 p-3 rounded-md border-gray-300" }>
-			<div className={ "flex gap-3 items-center" }>
-				<h1 className={ cn( isRed( cardSuit ) ? "text-red-600" : "text-gray-800", "text-2xl" ) }>
-					{ cardSetPosition.toUpperCase() }
-				</h1>
-				<img src={ suitSrcMap[ cardSuit ] } alt={ cardSet } width={ 32 } height={ 32 }/>
+		<div className={ "flex gap-3 items-center" }>
+			<h1 className={ cn( isRed( cardSuit ) ? "text-red-600" : "text-gray-800", "text-xl font-semibold" ) }>
+				{ cardSetPosition.toUpperCase() }
+			</h1>
+			<div className={ `text-center text-2xl ${ isRed( cardSuit ) ? "text-red-600" : "text-black" }` }>
+				{ suitIconMap[ cardSuit ] }
 			</div>
 		</div>
 	);
 };
 
 export const DisplayCard = ( { rank, suit }: DisplayCardProps ) => (
-	<div className={ "border-2 py-4 px-3 rounded-md border-gray-300 flex flex-col gap-2 items-center w-20" }>
-		<h1 className={ cn( isRed( suit ) ? "text-red-600" : "text-gray-800", "text-4xl mb-2 font-fjalla" ) }>
+	<div className="w-16 rounded-lg flex flex-col justify-between p-2 text-xl font-fjalla border-2">
+		<div className={ `text-left ${ isRed( suit ) ? "text-red-600" : "text-black" }` }>
 			{ rankTextMap[ rank ] }
-		</h1>
-		<img src={ suitSrcMap[ suit ] } alt={ "" } width={ 32 } height={ 32 } className={ "mb-2" }/>
+		</div>
+		<div className={ `text-center text-4xl ${ isRed( suit ) ? "text-red-600" : "text-black" }` }>
+			{ suitIconMap[ suit ] }
+		</div>
+		<div className={ `text-right ${ isRed( suit ) ? "text-red-600" : "text-black" }` }>
+			{ rankTextMap[ rank ] }
+		</div>
 	</div>
 );

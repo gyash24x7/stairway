@@ -18,7 +18,8 @@ export const Route = createFileRoute( "/wordle/$gameId" )( {
 		const isGameCompleted = useIsGameCompleted();
 
 		return (
-			<div className={ `flex flex-col mt-10 gap-12` }>
+			<div className={ `flex flex-col items-center mb-20` }>
+				<h1 className={ "font-fjalla text-4xl my-3" }>WORDLE</h1>
 				{ isGameCompleted ? <GameCompleted/> : <GameInProgress/> }
 			</div>
 		);

@@ -44,6 +44,10 @@ export class LiteratureRouter {
 				.use( this.gameDataMiddleware() )
 				.query( ( { ctx } ) => this.queries.getPreviousAsks( ctx.game.id ) ),
 
+			getMetrics: this.trpc.procedure.input( gameIdInputSchema )
+				.use( this.gameDataMiddleware( { status: "COMPLETED" } ) )
+				.query( ( { ctx } ) => this.queries.getMetrics( ctx.game, ctx.players, ctx.teams ) ),
+
 			addBots: this.trpc.procedure.input( gameIdInputSchema )
 				.use( this.gameDataMiddleware( { status: "CREATED" } ) )
 				.mutation( ( { ctx } ) => this.mutations.addBots( ctx ) ),

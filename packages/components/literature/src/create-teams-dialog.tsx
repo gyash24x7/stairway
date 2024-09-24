@@ -1,11 +1,11 @@
 import {
 	Button,
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
+	Drawer,
+	DrawerContent,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle,
+	DrawerTrigger,
 	Input
 } from "@base/components";
 import { useGameId, usePlayerCount, usePlayers } from "@literature/store";
@@ -34,45 +34,47 @@ export const CreateTeamsDialog = () => {
 	}, [ teamAName, teamBName, players, playerCount ] );
 
 	return (
-		<Dialog open={ open } onOpenChange={ setOpen }>
-			<DialogTrigger asChild>
-				<Button>CREATE TEAMS</Button>
-			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle>Create Teams</DialogTitle>
-				</DialogHeader>
-				<div className={ "flex flex-col gap-3" }>
-					<Input
-						type="text"
-						placeholder="Enter Team Name"
-						value={ teamAName }
-						onChange={ ( e ) => setTeamAName( e.target.value ) }
-					/>
-					<Input
-						type="text"
-						placeholder="Enter Team Name"
-						value={ teamBName }
-						onChange={ ( e ) => setTeamBName( e.target.value ) }
-					/>
-					<Button className={ "w-full" } onClick={ groupPlayers }>GROUP PLAYERS</Button>
-					<div className={ "flex flex-col gap-5" }>
-						{ Object.keys( teamMemberData ).map( ( team ) => (
-							<div key={ team } className={ "flex flex-col gap-5" }>
-								<h3>Team { team }</h3>
-								<div className={ "flex flex-wrap gap-3" }>
-									{ teamMemberData[ team ]?.map( member => (
-										<DisplayPlayer player={ players[ member ] } key={ players[ member ].id }/>
-									) ) }
+		<Drawer open={ open } onOpenChange={ setOpen }>
+			<DrawerTrigger asChild>
+				<Button className={ "flex-1 max-w-lg" }>CREATE TEAMS</Button>
+			</DrawerTrigger>
+			<DrawerContent>
+				<div className={ "mx-auto w-full max-w-lg" }>
+					<DrawerHeader>
+						<DrawerTitle>Create Teams</DrawerTitle>
+					</DrawerHeader>
+					<div className={ "flex flex-col gap-3 px-4" }>
+						<Input
+							type="text"
+							placeholder="Enter Team Name"
+							value={ teamAName }
+							onChange={ ( e ) => setTeamAName( e.target.value ) }
+						/>
+						<Input
+							type="text"
+							placeholder="Enter Team Name"
+							value={ teamBName }
+							onChange={ ( e ) => setTeamBName( e.target.value ) }
+						/>
+						<Button className={ "w-full" } onClick={ groupPlayers }>GROUP PLAYERS</Button>
+						<div className={ "flex flex-col gap-3" }>
+							{ Object.keys( teamMemberData ).map( ( team ) => (
+								<div key={ team } className={ "flex flex-col gap-2" }>
+									<h3 className={ "font-semibold" }>Team { team }</h3>
+									<div className={ "flex flex-wrap gap-2" }>
+										{ teamMemberData[ team ]?.map( member => players[ member ] ).map( player => (
+											<DisplayPlayer player={ player } key={ player.id }/>
+										) ) }
+									</div>
 								</div>
-							</div>
-						) ) }
+							) ) }
+						</div>
 					</div>
+					<DrawerFooter>
+						<CreateTeams gameId={ gameId } data={ teamMemberData } onSubmit={ () => setOpen( false ) }/>
+					</DrawerFooter>
 				</div>
-				<DialogFooter>
-					<CreateTeams gameId={ gameId } data={ teamMemberData } onSubmit={ () => setOpen( false ) }/>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+			</DrawerContent>
+		</Drawer>
 	);
 };
