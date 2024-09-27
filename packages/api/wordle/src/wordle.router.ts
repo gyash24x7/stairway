@@ -1,6 +1,6 @@
 import type { UserAuthInfo } from "@auth/api";
 import { Injectable } from "@nestjs/common";
-import { LoggerFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { Messages } from "./wordle.constants.ts";
 import { createGameInputSchema, type GameIdInput, gameIdInputSchema, makeGuessInputSchema } from "./wordle.inputs.ts";
@@ -10,12 +10,12 @@ import { WordleQueries } from "./wordle.queries.ts";
 @Injectable()
 export class WordleRouter {
 
-	private readonly logger = LoggerFactory.getLogger( WordleRouter );
 	private readonly trpc = initTRPC.context<{ authInfo: UserAuthInfo }>().create();
 
 	constructor(
 		private readonly queries: WordleQueries,
-		private readonly mutations: WordleMutations
+		private readonly mutations: WordleMutations,
+		@OgmaLogger( WordleRouter ) private readonly logger: OgmaService
 	) {}
 
 	router() {

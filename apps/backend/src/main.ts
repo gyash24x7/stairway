@@ -1,31 +1,32 @@
+import { AuthModule } from "@auth/api";
 import { LiteratureModule } from "@literature/api";
 import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { HealthModule, LoggerFactory, PostgresModule } from "@shared/api";
+import { OgmaModule, OgmaService } from "@ogma/nestjs-module";
 import { WordleModule } from "@wordle/api";
 import cookieParser from "cookie-parser";
 import path from "node:path";
+import { HealthController } from "./health.controller.ts";
+import { PrismaModule } from "./prisma.module.ts";
 
 const StaticModule = ServeStaticModule.forRoot( {
 	rootPath: path.join( process.cwd(), "..", "web", "dist" )
 } );
 
+const OgmaLoggerModule = OgmaModule.forRoot( {
+	application: "Stairway"
+} );
+
 @Module( {
-	imports: [
-		StaticModule,
-		HealthModule,
-		PostgresModule,
-		WordleModule,
-		LiteratureModule
-	]
+	imports: [ StaticModule, OgmaLoggerModule, PrismaModule, AuthModule, WordleModule, LiteratureModule ],
+	controllers: [ HealthController ]
 } )
 class AppModule {}
 
-const logger = LoggerFactory.getLogger( AppModule );
-logger.debug( "Env: %o", Bun.env );
-
 const app = await NestFactory.create( AppModule );
+const logger = app.get( OgmaService, { strict: false } );
+
 const host = Bun.env[ "HOST" ] ?? "localhost";
 const port = Bun.env[ "PORT" ] ?? "8000";
 const FRONTEND_URL = Bun.env[ "FRONTEND_URL" ] ?? "http://localhost:3000";

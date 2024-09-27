@@ -20,22 +20,18 @@ export function JoinGameDialog() {
 				<Button variant={ "secondary" }>JOIN GAME</Button>
 			</DialogTrigger>
 			<DialogContent>
-				<div className={ "mx-auto w-full max-w-sm" }>
-					<DialogHeader>
-						<DialogTitle className={ "text-xl text-center" }>Join Game</DialogTitle>
-					</DialogHeader>
-					<div className={ "px-4" }>
-						<Input
-							name={ "code" }
-							placeholder={ "Enter Game Code" }
-							value={ code }
-							onChange={ ( e ) => setCode( e.target.value ) }
-						/>
-					</div>
-					<DialogFooter>
-						<JoinGame code={ code }/>
-					</DialogFooter>
-				</div>
+				<DialogHeader>
+					<DialogTitle className={ "text-xl text-center" }>Join Game</DialogTitle>
+				</DialogHeader>
+				<Input
+					name={ "code" }
+					placeholder={ "Enter Game Code" }
+					value={ code }
+					onChange={ ( e ) => setCode( e.target.value ) }
+				/>
+				<DialogFooter>
+					<JoinGame code={ code }/>
+				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);

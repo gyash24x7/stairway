@@ -76,7 +76,7 @@ export function CreateTeams( { gameId, data, onSubmit, playerCount }: CreateTeam
 		<Button
 			onClick={ () => mutate( { gameId, data } ) }
 			disabled={ isDisabled }
-			className={ "w-full" }
+			className={ "flex-1" }
 		>
 			{ isPending ? <Spinner/> : "CREATE TEAMS" }
 		</Button>

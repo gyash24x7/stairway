@@ -55,6 +55,13 @@ export const CreateTeamsDialog = () => {
 						value={ teamBName }
 						onChange={ ( e ) => setTeamBName( e.target.value ) }
 					/>
+					<Button
+						className={ "w-full" }
+						onClick={ groupPlayers }
+						disabled={ !teamAName || !teamBName || teamAName === teamBName }
+					>
+						GROUP PLAYERS
+					</Button>
 					<div className={ "flex flex-col gap-3" }>
 						{ Object.keys( teamMemberData ).map( ( team ) => (
 							<div key={ team } className={ "flex flex-col gap-2" }>
@@ -65,13 +72,6 @@ export const CreateTeamsDialog = () => {
 					</div>
 				</div>
 				<DialogFooter>
-					<Button
-						className={ "w-full" }
-						onClick={ groupPlayers }
-						disabled={ !teamAName || !teamBName || teamAName === teamBName }
-					>
-						GROUP PLAYERS
-					</Button>
 					<CreateTeams
 						gameId={ gameId }
 						data={ teamMemberData }

@@ -1,8 +1,7 @@
-import { Module } from "@nestjs/common";
-import { AuthController } from "./auth.controller.ts";
 import { AuthService, type UserAuthInfo } from "./auth.service.ts";
 
 export * from "./auth.service.ts";
+export * from "./auth.module.ts";
 
 declare global {
 	namespace Express {
@@ -18,10 +17,3 @@ declare module "lucia" {
 		DatabaseUserAttributes: UserAuthInfo;
 	}
 }
-
-@Module( {
-	providers: [ AuthService ],
-	controllers: [ AuthController ],
-	exports: [ AuthService ]
-} )
-export class AuthModule {}

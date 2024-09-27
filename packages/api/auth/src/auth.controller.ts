@@ -1,5 +1,5 @@
 import { BadRequestException, Controller, Delete, Get, Query, Redirect, Req, Res } from "@nestjs/common";
-import { LoggerFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import type { Request, Response } from "express";
 import { AuthService } from "./auth.service.ts";
 
@@ -18,9 +18,10 @@ const cookieOptions = {
 @Controller( "auth" )
 export class AuthController {
 
-	private readonly logger = LoggerFactory.getLogger( AuthController );
-
-	constructor( private readonly authService: AuthService ) {}
+	constructor(
+		private readonly authService: AuthService,
+		@OgmaLogger( AuthController ) private readonly logger: OgmaService
+	) {}
 
 	@Get( "login" )
 	@Redirect()

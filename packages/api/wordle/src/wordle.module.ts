@@ -1,16 +1,16 @@
-import { AuthModule, AuthService } from "@auth/api";
+import { AuthService } from "@auth/api";
 import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
+import { OgmaModule } from "@ogma/nestjs-module";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import type { NextFunction, Request, Response } from "express";
 import { WordleMutations } from "./wordle.mutations.ts";
+import { WordlePrisma } from "./wordle.prisma.ts";
 import { WordleQueries } from "./wordle.queries.ts";
-import { WordleRepository } from "./wordle.repository.ts";
 import { WordleRouter } from "./wordle.router.ts";
 
-@Module( {
-	imports: [ AuthModule ],
-	providers: [ WordleRouter, WordleRepository, WordleQueries, WordleMutations ]
-} )
+const providers = [ WordleRouter, WordlePrisma, WordleQueries, WordleMutations ];
+
+@Module( { imports: [ OgmaModule.forFeatures( providers ) ], providers } )
 export class WordleModule implements NestModule {
 
 	constructor(

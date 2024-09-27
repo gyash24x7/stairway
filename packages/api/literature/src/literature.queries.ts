@@ -1,20 +1,25 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { LoggerFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import { CardHand } from "@stairway/cards";
-import { LiteratureRepository } from "./literature.repository.ts";
+import { LiteraturePrisma } from "./literature.prisma.ts";
 import type { CardCounts, Game, Metrics, PlayerData, TeamData } from "./literature.types.ts";
 
 @Injectable()
 export class LiteratureQueries {
 
-	private readonly logger = LoggerFactory.getLogger( LiteratureQueries );
-
-	constructor( private readonly repository: LiteratureRepository ) {}
+	constructor(
+		private readonly prisma: LiteraturePrisma,
+		@OgmaLogger( LiteratureQueries ) private readonly logger: OgmaService
+	) {}
 
 	async getGameData( gameId: string ) {
 		this.logger.debug( ">> getGameData()" );
 
-		const data = await this.repository.getGameById( gameId );
+		const data = await this.prisma.game.findUnique( {
+			where: { id: gameId },
+			include: { players: true, teams: true }
+		} );
+
 		if ( !data ) {
 			this.logger.error( "Game Not Found!" );
 			throw new NotFoundException();
@@ -38,7 +43,7 @@ export class LiteratureQueries {
 	async getCardCounts( gameId: string, players: PlayerData ) {
 		this.logger.debug( ">> getCardCounts()" );
 
-		const cardMappings = await this.repository.getCardMappingsForGame( gameId );
+		const cardMappings = await this.prisma.cardMapping.findMany( { where: { gameId } } );
 		const cardCounts: CardCounts = {};
 
 		Object.keys( players ).forEach( playerId => {
@@ -52,7 +57,7 @@ export class LiteratureQueries {
 	async getPlayerHand( gameId: string, playerId: string ) {
 		this.logger.debug( ">> getPlayerHand()" );
 
-		const cardMappings = await this.repository.getCardMappingsForPlayer( gameId, playerId );
+		const cardMappings = await this.prisma.cardMapping.findMany( { where: { gameId, playerId } } );
 		const hand = CardHand.fromMappings( cardMappings );
 
 		this.logger.debug( "<< getPlayerHand()" );
@@ -62,17 +67,17 @@ export class LiteratureQueries {
 	async getLastMoveData( lastMoveId: string ) {
 		this.logger.debug( ">> getLastMove()" );
 
-		const ask = await this.repository.getAskMove( lastMoveId );
+		const ask = await this.prisma.ask.findUnique( { where: { id: lastMoveId } } );
 		if ( !!ask ) {
 			return { move: ask, isCall: false } as const;
 		}
 
-		const call = await this.repository.getCallMove( lastMoveId );
+		const call = await this.prisma.call.findUnique( { where: { id: lastMoveId } } );
 		if ( !!call ) {
 			return { move: call, isCall: true } as const;
 		}
 
-		const transfer = await this.repository.getTransferMove( lastMoveId );
+		const transfer = await this.prisma.transfer.findUnique( { where: { id: lastMoveId } } );
 		if ( !!transfer ) {
 			return { move: transfer, isCall: false } as const;
 		}
@@ -82,7 +87,7 @@ export class LiteratureQueries {
 
 	async getPreviousAsks( gameId: string ) {
 		this.logger.debug( ">> getPreviousAsks()" );
-		const asks = await this.repository.getAskMoves( gameId );
+		const asks = await this.prisma.ask.findMany( { where: { gameId }, take: 5, orderBy: { timestamp: "desc" } } );
 		this.logger.debug( "<< getPreviousAsks()" );
 		return asks.slice( 0, 5 );
 	}
@@ -90,9 +95,9 @@ export class LiteratureQueries {
 	async getMetrics( game: Game, players: PlayerData, teams: TeamData ) {
 		this.logger.debug( ">> getMetrics()" );
 
-		const asks = await this.repository.getAskMoves( game.id );
-		const calls = await this.repository.getCallMoves( game.id );
-		const transfers = await this.repository.getTransferMoves( game.id );
+		const asks = await this.prisma.ask.findMany( { where: { gameId: game.id } } );
+		const calls = await this.prisma.call.findMany( { where: { gameId: game.id } } );
+		const transfers = await this.prisma.transfer.findMany( { where: { gameId: game.id } } );
 
 		const metrics: Metrics = { player: [], team: [] };
 

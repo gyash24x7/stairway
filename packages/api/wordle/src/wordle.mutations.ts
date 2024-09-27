@@ -1,19 +1,20 @@
 import type { UserAuthInfo } from "@auth/api";
 import { Injectable } from "@nestjs/common";
-import { LoggerFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import { dictionary } from "@stairway/words";
 import { TRPCError } from "@trpc/server";
+import type { Game } from "./index.ts";
 import { Messages } from "./wordle.constants.ts";
 import type { CreateGameInput, MakeGuessInput } from "./wordle.inputs.ts";
-import { WordleRepository } from "./wordle.repository.ts";
-import type { Game } from "./wordle.schema.ts";
+import { WordlePrisma } from "./wordle.prisma.ts";
 
 @Injectable()
 export class WordleMutations {
 
-	private readonly logger = LoggerFactory.getLogger( WordleMutations );
-
-	constructor( private readonly repository: WordleRepository ) {}
+	constructor(
+		private readonly prisma: WordlePrisma,
+		@OgmaLogger( WordleMutations ) private readonly logger: OgmaService
+	) {}
 
 	async createGame( { wordCount = 2, wordLength = 5 }: CreateGameInput, { authInfo }: { authInfo: UserAuthInfo } ) {
 		this.logger.log( ">> createGame()" );
@@ -23,7 +24,9 @@ export class WordleMutations {
 			words.push( dictionary[ Math.floor( Math.random() * dictionary.length ) ] );
 		}
 
-		const game = await this.repository.createGame( { playerId: authInfo.id, wordLength, wordCount, words } );
+		const game = await this.prisma.game.create( {
+			data: { playerId: authInfo.id, wordLength, wordCount, words }
+		} );
 
 		this.logger.debug( "<< createGame()" );
 		return game;
@@ -47,7 +50,10 @@ export class WordleMutations {
 		}
 
 		game.guesses.push( input.guess );
-		await this.repository.updateGame( game.id, game.guesses, game.completedWords );
+		await this.prisma.game.update( {
+			where: { id: game.id },
+			data: { guesses: game.guesses, completedWords: game.completedWords }
+		} );
 
 		this.logger.debug( "<< makeGuess()" );
 		return game;

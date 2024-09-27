@@ -61,7 +61,7 @@ export function GuessBlocks( props: { word: string } ) {
 export function GuessDiagramBlocks( props: { word: string } ) {
 	const guessBlockMap = useGuessBlockMap();
 	return (
-		<div className="grid gap-1" role="grid">
+		<div className="grid gap-1 text-center" role="grid">
 			{ guessBlockMap[ props.word ].map( ( guessBlock, i ) => (
 				<div className={ "grid grid-cols-5 gap-1" } key={ i }>
 					{ guessBlock.map( ( { state }, index ) => (
@@ -76,6 +76,7 @@ export function GuessDiagramBlocks( props: { word: string } ) {
 					) ) }
 				</div>
 			) ) }
+			<h2 className={ "font-semibold text-lg" }>{ props.word.toUpperCase() }</h2>
 		</div>
 	);
 }
