@@ -4,7 +4,6 @@
 	"scripts": {
 		"generate": "prisma generate --schema prisma",
 		"load:env": "bun run scripts/load-env.ts",
-		"migrate": "drizzle-kit generate && bun run scripts/apply-migrations.ts",
 		"dev": "turbo dev",
 		"build": "bun run generate && bun run load:env && turbo build",
 		"start": "turbo start"
