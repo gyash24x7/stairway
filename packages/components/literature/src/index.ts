@@ -9,6 +9,7 @@ export * from "./game-actions.tsx";
 export * from "./game-code.tsx";
 export * from "./game-completed.tsx";
 export * from "./join-game-dialog.tsx";
+export * from "./player-lobby.tsx";
 export * from "./previous-asks.tsx";
 export * from "./select-card.tsx";
 export * from "./select-card-set.tsx";

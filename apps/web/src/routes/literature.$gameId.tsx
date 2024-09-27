@@ -1,15 +1,13 @@
 import { initializeSocket } from "@/utils/socket.ts";
-import { DisplayHand, DisplayPlayerVertical, DisplayTeams, GameCode, GameCompleted } from "@literature/components";
+import { DisplayHand, DisplayTeams, GameCode, GameCompleted, PlayerLobby } from "@literature/components";
 import { ActionPanel } from "@literature/components/src/action-panel.tsx";
 import {
-	useCardCounts,
 	useGameEventHandlers,
 	useGameId,
 	useGameStatus,
 	useGameStore,
 	useLastMove,
 	usePlayerId,
-	usePlayers,
 	usePlayerSpecificEventHandlers
 } from "@literature/store";
 import { CardHand } from "@stairway/cards";
@@ -35,8 +33,6 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 		const gameId = useGameId();
 		const gameEventHandlers = useGameEventHandlers();
 		const playerEventHandlers = usePlayerSpecificEventHandlers();
-		const players = usePlayers();
-		const cardCounts = useCardCounts();
 
 		const areTeamsCreated = useMemo(
 			() => status === "TEAMS_CREATED" || status === "IN_PROGRESS" || status === "COMPLETED",
@@ -59,18 +55,7 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 				<GameCode/>
 				<div className={ "flex flex-col gap-3 justify-between mb-52" }>
 					{ areTeamsCreated && <DisplayTeams/> }
-					<div className={ "flex items-center gap-2 flex-wrap py-2" }>
-						{ Object.values( players ).toSorted( ( a, b ) => a.teamId?.localeCompare( b?.teamId ?? "" ) ??
-							0 ).map( player => (
-							<DisplayPlayerVertical
-								player={ player }
-								key={ player.id }
-								cardCount={ cardCounts[ player.id ] }
-								withBg
-								withCardCount
-							/>
-						) ) }
-					</div>
+					<PlayerLobby withBg withCardCount={ status === "IN_PROGRESS" }/>
 					{ status === "IN_PROGRESS" && !!lastMove && (
 						<div className={ "p-3 border-2 rounded-md" }>
 							<p>{ lastMove.description }</p>

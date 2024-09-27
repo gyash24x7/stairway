@@ -39,32 +39,18 @@ export const Navbar = () => {
 				) ) }
 			</div>
 			<Tabs defaultValue="home" className={ "w-full" } value={ pathname.split( "/" )[ 1 ] }>
-				<TabsList className="grid w-full grid-cols-4 font-semibold text-muted-foreground h-10">
+				<TabsList className="grid grid-cols-2 lg:grid-cols-4 font-semibold text-muted-foreground h-10">
 					<TabsTrigger
 						value=""
 						onClick={ () => navigate( { to: "/" } ) }
-						className={ "h-8" }
+						className={ "h-8 lg:col-start-2 lg:col-end-3" }
 					>
 						HOME
 					</TabsTrigger>
 					<TabsTrigger
-						value="literature"
-						onClick={ () => navigate( { to: "/literature" } ) }
-						className={ "h-8" }
-					>
-						LITERATURE
-					</TabsTrigger>
-					<TabsTrigger
-						value="wordle"
-						onClick={ () => navigate( { to: "/wordle" } ) }
-						className={ "h-8" }
-					>
-						WORDLE
-					</TabsTrigger>
-					<TabsTrigger
 						value="settings"
 						onClick={ () => navigate( { to: "/settings" } ) }
-						className={ "h-8" }
+						className={ "h-8 lg:col-start-3 lg:col-end-4" }
 					>
 						SETTINGS
 					</TabsTrigger>

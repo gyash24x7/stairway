@@ -1,7 +1,8 @@
+import type { UserAuthInfo } from "@auth/api";
 import { Injectable } from "@nestjs/common";
-import { LoggerFactory, TrpcService } from "@shared/api";
+import { LoggerFactory } from "@shared/api";
 import { CardHand } from "@stairway/cards";
-import { TRPCError } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import { Messages } from "./literature.constants.ts";
 import {
 	askCardInputSchema,
@@ -21,9 +22,9 @@ import type { GameStatus } from "./literature.types.ts";
 export class LiteratureRouter {
 
 	private readonly logger = LoggerFactory.getLogger( LiteratureRouter );
+	private readonly trpc = initTRPC.context<{ authInfo: UserAuthInfo }>().create();
 
 	constructor(
-		private readonly trpc: TrpcService,
 		private readonly queries: LiteratureQueries,
 		private readonly mutations: LiteratureMutations
 	) {}

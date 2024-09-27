@@ -10,7 +10,7 @@ const cookieOptions = {
 	path: "/",
 	secure: Bun.env[ "NODE_ENV" ] === "production",
 	httpOnly: true,
-	maxAge: 5000,
+	maxAge: 60 * 1000, // 1 min
 	sameSite: "lax" as const,
 	append: true
 };

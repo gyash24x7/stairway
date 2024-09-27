@@ -1,5 +1,6 @@
+import type { UserAuthInfo } from "@auth/api";
 import { Injectable } from "@nestjs/common";
-import { type AuthContext, LoggerFactory } from "@shared/api";
+import { LoggerFactory } from "@shared/api";
 import { dictionary } from "@stairway/words";
 import { TRPCError } from "@trpc/server";
 import { Messages } from "./wordle.constants.ts";
@@ -14,7 +15,7 @@ export class WordleMutations {
 
 	constructor( private readonly repository: WordleRepository ) {}
 
-	async createGame( { wordCount = 2, wordLength = 5 }: CreateGameInput, { authInfo }: AuthContext ) {
+	async createGame( { wordCount = 2, wordLength = 5 }: CreateGameInput, { authInfo }: { authInfo: UserAuthInfo } ) {
 		this.logger.log( ">> createGame()" );
 
 		const words: string[] = [];

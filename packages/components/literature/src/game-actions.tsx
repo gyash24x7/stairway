@@ -57,20 +57,26 @@ export const AddBots = ( { gameId }: GameIdProps ) => {
 };
 
 export type CreateTeamsProps = GameIdProps & {
+	playerCount: number;
 	data: Record<string, string[]>;
 	onSubmit: () => void;
 }
 
-export function CreateTeams( { gameId, data, onSubmit }: CreateTeamsProps ) {
+export function CreateTeams( { gameId, data, onSubmit, playerCount }: CreateTeamsProps ) {
 	const { mutate, isPending } = useMutation( {
 		mutationFn: client.createTeams.mutate,
 		onSuccess: () => onSubmit()
 	} );
 
+	const isDisabled = isPending
+		|| Object.keys( data ).length !== 2
+		|| Object.values( data ).flat().length !== playerCount;
+
 	return (
 		<Button
 			onClick={ () => mutate( { gameId, data } ) }
-			disabled={ isPending }
+			disabled={ isDisabled }
+			className={ "w-full" }
 		>
 			{ isPending ? <Spinner/> : "CREATE TEAMS" }
 		</Button>

@@ -1,6 +1,5 @@
 import { AuthModule, AuthService } from "@auth/api";
 import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
-import { TrpcModule } from "@shared/api";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import type { NextFunction, Request, Response } from "express";
 import { WordleMutations } from "./wordle.mutations.ts";
@@ -9,7 +8,7 @@ import { WordleRepository } from "./wordle.repository.ts";
 import { WordleRouter } from "./wordle.router.ts";
 
 @Module( {
-	imports: [ TrpcModule, AuthModule ],
+	imports: [ AuthModule ],
 	providers: [ WordleRouter, WordleRepository, WordleQueries, WordleMutations ]
 } )
 export class WordleModule implements NestModule {

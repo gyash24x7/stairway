@@ -11,7 +11,7 @@ export const Route = createRootRouteWithContext<RouterContext>()( {
 	component: () => {
 		const { authInfo } = Route.useRouteContext();
 		return (
-			<main className="flex min-h-screen flex-col">
+			<main className="flex min-h-screen flex-col bg-background">
 				<Navbar/>
 				<div className={ "px-3 md:px-5 lg:mt-44 xl:mt-48 md:mt-40 mt-36" }>
 					{ !authInfo && <LoginButton/> }
