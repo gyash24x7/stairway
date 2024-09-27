@@ -1,7 +1,7 @@
 import { cn } from "@base/components";
 import type { Player } from "@stairway/clients/literature";
 import type { Dispatch, SetStateAction } from "react";
-import { DisplayPlayerVertical } from "./display-player.tsx";
+import { DisplayPlayer } from "./display-player.tsx";
 
 export type SelectPlayerProps = {
 	options: Player[];
@@ -22,7 +22,7 @@ export function SelectPlayer( { setPlayer, player, options }: SelectPlayerProps 
 						"cursor-pointer border-2 rounded-md flex justify-center flex-1"
 					) }
 				>
-					<DisplayPlayerVertical player={ item }/>
+					<DisplayPlayer player={ item }/>
 				</div>
 			) ) }
 		</div>

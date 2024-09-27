@@ -9,7 +9,7 @@ export type ApplicationCardProps = {
 export const ApplicationCard = ( props: ApplicationCardProps ) => (
 	<div
 		className={ cn(
-			"cursor-pointer overflow-hidden relative card h-96 lg:w-80 rounded-md flex flex-col justify-between",
+			"cursor-pointer overflow-hidden relative card h-64 lg:h-96 lg:w-80 rounded-md flex flex-col justify-between",
 			`backgroundImage ${ props.name }-bg bg-cover border-2 w-full`
 		) }
 	>

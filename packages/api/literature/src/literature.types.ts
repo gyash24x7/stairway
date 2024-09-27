@@ -1,4 +1,4 @@
-import type { AuthContext } from "@shared/api";
+import type { UserAuthInfo } from "@auth/api";
 import { type CardSet } from "@stairway/cards";
 import {
 	asks,
@@ -42,6 +42,7 @@ export type GameData = {
 }
 
 export type LiteratureGameData = { game: Game; players: PlayerData; teams: TeamData; cardCounts: CardCounts }
+export type AuthContext = { authInfo: UserAuthInfo };
 export type LiteratureContext = AuthContext & LiteratureGameData;
 
 export type PlayerMetrics = {

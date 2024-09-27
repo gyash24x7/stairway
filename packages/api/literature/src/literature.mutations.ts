@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { type AuthContext, LoggerFactory } from "@shared/api";
+import { LoggerFactory } from "@shared/api";
 import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, PlayingCard, shuffle } from "@stairway/cards";
 import { uniqueNamesGenerator } from "unique-names-generator";
 import { LiteratureBotService } from "./literature.bot.service.ts";
@@ -15,6 +15,7 @@ import type {
 } from "./literature.inputs.ts";
 import { LiteratureRepository } from "./literature.repository.ts";
 import type {
+	AuthContext,
 	CardCounts,
 	CardLocation,
 	CardMapping,

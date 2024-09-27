@@ -1,6 +1,5 @@
 import { AuthModule, AuthService } from "@auth/api";
 import { type MiddlewareConsumer, Module, type NestModule } from "@nestjs/common";
-import { TrpcModule } from "@shared/api";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import type { NextFunction, Request, Response } from "express";
 import { LiteratureBotService } from "./literature.bot.service.ts";
@@ -12,7 +11,7 @@ import { LiteratureRouter } from "./literature.router.ts";
 import { LiteratureValidators } from "./literature.validators.ts";
 
 @Module( {
-	imports: [ TrpcModule, AuthModule ],
+	imports: [ AuthModule ],
 	providers: [
 		LiteratureRepository,
 		LiteratureQueries,

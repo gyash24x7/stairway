@@ -1,11 +1,11 @@
 import {
 	Button,
-	Drawer,
-	DrawerContent,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle,
-	DrawerTrigger,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
 	Input
 } from "@base/components";
 import { useState } from "react";
@@ -15,15 +15,15 @@ export function JoinGameDialog() {
 	const [ code, setCode ] = useState( "" );
 
 	return (
-		<Drawer>
-			<DrawerTrigger asChild>
+		<Dialog>
+			<DialogTrigger asChild>
 				<Button variant={ "secondary" }>JOIN GAME</Button>
-			</DrawerTrigger>
-			<DrawerContent>
+			</DialogTrigger>
+			<DialogContent>
 				<div className={ "mx-auto w-full max-w-sm" }>
-					<DrawerHeader>
-						<DrawerTitle className={ "text-xl text-center" }>Join Game</DrawerTitle>
-					</DrawerHeader>
+					<DialogHeader>
+						<DialogTitle className={ "text-xl text-center" }>Join Game</DialogTitle>
+					</DialogHeader>
 					<div className={ "px-4" }>
 						<Input
 							name={ "code" }
@@ -32,11 +32,11 @@ export function JoinGameDialog() {
 							onChange={ ( e ) => setCode( e.target.value ) }
 						/>
 					</div>
-					<DrawerFooter>
+					<DialogFooter>
 						<JoinGame code={ code }/>
-					</DrawerFooter>
+					</DialogFooter>
 				</div>
-			</DrawerContent>
-		</Drawer>
+			</DialogContent>
+		</Dialog>
 	);
 }
