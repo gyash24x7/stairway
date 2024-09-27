@@ -10,7 +10,6 @@
 		"@ogma/nestjs-module": "5.2.0",
 		"@stairway/words": "workspace:*",
 		"@trpc/server": "11.0.0-rc.502",
-		"drizzle-orm": "0.33.0",
 		"zod": "3.23.8"
 	},
 	"devDependencies": {
