@@ -1,31 +1,31 @@
 import type { UserAuthInfo } from "@auth/api";
+import type {
+	LiteratureAsk,
+	LiteratureCall,
+	LiteratureCardLocation,
+	LiteratureCardMapping,
+	LiteratureGame,
+	LiteratureGameStatus,
+	LiteraturePlayer,
+	LiteratureTeam,
+	LiteratureTransfer
+} from "@prisma/client";
 import { type CardSet } from "@stairway/cards";
-import {
-	asks,
-	calls,
-	cardLocations,
-	cardMappings,
-	games,
-	gameStatuses,
-	players,
-	teams,
-	transfers
-} from "./literature.schema.ts";
 
-export type Player = typeof players.$inferSelect;
-export type Team = typeof teams.$inferSelect;
-export type CardMapping = typeof cardMappings.$inferSelect;
-export type Game = typeof games.$inferSelect;
-export type CardLocation = typeof cardLocations.$inferSelect;
-export type Ask = typeof asks.$inferSelect;
-export type Call = typeof calls.$inferSelect;
-export type Transfer = typeof transfers.$inferSelect;
+export type Player = LiteraturePlayer
+export type Team = LiteratureTeam
+export type CardMapping = LiteratureCardMapping
+export type Game = LiteratureGame
+export type CardLocation = LiteratureCardLocation
+export type Ask = LiteratureAsk
+export type Call = LiteratureCall
+export type Transfer = LiteratureTransfer
 
 export type PlayerData = Record<string, Player>;
 export type TeamData = Record<string, Team>;
 export type CardCounts = Record<string, number>;
 export type ScoreUpdate = { teamId: string; score: number; setWon: CardSet; isLastSet: boolean }
-export type GameStatus = typeof gameStatuses[number];
+export type GameStatus = LiteratureGameStatus;
 
 export type GameData = {
 	id: string;

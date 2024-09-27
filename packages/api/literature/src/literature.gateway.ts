@@ -1,5 +1,6 @@
 import { type OnGatewayConnection, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { LoggerFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
+import { format } from "node:util";
 import { Server, type Socket } from "socket.io";
 import { Constants } from "./literature.constants.ts";
 
@@ -16,17 +17,17 @@ export class LiteratureGateway implements OnGatewayConnection {
 
 	@WebSocketServer() private server!: Server;
 
-	private readonly logger = LoggerFactory.getLogger( LiteratureGateway );
+	constructor( @OgmaLogger( LiteratureGateway ) private readonly logger: OgmaService ) {}
 
 	publishPlayerEvent( gameId: string, playerId: string, event: string, data: any ) {
 		const eventKey = `${ playerId }:${ event }`;
 		this.server.to( gameId ).emit( eventKey, data );
-		this.logger.debug( "Published Direct Message to %s", eventKey );
+		this.logger.debug( format( "Published Direct Message to %s", eventKey ) );
 	}
 
 	publishGameEvent( gameId: string, event: string, data: any ) {
 		this.server.to( gameId ).emit( event, data );
-		this.logger.debug( "Published Room Message to %s", gameId );
+		this.logger.debug( format( "Published Room Message to %s", gameId ) );
 	}
 
 	handleConnection( socket: Socket ) {
@@ -34,12 +35,12 @@ export class LiteratureGateway implements OnGatewayConnection {
 		this.logger.debug( `Socket: ${ socket.id }` );
 
 		socket.on( "join-room", ( gameId: string ) => {
-			this.logger.debug( "Joining Room: %s", gameId );
+			this.logger.debug( format( "Joining Room: %s", gameId ) );
 			socket.join( gameId );
 		} );
 
 		socket.on( "leave-room", ( gameId: string ) => {
-			this.logger.debug( "Leaving Room: %s", gameId );
+			this.logger.debug( format( "Leaving Room: %s", gameId ) );
 			socket.leave( gameId );
 		} );
 

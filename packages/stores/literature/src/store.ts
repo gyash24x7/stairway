@@ -99,7 +99,7 @@ export const useGameStore = create<GameStore>( set => ( {
 				produce<GameStore>( state => {
 					state.data.game.lastMoveId = data.id;
 					state.data.lastMoveData = { isCall: true, move: data };
-					state.data.hand.removeCards( Object.keys( data.correctCall ) );
+					state.data.hand.removeCards( Object.keys( data.correctCall as unknown as Record<string, string> ) );
 				} )
 			);
 		},

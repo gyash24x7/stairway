@@ -1,12 +1,10 @@
-import { DrizzlePostgreSQLAdapter } from "@lucia-auth/adapter-drizzle";
+import { PrismaAdapter } from "@lucia-auth/adapter-prisma";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { LoggerFactory, PostgresClientFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import { generateCodeVerifier, generateState, Google, OAuth2RequestError } from "arctic";
-import { eq } from "drizzle-orm";
-import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { Request, Response } from "express";
 import { Lucia } from "lucia";
-import * as schema from "./auth.schema.ts";
+import { AuthPrisma } from "./auth.prisma.ts";
 
 type GoogleUser = {
 	id: string;
@@ -22,28 +20,26 @@ type GoogleUser = {
 export type UserAuthInfo = {
 	id: string;
 	name: string;
+	email: string;
 	avatar: string;
 }
 
 @Injectable()
 export class AuthService {
 
-	private readonly logger = LoggerFactory.getLogger( AuthService );
-
-	private readonly db: PostgresJsDatabase<typeof schema>;
 	private readonly google: Google;
 	private readonly lucia: Lucia<Record<never, never>, UserAuthInfo>;
 
-	constructor( private readonly postgresClientFactory: PostgresClientFactory ) {
+	constructor(
+		private readonly prisma: AuthPrisma,
+		@OgmaLogger( AuthService ) private readonly logger: OgmaService
+	) {
 		const clientId = Bun.env[ "GOOGLE_CLIENT_ID" ]!;
 		const clientSecret = Bun.env[ "GOOGLE_CLIENT_SECRET" ]!;
 		const redirectUri = Bun.env[ "GOOGLE_REDIRECT_URI" ]!;
 
 		this.google = new Google( clientId, clientSecret, redirectUri );
-
-		const postgresClient = this.postgresClientFactory.get();
-		this.db = drizzle( postgresClient, { schema } );
-		const adapter = new DrizzlePostgreSQLAdapter( this.db, schema.sessions, schema.users );
+		const adapter = new PrismaAdapter( prisma.session, prisma.user );
 
 		this.lucia = new Lucia( adapter, {
 			sessionCookie: {
@@ -100,10 +96,12 @@ export class AuthService {
 
 		try {
 			const { name, email } = await this.getGoogleUser( code, codeVerifier );
-			let user = await this.db.query.users.findFirst( { where: eq( schema.users.email, email ) } );
+			let user = await this.prisma.user.findUnique( { where: { email } } );
 
 			if ( !user ) {
-				[ user ] = await this.db.insert( schema.users ).values( { name, email } ).returning();
+				const hash = Bun.hash( email );
+				const avatar = `https://api.dicebear.com/7.x/open-peeps/png?seed=${ hash }&r=50`;
+				user = await this.prisma.user.create( { data: { name, email, avatar } } );
 			}
 
 			const session = await this.lucia.createSession( user.id, {} );

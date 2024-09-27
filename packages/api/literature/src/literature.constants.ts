@@ -47,3 +47,12 @@ export const namesConfig: Config = {
 	separator: " ",
 	length: 1
 };
+
+export function generateGameCode() {
+	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	let result = "";
+	for ( let i = 0; i < 6; i++ ) {
+		result += chars[ Math.floor( Math.random() * 36 ) ];
+	}
+	return result;
+}

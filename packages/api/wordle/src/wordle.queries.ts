@@ -1,19 +1,18 @@
 import { Injectable } from "@nestjs/common";
-import { LoggerFactory } from "@shared/api";
-import { WordleRepository } from "./wordle.repository.ts";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
+import { WordlePrisma } from "./wordle.prisma.ts";
 
 @Injectable()
 export class WordleQueries {
 
-	private readonly logger = LoggerFactory.getLogger( WordleQueries );
-
-	constructor( private readonly repository: WordleRepository ) {}
+	constructor(
+		private readonly prisma: WordlePrisma,
+		@OgmaLogger( WordleQueries ) private readonly logger: OgmaService
+	) {}
 
 	async getGameDate( gameId: string ) {
 		this.logger.debug( ">> getGameData()" );
-
-		const data = await this.repository.getGameById( gameId );
-
+		const data = await this.prisma.game.findUnique( { where: { id: gameId } } );
 		this.logger.debug( "<< getGameData()" );
 		return data;
 	}

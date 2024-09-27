@@ -5,12 +5,11 @@
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
-		"@lucia-auth/adapter-drizzle": "1.1.0",
+		"@lucia-auth/adapter-prisma": "4.0.1",
 		"@nestjs/common": "10.4.3",
-		"@paralleldrive/cuid2": "2.2.2",
-		"@shared/api": "workspace:*",
+		"@ogma/nestjs-module": "5.2.0",
+		"@prisma/client": "5.20.0",
 		"arctic": "1.9.2",
-		"drizzle-orm": "0.33.0",
 		"lucia": "3.2.0"
 	},
 	"devDependencies": {

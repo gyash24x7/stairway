@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import { LoggerFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import { CardHand, CardSet, cardSetMap, PlayingCard, shuffle } from "@stairway/cards";
+import { format } from "node:util";
 import { Constants } from "./literature.constants.ts";
 import type { CardCounts, CardLocation, Game, PlayerData } from "./literature.types.ts";
 
@@ -12,7 +13,7 @@ type WeightedCardSet = { cardSet: CardSet, weight: number };
 @Injectable()
 export class LiteratureBotService {
 
-	private readonly logger = LoggerFactory.getLogger( LiteratureBotService );
+	constructor( @OgmaLogger( LiteratureBotService ) private readonly logger: OgmaService ) {}
 
 	suggestCardSets( cardLocations: CardLocation[], hand: CardHand ): CardSet[] {
 		const weightedCardSets: WeightedCardSet[] = [];
@@ -35,7 +36,7 @@ export class LiteratureBotService {
 			weightedCardSets.push( { cardSet, weight } );
 		}
 
-		this.logger.info( "Weighted CardSets: %o", weightedCardSets.sort( ( a, b ) => b.weight - a.weight ) );
+		this.logger.info( format( "Weighted CardSets: %o", weightedCardSets.sort( ( a, b ) => b.weight - a.weight ) ) );
 
 		return weightedCardSets.map( w => w.cardSet )
 			.filter( ( cardSet ) => hand.getCardsOfSet( cardSet ).length > 0 );
@@ -52,7 +53,7 @@ export class LiteratureBotService {
 			return { weight: 720 / myTeamMembers.length + cardCounts[ transferTo ], transferTo };
 		} );
 
-		this.logger.debug( "Weighted Transfers: %o", weightedTransfers );
+		this.logger.debug( format( "Weighted Transfers: %o", weightedTransfers ) );
 		return weightedTransfers.toSorted( ( a, b ) => b.weight - a.weight );
 	}
 
@@ -117,7 +118,7 @@ export class LiteratureBotService {
 				this.canCardSetBeCalled( game, players, cardCounts, cardSet, cardLocations, hand );
 
 			if ( !canCardSetBeCalled ) {
-				this.logger.info( "This card set is not with my team. Cannot Call! CardSet: %s", cardSet );
+				this.logger.info( format( "This card set is not with my team. Cannot Call! CardSet: %s", cardSet ) );
 				continue;
 			}
 
@@ -140,7 +141,7 @@ export class LiteratureBotService {
 			weightedCalls.push( { callData, weight, cardSet } );
 		}
 
-		this.logger.debug( "Weighted Calls: %o", weightedCalls );
+		this.logger.debug( format( "Weighted Calls: %o", weightedCalls ) );
 		return weightedCalls.toSorted( ( a, b ) => b.weight - a.weight );
 	}
 

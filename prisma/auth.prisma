@@ -1,0 +1,20 @@
+model User {
+    id       String    @id @default(cuid())
+    name     String
+    email    String    @unique
+    avatar   String
+    sessions Session[]
+
+    @@map("auth_users")
+    @@schema("auth")
+}
+
+model Session {
+    id        String   @id
+    userId    String
+    expiresAt DateTime
+    user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+
+    @@map("auth_sessions")
+    @@schema("auth")
+}

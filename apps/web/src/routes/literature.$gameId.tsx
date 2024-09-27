@@ -55,13 +55,13 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 				<GameCode/>
 				<div className={ "flex flex-col gap-3 justify-between mb-52" }>
 					{ areTeamsCreated && <DisplayTeams/> }
-					<PlayerLobby withBg withCardCount={ status === "IN_PROGRESS" }/>
+					{ status === "IN_PROGRESS" && <DisplayHand/> }
 					{ status === "IN_PROGRESS" && !!lastMove && (
 						<div className={ "p-3 border-2 rounded-md" }>
 							<p>{ lastMove.description }</p>
 						</div>
 					) }
-					{ status === "IN_PROGRESS" && <DisplayHand/> }
+					<PlayerLobby withBg withCardCount={ status === "IN_PROGRESS" }/>
 					{ status === "COMPLETED" && <GameCompleted/> }
 				</div>
 				{ status !== "COMPLETED" && <ActionPanel/> }

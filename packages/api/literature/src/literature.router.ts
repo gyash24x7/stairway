@@ -1,8 +1,9 @@
 import type { UserAuthInfo } from "@auth/api";
 import { Injectable } from "@nestjs/common";
-import { LoggerFactory } from "@shared/api";
+import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import { CardHand } from "@stairway/cards";
 import { initTRPC, TRPCError } from "@trpc/server";
+import superjson from "superjson";
 import { Messages } from "./literature.constants.ts";
 import {
 	askCardInputSchema,
@@ -21,12 +22,14 @@ import type { GameStatus } from "./literature.types.ts";
 @Injectable()
 export class LiteratureRouter {
 
-	private readonly logger = LoggerFactory.getLogger( LiteratureRouter );
-	private readonly trpc = initTRPC.context<{ authInfo: UserAuthInfo }>().create();
+	private readonly trpc = initTRPC.context<{ authInfo: UserAuthInfo }>().create( {
+		transformer: superjson
+	} );
 
 	constructor(
 		private readonly queries: LiteratureQueries,
-		private readonly mutations: LiteratureMutations
+		private readonly mutations: LiteratureMutations,
+		@OgmaLogger( LiteratureRouter ) private readonly logger: OgmaService
 	) {}
 
 	router() {
