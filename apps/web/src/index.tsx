@@ -5,7 +5,6 @@ import { createRouter, RouterProvider } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen.ts";
 
-import "@fontsource/bungee-spice/latin-400.css";
 import "@fontsource/fjalla-one/latin-400.css";
 import "@fontsource/montserrat/latin-500.css";
 import "@fontsource/montserrat/latin-700.css";
