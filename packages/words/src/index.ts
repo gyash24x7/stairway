@@ -1,4 +1,5 @@
 export type LetterState = "correct" | "wrongPlace" | "wrong" | "empty";
+import type { Game } from "@wordle/store";
 import dictionary from "./dictionary.ts";
 
 export function getAvailableLetters( guesses: string[] ) {
@@ -9,6 +10,29 @@ export function getAvailableLetters( guesses: string[] ) {
 		}
 	}
 	return letters;
+}
+
+export function getGuessBlocks( game: Game, currentGuess: string ) {
+	const map: Record<string, PositionData[][]> = {};
+	game.words.forEach( word => {
+		const completedIndex = game.guesses.indexOf( word );
+		map[ word ] = new Array( game.wordLength + game.wordCount ).fill( 0 ).map(
+			( _, i ) => i < game.guesses.length
+				? calculatePositions( word, game.guesses[ i ], completedIndex !== -1 && i > completedIndex )
+				: new Array( game.wordLength ).fill( 0 ).map( ( _, index ) => {
+					if ( completedIndex > -1 ) {
+						return { letter: "", state: "empty", index };
+					}
+
+					if ( i === game.guesses.length ) {
+						return { letter: currentGuess[ index ], state: "empty", index };
+					}
+
+					return { letter: "", state: "empty", index };
+				} )
+		);
+	} );
+	return map;
 }
 
 export type PositionData = {

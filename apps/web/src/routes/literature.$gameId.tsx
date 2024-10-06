@@ -1,19 +1,16 @@
 import { initializeSocket } from "@/utils/socket.ts";
-import { DisplayHand, DisplayTeams, GameCode, GameCompleted, PlayerLobby } from "@literature/components";
-import { ActionPanel } from "@literature/components/src/action-panel.tsx";
+import { GamePage } from "@literature/components";
 import {
+	client,
 	useGameEventHandlers,
 	useGameId,
-	useGameStatus,
 	useGameStore,
-	useLastMove,
 	usePlayerId,
 	usePlayerSpecificEventHandlers
 } from "@literature/store";
 import { CardHand } from "@stairway/cards";
-import { client } from "@stairway/clients/literature";
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute( "/literature/$gameId" )( {
 	beforeLoad: ( { context } ) => {
@@ -27,17 +24,10 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 		return data;
 	},
 	component: () => {
-		const status = useGameStatus();
 		const playerId = usePlayerId();
-		const lastMove = useLastMove();
 		const gameId = useGameId();
 		const gameEventHandlers = useGameEventHandlers();
 		const playerEventHandlers = usePlayerSpecificEventHandlers();
-
-		const areTeamsCreated = useMemo(
-			() => status === "TEAMS_CREATED" || status === "IN_PROGRESS" || status === "COMPLETED",
-			[ status ]
-		);
 
 		useEffect( () => {
 			const unsubscribe = initializeSocket(
@@ -50,22 +40,6 @@ export const Route = createFileRoute( "/literature/$gameId" )( {
 			return () => unsubscribe();
 		}, [] );
 
-		return (
-			<div className={ `flex flex-col gap-3` }>
-				<GameCode/>
-				<div className={ "flex flex-col gap-3 justify-between mb-52" }>
-					{ areTeamsCreated && <DisplayTeams/> }
-					{ status === "IN_PROGRESS" && <DisplayHand/> }
-					{ status === "IN_PROGRESS" && !!lastMove && (
-						<div className={ "p-3 border-2 rounded-md" }>
-							<p>{ lastMove.description }</p>
-						</div>
-					) }
-					<PlayerLobby withBg withCardCount={ status === "IN_PROGRESS" }/>
-					{ status === "COMPLETED" && <GameCompleted/> }
-				</div>
-				{ status !== "COMPLETED" && <ActionPanel/> }
-			</div>
-		);
+		return <GamePage/>;
 	}
 } );

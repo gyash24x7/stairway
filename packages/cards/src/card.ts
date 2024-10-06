@@ -1,4 +1,4 @@
-import { UPPER_CARD_RANKS } from "./constants.ts";
+import { CARD_RANKS, UPPER_CARD_RANKS } from "./constants.ts";
 import { CardRank, CardSet, CardSuit, type IPlayingCard } from "./types.ts";
 
 export class PlayingCard implements IPlayingCard {
@@ -41,5 +41,22 @@ export class PlayingCard implements IPlayingCard {
 		const rank = id.split( "Of" )[ 0 ] as CardRank;
 		const suit = id.split( "Of" )[ 1 ] as CardSuit;
 		return new PlayingCard( rank, suit );
+	}
+
+	isGreaterThan( cardId: string ) {
+		const card = PlayingCard.fromId( cardId );
+		if ( this.suit !== card.suit ) {
+			return false;
+		}
+
+		if ( card.rank === CardRank.ACE ) {
+			return false;
+		}
+
+		if ( this.rank === CardRank.ACE ) {
+			return true;
+		}
+
+		return CARD_RANKS.indexOf( this.rank ) > CARD_RANKS.indexOf( card.rank );
 	}
 }

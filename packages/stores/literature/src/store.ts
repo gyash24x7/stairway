@@ -1,16 +1,17 @@
-import { CardHand, type IPlayingCard, PlayingCard } from "@stairway/cards";
 import type {
 	Ask,
 	Call,
 	CardCounts,
 	Game,
 	GameStatus,
+	Metrics,
 	Player,
 	PlayerData,
 	ScoreUpdate,
 	TeamData,
 	Transfer
-} from "@stairway/clients/literature";
+} from "@literature/api";
+import { CardHand, type IPlayingCard, PlayingCard } from "@stairway/cards";
 import { produce } from "immer";
 import { create } from "zustand";
 
@@ -22,6 +23,8 @@ export type PlayerGameData = {
 	cardCounts: CardCounts;
 	hand: CardHand;
 	lastMoveData?: { move?: Ask | Transfer, isCall: false } | { move: Call, isCall: true };
+	asks: Ask[];
+	metrics: Metrics
 }
 
 export type GameEventHandlers = {
@@ -34,7 +37,7 @@ export type GameEventHandlers = {
 	handleScoreUpdatedEvent: ( scoreUpdate: ScoreUpdate ) => void;
 	handleStatusUpdatedEvent: ( status: GameStatus ) => void;
 	handleCardCountsUpdatedEvent: ( cardCounts: CardCounts ) => void;
-	handleGameCompletedEvent: () => void;
+	handleGameCompletedEvent: ( metrics: Metrics ) => void;
 	handleCardsDealtEvent: ( cards: IPlayingCard[] ) => void;
 }
 
@@ -57,7 +60,9 @@ export const useGameStore = create<GameStore>( set => ( {
 		players: {},
 		teams: {},
 		cardCounts: {},
-		hand: CardHand.empty()
+		hand: CardHand.empty(),
+		asks: [],
+		metrics: { player: [], team: [] }
 	},
 	eventHandlers: {
 		handlePlayerJoinedEvent: ( newPlayer ) => {
@@ -91,6 +96,8 @@ export const useGameStore = create<GameStore>( set => ( {
 					if ( data.askedFrom === state.data.playerId && data.success ) {
 						state.data.hand.removeCard( data.cardId );
 					}
+
+					state.data.asks.unshift( data );
 				} )
 			);
 		},
@@ -148,10 +155,11 @@ export const useGameStore = create<GameStore>( set => ( {
 				} )
 			);
 		},
-		handleGameCompletedEvent: () => {
+		handleGameCompletedEvent: ( metrics ) => {
 			set(
 				produce<GameStore>( state => {
 					state.data.game.status = "COMPLETED";
+					state.data.metrics = metrics;
 				} )
 			);
 		}

@@ -1,6 +1,6 @@
+import { client } from "@/utils/auth.ts";
 import { Avatar, AvatarFallback, AvatarImage, Button, Card, CardContent, Spinner } from "@base/components";
 import { ExitIcon } from "@radix-ui/react-icons";
-import { client } from "@stairway/clients/auth";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Fragment } from "react";
@@ -19,7 +19,7 @@ export const Route = createFileRoute( "/settings" )( {
 		return (
 			<div className={ "flex flex-col items-center" }>
 				{ !!authInfo && (
-					<div className="w-64 pt-8 relative">
+					<div className="max-w-xl w-full pt-8 relative">
 						<Card className={ "bg-muted" }>
 							<CardContent className="pt-14 pb-4 px-4 text-center flex flex-col gap-2 items-center">
 								<h2 className="text-lg font-semibold text-foreground mb-1">{ authInfo.name }</h2>

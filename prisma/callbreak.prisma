@@ -1,0 +1,98 @@
+enum CallBreakStatus {
+	CREATED
+	IN_PROGRESS
+	COMPLETED
+
+	@@schema("callbreak")
+}
+
+model CallBreakGame {
+	id        String          @id @default(cuid())
+	code      String          @unique
+	dealCount Int             @default(5)
+	trumpSuit String
+	status    CallBreakStatus @default(CREATED)
+	createdBy String
+	/// ![Array<Record<string, number>>]
+	scores    Json            @default("[]")
+
+	players      CallBreakPlayer[]
+	deals        CallBreakDeal[]
+	cardMappings CallBreakCardMapping[]
+	rounds       CallBreakRound[]
+
+	@@map("clbk_games")
+	@@schema("callbreak")
+}
+
+model CallBreakPlayer {
+	id     String  @default(cuid())
+	name   String
+	avatar String
+	gameId String
+	isBot  Boolean @default(false)
+
+	game         CallBreakGame          @relation(fields: [gameId], references: [id])
+	cardMappings CallBreakCardMapping[]
+
+	@@id([id, gameId])
+	@@map("clbk_players")
+	@@schema("callbreak")
+}
+
+model CallBreakDeal {
+	id           String          @default(cuid())
+	gameId       String
+	playerOrder  String[]
+	/// ![Record<string, number>]
+	declarations Json            @default("{}")
+	/// ![Record<string, number>]
+	wins         Json            @default("{}")
+	turnIdx      Int             @default(0)
+	status       CallBreakStatus @default(CREATED)
+	createdAt    DateTime        @default(now())
+
+	game         CallBreakGame          @relation(fields: [gameId], references: [id])
+	cardMappings CallBreakCardMapping[]
+	rounds       CallBreakRound[]
+
+	@@id([id, gameId])
+	@@map("clbk_deals")
+	@@schema("callbreak")
+}
+
+model CallBreakCardMapping {
+	cardId   String
+	dealId   String
+	gameId   String
+	playerId String
+
+	deal   CallBreakDeal   @relation(fields: [dealId, gameId], references: [id, gameId])
+	game   CallBreakGame   @relation(fields: [gameId], references: [id])
+	player CallBreakPlayer @relation(fields: [playerId, gameId], references: [id, gameId])
+
+	@@id([cardId, dealId, gameId])
+	@@map("clbk_card_mappings")
+	@@schema("callbreak")
+}
+
+model CallBreakRound {
+	id          String   @default(cuid())
+	gameId      String
+	dealId      String
+	winner      String?
+	playerOrder String[]
+	/// ![Record<string, string>]
+	cards       Json     @default("{}")
+	turnIdx     Int      @default(0)
+	suit        String?
+	completed   Boolean  @default(false)
+	createdAt   DateTime @default(now())
+
+	deal CallBreakDeal @relation(fields: [dealId, gameId], references: [id, gameId])
+	game CallBreakGame @relation(fields: [gameId], references: [id])
+
+	@@id([id, dealId, gameId])
+	@@map("clbk_rounds")
+	@@schema("callbreak")
+}

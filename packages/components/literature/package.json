@@ -6,9 +6,9 @@
 	"type": "module",
 	"dependencies": {
 		"@base/components": "workspace:*",
+		"@main/components": "workspace:*",
 		"@literature/store": "workspace:*",
 		"@stairway/cards": "workspace:*",
-		"@stairway/clients": "workspace:*",
 		"@stepperize/react": "3.0.1",
 		"@tanstack/react-query": "5.56.2",
 		"@tanstack/react-router": "1.58.3"

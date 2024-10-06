@@ -1,4 +1,5 @@
 import { AuthModule } from "@auth/api";
+import { CallBreakModule } from "@callbreak/api";
 import { LiteratureModule } from "@literature/api";
 import { Module } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
@@ -15,11 +16,20 @@ const StaticModule = ServeStaticModule.forRoot( {
 } );
 
 const OgmaLoggerModule = OgmaModule.forRoot( {
-	application: "Stairway"
+	application: "Stairway",
+	logLevel: "DEBUG"
 } );
 
 @Module( {
-	imports: [ StaticModule, OgmaLoggerModule, PrismaModule, AuthModule, WordleModule, LiteratureModule ],
+	imports: [
+		StaticModule,
+		OgmaLoggerModule,
+		PrismaModule,
+		AuthModule,
+		WordleModule,
+		LiteratureModule,
+		CallBreakModule
+	],
 	controllers: [ HealthController ]
 } )
 class AppModule {}

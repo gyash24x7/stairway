@@ -15,8 +15,10 @@ import { Route as SettingsImport } from './routes/settings'
 import { Route as IndexImport } from './routes/index'
 import { Route as WordleIndexImport } from './routes/wordle.index'
 import { Route as LiteratureIndexImport } from './routes/literature.index'
+import { Route as CallbreakIndexImport } from './routes/callbreak.index'
 import { Route as WordleGameIdImport } from './routes/wordle.$gameId'
 import { Route as LiteratureGameIdImport } from './routes/literature.$gameId'
+import { Route as CallbreakGameIdImport } from './routes/callbreak.$gameId'
 
 // Create/Update Routes
 
@@ -40,6 +42,11 @@ const LiteratureIndexRoute = LiteratureIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const CallbreakIndexRoute = CallbreakIndexImport.update({
+  path: '/callbreak/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const WordleGameIdRoute = WordleGameIdImport.update({
   path: '/wordle/$gameId',
   getParentRoute: () => rootRoute,
@@ -47,6 +54,11 @@ const WordleGameIdRoute = WordleGameIdImport.update({
 
 const LiteratureGameIdRoute = LiteratureGameIdImport.update({
   path: '/literature/$gameId',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const CallbreakGameIdRoute = CallbreakGameIdImport.update({
+  path: '/callbreak/$gameId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -68,6 +80,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsImport
       parentRoute: typeof rootRoute
     }
+    '/callbreak/$gameId': {
+      id: '/callbreak/$gameId'
+      path: '/callbreak/$gameId'
+      fullPath: '/callbreak/$gameId'
+      preLoaderRoute: typeof CallbreakGameIdImport
+      parentRoute: typeof rootRoute
+    }
     '/literature/$gameId': {
       id: '/literature/$gameId'
       path: '/literature/$gameId'
@@ -80,6 +99,13 @@ declare module '@tanstack/react-router' {
       path: '/wordle/$gameId'
       fullPath: '/wordle/$gameId'
       preLoaderRoute: typeof WordleGameIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/callbreak/': {
+      id: '/callbreak/'
+      path: '/callbreak'
+      fullPath: '/callbreak'
+      preLoaderRoute: typeof CallbreakIndexImport
       parentRoute: typeof rootRoute
     }
     '/literature/': {
@@ -104,8 +130,10 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
+  '/callbreak/$gameId': typeof CallbreakGameIdRoute
   '/literature/$gameId': typeof LiteratureGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
+  '/callbreak': typeof CallbreakIndexRoute
   '/literature': typeof LiteratureIndexRoute
   '/wordle': typeof WordleIndexRoute
 }
@@ -113,8 +141,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
+  '/callbreak/$gameId': typeof CallbreakGameIdRoute
   '/literature/$gameId': typeof LiteratureGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
+  '/callbreak': typeof CallbreakIndexRoute
   '/literature': typeof LiteratureIndexRoute
   '/wordle': typeof WordleIndexRoute
 }
@@ -123,8 +153,10 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/settings': typeof SettingsRoute
+  '/callbreak/$gameId': typeof CallbreakGameIdRoute
   '/literature/$gameId': typeof LiteratureGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
+  '/callbreak/': typeof CallbreakIndexRoute
   '/literature/': typeof LiteratureIndexRoute
   '/wordle/': typeof WordleIndexRoute
 }
@@ -134,24 +166,30 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/callbreak/$gameId'
     | '/literature/$gameId'
     | '/wordle/$gameId'
+    | '/callbreak'
     | '/literature'
     | '/wordle'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/settings'
+    | '/callbreak/$gameId'
     | '/literature/$gameId'
     | '/wordle/$gameId'
+    | '/callbreak'
     | '/literature'
     | '/wordle'
   id:
     | '__root__'
     | '/'
     | '/settings'
+    | '/callbreak/$gameId'
     | '/literature/$gameId'
     | '/wordle/$gameId'
+    | '/callbreak/'
     | '/literature/'
     | '/wordle/'
   fileRoutesById: FileRoutesById
@@ -160,8 +198,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRoute: typeof SettingsRoute
+  CallbreakGameIdRoute: typeof CallbreakGameIdRoute
   LiteratureGameIdRoute: typeof LiteratureGameIdRoute
   WordleGameIdRoute: typeof WordleGameIdRoute
+  CallbreakIndexRoute: typeof CallbreakIndexRoute
   LiteratureIndexRoute: typeof LiteratureIndexRoute
   WordleIndexRoute: typeof WordleIndexRoute
 }
@@ -169,8 +209,10 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRoute: SettingsRoute,
+  CallbreakGameIdRoute: CallbreakGameIdRoute,
   LiteratureGameIdRoute: LiteratureGameIdRoute,
   WordleGameIdRoute: WordleGameIdRoute,
+  CallbreakIndexRoute: CallbreakIndexRoute,
   LiteratureIndexRoute: LiteratureIndexRoute,
   WordleIndexRoute: WordleIndexRoute,
 }
@@ -189,8 +231,10 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/settings",
+        "/callbreak/$gameId",
         "/literature/$gameId",
         "/wordle/$gameId",
+        "/callbreak/",
         "/literature/",
         "/wordle/"
       ]
@@ -201,11 +245,17 @@ export const routeTree = rootRoute
     "/settings": {
       "filePath": "settings.tsx"
     },
+    "/callbreak/$gameId": {
+      "filePath": "callbreak.$gameId.tsx"
+    },
     "/literature/$gameId": {
       "filePath": "literature.$gameId.tsx"
     },
     "/wordle/$gameId": {
       "filePath": "wordle.$gameId.tsx"
+    },
+    "/callbreak/": {
+      "filePath": "callbreak.index.tsx"
     },
     "/literature/": {
       "filePath": "literature.index.tsx"

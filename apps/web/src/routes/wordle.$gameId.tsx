@@ -1,7 +1,6 @@
-import { client } from "@stairway/clients/wordle";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { GameCompleted, GameInProgress } from "@wordle/components";
-import { useGameStore, useIsGameCompleted } from "@wordle/store";
+import { client, useGameStore, useIsGameCompleted } from "@wordle/store";
 
 export const Route = createFileRoute( "/wordle/$gameId" )( {
 	beforeLoad: ( { context } ) => {

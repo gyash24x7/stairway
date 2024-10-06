@@ -44,14 +44,6 @@ export class LiteratureRouter {
 				.use( this.gameDataMiddleware( { isGameDataQuery: true } ) )
 				.query( ( { ctx: { authInfo, ...rest } } ) => ( { ...rest, playerId: authInfo.id } ) ),
 
-			getPreviousAsks: this.trpc.procedure.input( gameIdInputSchema )
-				.use( this.gameDataMiddleware() )
-				.query( ( { ctx } ) => this.queries.getPreviousAsks( ctx.game.id ) ),
-
-			getMetrics: this.trpc.procedure.input( gameIdInputSchema )
-				.use( this.gameDataMiddleware( { status: "COMPLETED" } ) )
-				.query( ( { ctx } ) => this.queries.getMetrics( ctx.game, ctx.players, ctx.teams ) ),
-
 			addBots: this.trpc.procedure.input( gameIdInputSchema )
 				.use( this.gameDataMiddleware( { status: "CREATED" } ) )
 				.mutation( ( { ctx } ) => this.mutations.addBots( ctx ) ),
@@ -115,6 +107,14 @@ export class LiteratureRouter {
 				? await this.queries.getLastMoveData( game.lastMoveId )
 				: undefined;
 
+			const asks = data?.isGameDataQuery
+				? await this.queries.getPreviousAsks( game.id )
+				: [];
+
+			const metrics = data?.isGameDataQuery
+				? await this.queries.getMetrics( game, players, teams )
+				: { player: [], team: [] };
+
 			return opts.next( {
 				ctx: {
 					authInfo,
@@ -123,7 +123,9 @@ export class LiteratureRouter {
 					teams,
 					cardCounts,
 					hand: hand.serialize(),
-					lastMoveData
+					lastMoveData,
+					asks,
+					metrics
 				}
 			} );
 		} );

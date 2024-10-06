@@ -46,15 +46,14 @@ export function initializeSocket(
 
 		if ( roomEventsMap ) {
 			Object.keys( roomEventsMap ).forEach( event => {
-				const eventKey = `${ roomId }:${ event }`;
-				socket.off( eventKey, roomEventsMap[ event ] );
-				console.log( "Unsubscribed from ", eventKey );
+				socket.off( event, roomEventsMap[ event ] );
+				console.log( "Unsubscribed from ", event );
 			} );
 		}
 
 		if ( memberEventsMap ) {
 			Object.keys( memberEventsMap ).forEach( event => {
-				const eventKey = `${ roomId }:${ memberId }:${ event }`;
+				const eventKey = `${ memberId }:${ event }`;
 				socket.off( eventKey, memberEventsMap[ event ] );
 				console.log( "Unsubscribed from ", eventKey );
 			} );

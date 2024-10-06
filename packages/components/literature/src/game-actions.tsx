@@ -1,5 +1,5 @@
 import { Button, Spinner } from "@base/components";
-import { client } from "@stairway/clients/literature";
+import { client } from "@literature/store";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 

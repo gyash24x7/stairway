@@ -1,5 +1,5 @@
 import { cn } from "@base/components";
-import type { Player } from "@stairway/clients/literature";
+import type { Player } from "@literature/store";
 import type { Dispatch, SetStateAction } from "react";
 import { DisplayPlayer } from "./display-player.tsx";
 

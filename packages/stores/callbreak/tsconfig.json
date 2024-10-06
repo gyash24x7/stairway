@@ -1,0 +1,11 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"allowImportingTsExtensions": true,
+		"exactOptionalPropertyTypes": false
+	},
+	"exclude": [ "node_modules", "tmp" ]
+}
