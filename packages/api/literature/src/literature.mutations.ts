@@ -1,10 +1,19 @@
 import { Injectable } from "@nestjs/common";
 import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
-import { CardDeck, CardHand, CardRank, CardSet, cardSetMap, PlayingCard, shuffle } from "@stairway/cards";
+import {
+	CardDeck,
+	CardHand,
+	CardRank,
+	CardSet,
+	cardSetMap,
+	generateGameCode,
+	PlayingCard,
+	shuffle
+} from "@stairway/cards";
 import { format } from "node:util";
 import { uniqueNamesGenerator } from "unique-names-generator";
 import { LiteratureBotService } from "./literature.bot.service.ts";
-import { Constants, GameEvents, generateGameCode, namesConfig } from "./literature.constants.ts";
+import { Constants, GameEvents, namesConfig } from "./literature.constants.ts";
 import { LiteratureGateway } from "./literature.gateway.ts";
 import type {
 	AskCardInput,
@@ -62,7 +71,9 @@ export class LiteratureMutations {
 			return game;
 		}
 
-		const newPlayer = await this.prisma.player.create( { data: { ...authInfo, gameId: game.id } } );
+		const newPlayer = await this.prisma.player.create( {
+			data: { id: authInfo.id, name: authInfo.name, avatar: authInfo.avatar, gameId: game.id }
+		} );
 
 		if ( game.playerCount === game.players.length + 1 ) {
 			await this.prisma.game.update( {

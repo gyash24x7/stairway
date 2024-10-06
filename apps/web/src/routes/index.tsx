@@ -1,4 +1,4 @@
-import { ApplicationCard } from "@/components/application-card.tsx";
+import { ApplicationCard } from "@main/components";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute( "/" )( {
@@ -6,6 +6,7 @@ export const Route = createFileRoute( "/" )( {
 		<div className={ "flex gap-5 flex-col md:flex-row" }>
 			<ApplicationCard name={ "literature" } path={ "/literature" }/>
 			<ApplicationCard name={ "wordle" } path={ "/wordle" }/>
+			<ApplicationCard name={ "callbreak" } path={ "/callbreak" }/>
 		</div>
 	)
 } );

@@ -1,10 +1,14 @@
 generator client {
-    provider        = "prisma-client-js"
-    previewFeatures = ["prismaSchemaFolder", "multiSchema"]
+	provider        = "prisma-client-js"
+	previewFeatures = ["prismaSchemaFolder", "multiSchema"]
+}
+
+generator json {
+	provider = "prisma-json-types-generator"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-    schemas  = ["auth", "literature", "wordle"]
+	provider = "postgresql"
+	url      = env("DATABASE_URL")
+	schemas  = ["auth", "literature", "wordle", "callbreak"]
 }

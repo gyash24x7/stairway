@@ -1,8 +1,8 @@
 import { cn } from "@base/components";
 import { EnterIcon, ResetIcon } from "@radix-ui/react-icons";
-import { client } from "@stairway/clients/wordle";
 import { useMutation } from "@tanstack/react-query";
 import {
+	client,
 	useAvailableLetters,
 	useBackspaceCurrentGuess,
 	useCurrentGuess,

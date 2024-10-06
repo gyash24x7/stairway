@@ -5,6 +5,10 @@ import { CreateGame } from "@wordle/components";
 export const Route = createFileRoute( "/wordle/" )( {
 	component: () => {
 		const { authInfo } = Route.useRouteContext();
+		const navigate = Route.useNavigate();
+
+		const navigateToGame = ( gameId: string ) => navigate( { to: "/wordle/$gameId", params: { gameId } } );
+
 		return (
 			<div className={ "flex gap-5 flex-col mt-2" }>
 				<h2 className={ "text-4xl font-fjalla" }>WORDLE</h2>
@@ -20,7 +24,10 @@ export const Route = createFileRoute( "/wordle/" )( {
 				</p>
 				<Separator/>
 				<div>
-					{ !!authInfo ? <CreateGame/> : <h2 className={ "text-2xl font-semibold" }>Login to Play!</h2> }
+					{ !!authInfo
+						? <CreateGame navigate={ navigateToGame }/>
+						: <h2 className={ "text-2xl font-semibold" }>Login to Play!</h2>
+					}
 				</div>
 			</div>
 		);

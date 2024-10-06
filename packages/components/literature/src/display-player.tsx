@@ -1,5 +1,5 @@
 import { Avatar, AvatarImage, cn } from "@base/components";
-import type { Player } from "@stairway/clients/literature";
+import type { Player } from "@literature/store";
 
 export type DisplayPlayerProps = {
 	player: Player,

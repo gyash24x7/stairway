@@ -6,21 +6,14 @@ import {
 	DrawerContent,
 	DrawerFooter,
 	DrawerHeader,
-	DrawerTitle,
-	Spinner
+	DrawerTitle
 } from "@base/components";
-import { useGameId } from "@literature/store";
-import { client } from "@stairway/clients/literature";
-import { useQuery } from "@tanstack/react-query";
+import { usePreviousAsks } from "@literature/store";
 import { useState } from "react";
 
 export function PreviousAsks() {
-	const gameId = useGameId();
 	const [ showDrawer, setShowDrawer ] = useState( false );
-	const { data, isPending } = useQuery( {
-		queryKey: [ "asks", gameId ],
-		queryFn: () => client.getPreviousAsks.query( { gameId } )
-	} );
+	const asks = usePreviousAsks();
 
 	const openDrawer = () => setShowDrawer( true );
 
@@ -35,13 +28,11 @@ export function PreviousAsks() {
 						<DrawerTitle className={ "text-center" }>Previous Asks</DrawerTitle>
 					</DrawerHeader>
 					<div className={ "flex flex-col gap-3 px-4" }>
-						{ isPending || !data ? <Spinner/> : (
-							data.map( move => (
-								<Alert key={ move.id } className={ "bg-accent" }>
-									<AlertTitle>{ move.description }</AlertTitle>
-								</Alert>
-							) )
-						) }
+						{ asks.map( ask => (
+							<Alert key={ ask.id } className={ "bg-accent" }>
+								<AlertTitle>{ ask.description }</AlertTitle>
+							</Alert>
+						) ) }
 					</div>
 					<DrawerFooter/>
 				</div>

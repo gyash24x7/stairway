@@ -12,6 +12,8 @@ export const useHand = () => useGameStore( state => state.data.hand );
 export const useLastMove = () => useGameStore( state => state.data.lastMoveData?.move );
 export const useCardSetsInHand = () => useGameStore( state => state.data.hand.sets );
 export const useCardCounts = () => useGameStore( state => state.data.cardCounts );
+export const usePreviousAsks = () => useGameStore( state => state.data.asks );
+export const useMetrics = () => useGameStore( state => state.data.metrics );
 export const useIsLastMoveSuccessfulCall = () => useGameStore(
 	state => state.data.lastMoveData?.isCall && state.data.lastMoveData?.move.success
 );

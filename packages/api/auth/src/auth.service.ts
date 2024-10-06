@@ -4,6 +4,7 @@ import { OgmaLogger, OgmaService } from "@ogma/nestjs-module";
 import { generateCodeVerifier, generateState, Google, OAuth2RequestError } from "arctic";
 import type { Request, Response } from "express";
 import { Lucia } from "lucia";
+import { format } from "node:util";
 import { AuthPrisma } from "./auth.prisma.ts";
 
 type GoogleUser = {
@@ -110,7 +111,8 @@ export class AuthService {
 			this.logger.debug( "<< handleAuthCallback()" );
 			return { status: 302 as const, sessionCookie };
 
-		} catch ( e ) {
+		} catch ( e: any ) {
+			this.logger.error( format( "Error getting google user!", e.message ) );
 			this.logger.debug( "<< handleAuthCallback()" );
 			return { status: e instanceof OAuth2RequestError ? 400 as const : 500 as const };
 		}

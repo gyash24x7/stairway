@@ -1,20 +1,9 @@
-import { Spinner, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@base/components";
-import { useGameId, usePlayers } from "@literature/store";
-import { client } from "@stairway/clients/literature";
-import { useQuery } from "@tanstack/react-query";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@base/components";
+import { useMetrics, usePlayers } from "@literature/store";
 
 export function GameCompleted() {
-	const gameId = useGameId();
 	const players = usePlayers();
-
-	const { data, isPending } = useQuery( {
-		queryKey: [ "metrics", gameId ],
-		queryFn: () => client.getMetrics.query( { gameId } )
-	} );
-
-	if ( isPending || !data ) {
-		return <Spinner/>;
-	}
+	const metrics = useMetrics();
 
 	return (
 		<div className={ "flex flex-col gap-3" }>
@@ -38,7 +27,7 @@ export function GameCompleted() {
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{ data.player.map( ( metrics ) => (
+						{ metrics.player.map( ( metrics ) => (
 							<TableRow key={ metrics.playerId } className={ "font-semibold" }>
 								<TableCell>{ players[ metrics.playerId ].name }</TableCell>
 								<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>

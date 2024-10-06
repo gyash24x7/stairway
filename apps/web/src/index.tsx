@@ -1,8 +1,7 @@
+import { client } from "@/utils/auth.ts";
 import { Spinner } from "@base/components";
-import { client } from "@stairway/clients/auth";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen.ts";
 
@@ -60,9 +59,7 @@ const rootEl = document.getElementById( "root" )!;
 const root = ReactDOM.createRoot( rootEl );
 
 root.render(
-	<React.StrictMode>
-		<QueryClientProvider client={ queryClient }>
-			<App/>
-		</QueryClientProvider>
-	</React.StrictMode>
+	<QueryClientProvider client={ queryClient }>
+		<App/>
+	</QueryClientProvider>
 );

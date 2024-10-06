@@ -1,7 +1,5 @@
-import { Route } from "@/routes/__root.tsx";
-import { cn } from "@base/components";
-import { Tabs, TabsList, TabsTrigger } from "@base/components/src/tabs.tsx";
-import { useLocation } from "@tanstack/react-router";
+import { cn, Tabs, TabsList, TabsTrigger } from "@base/components";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 const randomBg = () => {
 	const bgs = [ "bg-yellow-500", "bg-red-500", "bg-blue-500", "bg-green-500", "bg-pink-500 " ];
@@ -9,7 +7,7 @@ const randomBg = () => {
 };
 
 export const Navbar = () => {
-	const navigate = Route.useNavigate();
+	const navigate = useNavigate();
 	const { pathname } = useLocation();
 
 	return (

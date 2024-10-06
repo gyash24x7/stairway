@@ -8,6 +8,7 @@ export class CardHand {
 
 	protected constructor( cards: PlayingCard[] ) {
 		this.cards = cards;
+		this.cards = this.sorted();
 	}
 
 	get size() {
@@ -73,6 +74,15 @@ export class CardHand {
 
 	removeCards( cardIds: string[] ) {
 		this.cards = this.cards.filter( card => !cardIds.includes( card.id ) );
+	}
+
+	groupedBySuit() {
+		return {
+			[ CardSuit.CLUBS ]: this.getCardsOfSuit( CardSuit.CLUBS ),
+			[ CardSuit.DIAMONDS ]: this.getCardsOfSuit( CardSuit.DIAMONDS ),
+			[ CardSuit.HEARTS ]: this.getCardsOfSuit( CardSuit.HEARTS ),
+			[ CardSuit.SPADES ]: this.getCardsOfSuit( CardSuit.SPADES )
+		};
 	}
 
 	sorted() {

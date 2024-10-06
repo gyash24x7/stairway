@@ -1,6 +1,6 @@
-import { LoginButton } from "@/components/login-button.tsx";
-import { Navbar } from "@/components/navbar.tsx";
-import type { UserAuthInfo } from "@stairway/clients/auth";
+import type { UserAuthInfo } from "@auth/api";
+import { Toaster } from "@base/components";
+import { LoginButton, Navbar } from "@main/components";
 import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 
 type RouterContext = {
@@ -17,6 +17,7 @@ export const Route = createRootRouteWithContext<RouterContext>()( {
 					{ !authInfo && <LoginButton/> }
 					<Outlet/>
 				</div>
+				<Toaster expand richColors/>
 			</main>
 		);
 	}

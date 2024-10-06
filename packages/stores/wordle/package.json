@@ -5,10 +5,12 @@
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
+		"@trpc/client": "11.0.0-rc.502",
 		"immer": "10.1.1",
-		"zustand": "4.5.5"
+		"zustand": "4.5.5",
+		"superjson": "2.2.1"
 	},
 	"devDependencies": {
-		"@stairway/clients": "workspace:*"
+		"@wordle/api": "workspace:*"
 	}
 }
