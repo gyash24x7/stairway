@@ -15,8 +15,7 @@ const config = {
 		},
 		fontFamily: {
 			fjalla: [ "Fjalla One", "serif" ],
-			body: [ "Montserrat", "sans-serif" ],
-			bungee: [ "Bungee Spice", "serif" ]
+			body: [ "Montserrat", "sans-serif" ]
 		},
 		container: {
 			center: true,
