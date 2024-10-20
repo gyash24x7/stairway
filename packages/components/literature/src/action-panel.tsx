@@ -1,4 +1,5 @@
-import { cn } from "@base/components";
+import { observer } from "@legendapp/state/react";
+import { cn } from "@stairway/components/base";
 import {
 	useCurrentTurn,
 	useGameId,
@@ -6,7 +7,7 @@ import {
 	useIsLastMoveSuccessfulCall,
 	usePlayerId,
 	usePlayers
-} from "@literature/store";
+} from "@stairway/stores/literature";
 import { Fragment } from "react";
 import { AskCardDialog } from "./ask-card-dialog.tsx";
 import { CallSetDialog } from "./call-set-dialog.tsx";
@@ -15,7 +16,7 @@ import { AddBots, ExecuteBotMove, StartGame } from "./game-actions.tsx";
 import { PreviousAsks } from "./previous-asks.tsx";
 import { TransferTurnDialog } from "./transfer-turn-dialog.tsx";
 
-export function ActionPanel() {
+export const ActionPanel = observer( () => {
 	const status = useGameStatus();
 	const currentTurn = useCurrentTurn();
 	const playerId = usePlayerId();
@@ -53,4 +54,4 @@ export function ActionPanel() {
 			</div>
 		</div>
 	);
-}
+} );

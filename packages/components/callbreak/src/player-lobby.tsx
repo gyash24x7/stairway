@@ -1,5 +1,5 @@
-import { useDeal, usePlayerList } from "@callbreak/store";
-import { DisplayPlayer, type DisplayPlayerProps } from "@main/components";
+import { DisplayPlayer, type DisplayPlayerProps } from "@stairway/components/main";
+import { useCurrentDeal, usePlayerList } from "@stairway/stores/callbreak";
 
 export type PlayerLobbyProps = Omit<DisplayPlayerProps, "player" | "cardCount" | "declaration"> & {
 	playerIds?: string[];
@@ -7,7 +7,7 @@ export type PlayerLobbyProps = Omit<DisplayPlayerProps, "player" | "cardCount" |
 
 export function PlayerLobby( props: PlayerLobbyProps ) {
 	const playerList = usePlayerList();
-	const deal = useDeal();
+	const deal = useCurrentDeal();
 
 	return (
 		<div className={ "grid gap-3 grid-cols-2 lg:grid-cols-4" }>

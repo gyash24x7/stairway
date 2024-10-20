@@ -1,4 +1,4 @@
-import { usePlayers, useTeams } from "@literature/store";
+import { usePlayers, useTeams } from "@stairway/stores/literature";
 import { useMemo } from "react";
 import { DisplayScore } from "./display-score.tsx";
 

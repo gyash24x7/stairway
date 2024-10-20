@@ -1,16 +1,12 @@
 {
-	"name": "@wordle/store",
+	"name": "@stairway/stores/wordle",
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
-		"@trpc/client": "11.0.0-rc.502",
-		"immer": "10.1.1",
-		"zustand": "4.5.5",
-		"superjson": "2.2.1"
-	},
-	"devDependencies": {
-		"@wordle/api": "workspace:*"
+		"@legendapp/state": "3.0.0-beta.12",
+		"@stairway/api/wordle": "workspace:*",
+		"@stairway/words": "workspace:*"
 	}
 }

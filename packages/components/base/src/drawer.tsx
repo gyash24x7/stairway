@@ -1,6 +1,16 @@
-import { ComponentProps, ComponentPropsWithoutRef, ElementRef, forwardRef, HTMLAttributes } from "react";
+"use client";
+
+import {
+	type ComponentProps,
+	type ComponentPropsWithoutRef,
+	type ElementRef,
+	forwardRef,
+	type HTMLAttributes
+} from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { cn } from "./cn.ts";
+
+
 
 const { Trigger, Portal, Close, Overlay, Content, Title, Description, Root } = DrawerPrimitive;
 

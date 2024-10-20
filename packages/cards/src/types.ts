@@ -32,7 +32,7 @@ export enum CardSet {
 	UPPER_CLUBS = "Upper Clubs"
 }
 
-export interface IPlayingCard {
+export type PlayingCard = {
 	rank: CardRank;
 	suit: CardSuit;
 }

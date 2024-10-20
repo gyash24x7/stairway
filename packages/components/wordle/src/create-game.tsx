@@ -1,17 +1,20 @@
-import { Button, Spinner } from "@base/components";
-import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { client } from "@wordle/store";
+"use client";
+
+import { createGame } from "@stairway/api/wordle";
+import { Button, Spinner } from "@stairway/components/base";
+import { redirect } from "next/navigation";
+import { useTransition } from "react";
 
 export function CreateGame() {
-	const navigate = useNavigate();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.createGame.mutate,
-		onSuccess: ( data ) => navigate( { to: "/wordle/$gameId", params: { gameId: data.id } } )
+	const [ isPending, startTransition ] = useTransition();
+
+	const createGameFn = () => startTransition( async () => {
+		const game = await createGame( { wordCount: 4 } );
+		redirect( `/wordle/${ game.id }` );
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { wordCount: 4 } ) } disabled={ isPending }>
+		<Button onClick={ createGameFn } disabled={ isPending }>
 			{ isPending ? <Spinner/> : "CREATE GAME" }
 		</Button>
 	);

@@ -1,7 +1,7 @@
-import { cn } from "@base/components";
-import type { Player } from "@literature/store";
+import type { Player } from "@stairway/api/literature";
+import { cn } from "@stairway/components/base";
+import { DisplayPlayer } from "@stairway/components/main";
 import type { Dispatch, SetStateAction } from "react";
-import { DisplayPlayer } from "./display-player.tsx";
 
 export type SelectPlayerProps = {
 	options: Player[];

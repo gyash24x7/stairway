@@ -1,3 +1,6 @@
+"use client";
+
+import { CARD_SUITS, CardSuit } from "@stairway/cards";
 import {
 	Button,
 	cn,
@@ -7,9 +10,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger
-} from "@base/components";
-import { DisplayCardSuit } from "@main/components";
-import { CARD_SUITS, CardSuit } from "@stairway/cards";
+} from "@stairway/components/base";
+import { DisplayCardSuit } from "@stairway/components/main";
 import { useState } from "react";
 import { CreateGame } from "./game-actions.tsx";
 
@@ -21,7 +23,7 @@ export function CreateGameDialog() {
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
 			<DialogTrigger asChild>
-				<Button className={ "flex-1 max-w-lg" }>CREATE GAME</Button>
+				<Button>CREATE GAME</Button>
 			</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>

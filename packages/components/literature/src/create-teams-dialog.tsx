@@ -1,3 +1,4 @@
+import { chunk, shuffle } from "@stairway/cards";
 import {
 	Button,
 	Dialog,
@@ -7,9 +8,8 @@ import {
 	DialogTitle,
 	DialogTrigger,
 	Input
-} from "@base/components";
-import { useGameId, usePlayerCount, usePlayers } from "@literature/store";
-import { chunk, shuffle } from "@stairway/cards";
+} from "@stairway/components/base";
+import { useGameId, usePlayerCount, usePlayers } from "@stairway/stores/literature";
 import { useCallback, useState } from "react";
 import { CreateTeams } from "./game-actions.tsx";
 import { PlayerLobby } from "./player-lobby.tsx";

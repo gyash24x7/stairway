@@ -1,113 +1,74 @@
-import { PlayingCard } from "./card.ts";
+import { getCardId, getCardSet } from "./card.ts";
 import { cardSetMap, SORTED_DECK } from "./constants.ts";
-import { CardRank, CardSet, CardSuit, type IPlayingCard } from "./types.ts";
+import { CardRank, CardSet, CardSuit, type PlayingCard } from "./types.ts";
 import { chunk, shuffle } from "./utils.ts";
 
-export class CardHand {
-	protected cards: PlayingCard[];
-
-	protected constructor( cards: PlayingCard[] ) {
-		this.cards = cards;
-		this.cards = this.sorted();
-	}
-
-	get size() {
-		return this.cards.length;
-	}
-
-	get sets() {
-		return new Set( this.cards.map( card => card.set ) );
-	}
-
-	get suits() {
-		return new Set( this.cards.map( card => card.suit ) );
-	}
-
-	get cardIds() {
-		return this.cards.map( card => card.id );
-	}
-
-	static from( cards: IPlayingCard[] ) {
-		return new CardHand( cards.map( PlayingCard.from ) );
-	}
-
-	static empty() {
-		return new CardHand( [] );
-	}
-
-	static fromMappings( mappings: { cardId: string }[] ) {
-		return new CardHand( mappings.map( mapping => PlayingCard.fromId( mapping.cardId ) ) );
-	}
-
-	isEmpty() {
-		return this.cards.length === 0;
-	}
-
-	isCardSetInHand( set: CardSet ) {
-		return this.sets.has( set );
-	}
-
-	getCardsOfSet( set: CardSet ) {
-		return this.cards.filter( card => card.set === set );
-	}
-
-	getCardsOfSuit( suit: CardSuit ) {
-		return this.cards.filter( card => card.suit === suit );
-	}
-
-	getAskableCardsOfSet( set: CardSet ) {
-		return cardSetMap[ set ].map( PlayingCard.from )
-			.filter( card => !this.cards.map( c => c.id ).includes( card.id ) );
-	}
-
-	hasCard( cardId: string ) {
-		return this.cardIds.includes( cardId );
-	}
-
-	addCard( cardId: string ) {
-		this.cards.push( PlayingCard.fromId( cardId ) );
-	}
-
-	removeCard( cardId: string ) {
-		this.cards = this.cards.filter( card => card.id !== cardId );
-	}
-
-	removeCards( cardIds: string[] ) {
-		this.cards = this.cards.filter( card => !cardIds.includes( card.id ) );
-	}
-
-	groupedBySuit() {
-		return {
-			[ CardSuit.CLUBS ]: this.getCardsOfSuit( CardSuit.CLUBS ),
-			[ CardSuit.DIAMONDS ]: this.getCardsOfSuit( CardSuit.DIAMONDS ),
-			[ CardSuit.HEARTS ]: this.getCardsOfSuit( CardSuit.HEARTS ),
-			[ CardSuit.SPADES ]: this.getCardsOfSuit( CardSuit.SPADES )
-		};
-	}
-
-	sorted() {
-		const cardIds = this.cards.map( card => card.id );
-		return SORTED_DECK.map( PlayingCard.from ).filter( card => cardIds.includes( card.id ) );
-	}
-
-	serialize(): IPlayingCard[] {
-		return this.cards;
-	}
+export function getSetsInHand( hand: PlayingCard[] ) {
+	return new Set( hand.map( getCardSet ) );
 }
 
-export class CardDeck {
-	cards = shuffle( SORTED_DECK.map( PlayingCard.from ) );
+export function getSuitsInHand( hand: PlayingCard[] ) {
+	return new Set( hand.map( card => card.suit ) );
+}
 
-	removeCardsOfRank( rank: CardRank ) {
-		this.cards = this.cards.filter( card => card.rank !== rank );
+export function isCardSetInHand( hand: PlayingCard[], set: CardSet ) {
+	return getSetsInHand( hand ).has( set );
+}
+
+export function getCardsOfSet( hand: PlayingCard[], set: CardSet ) {
+	return hand.filter( card => getCardSet( card ) === set );
+}
+
+export function getCardsOfSuit( hand: PlayingCard[], suit: CardSuit ) {
+	return hand.filter( card => card.suit === suit );
+}
+
+export function getAskableCardsOfSet( hand: PlayingCard[], set: CardSet ) {
+	return cardSetMap[ set ].filter( card => !hand.map( getCardId ).includes( getCardId( card ) ) );
+}
+
+export function isCardInHand( hand: PlayingCard[], card: PlayingCard ) {
+	return hand.map( getCardId ).includes( getCardId( card ) );
+}
+
+export function addCardToHand( hand: PlayingCard[], card: PlayingCard ) {
+	return [ ...hand, card ];
+}
+
+export function removeCardFromHand( hand: PlayingCard[], card: PlayingCard ) {
+	return hand.filter( c => getCardId( c ) !== getCardId( card ) );
+}
+
+export function removeCardsFromHand( hand: PlayingCard[], cards: PlayingCard[] ) {
+	return hand.filter( c => !cards.map( getCardId ).includes( getCardId( c ) ) );
+}
+
+export function getSortedHand( hand: PlayingCard[] ) {
+	return SORTED_DECK.filter( card => hand.map( getCardId ).includes( getCardId( card ) ) );
+}
+
+export function getSuitGroupsFromHand( hand: PlayingCard[] ) {
+	return {
+		[ CardSuit.CLUBS ]: getCardsOfSuit( hand, CardSuit.CLUBS ),
+		[ CardSuit.DIAMONDS ]: getCardsOfSuit( hand, CardSuit.DIAMONDS ),
+		[ CardSuit.HEARTS ]: getCardsOfSuit( hand, CardSuit.HEARTS ),
+		[ CardSuit.SPADES ]: getCardsOfSuit( hand, CardSuit.SPADES )
+	};
+}
+
+export function generateDeck() {
+	return shuffle( SORTED_DECK );
+}
+
+export function removeCardsOfRank( deck: PlayingCard[], rank: CardRank ) {
+	return deck.filter( card => card.rank !== rank );
+}
+
+export function generateHands( deck: PlayingCard[], handCount: number ) {
+	if ( deck.length % handCount !== 0 ) {
+		return [];
 	}
 
-	generateHandsFromCards( handCount: number ) {
-		if ( this.cards.length % handCount !== 0 ) {
-			return [];
-		}
-
-		const handSize = this.cards.length / handCount;
-		return chunk( this.cards, handSize ).map( CardHand.from );
-	}
+	const handSize = deck.length / handCount;
+	return chunk( deck, handSize );
 }

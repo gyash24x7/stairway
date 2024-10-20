@@ -1,6 +1,5 @@
-import type { Game } from "@wordle/api";
-import { produce } from "immer";
-import { create } from "zustand";
+import { observable } from "@legendapp/state";
+import type { Game } from "@stairway/api/wordle";
 
 export type GameStore = {
 	game: Game;
@@ -11,7 +10,7 @@ export type GameStore = {
 	updateGameData: ( data: Game ) => void;
 };
 
-export const useGameStore = create<GameStore>( ( set ) => ( {
+export const wordle$ = observable<GameStore>( {
 	game: {
 		id: "",
 		playerId: "",
@@ -23,33 +22,17 @@ export const useGameStore = create<GameStore>( ( set ) => ( {
 	},
 	currentGuess: [],
 	backspaceCurrentGuess: () => {
-		set(
-			produce<GameStore>( state => {
-				state.currentGuess = state.currentGuess.slice( 0, state.currentGuess.length - 1 );
-			} )
-		);
+		wordle$.currentGuess.set( wordle$.currentGuess.slice( 0, wordle$.currentGuess.get().length - 1 ) );
 	},
 	updateCurrentGuess: ( letter: string ) => {
-		set(
-			produce<GameStore>( state => {
-				if ( state.currentGuess.length < state.game.wordLength ) {
-					state.currentGuess.push( letter );
-				}
-			} )
-		);
+		if ( wordle$.currentGuess.get().length < wordle$.game.wordLength.get() ) {
+			wordle$.currentGuess.push( letter );
+		}
 	},
 	resetCurrentGuess: () => {
-		set(
-			produce<GameStore>( state => {
-				state.currentGuess = [];
-			} )
-		);
+		wordle$.currentGuess.set( [] );
 	},
 	updateGameData: ( data ) => {
-		set(
-			produce<GameStore>( state => {
-				state.game = data;
-			} )
-		);
+		wordle$.game.set( data );
 	}
-} ) );
+} );

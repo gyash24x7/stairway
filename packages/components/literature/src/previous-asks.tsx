@@ -1,14 +1,5 @@
-import {
-	Alert,
-	AlertTitle,
-	Button,
-	Drawer,
-	DrawerContent,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle
-} from "@base/components";
-import { usePreviousAsks } from "@literature/store";
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@stairway/components/base";
+import { usePreviousAsks } from "@stairway/stores/literature";
 import { useState } from "react";
 
 export function PreviousAsks() {
@@ -28,10 +19,10 @@ export function PreviousAsks() {
 						<DrawerTitle className={ "text-center" }>Previous Asks</DrawerTitle>
 					</DrawerHeader>
 					<div className={ "flex flex-col gap-3 px-4" }>
-						{ asks.map( ask => (
-							<Alert key={ ask.id } className={ "bg-accent" }>
-								<AlertTitle>{ ask.description }</AlertTitle>
-							</Alert>
+						{ asks.slice( 0, 5 ).map( ask => (
+							<div className={ "p-3 border-2 rounded-md" } key={ ask.id }>
+								<p>{ ask.description }</p>
+							</div>
 						) ) }
 					</div>
 					<DrawerFooter/>

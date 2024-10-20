@@ -1,40 +1,41 @@
-import type { Player } from "@callbreak/api";
-import { getBestCardPlayed, getPlayableCards, PlayingCard } from "@stairway/cards";
-import { useGameStore } from "./store.ts";
+import type { Player } from "@stairway/api/callbreak";
+import { getBestCardPlayed, getCardFromId, getPlayableCards } from "@stairway/cards";
+import { callbreak$ } from "./store.ts";
 
 const sortById = ( a: Player, b: Player ) => a.id.localeCompare( b.id );
 
-export const useGameId = () => useGameStore( state => state.data.game.id );
-export const useDealId = () => useGameStore( state => state.data.deals[ 0 ]?.id );
-export const useRoundId = () => useGameStore( state => state.data.deals[ 0 ]?.rounds[ 0 ]?.id );
-export const useGameCode = () => useGameStore( state => state.data.game.code );
-export const usePlayerId = () => useGameStore( state => state.data.playerId );
-export const usePlayers = () => useGameStore( state => state.data.players );
-export const usePlayerList = () => useGameStore( state => Object.values( state.data.players ).toSorted( sortById ) );
-export const useGameStatus = () => useGameStore( state => state.data.game.status );
-export const useHand = () => useGameStore( state => state.data.hand );
-export const useScoreList = () => useGameStore( state => state.data.game.scores );
-export const useScoresAggregate = () => useGameStore( state => {
+export const useGameId = () => callbreak$.data.game.id.get();
+export const useCurrentDealId = () => callbreak$.data.currentDeal.get()?.id;
+export const useCurrentRoundId = () => callbreak$.data.currentRound.get()?.id;
+export const useGameCode = () => callbreak$.data.game.code.get();
+export const usePlayerId = () => callbreak$.data.playerId.get();
+export const usePlayers = () => callbreak$.data.players.get();
+export const usePlayerList = () => Object.values( callbreak$.data.players.get() ).toSorted( sortById );
+export const useGameStatus = () => callbreak$.data.game.status.get();
+export const useHand = () => callbreak$.data.hand.get();
+export const useScoreList = () => callbreak$.data.game.scores.get();
+export const useScoresAggregate = () => {
 	const aggregate: Record<string, number> = {};
-	state.data.game.scores.forEach( score => {
+	callbreak$.data.game.scores.get().forEach( score => {
 		Object.entries( score ).forEach( ( [ playerId, playerScore ] ) => {
 			aggregate[ playerId ] = ( aggregate[ playerId ] ?? 0 ) + playerScore;
 		} );
 	} );
 	return aggregate;
-} );
-export const useDeal = () => useGameStore( state => state.data.deals[ 0 ] );
-export const useRound = () => useGameStore( state => state.data.deals[ 0 ]?.rounds[ 0 ] );
+};
+export const useCurrentDeal = () => callbreak$.data.currentDeal.get();
+export const useCurrentRound = () => callbreak$.data.currentRound.get();
 
-export const usePlayableCardsForCurrentRound = () => useGameStore( state => {
-	const roundSuit = state.data.deals[ 0 ]?.rounds[ 0 ]?.suit;
-	const trumpSuit = state.data.game.trumpSuit;
-	const cardsPlayed = Object.values( state.data.deals[ 0 ]?.rounds[ 0 ]?.cards ?? {} ).map( PlayingCard.fromId );
-	const hand = state.data.hand;
+export const usePlayableCardsForCurrentRound = () => {
+	const currentRound = callbreak$.data.currentRound.get();
+	const roundSuit = currentRound?.suit;
+	const trumpSuit = callbreak$.data.game.trumpSuit.get();
+	const cardsPlayed = Object.values( currentRound?.cards ?? {} ).map( getCardFromId );
+	const hand = callbreak$.data.hand.get();
 
 	const bestCardPlayed = getBestCardPlayed( cardsPlayed ?? [], trumpSuit, roundSuit );
 	return getPlayableCards( hand, trumpSuit, bestCardPlayed, roundSuit );
-} );
+};
 
 const GameEvents = {
 	PLAYER_JOINED: "player-joined",
@@ -54,24 +55,24 @@ const PlayerSpecificEvents = {
 	CARDS_DEALT: "cards-dealt"
 };
 
-export const useGameEventHandlers = () => useGameStore( state => {
+export const useGameEventHandlers = () => {
 	return {
-		[ GameEvents.PLAYER_JOINED ]: state.eventHandlers.handlePlayerJoinedEvent,
-		[ GameEvents.ALL_PLAYER_JOINED ]: state.eventHandlers.handleAllPlayersJoinedEvent,
-		[ GameEvents.DEAL_CREATED ]: state.eventHandlers.handleDealCreatedEvent,
-		[ GameEvents.DEAL_WIN_DECLARED ]: state.eventHandlers.handleDealWinDeclaredEvent,
-		[ GameEvents.ALL_DEAL_WINS_DECLARED ]: state.eventHandlers.handleAllDealWinsDeclaredEvent,
-		[ GameEvents.ROUND_CREATED ]: state.eventHandlers.handleRoundCreatedEvent,
-		[ GameEvents.CARD_PLAYED ]: state.eventHandlers.handleCardPlayedEvent,
-		[ GameEvents.ROUND_COMPLETED ]: state.eventHandlers.handleRoundCompletedEvent,
-		[ GameEvents.DEAL_COMPLETED ]: state.eventHandlers.handleDealCompletedEvent,
-		[ GameEvents.STATUS_UPDATED ]: state.eventHandlers.handleStatusUpdatedEvent,
-		[ GameEvents.GAME_COMPLETED ]: state.eventHandlers.handleGameCompletedEvent
+		[ GameEvents.PLAYER_JOINED ]: callbreak$.eventHandlers.handlePlayerJoinedEvent,
+		[ GameEvents.ALL_PLAYER_JOINED ]: callbreak$.eventHandlers.handleAllPlayersJoinedEvent,
+		[ GameEvents.DEAL_CREATED ]: callbreak$.eventHandlers.handleDealCreatedEvent,
+		[ GameEvents.DEAL_WIN_DECLARED ]: callbreak$.eventHandlers.handleDealWinDeclaredEvent,
+		[ GameEvents.ALL_DEAL_WINS_DECLARED ]: callbreak$.eventHandlers.handleAllDealWinsDeclaredEvent,
+		[ GameEvents.ROUND_CREATED ]: callbreak$.eventHandlers.handleRoundCreatedEvent,
+		[ GameEvents.CARD_PLAYED ]: callbreak$.eventHandlers.handleCardPlayedEvent,
+		[ GameEvents.ROUND_COMPLETED ]: callbreak$.eventHandlers.handleRoundCompletedEvent,
+		[ GameEvents.DEAL_COMPLETED ]: callbreak$.eventHandlers.handleDealCompletedEvent,
+		[ GameEvents.STATUS_UPDATED ]: callbreak$.eventHandlers.handleStatusUpdatedEvent,
+		[ GameEvents.GAME_COMPLETED ]: callbreak$.eventHandlers.handleGameCompletedEvent
 	};
-} );
+};
 
-export const usePlayerSpecificEventHandlers = () => useGameStore( state => {
+export const usePlayerSpecificEventHandlers = () => {
 	return {
-		[ PlayerSpecificEvents.CARDS_DEALT ]: state.eventHandlers.handleCardsDealtEvent
+		[ PlayerSpecificEvents.CARDS_DEALT ]: callbreak$.eventHandlers.handleCardsDealtEvent
 	};
-} );
+};

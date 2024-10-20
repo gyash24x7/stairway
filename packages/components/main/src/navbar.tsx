@@ -1,14 +1,16 @@
-import { cn, Tabs, TabsList, TabsTrigger } from "@base/components";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+"use client";
+
+import { cn, Tabs, TabsList, TabsTrigger } from "@stairway/components/base";
+import { usePathname, useRouter } from "next/navigation";
 
 const randomBg = () => {
 	const bgs = [ "bg-yellow-500", "bg-red-500", "bg-blue-500", "bg-green-500", "bg-pink-500 " ];
 	return bgs[ Math.floor( Math.random() * 5 ) ];
 };
 
-export const Navbar = () => {
-	const navigate = useNavigate();
-	const { pathname } = useLocation();
+export function Navbar() {
+	const router = useRouter();
+	const pathname = usePathname();
 
 	return (
 		<div
@@ -40,14 +42,14 @@ export const Navbar = () => {
 				<TabsList className="grid grid-cols-2 lg:grid-cols-4 font-semibold text-muted-foreground h-10">
 					<TabsTrigger
 						value=""
-						onClick={ () => navigate( { to: "/" } ) }
+						onClick={ () => router.push( "/" ) }
 						className={ "h-8 lg:col-start-2 lg:col-end-3" }
 					>
 						HOME
 					</TabsTrigger>
 					<TabsTrigger
 						value="settings"
-						onClick={ () => navigate( { to: "/settings" } ) }
+						onClick={ () => router.push( "/settings" ) }
 						className={ "h-8 lg:col-start-3 lg:col-end-4" }
 					>
 						SETTINGS
@@ -56,4 +58,4 @@ export const Navbar = () => {
 			</Tabs>
 		</div>
 	);
-};
+}

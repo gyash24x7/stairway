@@ -1,6 +1,10 @@
+"use client";
+
 import { Root } from "@radix-ui/react-separator";
-import { ComponentPropsWithoutRef, ElementRef, forwardRef } from "react";
+import { type ComponentPropsWithoutRef, type ElementRef, forwardRef } from "react";
 import { cn } from "./cn.ts";
+
+
 
 const Separator = forwardRef<ElementRef<typeof Root>, ComponentPropsWithoutRef<typeof Root>>(
 	( { className, orientation = "horizontal", decorative = true, ...props }, ref ) => (

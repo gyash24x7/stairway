@@ -1,16 +1,14 @@
 {
-	"name": "@literature/components",
+	"name": "@stairway/components/literature",
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
-		"@base/components": "workspace:*",
-		"@main/components": "workspace:*",
-		"@literature/store": "workspace:*",
+		"@stairway/components/base": "workspace:*",
+		"@stairway/components/main": "workspace:*",
+		"@stairway/stores/literature": "workspace:*",
 		"@stairway/cards": "workspace:*",
-		"@stepperize/react": "3.0.1",
-		"@tanstack/react-query": "5.56.2",
-		"@tanstack/react-router": "1.58.3"
+		"react-use-websocket": "4.9.0"
 	}
 }

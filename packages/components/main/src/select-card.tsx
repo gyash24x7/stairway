@@ -1,5 +1,7 @@
-import { cn } from "@base/components";
-import { PlayingCard } from "@stairway/cards";
+"use client";
+
+import { getCardId, type PlayingCard } from "@stairway/cards";
+import { cn } from "@stairway/components/base";
 import { DisplayCard } from "./display-card.tsx";
 
 export type SelectCardProps = {
@@ -9,24 +11,25 @@ export type SelectCardProps = {
 	onDeselect: ( cardId: string ) => void;
 }
 
-export function SelectCard( { cards, onSelect, onDeselect, selectedCards }: SelectCardProps ) {
+export function SelectCard( props: SelectCardProps ) {
 
-	const handleCardClick = ( cardId: string ) => {
-		if ( selectedCards.includes( cardId ) ) {
-			onDeselect( cardId );
+	const handleCardClick = ( card: PlayingCard ) => {
+		const cardId = getCardId( card );
+		if ( props.selectedCards.includes( cardId ) ) {
+			props.onDeselect( cardId );
 		} else {
-			onSelect( cardId );
+			props.onSelect( cardId );
 		}
 	};
 
 	return (
 		<div className={ "flex gap-3 flex-wrap" }>
-			{ cards.map( ( card ) => (
+			{ props.cards.map( ( card ) => (
 				<div
-					key={ card.id }
-					onClick={ () => handleCardClick( card.id ) }
+					key={ getCardId( card ) }
+					onClick={ () => handleCardClick( card ) }
 					className={ cn(
-						selectedCards.includes( card.id ) ? "bg-accent" : "bg-background",
+						props.selectedCards.includes( getCardId( card ) ) ? "bg-accent" : "bg-background",
 						"cursor-pointer rounded-md"
 					) }
 				>
