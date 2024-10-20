@@ -1,7 +1,9 @@
-import { Button, Spinner } from "@base/components";
-import { client } from "@callbreak/store";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+"use client";
+
+import { addBots, createGame, declareDealWins, joinGame, playCard } from "@stairway/api/callbreak";
+import { Button, Spinner } from "@stairway/components/base";
+import { redirect } from "next/navigation";
+import { useTransition } from "react";
 
 type GameIdProps = { gameId: string };
 type DealIdProps = GameIdProps & { dealId: string };
@@ -10,52 +12,41 @@ type RoundIdProps = DealIdProps & { roundId: string };
 type CreateGameProps = { trumpSuit: string; dealCount?: 5 | 9 | 13 }
 
 export function CreateGame( { trumpSuit, dealCount = 5 }: CreateGameProps ) {
-	const navigate = useNavigate();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.createGame.mutate,
-		onSuccess: ( data ) => navigate( { to: "/callbreak/$gameId", params: { gameId: data.id } } )
+	const [ isPending, startTransition ] = useTransition();
+	const createGameFn = () => startTransition( async () => {
+		const game = await createGame( { trumpSuit, dealCount } );
+		redirect( `/callbreak/${ game.id }` );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { trumpSuit, dealCount } ) }
-			disabled={ isPending }
-			className={ "w-full" }
-		>
+		<Button onClick={ createGameFn } disabled={ isPending } className={ "w-full" }>
 			{ isPending ? <Spinner/> : "CREATE GAME" }
 		</Button>
 	);
 }
 
 export function JoinGame( { code }: { code: string } ) {
-	const navigate = useNavigate();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.joinGame.mutate,
-		onSuccess: ( data ) => navigate( { to: "/callbreak/$gameId", params: { gameId: data.id } } )
+	const [ isPending, startTransition ] = useTransition();
+	const joinGameFn = () => startTransition( async () => {
+		const game = await joinGame( code );
+		redirect( `/callbreak/${ game.id }` );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { code } ) }
-			disabled={ isPending }
-			className={ "w-full" }
-		>
+		<Button onClick={ joinGameFn } disabled={ isPending } className={ "w-full" }>
 			{ isPending ? <Spinner/> : "JOIN GAME" }
 		</Button>
 	);
 }
 
 export function AddBots( { gameId }: { gameId: string } ) {
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.addBots.mutate
+	const [ isPending, startTransition ] = useTransition();
+	const addBotsFn = () => startTransition( async () => {
+		await addBots( gameId );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId } ) }
-			disabled={ isPending }
-			className={ "w-full" }
-		>
+		<Button onClick={ addBotsFn } disabled={ isPending } className={ "w-full" }>
 			{ isPending ? <Spinner/> : "ADD BOTS" }
 		</Button>
 	);
@@ -67,21 +58,14 @@ export type DeclareDealWinsProps = DealIdProps & {
 }
 
 export function DeclareDealWins( { gameId, dealId, wins, onSubmit }: DeclareDealWinsProps ) {
-	const queryClient = useQueryClient();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.declareDealWins.mutate,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries();
-			onSubmit();
-		}
+	const [ isPending, startTransition ] = useTransition();
+	const declareWinsFn = () => startTransition( async () => {
+		await declareDealWins( { gameId, dealId, wins } );
+		onSubmit();
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId, wins, dealId } ) }
-			disabled={ isPending }
-			className={ "flex-1" }
-		>
+		<Button onClick={ declareWinsFn } disabled={ isPending } className={ "flex-1 max-w-lg" }>
 			{ isPending ? <Spinner/> : "DECLARE WINS" }
 		</Button>
 	);
@@ -93,17 +77,14 @@ export type PlayCardProps = RoundIdProps & {
 }
 
 export function PlayCard( { gameId, dealId, roundId, cardId, onSubmit }: PlayCardProps ) {
-	const queryClient = useQueryClient();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.playCard.mutate,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries();
-			onSubmit();
-		}
+	const [ isPending, startTransition ] = useTransition();
+	const playCardFn = () => startTransition( async () => {
+		await playCard( { gameId, dealId, roundId, cardId } );
+		onSubmit();
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId, dealId, roundId, cardId } ) } disabled={ isPending }>
+		<Button onClick={ playCardFn } disabled={ isPending } className={ "flex-1 max-w-lg" }>
 			{ isPending ? <Spinner/> : "PLAY CARD" }
 		</Button>
 	);

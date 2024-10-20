@@ -1,7 +1,7 @@
-import { cn } from "@base/components";
-import type { Player } from "@literature/api";
-import { useCardCounts, usePlayerCount, usePlayers } from "@literature/store";
-import { DisplayPlayer, type DisplayPlayerProps } from "./display-player.tsx";
+import type { Player } from "@stairway/api/literature";
+import { cn } from "@stairway/components/base";
+import { DisplayPlayer, type DisplayPlayerProps } from "@stairway/components/main";
+import { useCardCounts, usePlayerCount, usePlayers } from "@stairway/stores/literature";
 
 export type PlayerLobbyProps = Omit<DisplayPlayerProps, "player" | "cardCount"> & { playerIds?: string[]; }
 

@@ -1,5 +1,9 @@
+"use client";
+
 import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "./cn.ts";
+
+
 
 const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 	( { className, ...props }, ref ) => (

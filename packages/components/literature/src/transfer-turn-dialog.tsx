@@ -1,5 +1,5 @@
-import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
-import { useCardCounts, useGameId, useMyTeam, usePlayerId, usePlayers } from "@literature/store";
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@stairway/components/base";
+import { useCardCounts, useGameId, useMyTeam, usePlayerId, usePlayers } from "@stairway/stores/literature";
 import { useMemo, useState } from "react";
 import { TransferTurn } from "./game-actions.tsx";
 import { SelectPlayer } from "./select-player.tsx";

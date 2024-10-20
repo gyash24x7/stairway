@@ -1,6 +1,19 @@
-export type LetterState = "correct" | "wrongPlace" | "wrong" | "empty";
-import type { Game } from "@wordle/store";
 import dictionary from "./dictionary.ts";
+
+export type LetterState = "correct" | "wrongPlace" | "wrong" | "empty";
+
+type Game = {
+	wordLength: number;
+	wordCount: number;
+	words: string[];
+	guesses: string[];
+}
+
+export type PositionData = {
+	letter: string;
+	state: LetterState;
+	index: number
+}
 
 export function getAvailableLetters( guesses: string[] ) {
 	let letters = "abcdefghijklmnopqrstuvwxyz".split( "" );
@@ -33,12 +46,6 @@ export function getGuessBlocks( game: Game, currentGuess: string ) {
 		);
 	} );
 	return map;
-}
-
-export type PositionData = {
-	letter: string;
-	state: LetterState;
-	index: number
 }
 
 export function calculatePositions( word: string, input: string, isCompleted = false ): PositionData[] {

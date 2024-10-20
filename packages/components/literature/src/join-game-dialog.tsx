@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	Button,
 	Dialog,
@@ -7,7 +9,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 	Input
-} from "@base/components";
+} from "@stairway/components/base";
 import { useState } from "react";
 import { JoinGame } from "./game-actions.tsx";
 

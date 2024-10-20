@@ -1,14 +1,13 @@
 {
-	"name": "@wordle/components",
+	"name": "@stairway/components/wordle",
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
-		"@base/components": "workspace:*",
-		"@stairway/words": "workspace:*",
-		"@wordle/store": "workspace:*",
-		"@tanstack/react-query": "5.56.2",
-		"@tanstack/react-router": "1.58.3"
+		"@stairway/api/wordle": "workspace:*",
+		"@stairway/components/base": "workspace:*",
+		"@stairway/stores/wordle": "workspace:*",
+		"@stairway/words": "workspace:*"
 	}
 }

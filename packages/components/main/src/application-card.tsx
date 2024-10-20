@@ -1,5 +1,5 @@
-import { Button, cn } from "@base/components";
-import { Link } from "@tanstack/react-router";
+import { Button, cn, fjalla } from "@stairway/components/base";
+import Link from "next/link";
 
 export type ApplicationCardProps = {
 	name: string;
@@ -9,8 +9,8 @@ export type ApplicationCardProps = {
 export const ApplicationCard = ( props: ApplicationCardProps ) => (
 	<div
 		className={ cn(
-			"cursor-pointer overflow-hidden relative card h-64 lg:h-96 lg:w-80 rounded-md flex flex-col justify-between",
-			`backgroundImage ${ props.name }-bg bg-cover border-2 w-full`
+			"cursor-pointer overflow-hidden relative card min-w-xl h-64 md:h-96 rounded-md flex flex-col",
+			`justify-between backgroundImage ${ props.name }-bg bg-cover border-2 flex-1`
 		) }
 	>
 		<div
@@ -21,12 +21,12 @@ export const ApplicationCard = ( props: ApplicationCardProps ) => (
 		/>
 		<div className={ "bg-primary px-6 py-3 mt-6" }>
 			<p className={ "font-semibold text-sm relative z-10 text-primary-foreground" }>GAMES</p>
-			<h1 className={ `font-bold text-5xl relative z-10 font-fjalla text-primary-foreground` }>
+			<h1 className={ `font-bold text-5xl relative z-10 ${ fjalla.className } text-primary-foreground` }>
 				{ props.name.toUpperCase() }
 			</h1>
 		</div>
 		<div className={ "flex justify-end z-10 p-6" }>
-			<Link to={ props.path }>
+			<Link href={ props.path }>
 				<Button>PLAY</Button>
 			</Link>
 		</div>

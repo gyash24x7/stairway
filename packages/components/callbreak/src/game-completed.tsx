@@ -1,5 +1,5 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@base/components";
-import { usePlayers, useScoreList } from "@callbreak/store";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@stairway/components/base";
+import { usePlayers, useScoreList } from "@stairway/stores/callbreak";
 
 export function GameCompleted() {
 	const players = usePlayers();

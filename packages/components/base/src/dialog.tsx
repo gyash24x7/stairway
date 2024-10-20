@@ -1,7 +1,11 @@
+"use client";
+
 import { Close, Content, Description, Overlay, Portal, Root, Title, Trigger } from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
-import { ComponentPropsWithoutRef, ElementRef, forwardRef, HTMLAttributes } from "react";
+import { type ComponentPropsWithoutRef, type ElementRef, forwardRef, type HTMLAttributes } from "react";
 import { cn } from "./cn.ts";
+
+
 
 const Dialog = Root;
 

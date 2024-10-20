@@ -1,3 +1,4 @@
+import { MinusIcon, PlusIcon } from "@radix-ui/react-icons";
 import {
 	Button,
 	Drawer,
@@ -5,19 +6,19 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle,
-	DrawerTrigger,
-	Slider
-} from "@base/components";
-import { useDealId, useGameId } from "@callbreak/store";
+	DrawerTrigger
+} from "@stairway/components/base";
+import { useCurrentDealId, useGameId } from "@stairway/stores/callbreak";
 import { useState } from "react";
+import { useCounter } from "usehooks-ts";
 import { DeclareDealWins } from "./game-actions.tsx";
 
 
 export function DeclareDealWinsDrawer() {
 	const gameId = useGameId();
-	const dealId = useDealId();
-	const [ wins, setWins ] = useState( 2 );
+	const dealId = useCurrentDealId();
 	const [ open, setOpen ] = useState( false );
+	const { count, increment, decrement, reset } = useCounter( 2 );
 
 	return (
 		<Drawer open={ open } onOpenChange={ setOpen }>
@@ -30,25 +31,27 @@ export function DeclareDealWinsDrawer() {
 						<DrawerTitle>Declare Deal Wins</DrawerTitle>
 					</DrawerHeader>
 					<div className={ "flex flex-col gap-3" }>
-						<Slider
-							defaultValue={ [ 2 ] }
-							min={ 2 }
-							max={ 13 }
-							step={ 1 }
-							onValueCommit={ value => setWins( value[ 0 ]! ) }
-						/>
-						<div className={ "flex justify-between text-xl font-bold" }>
-							<div>2</div>
-							<div>{ wins }</div>
-							<div>13</div>
+						<div className="flex justify-center items-center space-x-2">
+							<Button variant="outline" size="icon" onClick={ increment } disabled={ count <= 2 }>
+								<MinusIcon className="h-4 w-4"/>
+							</Button>
+							<div className="w-20 h-10 flex items-center justify-center border bg-background text-sm">
+								{ count }
+							</div>
+							<Button variant="outline" size="icon" onClick={ decrement } disabled={ count >= 13 }>
+								<PlusIcon className="h-4 w-4"/>
+							</Button>
 						</div>
 					</div>
 					<DrawerFooter>
 						<DeclareDealWins
 							gameId={ gameId }
 							dealId={ dealId! }
-							wins={ wins }
-							onSubmit={ () => setOpen( false ) }
+							wins={ count }
+							onSubmit={ () => {
+								reset();
+								setOpen( false );
+							} }
 						/>
 					</DrawerFooter>
 				</div>

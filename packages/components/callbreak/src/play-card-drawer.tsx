@@ -1,3 +1,6 @@
+"use client";
+
+import { getSortedHand } from "@stairway/cards";
 import {
 	Button,
 	Drawer,
@@ -6,17 +9,21 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 	DrawerTrigger
-} from "@base/components";
-import { useDealId, useGameId, usePlayableCardsForCurrentRound, useRoundId } from "@callbreak/store";
-import { SelectCard } from "@main/components";
-import { CardHand, PlayingCard } from "@stairway/cards";
+} from "@stairway/components/base";
+import { SelectCard } from "@stairway/components/main";
+import {
+	useCurrentDealId,
+	useCurrentRoundId,
+	useGameId,
+	usePlayableCardsForCurrentRound
+} from "@stairway/stores/callbreak";
 import { useCallback, useState } from "react";
 import { PlayCard } from "./game-actions.tsx";
 
 export function PlayCardDrawer() {
 	const gameId = useGameId();
-	const dealId = useDealId();
-	const roundId = useRoundId();
+	const dealId = useCurrentDealId();
+	const roundId = useCurrentRoundId();
 	const playableCards = usePlayableCardsForCurrentRound();
 
 	const [ selectedCard, setSelectedCard ] = useState<string>();
@@ -43,7 +50,7 @@ export function PlayCardDrawer() {
 					</DrawerHeader>
 					<div className={ "px-4" }>
 						<SelectCard
-							cards={ CardHand.from( playableCards.map( PlayingCard.fromId ) ).sorted() }
+							cards={ getSortedHand( playableCards ) }
 							selectedCards={ !selectedCard ? [] : [ selectedCard ] }
 							onSelect={ ( cardId ) => setSelectedCard( cardId ) }
 							onDeselect={ () => setSelectedCard( undefined ) }

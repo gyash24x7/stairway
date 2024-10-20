@@ -1,5 +1,5 @@
-import { cn } from "@base/components";
-import { useDeal, useGameId, useGameStatus, usePlayerId, useRound } from "@callbreak/store";
+import { cn } from "@stairway/components/base";
+import { useCurrentDeal, useCurrentRound, useGameId, useGameStatus, usePlayerId } from "@stairway/stores/callbreak";
 import { Fragment } from "react";
 import { DeclareDealWinsDrawer } from "./declare-deal-wins-drawer.tsx";
 import { AddBots } from "./game-actions.tsx";
@@ -9,8 +9,8 @@ export function ActionPanel() {
 	const gameId = useGameId();
 	const status = useGameStatus();
 	const playerId = usePlayerId();
-	const deal = useDeal();
-	const round = useRound();
+	const deal = useCurrentDeal();
+	const round = useCurrentRound();
 
 	return (
 		<div

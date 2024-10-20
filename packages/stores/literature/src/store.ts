@@ -1,3 +1,4 @@
+import { observable } from "@legendapp/state";
 import type {
 	Ask,
 	Call,
@@ -10,10 +11,14 @@ import type {
 	ScoreUpdate,
 	TeamData,
 	Transfer
-} from "@literature/api";
-import { CardHand, type IPlayingCard, PlayingCard } from "@stairway/cards";
-import { produce } from "immer";
-import { create } from "zustand";
+} from "@stairway/api/literature";
+import {
+	addCardToHand,
+	getCardFromId,
+	type PlayingCard,
+	removeCardFromHand,
+	removeCardsFromHand
+} from "@stairway/cards";
 
 export type PlayerGameData = {
 	playerId: string;
@@ -21,7 +26,7 @@ export type PlayerGameData = {
 	players: PlayerData;
 	teams: TeamData;
 	cardCounts: CardCounts;
-	hand: CardHand;
+	hand: PlayingCard[];
 	lastMoveData?: { move?: Ask | Transfer, isCall: false } | { move: Call, isCall: true };
 	asks: Ask[];
 	metrics: Metrics
@@ -38,7 +43,7 @@ export type GameEventHandlers = {
 	handleStatusUpdatedEvent: ( status: GameStatus ) => void;
 	handleCardCountsUpdatedEvent: ( cardCounts: CardCounts ) => void;
 	handleGameCompletedEvent: ( metrics: Metrics ) => void;
-	handleCardsDealtEvent: ( cards: IPlayingCard[] ) => void;
+	handleCardsDealtEvent: ( cards: PlayingCard[] ) => void;
 }
 
 export type GameStore = {
@@ -46,7 +51,7 @@ export type GameStore = {
 	eventHandlers: GameEventHandlers;
 }
 
-export const useGameStore = create<GameStore>( set => ( {
+export const literature$ = observable<GameStore>( {
 	data: {
 		playerId: "",
 		game: {
@@ -60,108 +65,75 @@ export const useGameStore = create<GameStore>( set => ( {
 		players: {},
 		teams: {},
 		cardCounts: {},
-		hand: CardHand.empty(),
+		hand: [],
 		asks: [],
 		metrics: { player: [], team: [] }
 	},
 	eventHandlers: {
 		handlePlayerJoinedEvent: ( newPlayer ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.players[ newPlayer.id ] = newPlayer;
-				} )
-			);
+			literature$.data.players.set( { ...literature$.data.players.get(), [ newPlayer.id ]: newPlayer } );
 		},
 		handleTeamsCreatedEvent: ( teams ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.teams = teams;
-					Object.values( teams ).map( team => {
-						team.memberIds.forEach( memberId => {
-							state.data.players[ memberId ].teamId = team.id;
-						} );
-					} );
-				} )
-			);
-		},
-		handleCardAskedEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.lastMoveId = data.id;
-					state.data.lastMoveData = { isCall: false, move: data };
-					if ( data.playerId === state.data.playerId && data.success ) {
-						state.data.hand.addCard( data.cardId );
+			const players = literature$.data.players.get();
+			Object.values( teams ).map( team => {
+				team.memberIds.map( playerId => {
+					if ( players[ playerId ] ) {
+						players[ playerId ].teamId = team.id;
 					}
+				} );
+			} );
 
-					if ( data.askedFrom === state.data.playerId && data.success ) {
-						state.data.hand.removeCard( data.cardId );
-					}
-
-					state.data.asks.unshift( data );
-				} )
-			);
+			literature$.data.players.set( players );
+			literature$.data.teams.set( teams );
 		},
-		handleSetCalledEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.lastMoveId = data.id;
-					state.data.lastMoveData = { isCall: true, move: data };
-					state.data.hand.removeCards( Object.keys( data.correctCall as unknown as Record<string, string> ) );
-				} )
-			);
+		handleCardAskedEvent: ( ask ) => {
+			literature$.data.asks.unshift( ask );
+			literature$.data.game.lastMoveId.set( ask.id );
+			literature$.data.lastMoveData.set( { move: ask, isCall: false } );
+
+			const askedCard = getCardFromId( ask.cardId );
+			const playerId = literature$.data.playerId.get();
+			if ( ask.playerId === playerId && ask.success ) {
+				literature$.data.hand.set( addCardToHand( literature$.data.hand.get(), askedCard ) );
+			}
+
+			if ( ask.askedFrom === playerId && ask.success ) {
+				literature$.data.hand.set( removeCardFromHand( literature$.data.hand.get(), askedCard ) );
+			}
+		},
+		handleSetCalledEvent: ( call ) => {
+			literature$.data.game.lastMoveId.set( call.id );
+			literature$.data.lastMoveData.set( { move: call, isCall: true } );
+			literature$.data.hand.set( removeCardsFromHand(
+				literature$.data.hand.get(),
+				Object.keys( call.correctCall ).map( getCardFromId )
+			) );
 		},
 		handleTurnTransferredEvent: ( transfer ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.lastMoveId = transfer.id;
-					state.data.lastMoveData = { isCall: false, move: transfer };
-				} )
-			);
+			literature$.data.game.lastMoveId.set( transfer.id );
+			literature$.data.lastMoveData.set( { move: transfer, isCall: false } );
 		},
-		handleTurnUpdatedEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.currentTurn = data;
-				} )
-			);
+		handleTurnUpdatedEvent: ( nextTurn ) => {
+			literature$.data.game.currentTurn.set( nextTurn );
 		},
-		handleScoreUpdatedEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.teams[ data.teamId ].score = data.score;
-					state.data.teams[ data.teamId ].setsWon =
-						[ data.setWon, ...state.data.teams[ data.teamId ].setsWon ];
-				} )
-			);
+		handleScoreUpdatedEvent: ( { teamId, score, setWon } ) => {
+			const teams = literature$.data.teams.get();
+			teams[ teamId ].score = score;
+			teams[ teamId ].setsWon.push( setWon );
+			literature$.data.teams.set( teams );
 		},
-		handleStatusUpdatedEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.status = data;
-				} )
-			);
+		handleStatusUpdatedEvent: ( status ) => {
+			literature$.data.game.status.set( status );
 		},
-		handleCardCountsUpdatedEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.cardCounts = data;
-				} )
-			);
-		},
-		handleCardsDealtEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.hand = CardHand.from( data.map( PlayingCard.from ) );
-				} )
-			);
+		handleCardCountsUpdatedEvent: ( cardCounts ) => {
+			literature$.data.cardCounts.set( cardCounts );
 		},
 		handleGameCompletedEvent: ( metrics ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.status = "COMPLETED";
-					state.data.metrics = metrics;
-				} )
-			);
+			literature$.data.metrics.set( metrics );
+			literature$.data.game.status.set( "COMPLETED" );
+		},
+		handleCardsDealtEvent: ( cards ) => {
+			literature$.data.hand.set( cards );
 		}
 	}
-} ) );
+} );

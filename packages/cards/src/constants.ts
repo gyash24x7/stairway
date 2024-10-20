@@ -1,4 +1,4 @@
-import { CardRank, CardSet, CardSuit, type IPlayingCard } from "./types.ts";
+import { CardRank, CardSet, CardSuit, type PlayingCard } from "./types.ts";
 
 export const CARD_RANKS = [
 	CardRank.ACE,
@@ -32,20 +32,18 @@ export const CARD_SETS = [
 	CardSet.UPPER_HEARTS
 ] as const;
 
-export const SORTED_DECK: IPlayingCard[] = CARD_SUITS.flatMap(
-	suit => CARD_RANKS.map( rank => (
-		{ rank, suit }
-	) )
+export const SORTED_DECK: PlayingCard[] = CARD_SUITS.flatMap(
+	suit => CARD_RANKS.map( rank => ( { rank, suit } ) )
 );
 
-export const cardSuitMap: Record<CardSuit, IPlayingCard[]> = {
+export const cardSuitMap: Record<CardSuit, PlayingCard[]> = {
 	[ CardSuit.CLUBS ]: SORTED_DECK.filter( card => card.suit === CardSuit.CLUBS ),
 	[ CardSuit.SPADES ]: SORTED_DECK.filter( card => card.suit === CardSuit.SPADES ),
 	[ CardSuit.HEARTS ]: SORTED_DECK.filter( card => card.suit === CardSuit.HEARTS ),
 	[ CardSuit.DIAMONDS ]: SORTED_DECK.filter( card => card.suit === CardSuit.DIAMONDS )
 };
 
-export const cardSetMap: Record<CardSet, IPlayingCard[]> = {
+export const cardSetMap: Record<CardSet, PlayingCard[]> = {
 	[ CardSet.LOWER_CLUBS ]: cardSuitMap[ CardSuit.CLUBS ].slice( 0, 6 ),
 	[ CardSet.UPPER_CLUBS ]: cardSuitMap[ CardSuit.CLUBS ].slice( 7 ),
 	[ CardSet.LOWER_SPADES ]: cardSuitMap[ CardSuit.SPADES ].slice( 0, 6 ),

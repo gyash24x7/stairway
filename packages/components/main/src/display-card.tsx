@@ -1,17 +1,10 @@
-import { cn } from "@base/components";
 import type { CardRank, CardSet, CardSuit } from "@stairway/cards";
+import { cn, fjalla } from "@stairway/components/base";
 
 export interface DisplayCardProps {
 	rank: CardRank;
 	suit: CardSuit;
 }
-
-export const suitSrcMap: Record<CardSuit, string> = {
-	Clubs: "https://res.cloudinary.com/gyuapstha/image/upload/v1659599980/suits/clubs.png",
-	Spades: "https://res.cloudinary.com/gyuapstha/image/upload/v1659599981/suits/spades.png",
-	Hearts: "https://res.cloudinary.com/gyuapstha/image/upload/v1659599980/suits/hearts.png",
-	Diamonds: "https://res.cloudinary.com/gyuapstha/image/upload/v1659599981/suits/diamonds.png"
-};
 
 export const suitIconMap: Record<CardSuit, string> = {
 	Clubs: "♣",
@@ -55,7 +48,7 @@ export const DisplayCardSuit = ( { suit }: { suit: CardSuit } ) => {
 };
 
 export const DisplayCard = ( { rank, suit }: DisplayCardProps ) => (
-	<div className="w-16 rounded-lg flex flex-col justify-between p-2 text-xl font-fjalla border-2">
+	<div className={ `w-16 rounded-lg flex flex-col justify-between p-2 text-xl ${ fjalla.className } border-2` }>
 		<div className={ `text-left ${ isRed( suit ) ? "text-red-600" : "text-black" }` }>
 			{ rankTextMap[ rank ] }
 		</div>

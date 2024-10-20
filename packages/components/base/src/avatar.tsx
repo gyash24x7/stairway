@@ -1,3 +1,5 @@
+"use client";
+
 import { Fallback, Image, Root } from "@radix-ui/react-avatar";
 import { type ComponentPropsWithoutRef, type ElementRef, forwardRef } from "react";
 import { cn } from "./cn.ts";

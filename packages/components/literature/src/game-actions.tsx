@@ -1,56 +1,58 @@
-import { Button, Spinner } from "@base/components";
-import { client } from "@literature/store";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+"use client";
+
+import {
+	addBots,
+	askCard,
+	callSet,
+	createGame,
+	createTeams,
+	executeBotMove,
+	joinGame,
+	startGame,
+	transferTurn
+} from "@stairway/api/literature";
+import { Button, Spinner } from "@stairway/components/base";
+import { redirect } from "next/navigation";
+import { useTransition } from "react";
 
 type GameIdProps = { gameId: string };
 
 export function CreateGame() {
-	const navigate = useNavigate();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.createGame.mutate,
-		onSuccess: ( data ) => navigate( { to: "/literature/$gameId", params: { gameId: data.id } } )
+	const [ isPending, startTransition ] = useTransition();
+	const createGameFn = () => startTransition( async () => {
+		const game = await createGame();
+		redirect( `/literature/${ game.id }` );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { playerCount: 6 } ) }
-			disabled={ isPending }
-		>
+		<Button onClick={ createGameFn } disabled={ isPending }>
 			{ isPending ? <Spinner/> : "CREATE GAME" }
 		</Button>
 	);
 }
 
 export function JoinGame( { code }: { code: string } ) {
-	const navigate = useNavigate();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.joinGame.mutate,
-		onSuccess: ( data ) => navigate( { to: "/literature/$gameId", params: { gameId: data.id } } )
+	const [ isPending, startTransition ] = useTransition();
+	const joinGameFn = () => startTransition( async () => {
+		const game = await joinGame( code );
+		redirect( `/literature/${ game.id }` );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { code } ) }
-			disabled={ isPending }
-			className={ "w-full" }
-		>
+		<Button onClick={ joinGameFn } disabled={ isPending } className={ "w-full" }>
 			{ isPending ? <Spinner/> : "JOIN GAME" }
 		</Button>
 	);
 }
 
 export const AddBots = ( { gameId }: GameIdProps ) => {
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.addBots.mutate
+	const [ isPending, startTransition ] = useTransition();
+	const addBotsFn = () => startTransition( async () => {
+		await addBots( gameId );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId } ) }
-			disabled={ isPending }
-			className={ "flex-1 max-w-lg" }
-		>
+		<Button onClick={ addBotsFn } disabled={ isPending } className={ "flex-1 max-w-lg" }>
 			{ isPending ? <Spinner/> : "ADD BOTS" }
 		</Button>
 	);
@@ -63,9 +65,10 @@ export type CreateTeamsProps = GameIdProps & {
 }
 
 export function CreateTeams( { gameId, data, onSubmit, playerCount }: CreateTeamsProps ) {
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.createTeams.mutate,
-		onSuccess: () => onSubmit()
+	const [ isPending, startTransition ] = useTransition();
+	const createTeamsFn = () => startTransition( async () => {
+		await createTeams( gameId, data );
+		onSubmit();
 	} );
 
 	const isDisabled = isPending
@@ -73,47 +76,33 @@ export function CreateTeams( { gameId, data, onSubmit, playerCount }: CreateTeam
 		|| Object.values( data ).flat().length !== playerCount;
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId, data } ) }
-			disabled={ isDisabled }
-			className={ "flex-1" }
-		>
+		<Button onClick={ createTeamsFn } disabled={ isDisabled } className={ "flex-1" }>
 			{ isPending ? <Spinner/> : "CREATE TEAMS" }
 		</Button>
 	);
 }
 
 export const StartGame = ( { gameId }: GameIdProps ) => {
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.startGame.mutate
+	const [ isPending, startTransition ] = useTransition();
+	const startGameFn = () => startTransition( async () => {
+		await startGame( gameId );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId } ) }
-			disabled={ isPending }
-			className={ "flex-1 max-w-lg" }
-		>
+		<Button onClick={ startGameFn } disabled={ isPending } className={ "flex-1 max-w-lg" }>
 			{ isPending ? <Spinner/> : "START GAME" }
 		</Button>
 	);
 };
 
 export const ExecuteBotMove = ( { gameId }: GameIdProps ) => {
-	const queryClient = useQueryClient();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.executeBotMove.mutate,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries();
-		}
+	const [ isPending, startTransition ] = useTransition();
+	const executeBotMoveFn = () => startTransition( async () => {
+		await executeBotMove( gameId );
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId } ) }
-			disabled={ isPending }
-			className={ "flex-1 max-w-lg" }
-		>
+		<Button onClick={ executeBotMoveFn } disabled={ isPending } className={ "flex-1 max-w-lg" }>
 			{ isPending ? <Spinner/> : "EXECUTE BOT MOVE" }
 		</Button>
 	);
@@ -126,21 +115,14 @@ export type AskCardProps = GameIdProps & {
 }
 
 export function AskCard( { gameId, card, from, onSubmit }: AskCardProps ) {
-	const queryClient = useQueryClient();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.askCard.mutate,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries();
-			onSubmit();
-		}
+	const [ isPending, startTransition ] = useTransition();
+	const askCardFn = () => startTransition( async () => {
+		await askCard( gameId, from, card );
+		onSubmit();
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId, card, from } ) }
-			disabled={ isPending }
-			className={ "flex-1" }
-		>
+		<Button onClick={ askCardFn } disabled={ isPending } className={ "flex-1" }>
 			{ isPending ? <Spinner/> : "ASK CARD" }
 		</Button>
 	);
@@ -152,21 +134,14 @@ export type CallSetProps = GameIdProps & {
 }
 
 export function CallSet( { gameId, data, onSubmit }: CallSetProps ) {
-	const queryClient = useQueryClient();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.callSet.mutate,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries();
-			onSubmit();
-		}
+	const [ isPending, startTransition ] = useTransition();
+	const callSetFn = () => startTransition( async () => {
+		await callSet( gameId, data );
+		onSubmit();
 	} );
 
 	return (
-		<Button
-			onClick={ () => mutate( { gameId, data } ) }
-			disabled={ isPending }
-			className={ "flex-1" }
-		>
+		<Button onClick={ callSetFn } disabled={ isPending } className={ "flex-1" }>
 			{ isPending ? <Spinner/> : "CALL SET" }
 		</Button>
 	);
@@ -178,17 +153,14 @@ export type TransferTurnProps = GameIdProps & {
 }
 
 export function TransferTurn( { gameId, transferTo, onSubmit }: TransferTurnProps ) {
-	const queryClient = useQueryClient();
-	const { mutate, isPending } = useMutation( {
-		mutationFn: client.transferTurn.mutate,
-		onSuccess: async () => {
-			await queryClient.invalidateQueries();
-			onSubmit();
-		}
+	const [ isPending, startTransition ] = useTransition();
+	const transferTurnFn = () => startTransition( async () => {
+		await transferTurn( gameId, transferTo );
+		onSubmit();
 	} );
 
 	return (
-		<Button onClick={ () => mutate( { gameId, transferTo } ) } disabled={ isPending }>
+		<Button onClick={ transferTurnFn } disabled={ isPending } className={ "flex-1" }>
 			{ isPending ? <Spinner/> : "TRANSFER TURN" }
 		</Button>
 	);

@@ -1,62 +1,45 @@
 import { CARD_RANKS, UPPER_CARD_RANKS } from "./constants.ts";
-import { CardRank, CardSet, CardSuit, type IPlayingCard } from "./types.ts";
+import { CardRank, CardSet, CardSuit, type PlayingCard } from "./types.ts";
 
-export class PlayingCard implements IPlayingCard {
-	readonly rank: CardRank;
-	readonly suit: CardSuit;
-	readonly set: CardSet;
-	readonly id: string;
-	readonly displayString: string;
+export function getCardSet( card: PlayingCard ) {
+	switch ( card.suit ) {
+		case CardSuit.HEARTS:
+			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_HEARTS : CardSet.LOWER_HEARTS;
+		case CardSuit.CLUBS:
+			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_CLUBS : CardSet.LOWER_CLUBS;
+		case CardSuit.DIAMONDS:
+			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_DIAMONDS : CardSet.LOWER_DIAMONDS;
+		case CardSuit.SPADES:
+			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_SPADES : CardSet.LOWER_SPADES;
+	}
+}
 
-	private constructor( rank: CardRank, suit: CardSuit ) {
-		this.rank = rank;
-		this.suit = suit;
+export function getCardId( card: PlayingCard ) {
+	return card.rank.concat( "Of" ).concat( card.suit );
+}
 
-		const isUpper = UPPER_CARD_RANKS.includes( this.rank );
+export function getCardDisplayString( card: PlayingCard ) {
+	return card.rank.concat( " of " ).concat( card.suit );
+}
 
-		switch ( this.suit ) {
-			case CardSuit.HEARTS:
-				this.set = isUpper ? CardSet.UPPER_HEARTS : CardSet.LOWER_HEARTS;
-				break;
-			case CardSuit.CLUBS:
-				this.set = isUpper ? CardSet.UPPER_CLUBS : CardSet.LOWER_CLUBS;
-				break;
-			case CardSuit.DIAMONDS:
-				this.set = isUpper ? CardSet.UPPER_DIAMONDS : CardSet.LOWER_DIAMONDS;
-				break;
-			case CardSuit.SPADES:
-				this.set = isUpper ? CardSet.UPPER_SPADES : CardSet.LOWER_SPADES;
-				break;
-		}
-
-		this.id = this.rank.concat( "Of" ).concat( this.suit );
-		this.displayString = this.rank.concat( " of " ).concat( this.suit );
+export function compareCards( card1: PlayingCard, card2: PlayingCard ) {
+	if ( card1.suit !== card2.suit ) {
+		return false;
 	}
 
-	static from( { rank, suit }: IPlayingCard ) {
-		return new PlayingCard( rank, suit );
+	if ( card2.rank === CardRank.ACE ) {
+		return false;
 	}
 
-	static fromId( id: string ) {
-		const rank = id.split( "Of" )[ 0 ] as CardRank;
-		const suit = id.split( "Of" )[ 1 ] as CardSuit;
-		return new PlayingCard( rank, suit );
+	if ( card1.rank === CardRank.ACE ) {
+		return true;
 	}
 
-	isGreaterThan( cardId: string ) {
-		const card = PlayingCard.fromId( cardId );
-		if ( this.suit !== card.suit ) {
-			return false;
-		}
+	return CARD_RANKS.indexOf( card1.rank ) > CARD_RANKS.indexOf( card2.rank );
+}
 
-		if ( card.rank === CardRank.ACE ) {
-			return false;
-		}
-
-		if ( this.rank === CardRank.ACE ) {
-			return true;
-		}
-
-		return CARD_RANKS.indexOf( this.rank ) > CARD_RANKS.indexOf( card.rank );
-	}
+export function getCardFromId( id: string ) {
+	const rank = id.split( "Of" )[ 0 ] as CardRank;
+	const suit = id.split( "Of" )[ 1 ] as CardSuit;
+	return { rank, suit } as PlayingCard;
 }

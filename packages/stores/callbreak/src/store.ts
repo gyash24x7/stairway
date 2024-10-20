@@ -1,15 +1,15 @@
-import type { Deal, DealWithRounds, Game, Player, PlayerData, Round, Status } from "@callbreak/api";
-import { CardHand, type IPlayingCard, PlayingCard } from "@stairway/cards";
-import { produce } from "immer";
+import { observable } from "@legendapp/state";
+import type { Deal, DealWithRounds, Game, Player, PlayerData, Round, Status } from "@stairway/api/callbreak";
+import { getCardId, type PlayingCard } from "@stairway/cards";
 import { toast } from "sonner";
-import { create } from "zustand";
 
 export type PlayerGameData = {
 	playerId: string;
 	game: Game;
 	players: PlayerData;
-	deals: DealWithRounds[];
-	hand: CardHand;
+	currentDeal?: Deal | null;
+	currentRound?: Round | null;
+	hand: PlayingCard[];
 }
 
 export type GameEventHandlers = {
@@ -18,13 +18,13 @@ export type GameEventHandlers = {
 	handleDealCreatedEvent: ( deal: Deal ) => void;
 	handleDealWinDeclaredEvent: ( data: { deal: Deal, by: Player, wins: number } ) => void;
 	handleAllDealWinsDeclaredEvent: () => void;
-	handleRoundCreatedEvent: ( round: Round ) => void;
+	handleRoundCreatedEvent: ( data: { deal: Deal, round: Round } ) => void;
 	handleCardPlayedEvent: ( data: { round: Round, by: string, card: string } ) => void;
 	handleRoundCompletedEvent: ( data: { round: Round; deal: DealWithRounds, winner: Player } ) => void;
 	handleDealCompletedEvent: ( data: { deal: DealWithRounds, score: Record<string, number> } ) => void;
 	handleStatusUpdatedEvent: ( status: Status ) => void;
 	handleGameCompletedEvent: () => void;
-	handleCardsDealtEvent: ( cards: IPlayingCard[] ) => void;
+	handleCardsDealtEvent: ( cards: PlayingCard[] ) => void;
 }
 
 export type GameStore = {
@@ -32,7 +32,7 @@ export type GameStore = {
 	eventHandlers: GameEventHandlers;
 }
 
-export const useGameStore = create<GameStore>( set => ( {
+export const callbreak$ = observable<GameStore>( {
 	data: {
 		playerId: "",
 		game: {
@@ -45,116 +45,60 @@ export const useGameStore = create<GameStore>( set => ( {
 			scores: []
 		},
 		players: {},
-		deals: [],
-		hand: CardHand.empty()
+		hand: []
 	},
 	eventHandlers: {
 		handlePlayerJoinedEvent: ( newPlayer ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.players[ newPlayer.id ] = newPlayer;
-				} )
-			);
-
+			callbreak$.data.players.set( { ...callbreak$.data.players.get(), [ newPlayer.id ]: newPlayer } );
 			toast.success( `${ newPlayer.name } joined the game!` );
 		},
 		handleAllPlayersJoinedEvent: () => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.status = "IN_PROGRESS";
-				} )
-			);
+			callbreak$.data.game.status.set( "IN_PROGRESS" );
 			toast.info( "All players have joined the game. Starting round..." );
 		},
 		handleDealCreatedEvent: ( deal ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.deals = [ { ...deal, rounds: [] }, ...state.data.deals ];
-				} )
-			);
-
+			callbreak$.data.currentDeal.set( deal );
 			toast.info( "Deal created. Waiting for all players to declare wins..." );
 		},
 		handleAllDealWinsDeclaredEvent: () => {
 			toast.info( "All players have declared wins. Starting round..." );
 		},
 		handleDealWinDeclaredEvent: ( { deal, by, wins } ) => {
-			set(
-				produce<GameStore>( state => {
-					const idx = state.data.deals.findIndex( d => d.id === deal.id );
-					state.data.deals[ idx ] = { ...deal, rounds: [] };
-				} )
-			);
-
+			callbreak$.data.currentDeal.set( deal );
 			toast.info( `${ by.name } declared ${ wins } wins for the deal!` );
 		},
-		handleRoundCreatedEvent: ( round ) => {
-			set(
-				produce<GameStore>( state => {
-					const idx = state.data.deals.findIndex( d => d.id === round.dealId );
-					state.data.deals[ idx ]!.rounds = [ round, ...state.data.deals[ idx ]!.rounds ];
-					state.data.deals[ idx ]!.status = "IN_PROGRESS";
-				} )
-			);
-
+		handleRoundCreatedEvent: ( { deal, round } ) => {
+			callbreak$.data.currentDeal.set( deal );
+			callbreak$.data.currentRound.set( round );
 			toast.info( `Round started!` );
 		},
 		handleCardPlayedEvent: ( { round, by, card } ) => {
-			set(
-				produce<GameStore>( state => {
-					const dealIdx = state.data.deals.findIndex( d => d.id === round.dealId );
-					const roundIdx = state.data.deals[ dealIdx ]!.rounds.findIndex( r => r.id === round.id );
-					state.data.deals[ dealIdx ]!.rounds[ roundIdx ] = round;
-
-					if ( by === state.data.playerId ) {
-						state.data.hand.removeCard( card );
-					}
-				} )
-			);
+			callbreak$.data.currentRound.set( round );
+			if ( by === callbreak$.data.playerId.get() ) {
+				callbreak$.data.hand.set( callbreak$.data.hand.get().filter( c => getCardId( c ) !== card ) );
+			}
 		},
-		handleRoundCompletedEvent: ( { round, deal, winner } ) => {
-			set(
-				produce<GameStore>( state => {
-					const dealIdx = state.data.deals.findIndex( d => d.id === round.dealId );
-					state.data.deals[ dealIdx ] = deal;
-					const roundIdx = state.data.deals[ dealIdx ]!.rounds.findIndex( r => r.id === round.id );
-					state.data.deals[ dealIdx ]!.rounds[ roundIdx ] = round;
-				} )
-			);
-
+		handleRoundCompletedEvent: ( { deal, winner } ) => {
+			callbreak$.data.currentRound.set( undefined );
+			callbreak$.data.currentDeal.set( deal );
 			toast.info( `Round completed! ${ winner.name } won!` );
 		},
-		handleDealCompletedEvent: ( { deal, score } ) => {
-			set(
-				produce<GameStore>( state => {
-					const idx = state.data.deals.findIndex( d => d.id === deal.id );
-					state.data.deals[ idx ] = deal;
-					state.data.game.scores = [ score, ...state.data.game.scores as Record<string, number>[] ];
-				} )
-			);
+		handleDealCompletedEvent: ( { score } ) => {
+			callbreak$.data.currentDeal.set( undefined );
+			const scores = callbreak$.data.game.scores.get();
+			scores.push( score );
+			callbreak$.data.game.scores.set( scores );
 
 			toast.info( `Deal completed! Starting next deal...` );
 		},
-		handleStatusUpdatedEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.status = data;
-				} )
-			);
+		handleStatusUpdatedEvent: ( status ) => {
+			callbreak$.data.game.status.set( status );
 		},
-		handleCardsDealtEvent: ( data ) => {
-			set(
-				produce<GameStore>( state => {
-					state.data.hand = CardHand.from( data.map( PlayingCard.from ) );
-				} )
-			);
+		handleCardsDealtEvent: ( cards ) => {
+			callbreak$.data.hand.set( cards );
 		},
 		handleGameCompletedEvent: () => {
-			set(
-				produce<GameStore>( state => {
-					state.data.game.status = "COMPLETED";
-				} )
-			);
+			callbreak$.data.game.status.set( "COMPLETED" );
 		}
 	}
-} ) );
+} );

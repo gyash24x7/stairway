@@ -1,9 +1,9 @@
-import { Avatar, AvatarImage, Table, TableBody, TableCell, TableRow } from "@base/components";
-import { useDeal, useGameStatus, usePlayerList, useScoresAggregate } from "@callbreak/store";
+import { Avatar, AvatarImage, Table, TableBody, TableCell, TableRow } from "@stairway/components/base";
+import { useCurrentDeal, useGameStatus, usePlayerList, useScoresAggregate } from "@stairway/stores/callbreak";
 
 export function DisplayScore() {
 	const playerList = usePlayerList();
-	const deal = useDeal();
+	const deal = useCurrentDeal();
 	const scores = useScoresAggregate();
 	const gameStatus = useGameStatus();
 

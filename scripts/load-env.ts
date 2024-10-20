@@ -5,6 +5,6 @@ Object.keys( Bun.env ).map( key => {
 } );
 
 console.log( `Loading env vars...` );
-Bun.write( "apps/backend/.env", envFileContent ).then( () => {
+Bun.write( "apps/wss/.env", envFileContent ).then( () => {
 	console.log( "Env file created!" );
 } );

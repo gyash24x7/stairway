@@ -1,5 +1,5 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@base/components";
-import { useMetrics, usePlayers } from "@literature/store";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@stairway/components/base";
+import { useMetrics, usePlayers } from "@stairway/stores/literature";
 
 export function GameCompleted() {
 	const players = usePlayers();
@@ -19,7 +19,8 @@ export function GameCompleted() {
 						<TableRow className={ "font-semibold" }>
 							<TableHead>Player</TableHead>
 							<TableHead className={ "text-center" }>Total Asks</TableHead>
-							<TableHead className={ "text-center" }>Successful Asks</TableHead>
+							<TableHead className={ "text-center" }>Cards Taken</TableHead>
+							<TableHead className={ "text-center" }>Cards Given</TableHead>
 							<TableHead className={ "text-center" }>Total Calls</TableHead>
 							<TableHead className={ "text-center" }>Successful Calls</TableHead>
 							<TableHead className={ "text-center" }>Ask Accuracy</TableHead>
@@ -31,12 +32,13 @@ export function GameCompleted() {
 							<TableRow key={ metrics.playerId } className={ "font-semibold" }>
 								<TableCell>{ players[ metrics.playerId ].name }</TableCell>
 								<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>
-								<TableCell className={ "text-center" }>{ metrics.successfulAsks }</TableCell>
+								<TableCell className={ "text-center" }>{ metrics.cardsTaken }</TableCell>
+								<TableCell className={ "text-center" }>{ metrics.cardsGiven }</TableCell>
 								<TableCell className={ "text-center" }>{ metrics.totalCalls }</TableCell>
 								<TableCell className={ "text-center" }>{ metrics.successfulCalls }</TableCell>
 								<TableCell className={ "text-center" }>
 									{ metrics.totalAsks !== 0
-										? `${ Math.floor( metrics.successfulAsks / metrics.totalAsks * 100 ) } %`
+										? `${ Math.floor( metrics.cardsTaken / metrics.totalAsks * 100 ) } %`
 										: "-"
 									}
 								</TableCell>
