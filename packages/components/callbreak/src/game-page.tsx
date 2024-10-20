@@ -20,6 +20,8 @@ import { DisplayScore } from "./display-score.tsx";
 import { GameCompleted } from "./game-completed.tsx";
 import { PlayerLobby } from "./player-lobby.tsx";
 
+const WSS_URL = process.env[ "WSS_URL" ] ?? "ws://localhost:8000";
+
 export function GamePage( props: { gameData: PlayerGameData } ) {
 	const [ isLoading, setIsLoading ] = useState( true );
 	const players = usePlayers();
@@ -31,7 +33,7 @@ export function GamePage( props: { gameData: PlayerGameData } ) {
 
 	const playerOrder = round?.playerOrder ?? deal?.playerOrder ?? Object.keys( players );
 
-	const { sendJsonMessage } = useWebSocket( "ws://localhost:8000", {
+	const { sendJsonMessage } = useWebSocket( WSS_URL, {
 		onOpen() {
 			console.log( "Callbreak engine connected!" );
 			sendJsonMessage( {
