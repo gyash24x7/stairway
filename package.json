@@ -5,8 +5,12 @@
 		"generate": "prisma generate --schema prisma",
 		"load:env": "bun run scripts/load-env.ts",
 		"dev": "turbo dev",
-		"build": "bun run generate && bun run load:env && turbo build",
-		"start": "turbo start"
+		"build": "bun run generate && turbo build",
+		"build:web": "bun run generate && turbo build --filter @stairway/web",
+		"build:wss": "bun run load:env",
+		"start": "turbo start",
+		"start:web": "turbo start --filter @stairway/web",
+		"start:wss": "turbo start --filter @stairway/wss"
 	},
 	"devDependencies": {
 		"@tsconfig/bun": "1.0.7",

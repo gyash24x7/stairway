@@ -69,6 +69,6 @@ Bun.serve( {
 		if ( request.headers.get( "upgrade" ) === "websocket" ) {
 			return ws.handleUpgrade( request, server );
 		}
-		return new Response( null, { status: 404 } );
+		return new Response( null, { status: 200 } );
 	}
 } );
