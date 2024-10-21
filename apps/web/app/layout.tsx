@@ -1,4 +1,4 @@
-import { getAuthInfo } from "@stairway/api/auth";
+import { getAuthInfo } from "@/utils/actions.ts";
 import { montserrat, Toaster } from "@stairway/components/base";
 import { LoginButton, Navbar } from "@stairway/components/main";
 

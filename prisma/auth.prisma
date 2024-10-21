@@ -1,20 +1,53 @@
 model User {
-    id       String    @id @default(cuid())
-    name     String
-    email    String    @unique
-    avatar   String
-    sessions Session[]
+	id            String   @id @default(cuid())
+	name          String
+	email         String   @unique
+	emailVerified Boolean  @default(false)
+	image         String?
+	createdAt     DateTime @default(now())
+	updatedAt     DateTime @updatedAt
 
-    @@map("auth_users")
-    @@schema("auth")
+	sessions Session[]
+	accounts Account[]
+
+	@@map("auth_users")
+	@@schema("auth")
 }
 
 model Session {
-    id        String   @id
-    userId    String
-    expiresAt DateTime
-    user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
+	id        String   @id
+	userId    String
+	expiresAt DateTime
+	ipAddress String
+	userAgent String
+	user      User     @relation(references: [id], fields: [userId], onDelete: Cascade)
 
-    @@map("auth_sessions")
-    @@schema("auth")
+	@@map("auth_sessions")
+	@@schema("auth")
+}
+
+model Account {
+	id           String    @id @default(cuid())
+	userId       String
+	providerId   String
+	accountId    String
+	refreshToken String?
+	accessToken  String?
+	expiresAt    DateTime?
+	password     String?
+
+	user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@map("auth_accounts")
+	@@schema("auth")
+}
+
+model Verification {
+	id         String   @id @default(cuid())
+	identifier String
+	value      String
+	expiresAt  DateTime
+
+	@@map("auth_verifications")
+	@@schema("auth")
 }

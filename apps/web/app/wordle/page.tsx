@@ -1,4 +1,4 @@
-import { getAuthInfo } from "@stairway/api/auth";
+import { getAuthInfo } from "@/utils/actions.ts";
 import { Separator } from "@stairway/components/base";
 import { CreateGame } from "@stairway/components/wordle";
 

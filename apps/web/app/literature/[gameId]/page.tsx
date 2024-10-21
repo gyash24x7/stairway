@@ -1,4 +1,4 @@
-import { getAuthInfo } from "@stairway/api/auth";
+import { getAuthInfo } from "@/utils/actions.ts";
 import { getGameData } from "@stairway/api/literature";
 import { Spinner } from "@stairway/components/base";
 import { GamePage } from "@stairway/components/literature";

@@ -1,4 +1,4 @@
-import { getAuthInfo } from "@stairway/api/auth";
+import { getAuthInfo } from "@/utils/actions.ts";
 import { cn, fjalla, Separator } from "@stairway/components/base";
 import { CreateGameDialog, JoinGameDialog } from "@stairway/components/callbreak";
 

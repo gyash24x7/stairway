@@ -1,17 +1,34 @@
 import crossws from "crossws/adapters/bun";
 import redis from "redis";
 
-const client = redis.createClient( {
-	url: Bun.env[ "REDIS_URL" ] ?? "redis://localhost:6379"
+const redisHost = process.env[ "REDIS_HOST" ] ?? "localhost";
+const redisPort = parseInt( process.env[ "REDIS_PORT" ] ?? "6379" );
+
+let client = redis.createClient( {
+	url: `redis://${ redisHost }:${ redisPort }`
 } );
+
 await client.connect();
 
 await client.subscribe( "literature-event", ( message ) => {
-	const data: LiteratureEventMessage = JSON.parse( message );
+	const data: GameEventMessage = JSON.parse( message );
 
 	const topic = !!data.playerId
 		? `literature-${ data.gameId }-${ data.playerId }`
 		: `literature-${ data.gameId }`;
+
+	const payload = { type: data.event, data: data.data };
+
+	console.log( "Publishing to", topic, payload );
+	ws.publish( topic, payload );
+} );
+
+await client.subscribe( "callbreak-event", ( message ) => {
+	const data: GameEventMessage = JSON.parse( message );
+
+	const topic = !!data.playerId
+		? `callbreak-${ data.gameId }-${ data.playerId }`
+		: `callbreak-${ data.gameId }`;
 
 	const payload = { type: data.event, data: data.data };
 
@@ -25,7 +42,7 @@ export type JoinGameEventMessage = {
 	playerId: string;
 }
 
-export type LiteratureEventMessage = {
+export type GameEventMessage = {
 	gameId: string;
 	event: string;
 	playerId?: string;
