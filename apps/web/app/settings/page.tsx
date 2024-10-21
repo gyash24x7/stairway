@@ -1,4 +1,4 @@
-import { getAuthInfo, logout } from "@stairway/api/auth";
+import { getAuthInfo, logout } from "@/utils/actions.ts";
 import { Avatar, AvatarFallback, AvatarImage, Card, CardContent } from "@stairway/components/base";
 import { LogoutButton } from "@stairway/components/main";
 

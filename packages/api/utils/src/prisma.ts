@@ -5,7 +5,9 @@ const client = new PrismaClient();
 export const prisma = {
 	auth: {
 		user: client.user,
-		session: client.session
+		session: client.session,
+		account: client.account,
+		verificationRequest: client.verification
 	},
 	wordle: {
 		game: client.wordleGame

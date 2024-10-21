@@ -18,7 +18,9 @@ import { DisplayTeams } from "./display-teams.tsx";
 import { GameCompleted } from "./game-completed.tsx";
 import { PlayerLobby } from "./player-lobby.tsx";
 
-const WSS_URL = process.env[ "WSS_URL" ] ?? "ws://localhost:8000";
+const WSS_DOMAIN = process.env[ "NEXT_PUBLIC_WSS_DOMAIN" ] ?? "localhost:8000";
+const WSS_PROTOCOL = process.env[ "NODE_ENV" ] === "production" ? "wss" : "ws";
+const WSS_URL = `${ WSS_PROTOCOL }://${ WSS_DOMAIN }`;
 
 export const GamePage = observer( ( props: { gameData: PlayerGameData } ) => {
 	const [ isLoading, setIsLoading ] = useState( true );
@@ -29,7 +31,7 @@ export const GamePage = observer( ( props: { gameData: PlayerGameData } ) => {
 
 	const { sendJsonMessage } = useWebSocket( WSS_URL, {
 		onOpen() {
-			console.log( "opened" );
+			console.log( "Literature engine connected!" );
 			sendJsonMessage( {
 				gameId: props.gameData.game.id,
 				type: "literature",
