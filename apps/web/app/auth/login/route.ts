@@ -3,7 +3,7 @@ import { createLogger } from "@stairway/api/utils";
 import { cookies } from "next/headers";
 
 const cookieOptions = {
-	domain: "localhost",
+	domain: process.env[ "COOKIE_DOMAIN" ] ?? "localhost",
 	path: "/",
 	secure: process.env[ "NODE_ENV" ] === "production",
 	httpOnly: true,
