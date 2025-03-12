@@ -1,6 +1,6 @@
+import { cn } from "@base/components";
 import { CardSet } from "@stairway/cards";
-import { cn } from "@stairway/components/base";
-import { DisplayCardSet } from "@stairway/components/main";
+import { DisplayCardSet } from "@main/components";
 
 export type SelectCardSetProps = {
 	cardSet?: CardSet;

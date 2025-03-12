@@ -2,10 +2,9 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": [ "@tsconfig/strictest" ],
 	"compilerOptions": {
-		"allowImportingTsExtensions": true,
 		"noUncheckedIndexedAccess": false,
 		"exactOptionalPropertyTypes": false,
-		"jsx": "preserve",
+		"jsx": "react-jsx",
 		"module": "esnext",
 		"moduleResolution": "bundler",
 		"lib": [ "dom", "dom.iterable", "esnext" ]

@@ -1,6 +1,3 @@
-"use client";
-
-import { getSortedHand } from "@stairway/cards";
 import {
 	Button,
 	Drawer,
@@ -9,16 +6,17 @@ import {
 	DrawerHeader,
 	DrawerTitle,
 	DrawerTrigger
-} from "@stairway/components/base";
-import { SelectCard } from "@stairway/components/main";
+} from "@base/components";
+import { getSortedHand } from "@stairway/cards";
+import { SelectCard } from "@main/components";
 import {
 	useCurrentDealId,
 	useCurrentRoundId,
 	useGameId,
 	usePlayableCardsForCurrentRound
-} from "@stairway/stores/callbreak";
-import { useCallback, useState } from "react";
-import { PlayCard } from "./game-actions.tsx";
+} from "@callbreak/store";
+import { useState } from "react";
+import { PlayCard } from "./game-actions";
 
 export function PlayCardDrawer() {
 	const gameId = useGameId();
@@ -29,14 +27,14 @@ export function PlayCardDrawer() {
 	const [ selectedCard, setSelectedCard ] = useState<string>();
 	const [ open, setOpen ] = useState( false );
 
-	const openDrawer = useCallback( () => {
+	const openDrawer = () => {
 		setOpen( true );
-	}, [] );
+	};
 
-	const closeDrawer = useCallback( () => {
+	const closeDrawer = () => {
 		setSelectedCard( undefined );
 		setOpen( false );
-	}, [] );
+	};
 
 	return (
 		<Drawer open={ open } onOpenChange={ setOpen }>

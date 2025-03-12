@@ -1,5 +1,5 @@
-import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@stairway/components/base";
-import { usePreviousAsks } from "@stairway/stores/literature";
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
+import { usePreviousAsks } from "@literature/store";
 import { useState } from "react";
 
 export function PreviousAsks() {

@@ -1,4 +1,4 @@
-import { Avatar, AvatarImage, cn } from "@stairway/components/base";
+import { Avatar, AvatarImage, cn } from "@base/components";
 
 export type DisplayPlayerProps = {
 	player: { id: string; name: string; avatar: string; },

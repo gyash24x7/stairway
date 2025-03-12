@@ -1,9 +1,9 @@
-import { cn } from "@stairway/components/base";
-import { useCurrentDeal, useCurrentRound, useGameId, useGameStatus, usePlayerId } from "@stairway/stores/callbreak";
+import { cn } from "@base/components";
+import { useCurrentDeal, useCurrentRound, useGameId, useGameStatus, usePlayerId } from "@callbreak/store";
 import { Fragment } from "react";
-import { DeclareDealWinsDrawer } from "./declare-deal-wins-drawer.tsx";
-import { AddBots } from "./game-actions.tsx";
-import { PlayCardDrawer } from "./play-card-drawer.tsx";
+import { DeclareDealWinsDrawer } from "./declare-deal-wins-drawer";
+import { AddBots } from "./game-actions";
+import { PlayCardDrawer } from "./play-card-drawer";
 
 export function ActionPanel() {
 	const gameId = useGameId();

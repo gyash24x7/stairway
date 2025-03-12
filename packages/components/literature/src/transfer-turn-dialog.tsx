@@ -1,10 +1,10 @@
-import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@stairway/components/base";
-import { useCardCounts, useGameId, useMyTeam, usePlayerId, usePlayers } from "@stairway/stores/literature";
-import { useMemo, useState } from "react";
-import { TransferTurn } from "./game-actions.tsx";
-import { SelectPlayer } from "./select-player.tsx";
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
+import { useCardCounts, useGameId, useMyTeam, usePlayerId, usePlayers } from "@literature/store";
+import { useState } from "react";
+import { TransferTurn } from "./game-actions";
+import { SelectPlayer } from "./select-player";
 
-export const TransferTurnDialog = () => {
+export function TransferTurnDialog() {
 	const gameId = useGameId();
 	const myTeam = useMyTeam();
 	const players = usePlayers();
@@ -14,10 +14,9 @@ export const TransferTurnDialog = () => {
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ showDrawer, setShowDrawer ] = useState( false );
 
-	const myTeamMembersWithCards = useMemo( () => {
-		return myTeam?.memberIds.map( memberId => players[ memberId ] )
-			.filter( member => !!cardCounts[ member.id ] && member.id !== playerId ) ?? [];
-	}, [ myTeam, cardCounts, players ] );
+	const myTeamMembersWithCards = myTeam?.memberIds
+		.map( memberId => players[ memberId ] )
+		.filter( member => !!cardCounts[ member.id ] && member.id !== playerId ) ?? [];
 
 	const openDrawer = () => setShowDrawer( true );
 	const closeDrawer = () => setShowDrawer( false );
@@ -46,4 +45,4 @@ export const TransferTurnDialog = () => {
 			</DrawerContent>
 		</Drawer>
 	);
-};
+}

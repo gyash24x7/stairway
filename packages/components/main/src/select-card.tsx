@@ -1,8 +1,6 @@
-"use client";
-
+import { cn } from "@base/components";
 import { getCardId, type PlayingCard } from "@stairway/cards";
-import { cn } from "@stairway/components/base";
-import { DisplayCard } from "./display-card.tsx";
+import { DisplayCard } from "./display-card";
 
 export type SelectCardProps = {
 	cards: PlayingCard[];

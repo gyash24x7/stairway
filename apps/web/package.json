@@ -1,28 +1,39 @@
 {
 	"name": "@stairway/web",
 	"private": true,
-	"version": "1.0.0",
+	"type": "module",
 	"scripts": {
-		"dev": "next dev",
-		"build": "next build",
-		"start": "next start"
+		"build": "vite build",
+		"dev": "vite dev",
+		"start": "vite preview"
 	},
 	"dependencies": {
-		"@stairway/api/literature": "workspace:*",
-		"@stairway/api/utils": "workspace:*",
-		"@stairway/api/wordle": "workspace:*",
-		"@stairway/components/base": "workspace:*",
-		"@stairway/components/literature": "workspace:*",
-		"@stairway/components/wordle": "workspace:*",
-		"better-auth": "0.5.2-beta.19",
-		"next": "14.2.15",
-		"react": "18.3.1",
-		"react-dom": "18.3.1"
+		"@fontsource/fjalla-one": "5.2.5",
+		"@fontsource/montserrat": "5.2.5",
+		"@stairway/clients": "workspace:*",
+		"@base/components": "workspace:*",
+		"@callbreak/components": "workspace:*",
+		"@literature/components": "workspace:*",
+		"@main/components": "workspace:*",
+		"@wordle/components": "workspace:*",
+		"@tanstack/react-query": "5.66.11",
+		"@tanstack/react-query-devtools": "5.66.11",
+		"@tanstack/react-router": "1.112.0",
+		"@tanstack/router-devtools": "1.112.0",
+		"@tanstack/router-plugin": "1.112.0",
+		"@trpc/client": "11.0.0-rc.818",
+		"@trpc/tanstack-react-query": "11.0.0-rc.818",
+		"react": "19.0.0",
+		"react-dom": "19.0.0",
+		"tailwindcss": "3.4.17",
+		"tailwindcss-animate": "1.0.7"
 	},
 	"devDependencies": {
-		"@types/react": "18.3.11",
-		"@types/react-dom": "18.3.1",
-		"tailwindcss": "3.4.14",
-		"tailwindcss-animate": "1.0.7"
+		"@types/react": "19.0.10",
+		"@types/react-dom": "19.0.4",
+		"@vitejs/plugin-react-swc": "3.8.0",
+		"autoprefixer": "10.4.20",
+		"postcss": "8.5.3",
+		"vite": "6.2.0"
 	}
 }

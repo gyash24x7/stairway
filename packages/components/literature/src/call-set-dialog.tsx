@@ -1,3 +1,4 @@
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
 import {
 	CardSet,
 	cardSetMap,
@@ -6,15 +7,14 @@ import {
 	getSetsInHand,
 	type PlayingCard
 } from "@stairway/cards";
-import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@stairway/components/base";
-import { SelectCard } from "@stairway/components/main";
-import { useGameId, useHand, useMyTeam, usePlayers } from "@stairway/stores/literature";
-import { Fragment, useCallback, useState } from "react";
+import { SelectCard } from "@main/components";
+import { useGameId, useHand, useMyTeam, usePlayers } from "@literature/store";
+import { Fragment, useState } from "react";
 import { useStep } from "usehooks-ts";
-import { CallSet } from "./game-actions.tsx";
-import { SelectCardSet } from "./select-card-set.tsx";
+import { CallSet } from "./game-actions";
+import { SelectCardSet } from "./select-card-set";
 
-export const CallSetDialog = () => {
+export function CallSetDialog() {
 	const gameId = useGameId();
 	const hand = useHand();
 	const players = usePlayers();
@@ -26,18 +26,18 @@ export const CallSetDialog = () => {
 
 	const [ showDrawer, setShowDrawer ] = useState( false );
 
-	const openDrawer = useCallback( () => {
+	const openDrawer = () => {
 		setShowDrawer( true );
-	}, [] );
+	};
 
-	const closeDrawer = useCallback( () => {
+	const closeDrawer = () => {
 		setSelectedCardSet( undefined );
 		setCardOptions( [] );
 		setCardMap( {} );
 		setShowDrawer( false );
-	}, [] );
+	};
 
-	const handleCardSetSelect = useCallback( ( value?: string ) => {
+	const handleCardSetSelect = ( value?: string ) => {
 		if ( !value ) {
 			setSelectedCardSet( undefined );
 		} else {
@@ -45,7 +45,7 @@ export const CallSetDialog = () => {
 			setSelectedCardSet( cardSet );
 			setCardOptions( cardSetMap[ cardSet ] );
 		}
-	}, [] );
+	};
 
 	const handleCardSelectForPlayer = ( playerId: string ) => ( cardId: string ) => {
 		setCardMap( data => ( { ...data, [ cardId ]: playerId } ) );
@@ -58,10 +58,8 @@ export const CallSetDialog = () => {
 		} );
 	};
 
-	const getCardsForPlayers = useCallback(
-		( playerId: string ) => Object.keys( cardMap ).filter( cardId => cardMap[ cardId ] === playerId ),
-		[ cardMap ]
-	);
+	const getCardsForPlayers = ( playerId: string ) => Object.keys( cardMap )
+		.filter( cardId => cardMap[ cardId ] === playerId );
 
 	const [ currentStep, { goToNextStep, goToPrevStep } ] = useStep( 3 );
 
@@ -136,4 +134,4 @@ export const CallSetDialog = () => {
 			</DrawerContent>
 		</Drawer>
 	);
-};
+}

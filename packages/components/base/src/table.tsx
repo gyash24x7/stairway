@@ -1,9 +1,5 @@
-"use client";
-
-import { forwardRef, type HTMLAttributes } from "react";
-import { cn } from "./cn.ts";
-
-
+import { forwardRef, HTMLAttributes } from "react";
+import { cn } from "./cn";
 
 const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
 	( { className, ...props }, ref ) => (
@@ -17,15 +13,11 @@ const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElement>>(
 	)
 );
 
-Table.displayName = "Table";
-
 const TableHeader = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
 	( { className, ...props }, ref ) => (
 		<thead ref={ ref } className={ cn( "[&_tr]:border-b", className ) } { ...props } />
 	)
 );
-
-TableHeader.displayName = "TableHeader";
 
 const TableBody = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
 	( { className, ...props }, ref ) => (
@@ -37,8 +29,6 @@ const TableBody = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSe
 	)
 );
 
-TableBody.displayName = "TableBody";
-
 const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
 	( { className, ...props }, ref ) => (
 		<tfoot
@@ -49,8 +39,6 @@ const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTable
 	)
 );
 
-TableFooter.displayName = "TableFooter";
-
 const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
 	( { className, ...props }, ref ) => (
 		<tr
@@ -60,8 +48,6 @@ const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElem
 		/>
 	)
 );
-
-TableRow.displayName = "TableRow";
 
 const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellElement>>(
 	( { className, ...props }, ref ) => (
@@ -77,8 +63,6 @@ const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellE
 	)
 );
 
-TableHead.displayName = "TableHead";
-
 const TableCell = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellElement>>(
 	( { className, ...props }, ref ) => (
 		<td
@@ -92,8 +76,6 @@ const TableCell = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellE
 	)
 );
 
-TableCell.displayName = "TableCell";
-
 const TableCaption = forwardRef<HTMLTableCaptionElement, HTMLAttributes<HTMLTableCaptionElement>>(
 	( { className, ...props }, ref ) => (
 		<caption
@@ -103,8 +85,6 @@ const TableCaption = forwardRef<HTMLTableCaptionElement, HTMLAttributes<HTMLTabl
 		/>
 	)
 );
-
-TableCaption.displayName = "TableCaption";
 
 export {
 	Table,

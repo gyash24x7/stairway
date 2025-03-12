@@ -1,20 +1,12 @@
-"use client";
+import { Button, Spinner } from "@base/components";
+import { wordle } from "@stairway/clients/wordle";
 
-import { createGame } from "@stairway/api/wordle";
-import { Button, Spinner } from "@stairway/components/base";
-import { redirect } from "next/navigation";
-import { useTransition } from "react";
-
-export function CreateGame() {
-	const [ isPending, startTransition ] = useTransition();
-
-	const createGameFn = () => startTransition( async () => {
-		const game = await createGame( { wordCount: 4 } );
-		redirect( `/wordle/${ game.id }` );
-	} );
-
+export function CreateGame( props: { navigate: ( gameId: string ) => Promise<void> } ) {
+	const { mutate, isPending } = wordle.useCreateGameMutation(
+		( game ) => props.navigate( game.id )
+	);
 	return (
-		<Button onClick={ createGameFn } disabled={ isPending }>
+		<Button onClick={ () => mutate( {} ) } disabled={ isPending }>
 			{ isPending ? <Spinner/> : "CREATE GAME" }
 		</Button>
 	);

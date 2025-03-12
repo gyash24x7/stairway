@@ -3,15 +3,19 @@ import type { Config } from "tailwindcss";
 const config = {
 	darkMode: [ "class" ],
 	content: [
-		"./app/**/*.{ts,tsx}",
+		"./src/**/*.{ts,tsx}",
 		"../../packages/components/**/*.{ts,tsx}"
 	],
 	prefix: "",
 	theme: {
 		fontWeight: {
-			normal: "400",
-			semibold: "600",
-			bold: "800"
+			normal: "500",
+			semibold: "700",
+			bold: "900"
+		},
+		fontFamily: {
+			fjalla: [ "Fjalla One", "serif" ],
+			body: [ "Montserrat", "sans-serif" ]
 		},
 		container: {
 			center: true,

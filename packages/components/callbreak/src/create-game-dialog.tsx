@@ -1,6 +1,3 @@
-"use client";
-
-import { CARD_SUITS, CardSuit } from "@stairway/cards";
 import {
 	Button,
 	cn,
@@ -10,12 +7,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger
-} from "@stairway/components/base";
-import { DisplayCardSuit } from "@stairway/components/main";
+} from "@base/components";
+import { CARD_SUITS, CardSuit } from "@stairway/cards";
+import { DisplayCardSuit } from "@main/components";
 import { useState } from "react";
-import { CreateGame } from "./game-actions.tsx";
+import { CreateGame } from "./game-actions";
 
-export function CreateGameDialog() {
+export function CreateGameDialog( props: { navigate: ( gameId: string ) => Promise<void>; } ) {
 	const [ selectedSuit, setSelectedSuit ] = useState<CardSuit>();
 	const [ dealCount, setDealCount ] = useState<5 | 9 | 13>();
 	const [ open, setOpen ] = useState( false );
@@ -62,7 +60,7 @@ export function CreateGameDialog() {
 					</div>
 				</div>
 				<DialogFooter>
-					<CreateGame trumpSuit={ selectedSuit! } dealCount={ dealCount }/>
+					<CreateGame trumpSuit={ selectedSuit! } dealCount={ dealCount } navigate={ props.navigate }/>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

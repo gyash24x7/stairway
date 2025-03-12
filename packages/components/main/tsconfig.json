@@ -3,8 +3,7 @@
 	"extends": [ "@tsconfig/strictest" ],
 	"compilerOptions": {
 		"noUncheckedIndexedAccess": false,
-		"allowImportingTsExtensions": true,
-		"jsx": "preserve",
+		"jsx": "react-jsx",
 		"module": "esnext",
 		"moduleResolution": "bundler",
 		"lib": [ "dom", "dom.iterable", "esnext" ]

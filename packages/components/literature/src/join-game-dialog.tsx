@@ -1,5 +1,3 @@
-"use client";
-
 import {
 	Button,
 	Dialog,
@@ -9,11 +7,11 @@ import {
 	DialogTitle,
 	DialogTrigger,
 	Input
-} from "@stairway/components/base";
+} from "@base/components";
 import { useState } from "react";
-import { JoinGame } from "./game-actions.tsx";
+import { JoinGame } from "./game-actions";
 
-export function JoinGameDialog() {
+export function JoinGameDialog( props: { navigate: ( gameId: string ) => Promise<void> } ) {
 	const [ code, setCode ] = useState( "" );
 
 	return (
@@ -32,7 +30,7 @@ export function JoinGameDialog() {
 					onChange={ ( e ) => setCode( e.target.value ) }
 				/>
 				<DialogFooter>
-					<JoinGame code={ code }/>
+					<JoinGame code={ code } navigate={ props.navigate }/>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

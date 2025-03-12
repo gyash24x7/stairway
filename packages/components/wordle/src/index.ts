@@ -1,2 +1,2 @@
-export * from "./create-game.tsx";
-export * from "./game-page.tsx";
+export * from "./create-game";
+export * from "./game-page";

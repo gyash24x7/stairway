@@ -1,0 +1,25 @@
+{
+	"name": "@stairway/clients",
+	"main": "src/index.ts",
+	"module": "src/index.ts",
+	"types": "src/index.ts",
+	"type": "module",
+	"dependencies": {
+		"@tanstack/react-query": "5.66.11",
+		"@trpc/client": "11.0.0-rc.818",
+		"@trpc/tanstack-react-query": "11.0.0-rc.818",
+		"superjson": "2.2.2"
+	},
+	"devDependencies": {
+		"@callbreak/api": "workspace:*",
+		"@literature/api": "workspace:*",
+		"@wordle/api": "workspace:*",
+		"@stairway/types": "workspace:*"
+	},
+	"exports": {
+		"./*": {
+			"import": "./src/*.ts",
+			"types": "./src/*.ts"
+		}
+	}
+}
