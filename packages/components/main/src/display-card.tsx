@@ -1,5 +1,5 @@
+import { cn } from "@base/components";
 import type { CardRank, CardSet, CardSuit } from "@stairway/cards";
-import { cn, fjalla } from "@stairway/components/base";
 
 export interface DisplayCardProps {
 	rank: CardRank;
@@ -48,7 +48,7 @@ export const DisplayCardSuit = ( { suit }: { suit: CardSuit } ) => {
 };
 
 export const DisplayCard = ( { rank, suit }: DisplayCardProps ) => (
-	<div className={ `w-16 rounded-lg flex flex-col justify-between p-2 text-xl ${ fjalla.className } border-2` }>
+	<div className={ `w-16 rounded-lg flex flex-col justify-between p-2 text-xl border-2` }>
 		<div className={ `text-left ${ isRed( suit ) ? "text-red-600" : "text-black" }` }>
 			{ rankTextMap[ rank ] }
 		</div>

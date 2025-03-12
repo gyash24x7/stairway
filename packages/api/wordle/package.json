@@ -1,14 +1,16 @@
 {
-	"name": "@stairway/api/wordle",
+	"name": "@wordle/api",
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
-		"@stairway/api/auth": "workspace:*",
-		"@stairway/api/utils": "workspace:*",
+		"@stairway/prisma": "workspace:*",
+		"@stairway/utils": "workspace:*",
 		"@stairway/words": "workspace:*",
-		"@trpc/server": "11.0.0-rc.589",
-		"zod": "3.23.8"
+		"@stairway/types": "workspace:*",
+		"@trpc/server": "11.0.0-rc.818",
+		"superjson": "2.2.2",
+		"zod": "3.24.2"
 	}
 }

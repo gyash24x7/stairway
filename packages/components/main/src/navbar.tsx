@@ -1,7 +1,5 @@
-"use client";
-
-import { cn, Tabs, TabsList, TabsTrigger } from "@stairway/components/base";
-import { usePathname, useRouter } from "next/navigation";
+import { cn, Tabs, TabsList, TabsTrigger } from "@base/components";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 const randomBg = () => {
 	const bgs = [ "bg-yellow-500", "bg-red-500", "bg-blue-500", "bg-green-500", "bg-pink-500 " ];
@@ -9,8 +7,8 @@ const randomBg = () => {
 };
 
 export function Navbar() {
-	const router = useRouter();
-	const pathname = usePathname();
+	const navigate = useNavigate();
+	const { pathname } = useLocation();
 
 	return (
 		<div
@@ -42,14 +40,14 @@ export function Navbar() {
 				<TabsList className="grid grid-cols-2 lg:grid-cols-4 font-semibold text-muted-foreground h-10">
 					<TabsTrigger
 						value=""
-						onClick={ () => router.push( "/" ) }
+						onClick={ () => navigate( { to: "/" } ) }
 						className={ "h-8 lg:col-start-2 lg:col-end-3" }
 					>
 						HOME
 					</TabsTrigger>
 					<TabsTrigger
 						value="settings"
-						onClick={ () => router.push( "/settings" ) }
+						onClick={ () => navigate( { to: "/settings" } ) }
 						className={ "h-8 lg:col-start-3 lg:col-end-4" }
 					>
 						SETTINGS

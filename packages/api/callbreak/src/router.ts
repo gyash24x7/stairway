@@ -1,15 +1,20 @@
-import { createContextFn, createLogger, trpc } from "@stairway/api/utils";
-import { TRPCError } from "@trpc/server";
+import type { Auth } from "@stairway/types/auth";
+import { createLogger } from "@stairway/utils";
+import { initTRPC, TRPCError } from "@trpc/server";
+import superjson from "superjson";
 import {
 	createGameInputSchema,
 	declareDealWinsInputSchema,
 	gameIdInputSchema,
 	joinGameInputSchema,
 	playCardInputSchema
-} from "./inputs.ts";
-import { addBots, createGame, declareDealWins, getBaseGameData, getGameData, joinGame, playCard } from "./service.ts";
+} from "./inputs";
+import { addBots, createGame, declareDealWins, getBaseGameData, getGameData, joinGame, playCard } from "./service";
 
 const logger = createLogger( "CallbreakRouter" );
+const trpc = initTRPC.context<Auth.Context>().create( {
+	transformer: superjson
+} );
 
 function middleware() {
 	return trpc.middleware( async opts => {
@@ -28,18 +33,18 @@ function middleware() {
 	} );
 }
 
-const router = trpc.router( {
+export const router = trpc.router( {
 	createGame: trpc.procedure.input( createGameInputSchema )
 		.mutation( ( { input, ctx } ) => createGame( input, ctx.authInfo ) ),
 
 	joinGame: trpc.procedure.input( joinGameInputSchema )
 		.mutation( ( { input, ctx } ) => joinGame( input, ctx.authInfo ) ),
 
-	addBots: trpc.procedure.input( gameIdInputSchema ).use( middleware() )
-		.mutation( ( { ctx } ) => addBots( ctx.game, ctx.players ) ),
-
 	getGameData: trpc.procedure.input( gameIdInputSchema ).use( middleware() )
 		.query( ( { ctx } ) => getGameData( ctx.game, ctx.players, ctx.authInfo ) ),
+
+	addBots: trpc.procedure.input( gameIdInputSchema ).use( middleware() )
+		.mutation( ( { ctx } ) => addBots( ctx.game, ctx.players ) ),
 
 	declareDealWins: trpc.procedure.input( declareDealWinsInputSchema ).use( middleware() )
 		.mutation( ( { input, ctx } ) => {
@@ -51,6 +56,3 @@ const router = trpc.router( {
 			return playCard( input, ctx.game, ctx.players, ctx.authInfo.id );
 		} )
 } );
-
-const createCaller = trpc.createCallerFactory( router );
-export const caller = createCaller( createContextFn );

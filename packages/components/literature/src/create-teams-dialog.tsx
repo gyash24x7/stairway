@@ -1,4 +1,3 @@
-import { chunk, shuffle } from "@stairway/cards";
 import {
 	Button,
 	Dialog,
@@ -8,13 +7,14 @@ import {
 	DialogTitle,
 	DialogTrigger,
 	Input
-} from "@stairway/components/base";
-import { useGameId, usePlayerCount, usePlayers } from "@stairway/stores/literature";
-import { useCallback, useState } from "react";
-import { CreateTeams } from "./game-actions.tsx";
-import { PlayerLobby } from "./player-lobby.tsx";
+} from "@base/components";
+import { chunk, shuffle } from "@stairway/cards";
+import { useGameId, usePlayerCount, usePlayers } from "@literature/store";
+import { useState } from "react";
+import { CreateTeams } from "./game-actions";
+import { PlayerLobby } from "./player-lobby";
 
-export const CreateTeamsDialog = () => {
+export function CreateTeamsDialog() {
 	const gameId = useGameId();
 	const players = usePlayers();
 	const playerCount = usePlayerCount();
@@ -25,13 +25,13 @@ export const CreateTeamsDialog = () => {
 
 	const [ open, setOpen ] = useState( false );
 
-	const groupPlayers = useCallback( () => {
+	const groupPlayers = () => {
 		const teamMembers = chunk( shuffle( Object.keys( players ) ), playerCount / 2 );
 		setTeamMemberData( {
 			[ teamAName ]: teamMembers[ 0 ],
 			[ teamBName ]: teamMembers[ 1 ]
 		} );
-	}, [ teamAName, teamBName, players, playerCount ] );
+	};
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
@@ -82,4 +82,4 @@ export const CreateTeamsDialog = () => {
 			</DialogContent>
 		</Dialog>
 	);
-};
+}

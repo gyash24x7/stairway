@@ -1,78 +1,53 @@
-import { literature$ } from "./store.ts";
+import { getSetsInHand } from "@stairway/cards";
+import { useShallow } from "zustand/shallow";
+import { useGameStore } from "./store";
 
-export const useGameId = () => literature$.data.game.id.get();
-export const usePlayerCount = () => literature$.data.game.playerCount.get();
-export const useGameCode = () => literature$.data.game.code.get();
-export const usePlayerId = () => literature$.data.playerId.get();
-export const usePlayers = () => literature$.data.players.get();
-export const useTeams = () => literature$.data.teams.get();
-export const useGameStatus = () => literature$.data.game.status.get();
-export const useCurrentTurn = () => literature$.data.game.currentTurn.get();
-export const useHand = () => literature$.data.hand.get();
-export const useLastMove = () => literature$.data.lastMoveData?.move.get();
-export const useCardCounts = () => literature$.data.cardCounts.get();
-export const usePreviousAsks = () => literature$.data.asks.get();
-export const useMetrics = () => literature$.data.metrics.get();
-export const useIsLastMoveSuccessfulCall = () => literature$.data.lastMoveData.get()?.isCall &&
-	literature$.data.lastMoveData.get()?.move?.success;
+export const useGameId = () => useGameStore( state => state.data.game.id );
 
-export const useMyTeam = () => {
-	const playerId = usePlayerId();
-	const teams = useTeams();
-	const players = usePlayers();
+export const usePlayerCount = () => useGameStore( state => state.data.game.playerCount );
 
-	if ( !players[ playerId ].teamId ) {
+export const useGameCode = () => useGameStore( state => state.data.game.code );
+
+export const usePlayerId = () => useGameStore( state => state.data.playerId );
+
+export const usePlayers = () => useGameStore( state => state.data.players );
+
+export const useTeams = () => useGameStore( state => state.data.teams );
+
+export const useGameStatus = () => useGameStore( state => state.data.game.status );
+
+export const useCurrentTurn = () => useGameStore( state => state.data.game.currentTurn );
+
+export const useHand = () => useGameStore( state => state.data.hand );
+
+export const useLastMove = () => useGameStore( state => state.data.lastMoveData?.move );
+
+export const useCardSetsInHand = () => useGameStore( useShallow( state => getSetsInHand( state.data.hand ) ) );
+
+export const useCardCounts = () => useGameStore( state => state.data.cardCounts );
+
+export const usePreviousAsks = () => useGameStore( state => state.data.asks );
+
+export const useMetrics = () => useGameStore( state => state.data.metrics );
+
+export const useIsLastMoveSuccessfulCall = () => useGameStore(
+	state => state.data.lastMoveData?.isCall && state.data.lastMoveData?.move.success
+);
+
+export const useMyTeam = () => useGameStore( useShallow( state => {
+	const player = state.data.players[ state.data.playerId ];
+	if ( !player.teamId ) {
 		return null;
 	}
-	return teams[ players[ playerId ].teamId ];
-};
+	return state.data.teams[ player.teamId ];
+} ) );
 
-export const useOppositeTeam = () => {
-	const playerId = usePlayerId();
-	const teams = useTeams();
-	const players = usePlayers();
-
-	if ( !players[ playerId ].teamId ) {
+export const useOppositeTeam = () => useGameStore( useShallow( state => {
+	const player = state.data.players[ state.data.playerId ];
+	if ( !player.teamId ) {
 		return null;
 	}
+	return Object.values( state.data.teams ).find( team => team.id !== player.teamId );
+} ) );
 
-	return Object.values( teams ).find( team => team.id !== players[ playerId ].teamId );
-};
-
-const GameEvents = {
-	PLAYER_JOINED: "player-joined",
-	TEAMS_CREATED: "teams-created",
-	CARD_ASKED: "card-asked",
-	SET_CALLED: "set-called",
-	TURN_TRANSFERRED: "turn-transferred",
-	TURN_UPDATED: "turn-updated",
-	SCORE_UPDATED: "score-updated",
-	STATUS_UPDATED: "status-updated",
-	CARD_COUNT_UPDATED: "card-count-updated",
-	GAME_COMPLETED: "game-completed"
-};
-
-const PlayerSpecificEvents = {
-	CARDS_DEALT: "cards-dealt"
-};
-
-export const useGameEventHandlers = () => {
-	return {
-		[ GameEvents.PLAYER_JOINED ]: literature$.eventHandlers.handlePlayerJoinedEvent,
-		[ GameEvents.TEAMS_CREATED ]: literature$.eventHandlers.handleTeamsCreatedEvent,
-		[ GameEvents.CARD_ASKED ]: literature$.eventHandlers.handleCardAskedEvent,
-		[ GameEvents.SET_CALLED ]: literature$.eventHandlers.handleSetCalledEvent,
-		[ GameEvents.TURN_TRANSFERRED ]: literature$.eventHandlers.handleTurnTransferredEvent,
-		[ GameEvents.TURN_UPDATED ]: literature$.eventHandlers.handleTurnUpdatedEvent,
-		[ GameEvents.SCORE_UPDATED ]: literature$.eventHandlers.handleScoreUpdatedEvent,
-		[ GameEvents.STATUS_UPDATED ]: literature$.eventHandlers.handleStatusUpdatedEvent,
-		[ GameEvents.CARD_COUNT_UPDATED ]: literature$.eventHandlers.handleCardCountsUpdatedEvent,
-		[ GameEvents.GAME_COMPLETED ]: literature$.eventHandlers.handleGameCompletedEvent
-	};
-};
-
-export const usePlayerSpecificEventHandlers = () => {
-	return {
-		[ PlayerSpecificEvents.CARDS_DEALT ]: literature$.eventHandlers.handleCardsDealtEvent
-	};
-}; 
+export const useEventHandlers = () => useGameStore( state => state.eventHandlers );

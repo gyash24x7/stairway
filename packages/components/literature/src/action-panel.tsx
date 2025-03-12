@@ -1,5 +1,4 @@
-import { observer } from "@legendapp/state/react";
-import { cn } from "@stairway/components/base";
+import { cn } from "@base/components";
 import {
 	useCurrentTurn,
 	useGameId,
@@ -7,16 +6,16 @@ import {
 	useIsLastMoveSuccessfulCall,
 	usePlayerId,
 	usePlayers
-} from "@stairway/stores/literature";
+} from "@literature/store";
 import { Fragment } from "react";
-import { AskCardDialog } from "./ask-card-dialog.tsx";
-import { CallSetDialog } from "./call-set-dialog.tsx";
-import { CreateTeamsDialog } from "./create-teams-dialog.tsx";
-import { AddBots, ExecuteBotMove, StartGame } from "./game-actions.tsx";
-import { PreviousAsks } from "./previous-asks.tsx";
-import { TransferTurnDialog } from "./transfer-turn-dialog.tsx";
+import { AskCardDialog } from "./ask-card-dialog";
+import { CallSetDialog } from "./call-set-dialog";
+import { CreateTeamsDialog } from "./create-teams-dialog";
+import { AddBots, ExecuteBotMove, StartGame } from "./game-actions";
+import { PreviousAsks } from "./previous-asks";
+import { TransferTurnDialog } from "./transfer-turn-dialog";
 
-export const ActionPanel = observer( () => {
+export function ActionPanel() {
 	const status = useGameStatus();
 	const currentTurn = useCurrentTurn();
 	const playerId = usePlayerId();
@@ -54,4 +53,4 @@ export const ActionPanel = observer( () => {
 			</div>
 		</div>
 	);
-} );
+}

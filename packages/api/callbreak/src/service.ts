@@ -1,29 +1,22 @@
 import {
-	createLogger,
-	generateAvatar,
-	generateName,
-	prisma,
-	publishCallbreakGameEvent,
-	publishCallbreakPlayerEvent,
-	type UserAuthInfo
-} from "@stairway/api/utils";
-import {
 	CardSuit,
 	generateDeck,
-	generateGameCode,
 	generateHands,
 	getBestCardPlayed,
 	getCardFromId,
 	getCardId,
 	type PlayingCard
 } from "@stairway/cards";
+import { prisma } from "@stairway/prisma";
+import type { Auth } from "@stairway/types/auth";
+import type { Callbreak } from "@stairway/types/callbreak";
+import { createLogger, generateAvatar, generateGameCode, generateName } from "@stairway/utils";
 import { TRPCError } from "@trpc/server";
 import { format } from "node:util";
-import { suggestCardToPlay, suggestDealWins } from "./bot.service.ts";
-import { GameEvents } from "./constants.ts";
-import type { CreateGameInput, DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "./inputs.ts";
-import type { Deal, DealWithRounds, Game, PlayerData, Round } from "./types.ts";
-import { validateAddBots, validateDealWinDeclaration, validateJoinGame, validatePlayCard } from "./validators.ts";
+import { suggestCardToPlay, suggestDealWins } from "./bot.service";
+import { publishGameEvent, publishPlayerEvent } from "./events";
+import type { CreateGameInput, DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "./inputs";
+import { validateAddBots, validateDealWinDeclaration, validateJoinGame, validatePlayCard } from "./validators";
 
 const logger = createLogger( "CallbreakService" );
 
@@ -41,7 +34,7 @@ export async function getBaseGameData( gameId: string ) {
 	}
 
 	const { players, ...game } = data;
-	const playerMap: PlayerData = {};
+	const playerMap: Callbreak.PlayerData = {};
 	players.forEach( player => {
 		playerMap[ player.id ] = player;
 	} );
@@ -50,7 +43,7 @@ export async function getBaseGameData( gameId: string ) {
 	return { game, players: playerMap };
 }
 
-export async function getGameData( game: Game, players: PlayerData, authInfo: UserAuthInfo ) {
+export async function getGameData( game: Callbreak.Game, players: Callbreak.PlayerData, authInfo: Auth.Info ) {
 	logger.debug( ">> getGameData()" );
 
 	const currentDeal = await prisma.callbreak.deal.findFirst( {
@@ -58,7 +51,7 @@ export async function getGameData( game: Game, players: PlayerData, authInfo: Us
 		orderBy: { createdAt: "desc" }
 	} );
 
-	let currentRound: Round | null = null;
+	let currentRound: Callbreak.Round | null = null;
 	const hand: PlayingCard[] = [];
 
 	if ( !!currentDeal ) {
@@ -77,7 +70,7 @@ export async function getGameData( game: Game, players: PlayerData, authInfo: Us
 	return { game, players, currentDeal, currentRound, playerId: authInfo.id, hand };
 }
 
-export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { id, name, avatar }: UserAuthInfo ) {
+export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { id, name, avatar }: Auth.Info ) {
 	logger.debug( ">> createGame()" );
 
 	const code = generateGameCode();
@@ -88,7 +81,7 @@ export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { i
 	return game;
 }
 
-export async function joinGame( input: JoinGameInput, authInfo: UserAuthInfo ) {
+export async function joinGame( input: JoinGameInput, authInfo: Auth.Info ) {
 	logger.debug( ">> joinGame()" );
 
 	const { game, alreadyJoined } = await validateJoinGame( input, authInfo );
@@ -101,7 +94,7 @@ export async function joinGame( input: JoinGameInput, authInfo: UserAuthInfo ) {
 		data: { gameId: game.id, id: authInfo.id, name: authInfo.name, avatar: authInfo.avatar }
 	} );
 
-	publishCallbreakGameEvent( game.id, GameEvents.PLAYER_JOINED, player );
+	publishGameEvent( game.id, "player-joined", player );
 
 	game.players.push( player );
 
@@ -113,14 +106,14 @@ export async function joinGame( input: JoinGameInput, authInfo: UserAuthInfo ) {
 			data: { status: "IN_PROGRESS" }
 		} );
 
-		publishCallbreakGameEvent( game.id, GameEvents.ALL_PLAYERS_JOINED, updatedGame );
+		publishGameEvent( game.id, "all-players-joined", updatedGame );
 	}
 
 	logger.debug( "<< joinGame()" );
 	return game;
 }
 
-export async function addBots( game: Game, players: PlayerData ) {
+export async function addBots( game: Callbreak.Game, players: Callbreak.PlayerData ) {
 	logger.debug( ">> addBots()" );
 
 	const botCount = await validateAddBots( game, players );
@@ -129,7 +122,7 @@ export async function addBots( game: Game, players: PlayerData ) {
 		const avatar = generateAvatar();
 		const bot = await prisma.callbreak.player.create( { data: { name, avatar, gameId: game.id, isBot: true } } );
 
-		publishCallbreakGameEvent( game.id, GameEvents.PLAYER_JOINED, bot );
+		publishGameEvent( game.id, "player-joined", bot );
 		players[ bot.id ] = bot;
 	}
 
@@ -138,7 +131,7 @@ export async function addBots( game: Game, players: PlayerData ) {
 		data: { status: "IN_PROGRESS" }
 	} );
 
-	publishCallbreakGameEvent( game.id, GameEvents.ALL_PLAYERS_JOINED, updatedGame );
+	publishGameEvent( game.id, "all-players-joined", updatedGame );
 
 	setTimeout( async () => {
 		logger.debug( "Creating new deal..." );
@@ -148,7 +141,7 @@ export async function addBots( game: Game, players: PlayerData ) {
 	logger.debug( "<< addBots()" );
 }
 
-export async function createDeal( game: Game, players: PlayerData, lastDeal?: Deal ) {
+export async function createDeal( game: Callbreak.Game, players: Callbreak.PlayerData, lastDeal?: Callbreak.Deal ) {
 	logger.debug( ">> createDeal()" );
 
 	const deck = generateDeck();
@@ -174,10 +167,10 @@ export async function createDeal( game: Game, players: PlayerData, lastDeal?: De
 			} ) )
 		} );
 
-		publishCallbreakPlayerEvent( game.id, playerId, GameEvents.CARDS_DEALT, hand );
+		publishPlayerEvent( game.id, playerId, "cards-dealt", hand );
 	}
 
-	publishCallbreakGameEvent( game.id, GameEvents.DEAL_CREATED, deal );
+	publishGameEvent( game.id, "deal-created", deal );
 
 	logger.debug( "<< createDeal()" );
 	return deal;
@@ -185,8 +178,8 @@ export async function createDeal( game: Game, players: PlayerData, lastDeal?: De
 
 export async function declareDealWins(
 	input: DeclareDealWinsInput,
-	game: Game,
-	players: PlayerData,
+	game: Callbreak.Game,
+	players: Callbreak.PlayerData,
 	playerId: string
 ) {
 	logger.debug( ">> declareDealWins()" );
@@ -202,11 +195,7 @@ export async function declareDealWins(
 		include: { rounds: true }
 	} );
 
-	publishCallbreakGameEvent(
-		game.id,
-		GameEvents.DEAL_WIN_DECLARED,
-		{ deal, by: players[ playerId ], wins: input.wins }
-	);
+	publishGameEvent( game.id, "deal-win-declared", { deal, by: players[ playerId ], wins: input.wins } );
 
 	const nextPlayer = deal.playerOrder[ deal.turnIdx ];
 	if ( players[ nextPlayer ]?.isBot ) {
@@ -231,7 +220,7 @@ export async function declareDealWins(
 			include: { rounds: true }
 		} );
 
-		publishCallbreakGameEvent( game.id, GameEvents.ALL_DEAL_WINS_DECLARED, deal );
+		publishGameEvent( game.id, "all-deal-wins-declared", deal );
 
 		setTimeout( async () => {
 			await createRound( deal, game, players );
@@ -241,7 +230,11 @@ export async function declareDealWins(
 	logger.debug( "<< declareDealWins()" );
 }
 
-export async function createRound( deal: DealWithRounds, game: Game, players: PlayerData ) {
+export async function createRound(
+	deal: Callbreak.DealWithRounds,
+	game: Callbreak.Game,
+	players: Callbreak.PlayerData
+) {
 	logger.debug( ">> createRound()" );
 
 	const lastRound = deal.rounds[ 0 ];
@@ -256,7 +249,7 @@ export async function createRound( deal: DealWithRounds, game: Game, players: Pl
 
 	deal.rounds.unshift( round );
 
-	publishCallbreakGameEvent( game.id, GameEvents.ROUND_CREATED, { round, deal } );
+	publishGameEvent( game.id, "round-created", round );
 
 	const firstPlayer = players[ playerOrder[ 0 ] ];
 	if ( firstPlayer.isBot ) {
@@ -277,7 +270,12 @@ export async function createRound( deal: DealWithRounds, game: Game, players: Pl
 	return round;
 }
 
-export async function playCard( input: PlayCardInput, game: Game, players: PlayerData, playerId: string ) {
+export async function playCard(
+	input: PlayCardInput,
+	game: Callbreak.Game,
+	players: Callbreak.PlayerData,
+	playerId: string
+) {
 	logger.debug( ">> playCard()" );
 
 	let { round } = await validatePlayCard( input, game, playerId );
@@ -295,7 +293,7 @@ export async function playCard( input: PlayCardInput, game: Game, players: Playe
 		where: { cardId_dealId_gameId: { cardId: input.cardId, gameId: game.id, dealId: input.dealId } }
 	} );
 
-	publishCallbreakGameEvent( game.id, GameEvents.CARD_PLAYED, { round, card: input.cardId, by: playerId } );
+	publishGameEvent( game.id, "card-played", { round, card: input.cardId, by: playerId } );
 
 	let deal = await prisma.callbreak.deal.findUniqueOrThrow( {
 		where: { id_gameId: { id: input.dealId, gameId: game.id } },
@@ -355,11 +353,7 @@ export async function playCard( input: PlayCardInput, game: Game, players: Playe
 			include: { rounds: { orderBy: { createdAt: "desc" } } }
 		} );
 
-		publishCallbreakGameEvent(
-			game.id,
-			GameEvents.ROUND_COMPLETED,
-			{ round, deal, winner: players[ winningPlayer! ] }
-		);
+		publishGameEvent( game.id, "round-completed", { round, winner: players[ winningPlayer! ], deal } );
 
 		const completedRounds = deal.rounds.filter( r => r.completed ).length;
 
@@ -384,7 +378,7 @@ export async function playCard( input: PlayCardInput, game: Game, players: Playe
 				}
 			} );
 
-			publishCallbreakGameEvent( game.id, GameEvents.DEAL_COMPLETED, { deal, score } );
+			publishGameEvent( game.id, "deal-completed", { deal, score } );
 
 			const completedDeals = await prisma.callbreak.deal.count( {
 				where: { gameId: game.id, status: "COMPLETED" }
@@ -400,7 +394,7 @@ export async function playCard( input: PlayCardInput, game: Game, players: Playe
 
 			if ( completedDeals === game.dealCount ) {
 				logger.info( "All deals completed, Game Over!" );
-				publishCallbreakGameEvent( game.id, GameEvents.GAME_COMPLETED, game );
+				publishGameEvent( game.id, "game-completed", game );
 			} else {
 				logger.info( "Starting the next deal..." );
 				setTimeout( async () => {

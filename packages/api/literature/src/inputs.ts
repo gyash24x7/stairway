@@ -28,7 +28,7 @@ export type TransferTurnInput = z.infer<typeof transferTurnInputSchema>;
 
 export const callSetInputSchema = z.object( {
 	gameId: z.string(),
-	data: z.record( z.string(), z.string() )
+	data: z.record( z.string() )
 } );
 
 export type CallSetInput = z.infer<typeof callSetInputSchema>;

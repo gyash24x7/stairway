@@ -1,21 +1,36 @@
-import { dictionary, getAvailableLetters, getGuessBlocks } from "@stairway/words";
-import { wordle$ } from "./store.ts";
+import { dictionary, getAvailableLetters } from "@stairway/words";
+import { useShallow } from "zustand/shallow";
+import { useGameStore } from "./store";
 
-export const useGameWords = () => wordle$.game.words.get();
-export const useGameGuesses = () => wordle$.game.guesses.get();
-export const useAvailableLetters = () => getAvailableLetters( wordle$.game.guesses.get() );
-export const useGuessBlockMap = () => getGuessBlocks( wordle$.game.get(), wordle$.currentGuess.get().join( "" ) );
-export const useGameId = () => wordle$.game.id.get();
-export const useCompletedWords = () => wordle$.game.completedWords.get();
-export const useCurrentGuess = () => wordle$.currentGuess.get();
-export const useIsValidWord = () => dictionary.includes( wordle$.currentGuess.get().join( "" ) );
-export const useIsValidGuessLength = () => wordle$.currentGuess.get().length === wordle$.game.wordLength.get();
-export const useIsGameCompleted = () => {
-	const words = wordle$.game.words.get();
-	const completedWords = wordle$.game.completedWords.get();
-	const guesses = wordle$.game.guesses.get();
+export const useGame = () => useGameStore( state => state.game );
 
-	const areAllWordsCompleted = words.length === completedWords.length;
-	const areAllGuessesCompleted = guesses.length === words.length + wordle$.game.wordLength.get();
+export const useIsGameCompleted = () => useGameStore( state => {
+	const areAllWordsCompleted = state.game.words.length === state.game.completedWords.length;
+	const areAllGuessesCompleted = state.game.guesses.length ===
+		state.game.words.length + state.game.wordLength;
 	return areAllGuessesCompleted || areAllWordsCompleted;
-};
+} );
+
+export const useAvailableLetters = () => useGameStore( useShallow( state => {
+	return getAvailableLetters( state.game.guesses );
+} ) );
+
+export const useGameId = () => useGameStore( state => state.game.id );
+
+export const useCurrentGuess = () => useGameStore( state => state.currentGuess );
+
+export const useBackspaceCurrentGuess = () => useGameStore( state => state.backspaceCurrentGuess );
+
+export const useResetCurrentGuess = () => useGameStore( state => state.resetCurrentGuess );
+
+export const useUpdateCurrentGuess = () => useGameStore( state => state.updateCurrentGuess );
+
+export const useIsValidWord = () => useGameStore( state => {
+	return dictionary.includes( state.currentGuess.join( "" ) );
+} );
+
+export const useUpdateGameData = () => useGameStore( state => state.updateGameData );
+
+export const useIsValidGuessLength = () => useGameStore( state => {
+	return state.currentGuess.length === state.game.wordLength;
+} );

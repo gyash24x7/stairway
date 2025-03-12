@@ -1,14 +1,10 @@
-import { usePlayers, useTeams } from "@stairway/stores/literature";
-import { useMemo } from "react";
-import { DisplayScore } from "./display-score.tsx";
+import { usePlayers, useTeams } from "@literature/store";
+import { DisplayScore } from "./display-score";
 
-export const DisplayTeams = () => {
+export function DisplayTeams() {
 	const players = usePlayers();
 	const teams = useTeams();
-	const teamList = useMemo(
-		() => Object.values( teams ).toSorted( ( a, b ) => a.id.localeCompare( b.id ) ),
-		[ teams ]
-	);
+	const teamList = Object.values( teams ).toSorted( ( a, b ) => a.id.localeCompare( b.id ) );
 
 	return (
 		<div className={ "flex flex-col border-2 rounded-md" }>
@@ -23,4 +19,4 @@ export const DisplayTeams = () => {
 			</div>
 		</div>
 	);
-};
+}

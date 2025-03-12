@@ -1,4 +1,3 @@
-import { createLogger } from "@stairway/api/utils";
 import {
 	CardSet,
 	cardSetMap,
@@ -11,9 +10,8 @@ import {
 	type PlayingCard,
 	shuffle
 } from "@stairway/cards";
-import { format } from "node:util";
-import { Constants } from "./constants.ts";
-import type { CardCounts, CardLocation, Game, PlayerData } from "./types.ts";
+import type { Literature } from "@stairway/types/literature";
+import { createLogger } from "@stairway/utils";
 
 const logger = createLogger( "LiteratureBotService" );
 
@@ -22,7 +20,9 @@ type WeightedCall = { cardSet: CardSet, callData: Record<string, string>, weight
 type WeightedTransfer = { weight: number, transferTo: string };
 type WeightedCardSet = { cardSet: CardSet, weight: number };
 
-export function suggestCardSets( cardLocations: CardLocation[], hand: PlayingCard[] ): CardSet[] {
+const MAX_ASK_WEIGHT = 720;
+
+export function suggestCardSets( cardLocations: Literature.CardLocation[], hand: PlayingCard[] ): CardSet[] {
 	const weightedCardSets: WeightedCardSet[] = [];
 	const cardSetsInGame = new Set( cardLocations.map( l => getCardSet( getCardFromId( l.cardId ) ) ) );
 
@@ -36,18 +36,22 @@ export function suggestCardSets( cardLocations: CardLocation[], hand: PlayingCar
 				continue;
 			}
 
-			weight += Constants.MAX_ASK_WEIGHT / cardLocation.playerIds.length;
+			weight += MAX_ASK_WEIGHT / cardLocation.playerIds.length;
 		}
 
 		weightedCardSets.push( { cardSet, weight } );
 	}
 
-	logger.info( format( "Weighted CardSets: %o", weightedCardSets.sort( ( a, b ) => b.weight - a.weight ) ) );
+	logger.info( "Weighted CardSets: %o", weightedCardSets.sort( ( a, b ) => b.weight - a.weight ) );
 
 	return weightedCardSets.map( w => w.cardSet ).filter( ( cardSet ) => isCardSetInHand( hand, cardSet ) );
 }
 
-export function suggestTransfer( game: Game, players: PlayerData, cardCounts: CardCounts ): WeightedTransfer[] {
+export function suggestTransfer(
+	game: Literature.Game,
+	players: Literature.PlayerData,
+	cardCounts: Literature.CardCounts
+): WeightedTransfer[] {
 	const teamId = players[ game.currentTurn ].teamId;
 	const myTeamMembers = Object.values( players )
 		.filter( player => player.teamId === teamId && player.id !== game.currentTurn )
@@ -58,16 +62,16 @@ export function suggestTransfer( game: Game, players: PlayerData, cardCounts: Ca
 		return { weight: 720 / myTeamMembers.length + cardCounts[ transferTo ], transferTo };
 	} );
 
-	logger.debug( format( "Weighted Transfers: %o", weightedTransfers ) );
+	logger.debug( "Weighted Transfers: %o", weightedTransfers );
 	return weightedTransfers.toSorted( ( a, b ) => b.weight - a.weight );
 }
 
 export function canCardSetBeCalled(
-	game: Game,
-	players: PlayerData,
-	cardCounts: CardCounts,
+	game: Literature.Game,
+	players: Literature.PlayerData,
+	cardCounts: Literature.CardCounts,
 	cardSet: CardSet,
-	cardLocations: CardLocation[],
+	cardLocations: Literature.CardLocation[],
 	hand: PlayingCard[]
 ) {
 	const teamId = players[ game.currentTurn ].teamId;
@@ -106,11 +110,11 @@ export function canCardSetBeCalled(
 }
 
 export function suggestCalls(
-	game: Game,
-	players: PlayerData,
-	cardCounts: CardCounts,
+	game: Literature.Game,
+	players: Literature.PlayerData,
+	cardCounts: Literature.CardCounts,
 	cardSetsInGame: CardSet[],
-	cardLocations: CardLocation[],
+	cardLocations: Literature.CardLocation[],
 	hand: PlayingCard[]
 ) {
 	const weightedCalls: WeightedCall[] = [];
@@ -121,12 +125,12 @@ export function suggestCalls(
 			canCardSetBeCalled( game, players, cardCounts, cardSet, cardLocations, hand );
 
 		if ( !canCardSetBeCalledValue ) {
-			logger.info( format( "This card set is not with my team. Cannot Call! CardSet: %s", cardSet ) );
+			logger.info( "This card set is not with my team. Cannot Call! CardSet: %s", cardSet );
 			continue;
 		}
 
 		const totalPossiblePlayers = Object.values( cardPossibilityMap ).flat().length;
-		let weight = Constants.MAX_ASK_WEIGHT;
+		let weight = MAX_ASK_WEIGHT;
 
 		if ( totalPossiblePlayers > 6 ) {
 			weight /= totalPossiblePlayers - 6;
@@ -145,16 +149,16 @@ export function suggestCalls(
 		weightedCalls.push( { callData, weight, cardSet } );
 	}
 
-	logger.debug( format( "Weighted Calls: %o", weightedCalls ) );
+	logger.debug( "Weighted Calls: %o", weightedCalls );
 	return weightedCalls.toSorted( ( a, b ) => b.weight - a.weight );
 }
 
 export function suggestAsks(
-	game: Game,
-	players: PlayerData,
-	cardCounts: CardCounts,
+	game: Literature.Game,
+	players: Literature.PlayerData,
+	cardCounts: Literature.CardCounts,
 	cardSets: CardSet[],
-	cardLocations: CardLocation[],
+	cardLocations: Literature.CardLocation[],
 	hand: PlayingCard[]
 ) {
 	const teamId = players[ game.currentTurn ].teamId;
@@ -185,7 +189,7 @@ export function suggestAsks(
 				.filter( playerId => oppositeTeamMembers.includes( playerId ) )
 				.filter( playerId => cardCounts[ playerId ] > 0 )
 				.map( playerId => {
-					const weight = Constants.MAX_ASK_WEIGHT / cardLocation.playerIds.length;
+					const weight = MAX_ASK_WEIGHT / cardLocation.playerIds.length;
 					return { cardId, playerId, weight };
 				} );
 

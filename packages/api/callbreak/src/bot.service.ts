@@ -1,4 +1,3 @@
-import { createLogger } from "@stairway/api/utils";
 import {
 	CARD_SUITS,
 	CardRank,
@@ -11,7 +10,8 @@ import {
 	getSuitGroupsFromHand,
 	type PlayingCard
 } from "@stairway/cards";
-import type { DealWithRounds } from "./types.ts";
+import type { Callbreak } from "@stairway/types/callbreak";
+import { createLogger } from "@stairway/utils";
 
 const logger = createLogger( "CallbreakBotService" );
 
@@ -49,7 +49,7 @@ export function suggestDealWins( hand: PlayingCard[], trumpSuit: CardSuit ) {
 	return possibleWins;
 }
 
-export function suggestCardToPlay( hand: PlayingCard[], deal: DealWithRounds, trumpSuit: CardSuit ) {
+export function suggestCardToPlay( hand: PlayingCard[], deal: Callbreak.DealWithRounds, trumpSuit: CardSuit ) {
 	logger.debug( ">> suggestCardToPlay()" );
 
 	const activeRound = deal.rounds[ 0 ];

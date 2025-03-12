@@ -1,14 +1,14 @@
 {
-	"name": "@stairway/components/literature",
+	"name": "@literature/components",
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
-		"@stairway/components/base": "workspace:*",
-		"@stairway/components/main": "workspace:*",
-		"@stairway/stores/literature": "workspace:*",
+		"@base/components": "workspace:*",
+		"@main/components": "workspace:*",
+		"@literature/store": "workspace:*",
 		"@stairway/cards": "workspace:*",
-		"react-use-websocket": "4.9.0"
+		"@stairway/clients": "workspace:*"
 	}
 }

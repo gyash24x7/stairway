@@ -1,10 +1,8 @@
-"use client";
-
 import { Fallback, Image, Root } from "@radix-ui/react-avatar";
-import { type ComponentPropsWithoutRef, type ElementRef, forwardRef } from "react";
-import { cn } from "./cn.ts";
+import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
+import { cn } from "./cn";
 
-const Avatar = forwardRef<ElementRef<typeof Root>, ComponentPropsWithoutRef<typeof Root>>(
+const Avatar = forwardRef<ComponentRef<typeof Root>, ComponentPropsWithoutRef<typeof Root>>(
 	( { className, ...props }, ref ) => (
 		<Root
 			ref={ ref }
@@ -14,17 +12,13 @@ const Avatar = forwardRef<ElementRef<typeof Root>, ComponentPropsWithoutRef<type
 	)
 );
 
-Avatar.displayName = Root.displayName;
-
-const AvatarImage = forwardRef<ElementRef<typeof Image>, ComponentPropsWithoutRef<typeof Image>>(
+const AvatarImage = forwardRef<ComponentRef<typeof Image>, ComponentPropsWithoutRef<typeof Image>>(
 	( { className, ...props }, ref ) => (
 		<Image ref={ ref } className={ cn( "aspect-square h-full w-full", className ) } { ...props }/>
 	)
 );
 
-AvatarImage.displayName = Image.displayName;
-
-const AvatarFallback = forwardRef<ElementRef<typeof Fallback>, ComponentPropsWithoutRef<typeof Fallback>>(
+const AvatarFallback = forwardRef<ComponentRef<typeof Fallback>, ComponentPropsWithoutRef<typeof Fallback>>(
 	( { className, ...props }, ref ) => (
 		<Fallback
 			ref={ ref }
@@ -33,7 +27,5 @@ const AvatarFallback = forwardRef<ElementRef<typeof Fallback>, ComponentPropsWit
 		/>
 	)
 );
-
-AvatarFallback.displayName = Fallback.displayName;
 
 export { Avatar, AvatarImage, AvatarFallback };

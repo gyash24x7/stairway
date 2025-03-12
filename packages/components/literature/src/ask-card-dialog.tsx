@@ -1,3 +1,4 @@
+import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@base/components";
 import {
 	type CardSet,
 	getAskableCardsOfSet,
@@ -6,16 +7,15 @@ import {
 	getCardsOfSet,
 	getSetsInHand
 } from "@stairway/cards";
-import { Button, Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@stairway/components/base";
-import { SelectCard } from "@stairway/components/main";
-import { useCardCounts, useGameId, useHand, useOppositeTeam, usePlayers } from "@stairway/stores/literature";
-import { useCallback, useMemo, useState } from "react";
+import { SelectCard } from "@main/components";
+import { useCardCounts, useGameId, useHand, useOppositeTeam, usePlayers } from "@literature/store";
+import { useState } from "react";
 import { useStep } from "usehooks-ts";
-import { AskCard } from "./game-actions.tsx";
-import { SelectCardSet } from "./select-card-set.tsx";
-import { SelectPlayer } from "./select-player.tsx";
+import { AskCard } from "./game-actions";
+import { SelectCardSet } from "./select-card-set";
+import { SelectPlayer } from "./select-player";
 
-export const AskCardDialog = () => {
+export function AskCardDialog() {
 	const gameId = useGameId();
 	const players = usePlayers();
 	const hand = useHand();
@@ -27,42 +27,32 @@ export const AskCardDialog = () => {
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ open, setOpen ] = useState( false );
 
-	const openDrawer = useCallback( () => setOpen( true ), [] );
+	const openDrawer = () => setOpen( true );
 
-	const askableCardSets = useMemo( () => {
-		return Array.from( getSetsInHand( hand ) ).filter( cardSet => {
-			const cards = getCardsOfSet( hand, cardSet );
-			return cards.length !== 6;
-		} );
-	}, [ hand ] );
+	const askableCardSets = Array.from( getSetsInHand( hand ) ).filter( cardSet => {
+		const cards = getCardsOfSet( hand, cardSet );
+		return cards.length !== 6;
+	} );
 
-	const oppositeTeamMembersWithCards = useMemo( () => {
-		return oppositeTeam?.memberIds.map( memberId => players[ memberId ] )
-			.filter( member => !!cardCounts[ member.id ] ) ?? [];
-	}, [ oppositeTeam, cardCounts, players ] );
+	const oppositeTeamMembersWithCards = oppositeTeam?.memberIds
+		.map( memberId => players[ memberId ] )
+		.filter( member => !!cardCounts[ member.id ] ) ?? [];
 
-	const handleCardSetSelection = useCallback(
-		( cardSet?: string ) => setSelectedCardSet( cardSet as CardSet | undefined ),
-		[]
-	);
+	const handleCardSetSelection = ( cardSet?: string ) => setSelectedCardSet( cardSet as CardSet | undefined );
 
 	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
 
-	const closeModal = useCallback( () => {
+	const closeModal = () => {
 		setSelectedCardSet( undefined );
 		setSelectedCard( undefined );
 		setSelectedPlayer( undefined );
 		reset();
 		setOpen( false );
-	}, [] );
+	};
 
-	const confirmAskDrawerTitle = useMemo( () => {
-		if ( selectedPlayer && selectedCard ) {
-			return `Ask ${ players[ selectedPlayer ].name } for ${ getCardDisplayString( getCardFromId( selectedCard ) ) }`;
-		}
-
-		return "";
-	}, [ players, selectedPlayer, selectedCard ] );
+	const confirmAskDrawerTitle = selectedPlayer && selectedCard
+		? `Ask ${ players[ selectedPlayer ].name } for ${ getCardDisplayString( getCardFromId( selectedCard ) ) }`
+		: "";
 
 	return (
 		<Drawer open={ open } onOpenChange={ setOpen }>
@@ -139,4 +129,4 @@ export const AskCardDialog = () => {
 			</DrawerContent>
 		</Drawer>
 	);
-};
+}

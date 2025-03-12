@@ -1,5 +1,5 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@stairway/components/base";
-import { useMetrics, usePlayers } from "@stairway/stores/literature";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@base/components";
+import { useMetrics, usePlayers } from "@literature/store";
 
 export function GameCompleted() {
 	const players = usePlayers();

@@ -1,11 +1,7 @@
-"use client";
-
 import { Close, Content, Description, Overlay, Portal, Root, Title, Trigger } from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
-import { type ComponentPropsWithoutRef, type ElementRef, forwardRef, type HTMLAttributes } from "react";
-import { cn } from "./cn.ts";
-
-
+import { ComponentPropsWithoutRef, ComponentRef, forwardRef, HTMLAttributes } from "react";
+import { cn } from "./cn";
 
 const Dialog = Root;
 
@@ -15,12 +11,13 @@ const DialogPortal = Portal;
 
 const DialogClose = Close;
 
-const DialogOverlay = forwardRef<ElementRef<typeof Overlay>, ComponentPropsWithoutRef<typeof Overlay>>(
+const DialogOverlay = forwardRef<ComponentRef<typeof Overlay>, ComponentPropsWithoutRef<typeof Overlay>>(
 	( { className, ...props }, ref ) => (
 		<Overlay
 			ref={ ref }
 			className={ cn(
-				"fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+				"fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in",
+				"data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
 				className
 			) }
 			{ ...props }
@@ -28,9 +25,7 @@ const DialogOverlay = forwardRef<ElementRef<typeof Overlay>, ComponentPropsWitho
 	)
 );
 
-DialogOverlay.displayName = Overlay.displayName;
-
-const DialogContent = forwardRef<ElementRef<typeof Content>, ComponentPropsWithoutRef<typeof Content>>(
+const DialogContent = forwardRef<ComponentRef<typeof Content>, ComponentPropsWithoutRef<typeof Content>>(
 	( { className, children, ...props }, ref ) => (
 		<DialogPortal>
 			<DialogOverlay/>
@@ -53,21 +48,15 @@ const DialogContent = forwardRef<ElementRef<typeof Content>, ComponentPropsWitho
 	)
 );
 
-DialogContent.displayName = Content.displayName;
-
 const DialogHeader = ( { className, ...props }: HTMLAttributes<HTMLDivElement> ) => (
 	<div className={ cn( "flex flex-col space-y-1.5 text-center sm:text-left", className ) } { ...props }/>
 );
-
-DialogHeader.displayName = "DialogHeader";
 
 const DialogFooter = ( { className, ...props }: HTMLAttributes<HTMLDivElement> ) => (
 	<div className={ cn( "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className ) } { ...props } />
 );
 
-DialogFooter.displayName = "DialogFooter";
-
-const DialogTitle = forwardRef<ElementRef<typeof Title>, ComponentPropsWithoutRef<typeof Title>>(
+const DialogTitle = forwardRef<ComponentRef<typeof Title>, ComponentPropsWithoutRef<typeof Title>>(
 	( { className, ...props }, ref ) => (
 		<Title
 			ref={ ref }
@@ -77,9 +66,7 @@ const DialogTitle = forwardRef<ElementRef<typeof Title>, ComponentPropsWithoutRe
 	)
 );
 
-DialogTitle.displayName = Title.displayName;
-
-const DialogDescription = forwardRef<ElementRef<typeof Description>, ComponentPropsWithoutRef<typeof Description>>(
+const DialogDescription = forwardRef<ComponentRef<typeof Description>, ComponentPropsWithoutRef<typeof Description>>(
 	( { className, ...props }, ref ) => (
 		<Description
 			ref={ ref }
@@ -88,8 +75,6 @@ const DialogDescription = forwardRef<ElementRef<typeof Description>, ComponentPr
 		/>
 	)
 );
-
-DialogDescription.displayName = Description.displayName;
 
 export {
 	Dialog,

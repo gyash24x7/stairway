@@ -1,12 +1,13 @@
 {
-	"name": "@stairway/stores/callbreak",
+	"name": "@callbreak/store",
 	"main": "src/index.ts",
 	"module": "src/index.ts",
 	"types": "src/index.ts",
 	"type": "module",
 	"dependencies": {
-		"@legendapp/state": "3.0.0-beta.12",
-		"@stairway/api/callbreak": "workspace:*",
-		"@stairway/cards": "workspace:*"
+		"@stairway/types": "workspace:*",
+		"@stairway/cards": "workspace:*",
+		"immer": "10.1.1",
+		"zustand": "5.0.3"
 	}
 }

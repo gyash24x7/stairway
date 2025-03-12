@@ -1,10 +1,9 @@
-import "server-only";
-
-import type { UserAuthInfo } from "@stairway/api/utils";
-import { createLogger, prisma } from "@stairway/api/utils";
+import { prisma } from "@stairway/prisma";
+import type { Auth } from "@stairway/types/auth";
+import type { Wordle } from "@stairway/types/wordle";
+import { createLogger } from "@stairway/utils";
 import { dictionary } from "@stairway/words";
-import type { CreateGameInput, MakeGuessInput } from "./inputs.ts";
-import type { Game } from "./types.ts";
+import type { CreateGameInput, MakeGuessInput } from "./inputs";
 
 const logger = createLogger( "WordleMutations" );
 
@@ -17,7 +16,7 @@ export async function getGameData( gameId: string ) {
 
 export async function createGame(
 	{ wordCount = 2, wordLength = 5 }: CreateGameInput,
-	{ authInfo }: { authInfo: UserAuthInfo }
+	{ authInfo }: { authInfo: Auth.Info }
 ) {
 	logger.debug( ">> createGame()" );
 
@@ -34,7 +33,7 @@ export async function createGame(
 	return game;
 }
 
-export async function makeGuess( input: MakeGuessInput, game: Game ) {
+export async function makeGuess( input: MakeGuessInput, game: Wordle.Game ) {
 	logger.debug( ">> makeGuess()" );
 
 	if ( game.guesses.length >= game.wordLength + game.wordCount ) {

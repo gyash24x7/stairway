@@ -1,10 +1,6 @@
-"use client";
-
-import type { ComponentProps } from "react";
+import { ComponentProps } from "react";
 import { Toaster as Sonner } from "sonner";
-import { cn } from "./cn.ts";
-
-
+import { cn } from "./cn";
 
 type ToasterProps = ComponentProps<typeof Sonner>
 

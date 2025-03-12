@@ -1,0 +1,14 @@
+{
+	"name": "@stairway/types",
+	"type": "module",
+	"devDependencies": {
+		"@stairway/cards": "workspace:*",
+		"@stairway/prisma": "workspace:*"
+	},
+	"exports": {
+		"./*": {
+			"import": "./src/*.ts",
+			"types": "./src/*.ts"
+		}
+	}
+}

@@ -1,12 +1,12 @@
-import "server-only";
-
-import { createContextFn, createLogger, trpc } from "@stairway/api/utils";
-import { TRPCError } from "@trpc/server";
-import type { GameIdInput } from "./inputs.ts";
-import { createGameInputSchema, gameIdInputSchema, makeGuessInputSchema } from "./inputs.ts";
-import { createGame, getGameData, makeGuess } from "./service.ts";
+import type { Auth } from "@stairway/types/auth";
+import { createLogger } from "@stairway/utils";
+import { initTRPC, TRPCError } from "@trpc/server";
+import type { GameIdInput } from "./inputs";
+import { createGameInputSchema, gameIdInputSchema, makeGuessInputSchema } from "./inputs";
+import { createGame, getGameData, makeGuess } from "./service";
 
 const logger = createLogger( "WordleRouter" );
+const trpc = initTRPC.context<Auth.Context>().create();
 
 const middleware = ( requireInProgress?: boolean ) => trpc.middleware( async opts => {
 	const { gameId } = await opts.getRawInput() as GameIdInput;
@@ -31,7 +31,7 @@ const middleware = ( requireInProgress?: boolean ) => trpc.middleware( async opt
 	return opts.next( { ctx: { authInfo, game } } );
 } );
 
-const router = trpc.router( {
+export const router = trpc.router( {
 	createGame: trpc.procedure.input( createGameInputSchema )
 		.mutation( ( { input, ctx } ) => createGame( input, ctx ) ),
 
@@ -40,6 +40,3 @@ const router = trpc.router( {
 
 	getGame: trpc.procedure.input( gameIdInputSchema ).use( middleware() ).query( ( { ctx: { game } } ) => game )
 } );
-
-const createCaller = trpc.createCallerFactory( router );
-export const caller = createCaller( createContextFn );

@@ -1,10 +1,10 @@
-import type { Player } from "@stairway/api/literature";
-import { cn } from "@stairway/components/base";
-import { DisplayPlayer } from "@stairway/components/main";
+import { cn } from "@base/components";
+import { DisplayPlayer } from "@main/components";
+import type { Literature } from "@stairway/types/literature";
 import type { Dispatch, SetStateAction } from "react";
 
 export type SelectPlayerProps = {
-	options: Player[];
+	options: Literature.Player[];
 	player?: string;
 	setPlayer: Dispatch<SetStateAction<string | undefined>>;
 }

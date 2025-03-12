@@ -1,0 +1,20 @@
+{
+	"name": "@stairway/backend",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "bun run --watch src/main.ts",
+		"start": "bun run src/main.ts"
+	},
+	"dependencies": {
+		"@auth/api": "workspace:*",
+		"@callbreak/api": "workspace:*",
+		"@literature/api": "workspace:*",
+		"@wordle/api": "workspace:*",
+		"@stairway/types": "workspace:*",
+		"@stairway/utils": "workspace:*",
+		"@trpc/server": "11.0.0-rc.818",
+		"crossws": "0.3.4",
+		"h3": "1.15.1"
+	}
+}

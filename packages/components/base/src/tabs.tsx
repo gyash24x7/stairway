@@ -1,13 +1,10 @@
-"use client";
-
 import { Content, List, Root, Trigger } from "@radix-ui/react-tabs";
-import { type ComponentPropsWithoutRef, type ElementRef, forwardRef } from "react";
-import { cn } from "./cn.ts";
-
+import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from "react";
+import { cn } from "./cn";
 
 const Tabs = Root;
 
-const TabsList = forwardRef<ElementRef<typeof List>, ComponentPropsWithoutRef<typeof List>>(
+const TabsList = forwardRef<ComponentRef<typeof List>, ComponentPropsWithoutRef<typeof List>>(
 	( { className, ...props }, ref ) => (
 		<List
 			ref={ ref }
@@ -20,9 +17,7 @@ const TabsList = forwardRef<ElementRef<typeof List>, ComponentPropsWithoutRef<ty
 	)
 );
 
-TabsList.displayName = List.displayName;
-
-const TabsTrigger = forwardRef<ElementRef<typeof Trigger>, ComponentPropsWithoutRef<typeof Trigger>>(
+const TabsTrigger = forwardRef<ComponentRef<typeof Trigger>, ComponentPropsWithoutRef<typeof Trigger>>(
 	( { className, ...props }, ref ) => (
 		<Trigger
 			ref={ ref }
@@ -41,7 +36,7 @@ const TabsTrigger = forwardRef<ElementRef<typeof Trigger>, ComponentPropsWithout
 
 TabsTrigger.displayName = Trigger.displayName;
 
-const TabsContent = forwardRef<ElementRef<typeof Content>, ComponentPropsWithoutRef<typeof Content>>(
+const TabsContent = forwardRef<ComponentRef<typeof Content>, ComponentPropsWithoutRef<typeof Content>>(
 	( { className, ...props }, ref ) => (
 		<Content
 			ref={ ref }
@@ -54,7 +49,5 @@ const TabsContent = forwardRef<ElementRef<typeof Content>, ComponentPropsWithout
 		/>
 	)
 );
-
-TabsContent.displayName = Content.displayName;
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };

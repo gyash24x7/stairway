@@ -1,5 +1,4 @@
-import { Button, cn, fjalla } from "@stairway/components/base";
-import Link from "next/link";
+import { Button, cn } from "@base/components";
 
 export type ApplicationCardProps = {
 	name: string;
@@ -21,14 +20,14 @@ export const ApplicationCard = ( props: ApplicationCardProps ) => (
 		/>
 		<div className={ "bg-primary px-6 py-3 mt-6" }>
 			<p className={ "font-semibold text-sm relative z-10 text-primary-foreground" }>GAMES</p>
-			<h1 className={ `font-bold text-5xl relative z-10 ${ fjalla.className } text-primary-foreground` }>
+			<h1 className={ `font-bold text-5xl relative z-10 text-primary-foreground` }>
 				{ props.name.toUpperCase() }
 			</h1>
 		</div>
 		<div className={ "flex justify-end z-10 p-6" }>
-			<Link href={ props.path }>
+			<a href={ props.path }>
 				<Button>PLAY</Button>
-			</Link>
+			</a>
 		</div>
 	</div>
 );

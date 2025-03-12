@@ -1,14 +1,6 @@
-import { observer } from "@legendapp/state/react";
-import { cn } from "@stairway/components/base";
-import {
-	useCompletedWords,
-	useGameGuesses,
-	useGameWords,
-	useGuessBlockMap,
-	useIsValidGuessLength,
-	useIsValidWord
-} from "@stairway/stores/wordle";
-import type { LetterState } from "@stairway/words";
+import { cn } from "@base/components";
+import { useCurrentGuess, useGame, useIsValidGuessLength, useIsValidWord } from "@wordle/store";
+import { getGuessBlocks, type LetterState } from "@stairway/words";
 
 function getBlockColor( state: LetterState ) {
 	switch ( state ) {
@@ -23,21 +15,21 @@ function getBlockColor( state: LetterState ) {
 	}
 }
 
-export const GuessBlocks = observer( () => {
-	const words = useGameWords();
+export function GuessBlocks() {
+	const game = useGame();
 	const isValidWord = useIsValidWord();
-	const guessBlockMap = useGuessBlockMap();
-	const completedWords = useCompletedWords();
+	const currentGuess = useCurrentGuess();
 	const isValidGuessLength = useIsValidGuessLength();
-	const guesses = useGameGuesses();
+
+	const guessBlockMap = getGuessBlocks( game, currentGuess.join( "" ) );
 
 	const isInvalidGuess = ( word: string, i: number ) => (
-		isValidGuessLength && !isValidWord && i === guesses.length && !completedWords.includes( word )
+		isValidGuessLength && !isValidWord && i === game.guesses.length && !game.completedWords.includes( word )
 	);
 
 	return (
 		<div className={ "grid grid-cols-2 lg:grid-cols-4 gap-5 mb-48" }>
-			{ words.map( word => (
+			{ game.words.map( word => (
 				<div className="grid gap-1" role="grid" key={ word }>
 					{ guessBlockMap[ word ].map( ( guessBlock, i ) => (
 						<div className={ "grid grid-cols-5 gap-1" } key={ i }>
@@ -62,15 +54,15 @@ export const GuessBlocks = observer( () => {
 			) ) }
 		</div>
 	);
-} );
+}
 
-export const GuessDiagramBlocks = observer( () => {
-	const guessBlockMap = useGuessBlockMap();
-	const words = useGameWords();
+export function GuessDiagramBlocks() {
+	const game = useGame();
+	const guessBlockMap = getGuessBlocks( game, "" );
 
 	return (
 		<div className={ "grid grid-cols-2 lg:grid-cols-4 gap-5 mb-48" }>
-			{ words.map( word => (
+			{ game.words.map( word => (
 				<div className="grid gap-1 text-center" role="grid" key={ word }>
 					{ guessBlockMap[ word ].map( ( guessBlock, i ) => (
 						<div className={ "grid grid-cols-5 gap-1" } key={ i }>
@@ -91,4 +83,4 @@ export const GuessDiagramBlocks = observer( () => {
 			) ) }
 		</div>
 	);
-} );
+}

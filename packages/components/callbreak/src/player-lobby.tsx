@@ -1,5 +1,5 @@
-import { DisplayPlayer, type DisplayPlayerProps } from "@stairway/components/main";
-import { useCurrentDeal, usePlayerList } from "@stairway/stores/callbreak";
+import { DisplayPlayer, type DisplayPlayerProps } from "@main/components";
+import { useCurrentDeal, usePlayerList } from "@callbreak/store";
 
 export type PlayerLobbyProps = Omit<DisplayPlayerProps, "player" | "cardCount" | "declaration"> & {
 	playerIds?: string[];

@@ -1,0 +1,10 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"noUncheckedIndexedAccess": false,
+		"exactOptionalPropertyTypes": false
+	},
+	"exclude": [ "node_modules", "tmp" ]
+}

@@ -1,11 +1,11 @@
-import type { Player } from "@stairway/api/literature";
-import { cn } from "@stairway/components/base";
-import { DisplayPlayer, type DisplayPlayerProps } from "@stairway/components/main";
-import { useCardCounts, usePlayerCount, usePlayers } from "@stairway/stores/literature";
+import { cn } from "@base/components";
+import { DisplayPlayer, type DisplayPlayerProps } from "@main/components";
+import { useCardCounts, usePlayerCount, usePlayers } from "@literature/store";
+import type { Literature } from "@stairway/types/literature";
 
 export type PlayerLobbyProps = Omit<DisplayPlayerProps, "player" | "cardCount"> & { playerIds?: string[]; }
 
-const sortByTeam = ( a: Player, b: Player ) => a.teamId?.localeCompare( b?.teamId ?? "" ) ?? 0;
+const sortByTeam = ( a: Literature.Player, b: Literature.Player ) => a.teamId?.localeCompare( b?.teamId ?? "" ) ?? 0;
 
 export function PlayerLobby( props: PlayerLobbyProps ) {
 	const players = usePlayers();

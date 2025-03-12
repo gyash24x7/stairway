@@ -1,13 +1,15 @@
-import { createLogger, prisma, type UserAuthInfo } from "@stairway/api/utils";
 import { getBestCardPlayed, getCardFromId, getPlayableCards, isCardInHand } from "@stairway/cards";
+import { prisma } from "@stairway/prisma";
+import type { Auth } from "@stairway/types/auth";
+import type { Callbreak } from "@stairway/types/callbreak";
+import { createLogger } from "@stairway/utils";
 import { TRPCError } from "@trpc/server";
 import { format } from "node:util";
-import type { DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "./inputs.ts";
-import type { Game, PlayerData } from "./types.ts";
+import type { DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "./inputs";
 
 const logger = createLogger( "CallbreakValidators" );
 
-export async function validateJoinGame( input: JoinGameInput, { id }: UserAuthInfo ) {
+export async function validateJoinGame( input: JoinGameInput, { id }: Auth.Info ) {
 	logger.debug( ">> validateJoinGame()" );
 
 	const game = await prisma.callbreak.game.findUnique( {
@@ -34,7 +36,7 @@ export async function validateJoinGame( input: JoinGameInput, { id }: UserAuthIn
 	return { alreadyJoined: false, game };
 }
 
-export async function validateAddBots( game: Game, players: PlayerData ) {
+export async function validateAddBots( game: Callbreak.Game, players: Callbreak.PlayerData ) {
 	logger.debug( ">> validateAddBots()" );
 
 	const botCount = 4 - Object.keys( players ).length;
@@ -48,7 +50,11 @@ export async function validateAddBots( game: Game, players: PlayerData ) {
 	return botCount;
 }
 
-export async function validateDealWinDeclaration( input: DeclareDealWinsInput, game: Game, playerId: string ) {
+export async function validateDealWinDeclaration(
+	input: DeclareDealWinsInput,
+	game: Callbreak.Game,
+	playerId: string
+) {
 	logger.debug( ">> validateDealWinDeclaration()" );
 
 	const deal = await prisma.callbreak.deal.findUnique( {
@@ -70,7 +76,7 @@ export async function validateDealWinDeclaration( input: DeclareDealWinsInput, g
 	return deal;
 }
 
-export async function validatePlayCard( input: PlayCardInput, game: Game, playerId: string ) {
+export async function validatePlayCard( input: PlayCardInput, game: Callbreak.Game, playerId: string ) {
 	logger.debug( ">> validatePlayCard()" );
 
 	const playedCard = getCardFromId( input.cardId );
