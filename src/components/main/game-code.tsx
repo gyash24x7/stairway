@@ -1,7 +1,7 @@
 import { Button } from "@/components/base/button";
 import { cn } from "@/utils/cn";
 import { fjalla } from "@/utils/fonts";
-import { CopyIcon } from "@radix-ui/react-icons";
+import { CopyIcon } from "lucide-react";
 import { useCopyToClipboard } from "usehooks-ts";
 
 export function GameCode( { code }: { code: string } ) {

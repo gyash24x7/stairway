@@ -6,8 +6,8 @@ import { getAvailableLetters } from "@/libs/words/utils";
 import { makeGuess } from "@/server/wordle/functions";
 import { backspaceCurrentGuess, resetCurrentGuess, store, updateCurrentGuess, updateGameData } from "@/stores/wordle";
 import { cn } from "@/utils/cn";
-import { EnterIcon, ResetIcon } from "@radix-ui/react-icons";
 import { useStore } from "@tanstack/react-store";
+import { DeleteIcon, LogOutIcon } from "lucide-react";
 import { useTransition } from "react";
 
 const LINES = [
@@ -40,7 +40,7 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 				) }
 				disabled={ !isValidWord || isPending }
 			>
-				{ isPending ? <Spinner/> : <EnterIcon className={ "w-6 h-6" }/> }
+				{ isPending ? <Spinner/> : <LogOutIcon className={ "w-6 h-6" }/> }
 			</button>
 		);
 	}
@@ -54,7 +54,7 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 				) }
 				onClick={ () => backspaceCurrentGuess() }
 			>
-				<ResetIcon className={ "w-6 h-6" }/>
+				<DeleteIcon className={ "w-6 h-6" }/>
 			</button>
 		);
 	}

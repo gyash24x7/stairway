@@ -1,6 +1,6 @@
 import { cn } from "@/utils/cn";
 import { Close, Content, Description, Overlay, Portal, Root, Title, Trigger } from "@radix-ui/react-dialog";
-import { Cross2Icon } from "@radix-ui/react-icons";
+import { CrossIcon } from "lucide-react";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef, type HTMLAttributes } from "react";
 
 export const Dialog = Root;
@@ -51,7 +51,7 @@ export const DialogContent = forwardRef<ComponentRef<typeof Content>, ComponentP
 						"disabled:pointer-events-none data-[state=open]:bg-white data-[state=open]:text-white"
 					) }
 				>
-					<Cross2Icon className="h-4 w-4"/>
+					<CrossIcon className="h-4 w-4"/>
 					<span className="sr-only">Close</span>
 				</Close>
 			</Content>

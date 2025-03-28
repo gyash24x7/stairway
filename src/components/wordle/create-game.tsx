@@ -12,7 +12,7 @@ import {
 import { Separator } from "@/components/base/separator";
 import { Spinner } from "@/components/base/spinner";
 import { createGame } from "@/server/wordle/functions";
-import { MinusIcon, PlusIcon } from "@radix-ui/react-icons";
+import { MinusIcon, PlusIcon } from "lucide-react";
 import { redirect } from "next/navigation";
 import { useState, useTransition } from "react";
 
