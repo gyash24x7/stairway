@@ -1,4 +1,4 @@
-import { subscribeToGameEvents } from "@/server/utils/events";
+import { connectRedis, subscribeToGameEvents } from "@/server/utils/events";
 import { createLogger } from "@/server/utils/logger";
 import next from "next";
 import { createServer } from "node:http";
@@ -14,6 +14,8 @@ const handler = app.getRequestHandler();
 
 app.prepare().then( async () => {
 	const httpServer = createServer( handler );
+
+	await connectRedis();
 
 	const io = new Server( httpServer );
 
