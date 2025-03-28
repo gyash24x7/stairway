@@ -16,7 +16,7 @@ export function LoginButton() {
 	};
 
 	return (
-		<Button className={ "flex gap-2 items-center" } onClick={ handleLogin } disabled={ isPending }>
+		<Button className={ "flex gap-2 items-center" } onClick={ handleLogin } disabled={ isPending } size={ "sm" }>
 			{ isPending ? <Spinner/> : (
 				<Fragment>
 					<Fragment>LOGIN</Fragment>

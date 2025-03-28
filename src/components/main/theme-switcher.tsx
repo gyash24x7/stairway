@@ -25,7 +25,7 @@ export function ThemeSwitcher() {
 
 	return (
 		<Select onValueChange={ ( value ) => setTheme( value as keyof typeof colors ) } value={ theme }>
-			<SelectTrigger className={ "w-[150px]" }>
+			<SelectTrigger className={ "w-[150px] h-8" }>
 				<SelectValue placeholder={ "Select Theme" }/>
 			</SelectTrigger>
 			<SelectContent>

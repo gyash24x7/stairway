@@ -188,10 +188,10 @@ export async function joinGame( input: JoinGameInput, { authInfo }: Auth.Context
 			data: { status: "PLAYERS_READY" }
 		} );
 
-		publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "PLAYERS_READY" );
+		await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "PLAYERS_READY" );
 	}
 
-	publishLiteratureEvent( game.id, LiteratureEvent.PLAYER_JOINED, newPlayer );
+	await publishLiteratureEvent( game.id, LiteratureEvent.PLAYER_JOINED, newPlayer );
 
 	logger.debug( "<< joinGame()" );
 	return game;
@@ -209,7 +209,7 @@ export async function addBots( { game, players }: Literature.Context ) {
 		const bot = await prisma.literature.player.create( { data: { name, avatar, gameId: game.id, isBot: true } } );
 
 		botData[ bot.id ] = bot;
-		publishLiteratureEvent( game.id, LiteratureEvent.PLAYER_JOINED, bot );
+		await publishLiteratureEvent( game.id, LiteratureEvent.PLAYER_JOINED, bot );
 	}
 
 	await prisma.literature.game.update( {
@@ -217,7 +217,7 @@ export async function addBots( { game, players }: Literature.Context ) {
 		data: { status: "PLAYERS_READY" }
 	} );
 
-	publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "PLAYERS_READY" );
+	await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "PLAYERS_READY" );
 
 	logger.debug( "<< addBots()" );
 	return botData;
@@ -245,8 +245,8 @@ export async function createTeams( input: CreateTeamsInput, { game, players }: L
 		data: { status: "TEAMS_CREATED" }
 	} );
 
-	publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "TEAMS_CREATED" );
-	publishLiteratureEvent( game.id, LiteratureEvent.TEAMS_CREATED, teamData );
+	await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "TEAMS_CREATED" );
+	await publishLiteratureEvent( game.id, LiteratureEvent.TEAMS_CREATED, teamData );
 
 	logger.debug( "<< createTeams()" );
 	return teamData;
@@ -294,14 +294,15 @@ export async function startGame( { game, players }: Literature.Context ) {
 	await prisma.literature.cardMapping.createMany( { data: cardMappings } );
 	await prisma.literature.cardLocation.createMany( { data: cardLocations } );
 
-	publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
+	await publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
 	logger.debug( "Published CardCountUpdatedEvent!" );
 
-	playerIds.forEach( ( playerId, index ) => {
-		publishLiteratureEvent( game.id, LiteratureEvent.CARDS_DEALT, hands[ index ], playerId );
-	} );
-
-	publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "IN_PROGRESS" );
+	let i = 0;
+	for ( const playerId of playerIds ) {
+		await publishLiteratureEvent( game.id, LiteratureEvent.CARDS_DEALT, hands[ i++ ], playerId );
+	}
+	
+	await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "IN_PROGRESS" );
 	logger.debug( "Published StatusUpdatedEvent!" );
 
 	logger.debug( "<< startGame()" );
@@ -337,7 +338,7 @@ export async function askCard( input: AskCardInput, { game, players, cardCounts 
 			data: { currentTurn: nextTurn }
 		} );
 
-		publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, nextTurn );
+		await publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, nextTurn );
 		logger.debug( "Published TurnUpdatedEvent!" );
 	}
 
@@ -350,7 +351,7 @@ export async function askCard( input: AskCardInput, { game, players, cardCounts 
 		cardCounts[ ask.playerId ]++;
 		cardCounts[ ask.askedFrom ]--;
 
-		publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
+		await publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
 		logger.debug( "Published CardCountUpdatedEvent!" );
 	}
 
@@ -381,7 +382,7 @@ export async function askCard( input: AskCardInput, { game, players, cardCounts 
 		data: { lastMoveId: ask.id }
 	} );
 
-	publishLiteratureEvent( game.id, LiteratureEvent.CARD_ASKED, ask );
+	await publishLiteratureEvent( game.id, LiteratureEvent.CARD_ASKED, ask );
 
 	logger.debug( "<< askCard()" );
 }
@@ -451,7 +452,7 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 		isLastSet: setsCompleted.length === 8
 	};
 
-	publishLiteratureEvent( game.id, LiteratureEvent.SCORE_UPDATED, scoreUpdate );
+	await publishLiteratureEvent( game.id, LiteratureEvent.SCORE_UPDATED, scoreUpdate );
 	logger.debug( "SetsCompleted: %o", setsCompleted );
 
 	if ( scoreUpdate.isLastSet ) {
@@ -461,7 +462,7 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 		} );
 
 		const metrics = await getMetrics( game, players, teams );
-		publishLiteratureEvent( game.id, LiteratureEvent.GAME_COMPLETED, metrics );
+		await publishLiteratureEvent( game.id, LiteratureEvent.GAME_COMPLETED, metrics );
 
 	} else {
 
@@ -496,7 +497,7 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 				data: { currentTurn: nextTurn }
 			} );
 
-			publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, nextTurn );
+			await publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, nextTurn );
 			logger.debug( "Published TurnUpdatedEvent!" );
 		}
 	}
@@ -506,8 +507,8 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 		data: { lastMoveId: call.id }
 	} );
 
-	publishLiteratureEvent( game.id, LiteratureEvent.SET_CALLED, call );
-	publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
+	await publishLiteratureEvent( game.id, LiteratureEvent.SET_CALLED, call );
+	await publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
 
 	logger.debug( "<< callSet()" );
 }
@@ -534,10 +535,10 @@ export async function transferTurn( input: TransferTurnInput, { game, players, c
 		data: { currentTurn: input.transferTo, lastMoveId: transfer.id }
 	} );
 
-	publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, input.transferTo );
+	await publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, input.transferTo );
 	logger.debug( "Published TurnUpdatedEvent!" );
 
-	publishLiteratureEvent( game.id, LiteratureEvent.TURN_TRANSFERRED, transfer );
+	await publishLiteratureEvent( game.id, LiteratureEvent.TURN_TRANSFERRED, transfer );
 
 	logger.debug( "<< transferTurn()" );
 }
@@ -589,11 +590,11 @@ export async function executeBotMove( context: Literature.Context ) {
 	logger.debug( "<< executeBotMove()" );
 }
 
-function publishLiteratureEvent<E extends Literature.Event>(
+async function publishLiteratureEvent<E extends Literature.Event>(
 	gameId: string,
 	event: E,
 	data: Literature.EventPayloads[E],
 	playerId?: string
 ) {
-	emitGameEvent( "literature", { gameId, event, data, playerId } );
+	await emitGameEvent( "literature", { gameId, event, data, playerId } );
 }
