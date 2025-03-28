@@ -1,0 +1,148 @@
+model LiteraturePlayer {
+	id     String  @default(ulid())
+	name   String
+	avatar String
+	gameId String
+	teamId String?
+	isBot  Boolean @default(false)
+
+	game          LiteratureGame           @relation(fields: [gameId], references: [id])
+	team          LiteratureTeam?          @relation(fields: [teamId], references: [id])
+	cardMappings  LiteratureCardMapping[]
+	cardLocations LiteratureCardLocation[]
+	asks          LiteratureAsk[]
+	calls         LiteratureCall[]
+	transfers     LiteratureTransfer[]
+
+	@@id([id, gameId])
+	@@map("lit_players")
+	@@schema("literature")
+}
+
+model LiteratureTeam {
+	id        String   @id @default(ulid())
+	name      String
+	score     Int      @default(0)
+	setsWon   String[] @default([])
+	memberIds String[]
+	gameId    String
+
+	members LiteraturePlayer[]
+	game    LiteratureGame     @relation(fields: [gameId], references: [id])
+
+	@@map("lit_teams")
+	@@schema("literature")
+}
+
+model LiteratureCardMapping {
+	cardId   String
+	gameId   String
+	playerId String
+
+	game   LiteratureGame   @relation(fields: [gameId], references: [id])
+	player LiteraturePlayer @relation(fields: [playerId, gameId], references: [id, gameId])
+
+	@@id([gameId, cardId])
+	@@map("lit_card_mappings")
+	@@schema("literature")
+}
+
+model LiteratureCardLocation {
+	cardId    String
+	gameId    String
+	playerId  String
+	playerIds String[]
+	weight    Int
+
+	game   LiteratureGame   @relation(fields: [gameId], references: [id])
+	player LiteraturePlayer @relation(fields: [playerId, gameId], references: [id, gameId])
+
+	@@id([gameId, playerId, cardId])
+	@@map("lit_card_locations")
+	@@schema("literature")
+}
+
+model LiteratureAsk {
+	id          String   @id @default(ulid())
+	gameId      String
+	playerId    String
+	timestamp   DateTime @default(now())
+	description String
+	success     Boolean
+	cardId      String
+	askedFrom   String
+
+	game   LiteratureGame   @relation(fields: [gameId], references: [id])
+	player LiteraturePlayer @relation(fields: [playerId, gameId], references: [id, gameId])
+
+	@@map("lit_asks")
+	@@schema("literature")
+}
+
+model LiteratureCall {
+	id          String   @id @default(ulid())
+	gameId      String
+	playerId    String
+	timestamp   DateTime @default(now())
+	description String
+	success     Boolean
+	cardSet     String
+
+	/// ![Record<string, string>]
+	actualCall Json
+
+	/// ![Record<string, string>]
+	correctCall Json
+
+	game   LiteratureGame   @relation(fields: [gameId], references: [id])
+	player LiteraturePlayer @relation(fields: [playerId, gameId], references: [id, gameId])
+
+	@@map("lit_calls")
+	@@schema("literature")
+}
+
+model LiteratureTransfer {
+	id          String   @id @default(ulid())
+	gameId      String
+	playerId    String
+	timestamp   DateTime @default(now())
+	description String
+	success     Boolean  @default(true)
+	transferTo  String
+
+	game   LiteratureGame   @relation(fields: [gameId], references: [id])
+	player LiteraturePlayer @relation(fields: [playerId, gameId], references: [id, gameId])
+
+	@@map("lit_transfers")
+	@@schema("literature")
+}
+
+enum LiteratureGameStatus {
+	CREATED
+	PLAYERS_READY
+	TEAMS_CREATED
+	IN_PROGRESS
+	COMPLETED
+
+	@@schema("literature")
+}
+
+model LiteratureGame {
+	id          String               @id @default(ulid())
+	code        String               @unique
+	status      LiteratureGameStatus @default(CREATED)
+	playerCount Int                  @default(6)
+	currentTurn String
+	lastMoveId  String               @default("")
+
+	players       LiteraturePlayer[]
+	teams         LiteratureTeam[]
+	cardMappings  LiteratureCardMapping[]
+	cardLocations LiteratureCardLocation[]
+	asks          LiteratureAsk[]
+	calls         LiteratureCall[]
+	transfers     LiteratureTransfer[]
+
+	@@map("lit_games")
+	@@schema("literature")
+}
