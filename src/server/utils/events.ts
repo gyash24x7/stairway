@@ -14,7 +14,9 @@ const redisClient = createClient( {
 	url: process.env.REDIS_URL
 } );
 
-await redisClient.connect();
+export async function connectRedis() {
+	await redisClient.connect();
+}
 
 export function emitGameEvent( game: "literature" | "callbreak", event: GenericEvent ) {
 	redisClient.publish( game, JSON.stringify( event ) ).then( () => {
