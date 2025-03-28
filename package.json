@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "bun run src/main.ts",
-		"db:push": "prisma db push",
+		"db:push": "prisma db push --accept-data-loss",
 		"generate": "prisma generate",
 		"build": "bun run generate && next build",
 		"start": "bun run db:push && NODE_ENV=production bun run src/main.ts"
