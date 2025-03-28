@@ -1,7 +1,0 @@
-{
-	"name": "@stairway/cards",
-	"main": "src/index.ts",
-	"module": "src/index.ts",
-	"types": "src/index.ts",
-	"type": "module"
-}
