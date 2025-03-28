@@ -5,8 +5,9 @@
 	"scripts": {
 		"dev": "bun run src/main.ts",
 		"db:push": "prisma db push",
-		"build": "bun run db:push && next build",
-		"start": "NODE_ENV=production bun run src/main.ts"
+		"generate": "prisma generate",
+		"build": "bun run generate && next build",
+		"start": "bun run db:push && NODE_ENV=production bun run src/main.ts"
 	},
 	"dependencies": {
 		"@orpc/server": "0.49.0",
