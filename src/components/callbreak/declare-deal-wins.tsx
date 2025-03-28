@@ -12,8 +12,8 @@ import {
 import { Spinner } from "@/components/base/spinner";
 import { declareDealWins } from "@/server/callbreak/functions";
 import { store } from "@/stores/callbreak";
-import { MinusIcon, PlusIcon } from "@radix-ui/react-icons";
 import { useStore } from "@tanstack/react-store";
+import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useCounter } from "usehooks-ts";
 

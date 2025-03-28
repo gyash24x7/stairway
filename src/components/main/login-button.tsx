@@ -3,7 +3,7 @@
 import { Button } from "@/components/base/button";
 import { Spinner } from "@/components/base/spinner";
 import { authClient } from "@/utils/auth";
-import { EnterIcon } from "@radix-ui/react-icons";
+import { LogInIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";
 
 export function LoginButton() {
@@ -20,7 +20,7 @@ export function LoginButton() {
 			{ isPending ? <Spinner/> : (
 				<Fragment>
 					<Fragment>LOGIN</Fragment>
-					<EnterIcon fontWeight={ "bold" } className={ "w-4 h-4" }/>
+					<LogInIcon fontWeight={ "bold" } className={ "w-4 h-4" }/>
 				</Fragment>
 			) }
 		</Button>
