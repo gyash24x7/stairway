@@ -11,7 +11,7 @@ export type GenericEvent = {
 const logger = createLogger( "Events" );
 
 const redisClient = createClient( {
-	url: "redis://localhost:6379"
+	url: process.env.REDIS_URL
 } );
 
 await redisClient.connect();
