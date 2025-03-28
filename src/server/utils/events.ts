@@ -15,10 +15,18 @@ const redisClient = createClient( {
 } );
 
 export async function connectRedis() {
+	logger.info( "Connecting to redis..." );
 	await redisClient.connect();
+	redisClient.on( "error", ( e ) => {
+		logger.error( "Error in redis: %s", e );
+	} );
 }
 
-export function emitGameEvent( game: "literature" | "callbreak", event: GenericEvent ) {
+export async function emitGameEvent( game: "literature" | "callbreak", event: GenericEvent ) {
+	if ( !redisClient.isOpen ) {
+		await connectRedis();
+	}
+	
 	redisClient.publish( game, JSON.stringify( event ) ).then( () => {
 		logger.info( "Published %s Game Event %s", game, event );
 	} );

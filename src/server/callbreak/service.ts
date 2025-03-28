@@ -96,7 +96,7 @@ export async function joinGame( input: JoinGameInput, { authInfo }: Auth.Context
 		data: { gameId: game.id, id: authInfo.id, name: authInfo.name, avatar: authInfo.avatar }
 	} );
 
-	publishCallbreakEvent( game.id, CallbreakEvent.PLAYER_JOINED, player );
+	await publishCallbreakEvent( game.id, CallbreakEvent.PLAYER_JOINED, player );
 
 	game.players.push( player );
 
@@ -108,7 +108,7 @@ export async function joinGame( input: JoinGameInput, { authInfo }: Auth.Context
 			data: { status: CallBreakStatus.IN_PROGRESS }
 		} );
 
-		publishCallbreakEvent( game.id, CallbreakEvent.ALL_PLAYERS_JOINED, updatedGame );
+		await publishCallbreakEvent( game.id, CallbreakEvent.ALL_PLAYERS_JOINED, updatedGame );
 	}
 
 	logger.debug( "<< joinGame()" );
@@ -124,7 +124,7 @@ export async function addBots( { game, players }: Callbreak.Context ) {
 		const avatar = generateAvatar();
 		const bot = await prisma.callbreak.player.create( { data: { name, avatar, gameId: game.id, isBot: true } } );
 
-		publishCallbreakEvent( game.id, CallbreakEvent.PLAYER_JOINED, bot );
+		await publishCallbreakEvent( game.id, CallbreakEvent.PLAYER_JOINED, bot );
 		players[ bot.id ] = bot;
 	}
 
@@ -133,7 +133,7 @@ export async function addBots( { game, players }: Callbreak.Context ) {
 		data: { status: CallBreakStatus.IN_PROGRESS }
 	} );
 
-	publishCallbreakEvent( game.id, CallbreakEvent.ALL_PLAYERS_JOINED, updatedGame );
+	await publishCallbreakEvent( game.id, CallbreakEvent.ALL_PLAYERS_JOINED, updatedGame );
 
 	setTimeout( async () => {
 		logger.debug( "Creating new deal..." );
@@ -170,10 +170,10 @@ export async function createDeal( { game, players }: Callbreak.Context, lastDeal
 			} ) )
 		} );
 
-		publishCallbreakEvent( game.id, CallbreakEvent.CARDS_DEALT, hand, playerId );
+		await publishCallbreakEvent( game.id, CallbreakEvent.CARDS_DEALT, hand, playerId );
 	}
 
-	publishCallbreakEvent( game.id, CallbreakEvent.DEAL_CREATED, deal );
+	await publishCallbreakEvent( game.id, CallbreakEvent.DEAL_CREATED, deal );
 
 	const startingPlayer = players[ playerOrder[ 0 ] ];
 	if ( startingPlayer.isBot ) {
@@ -204,7 +204,7 @@ export async function declareDealWins( input: DeclareDealWinsInput, { game, play
 		include: { rounds: true }
 	} );
 
-	publishCallbreakEvent(
+	await publishCallbreakEvent(
 		game.id,
 		CallbreakEvent.DEAL_WIN_DECLARED,
 		{ deal, by: players[ input.playerId ], wins: input.wins }
@@ -236,7 +236,7 @@ export async function declareDealWins( input: DeclareDealWinsInput, { game, play
 			include: { rounds: true }
 		} );
 
-		publishCallbreakEvent( game.id, CallbreakEvent.ALL_DEAL_WINS_DECLARED, deal );
+		await publishCallbreakEvent( game.id, CallbreakEvent.ALL_DEAL_WINS_DECLARED, deal );
 
 		setTimeout( async () => {
 			await createRound( deal, { game, players } );
@@ -261,7 +261,7 @@ export async function createRound( deal: Callbreak.DealWithRounds, { game, playe
 
 	deal.rounds.unshift( round );
 
-	publishCallbreakEvent( game.id, CallbreakEvent.ROUND_CREATED, round );
+	await publishCallbreakEvent( game.id, CallbreakEvent.ROUND_CREATED, round );
 
 	const firstPlayer = players[ playerOrder[ 0 ] ];
 	if ( firstPlayer.isBot ) {
@@ -308,7 +308,11 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 		where: { cardId_dealId_gameId: { cardId: input.cardId, gameId: game.id, dealId: input.dealId } }
 	} );
 
-	publishCallbreakEvent( game.id, CallbreakEvent.CARD_PLAYED, { round, card: input.cardId, by: input.playerId } );
+	await publishCallbreakEvent(
+		game.id,
+		CallbreakEvent.CARD_PLAYED,
+		{ round, card: input.cardId, by: input.playerId }
+	);
 
 	let deal = await prisma.callbreak.deal.findUniqueOrThrow( {
 		where: { id_gameId: { id: input.dealId, gameId: game.id } },
@@ -376,7 +380,7 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 			include: { rounds: { orderBy: { createdAt: "desc" } } }
 		} );
 
-		publishCallbreakEvent(
+		await publishCallbreakEvent(
 			game.id,
 			CallbreakEvent.ROUND_COMPLETED,
 			{ round, winner: players[ winningPlayer! ], deal }
@@ -405,7 +409,7 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 				}
 			} );
 
-			publishCallbreakEvent( game.id, CallbreakEvent.DEAL_COMPLETED, { deal, score } );
+			await publishCallbreakEvent( game.id, CallbreakEvent.DEAL_COMPLETED, { deal, score } );
 
 			const completedDeals = await prisma.callbreak.deal.count( {
 				where: { gameId: game.id, status: CallBreakStatus.COMPLETED }
@@ -423,7 +427,7 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 
 			if ( completedDeals === game.dealCount ) {
 				logger.info( "All deals completed, Game Over!" );
-				publishCallbreakEvent( game.id, CallbreakEvent.GAME_COMPLETED, game );
+				await publishCallbreakEvent( game.id, CallbreakEvent.GAME_COMPLETED, game );
 			} else {
 				logger.info( "Starting the next deal..." );
 				setTimeout( async () => {
@@ -443,7 +447,7 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 	return round;
 }
 
-function publishCallbreakEvent<E extends Callbreak.Event>(
+async function publishCallbreakEvent<E extends Callbreak.Event>(
 	gameId: string,
 	event: E,
 	data: Callbreak.EventPayloads[E],

@@ -6,17 +6,18 @@ import { ThemeSwitcher } from "@/components/main/theme-switcher";
 import type { Auth } from "@/types/auth";
 import { cn } from "@/utils/cn";
 import { fjalla } from "@/utils/fonts";
+import { CogIcon, HomeIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-
-const randomBg = () => {
-	const bgs = [ "bg-main", "bg-bg" ];
-	return bgs[ Math.floor( Math.random() * 2 ) ];
-};
 
 export function Navbar( props: { authInfo?: Auth.Info | null } ) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const page = pathname.split( "/" )[ 1 ];
+
+	const randomBg = () => {
+		const bgs = [ "bg-main", "bg-bg" ];
+		return bgs[ Math.floor( Math.random() * 2 ) ];
+	};
 
 	return (
 		<div
@@ -50,19 +51,21 @@ export function Navbar( props: { authInfo?: Auth.Info | null } ) {
 					</div>
 				) ) }
 			</div>
-			<div className={ "flex bg-bg w-full px-3 md:px-5 py-5 justify-between border-b-2" }>
+			<div className={ "flex bg-bg w-full px-3 md:px-5 py-3 md:py-5 justify-between border-b-2" }>
 				<div className={ "flex gap-3" }>
 					<Button
-						className={ cn( page === "" && "bg-white" ) }
+						className={ cn( page === "" && "bg-white", "w-8 h-8" ) }
 						onClick={ () => router.push( "/" ) }
+						size={ "icon" }
 					>
-						HOME
+						<HomeIcon className={ "w-4 h-4" }/>
 					</Button>
 					<Button
-						className={ cn( page === "settings" && "bg-white" ) }
+						className={ cn( page === "settings" && "bg-white", "w-8 h-8" ) }
 						onClick={ () => router.push( "/settings" ) }
+						size={ "icon" }
 					>
-						SETTINGS
+						<CogIcon className={ "w-4 h-4" }/>
 					</Button>
 				</div>
 				<div className={ "flex gap-3" }>
