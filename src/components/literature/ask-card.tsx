@@ -3,14 +3,14 @@
 import { Button } from "@/components/base/button";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/base/drawer";
 import { Spinner } from "@/components/base/spinner";
-import { SelectCardSet } from "@/components/literature/select-card-set";
-import { SelectPlayer } from "@/components/literature/select-player";
-import { SelectCard } from "@/components/main/select-card";
-import { getCardDisplayString, getCardFromId } from "@/libs/cards/card";
+import { DisplayCard, DisplayCardSet } from "@/components/main/display-card";
+import { DisplayPlayer } from "@/components/main/display-player";
+import { getCardDisplayString, getCardFromId, getCardId } from "@/libs/cards/card";
 import { getAskableCardsOfSet, getCardsOfSet, getSetsInHand } from "@/libs/cards/hand";
 import type { CardSet } from "@/libs/cards/types";
 import { askCard } from "@/server/literature/functions";
 import { store } from "@/stores/literature";
+import { cn } from "@/utils/cn";
 import { useStore } from "@tanstack/react-store";
 import { useState, useTransition } from "react";
 import { useStep } from "usehooks-ts";
@@ -33,6 +33,7 @@ export function AskCard() {
 	const [ selectedCard, setSelectedCard ] = useState<string>();
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ open, setOpen ] = useState( false );
+	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
 
 	const openDrawer = () => setOpen( true );
 
@@ -45,9 +46,32 @@ export function AskCard() {
 		.map( memberId => players[ memberId ] )
 		.filter( member => !!cardCounts[ member.id ] ) ?? [];
 
-	const handleCardSetSelection = ( cardSet?: string ) => setSelectedCardSet( cardSet as CardSet | undefined );
+	const handleCardSetSelect = ( value?: string ) => () => {
+		if ( !value ) {
+			setSelectedCardSet( undefined );
+		} else {
+			setSelectedCardSet( value as CardSet | undefined );
+			goToNextStep();
+		}
+	};
 
-	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
+	const handleCardSelect = ( cardId?: string ) => () => {
+		if ( !cardId ) {
+			setSelectedCard( undefined );
+		} else {
+			setSelectedCard( cardId );
+			goToNextStep();
+		}
+	};
+
+	const handlePlayerSelect = ( player?: string ) => () => {
+		if ( !player ) {
+			setSelectedPlayer( undefined );
+		} else {
+			setSelectedPlayer( player );
+			goToNextStep();
+		}
+	};
 
 	const closeDrawer = () => {
 		setSelectedCardSet( undefined );
@@ -73,39 +97,63 @@ export function AskCard() {
 				<div className={ "mx-auto w-full max-w-lg" }>
 					<DrawerHeader>
 						<DrawerTitle className={ "text-center" }>
-							{ currentStep === 1 && "Select Card Set to Ask" }
-							{ currentStep === 2 && "Select Card to Ask" }
-							{ currentStep === 3 && "Select Player to Ask" }
-							{ currentStep === 4 && confirmAskDrawerTitle }
+							{ currentStep === 1 && "Select Card Set to Ask".toUpperCase() }
+							{ currentStep === 2 && "Select Card to Ask".toUpperCase() }
+							{ currentStep === 3 && "Select Player to Ask".toUpperCase() }
+							{ currentStep === 4 && confirmAskDrawerTitle.toUpperCase() }
 						</DrawerTitle>
 					</DrawerHeader>
-					<div className={ "px-4" }>
+					<div className={ "px-3 md:px-4" }>
 						{ currentStep === 1 && (
-							<SelectCardSet
-								cardSet={ selectedCardSet }
-								cardSetOptions={ askableCardSets }
-								handleSelection={ handleCardSetSelection }
-							/>
+							<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
+								{ askableCardSets.map( ( item ) => (
+									<div
+										key={ item }
+										onClick={ handleCardSetSelect( selectedCardSet === item ? undefined : item ) }
+										className={ cn(
+											selectedCardSet === item ? "bg-white" : "bg-bg",
+											"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
+											"flex justify-center"
+										) }
+									>
+										<DisplayCardSet cardSet={ item }/>
+									</div>
+								) ) }
+							</div>
 						) }
 						{ currentStep === 2 && (
-							<SelectCard
-								cards={ getAskableCardsOfSet( hand, selectedCardSet! ) }
-								selectedCards={ !selectedCard ? [] : [ selectedCard ] }
-								onSelect={ ( cardId ) => setSelectedCard( cardId ) }
-								onDeselect={ () => setSelectedCard( undefined ) }
-							/>
+							<div className={ "flex gap-3 flex-wrap justify-center" }>
+								{ getAskableCardsOfSet( hand, selectedCardSet! ).map( getCardId ).map( ( cardId ) => (
+									<div
+										key={ cardId }
+										onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
+										className={ "cursor-pointer rounded-md flex justify-center" }
+									>
+										<DisplayCard cardId={ cardId } focused={ selectedCard === cardId }/>
+									</div>
+								) ) }
+							</div>
 						) }
 						{ currentStep === 3 && (
-							<SelectPlayer
-								player={ selectedPlayer }
-								options={ oppositeTeamMembersWithCards }
-								setPlayer={ setSelectedPlayer }
-							/>
+							<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
+								{ oppositeTeamMembersWithCards.map( ( p ) => (
+									<div
+										key={ p.id }
+										onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
+										className={ cn(
+											selectedPlayer === p.id ? "bg-white" : "bg-bg",
+											"cursor-pointer border-2 rounded-md flex justify-center flex-1"
+										) }
+									>
+										<DisplayPlayer player={ p }/>
+									</div>
+								) ) }
+							</div>
 						) }
 					</div>
 					<DrawerFooter>
 						{ currentStep === 1 && (
-							<Button className={ "flex-1" } onClick={ goToNextStep } disabled={ !selectedCardSet }>
+							<Button className={ "w-full" } onClick={ goToNextStep } disabled={ !selectedCardSet }>
 								SELECT CARD SET
 							</Button>
 						) }

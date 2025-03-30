@@ -32,7 +32,7 @@ export function CreateGame() {
 			</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
-					<DialogTitle>CREATE GAME</DialogTitle>
+					<DialogTitle className={ "font-bold" }>CREATE GAME</DialogTitle>
 				</DialogHeader>
 				<div className={ "flex flex-col gap-3" }>
 					<h2>SELECT PLAYER COUNT</h2>

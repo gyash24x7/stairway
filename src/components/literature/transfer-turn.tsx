@@ -3,9 +3,10 @@
 import { Button } from "@/components/base/button";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/base/drawer";
 import { Spinner } from "@/components/base/spinner";
-import { SelectPlayer } from "@/components/literature/select-player";
+import { DisplayPlayer } from "@/components/main/display-player";
 import { transferTurn } from "@/server/literature/functions";
 import { store } from "@/stores/literature";
+import { cn } from "@/utils/cn";
 import { useStore } from "@tanstack/react-store";
 import { useState, useTransition } from "react";
 
@@ -34,6 +35,14 @@ export function TransferTurn() {
 	const openDrawer = () => setShowDrawer( true );
 	const closeDrawer = () => setShowDrawer( false );
 
+	const handlePlayerSelect = ( playerId?: string ) => () => {
+		if ( !playerId ) {
+			setSelectedPlayer( undefined );
+		} else {
+			setSelectedPlayer( playerId );
+		}
+	};
+
 	const handleClick = () => startTransition( async () => {
 		await transferTurn( { gameId, transferTo: selectedPlayer! } );
 		closeDrawer();
@@ -49,15 +58,24 @@ export function TransferTurn() {
 					<DrawerHeader>
 						<DrawerTitle className={ "text-center" }>Transfer Turn</DrawerTitle>
 					</DrawerHeader>
-					<div className={ "px-4" }>
-						<SelectPlayer
-							options={ myTeamMembersWithCards }
-							setPlayer={ setSelectedPlayer }
-							player={ selectedPlayer }
-						/>
+					<div className={ "px-3 md:px-4" }>
+						<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
+							{ myTeamMembersWithCards.map( ( p ) => (
+								<div
+									key={ p.id }
+									onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
+									className={ cn(
+										selectedPlayer === p.id ? "bg-white" : "bg-bg",
+										"cursor-pointer border-2 rounded-md flex justify-center flex-1"
+									) }
+								>
+									<DisplayPlayer player={ p }/>
+								</div>
+							) ) }
+						</div>
 					</div>
 					<DrawerFooter>
-						<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
+						<Button onClick={ handleClick } disabled={ isPending } className={ "w-full" }>
 							{ isPending ? <Spinner/> : "TRANSFER TURN" }
 						</Button>
 					</DrawerFooter>

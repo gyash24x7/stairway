@@ -1,6 +1,6 @@
 import { cn } from "@/utils/cn";
 import { Close, Content, Description, Overlay, Portal, Root, Title, Trigger } from "@radix-ui/react-dialog";
-import { CrossIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef, type HTMLAttributes } from "react";
 
 export const Dialog = Root;
@@ -51,7 +51,7 @@ export const DialogContent = forwardRef<ComponentRef<typeof Content>, ComponentP
 						"disabled:pointer-events-none data-[state=open]:bg-white data-[state=open]:text-white"
 					) }
 				>
-					<CrossIcon className="h-4 w-4"/>
+					<XIcon className="h-4 w-4"/>
 					<span className="sr-only">Close</span>
 				</Close>
 			</Content>
@@ -60,7 +60,7 @@ export const DialogContent = forwardRef<ComponentRef<typeof Content>, ComponentP
 );
 
 export const DialogHeader = ( { className, ...props }: HTMLAttributes<HTMLDivElement> ) => (
-	<div className={ cn( "flex flex-col space-y-1.5 text-center sm:text-left", className ) } { ...props }/>
+	<div className={ cn( "flex flex-col space-y-1.5 sm:text-left", className ) } { ...props }/>
 );
 
 export const DialogFooter = ( { className, ...props }: HTMLAttributes<HTMLDivElement> ) => (

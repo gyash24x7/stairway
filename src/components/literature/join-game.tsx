@@ -31,7 +31,7 @@ export function JoinGame() {
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className={ "text-xl text-center" }>Join Game</DialogTitle>
+					<DialogTitle className={ "font-bold" }>JOIN GAME</DialogTitle>
 				</DialogHeader>
 				<Input
 					name={ "code" }

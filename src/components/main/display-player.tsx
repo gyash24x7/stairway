@@ -20,11 +20,11 @@ export function DisplayPlayer( props: DisplayPlayerProps ) {
 			) }
 			key={ props.player.id }
 		>
-			<Avatar className={ "rounded-full" }>
+			<Avatar className={ "rounded-full w-8 h-8 md:w-10 md:h-10 xl:h-12 xl:w-12" }>
 				<AvatarImage src={ props.player.avatar } alt={ "" }/>
 			</Avatar>
 			<div>
-				<h2 className={ "font-semibold text-center" }>{ firstName }</h2>
+				<h2 className={ "text-center text-xs md:text-md xl:text-xl" }>{ firstName }</h2>
 				{ props.withCardCount && (
 					<p className={ "text-xs text-center" }>
 						{ props.cardCount ?? 0 }&nbsp;Cards
