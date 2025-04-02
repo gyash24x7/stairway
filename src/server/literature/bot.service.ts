@@ -111,6 +111,7 @@ export function suggestCalls(
 	hand: PlayingCard[]
 ) {
 	const weightedCalls: WeightedCall[] = [];
+	logger.info( "CardSets in Game: %o", cardSetsInGame );
 
 	for ( const cardSet of cardSetsInGame ) {
 

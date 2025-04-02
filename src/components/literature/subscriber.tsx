@@ -20,7 +20,7 @@ import { io } from "socket.io-client";
 export function Subscriber( props: { gameId: string; playerId: string; children: ReactNode } ) {
 
 	useEffect( () => {
-		const socket = io( "/_literature" );
+		const socket = io( process.env.NODE_ENV === "production" ? "/_literature" : "localhost:8000/_literature" );
 
 		socket.on( "connect", () => {
 			console.log( "Connected to Literature Server!" );

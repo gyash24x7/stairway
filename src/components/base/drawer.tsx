@@ -55,7 +55,7 @@ export const DrawerHeader = ( { className, ...props }: HTMLAttributes<HTMLDivEle
 );
 
 export const DrawerFooter = ( { className, ...props }: HTMLAttributes<HTMLDivElement> ) => (
-	<div className={ cn( "mt-auto flex flex-col gap-2 p-4 font-heading", className ) } { ...props } />
+	<div className={ cn( "mt-auto flex flex-col gap-2 py-4 px-3 md:px-4 font-heading", className ) } { ...props } />
 );
 
 export const DrawerTitle = forwardRef<ComponentRef<typeof Title>, ComponentPropsWithoutRef<typeof Title>>(

@@ -20,7 +20,7 @@ import { io } from "socket.io-client";
 export function Subscriber( props: { gameId: string; playerId: string; children: ReactNode } ) {
 
 	useEffect( () => {
-		const socket = io( "/_callbreak" );
+		const socket = io( process.env.NODE_ENV === "production" ? "/_callbreak" : "localhost:8000/_callbreak" );
 
 		socket.on( "connect", () => {
 			console.log( "Connected to Callbreak Server!" );

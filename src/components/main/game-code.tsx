@@ -16,12 +16,13 @@ export function GameCode( { code }: { code: string } ) {
 	return (
 		<div className={ "flex justify-between items-center rounded-md p-3 border-2" }>
 			<div>
-				<p className={ "text-sm" }>GAME CODE</p>
-				<h2 className={ cn( "text-5xl", fjalla.className ) }>{ code }</h2>
+				<p className={ "text-xs md:text-sm" }>GAME CODE</p>
+				<h2 className={ cn( "text-3xl md:text-5xl", fjalla.className ) }>{ code }</h2>
 			</div>
 			<div className={ "flex gap-3" }>
-				<Button variant={ "noShadow" } onClick={ handleCopy } className={ "px-2 py-4" }>
-					<CopyIcon className={ "w-6 h-6" }/>
+				<Button variant={ "noShadow" } onClick={ handleCopy } size={ "icon" }
+						className={ "w-8 h-8 md:h-10 md:w-10" }>
+					<CopyIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 				</Button>
 			</div>
 		</div>

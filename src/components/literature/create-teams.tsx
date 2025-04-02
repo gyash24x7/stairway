@@ -50,7 +50,7 @@ export function CreateTeams() {
 			</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
-					<DialogTitle>Create Teams</DialogTitle>
+					<DialogTitle>CREATE TEAMS</DialogTitle>
 				</DialogHeader>
 				<div className={ "flex flex-col gap-3" }>
 					<Input
@@ -82,7 +82,7 @@ export function CreateTeams() {
 					</div>
 				</div>
 				<DialogFooter>
-					<Button onClick={ handleCreateTeams } disabled={ isPending } className={ "flex-1" }>
+					<Button onClick={ handleCreateTeams } disabled={ isPending } className={ "w-full" }>
 						{ isPending ? <Spinner/> : "CREATE TEAMS" }
 					</Button>
 				</DialogFooter>

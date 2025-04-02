@@ -29,7 +29,7 @@ export function GuessBlocks() {
 	);
 
 	return (
-		<div className={ "flex justify-center flex-wrap gap-5 mb-48" }>
+		<div className={ "flex justify-center flex-wrap gap-3 mb-48" }>
 			{ game.words.map( word => (
 				<div className="grid gap-1" role="grid" key={ word }>
 					{ guessBlockMap[ word ].map( ( guessBlock, i ) => (

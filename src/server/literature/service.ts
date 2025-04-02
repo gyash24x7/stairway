@@ -301,7 +301,7 @@ export async function startGame( { game, players }: Literature.Context ) {
 	for ( const playerId of playerIds ) {
 		await publishLiteratureEvent( game.id, LiteratureEvent.CARDS_DEALT, hands[ i++ ], playerId );
 	}
-	
+
 	await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "IN_PROGRESS" );
 	logger.debug( "Published StatusUpdatedEvent!" );
 
@@ -487,7 +487,11 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 			if ( oppositeTeamPlayersWithCards.length !== 0 ) {
 				nextTurn = oppositeTeamPlayersWithCards[ 0 ].id;
 			} else {
-				nextTurn = callingPlayer.id;
+				if ( teamPlayersWithCards.length > 0 ) {
+					nextTurn = teamPlayersWithCards[ 0 ].id;
+				} else {
+					nextTurn = callingPlayer.id;
+				}
 			}
 		}
 

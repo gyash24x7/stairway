@@ -13,7 +13,6 @@ import { useEffect } from "react";
 
 export function GamePage( props: { data: Literature.Store } ) {
 	const status = useStore( store, state => state.game.status );
-	const lastMove = useStore( store, state => state.lastMoveData?.move );
 	const code = useStore( store, state => state.game.code );
 	const hand = useStore( store, state => state.hand );
 
@@ -28,13 +27,8 @@ export function GamePage( props: { data: Literature.Store } ) {
 			<GameCode code={ code }/>
 			<div className={ "flex flex-col gap-3 justify-between mb-52" }>
 				{ areTeamsCreated && <DisplayTeams/> }
-				{ status === "IN_PROGRESS" && <DisplayHand hand={ hand }/> }
-				{ status === "IN_PROGRESS" && !!lastMove && (
-					<div className={ "p-3 border-2 rounded-md" }>
-						<p>{ lastMove.description }</p>
-					</div>
-				) }
 				<PlayerLobby withBg withCardCount={ status === "IN_PROGRESS" }/>
+				{ status === "IN_PROGRESS" && <DisplayHand hand={ hand }/> }
 				{ status === "COMPLETED" && <GameCompleted/> }
 			</div>
 			{ status !== "COMPLETED" && <ActionPanel/> }

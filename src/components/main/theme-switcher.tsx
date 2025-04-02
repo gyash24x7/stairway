@@ -1,6 +1,7 @@
 "use client";
 
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/base/select";
+import { cn } from "@/utils/cn";
 import { useEffect } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -25,7 +26,7 @@ export function ThemeSwitcher() {
 
 	return (
 		<Select onValueChange={ ( value ) => setTheme( value as keyof typeof colors ) } value={ theme }>
-			<SelectTrigger className={ "w-[150px] h-8" }>
+			<SelectTrigger className={ cn( "w-[150px]", "h-8 md:h-10" ) }>
 				<SelectValue placeholder={ "Select Theme" }/>
 			</SelectTrigger>
 			<SelectContent>

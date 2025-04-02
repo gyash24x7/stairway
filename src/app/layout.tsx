@@ -20,10 +20,10 @@ export default async function RootLayout( { children }: Readonly<{ children: Rea
 		<body className={ `${ geistMono.className } antialiased` }>
 		<main className="flex min-h-screen flex-col bg-bg">
 			<Navbar authInfo={ authInfo }/>
-			<div className={ "px-3 md:px-5 lg:mt-52 xl:mt-56 md:mt-48 mt-44" }>
+			<div className={ "px-3 py-3 md:px-5 md:py-5 xl:mt-52 lg:mt-[190px] md:mt-[175px] mt-[140px]" }>
 				{ children }
 			</div>
-			<Toaster expand/>
+			<Toaster expand position={ "top-center" }/>
 		</main>
 		</body>
 		</html>
