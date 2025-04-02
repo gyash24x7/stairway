@@ -62,7 +62,7 @@ export function DisplayCard( { rank, suit, cardId, focused }: DisplayCardProps )
 		<div
 			className={ cn(
 				"w-12 md:w-14 xl:w-16 p-1 md:p-1.5 xl:p-2",
-				`rounded-lg flex flex-col justify-between p-2 md:text-lg xl:text-xl border-2 bg-bg`,
+				`rounded-lg flex flex-col justify-between md:text-lg xl:text-xl border-2 bg-bg`,
 				focused && "bg-white"
 			) }
 		>

@@ -45,7 +45,7 @@ export function GamePage( props: { data: Callbreak.Store } ) {
 				{ deal?.status !== "IN_PROGRESS" && <PlayerLobby withBg/> }
 				<DisplayScore/>
 				{ status === "IN_PROGRESS" && deal?.status === "IN_PROGRESS" && !!round && (
-					<div className={ "grid gap-3 grid-cols-2 md:grid-cols-4" }>
+					<div className={ "grid gap-3 grid-cols-4" }>
 						{ playerOrder.map( ( playerId, i ) => {
 							const cardId = round.cards[ playerId ]!;
 							const card = !!cardId ? getCardFromId( cardId ) : undefined;
@@ -54,8 +54,8 @@ export function GamePage( props: { data: Callbreak.Store } ) {
 									key={ playerId }
 									className={ cn(
 										"w-full flex flex-col gap-3 p-3 rounded-md items-center",
-										"bg-gradient-to-b from-white to-main border-2",
-										round.turnIdx === i && "bg-white"
+										"border-2",
+										round.turnIdx === i && "border-main border-4"
 									) }
 								>
 									<DisplayPlayer
@@ -64,8 +64,16 @@ export function GamePage( props: { data: Callbreak.Store } ) {
 										key={ playerId }
 										declaration={ deal?.declarations[ playerId ] }
 									/>
-									{ card &&
-										<DisplayCard rank={ card.rank } suit={ card.suit } key={ cardId } focused/> }
+									{ card && <DisplayCard rank={ card.rank } suit={ card.suit } focused/> }
+									{ !card && (
+										<div
+											className={ cn(
+												"w-12 md:w-14 xl:w-16 p-1 md:p-1.5 xl:p-2 md:text-lg xl:text-xl",
+												`rounded-lg flex flex-col justify-between border-2 bg-bg border-dotted`,
+												"h-[88px] md:h-[104px] xl:h-[116px] bg-white"
+											) }
+										/>
+									) }
 								</div>
 							);
 						} ) }

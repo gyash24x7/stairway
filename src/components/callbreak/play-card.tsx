@@ -10,8 +10,8 @@ import {
 	DrawerTrigger
 } from "@/components/base/drawer";
 import { Spinner } from "@/components/base/spinner";
-import { SelectCard } from "@/components/main/select-card";
-import { getCardFromId } from "@/libs/cards/card";
+import { DisplayCard } from "@/components/main/display-card";
+import { getCardFromId, getCardId } from "@/libs/cards/card";
 import { getSortedHand } from "@/libs/cards/hand";
 import { getBestCardPlayed, getPlayableCards } from "@/libs/cards/utils";
 import { playCard } from "@/server/callbreak/functions";
@@ -45,6 +45,10 @@ export function PlayCard() {
 		setOpen( false );
 	};
 
+	const handleCardSelect = ( cardId?: string ) => () => {
+		setSelectedCard( cardId );
+	};
+
 	const handleClick = () => startTransition( async () => {
 		await playCard( { gameId, dealId, roundId, cardId: selectedCard!, playerId } );
 		closeDrawer();
@@ -53,23 +57,32 @@ export function PlayCard() {
 	return (
 		<Drawer open={ open } onOpenChange={ setOpen }>
 			<DrawerTrigger asChild>
-				<Button onClick={ openDrawer } className={ "flex-1 max-w-lg" }>PLAY CARD</Button>
+				<Button onClick={ openDrawer } className={ "w-full max-w-lg" }>PLAY CARD</Button>
 			</DrawerTrigger>
 			<DrawerContent>
 				<div className={ "mx-auto w-full max-w-lg" }>
 					<DrawerHeader>
 						<DrawerTitle className={ "text-center" }>SELECT CARD TO PLAY</DrawerTitle>
 					</DrawerHeader>
-					<div className={ "px-4" }>
-						<SelectCard
-							cards={ getSortedHand( playableCards ) }
-							selectedCards={ !selectedCard ? [] : [ selectedCard ] }
-							onSelect={ ( cardId ) => setSelectedCard( cardId ) }
-							onDeselect={ () => setSelectedCard( undefined ) }
-						/>
+					<div className={ "px-3 md:px-4" }>
+						<div className={ "flex gap-3 flex-wrap justify-center" }>
+							{ getSortedHand( playableCards ).map( getCardId ).map( ( cardId ) => (
+								<div
+									key={ cardId }
+									onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
+									className={ "cursor-pointer rounded-md flex justify-center" }
+								>
+									<DisplayCard cardId={ cardId } focused={ selectedCard === cardId }/>
+								</div>
+							) ) }
+						</div>
 					</div>
 					<DrawerFooter>
-						<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1 max-w-lg" }>
+						<Button
+							onClick={ handleClick }
+							disabled={ isPending || !selectedCard }
+							className={ "max-w-lg" }
+						>
 							{ isPending ? <Spinner/> : "PLAY CARD" }
 						</Button>
 					</DrawerFooter>

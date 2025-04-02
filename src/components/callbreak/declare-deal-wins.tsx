@@ -36,7 +36,7 @@ export function DeclareDealWins() {
 	return (
 		<Drawer open={ open } onOpenChange={ setOpen }>
 			<DrawerTrigger asChild>
-				<Button className={ "flex-1 max-w-lg" }>DECLARE DEAL WINS</Button>
+				<Button className={ "w-full max-w-lg" }>DECLARE DEAL WINS</Button>
 			</DrawerTrigger>
 			<DrawerContent>
 				<div className={ "mx-auto w-full max-w-lg" }>
@@ -57,7 +57,7 @@ export function DeclareDealWins() {
 						</div>
 					</div>
 					<DrawerFooter>
-						<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1 max-w-lg" }>
+						<Button onClick={ handleClick } disabled={ isPending } className={ "max-w-lg" }>
 							{ isPending ? <Spinner/> : "DECLARE WINS" }
 						</Button>
 					</DrawerFooter>
