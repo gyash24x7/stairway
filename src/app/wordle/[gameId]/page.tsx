@@ -1,6 +1,6 @@
-import { GamePage } from "@/components/wordle/game-page";
-import { getAuthInfo } from "@/server/utils/auth";
-import { getGameData } from "@/server/wordle/functions";
+import { getAuthInfo } from "@/auth/server/functions";
+import { GamePage } from "@/wordle/components/game-page";
+import { getGameData } from "@/wordle/server/functions";
 import { redirect } from "next/navigation";
 
 export default async function WordleGamePage( { params }: { params: Promise<{ gameId: string }> } ) {
@@ -11,9 +11,9 @@ export default async function WordleGamePage( { params }: { params: Promise<{ ga
 	}
 
 	const { gameId } = await params;
-	const data = await getGameData( { gameId } );
+	const [ err, data ] = await getGameData( { gameId } );
 
-	if ( !data ) {
+	if ( !data || !!err ) {
 		throw "Game not found!";
 	}
 

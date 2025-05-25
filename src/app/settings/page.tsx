@@ -1,7 +1,7 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/base/avatar";
-import { Card, CardContent } from "@/components/base/card";
-import { LogoutButton } from "@/components/main/logout-button";
-import { getAuthInfo } from "@/server/utils/auth";
+import { LogoutButton } from "@/auth/components/logout-button";
+import { getAuthInfo } from "@/auth/server/functions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/primitives/avatar";
+import { Card, CardContent } from "@/shared/primitives/card";
 
 export default async function Settings() {
 	const authInfo = await getAuthInfo();

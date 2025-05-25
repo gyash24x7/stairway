@@ -1,9 +1,9 @@
-import { Separator } from "@/components/base/separator";
-import { CreateGame } from "@/components/literature/create-game";
-import { JoinGame } from "@/components/literature/join-game";
-import { getAuthInfo } from "@/server/utils/auth";
-import { cn } from "@/utils/cn";
-import { fjalla } from "@/utils/fonts";
+import { getAuthInfo } from "@/auth/server/functions";
+import { CreateGame } from "@/literature/components/create-game";
+import { JoinGame } from "@/literature/components/join-game";
+import { Separator } from "@/shared/primitives/separator";
+import { cn } from "@/shared/utils/cn";
+import { fjalla } from "@/shared/utils/fonts";
 
 export default async function LiteratureHome() {
 	const authInfo = await getAuthInfo();

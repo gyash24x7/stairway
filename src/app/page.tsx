@@ -1,4 +1,4 @@
-import { ApplicationCard } from "@/components/main/application-card";
+import { ApplicationCard } from "@/shared/components/application-card";
 
 export default function Home() {
 	return (

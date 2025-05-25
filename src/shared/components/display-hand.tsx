@@ -1,0 +1,15 @@
+import { getCardId } from "@/shared/cards/card";
+import { getSortedHand } from "@/shared/cards/hand";
+import type { PlayingCard } from "@/shared/cards/types";
+import { DisplayCard } from "@/shared/components/display-card";
+
+export function DisplayHand( { hand }: { hand: PlayingCard[] } ) {
+	return (
+		<div className={ "border-2 rounded-md p-2 md:p-3 flex gap-2 md:gap-3 flex-wrap justify-center bg-white" }>
+			{ getSortedHand( hand ).map( ( { suit, rank } ) => (
+				<DisplayCard key={ getCardId( { rank, suit } ) } suit={ suit } rank={ rank }/>
+			) ) }
+			{ hand.length === 0 && <h2>NO CARDS LEFT</h2> }
+		</div>
+	);
+}

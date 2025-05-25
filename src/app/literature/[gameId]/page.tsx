@@ -1,26 +1,21 @@
-import { GamePage } from "@/components/literature/game-page";
-import { Subscriber } from "@/components/literature/subscriber";
-import { getGameData } from "@/server/literature/functions";
-import { getAuthInfo } from "@/server/utils/auth";
+import { getAuthInfo } from "@/auth/server/functions";
+import { GamePage } from "@/literature/components/game-page";
+import { getGameData } from "@/literature/server/functions";
 import { redirect } from "next/navigation";
 
 export default async function LiteratureGamePage( { params }: { params: Promise<{ gameId: string }> } ) {
 	const authInfo = await getAuthInfo();
 
 	if ( !authInfo ) {
-		redirect( "/wordle" );
+		redirect( "/literature" );
 	}
 
 	const { gameId } = await params;
-	const data = await getGameData( { gameId } );
+	const [ err, data ] = await getGameData( { gameId } );
 
-	if ( !data ) {
+	if ( !data || !!err ) {
 		throw "Game not found!";
 	}
 
-	return (
-		<Subscriber gameId={ gameId } playerId={ authInfo.id }>
-			<GamePage data={ data }/>
-		</Subscriber>
-	);
+	return <GamePage data={ data }/>;
 }

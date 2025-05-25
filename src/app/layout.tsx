@@ -1,7 +1,7 @@
-import { Toaster } from "@/components/base/sonner";
-import { Navbar } from "@/components/main/navbar";
-import { getAuthInfo } from "@/server/utils/auth";
-import { geistMono } from "@/utils/fonts";
+import { getAuthInfo } from "@/auth/server/functions";
+import { Navbar } from "@/shared/components/navbar";
+import { Toaster } from "@/shared/primitives/sonner";
+import { geistMono } from "@/shared/utils/fonts";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 

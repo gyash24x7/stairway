@@ -1,8 +1,8 @@
-import { Separator } from "@/components/base/separator";
-import { CreateGame } from "@/components/wordle/create-game";
-import { getAuthInfo } from "@/server/utils/auth";
-import { cn } from "@/utils/cn";
-import { fjalla } from "@/utils/fonts";
+import { getAuthInfo } from "@/auth/server/functions";
+import { Separator } from "@/shared/primitives/separator";
+import { cn } from "@/shared/utils/cn";
+import { fjalla } from "@/shared/utils/fonts";
+import { CreateGame } from "@/wordle/components/create-game";
 
 export default async function WordleHome() {
 	const authInfo = await getAuthInfo();
