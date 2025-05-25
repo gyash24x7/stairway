@@ -2,9 +2,9 @@
 
 import { DisplayCard, DisplayCardSet } from "@/shared/components/display-card";
 import { DisplayPlayer } from "@/shared/components/display-player";
-import { getCardDisplayString, getCardFromId, getCardId } from "@/shared/cards/card";
-import { getAskableCardsOfSet, getCardsOfSet, getSetsInHand } from "@/shared/cards/hand";
-import type { CardSet } from "@/shared/cards/types";
+import { getCardDisplayString, getCardFromId, getCardId } from "@/libs/cards/card";
+import { getAskableCardsOfSet, getCardsOfSet, getSetsInHand } from "@/libs/cards/hand";
+import type { CardSet } from "@/libs/cards/types";
 import { askCard } from "@/literature/server/functions";
 import { store } from "@/literature/store";
 import { Button } from "@/shared/primitives/button";

@@ -1,5 +1,5 @@
 import type { AuthInfo } from "@/auth/types";
-import { dictionary } from "@/shared/words/dictionary";
+import { dictionary } from "@/libs/words/dictionary";
 import { createLogger } from "@/shared/utils/logger";
 import { prisma } from "@/shared/utils/prisma";
 import type { CreateGameInput, MakeGuessInput } from "@/wordle/server/inputs";

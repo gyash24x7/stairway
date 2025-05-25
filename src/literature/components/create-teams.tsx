@@ -1,6 +1,6 @@
 "use client";
 
-import { chunk, shuffle } from "@/shared/cards/utils";
+import { chunk, shuffle } from "@/libs/cards/utils";
 import { PlayerLobby } from "@/literature/components/player-lobby";
 import { createTeams } from "@/literature/server/functions";
 import { store } from "@/literature/store";

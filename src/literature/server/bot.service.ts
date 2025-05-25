@@ -1,8 +1,8 @@
-import { getCardFromId, getCardId, getCardSet } from "@/shared/cards/card";
-import { cardSetMap } from "@/shared/cards/constants";
-import { getAskableCardsOfSet, isCardInHand, isCardSetInHand } from "@/shared/cards/hand";
-import type { CardSet, PlayingCard } from "@/shared/cards/types";
-import { shuffle } from "@/shared/cards/utils";
+import { getCardFromId, getCardId, getCardSet } from "@/libs/cards/card";
+import { cardSetMap } from "@/libs/cards/constants";
+import { getAskableCardsOfSet, isCardInHand, isCardSetInHand } from "@/libs/cards/hand";
+import type { CardSet, PlayingCard } from "@/libs/cards/types";
+import { shuffle } from "@/libs/cards/utils";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
 

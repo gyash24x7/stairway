@@ -1,4 +1,4 @@
-import { CardRank, CardSet, CardSuit, type PlayingCard } from "@/shared/cards/types";
+import { CardRank, CardSet, CardSuit, type PlayingCard } from "@/libs/cards/types";
 
 export const CARD_RANKS = [
 	CardRank.ACE,

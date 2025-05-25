@@ -1,4 +1,4 @@
-import type { CardSet, PlayingCard } from "@/shared/cards/types";
+import type { CardSet, PlayingCard } from "@/libs/cards/types";
 import type {
 	LiteratureAsk,
 	LiteratureCall,

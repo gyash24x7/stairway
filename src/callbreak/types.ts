@@ -1,4 +1,4 @@
-import type { PlayingCard } from "@/shared/cards/types";
+import type { PlayingCard } from "@/libs/cards/types";
 import type {
 	CallBreakCardMapping,
 	CallBreakDeal,

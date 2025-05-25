@@ -1,5 +1,5 @@
-import { CARD_RANKS, UPPER_CARD_RANKS } from "@/shared/cards/constants";
-import { CardRank, CardSet, CardSuit, type PlayingCard } from "@/shared/cards/types";
+import { CARD_RANKS, UPPER_CARD_RANKS } from "@/libs/cards/constants";
+import { CardRank, CardSet, CardSuit, type PlayingCard } from "@/libs/cards/types";
 
 export function getCardSet( card: PlayingCard ) {
 	switch ( card.suit ) {

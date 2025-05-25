@@ -1,7 +1,7 @@
 "use client";
 
-import { dictionary } from "@/shared/words/dictionary";
-import { getAvailableLetters } from "@/shared/words/utils";
+import { dictionary } from "@/libs/words/dictionary";
+import { getAvailableLetters } from "@/libs/words/utils";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
 import { makeGuess } from "@/wordle/server/functions";

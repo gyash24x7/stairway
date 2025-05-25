@@ -17,11 +17,11 @@ import {
 	validateTransferTurn
 } from "@/literature/server/validators";
 import { type Literature, LiteratureEvent } from "@/literature/types";
-import { getCardDisplayString, getCardFromId, getCardId } from "@/shared/cards/card";
-import { cardSetMap } from "@/shared/cards/constants";
-import { generateDeck, generateHands, isCardInHand, removeCardsOfRank } from "@/shared/cards/hand";
-import { CardRank, type CardSet } from "@/shared/cards/types";
-import { shuffle } from "@/shared/cards/utils";
+import { getCardDisplayString, getCardFromId, getCardId } from "@/libs/cards/card";
+import { cardSetMap } from "@/libs/cards/constants";
+import { generateDeck, generateHands, isCardInHand, removeCardsOfRank } from "@/libs/cards/hand";
+import { CardRank, type CardSet } from "@/libs/cards/types";
+import { shuffle } from "@/libs/cards/utils";
 import { generateAvatar, generateGameCode, generateName } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import { prisma } from "@/shared/utils/prisma";

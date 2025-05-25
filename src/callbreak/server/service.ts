@@ -8,10 +8,10 @@ import {
 	validatePlayCard
 } from "@/callbreak/server/validators";
 import { type Callbreak, CallbreakEvent } from "@/callbreak/types";
-import { getCardFromId, getCardId } from "@/shared/cards/card";
-import { generateDeck, generateHands } from "@/shared/cards/hand";
-import { CardSuit, type PlayingCard } from "@/shared/cards/types";
-import { getBestCardPlayed } from "@/shared/cards/utils";
+import { getCardFromId, getCardId } from "@/libs/cards/card";
+import { generateDeck, generateHands } from "@/libs/cards/hand";
+import { CardSuit, type PlayingCard } from "@/libs/cards/types";
+import { getBestCardPlayed } from "@/libs/cards/utils";
 import { generateAvatar, generateGameCode, generateName } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import { prisma } from "@/shared/utils/prisma";

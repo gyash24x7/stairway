@@ -1,6 +1,6 @@
 import type { Callbreak } from "@/callbreak/types";
-import { getCardDisplayString, getCardFromId } from "@/shared/cards/card";
-import { removeCardFromHand } from "@/shared/cards/hand";
+import { getCardDisplayString, getCardFromId } from "@/libs/cards/card";
+import { removeCardFromHand } from "@/libs/cards/hand";
 import { Store } from "@tanstack/react-store";
 import { produce } from "immer";
 import { toast } from "sonner";

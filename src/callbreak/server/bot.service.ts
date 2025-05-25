@@ -1,9 +1,9 @@
 import type { Callbreak } from "@/callbreak/types";
-import { compareCards, getCardFromId } from "@/shared/cards/card";
-import { CARD_SUITS } from "@/shared/cards/constants";
-import { generateDeck, getSuitGroupsFromHand } from "@/shared/cards/hand";
-import { CardRank, CardSuit, type PlayingCard } from "@/shared/cards/types";
-import { getBestCardPlayed, getPlayableCards } from "@/shared/cards/utils";
+import { compareCards, getCardFromId } from "@/libs/cards/card";
+import { CARD_SUITS } from "@/libs/cards/constants";
+import { generateDeck, getSuitGroupsFromHand } from "@/libs/cards/hand";
+import { CardRank, CardSuit, type PlayingCard } from "@/libs/cards/types";
+import { getBestCardPlayed, getPlayableCards } from "@/libs/cards/utils";
 import { createLogger } from "@/shared/utils/logger";
 
 const logger = createLogger( "CallbreakBotService" );

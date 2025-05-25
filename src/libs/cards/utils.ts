@@ -1,6 +1,6 @@
-import { compareCards } from "@/shared/cards/card";
-import { getCardsOfSuit } from "@/shared/cards/hand";
-import { CardSuit, type PlayingCard } from "@/shared/cards/types";
+import { compareCards } from "@/libs/cards/card";
+import { getCardsOfSuit } from "@/libs/cards/hand";
+import { CardSuit, type PlayingCard } from "@/libs/cards/types";
 
 export function shuffle<T>( arr: T[] ): T[] {
 	return arr

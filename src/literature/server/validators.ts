@@ -1,5 +1,5 @@
 import type { AuthInfo } from "@/auth/types";
-import { getCardFromId, getCardSet } from "@/shared/cards/card";
+import { getCardFromId, getCardSet } from "@/libs/cards/card";
 import type { AskCardInput, CallSetInput, JoinGameInput, TransferTurnInput } from "@/literature/server/inputs";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";

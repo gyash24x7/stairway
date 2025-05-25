@@ -1,5 +1,5 @@
-import { getCardFromId } from "@/shared/cards/card";
-import { addCardToHand, removeCardFromHand, removeCardsFromHand } from "@/shared/cards/hand";
+import { getCardFromId } from "@/libs/cards/card";
+import { addCardToHand, removeCardFromHand, removeCardsFromHand } from "@/libs/cards/hand";
 import type { Literature } from "@/literature/types";
 import { Store } from "@tanstack/react-store";
 import { produce } from "immer";

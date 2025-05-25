@@ -1,5 +1,5 @@
-import { getCardFromId } from "@/shared/cards/card";
-import type { CardRank, CardSet, CardSuit } from "@/shared/cards/types";
+import { getCardFromId } from "@/libs/cards/card";
+import type { CardRank, CardSet, CardSuit } from "@/libs/cards/types";
 import { cn } from "@/shared/utils/cn";
 
 export type DisplayCardProps = { focused?: boolean; rank: CardRank; suit: CardSuit; cardId?: undefined; }

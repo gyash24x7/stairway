@@ -1,7 +1,7 @@
-import { getCardId, getCardSet } from "@/shared/cards/card";
-import { cardSetMap, SORTED_DECK } from "@/shared/cards/constants";
-import { CardRank, CardSet, CardSuit, type PlayingCard } from "@/shared/cards/types";
-import { chunk, shuffle } from "@/shared/cards/utils";
+import { getCardId, getCardSet } from "@/libs/cards/card";
+import { cardSetMap, SORTED_DECK } from "@/libs/cards/constants";
+import { CardRank, CardSet, CardSuit, type PlayingCard } from "@/libs/cards/types";
+import { chunk, shuffle } from "@/libs/cards/utils";
 
 export function getSetsInHand( hand: PlayingCard[] ) {
 	return new Set( hand.map( getCardSet ) );

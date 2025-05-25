@@ -1,5 +1,5 @@
-import { dictionary } from "@/shared/words/dictionary";
-import { getGuessBlocks, type LetterState } from "@/shared/words/utils";
+import { dictionary } from "@/libs/words/dictionary";
+import { getGuessBlocks, type LetterState } from "@/libs/words/utils";
 import { cn } from "@/shared/utils/cn";
 import { store } from "@/wordle/store";
 import { useStore } from "@tanstack/react-store";
