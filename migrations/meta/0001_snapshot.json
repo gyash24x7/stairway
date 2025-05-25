@@ -1,0 +1,209 @@
+{
+	"version": "6",
+	"dialect": "sqlite",
+	"id": "228e04ed-eb70-436d-87a7-cef9efb9040c",
+	"prevId": "37d5be86-edb8-4eca-b70b-dd6280e03fa6",
+	"tables": {
+		"auth_passkeys": {
+			"name": "auth_passkeys",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"public_key": {
+					"name": "public_key",
+					"type": "blob",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"user_id": {
+					"name": "user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"webauthn_user_id": {
+					"name": "webauthn_user_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"counter": {
+					"name": "counter",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"device_type": {
+					"name": "device_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"backed_up": {
+					"name": "backed_up",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 0
+				},
+				"transports": {
+					"name": "transports",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false,
+					"autoincrement": false
+				}
+			},
+			"indexes": { },
+			"foreignKeys": {
+				"auth_passkeys_user_id_auth_users_id_fk": {
+					"name": "auth_passkeys_user_id_auth_users_id_fk",
+					"tableFrom": "auth_passkeys",
+					"tableTo": "auth_users",
+					"columnsFrom": [
+						"user_id"
+					],
+					"columnsTo": [
+						"id"
+					],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": { },
+			"uniqueConstraints": { },
+			"checkConstraints": { }
+		},
+		"auth_users": {
+			"name": "auth_users",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"name": {
+					"name": "name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"username": {
+					"name": "username",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"avatar": {
+					"name": "avatar",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				}
+			},
+			"indexes": {
+				"auth_users_username_unique": {
+					"name": "auth_users_username_unique",
+					"columns": [
+						"username"
+					],
+					"isUnique": true
+				}
+			},
+			"foreignKeys": { },
+			"compositePrimaryKeys": { },
+			"uniqueConstraints": { },
+			"checkConstraints": { }
+		},
+		"wdl_games": {
+			"name": "wdl_games",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"player_id": {
+					"name": "player_id",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false
+				},
+				"word_length": {
+					"name": "word_length",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 5
+				},
+				"word_count": {
+					"name": "word_count",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": 1
+				},
+				"words": {
+					"name": "words",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "''"
+				},
+				"guesses": {
+					"name": "guesses",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "''"
+				},
+				"completed_words": {
+					"name": "completed_words",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"autoincrement": false,
+					"default": "''"
+				}
+			},
+			"indexes": { },
+			"foreignKeys": { },
+			"compositePrimaryKeys": { },
+			"uniqueConstraints": { },
+			"checkConstraints": { }
+		}
+	},
+	"views": { },
+	"enums": { },
+	"_meta": {
+		"schemas": { },
+		"tables": { },
+		"columns": { }
+	},
+	"internal": {
+		"indexes": { }
+	}
+}
