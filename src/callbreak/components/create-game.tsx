@@ -1,9 +1,9 @@
 "use client";
 
 import { createGame } from "@/callbreak/server/functions";
-import { DisplayCardSuit } from "@/shared/components/display-card";
 import { CARD_SUITS } from "@/libs/cards/constants";
 import type { CardSuit } from "@/libs/cards/types";
+import { DisplayCardSuit } from "@/shared/components/display-card";
 import { Button } from "@/shared/primitives/button";
 import {
 	Dialog,

@@ -1,5 +1,6 @@
 "use client";
 
+import { logout } from "@/auth/server/functions";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
 import { LogOutIcon } from "lucide-react";
@@ -9,7 +10,7 @@ export function LogoutButton() {
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleLogout = () => startTransition( async () => {
-		// await logout();
+		await logout();
 	} );
 
 	return (

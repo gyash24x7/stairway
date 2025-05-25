@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { ulid } from "ulid";
 import { type Config, names, uniqueNamesGenerator } from "unique-names-generator";
 
 const namesConfig: Config = {
@@ -6,6 +7,10 @@ const namesConfig: Config = {
 	separator: " ",
 	length: 1
 };
+
+export function generateId() {
+	return ulid();
+}
 
 export function generateName() {
 	return uniqueNamesGenerator( namesConfig );
