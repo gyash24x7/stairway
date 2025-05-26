@@ -15,7 +15,7 @@ export const userRelations = relations( users, ( { many } ) => ( {
 
 export const passkeys = sqliteTable( "auth_passkeys", {
 	id: text( "id" ).primaryKey(),
-	publicKey: blob( "public_key" ).notNull(),
+	publicKey: blob( "public_key" ).notNull().$type<Uint8Array<ArrayBufferLike>>(),
 	userId: text( "user_id" ).notNull().references( () => users.id ),
 	webauthnUserId: text( "webauthn_user_id" ).notNull(),
 	counter: integer( "counter" ).notNull(),
