@@ -1,0 +1,69 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "stairway",
+	"main": ".open-next/worker.js",
+	"compatibility_date": "2025-03-01",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"observability": {
+		"enabled": true
+	},
+	/**
+	 * Smart Placement
+	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
+	 */
+	// "placement": { "mode": "smart" },
+
+	/**
+	 * Bindings
+	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
+	 * databases, object storage, AI inference, real-time communication and more.
+	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
+	 */
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "stairway",
+			"database_id": "bcf7d549-cee9-4bbc-a987-e4eef96f34e0"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "5128fa4559fe4ed2a893f10b257fe676",
+			"preview_id": "stairway-kv"
+		}
+	],
+	/**
+	 * Environment Variables
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
+	 */
+	"vars": {
+		"APP_NAME": "stairway"
+	},
+	/**
+	 * Note: Use secrets to store sensitive data.
+	 * https://developers.cloudflare.com/workers/configuration/secrets/
+	 */
+
+	/**
+	 * Static Assets
+	 * https://developers.cloudflare.com/workers/static-assets/binding/
+	 */
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".open-next/assets"
+	}
+
+	/**
+	 * Service Bindings (communicate between multiple Workers)
+	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
+	 */
+	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+}
