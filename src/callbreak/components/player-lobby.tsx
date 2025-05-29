@@ -21,7 +21,7 @@ export function PlayerLobby( props: PlayerLobbyProps ) {
 					{ ...props }
 					player={ player }
 					key={ player.id }
-					declaration={ deal?.declarations[ player.id ] }
+					declaration={ deal?.scores[ player.id ].declarations }
 				/>
 			) ) }
 		</div>

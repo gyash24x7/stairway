@@ -1,6 +1,7 @@
 import type { Callbreak } from "@/callbreak/types";
 import { getCardDisplayString, getCardFromId } from "@/libs/cards/card";
 import { removeCardFromHand } from "@/libs/cards/hand";
+import { CardSuit } from "@/libs/cards/types";
 import { Store } from "@tanstack/react-store";
 import { produce } from "immer";
 import { toast } from "sonner";
@@ -12,12 +13,12 @@ export const store = new Store<Callbreak.Store>( {
 		status: "CREATED",
 		code: "",
 		dealCount: 0,
-		trumpSuit: "",
-		createdBy: "",
-		scores: []
+		trumpSuit: CardSuit.DIAMONDS,
+		createdBy: ""
 	},
 	players: {},
-	hand: []
+	hand: [],
+	scores: []
 } );
 
 export function handlePlayerJoinedEvent( newPlayer: Callbreak.EventPayloads["player-joined"] ) {
@@ -50,9 +51,11 @@ export function handleCardsDealtEvent( cards: Callbreak.EventPayloads["cards-dea
 	} ) );
 }
 
-export function handleDealWinDeclaredEvent( { deal, by, wins }: Callbreak.EventPayloads["deal-win-declared"] ) {
+export function handleDealWinDeclaredEvent( { by, wins }: Callbreak.EventPayloads["deal-win-declared"] ) {
 	store.setState( state => produce( state, draft => {
-		draft.currentDeal = deal;
+		if ( draft.currentDeal ) {
+			draft.currentDeal.scores[ by.id ].declarations = wins;
+		}
 	} ) );
 
 	toast.info( `${ by.name } declared ${ wins } wins!` );
@@ -65,16 +68,15 @@ export function handleAllDealWinsDeclaredEvent() {
 export function handleRoundCreatedEvent( round: Callbreak.EventPayloads["round-created"] ) {
 	store.setState( state => produce( state, draft => {
 		draft.currentDeal!.status = "IN_PROGRESS";
-		draft.currentRound = round;
+		draft.currentRound = { ...round, cards: {} };
 	} ) );
 
 	const turnPlayer = store.state.players[ round.playerOrder[ round.turnIdx ] ];
 	toast.info( `New Round Created! ${ turnPlayer.name } to play card!` );
 }
 
-export function handleCardPlayedEvent( { round, by, card }: Callbreak.EventPayloads["card-played"] ) {
+export function handleCardPlayedEvent( { by, card }: Callbreak.EventPayloads["card-played"] ) {
 	store.setState( state => produce( state, draft => {
-		draft.currentRound = round;
 		if ( by === draft.playerId ) {
 			draft.hand = removeCardFromHand( draft.hand, getCardFromId( card ) );
 		}
@@ -84,18 +86,22 @@ export function handleCardPlayedEvent( { round, by, card }: Callbreak.EventPaylo
 	toast.info( `${ player.name } played ${ getCardDisplayString( getCardFromId( card ) ) }!` );
 }
 
-export function handleRoundCompletedEvent( { deal, winner }: Callbreak.EventPayloads["round-completed"] ) {
+export function handleRoundCompletedEvent( { winner }: Callbreak.EventPayloads["round-completed"] ) {
 	store.setState( state => produce( state, draft => {
-		draft.currentDeal = deal;
+		if ( draft.currentDeal ) {
+			draft.currentDeal.scores[ winner.id ].wins++;
+		}
 	} ) );
 
 	toast.info( `Round Completed! ${ winner.name } Won!` );
 }
 
-export function handleDealCompletedEvent( { deal, score }: Callbreak.EventPayloads["deal-completed"] ) {
+export function handleDealCompletedEvent( { score }: Callbreak.EventPayloads["deal-completed"] ) {
 	store.setState( state => produce( state, draft => {
-		draft.game.scores.unshift( score );
-		draft.currentDeal = deal;
+		draft.scores.unshift( score );
+		if ( draft.currentDeal ) {
+			draft.currentDeal.status = "COMPLETED";
+		}
 	} ) );
 
 	toast.info( `Deal Completed!` );

@@ -9,8 +9,8 @@ export function DisplayDeal() {
 	const deal = useStore( store, state => state.currentDeal );
 	const round = useStore( store, state => state.currentRound! );
 	const players = useStore( store, state => state.players );
-	const playerOrder = useStore( store, state => state.currentRound?.playerOrder
-		?? state.currentDeal?.playerOrder
+	const playerOrder = useStore( store, state => state.currentRound?.playerOrder.split( "," )
+		?? state.currentDeal?.playerOrder.split( "," )
 		?? Object.keys( state.players ) );
 
 	if ( deal?.status !== "IN_PROGRESS" ) {
@@ -28,7 +28,7 @@ export function DisplayDeal() {
 							player={ players[ playerId ] }
 							key={ playerId }
 							withDeclaration={ deal?.status !== "COMPLETED" }
-							declaration={ deal?.declarations[ playerId ] }
+							declaration={ deal?.scores[ playerId ].declarations }
 						/>
 					</div>
 				) ) }

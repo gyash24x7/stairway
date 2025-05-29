@@ -1,4 +1,5 @@
 import { users } from "@/auth/schema";
+import type { CardSuit } from "@/libs/cards/types";
 import { generateAvatar, generateGameCode, generateId, generateName } from "@/shared/utils/generator";
 import { foreignKey, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
@@ -6,7 +7,7 @@ export const games = sqliteTable( "clbk_games", {
 	id: text( "id" ).notNull().$default( () => generateId() ).primaryKey(),
 	code: text( "code" ).notNull().unique().$default( () => generateGameCode() ),
 	dealCount: integer( "deal_count" ).default( 5 ).notNull(),
-	trumpSuit: text( "trump_suit" ).notNull().$type<"H" | "C" | "S" | "D">(),
+	trumpSuit: text( "trump_suit" ).notNull().$type<CardSuit>(),
 	status: text( "status" ).notNull().$type<"CREATED" | "IN_PROGRESS" | "COMPLETED">().default( "CREATED" ),
 	createdBy: text( "created_by" ).notNull().references( () => users.id )
 } );
@@ -37,14 +38,15 @@ export const deals = sqliteTable(
 	table => [ primaryKey( { columns: [ table.id, table.gameId ] } ) ]
 );
 
-export const declarations = sqliteTable(
-	"clbk_declarations",
+export const dealScores = sqliteTable(
+	"clbk_deal_scores",
 	{
 		id: text( "id" ).notNull().$default( () => generateId() ),
 		dealId: text( "deal_id" ).notNull(),
 		gameId: text( "game_id" ).notNull().references( () => games.id ),
 		playerId: text( "player_id" ).notNull().references( () => users.id ),
-		wins: integer( "wins" ).notNull().default( 2 )
+		declarations: integer( "declarations" ).notNull().default( 2 ),
+		wins: integer( "wins" ).notNull().default( 0 )
 	},
 	table => [
 		primaryKey( { columns: [ table.id, table.dealId, table.gameId ] } ),
@@ -79,9 +81,10 @@ export const rounds = sqliteTable(
 		dealId: text( "deal_id" ).notNull(),
 		gameId: text( "game_id" ).notNull().references( () => games.id ),
 		winner: text( "winner" ).references( () => users.id ),
-		suit: text( "suit" ).$type<"H" | "C" | "S" | "D">(),
+		suit: text( "suit" ).$type<CardSuit>(),
 		playerOrder: text( "player_order" ).notNull(),
 		turnIdx: integer( "turn_idx" ).notNull().default( 0 ),
+		completed: integer( "completed" ).notNull().default( 0 ),
 		createdAt: text( "created_at" ).notNull().$default( () => new Date().toISOString() )
 	},
 	table => [

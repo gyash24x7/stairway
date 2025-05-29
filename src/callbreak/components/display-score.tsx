@@ -15,7 +15,7 @@ export function DisplayScore() {
 				scores[ playerId ] = [];
 			}
 
-			scores[ playerId ].push( ...state.game.scores.toReversed().map( dealScore => dealScore[ playerId ] ) );
+			scores[ playerId ].push( ...state.scores.toReversed().map( dealScore => dealScore[ playerId ] ) );
 		} );
 		return scores;
 	} );
@@ -53,8 +53,8 @@ export function DisplayScore() {
 							</TableCell>
 							{ status !== "COMPLETED" && (
 								<TableCell className={ "text-center" }>
-									{ deal?.wins[ player.id ] ??
-										0 }&nbsp;/&nbsp;{ deal?.declarations[ player.id ] ?? 0 }
+									{ deal?.scores[ player.id ].wins ??
+										0 }&nbsp;/&nbsp;{ deal?.scores[ player.id ].declarations ?? 0 }
 								</TableCell>
 							) }
 						</TableRow>

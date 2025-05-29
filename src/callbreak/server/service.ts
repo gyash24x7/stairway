@@ -1,33 +1,22 @@
 import type { AuthContext } from "@/auth/types";
 import { suggestCardToPlay, suggestDealWins } from "@/callbreak/server/bot.service";
 import type { CreateGameInput, DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "@/callbreak/server/inputs";
-import {
-	validateAddBots,
-	validateDealWinDeclaration,
-	validateJoinGame,
-	validatePlayCard
-} from "@/callbreak/server/validators";
+import * as repository from "@/callbreak/server/repository";
+import * as validators from "@/callbreak/server/validators";
 import { type Callbreak, CallbreakEvent } from "@/callbreak/types";
 import { getCardFromId, getCardId } from "@/libs/cards/card";
 import { generateDeck, generateHands } from "@/libs/cards/hand";
 import { CardSuit, type PlayingCard } from "@/libs/cards/types";
 import { getBestCardPlayed } from "@/libs/cards/utils";
-import { generateAvatar, generateGameCode, generateName } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { prisma } from "@/shared/utils/prisma";
 import { ORPCError } from "@orpc/server";
-import { CallBreakStatus } from "@prisma/client";
 
 const logger = createLogger( "CallbreakService" );
 
 export async function getBaseGameData( gameId: string ) {
 	logger.debug( ">> getBaseGameData()" );
 
-	const data = await prisma.callbreak.game.findUnique( {
-		where: { id: gameId },
-		include: { players: true }
-	} );
-
+	const data = await repository.getGameById( gameId );
 	if ( !data ) {
 		logger.error( "Game Not Found!" );
 		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
@@ -46,37 +35,26 @@ export async function getBaseGameData( gameId: string ) {
 export async function getGameData( { game, players, authInfo }: Callbreak.Context & AuthContext ) {
 	logger.debug( ">> getGameData()" );
 
-	const currentDeal = await prisma.callbreak.deal.findFirst( {
-		where: { gameId: game.id },
-		orderBy: { createdAt: "desc" }
-	} );
-
-	let currentRound: Callbreak.Round | null = null;
+	const activeDeal = await repository.getActiveDeal( game.id );
+	let activeRound: Callbreak.Round | null = null;
 	const hand: PlayingCard[] = [];
 
-	if ( !!currentDeal ) {
-		const cardMappings = await prisma.callbreak.cardMapping.findMany( {
-			where: { gameId: game.id, dealId: currentDeal.id, playerId: authInfo.id }
-		} );
-
+	if ( !!activeDeal ) {
+		const cardMappings = await repository.getCardMappingsForPlayer( activeDeal.id, game.id, authInfo.id );
 		hand.push( ...cardMappings.map( cm => getCardFromId( cm.cardId ) ) );
-		currentRound = await prisma.callbreak.round.findFirst( {
-			where: { gameId: game.id, dealId: currentDeal.id },
-			orderBy: { createdAt: "desc" }
-		} );
+		activeRound = await repository.getActiveRound( activeDeal.id, game.id );
 	}
 
 	logger.debug( "<< getGameData()" );
-	return { game, players, currentDeal, currentRound, playerId: authInfo.id, hand };
+	return { game, players, currentDeal: activeDeal, currentRound: activeRound, playerId: authInfo.id, hand };
 }
 
 export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { authInfo }: AuthContext ) {
 	logger.debug( ">> createGame()" );
 
-	const code = generateGameCode();
 	const { id, name, avatar } = authInfo;
-	const game = await prisma.callbreak.game.create( { data: { code, dealCount, trumpSuit, createdBy: id } } );
-	await prisma.callbreak.player.create( { data: { gameId: game.id, id, name, avatar } } );
+	const game = await repository.createGame( { dealCount, trumpSuit, createdBy: id } );
+	await repository.createPlayer( { gameId: game.id, id, name, avatar } );
 
 	logger.debug( "<< createGame()" );
 	return game;
@@ -85,28 +63,21 @@ export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { a
 export async function joinGame( input: JoinGameInput, { authInfo }: AuthContext ) {
 	logger.debug( ">> joinGame()" );
 
-	const { game, alreadyJoined } = await validateJoinGame( input, authInfo );
+	const { game, alreadyJoined } = await validators.validateJoinGame( input, authInfo );
 	if ( alreadyJoined ) {
 		logger.warn( "Player Already Joined: %s", authInfo.id );
 		return game;
 	}
 
-	const player = await prisma.callbreak.player.create( {
-		data: { gameId: game.id, id: authInfo.id, name: authInfo.name, avatar: authInfo.avatar }
-	} );
-
+	const { id, name, avatar } = authInfo;
+	const player = await repository.createPlayer( { gameId: game.id, name, avatar, id } );
 	await publishCallbreakEvent( game.id, CallbreakEvent.PLAYER_JOINED, player );
 
 	game.players.push( player );
 
 	if ( game.players.length === 4 ) {
 		logger.info( "All Players joined, Starting the game..." );
-
-		const updatedGame = await prisma.callbreak.game.update( {
-			where: { id: game.id },
-			data: { status: CallBreakStatus.IN_PROGRESS }
-		} );
-
+		const updatedGame = await repository.updateGame( game.id, { status: "IN_PROGRESS" } );
 		await publishCallbreakEvent( game.id, CallbreakEvent.ALL_PLAYERS_JOINED, updatedGame );
 	}
 
@@ -117,21 +88,14 @@ export async function joinGame( input: JoinGameInput, { authInfo }: AuthContext 
 export async function addBots( { game, players }: Callbreak.Context ) {
 	logger.debug( ">> addBots()" );
 
-	const botCount = await validateAddBots( game, players );
+	const botCount = await validators.validateAddBots( game, players );
 	for ( let i = 0; i < botCount; i++ ) {
-		const name = generateName();
-		const avatar = generateAvatar();
-		const bot = await prisma.callbreak.player.create( { data: { name, avatar, gameId: game.id, isBot: true } } );
-
+		const bot = await repository.createPlayer( { gameId: game.id, isBot: 1 } );
 		await publishCallbreakEvent( game.id, CallbreakEvent.PLAYER_JOINED, bot );
 		players[ bot.id ] = bot;
 	}
 
-	const updatedGame = await prisma.callbreak.game.update( {
-		where: { id: game.id },
-		data: { status: CallBreakStatus.IN_PROGRESS }
-	} );
-
+	const updatedGame = await repository.updateGame( game.id, { status: "IN_PROGRESS" } );
 	await publishCallbreakEvent( game.id, CallbreakEvent.ALL_PLAYERS_JOINED, updatedGame );
 
 	setTimeout( async () => {
@@ -155,19 +119,17 @@ export async function createDeal( { game, players }: Callbreak.Context, lastDeal
 		] :
 		[ ...lastDeal.playerOrder.slice( 1 ), lastDeal.playerOrder[ 0 ] ];
 
-	const deal = await prisma.callbreak.deal.create( { data: { gameId: game.id, playerOrder } } );
+	const deal = await repository.createDeal( { gameId: game.id, playerOrder: playerOrder.join( "," ) } );
 
 	let i = 0;
 	for ( const playerId of deal.playerOrder ) {
 		const hand = hands[ i++ ];
-		await prisma.callbreak.cardMapping.createMany( {
-			data: hand.map( card => ( {
-				cardId: getCardId( card ),
-				dealId: deal.id,
-				gameId: game.id,
-				playerId
-			} ) )
-		} );
+		await repository.createCardMappings( hand.map( card => ( {
+			cardId: getCardId( card ),
+			dealId: deal.id,
+			gameId: game.id,
+			playerId
+		} ) ) );
 
 		await publishCallbreakEvent( game.id, CallbreakEvent.CARDS_DEALT, hand, playerId );
 	}
@@ -192,16 +154,17 @@ export async function createDeal( { game, players }: Callbreak.Context, lastDeal
 export async function declareDealWins( input: DeclareDealWinsInput, { game, players }: Callbreak.Context ) {
 	logger.debug( ">> declareDealWins()" );
 
-	let deal = await validateDealWinDeclaration( input, game );
+	let deal = await validators.validateDealWinDeclaration( input );
 
-	deal = await prisma.callbreak.deal.update( {
-		where: { id_gameId: { id: input.dealId, gameId: game.id } },
-		data: {
-			declarations: { ...deal.declarations, [ input.playerId ]: input.wins },
-			turnIdx: { increment: 1 }
-		},
-		include: { rounds: true }
+	await repository.createDealScore( {
+		dealId: input.dealId,
+		gameId: game.id,
+		playerId: input.playerId,
+		declarations: input.wins
 	} );
+
+	deal.turnIdx++;
+	await repository.updateDeal( input.dealId, game.id, { turnIdx: deal.turnIdx } );
 
 	await publishCallbreakEvent(
 		game.id,
@@ -212,10 +175,7 @@ export async function declareDealWins( input: DeclareDealWinsInput, { game, play
 	const nextPlayer = deal.playerOrder[ deal.turnIdx ];
 	if ( players[ nextPlayer ]?.isBot ) {
 		setTimeout( async () => {
-			const mappings = await prisma.callbreak.cardMapping.findMany( {
-				where: { gameId: game.id, dealId: deal.id, playerId: nextPlayer }
-			} );
-
+			const mappings = await repository.getCardMappingsForPlayer( input.dealId, game.id, nextPlayer );
 			const hand = mappings.map( cm => getCardFromId( cm.cardId ) );
 			const wins = suggestDealWins( hand, game.trumpSuit as CardSuit );
 
@@ -228,13 +188,8 @@ export async function declareDealWins( input: DeclareDealWinsInput, { game, play
 
 	if ( deal.turnIdx === 4 ) {
 		logger.info( "All players declared wins, Starting the round..." );
-
-		deal = await prisma.callbreak.deal.update( {
-			where: { id_gameId: { id: input.dealId, gameId: game.id } },
-			data: { status: CallBreakStatus.IN_PROGRESS },
-			include: { rounds: true }
-		} );
-
+		deal.status = "IN_PROGRESS";
+		await repository.updateDeal( input.dealId, game.id, { status: "IN_PROGRESS" } );
 		await publishCallbreakEvent( game.id, CallbreakEvent.ALL_DEAL_WINS_DECLARED, deal );
 
 		setTimeout( async () => {
@@ -249,13 +204,15 @@ export async function createRound( deal: Callbreak.DealWithRounds, { game, playe
 	logger.debug( ">> createRound()" );
 
 	const lastRound = deal.rounds[ 0 ];
-	const playerOrder = !lastRound ? deal.playerOrder : [
-		...lastRound.playerOrder.slice( lastRound.playerOrder.indexOf( lastRound.winner! ) ),
-		...lastRound.playerOrder.slice( 0, lastRound.playerOrder.indexOf( lastRound.winner! ) )
+	const playerOrder = !lastRound ? deal.playerOrder.split( "," ) : [
+		...lastRound.playerOrder.split( "," ).slice( lastRound.playerOrder.indexOf( lastRound.winner! ) ),
+		...lastRound.playerOrder.split( "," ).slice( 0, lastRound.playerOrder.indexOf( lastRound.winner! ) )
 	];
 
-	const round = await prisma.callbreak.round.create( {
-		data: { dealId: deal.id, gameId: game.id, playerOrder }
+	const round = await repository.createRound( {
+		dealId: deal.id,
+		gameId: game.id,
+		playerOrder: playerOrder.join( "," )
 	} );
 
 	deal.rounds.unshift( round );
@@ -265,12 +222,15 @@ export async function createRound( deal: Callbreak.DealWithRounds, { game, playe
 	const firstPlayer = players[ playerOrder[ 0 ] ];
 	if ( firstPlayer.isBot ) {
 		setTimeout( async () => {
-			const mappings = await prisma.callbreak.cardMapping.findMany( {
-				where: { gameId: game.id, dealId: deal.id, playerId: firstPlayer.id }
-			} );
-
+			const mappings = await repository.getCardMappingsForPlayer( deal.id, game.id, firstPlayer.id );
 			const hand = mappings.map( cm => getCardFromId( cm.cardId ) );
-			const card = suggestCardToPlay( hand, deal, game.trumpSuit as CardSuit );
+			const cardsAlreadyPlayed = await repository.getCardsPlayedInDeal( deal.id, game.id );
+			const card = suggestCardToPlay(
+				hand,
+				{ ...round, cards: {} },
+				cardsAlreadyPlayed.map( cp => getCardFromId( cp.cardId ) ),
+				game.trumpSuit as CardSuit
+			);
 
 			await playCard(
 				{
@@ -292,20 +252,21 @@ export async function createRound( deal: Callbreak.DealWithRounds, { game, playe
 export async function playCard( input: PlayCardInput, { game, players }: Callbreak.Context ) {
 	logger.debug( ">> playCard()" );
 
-	let { round } = await validatePlayCard( input, game );
+	let { round } = await validators.validatePlayCard( input, game );
 
-	round = await prisma.callbreak.round.update( {
-		where: { id_dealId_gameId: { id: round.id, gameId: game.id, dealId: input.dealId } },
-		data: {
-			suit: round.turnIdx === 0 ? getCardFromId( input.cardId ).suit : round.suit,
-			cards: { ...round.cards, [ input.playerId ]: input.cardId },
-			turnIdx: { increment: 1 }
-		}
+	await repository.createCardPlay( {
+		roundId: round.id,
+		dealId: input.dealId,
+		gameId: game.id,
+		playerId: input.playerId,
+		cardId: input.cardId
 	} );
 
-	await prisma.callbreak.cardMapping.delete( {
-		where: { cardId_dealId_gameId: { cardId: input.cardId, gameId: game.id, dealId: input.dealId } }
-	} );
+	round.suit = round.turnIdx === 0 ? getCardFromId( input.cardId ).suit : round.suit;
+	round.turnIdx++;
+
+	await repository.updateRound( round.id, input.dealId, game.id, { suit: round.suit, turnIdx: round.turnIdx } );
+	await repository.deleteCardMapping( input.cardId, input.dealId, game.id );
 
 	await publishCallbreakEvent(
 		game.id,
@@ -313,22 +274,22 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 		{ round, card: input.cardId, by: input.playerId }
 	);
 
-	let deal = await prisma.callbreak.deal.findUniqueOrThrow( {
-		where: { id_gameId: { id: input.dealId, gameId: game.id } },
-		include: { rounds: { orderBy: { createdAt: "desc" } } }
-	} );
+	let deal = await repository.getActiveDeal( game.id );
 
 	const nextPlayer = players[ round.playerOrder[ round.turnIdx ] ];
 	if ( nextPlayer?.isBot ) {
 		logger.debug( "Next player is bot executing turn after 5s..." );
 		setTimeout( async () => {
 			logger.debug( "Executing play card for bot..." );
-			const mappings = await prisma.callbreak.cardMapping.findMany( {
-				where: { gameId: game.id, dealId: deal.id, playerId: nextPlayer.id }
-			} );
-
+			const mappings = await repository.getCardMappingsForPlayer( deal.id, game.id, nextPlayer.id );
 			const hand = mappings.map( cm => getCardFromId( cm.cardId ) );
-			const card = suggestCardToPlay( hand, deal, game.trumpSuit as CardSuit );
+			const cardsAlreadyPlayed = await repository.getCardsPlayedInDeal( deal.id, game.id );
+			const card = suggestCardToPlay(
+				hand,
+				round,
+				cardsAlreadyPlayed.map( cp => getCardFromId( cp.cardId ) ),
+				game.trumpSuit as CardSuit
+			);
 
 			await playCard(
 				{
@@ -354,16 +315,14 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 
 		logger.info( "Winning Card: %s", winningCard );
 
-		const winningPlayer = round.playerOrder.find( p => round.cards[ p ] === getCardId( winningCard! ) );
+		const winningPlayer = round.playerOrder.split( "," )
+			.find( p => round.cards[ p ] === getCardId( winningCard! ) );
+
 		logger.info( "Player %s won the round", winningPlayer );
 
-		round = await prisma.callbreak.round.update( {
-			where: { id_dealId_gameId: { id: round.id, gameId: game.id, dealId: input.dealId } },
-			data: {
-				completed: true,
-				winner: winningPlayer
-			}
-		} );
+		round.completed = 1;
+		round.winner = winningPlayer ?? null;
+		await repository.updateRound( round.id, input.dealId, game.id, { completed: 1, winner: winningPlayer } );
 
 		const wins: Record<string, number> = {};
 		Object.keys( players ).forEach( p => {
@@ -373,11 +332,10 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 			}
 		} );
 
-		deal = await prisma.callbreak.deal.update( {
-			where: { id_gameId: { id: input.dealId, gameId: game.id } },
-			data: { wins: { ...wins } },
-			include: { rounds: { orderBy: { createdAt: "desc" } } }
-		} );
+		await Promise.all( Object.keys( wins ).map( playerId => {
+			deal.scores[ playerId ].wins = wins[ playerId ];
+			return repository.updateDealScore( input.dealId, game.id, playerId, { wins: wins[ playerId ] } );
+		} ) );
 
 		await publishCallbreakEvent(
 			game.id,
@@ -389,18 +347,11 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 
 		if ( completedRounds === 13 ) {
 			logger.info( "All rounds completed, Calculating scores for deal..." );
-
-			deal = await prisma.callbreak.deal.update( {
-				where: { id_gameId: { id: input.dealId, gameId: game.id } },
-				data: { status: CallBreakStatus.COMPLETED },
-				include: { rounds: { orderBy: { createdAt: "desc" } } }
-			} );
+			await repository.updateDeal( input.dealId, game.id, { status: "COMPLETED" } );
 
 			const score: Record<string, number> = {};
 			Object.keys( players ).forEach( ( playerId ) => {
-				const declared = deal.declarations[ playerId ];
-				const won = wins[ playerId ];
-
+				const { declarations: declared, wins: won } = deal.scores[ playerId ];
 				if ( declared > won ) {
 					score[ playerId ] = ( -10 * declared );
 				} else {
@@ -409,20 +360,12 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 			} );
 
 			await publishCallbreakEvent( game.id, CallbreakEvent.DEAL_COMPLETED, { deal, score } );
+			const completedDeals = await repository.getCompletedDealCount( game.id );
 
-			const completedDeals = await prisma.callbreak.deal.count( {
-				where: { gameId: game.id, status: CallBreakStatus.COMPLETED }
-			} );
-
-			game = await prisma.callbreak.game.update( {
-				where: { id: game.id },
-				data: {
-					scores: [ score, ...game.scores ],
-					status: completedDeals === game.dealCount
-						? CallBreakStatus.COMPLETED
-						: CallBreakStatus.IN_PROGRESS
-				}
-			} );
+			await repository.updateGame(
+				game.id,
+				{ status: completedDeals === game.dealCount ? "COMPLETED" : "IN_PROGRESS" }
+			);
 
 			if ( completedDeals === game.dealCount ) {
 				logger.info( "All deals completed, Game Over!" );

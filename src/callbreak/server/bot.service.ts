@@ -42,11 +42,14 @@ export function suggestDealWins( hand: PlayingCard[], trumpSuit: CardSuit ) {
 	return possibleWins;
 }
 
-export function suggestCardToPlay( hand: PlayingCard[], deal: Callbreak.DealWithRounds, trumpSuit: CardSuit ) {
+export function suggestCardToPlay(
+	hand: PlayingCard[],
+	activeRound: Callbreak.RoundWithCards,
+	cardsAlreadyPlayed: PlayingCard[],
+	trumpSuit: CardSuit
+) {
 	logger.debug( ">> suggestCardToPlay()" );
 
-	const activeRound = deal.rounds[ 0 ];
-	const cardsAlreadyPlayed = deal.rounds.flatMap( round => Object.values( round.cards ) ).map( getCardFromId );
 	const cardsPlayedInActiveRound = Object.values( activeRound.cards ).map( getCardFromId );
 	const bestCardInActiveRound = getBestCardPlayed( cardsPlayedInActiveRound, trumpSuit, activeRound.suit );
 	const playableCards = getPlayableCards( hand, trumpSuit, bestCardInActiveRound, activeRound.suit );

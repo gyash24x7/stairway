@@ -5,7 +5,7 @@ import { DisplayPlayer } from "@/shared/components/display-player";
 import { cn } from "@/shared/utils/cn";
 
 type DisplayRoundProps = {
-	round: Callbreak.Round;
+	round: Callbreak.RoundWithCards;
 	players: Callbreak.PlayerData;
 	playerOrder: string[];
 }

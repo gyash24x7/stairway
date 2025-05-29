@@ -6,10 +6,13 @@ export namespace Callbreak {
 	export type CardMapping = typeof schema.cardMappings.$inferSelect;
 	export type Game = typeof schema.games.$inferSelect;
 	export type Deal = typeof schema.deals.$inferSelect;
+	export type DealScore = typeof schema.dealScores.$inferSelect;
 	export type Round = typeof schema.rounds.$inferSelect;
 
 	export type PlayerData = Record<string, Player>;
 	export type DealWithRounds = Deal & { rounds: Round[] };
+	export type DealWithScores = Deal & { scores: Record<string, { declarations: number; wins: number; }> };
+	export type RoundWithCards = Round & { cards: Record<string, string> };
 
 	export type Event =
 		"player-joined"
@@ -27,7 +30,7 @@ export namespace Callbreak {
 	export type EventPayloads = {
 		"player-joined": Player;
 		"all-players-joined": Game;
-		"deal-created": Deal;
+		"deal-created": DealWithScores;
 		"deal-win-declared": { deal: Deal; by: Player; wins: number };
 		"all-deal-wins-declared": Deal;
 		"round-created": Round;
@@ -47,9 +50,10 @@ export namespace Callbreak {
 		playerId: string;
 		game: Callbreak.Game;
 		players: Callbreak.PlayerData;
-		currentDeal?: Callbreak.Deal | null;
-		currentRound?: Callbreak.Round | null;
+		currentDeal?: Callbreak.DealWithScores | null;
+		currentRound?: Callbreak.RoundWithCards | null;
 		hand: PlayingCard[];
+		scores: Record<string, number>[];
 	}
 }
 

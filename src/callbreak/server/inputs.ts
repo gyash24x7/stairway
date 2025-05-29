@@ -1,8 +1,9 @@
+import { CardSuit } from "@/libs/cards/types";
 import { z } from "zod/v4";
 
 export const createGameInputSchema = z.object( {
 	dealCount: z.number().positive().optional(),
-	trumpSuit: z.string()
+	trumpSuit: z.enum( [ CardSuit.CLUBS, CardSuit.DIAMONDS, CardSuit.HEARTS, CardSuit.SPADES ] )
 } );
 
 export type CreateGameInput = z.infer<typeof createGameInputSchema>;

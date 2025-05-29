@@ -1,11 +1,11 @@
 import type { AuthInfo } from "@/auth/types";
 import type { DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "@/callbreak/server/inputs";
+import * as repository from "@/callbreak/server/repository";
 import type { Callbreak } from "@/callbreak/types";
 import { getCardFromId } from "@/libs/cards/card";
 import { isCardInHand } from "@/libs/cards/hand";
 import { getBestCardPlayed, getPlayableCards } from "@/libs/cards/utils";
 import { createLogger } from "@/shared/utils/logger";
-import { prisma } from "@/shared/utils/prisma";
 import { ORPCError } from "@orpc/server";
 
 const logger = createLogger( "CallbreakValidators" );
@@ -13,11 +13,7 @@ const logger = createLogger( "CallbreakValidators" );
 export async function validateJoinGame( input: JoinGameInput, { id }: AuthInfo ) {
 	logger.debug( ">> validateJoinGame()" );
 
-	const game = await prisma.callbreak.game.findUnique( {
-		where: { code: input.code },
-		include: { players: true }
-	} );
-
+	const game = await repository.getGameByCode( input.code );
 	if ( !game ) {
 		logger.error( "Game Not Found: %s", input.code );
 		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
@@ -51,16 +47,12 @@ export async function validateAddBots( game: Callbreak.Game, players: Callbreak.
 	return botCount;
 }
 
-export async function validateDealWinDeclaration( input: DeclareDealWinsInput, game: Callbreak.Game ) {
+export async function validateDealWinDeclaration( input: DeclareDealWinsInput ) {
 	logger.debug( ">> validateDealWinDeclaration()" );
 
-	const deal = await prisma.callbreak.deal.findUnique( {
-		where: { id_gameId: { id: input.dealId, gameId: game.id } },
-		include: { rounds: true }
-	} );
-
+	const deal = await repository.getActiveDeal( input.gameId );
 	if ( !deal ) {
-		logger.error( "Deal Not Found: %s", input.dealId );
+		logger.error( "Active Deal Not Found: %s", input.gameId );
 		throw new ORPCError( "NOT_FOUND", { message: "Deal Not Found!" } );
 	}
 
@@ -78,13 +70,7 @@ export async function validatePlayCard( input: PlayCardInput, game: Callbreak.Ga
 
 	const playedCard = getCardFromId( input.cardId );
 
-	const round = await prisma.callbreak.round.findUnique( {
-		where: {
-			id_dealId_gameId: { id: input.roundId, gameId: game.id, dealId: input.dealId },
-			completed: false
-		}
-	} );
-
+	const round = await repository.getActiveRound( input.dealId, game.id );
 	if ( !round ) {
 		logger.error( "Round Not Found: %s", input.roundId );
 		throw new ORPCError( "NOT_FOUND", { message: "Round Not Found!" } );
@@ -95,10 +81,7 @@ export async function validatePlayCard( input: PlayCardInput, game: Callbreak.Ga
 		throw new ORPCError( "BAD_REQUEST", { message: "Not Your Turn!" } );
 	}
 
-	const cardMappings = await prisma.callbreak.cardMapping.findMany( {
-		where: { dealId: input.dealId, gameId: game.id, playerId: input.playerId }
-	} );
-
+	const cardMappings = await repository.getCardMappingsForPlayer( input.dealId, game.id, input.playerId );
 	const hand = cardMappings.map( mapping => getCardFromId( mapping.cardId ) );
 
 	if ( !isCardInHand( hand, playedCard ) ) {
