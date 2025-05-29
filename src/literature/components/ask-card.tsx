@@ -42,7 +42,7 @@ export function AskCard() {
 		return cards.length !== 6;
 	} );
 
-	const oppositeTeamMembersWithCards = oppositeTeam?.memberIds
+	const oppositeTeamMembersWithCards = oppositeTeam?.memberIds.split( "," )
 		.map( memberId => players[ memberId ] )
 		.filter( member => !!cardCounts[ member.id ] ) ?? [];
 

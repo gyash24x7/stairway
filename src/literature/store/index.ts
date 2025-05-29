@@ -35,7 +35,7 @@ export function handleTeamsCreatedEvent( teams: Literature.EventPayloads["teams-
 	store.setState( state => produce( state, draft => {
 		draft.teams = teams;
 		Object.values( teams ).map( team => {
-			team.memberIds.forEach( memberId => {
+			team.memberIds.split( "," ).forEach( memberId => {
 				draft.players[ memberId ].teamId = team.id;
 			} );
 		} );
@@ -91,7 +91,7 @@ export function handleScoreUpdatedEvent( scoreUpdate: Literature.EventPayloads["
 	store.setState( state => produce( state, draft => {
 		draft.teams[ scoreUpdate.teamId ].score = scoreUpdate.score;
 		draft.teams[ scoreUpdate.teamId ].setsWon =
-			[ scoreUpdate.setWon, ...draft.teams[ scoreUpdate.teamId ].setsWon ];
+			draft.teams[ scoreUpdate.teamId ].setsWon.concat( "," + scoreUpdate.setWon );
 	} ) );
 }
 

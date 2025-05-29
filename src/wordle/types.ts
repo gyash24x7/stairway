@@ -4,7 +4,11 @@ export namespace Wordle {
 	export type Game = typeof schema.games.$inferSelect;
 
 	export type Store = {
-		game: Game;
+		game: Omit<Game, "words" | "guesses" | "completedWords"> & {
+			words: string[];
+			guesses: string[];
+			completedWords: string[];
+		};
 		currentGuess: string[];
 	}
 }

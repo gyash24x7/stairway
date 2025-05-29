@@ -1,20 +1,17 @@
 import type { AuthInfo } from "@/auth/types";
 import { getCardFromId, getCardSet } from "@/libs/cards/card";
 import type { AskCardInput, CallSetInput, JoinGameInput, TransferTurnInput } from "@/literature/server/inputs";
+import * as repository from "@/literature/server/repository";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
-import { prisma } from "@/shared/utils/prisma";
 import { ORPCError } from "@orpc/server";
 
 const logger = createLogger( "LiteratureValidations" );
 
 export async function validateJoinGame( input: JoinGameInput, authInfo: AuthInfo ) {
 	logger.debug( ">> validateJoinGame()" );
-	const game = await prisma.literature.game.findUnique( {
-		where: { code: input.code },
-		include: { players: true }
-	} );
 
+	const game = await repository.getGameByCode( input.code );
 	if ( !game ) {
 		logger.error( "Game Not Found!" );
 		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
@@ -22,8 +19,7 @@ export async function validateJoinGame( input: JoinGameInput, authInfo: AuthInfo
 
 	logger.debug( "Found Game: %o", game.players.length );
 
-	const isUserAlreadyInGame = !!game.players.find( player => player.id === authInfo.id );
-
+	const isUserAlreadyInGame = !!game.players.find( player => player.userId === authInfo.id );
 	if ( isUserAlreadyInGame ) {
 		logger.warn( "The User is already part of the Game! GameId: %s", game.id );
 		return { game, isUserAlreadyInGame };
@@ -66,10 +62,7 @@ export async function validateCreateTeams( game: Literature.Game, players: Liter
 export async function validateAskCard( input: AskCardInput, game: Literature.Game, players: Literature.PlayerData ) {
 	logger.debug( ">> validateAskCardRequest()" );
 
-	const cardMapping = await prisma.literature.cardMapping.findUnique( {
-		where: { gameId_cardId: { gameId: game.id, cardId: input.card } }
-	} );
-
+	const cardMapping = await repository.getCardMappingForCard( input.gameId, input.card );
 	if ( !cardMapping ) {
 		logger.error( "Card Not Part of Game! GameId: %s CardId: %s", game.id, input.card );
 		throw new ORPCError( "BAD_REQUEST", { message: "Card Not Part of Game!" } );
@@ -100,10 +93,7 @@ export async function validateAskCard( input: AskCardInput, game: Literature.Gam
 export async function validateCallSet( input: CallSetInput, game: Literature.Game, players: Literature.PlayerData ) {
 	logger.debug( ">> validateCallSetRequest()" );
 
-	const cardMappings = await prisma.literature.cardMapping.findMany( {
-		where: { gameId: game.id, cardId: { in: Object.keys( input.data ) } }
-	} );
-
+	const cardMappings = await repository.getCardMappingsForCards( input.gameId, Object.keys( input.data ) );
 	const calledCards = Object.keys( input.data ).map( getCardFromId );
 	const cardSets = new Set( calledCards.map( getCardSet ) );
 
@@ -169,7 +159,7 @@ export async function validateTransferTurn(
 ) {
 	logger.debug( ">> validateTransferTurnRequest()" );
 
-	const lastMove = await prisma.literature.call.findUnique( { where: { id: game.lastMoveId } } );
+	const lastMove = await repository.getCallMove( game.lastMoveId );
 	if ( !lastMove ) {
 		logger.error( "Turn can only be transferred after a successful call!" );
 		throw new ORPCError( "BAD_REQUEST", { message: "Turn can only be transferred after a successful call!" } );

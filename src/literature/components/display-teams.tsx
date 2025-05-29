@@ -18,10 +18,14 @@ export function DisplayTeams() {
 			<DisplayScore team1={ teams[ 0 ] } team2={ teams[ 1 ] }/>
 			<div className={ "flex" }>
 				<div className={ "w-full p-2 border-r-2 text-xs md:text-md text-left" }>
-					{ teams[ 0 ]?.memberIds.map( playerId => getFirstName( players[ playerId ].name ) ).join( ", " ) }
+					{ teams[ 0 ]?.memberIds.split( "," )
+						.map( playerId => getFirstName( players[ playerId ].name ) ).join( ", " )
+					}
 				</div>
 				<div className={ "w-full p-2 text-xs md:text-md text-right" }>
-					{ teams[ 1 ]?.memberIds.map( playerId => getFirstName( players[ playerId ].name ) ).join( ", " ) }
+					{ teams[ 1 ]?.memberIds.split( "," )
+						.map( playerId => getFirstName( players[ playerId ].name ) ).join( ", " )
+					}
 				</div>
 			</div>
 		</div>

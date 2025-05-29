@@ -88,8 +88,8 @@ export function canCardSetBeCalled(
 			continue;
 		}
 
-		cardPossibilityMap[ cardId ] = cardLocation.playerIds;
-		cardLocation.playerIds.filter( playerId => cardCounts[ playerId ] > 0 ).forEach( playerId => {
+		cardPossibilityMap[ cardId ] = cardLocation.playerIds.split( "," );
+		cardLocation.playerIds.split( "," ).filter( playerId => cardCounts[ playerId ] > 0 ).forEach( playerId => {
 			if ( oppositeTeamMembers.includes( playerId ) ) {
 				isCardSetWithUs = false;
 			}
@@ -179,7 +179,7 @@ export function suggestAsks(
 				continue;
 			}
 
-			const possibleAsks: WeightedAsk[] = cardLocation.playerIds
+			const possibleAsks: WeightedAsk[] = cardLocation.playerIds.split( "," )
 				.filter( playerId => oppositeTeamMembers.includes( playerId ) )
 				.filter( playerId => cardCounts[ playerId ] > 0 )
 				.map( playerId => {

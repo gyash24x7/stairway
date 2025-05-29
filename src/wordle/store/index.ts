@@ -35,6 +35,11 @@ export function resetCurrentGuess() {
 
 export function updateGameData( game: Wordle.Game ) {
 	store.setState( state => produce( state, draft => {
-		draft.game = game;
+		draft.game = {
+			...game,
+			words: game.words.split( "," ),
+			guesses: game.guesses.split( "," ),
+			completedWords: game.completedWords.split( "," )
+		};
 	} ) );
 }

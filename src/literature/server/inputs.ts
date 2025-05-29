@@ -40,7 +40,7 @@ export const askCardInputSchema = z.object( {
 export type AskCardInput = z.infer<typeof askCardInputSchema>;
 
 export const gameIdInputSchema = z.object( {
-	gameId: z.string().ulid()
+	gameId: z.ulid()
 } );
 
 export type GameIdInput = z.infer<typeof gameIdInputSchema>;

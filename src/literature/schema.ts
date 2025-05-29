@@ -1,17 +1,20 @@
-import { users } from "@/auth/schema";
 import type { CardSet } from "@/libs/cards/types";
-import { generateGameCode, generateId } from "@/shared/utils/generator";
+import { generateAvatar, generateGameCode, generateId, generateName } from "@/shared/utils/generator";
 import { relations } from "drizzle-orm";
 import { integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const players = sqliteTable(
 	"lit_players",
 	{
-		userId: text( "user_id" ).notNull().references( () => users.id ),
+		id: text( "id" ).notNull().$default( () => generateId() ),
+		name: text( "name" ).notNull().$default( () => generateName() ),
+		username: text( "username" ).notNull().unique().$default( () => generateId() ),
+		avatar: text( "avatar" ).notNull().$default( () => generateAvatar() ),
 		gameId: text( "game_id" ).notNull().references( () => games.id ),
-		teamId: text( "team_id" ).references( () => teams.id )
+		teamId: text( "team_id" ).references( () => teams.id ),
+		isBot: integer( "is_bot" ).notNull().default( 0 )
 	},
-	( table ) => [ primaryKey( { columns: [ table.userId, table.gameId ] } ) ]
+	( table ) => [ primaryKey( { columns: [ table.id, table.gameId ] } ) ]
 );
 
 export const playerRelations = relations( players, ( { one, many } ) => ( {
@@ -60,7 +63,7 @@ export const cardMappingRelations = relations( cardMappings, ( { one } ) => {
 		} ),
 		player: one( players, {
 			fields: [ cardMappings.playerId, cardMappings.gameId ],
-			references: [ players.userId, players.gameId ]
+			references: [ players.id, players.gameId ]
 		} )
 	};
 } );

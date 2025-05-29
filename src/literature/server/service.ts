@@ -13,6 +13,7 @@ import type {
 	JoinGameInput,
 	TransferTurnInput
 } from "@/literature/server/inputs";
+import * as repository from "@/literature/server/repository";
 import {
 	validateAddBots,
 	validateAskCard,
@@ -22,9 +23,8 @@ import {
 	validateTransferTurn
 } from "@/literature/server/validators";
 import { type Literature, LiteratureEvent } from "@/literature/types";
-import { generateAvatar, generateGameCode, generateName } from "@/shared/utils/generator";
+import { generateGameCode } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { prisma } from "@/shared/utils/prisma";
 import { ORPCError } from "@orpc/server";
 
 const logger = createLogger( "LiteratureService" );
@@ -33,40 +33,31 @@ const MAX_ASK_WEIGHT = 720;
 export async function getGameData( gameId: string ) {
 	logger.debug( ">> getGameData()" );
 
-	const data = await prisma.literature.game.findUnique( {
-		where: { id: gameId },
-		include: { players: true, teams: true }
-	} );
+	const data = await repository.getGameById( gameId );
 
 	if ( !data ) {
 		logger.error( "Game Not Found!" );
 		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
 	}
 
-	const { players, teams, ...game } = data;
-	const playerMap: Literature.PlayerData = {};
-	players.forEach( player => {
-		playerMap[ player.id ] = player;
-	} );
-
-	const teamMap: Literature.TeamData = {};
-	teams.forEach( team => {
-		teamMap[ team.id ] = team;
-	} );
-
 	logger.debug( "<< getGameData()" );
-	return { game, players: playerMap, teams: teamMap };
+	return data;
 }
 
-export async function getCardCounts( gameId: string, players: Literature.PlayerData ) {
+export async function getCardCounts( gameId: string ) {
 	logger.debug( ">> getCardCounts()" );
 
-	const cardMappings = await prisma.literature.cardMapping.findMany( { where: { gameId } } );
-	const cardCounts: Literature.CardCounts = {};
-
-	Object.keys( players ).forEach( playerId => {
-		cardCounts[ playerId ] = cardMappings.filter( mapping => mapping.playerId === playerId ).length;
-	} );
+	const cardMappings = await repository.getCardMappingsForGame( gameId );
+	const cardCounts = cardMappings.reduce(
+		( acc, mapping ) => {
+			if ( !acc[ mapping.playerId ] ) {
+				acc[ mapping.playerId ] = 0;
+			}
+			acc[ mapping.playerId ]++;
+			return acc;
+		},
+		{} as Literature.CardCounts
+	);
 
 	logger.debug( "<< getCardCounts()" );
 	return cardCounts;
@@ -75,7 +66,7 @@ export async function getCardCounts( gameId: string, players: Literature.PlayerD
 export async function getPlayerHand( gameId: string, playerId: string ) {
 	logger.debug( ">> getPlayerHand()" );
 
-	const cardMappings = await prisma.literature.cardMapping.findMany( { where: { gameId, playerId } } );
+	const cardMappings = await repository.getCardMappingsForPlayer( gameId, playerId );
 	const hand = cardMappings.map( mapping => getCardFromId( mapping.cardId ) );
 
 	logger.debug( "<< getPlayerHand()" );
@@ -85,17 +76,17 @@ export async function getPlayerHand( gameId: string, playerId: string ) {
 export async function getLastMoveData( lastMoveId: string ) {
 	logger.debug( ">> getLastMove()" );
 
-	const ask = await prisma.literature.ask.findUnique( { where: { id: lastMoveId } } );
+	const ask = await repository.getAskMove( lastMoveId );
 	if ( !!ask ) {
 		return { move: ask, isCall: false } as const;
 	}
 
-	const call = await prisma.literature.call.findUnique( { where: { id: lastMoveId } } );
+	const call = await repository.getCallMove( lastMoveId );
 	if ( !!call ) {
 		return { move: call, isCall: true } as const;
 	}
 
-	const transfer = await prisma.literature.transfer.findUnique( { where: { id: lastMoveId } } );
+	const transfer = await repository.getTransferMove( lastMoveId );
 	if ( !!transfer ) {
 		return { move: transfer, isCall: false } as const;
 	}
@@ -105,7 +96,7 @@ export async function getLastMoveData( lastMoveId: string ) {
 
 export async function getPreviousAsks( gameId: string ) {
 	logger.debug( ">> getPreviousAsks()" );
-	const asks = await prisma.literature.ask.findMany( { where: { gameId }, take: 5, orderBy: { timestamp: "desc" } } );
+	const asks = await repository.getAskMoves( gameId );
 	logger.debug( "<< getPreviousAsks()" );
 	return asks.slice( 0, 5 );
 }
@@ -113,9 +104,9 @@ export async function getPreviousAsks( gameId: string ) {
 export async function getMetrics( game: Literature.Game, players: Literature.PlayerData, teams: Literature.TeamData ) {
 	logger.debug( ">> getMetrics()" );
 
-	const asks = await prisma.literature.ask.findMany( { where: { gameId: game.id } } );
-	const calls = await prisma.literature.call.findMany( { where: { gameId: game.id } } );
-	const transfers = await prisma.literature.transfer.findMany( { where: { gameId: game.id } } );
+	const asks = await repository.getAskMoves( game.id );
+	const calls = await repository.getCallMoves( game.id );
+	const transfers = await repository.getTransferMoves( game.id );
 
 	const metrics: Literature.Metrics = { player: [], team: [] };
 
@@ -143,7 +134,7 @@ export async function getMetrics( game: Literature.Game, players: Literature.Pla
 		metrics.team.push( {
 			teamId,
 			score: teams[ teamId ].score,
-			setsWon: teams[ teamId ].setsWon
+			setsWon: teams[ teamId ].setsWon.split( "," )
 		} );
 	}
 
@@ -154,15 +145,8 @@ export async function getMetrics( game: Literature.Game, players: Literature.Pla
 export async function createGame( { playerCount }: CreateGameInput, { authInfo }: AuthContext ) {
 	logger.debug( ">> createGame()" );
 
-	const { id, name, avatar } = authInfo;
-	const game = await prisma.literature.game.create( {
-		data: {
-			playerCount,
-			code: generateGameCode(),
-			currentTurn: id,
-			players: { create: { id, name, avatar } }
-		}
-	} );
+	const game = await repository.createGame( { playerCount, code: generateGameCode(), currentTurn: authInfo.id } );
+	await repository.createPlayer( { ...authInfo, gameId: game.id } );
 
 	logger.debug( "<< createGame()" );
 	return game;
@@ -177,16 +161,10 @@ export async function joinGame( input: JoinGameInput, { authInfo }: AuthContext 
 		return game;
 	}
 
-	const newPlayer = await prisma.literature.player.create( {
-		data: { id: authInfo.id, name: authInfo.name, avatar: authInfo.avatar, gameId: game.id }
-	} );
+	const newPlayer = await repository.createPlayer( { ...authInfo, gameId: game.id } );
 
 	if ( game.playerCount === game.players.length + 1 ) {
-		await prisma.literature.game.update( {
-			where: { id: game.id },
-			data: { status: "PLAYERS_READY" }
-		} );
-
+		await repository.updateGameStatus( game.id, "PLAYERS_READY" );
 		await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "PLAYERS_READY" );
 	}
 
@@ -203,19 +181,12 @@ export async function addBots( { game, players }: Literature.Context ) {
 	const botCount = await validateAddBots( game, players );
 
 	for ( let i = 0; i < botCount; i++ ) {
-		const name = generateName();
-		const avatar = generateAvatar();
-		const bot = await prisma.literature.player.create( { data: { name, avatar, gameId: game.id, isBot: true } } );
-
+		const bot = await repository.createPlayer( { gameId: game.id, isBot: 1 } );
 		botData[ bot.id ] = bot;
 		await publishLiteratureEvent( game.id, LiteratureEvent.PLAYER_JOINED, bot );
 	}
 
-	await prisma.literature.game.update( {
-		where: { id: game.id },
-		data: { status: "PLAYERS_READY" }
-	} );
-
+	await repository.updateGameStatus( game.id, "PLAYERS_READY" );
 	await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "PLAYERS_READY" );
 
 	logger.debug( "<< addBots()" );
@@ -227,22 +198,24 @@ export async function createTeams( input: CreateTeamsInput, { game, players }: L
 
 	await validateCreateTeams( game, players );
 
-	const teamData: Literature.TeamData = {};
-	for ( const name of Object.keys( input.data ) ) {
-		const memberIds = input.data[ name ];
-		const team = await prisma.literature.team.create( { data: { name, gameId: game.id, memberIds } } );
-		await prisma.literature.player.updateMany( {
-			where: { id: { in: memberIds } },
-			data: { teamId: team.id }
-		} );
+	const teams = await repository.createTeams(
+		Object.keys( input.data ).map( name => ( {
+			name,
+			memberIds: input.data[ name ].join( "," ),
+			gameId: game.id
+		} ) )
+	);
 
-		teamData[ team.id ] = team;
-	}
+	const teamData = teams.reduce(
+		( acc, team ) => {
+			acc[ team.id ] = team;
+			return acc;
+		},
+		{} as Literature.TeamData
+	);
 
-	await prisma.literature.game.update( {
-		where: { id: game.id },
-		data: { status: "TEAMS_CREATED" }
-	} );
+	await repository.assignTeamsToPlayers( teamData );
+	await repository.updateGameStatus( game.id, "TEAMS_CREATED" );
 
 	await publishLiteratureEvent( game.id, LiteratureEvent.STATUS_UPDATED, "TEAMS_CREATED" );
 	await publishLiteratureEvent( game.id, LiteratureEvent.TEAMS_CREATED, teamData );
@@ -254,10 +227,7 @@ export async function createTeams( input: CreateTeamsInput, { game, players }: L
 export async function startGame( { game, players }: Literature.Context ) {
 	logger.debug( ">> startGame()" );
 
-	await prisma.literature.game.update( {
-		where: { id: game.id },
-		data: { status: "IN_PROGRESS" }
-	} );
+	await repository.updateGameStatus( game.id, "IN_PROGRESS" );
 
 	const deck = removeCardsOfRank( generateDeck(), CardRank.SEVEN );
 
@@ -276,11 +246,11 @@ export async function startGame( { game, players }: Literature.Context ) {
 			cardMappings.push( { cardId: getCardId( card ), playerId, gameId: game.id } );
 		} );
 
-		const otherPlayerIds = playerIds.filter( id => id !== playerId );
+		const otherPlayerIds = playerIds.filter( id => id !== playerId ).join( "," );
 
 		const cardLocationsForPlayer = deck.map( c => {
 			if ( isCardInHand( hand, c ) ) {
-				return { gameId: game.id, cardId: getCardId( c ), playerId, playerIds: [ playerId ], weight: 0 };
+				return { gameId: game.id, cardId: getCardId( c ), playerId, playerIds: playerId, weight: 0 };
 			}
 
 			const weight = MAX_ASK_WEIGHT / otherPlayerIds.length;
@@ -290,8 +260,8 @@ export async function startGame( { game, players }: Literature.Context ) {
 		cardLocations.push( ...cardLocationsForPlayer );
 	} );
 
-	await prisma.literature.cardMapping.createMany( { data: cardMappings } );
-	await prisma.literature.cardLocation.createMany( { data: cardLocations } );
+	await repository.createCardMappings( cardMappings );
+	await repository.createCardLocations( cardLocations );
 
 	await publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
 	logger.debug( "Published CardCountUpdatedEvent!" );
@@ -314,39 +284,29 @@ export async function askCard( input: AskCardInput, { game, players, cardCounts 
 	const askedCard = getCardFromId( input.card );
 	const currentPlayer = players[ game.currentTurn ];
 
-	const moveSuccess = askedPlayer.id === playerWithAskedCard.id;
+	const moveSuccess = askedPlayer.id === playerWithAskedCard.id ? 1 : 0;
 	const receivedString = moveSuccess ? "got the card!" : "was declined!";
 	const cardDisplayString = getCardDisplayString( askedCard );
 	const description = `${ currentPlayer.name } asked ${ askedPlayer.name } for ${ cardDisplayString } and ${ receivedString }`;
 
-	const ask = await prisma.literature.ask.create( {
-		data: {
-			playerId: currentPlayer.id,
-			gameId: game.id,
-			success: moveSuccess,
-			description,
-			cardId: input.card,
-			askedFrom: input.from
-		}
+	const ask = await repository.createAsk( {
+		playerId: currentPlayer.id,
+		gameId: game.id,
+		success: moveSuccess,
+		description,
+		cardId: input.card,
+		askedFrom: input.from
 	} );
 
 	const nextTurn = !ask.success ? ask.askedFrom : ask.playerId;
 	if ( nextTurn !== game.currentTurn ) {
-		await prisma.literature.game.update( {
-			where: { id: game.id },
-			data: { currentTurn: nextTurn }
-		} );
-
+		await repository.updateCurrentTurn( game.id, nextTurn );
 		await publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, nextTurn );
 		logger.debug( "Published TurnUpdatedEvent!" );
 	}
 
 	if ( ask.success ) {
-		await prisma.literature.cardMapping.update( {
-			where: { gameId_cardId: { gameId: ask.gameId, cardId: ask.cardId } },
-			data: { playerId: ask.playerId }
-		} );
-
+		await repository.updateCardMapping( ask.cardId, game.id, ask.playerId );
 		cardCounts[ ask.playerId ]++;
 		cardCounts[ ask.askedFrom ]--;
 
@@ -354,33 +314,22 @@ export async function askCard( input: AskCardInput, { game, players, cardCounts 
 		logger.debug( "Published CardCountUpdatedEvent!" );
 	}
 
-	const cardLocations = await prisma.literature.cardLocation.findMany( {
-		where: {
-			gameId: game.id,
-			cardId: ask.cardId
-		}
-	} );
+	const cardLocations = await repository.getCardLocationsForCard( game.id, ask.cardId ).then( cardLocations => {
+		return cardLocations.map( ( { gameId, playerId, cardId, playerIds, weight } ) => {
+			if ( ask.success ) {
+				weight = ask.playerId === playerId ? 0 : MAX_ASK_WEIGHT;
+				playerIds = ask.playerId;
+			} else {
+				playerIds = playerIds.split( "," ).filter( p => p !== ask.playerId && p !== ask.askedFrom ).join( "," );
+				weight = MAX_ASK_WEIGHT / playerIds.length;
+			}
 
-	for ( let { gameId, playerId, cardId, playerIds, weight } of cardLocations ) {
-		if ( ask.success ) {
-			weight = ask.playerId === playerId ? 0 : MAX_ASK_WEIGHT;
-			playerIds = [ ask.playerId ];
-		} else {
-			playerIds = playerIds.filter( p => p !== ask.playerId && p !== ask.askedFrom );
-			weight = MAX_ASK_WEIGHT / playerIds.length;
-		}
-
-		await prisma.literature.cardLocation.update( {
-			where: { gameId_playerId_cardId: { gameId, playerId, cardId } },
-			data: { playerIds, weight }
+			return { gameId, playerId, cardId, playerIds, weight };
 		} );
-	}
-
-	await prisma.literature.game.update( {
-		where: { id: game.id },
-		data: { lastMoveId: ask.id }
 	} );
 
+	await repository.updateCardLocations( cardLocations );
+	await repository.updateLastMove( game.id, ask.id );
 	await publishLiteratureEvent( game.id, LiteratureEvent.CARD_ASKED, ask );
 
 	logger.debug( "<< askCard()" );
@@ -392,33 +341,31 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 	const { correctCall, calledSet } = await validateCallSet( input, game, players );
 	const callingPlayer = players[ game.currentTurn ]!;
 
-	let success = true;
+	let success = 1;
 	let successString = "correctly!";
 
 	for ( const card of cardSetMap[ calledSet ] ) {
 		const cardId = getCardId( card );
 		if ( correctCall[ cardId ] !== input.data[ cardId ] ) {
-			success = false;
+			success = 0;
 			successString = "incorrectly!";
 			break;
 		}
 	}
 
-	const call = await prisma.literature.call.create( {
-		data: {
-			gameId: game.id,
-			playerId: callingPlayer.id,
-			success,
-			description: `${ callingPlayer.name } called ${ calledSet } ${ successString }`,
-			cardSet: calledSet,
-			actualCall: input.data,
-			correctCall
-		}
+	const call = await repository.createCall( {
+		gameId: game.id,
+		playerId: callingPlayer.id,
+		success,
+		description: `${ callingPlayer.name } called ${ calledSet } ${ successString }`,
+		cardSet: calledSet,
+		actualCall: input.data,
+		correctCall
 	} );
 
 	const calledCards = Object.keys( correctCall );
-	await prisma.literature.cardMapping.deleteMany( { where: { gameId: game.id, cardId: { in: calledCards } } } );
-	await prisma.literature.cardLocation.deleteMany( { where: { gameId: game.id, cardId: { in: calledCards } } } );
+	await repository.deleteCardLocationForCards( game.id, calledCards );
+	await repository.deleteCardMappings( game.id, calledCards );
 
 	Object.values( correctCall ).forEach( playerId => {
 		cardCounts[ playerId ]--;
@@ -431,17 +378,15 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 		winningTeamId = player.teamId!;
 	}
 
-	await prisma.literature.team.update( {
-		where: { id: winningTeamId },
-		data: {
-			score: { increment: 1 },
-			setsWon: { push: calledSet }
-		}
-	} );
+	await repository.updateTeamScore(
+		winningTeamId,
+		teams[ winningTeamId ].score++,
+		teams[ winningTeamId ].setsWon.concat( "," + calledSet )
+	);
 
 	const setsCompleted: CardSet[] = [ calledSet ];
 	Object.values( teams ).forEach( team => {
-		setsCompleted.push( ...team.setsWon as CardSet[] );
+		setsCompleted.push( ...team.setsWon.split( "," ) as CardSet[] );
 	} );
 
 	const scoreUpdate = {
@@ -455,11 +400,7 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 	logger.debug( "SetsCompleted: %o", setsCompleted );
 
 	if ( scoreUpdate.isLastSet ) {
-		await prisma.literature.game.update( {
-			where: { id: game.id },
-			data: { status: "COMPLETED" }
-		} );
-
+		await repository.updateGameStatus( game.id, "COMPLETED" );
 		const metrics = await getMetrics( game, players, teams );
 		await publishLiteratureEvent( game.id, LiteratureEvent.GAME_COMPLETED, metrics );
 
@@ -495,21 +436,13 @@ export async function callSet( input: CallSetInput, { game, players, cardCounts,
 		}
 
 		if ( nextTurn !== game.currentTurn ) {
-			await prisma.literature.game.update( {
-				where: { id: game.id },
-				data: { currentTurn: nextTurn }
-			} );
-
+			await repository.updateCurrentTurn( game.id, nextTurn );
 			await publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, nextTurn );
 			logger.debug( "Published TurnUpdatedEvent!" );
 		}
 	}
 
-	await prisma.literature.game.update( {
-		where: { id: game.id },
-		data: { lastMoveId: call.id }
-	} );
-
+	await repository.updateLastMove( game.id, call.id );
 	await publishLiteratureEvent( game.id, LiteratureEvent.SET_CALLED, call );
 	await publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
 
@@ -523,21 +456,16 @@ export async function transferTurn( input: TransferTurnInput, { game, players, c
 		input, game, players, cardCounts
 	);
 
-	const transfer = await prisma.literature.transfer.create( {
-		data: {
-			gameId: game.id,
-			playerId: transferringPlayer.id,
-			success: true,
-			description: `${ transferringPlayer.name } transferred the turn to ${ receivingPlayer.name }`,
-			transferTo: input.transferTo
-		}
+	const transfer = await repository.createTransfer( {
+		gameId: game.id,
+		playerId: transferringPlayer.id,
+		success: 1,
+		description: `${ transferringPlayer.name } transferred the turn to ${ receivingPlayer.name }`,
+		transferTo: input.transferTo
 	} );
 
-	await prisma.literature.game.update( {
-		where: { id: game.id },
-		data: { currentTurn: input.transferTo, lastMoveId: transfer.id }
-	} );
-
+	await repository.updateCurrentTurn( game.id, input.transferTo );
+	await repository.updateLastMove( game.id, transfer.id );
 	await publishLiteratureEvent( game.id, LiteratureEvent.TURN_UPDATED, input.transferTo );
 	logger.debug( "Published TurnUpdatedEvent!" );
 
@@ -551,12 +479,9 @@ export async function executeBotMove( context: Literature.Context ) {
 
 	const { game, players, cardCounts } = context;
 
-	const { cardLocations, cardMappings } = await prisma.literature.player.findUniqueOrThrow( {
-		where: { id_gameId: { id: game.currentTurn, gameId: game.id } },
-		include: { cardLocations: true, cardMappings: true }
-	} );
-
-	const lastCall = await prisma.literature.call.findFirst( { where: { id: game.lastMoveId } } );
+	const cardMappings = await repository.getCardMappingsForPlayer( game.id, game.currentTurn );
+	const cardLocations = await repository.getCardLocationsForPlayer( game.id, game.currentTurn );
+	const lastCall = await repository.getCallMove( game.lastMoveId );
 	const hand = cardMappings.map( mapping => getCardFromId( mapping.cardId ) );
 	const cardSets = suggestCardSets( cardLocations, hand );
 

@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const createGameInputSchema = z.object( {
 	dealCount: z.number().positive().optional(),
@@ -15,25 +15,25 @@ export type JoinGameInput = z.infer<typeof joinGameInputSchema>;
 
 export const declareDealWinsInputSchema = z.object( {
 	wins: z.number().positive().lte( 13 ),
-	dealId: z.string().ulid(),
-	gameId: z.string().ulid(),
-	playerId: z.string().ulid()
+	dealId: z.ulid(),
+	gameId: z.ulid(),
+	playerId: z.ulid()
 } );
 
 export type DeclareDealWinsInput = z.infer<typeof declareDealWinsInputSchema>;
 
 export const playCardInputSchema = z.object( {
 	cardId: z.string(),
-	roundId: z.string().ulid(),
-	dealId: z.string().ulid(),
-	gameId: z.string().ulid(),
-	playerId: z.string().ulid()
+	roundId: z.ulid(),
+	dealId: z.ulid(),
+	gameId: z.ulid(),
+	playerId: z.ulid()
 } );
 
 export type PlayCardInput = z.infer<typeof playCardInputSchema>;
 
 export const gameIdInputSchema = z.object( {
-	gameId: z.string().ulid()
+	gameId: z.ulid()
 } );
 
 export type GameIdInput = z.infer<typeof gameIdInputSchema>;

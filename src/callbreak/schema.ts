@@ -1,5 +1,5 @@
 import { users } from "@/auth/schema";
-import { generateGameCode, generateId } from "@/shared/utils/generator";
+import { generateAvatar, generateGameCode, generateId, generateName } from "@/shared/utils/generator";
 import { foreignKey, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const games = sqliteTable( "clbk_games", {
@@ -14,10 +14,14 @@ export const games = sqliteTable( "clbk_games", {
 export const players = sqliteTable(
 	"clbk_players",
 	{
-		userId: text( "user_id" ).notNull().references( () => users.id ),
-		gameId: text( "game_id" ).notNull().references( () => games.id )
+		id: text( "id" ).notNull().$default( () => generateId() ),
+		name: text( "name" ).notNull().$default( () => generateName() ),
+		username: text( "username" ).notNull().unique().$default( () => generateId() ),
+		avatar: text( "avatar" ).notNull().$default( () => generateAvatar() ),
+		gameId: text( "game_id" ).notNull().references( () => games.id ),
+		isBot: integer( "is_bot" ).notNull().default( 0 )
 	},
-	( table ) => [ primaryKey( { columns: [ table.userId, table.gameId ] } ) ]
+	( table ) => [ primaryKey( { columns: [ table.id, table.gameId ] } ) ]
 );
 
 export const deals = sqliteTable(

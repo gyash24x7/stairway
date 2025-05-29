@@ -114,7 +114,7 @@ export function CallSet() {
 						) }
 						{ currentStep === 2 && (
 							<div className={ "flex flex-col gap-3" }>
-								{ team!.memberIds.map( playerId => players[ playerId ] ).map( player => (
+								{ team!.memberIds.split( "," ).map( playerId => players[ playerId ] ).map( player => (
 									<Fragment key={ player.id }>
 										<h1>Cards With { player.name }</h1>
 										<div className={ "grid gap-3 grid-cols-6" }>

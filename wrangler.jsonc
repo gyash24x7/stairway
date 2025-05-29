@@ -35,9 +35,14 @@
 	],
 	"kv_namespaces": [
 		{
-			"binding": "KV",
-			"id": "5128fa4559fe4ed2a893f10b257fe676",
-			"preview_id": "stairway-kv"
+			"binding": "WEBAUTHN_KV",
+			"id": "7ad7fc41c4d047fe8f6893e6cb1cd75a",
+			"preview_id": "stairway-webauthn"
+		},
+		{
+			"binding": "SESSION_KV",
+			"id": "15cd97e160d742a4869b45efe0163da1",
+			"preview_id": "stairway-session"
 		}
 	],
 	/**

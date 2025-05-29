@@ -1,31 +1,21 @@
 import type { CardSet, PlayingCard } from "@/libs/cards/types";
-import type {
-	LiteratureAsk,
-	LiteratureCall,
-	LiteratureCardLocation,
-	LiteratureCardMapping,
-	LiteratureGame,
-	LiteratureGameStatus,
-	LiteraturePlayer,
-	LiteratureTeam,
-	LiteratureTransfer
-} from "@prisma/client";
+import type * as schema from "@/literature/schema";
 
 export namespace Literature {
-	export type Player = LiteraturePlayer
-	export type Team = LiteratureTeam
-	export type CardMapping = LiteratureCardMapping
-	export type Game = LiteratureGame
-	export type CardLocation = LiteratureCardLocation
-	export type Ask = LiteratureAsk
-	export type Call = LiteratureCall
-	export type Transfer = LiteratureTransfer
+	export type Player = typeof schema.players.$inferSelect;
+	export type Team = typeof schema.teams.$inferSelect;
+	export type CardMapping = typeof schema.cardMappings.$inferSelect;
+	export type Game = typeof schema.games.$inferSelect;
+	export type CardLocation = typeof schema.cardLocations.$inferSelect;
+	export type Ask = typeof schema.asks.$inferSelect;
+	export type Call = typeof schema.calls.$inferSelect;
+	export type Transfer = typeof schema.transfers.$inferSelect;
 
 	export type PlayerData = Record<string, Player>;
 	export type TeamData = Record<string, Team>;
 	export type CardCounts = Record<string, number>;
 	export type ScoreUpdate = { teamId: string; score: number; setWon: CardSet; isLastSet: boolean }
-	export type GameStatus = LiteratureGameStatus;
+	export type GameStatus = Game["status"];
 
 	export type GameData = {
 		id: string;

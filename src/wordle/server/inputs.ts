@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const createGameInputSchema = z.object( {
 	wordCount: z.number().optional(),
@@ -7,10 +7,10 @@ export const createGameInputSchema = z.object( {
 
 export type CreateGameInput = z.infer<typeof createGameInputSchema>;
 
-export const makeGuessInputSchema = z.object( { gameId: z.string().ulid(), guess: z.string() } );
+export const makeGuessInputSchema = z.object( { gameId: z.ulid(), guess: z.string() } );
 
 export type MakeGuessInput = z.infer<typeof makeGuessInputSchema>;
 
-export const gameIdInputSchema = z.object( { gameId: z.string().ulid() } );
+export const gameIdInputSchema = z.object( { gameId: z.ulid() } );
 
 export type GameIdInput = z.infer<typeof gameIdInputSchema>;

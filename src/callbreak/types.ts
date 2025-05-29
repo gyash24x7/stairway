@@ -1,18 +1,12 @@
+import type * as schema from "@/callbreak/schema";
 import type { PlayingCard } from "@/libs/cards/types";
-import type {
-	CallBreakCardMapping,
-	CallBreakDeal,
-	CallBreakGame,
-	CallBreakPlayer,
-	CallBreakRound
-} from "@prisma/client";
 
 export namespace Callbreak {
-	export type Player = CallBreakPlayer
-	export type CardMapping = CallBreakCardMapping
-	export type Game = CallBreakGame
-	export type Deal = CallBreakDeal
-	export type Round = CallBreakRound
+	export type Player = typeof schema.players.$inferSelect;
+	export type CardMapping = typeof schema.cardMappings.$inferSelect;
+	export type Game = typeof schema.games.$inferSelect;
+	export type Deal = typeof schema.deals.$inferSelect;
+	export type Round = typeof schema.rounds.$inferSelect;
 
 	export type PlayerData = Record<string, Player>;
 	export type DealWithRounds = Deal & { rounds: Round[] };

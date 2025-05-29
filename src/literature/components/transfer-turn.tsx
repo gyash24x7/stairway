@@ -1,8 +1,8 @@
 "use client";
 
-import { DisplayPlayer } from "@/shared/components/display-player";
 import { transferTurn } from "@/literature/server/functions";
 import { store } from "@/literature/store";
+import { DisplayPlayer } from "@/shared/components/display-player";
 import { Button } from "@/shared/primitives/button";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
@@ -28,7 +28,7 @@ export function TransferTurn() {
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ showDrawer, setShowDrawer ] = useState( false );
 
-	const myTeamMembersWithCards = myTeam?.memberIds
+	const myTeamMembersWithCards = myTeam?.memberIds.split( "," )
 		.map( memberId => players[ memberId ] )
 		.filter( member => !!cardCounts[ member.id ] && member.id !== playerId ) ?? [];
 
