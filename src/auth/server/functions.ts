@@ -9,6 +9,10 @@ import { redirect } from "next/navigation";
 
 const logger = createLogger( "Auth:Functions" );
 
+export const checkIfUserExists = os.input( usernameInput )
+	.handler( async ( { input } ) => service.checkIfUserExists( input.username ) )
+	.actionable();
+
 export const getRegistrationOptions = os.input( usernameInput )
 	.handler( async ( { input } ) => service.getWebAuthnRegistrationOptions( input.username ) )
 	.actionable();
@@ -18,11 +22,17 @@ export const getLoginOptions = os.input( usernameInput )
 	.actionable();
 
 export const verifyRegistration = os.input( registrationVerificationInput )
-	.handler( async ( { input } ) => service.verifyWebAuthnRegistration( input ) )
+	.handler( async ( { input } ) => {
+		const { token, expiresAt } = await service.verifyWebAuthnRegistration( input );
+		await setSessionTokenCookie( token, expiresAt );
+	} )
 	.actionable();
 
 export const verifyLogin = os.input( loginVerificationInput )
-	.handler( async ( { input } ) => service.verifyWebAuthnLogin( input ) )
+	.handler( async ( { input } ) => {
+		const { token, expiresAt } = await service.verifyWebAuthnLogin( input );
+		await setSessionTokenCookie( token, expiresAt );
+	} )
 	.actionable();
 
 export async function getAuthInfo() {
@@ -49,4 +59,15 @@ export async function logout() {
 	} );
 
 	redirect( "/" );
+}
+
+async function setSessionTokenCookie( token: string, expiresAt: Date ): Promise<void> {
+	const cookieStore = await cookies();
+	cookieStore.set( "session-id", token, {
+		httpOnly: true,
+		sameSite: "lax",
+		secure: process.env.NODE_ENV === "production",
+		expires: expiresAt,
+		path: "/"
+	} );
 }

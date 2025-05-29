@@ -22,7 +22,7 @@ type MiddlewareData = { status?: Literature.GameStatus, turn?: true, isGameDataQ
 
 const gameMiddleware = ( data?: MiddlewareData ) => authMiddleware.concat( async ( { context, next }, input ) => {
 	const { gameId } = input as GameIdInput;
-	const { game, players, teams } = await service.getGameData( gameId );
+	const { players, teams, ...game } = await service.getGameData( gameId );
 
 	if ( !players[ context.authInfo.id ] ) {
 		logger.error( "Logged In User not part of this game! UserId: %s", context.authInfo.id );
@@ -40,7 +40,7 @@ const gameMiddleware = ( data?: MiddlewareData ) => authMiddleware.concat( async
 	}
 
 	const cardCounts = game.status === "IN_PROGRESS"
-		? await service.getCardCounts( game.id, players )
+		? await service.getCardCounts( game.id )
 		: {};
 
 	const hand = data?.isGameDataQuery

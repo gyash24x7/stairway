@@ -36,7 +36,7 @@ export async function getGameData( { game, players, authInfo }: Callbreak.Contex
 	logger.debug( ">> getGameData()" );
 
 	const activeDeal = await repository.getActiveDeal( game.id );
-	let activeRound: Callbreak.Round | null = null;
+	let activeRound: Callbreak.RoundWithCards | null = null;
 	const hand: PlayingCard[] = [];
 
 	if ( !!activeDeal ) {
@@ -45,8 +45,10 @@ export async function getGameData( { game, players, authInfo }: Callbreak.Contex
 		activeRound = await repository.getActiveRound( activeDeal.id, game.id );
 	}
 
+	const scores = await repository.getScores( game.id );
+
 	logger.debug( "<< getGameData()" );
-	return { game, players, currentDeal: activeDeal, currentRound: activeRound, playerId: authInfo.id, hand };
+	return { game, players, currentDeal: activeDeal, currentRound: activeRound, playerId: authInfo.id, hand, scores };
 }
 
 export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { authInfo }: AuthContext ) {
@@ -134,7 +136,7 @@ export async function createDeal( { game, players }: Callbreak.Context, lastDeal
 		await publishCallbreakEvent( game.id, CallbreakEvent.CARDS_DEALT, hand, playerId );
 	}
 
-	await publishCallbreakEvent( game.id, CallbreakEvent.DEAL_CREATED, deal );
+	await publishCallbreakEvent( game.id, CallbreakEvent.DEAL_CREATED, { ...deal, scores: {} } );
 
 	const startingPlayer = players[ playerOrder[ 0 ] ];
 	if ( startingPlayer.isBot ) {

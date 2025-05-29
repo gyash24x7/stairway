@@ -19,5 +19,5 @@ export type WebAuthnOptions = { webauthnUserId?: string; challenge: string };
 export type Session = {
 	id: string;
 	userId: string;
-	expiresAt: Date;
+	expiresAt: string;
 }

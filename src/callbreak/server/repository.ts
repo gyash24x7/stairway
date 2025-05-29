@@ -78,6 +78,25 @@ export async function getActiveRound( dealId: string, gameId: string ) {
 	return { ...round, cards };
 }
 
+export async function getScores( gameId: string ): Promise<Record<string, number>[]> {
+	const db = await getDb();
+	const scores = await db.select().from( schema.dealScores ).where( eq( schema.dealScores.gameId, gameId ) );
+	return Object.values( scores.reduce(
+		( acc, score ) => {
+			if ( !acc[ score.dealId ] ) {
+				acc[ score.dealId ] = {};
+			}
+
+			acc[ score.dealId ][ score.playerId ] = score.declarations < score.wins
+				? 10 * score.declarations + 2 * ( score.wins - score.declarations )
+				: -10 * score.declarations;
+
+			return acc;
+		},
+		{} as Record<string, Record<string, number>>
+	) );
+}
+
 export async function getCardMappingsForPlayer( dealId: string, gameId: string, playerId: string ) {
 	const db = await getDb();
 	return db.select().from( schema.cardMappings )

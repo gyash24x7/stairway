@@ -19,7 +19,7 @@ export async function validateJoinGame( input: JoinGameInput, authInfo: AuthInfo
 
 	logger.debug( "Found Game: %o", game.players.length );
 
-	const isUserAlreadyInGame = !!game.players.find( player => player.userId === authInfo.id );
+	const isUserAlreadyInGame = !!game.players.find( player => player.id === authInfo.id );
 	if ( isUserAlreadyInGame ) {
 		logger.warn( "The User is already part of the Game! GameId: %s", game.id );
 		return { game, isUserAlreadyInGame };

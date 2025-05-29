@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const createGameInputSchema = z.object( {
 	playerCount: z.number().positive().multipleOf( 2 ).lte( 8 ).optional()
@@ -12,7 +12,7 @@ export type JoinGameInput = z.infer<typeof joinGameInputSchema>;
 
 export const createTeamsInputSchema = z.object( {
 	gameId: z.string(),
-	data: z.record( z.string().array() )
+	data: z.record( z.string(), z.string().array() )
 } );
 
 export type CreateTeamsInput = z.infer<typeof createTeamsInputSchema>;
@@ -26,7 +26,7 @@ export type TransferTurnInput = z.infer<typeof transferTurnInputSchema>;
 
 export const callSetInputSchema = z.object( {
 	gameId: z.string(),
-	data: z.record( z.string() )
+	data: z.record( z.string(), z.string() )
 } );
 
 export type CallSetInput = z.infer<typeof callSetInputSchema>;

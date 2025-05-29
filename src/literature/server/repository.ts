@@ -1,5 +1,4 @@
 import * as authSchema from "@/auth/schema";
-import type { User } from "@/auth/types";
 import * as schema from "@/literature/schema";
 import type { Literature } from "@/literature/types";
 import { getDb } from "@/shared/db";
@@ -8,16 +7,7 @@ import { and, desc, eq, ilike, inArray } from "drizzle-orm";
 export async function getGameById( id: string ) {
 	const db = await getDb();
 	const [ game ] = await db.select().from( schema.games ).where( eq( schema.games.id, id ) ).limit( 1 );
-	const players = await db
-		.select( {
-			id: authSchema.users.id,
-			name: authSchema.users.name,
-			username: authSchema.users.username,
-			avatar: authSchema.users.avatar,
-			teamId: schema.players.teamId
-		} )
-		.from( authSchema.users )
-		.leftJoin( schema.players, eq( authSchema.users.id, schema.players.id ) )
+	const players = await db.select().from( schema.players )
 		.where( eq( schema.players.gameId, id ) );
 
 	const teams = await db.select().from( schema.teams ).where( eq( schema.teams.gameId, id ) );
@@ -26,16 +16,10 @@ export async function getGameById( id: string ) {
 		...game,
 		players: players.reduce(
 			( acc, player ) => {
-				acc[ player.id ] = {
-					id: player.id,
-					name: player.name,
-					username: player.username,
-					avatar: player.avatar,
-					teamId: player.teamId
-				};
+				acc[ player.id ] = player;
 				return acc;
 			},
-			{} as Record<string, User & { teamId?: string | null }>
+			{} as Literature.PlayerData
 		),
 		teams: teams.reduce(
 			( acc, team ) => {

@@ -1,11 +1,12 @@
 "use client";
+
 import {
 	checkIfUserExists,
-	generateWebAuthnLoginOptions,
-	generateWebAuthnRegistrationOptions,
-	verifyWebAuthnLogin,
-	verifyWebAuthnRegistration
+	getLoginOptions,
+	getRegistrationOptions,
+	verifyRegistration
 } from "@/auth/server/functions";
+import { verifyWebAuthnLogin } from "@/auth/server/service";
 import { Button } from "@/shared/primitives/button";
 import {
 	Drawer,
@@ -33,9 +34,7 @@ export function Login() {
 	const router = useRouter();
 
 	const passkeyLogin = async () => {
-		// 1. Get a challenge from the worker
-		// const options = await startPasskeyLogin( username );
-		const existingUser = await checkIfUserExists( username );
+		const [ _, existingUser ] = await checkIfUserExists( { username } );
 		if ( !existingUser ) {
 			console.log( "User does not exist, switching to register mode" );
 			setMode( "register" );
@@ -43,42 +42,39 @@ export function Login() {
 		}
 
 		console.log( "User exists, proceeding with login" );
-		const { success, message, data } = await generateWebAuthnLoginOptions( username );
+		const [ err, data ] = await getLoginOptions( { username } );
 
-		if ( !success || !data ) {
-			console.error( message );
-			alert( message ?? "Something went wrong!" );
+		if ( !!err || !data ) {
+			console.error( err.message );
+			alert( err.message ?? "Something went wrong!" );
 			return;
 		}
 
-		const localResponse = await startAuthentication( { optionsJSON: data } );
-		const verifyResponse = await verifyWebAuthnLogin( localResponse );
-
-		if ( !verifyResponse.success ) {
-			console.error( verifyResponse.message );
-			alert( verifyResponse.message ?? "Something went wrong!" );
-			return;
-		}
+		const response = await startAuthentication( { optionsJSON: data } );
+		await verifyWebAuthnLogin( { response, username } ).catch( err => {
+			console.error( err.message );
+			alert( err.message ?? "Something went wrong!" );
+		} );
 
 		console.log( "Login successful!" );
 		router.refresh();
 	};
 
 	const passkeyRegister = async ( username: string ) => {
-		const { success, data, message } = await generateWebAuthnRegistrationOptions( username );
+		const [ err1, data1 ] = await getRegistrationOptions( { username } );
 
-		if ( !success || !data ) {
-			console.error( message );
-			alert( message ?? "Something went wrong!" );
+		if ( !!err1 || !data1 ) {
+			console.error( err1.message );
+			alert( err1.message ?? "Something went wrong!" );
 			return;
 		}
 
-		const localResponse = await startRegistration( { optionsJSON: data } );
-		const verifyResponse = await verifyWebAuthnRegistration( localResponse );
+		const response = await startRegistration( { optionsJSON: data1 } );
 
-		if ( !verifyResponse.success ) {
-			console.error( verifyResponse.message );
-			alert( verifyResponse.message ?? "Something went wrong!" );
+		const [ err2 ] = await verifyRegistration( { response, username, name } );
+		if ( !!err2 ) {
+			console.error( err2.message );
+			alert( err2.message ?? "Something went wrong!" );
 			return;
 		}
 
@@ -125,6 +121,13 @@ export function Login() {
 						<DrawerTitle className={ cn( "text-2xl" ) }>LOGIN</DrawerTitle>
 					</DrawerHeader>
 					<div className={ "flex flex-col gap-3 px-4" }>
+						<label>Username</label>
+						<Input
+							type={ "text" }
+							value={ username }
+							onInput={ handleUsernameInput }
+							placeholder={ "Enter your username" }
+						/>
 						{ mode === "register" && (
 							<Fragment>
 								<label>Name</label>
@@ -136,13 +139,6 @@ export function Login() {
 								/>
 							</Fragment>
 						) }
-						<label>Username</label>
-						<Input
-							type={ "text" }
-							value={ username }
-							onInput={ handleUsernameInput }
-							placeholder={ "Enter your username" }
-						/>
 					</div>
 					<DrawerFooter>
 						<Button
