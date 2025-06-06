@@ -8,7 +8,7 @@ export const players = sqliteTable(
 	{
 		id: text( "id" ).notNull().$default( () => generateId() ),
 		name: text( "name" ).notNull().$default( () => generateName() ),
-		username: text( "username" ).notNull().unique().$default( () => generateId() ),
+		username: text( "username" ).notNull().$default( () => generateId() ),
 		avatar: text( "avatar" ).notNull().$default( () => generateAvatar() ),
 		gameId: text( "game_id" ).notNull().references( () => games.id ),
 		teamId: text( "team_id" ).references( () => teams.id ),

@@ -1,0 +1,1 @@
+DROP INDEX `lit_players_username_unique`;

@@ -67,7 +67,7 @@ export function ActionPanel() {
 						{ playerId === currentTurn && <AskCard/> }
 						{ playerId === currentTurn && <CallSet/> }
 						{ playerId === currentTurn && isLastMoveSuccessfulCall && <TransferTurn/> }
-						{ players[ currentTurn ].isBot && (
+						{ !!players[ currentTurn ].isBot && (
 							<Button
 								onClick={ handleExecuteBotMove }
 								disabled={ isPending }

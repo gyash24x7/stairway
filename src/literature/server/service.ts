@@ -238,6 +238,8 @@ export async function startGame( { game, players }: Literature.Context ) {
 	const cardMappings: Literature.CardMapping[] = [];
 	const cardCounts: Literature.CardCounts = {};
 
+	logger.info( "Starting game with playerIds: %o", playerIds );
+
 	playerIds.forEach( ( playerId, index ) => {
 		const hand = hands[ index ];
 		cardCounts[ playerId ] = 48 / game.playerCount;
@@ -260,8 +262,13 @@ export async function startGame( { game, players }: Literature.Context ) {
 		cardLocations.push( ...cardLocationsForPlayer );
 	} );
 
-	await repository.createCardMappings( cardMappings );
-	await repository.createCardLocations( cardLocations );
+	await repository.createCardMappings( cardMappings ).catch( e => {
+		logger.error( "Error creating card mappings: %o", e );
+	} );
+
+	await repository.createCardLocations( cardLocations ).catch( e => {
+		logger.error( "Error creating card locations: %o", e );
+	} );
 
 	await publishLiteratureEvent( game.id, LiteratureEvent.CARD_COUNT_UPDATED, cardCounts );
 	logger.debug( "Published CardCountUpdatedEvent!" );

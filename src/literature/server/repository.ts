@@ -2,7 +2,7 @@ import * as authSchema from "@/auth/schema";
 import * as schema from "@/literature/schema";
 import type { Literature } from "@/literature/types";
 import { getDb } from "@/shared/db";
-import { and, desc, eq, ilike, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 
 export async function getGameById( id: string ) {
 	const db = await getDb();
@@ -40,6 +40,7 @@ export async function getGameByCode( code: string ) {
 
 export async function createGame( input: typeof schema.games.$inferInsert ) {
 	const db = await getDb();
+	console.log( input );
 	const [ game ] = await db.insert( schema.games ).values( input ).returning();
 	return game;
 }
@@ -166,7 +167,7 @@ export async function getTransferMove( moveId: string ) {
 
 export async function createCardMappings( input: typeof schema.cardMappings.$inferInsert[] ) {
 	const db = await getDb();
-	return db.insert( schema.cardMappings ).values( input ).returning();
+	return Promise.all( input.map( d => db.insert( schema.cardMappings ).values( d ).returning() ) );
 }
 
 export async function createAsk( input: typeof schema.asks.$inferInsert ) {
@@ -233,14 +234,14 @@ export async function assignTeamsToPlayers( teamData: Record<string, Literature.
 			const playerIds = teamData[ teamId ].memberIds;
 			return db.update( schema.players )
 				.set( { teamId } )
-				.where( ilike( schema.players.id, playerIds ) );
+				.where( inArray( schema.players.id, playerIds.split( "," ) ) );
 		} )
 	);
 }
 
 export async function createCardLocations( input: typeof schema.cardLocations.$inferInsert[] ) {
 	const db = await getDb();
-	await db.insert( schema.cardLocations ).values( input ).returning();
+	return Promise.all( input.map( d => db.insert( schema.cardLocations ).values( d ).returning() ).flat() );
 }
 
 export async function deleteCardLocationForCards( gameId: string, cardIds: string[] ) {
