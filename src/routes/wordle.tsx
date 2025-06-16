@@ -1,14 +1,12 @@
-import { getAuthInfo } from "@/auth/server/functions";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
-import { fjalla } from "@/shared/utils/fonts";
 import { CreateGame } from "@/wordle/components/create-game";
+import type { AppContext } from "@/worker";
 
-export default async function WordleHome() {
-	const authInfo = await getAuthInfo();
+export async function WordleHome( { ctx }: { ctx: AppContext } ) {
 	return (
 		<div className={ "flex gap-5 flex-col mt-2" }>
-			<h2 className={ cn( "text-4xl", fjalla.className ) }>WORDLE</h2>
+			<h2 className={ cn( "text-4xl font-heading" ) }>WORDLE</h2>
 			<p>
 				Wordle is word game where players have six attempts to guess a
 				five-letter word, with feedback given for each guess in the form of
@@ -21,7 +19,7 @@ export default async function WordleHome() {
 			</p>
 			<Separator/>
 			<div>
-				{ !!authInfo
+				{ !!ctx.authInfo
 					? <CreateGame/>
 					: <h2 className={ "text-2xl font-semibold" }>Login to Play!</h2>
 				}

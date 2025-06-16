@@ -1,11 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=Fjalla+One&family=Geist+Mono:wght@600&display=swap');
+
 @import "tailwindcss";
 @import "tw-animate-css";
 
 :root {
-	--background: #fef3c8;
+	--background: #ffffff;
 	--border: #000000;
 	--foreground: #000000;
-	--main: #ffbf00;
+	--main: #ffffff;
 	--overlay: #000000cc;
 	--ring: #ffffff;
 	--shadow: -2px 4px 0px 0px var(--border);
@@ -31,7 +33,7 @@
 	--shadow-shadow: var(--shadow);
 
 	--font-heading: "Fjalla One", serif;
-	--font-base: "Jetbrains Mono", monospace;
+	--font-base: "Geist Mono", monospace;
 	--font-weight-base: 600;
 	--font-weight-heading: 700;
 }

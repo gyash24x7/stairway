@@ -15,7 +15,6 @@ import {
 } from "@/shared/primitives/dialog";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
-import { redirect } from "next/navigation";
 import { useState, useTransition } from "react";
 
 export function CreateGame() {
@@ -27,7 +26,7 @@ export function CreateGame() {
 	const handleClick = () => startTransition( async () => {
 		const [ err, game ] = await createGame( { trumpSuit: selectedSuit!, dealCount } );
 		if ( !err && game ) {
-			redirect( `/callbreak/${ game.id }` );
+			window.location.href = `/callbreak/${ game.id }`;
 		}
 	} );
 

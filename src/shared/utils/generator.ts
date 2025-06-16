@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { ulid } from "ulid";
 import { type Config, names, uniqueNamesGenerator } from "unique-names-generator";
 
@@ -16,9 +15,8 @@ export function generateName() {
 	return uniqueNamesGenerator( namesConfig );
 }
 
-export function generateAvatar( seed: string = Date.now().toString() ) {
-	const hash = crypto.createHash( "md5" ).update( seed ).digest( "hex" );
-	return `https://api.dicebear.com/7.x/open-peeps/png?seed=${ hash }&r=50`;
+export function generateAvatar() {
+	return `https://api.dicebear.com/7.x/open-peeps/png?seed=${ Date.now() }&r=50`;
 }
 
 export function generateGameCode() {

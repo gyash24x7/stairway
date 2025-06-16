@@ -1,16 +1,17 @@
 "use client";
 
-import { logout } from "@/auth/server/functions";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
 import { LogOutIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";
+import { default as axios } from "redaxios";
 
 export function LogoutButton() {
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleLogout = () => startTransition( async () => {
-		await logout();
+		const response = await axios.delete( "/auth/logout", { withCredentials: true } );
+		window.location.href = response.url;
 	} );
 
 	return (

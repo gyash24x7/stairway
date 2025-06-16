@@ -10,17 +10,22 @@ import {
 } from "@/callbreak/server/inputs";
 import * as service from "@/callbreak/server/service";
 import { createLogger } from "@/shared/utils/logger";
-import { authMiddleware } from "@/shared/utils/orpc";
 import { ORPCError, os } from "@orpc/server";
+import { requestInfo } from "rwsdk/worker";
 
 const logger = createLogger( "Callbreak Functions" );
 
-const gameMiddleware = authMiddleware.concat( async ( { context, next }, input ) => {
+const gameMiddleware = os.middleware( async ( { next }, input ) => {
+	if ( !requestInfo.ctx.authInfo ) {
+		logger.error( "No auth info found in request context!" );
+		throw new ORPCError( "UNAUTHORIZED", { message: "User not authenticated!" } );
+	}
+
 	const { gameId } = input as GameIdInput;
 	const { game, players } = await service.getBaseGameData( gameId );
 
-	if ( !players[ context.authInfo.id ] ) {
-		logger.error( "Logged In User not part of this game! UserId: %s", context.authInfo.id );
+	if ( !players[ requestInfo.ctx.authInfo.id ] ) {
+		logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo.id );
 		throw new ORPCError( "BAD_REQUEST", { message: "User not part of this game!" } );
 	}
 
@@ -28,21 +33,19 @@ const gameMiddleware = authMiddleware.concat( async ( { context, next }, input )
 } );
 
 export const createGame = os
-	.use( authMiddleware )
 	.input( createGameInputSchema )
-	.handler( async ( { input, context } ) => service.createGame( input, context ) )
+	.handler( async ( { input } ) => service.createGame( input, requestInfo.ctx.authInfo! ) )
 	.actionable();
 
 export const joinGame = os
-	.use( authMiddleware )
 	.input( joinGameInputSchema )
-	.handler( async ( { input, context } ) => service.joinGame( input, context ) )
+	.handler( async ( { input } ) => service.joinGame( input, requestInfo.ctx.authInfo! ) )
 	.actionable();
 
 export const getGameData = os
 	.use( gameMiddleware )
 	.input( gameIdInputSchema )
-	.handler( async ( { context } ) => service.getGameData( context ) )
+	.handler( async ( { context } ) => service.getGameData( { ...context, authInfo: requestInfo.ctx.authInfo! } ) )
 	.actionable();
 
 export const addBots = os

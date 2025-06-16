@@ -1,22 +1,20 @@
-import { getAuthInfo } from "@/auth/server/functions";
 import { CreateGame } from "@/callbreak/components/create-game";
 import { JoinGame } from "@/callbreak/components/join-game";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
-import { fjalla } from "@/shared/utils/fonts";
+import type { AppContext } from "@/worker";
 
-export default async function CallbreakHome() {
-	const authInfo = await getAuthInfo();
+export async function CallbreakHome( { ctx }: { ctx: AppContext } ) {
 	return (
 		<div className={ "flex gap-5 flex-col mt-2" }>
-			<h2 className={ cn( "text-4xl", fjalla.className ) }>CALLBREAK</h2>
+			<h2 className={ cn( "text-4xl font-heading" ) }>CALLBREAK</h2>
 			<p>
 				CallBreak is a thrilling card game enjoyed by many, particularly in India.
 				It is a type of trick taking game where points are calculated based on the
 				number of rounds the player has won.
 			</p>
 			<Separator className={ "my-5" }/>
-			{ !!authInfo ? (
+			{ !!ctx.authInfo ? (
 				<div className={ "flex gap-5" }>
 					<CreateGame/>
 					<JoinGame/>

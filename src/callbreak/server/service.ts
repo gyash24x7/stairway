@@ -1,4 +1,4 @@
-import type { AuthContext } from "@/auth/types";
+import type { AuthInfo } from "@/auth/types";
 import { suggestCardToPlay, suggestDealWins } from "@/callbreak/server/bot.service";
 import type { CreateGameInput, DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "@/callbreak/server/inputs";
 import * as repository from "@/callbreak/server/repository";
@@ -32,7 +32,7 @@ export async function getBaseGameData( gameId: string ) {
 	return { game, players: playerMap };
 }
 
-export async function getGameData( { game, players, authInfo }: Callbreak.Context & AuthContext ) {
+export async function getGameData( { game, players, authInfo }: Callbreak.Context & { authInfo: AuthInfo } ) {
 	logger.debug( ">> getGameData()" );
 
 	const activeDeal = await repository.getActiveDeal( game.id );
@@ -51,7 +51,7 @@ export async function getGameData( { game, players, authInfo }: Callbreak.Contex
 	return { game, players, currentDeal: activeDeal, currentRound: activeRound, playerId: authInfo.id, hand, scores };
 }
 
-export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { authInfo }: AuthContext ) {
+export async function createGame( { dealCount, trumpSuit }: CreateGameInput, authInfo: AuthInfo ) {
 	logger.debug( ">> createGame()" );
 
 	const { id, name, avatar } = authInfo;
@@ -62,7 +62,7 @@ export async function createGame( { dealCount, trumpSuit }: CreateGameInput, { a
 	return game;
 }
 
-export async function joinGame( input: JoinGameInput, { authInfo }: AuthContext ) {
+export async function joinGame( input: JoinGameInput, authInfo: AuthInfo ) {
 	logger.debug( ">> joinGame()" );
 
 	const { game, alreadyJoined } = await validators.validateJoinGame( input, authInfo );

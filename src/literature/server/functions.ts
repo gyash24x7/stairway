@@ -13,19 +13,24 @@ import {
 import * as service from "@/literature/server/service";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
-import { authMiddleware } from "@/shared/utils/orpc";
 import { ORPCError, os } from "@orpc/server";
+import { requestInfo } from "rwsdk/worker";
 
 const logger = createLogger( "Literature Functions" );
 
 type MiddlewareData = { status?: Literature.GameStatus, turn?: true, isGameDataQuery?: true };
 
-const gameMiddleware = ( data?: MiddlewareData ) => authMiddleware.concat( async ( { context, next }, input ) => {
+const gameMiddleware = ( data?: MiddlewareData ) => os.middleware( async ( { next }, input ) => {
+	if ( !requestInfo.ctx.authInfo ) {
+		logger.error( "No authInfo found in context!" );
+		throw new ORPCError( "UNAUTHORIZED", { message: "User not authenticated!" } );
+	}
+
 	const { gameId } = input as GameIdInput;
 	const { players, teams, ...game } = await service.getGameData( gameId );
 
-	if ( !players[ context.authInfo.id ] ) {
-		logger.error( "Logged In User not part of this game! UserId: %s", context.authInfo.id );
+	if ( !players[ requestInfo.ctx.authInfo.id ] ) {
+		logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo.id );
 		throw new ORPCError( "BAD_REQUEST", { message: "User not part of this game!" } );
 	}
 
@@ -34,7 +39,7 @@ const gameMiddleware = ( data?: MiddlewareData ) => authMiddleware.concat( async
 		throw new ORPCError( "BAD_REQUEST", { message: "Game is in incorrect status!" } );
 	}
 
-	if ( !!data?.turn && game.currentTurn !== context.authInfo.id ) {
+	if ( !!data?.turn && game.currentTurn !== requestInfo.ctx.authInfo.id ) {
 		logger.error( "It's not your turn! GameId: %s", game.id );
 		throw new ORPCError( "BAD_REQUEST", { message: "It is not your turn!" } );
 	}
@@ -44,7 +49,7 @@ const gameMiddleware = ( data?: MiddlewareData ) => authMiddleware.concat( async
 		: {};
 
 	const hand = data?.isGameDataQuery
-		? await service.getPlayerHand( game.id, context.authInfo.id )
+		? await service.getPlayerHand( game.id, requestInfo.ctx.authInfo.id )
 		: [];
 
 	const lastMoveData = data?.isGameDataQuery
@@ -63,21 +68,19 @@ const gameMiddleware = ( data?: MiddlewareData ) => authMiddleware.concat( async
 } );
 
 export const createGame = os
-	.use( authMiddleware )
 	.input( createGameInputSchema )
-	.handler( async ( { input, context } ) => service.createGame( input, context ) )
+	.handler( async ( { input } ) => service.createGame( input, requestInfo.ctx.authInfo! ) )
 	.actionable();
 
 export const joinGame = os
-	.use( authMiddleware )
 	.input( joinGameInputSchema )
-	.handler( async ( { input, context } ) => service.joinGame( input, context ) )
+	.handler( async ( { input } ) => service.joinGame( input, requestInfo.ctx.authInfo! ) )
 	.actionable();
 
 export const getGameData = os
 	.use( gameMiddleware( { isGameDataQuery: true } ) )
 	.input( gameIdInputSchema )
-	.handler( async ( { context: { authInfo, ...rest } } ) => ( { ...rest, playerId: authInfo.id } ) )
+	.handler( async ( { context } ) => ( { ...context, playerId: requestInfo.ctx.authInfo!.id } ) )
 	.actionable();
 
 export const addBots = os

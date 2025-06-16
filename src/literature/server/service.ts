@@ -1,4 +1,4 @@
-import type { AuthContext } from "@/auth/types";
+import type { AuthInfo } from "@/auth/types";
 import { getCardDisplayString, getCardFromId, getCardId } from "@/libs/cards/card";
 import { cardSetMap } from "@/libs/cards/constants";
 import { generateDeck, generateHands, isCardInHand, removeCardsOfRank } from "@/libs/cards/hand";
@@ -142,7 +142,7 @@ export async function getMetrics( game: Literature.Game, players: Literature.Pla
 	return metrics;
 }
 
-export async function createGame( { playerCount }: CreateGameInput, { authInfo }: AuthContext ) {
+export async function createGame( { playerCount }: CreateGameInput, authInfo: AuthInfo ) {
 	logger.debug( ">> createGame()" );
 
 	const game = await repository.createGame( { playerCount, code: generateGameCode(), currentTurn: authInfo.id } );
@@ -152,7 +152,7 @@ export async function createGame( { playerCount }: CreateGameInput, { authInfo }
 	return game;
 }
 
-export async function joinGame( input: JoinGameInput, { authInfo }: AuthContext ) {
+export async function joinGame( input: JoinGameInput, authInfo: AuthInfo ) {
 	logger.debug( ">> joinGame()" );
 
 	const { game, isUserAlreadyInGame } = await validateJoinGame( input, authInfo );

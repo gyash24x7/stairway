@@ -1,6 +1,5 @@
 import type { Literature } from "@/literature/types";
 import { cn } from "@/shared/utils/cn";
-import { fjalla } from "@/shared/utils/fonts";
 
 export type DisplayScoreProps = {
 	team1?: Literature.Team;
@@ -9,7 +8,7 @@ export type DisplayScoreProps = {
 
 export function DisplayScore( { team1, team2 }: DisplayScoreProps ) {
 	return (
-		<div className={ cn( "flex border-b-2 items-center", fjalla.className ) }>
+		<div className={ cn( "flex border-b-2 items-center font-heading" ) }>
 			<div className={ "flex-1 p-3 flex flex-col items-center justify-center" }>
 				<h2 className={ "lg:text-4xl sm:text-3xl text-2xl" }>
 					{ team1?.name.toUpperCase() }

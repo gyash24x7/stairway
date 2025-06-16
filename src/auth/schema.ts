@@ -1,5 +1,4 @@
 import { generateAvatar, generateId } from "@/shared/utils/generator";
-import { relations } from "drizzle-orm";
 import { blob, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable( "auth_users", {
@@ -8,10 +7,6 @@ export const users = sqliteTable( "auth_users", {
 	username: text( "username" ).notNull().unique(),
 	avatar: text( "avatar" ).notNull().$default( () => generateAvatar() )
 } );
-
-export const userRelations = relations( users, ( { many } ) => ( {
-	passkeys: many( passkeys )
-} ) );
 
 export const passkeys = sqliteTable( "auth_passkeys", {
 	id: text( "id" ).primaryKey(),
@@ -23,7 +18,3 @@ export const passkeys = sqliteTable( "auth_passkeys", {
 	backedUp: integer( "backed_up" ).notNull().default( 0 ),
 	transports: text( "transports" )
 } );
-
-export const passkeyRelations = relations( passkeys, ( { one } ) => ( {
-	user: one( users, { fields: [ passkeys.userId ], references: [ users.id ] } )
-} ) );

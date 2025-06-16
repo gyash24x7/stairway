@@ -1,31 +1,21 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
+	// Schema reference
 	"$schema": "node_modules/wrangler/config-schema.json",
+	// Worker name
 	"name": "stairway",
-	"main": ".open-next/worker.js",
-	"compatibility_date": "2025-03-01",
-	"compatibility_flags": [
-		"nodejs_compat",
-		"global_fetch_strictly_public"
-	],
+	// Entry point
+	"main": "src/worker.tsx",
+	// Compatibility settings
+	"compatibility_date": "2024-09-23",
+	"compatibility_flags": [ "nodejs_compat" ],
+	// Assets configuration
+	"assets": {
+		"binding": "ASSETS"
+	},
+	// Observability settings
 	"observability": {
 		"enabled": true
 	},
-	/**
-	 * Smart Placement
-	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": { "mode": "smart" },
-
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -45,30 +35,24 @@
 			"preview_id": "stairway-session"
 		}
 	],
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 */
+	// Durable Objects configuration
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "REALTIME_DURABLE_OBJECT",
+				"class_name": "RealtimeDurableObject"
+			}
+		]
+	},
+	// Environment variables
 	"vars": {
 		"APP_NAME": "stairway"
 	},
-	/**
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-
-	/**
-	 * Static Assets
-	 * https://developers.cloudflare.com/workers/static-assets/binding/
-	 */
-	"assets": {
-		"binding": "ASSETS",
-		"directory": ".open-next/assets"
-	}
-
-	/**
-	 * Service Bindings (communicate between multiple Workers)
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings
-	 */
-	// "services": [{ "binding": "MY_SERVICE", "service": "my-service" }]
+	// Migrations configuration
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [ "RealtimeDurableObject" ]
+		}
+	]
 }

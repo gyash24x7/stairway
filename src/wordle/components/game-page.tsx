@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/shared/utils/cn";
-import { fjalla } from "@/shared/utils/fonts";
 import { GuessBlocks, GuessDiagramBlocks } from "@/wordle/components/guess-blocks";
 import { Keyboard } from "@/wordle/components/keyboard";
 import { store, updateGameData } from "@/wordle/store";
@@ -20,7 +19,7 @@ export function GamePage( props: { data: Wordle.Game } ) {
 
 	return (
 		<div className={ `flex flex-col items-center mb-20` }>
-			<h1 className={ cn( "text-4xl my-3", fjalla.className ) }>WORDLE</h1>
+			<h1 className={ cn( "text-4xl my-3 font-heading" ) }>WORDLE</h1>
 			{ isGameCompleted && (
 				<div className={ "flex flex-col gap-12 items-center" }>
 					<h1 className={ "text-4xl font-fjalla text-green-600" }>Game Completed</h1>

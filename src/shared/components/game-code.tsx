@@ -1,6 +1,7 @@
+"use client";
+
 import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
-import { fjalla } from "@/shared/utils/fonts";
 import { CopyIcon } from "lucide-react";
 import { useCopyToClipboard } from "usehooks-ts";
 
@@ -17,7 +18,7 @@ export function GameCode( { code }: { code: string } ) {
 		<div className={ "flex justify-between items-center rounded-md p-3 border-2" }>
 			<div>
 				<p className={ "text-xs md:text-sm" }>GAME CODE</p>
-				<h2 className={ cn( "text-3xl md:text-5xl", fjalla.className ) }>{ code }</h2>
+				<h2 className={ cn( "text-3xl md:text-5xl font-heading" ) }>{ code }</h2>
 			</div>
 			<div className={ "flex gap-3" }>
 				<Button variant={ "noShadow" } onClick={ handleCopy } size={ "icon" }

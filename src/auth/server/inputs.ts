@@ -3,6 +3,8 @@ import { z } from "zod/v4";
 
 export const usernameInput = z.object( { username: z.string() } );
 
+export type UsernameInput = z.infer<typeof usernameInput>;
+
 export const registrationVerificationInput = z.object( {
 	username: z.string(),
 	name: z.string(),

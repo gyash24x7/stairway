@@ -13,7 +13,6 @@ import { Separator } from "@/shared/primitives/separator";
 import { Spinner } from "@/shared/primitives/spinner";
 import { createGame } from "@/wordle/server/functions";
 import { MinusIcon, PlusIcon } from "lucide-react";
-import { redirect } from "next/navigation";
 import { useState, useTransition } from "react";
 
 export function CreateGame() {
@@ -28,7 +27,7 @@ export function CreateGame() {
 	const handleClick = () => startTransition( async () => {
 		const [ err, game ] = await createGame( { wordCount } );
 		if ( !err && game ) {
-			redirect( `/wordle/${ game.id }` );
+			window.location.href = `/wordle/${ game.id }`;
 		}
 	} );
 

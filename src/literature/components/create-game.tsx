@@ -12,7 +12,6 @@ import {
 } from "@/shared/primitives/dialog";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
-import { redirect } from "next/navigation";
 import { useState, useTransition } from "react";
 
 export function CreateGame() {
@@ -23,7 +22,7 @@ export function CreateGame() {
 	const handleClick = () => startTransition( async () => {
 		const [ err, game ] = await createGame( { playerCount } );
 		if ( !err && game ) {
-			redirect( `/literature/${ game.id }` );
+			window.location.href = `/literature/game/${ game.id }`;
 		}
 	} );
 
@@ -39,7 +38,7 @@ export function CreateGame() {
 				<div className={ "flex flex-col gap-3" }>
 					<h2>SELECT PLAYER COUNT</h2>
 					<div className={ "flex gap-3 flex-wrap" }>
-						{ [ 2 as const, 4 as const, 6 as const, 8 as const ].map( ( item ) => (
+						{ ( [ 2, 4, 6, 8 ] as const ).map( ( item ) => (
 							<div
 								key={ item }
 								onClick={ () => setPlayerCount( playerCount === item ? undefined : item ) }

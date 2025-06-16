@@ -12,7 +12,6 @@ import {
 } from "@/shared/primitives/dialog";
 import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
-import { redirect } from "next/navigation";
 import { useState, useTransition } from "react";
 
 export function JoinGame() {
@@ -22,7 +21,7 @@ export function JoinGame() {
 	const handleJoinGame = () => startTransition( async () => {
 		const [ err, game ] = await joinGame( { code } );
 		if ( !err && game ) {
-			redirect( `/literature/${ game.id }` );
+			window.location.href = `/literature/${ game.id }`;
 		}
 	} );
 

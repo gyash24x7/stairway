@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	checkIfUserExists,
-	getLoginOptions,
-	getRegistrationOptions,
-	verifyRegistration
-} from "@/auth/server/functions";
-import { verifyWebAuthnLogin } from "@/auth/server/service";
+import { checkIfUserExists, getLoginOptions, getRegistrationOptions } from "@/auth/server/functions";
 import { Button } from "@/shared/primitives/button";
 import {
 	Drawer,
@@ -21,8 +15,8 @@ import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { LogInIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { type FormEvent, Fragment, useState, useTransition } from "react";
+import { default as axios } from "redaxios";
 
 export function Login() {
 	const [ isPending, startTransition ] = useTransition();
@@ -31,10 +25,12 @@ export function Login() {
 	const [ username, setUsername ] = useState( "" );
 	const [ name, setName ] = useState( "" );
 
-	const router = useRouter();
-
 	const passkeyLogin = async () => {
-		const [ _, existingUser ] = await checkIfUserExists( { username } );
+		const existingUser = await checkIfUserExists( { username } ).catch( err => {
+			console.error( err.message );
+			console.error( err.message ?? "Something went wrong!" );
+		} );
+
 		if ( !existingUser ) {
 			console.log( "User does not exist, switching to register mode" );
 			setMode( "register" );
@@ -42,44 +38,36 @@ export function Login() {
 		}
 
 		console.log( "User exists, proceeding with login" );
-		const [ err, data ] = await getLoginOptions( { username } );
-
-		if ( !!err || !data ) {
-			console.error( err.message );
-			alert( err.message ?? "Something went wrong!" );
-			return;
-		}
-
+		const data = await getLoginOptions( { username } );
 		const response = await startAuthentication( { optionsJSON: data } );
-		await verifyWebAuthnLogin( { response, username } ).catch( err => {
-			console.error( err.message );
-			alert( err.message ?? "Something went wrong!" );
-		} );
 
-		console.log( "Login successful!" );
-		router.refresh();
+		const { url, status } = await axios.post(
+			"/auth/login",
+			{ username, response },
+			{ withCredentials: true }
+		);
+
+		console.log( "Login successful!", url, status );
+		window.location.href = url;
 	};
 
 	const passkeyRegister = async ( username: string ) => {
-		const [ err1, data1 ] = await getRegistrationOptions( { username } );
+		const options = await getRegistrationOptions( { username } );
 
-		if ( !!err1 || !data1 ) {
-			console.error( err1.message );
-			alert( err1.message ?? "Something went wrong!" );
+		if ( !options ) {
+			console.error( "Failed to get registration options." );
 			return;
 		}
 
-		const response = await startRegistration( { optionsJSON: data1 } );
+		const response = await startRegistration( { optionsJSON: options } );
+		const { url, status } = await axios.post(
+			"/auth/registration",
+			{ username, name, response },
+			{ withCredentials: true }
+		);
 
-		const [ err2 ] = await verifyRegistration( { response, username, name } );
-		if ( !!err2 ) {
-			console.error( err2.message );
-			alert( err2.message ?? "Something went wrong!" );
-			return;
-		}
-
-		console.log( "Register successful!" );
-		router.refresh();
+		console.log( "Register successful!", url, status );
+		window.location.href = url;
 	};
 
 	const performPasskeyLogin = () => {
