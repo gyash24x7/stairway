@@ -4,7 +4,6 @@ import { getDb } from "@/shared/db";
 import { createLogger } from "@/shared/utils/logger";
 import * as schema from "@/wordle/schema";
 import type { CreateGameInput, MakeGuessInput } from "@/wordle/server/inputs";
-import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 
 const logger = createLogger( "WordleMutations" );
@@ -44,7 +43,7 @@ export async function makeGuess( input: MakeGuessInput ) {
 	const [ game ] = await db.select().from( schema.games ).where( eq( schema.games.id, input.gameId ) );
 	if ( !game ) {
 		logger.error( "Game Not Found!" );
-		throw new ORPCError( "NOT_FOUND", { message: "Game not found!" } );
+		throw "Game not found!";
 	}
 
 	const words = game.words ? game.words.split( "," ) : [];
@@ -53,12 +52,12 @@ export async function makeGuess( input: MakeGuessInput ) {
 
 	if ( guesses.length >= game.wordLength + game.wordCount ) {
 		logger.error( "No More Guesses Left! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "No More Guesses Left!" } );
+		throw "No More Guesses Left!";
 	}
 
 	if ( !dictionary.includes( input.guess ) ) {
 		logger.error( "The guess is not a valid word! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "The guess is not a valid word!" } );
+		throw "The guess is not a valid word!";
 	}
 
 	if ( !completedWords.includes( input.guess ) && words.includes( input.guess ) ) {

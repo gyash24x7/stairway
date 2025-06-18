@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import type { DocumentProps } from "rwsdk/router";
 import { TurnstileScript } from "rwsdk/turnstile";
 import styles from "./styles/globals.css?url";
 
-export function Document( { children }: { children: ReactNode } ) {
+export function Document( { children }: DocumentProps ) {
 	return (
 		<html lang="en">
 		<head>
@@ -16,7 +17,7 @@ export function Document( { children }: { children: ReactNode } ) {
 			<TurnstileScript/>
 		</head>
 		<body>
-		<div id="root">{ children }</div>
+		<div id="root">{ children as ReactNode }</div>
 		<script>import("/src/client.tsx")</script>
 		</body>
 		</html>

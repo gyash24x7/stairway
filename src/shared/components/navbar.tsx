@@ -10,9 +10,12 @@ import { cn } from "@/shared/utils/cn";
 import { CogIcon, HomeIcon } from "lucide-react";
 
 export function Navbar( props: { authInfo?: AuthInfo | null } ) {
-	// const router = useRouter();
-	// const pathname = usePathname();
-	const page = "pathname".split( "/" )[ 1 ];
+
+	const navigate = ( link: string ) => () => {
+		if ( window.location.pathname.split( "/" )[ 1 ] !== link.split( "/" )[ 1 ] ) {
+			window.location.href = link;
+		}
+	};
 
 	return (
 		<div
@@ -24,22 +27,20 @@ export function Navbar( props: { authInfo?: AuthInfo | null } ) {
 			<Logo/>
 			<div className={ "flex bg-bg w-full px-3 md:px-5 py-3 md:py-5 justify-between border-b-2" }>
 				<div className={ "flex gap-3" }>
-					<a href={ links( "/" ) }>
-						<Button
-							className={ cn( page === "" && "bg-white", "w-8 h-8 md:w-10 md:h-10" ) }
-							size={ "icon" }
-						>
-							<HomeIcon className={ "w-4 h-4" }/>
-						</Button>
-					</a>
-					<a href={ links( "/settings" ) }>
-						<Button
-							className={ cn( page === "settings" && "bg-white", "w-8 h-8 md:w-10 md:h-10" ) }
-							size={ "icon" }
-						>
-							<CogIcon className={ "w-4 h-4" }/>
-						</Button>
-					</a>
+					<Button
+						className={ cn( "w-8 h-8 md:w-10 md:h-10" ) }
+						size={ "icon" }
+						onClick={ navigate( links( "/" ) ) }
+					>
+						<HomeIcon className={ "w-4 h-4" }/>
+					</Button>
+					<Button
+						className={ cn( "w-8 h-8 md:w-10 md:h-10" ) }
+						size={ "icon" }
+						onClick={ navigate( links( "/settings" ) ) }
+					>
+						<CogIcon className={ "w-4 h-4" }/>
+					</Button>
 				</div>
 				<div className={ "flex gap-3" }>
 					<ThemeSwitcher/>
