@@ -25,9 +25,9 @@ export function CreateGame() {
 	const decrement = () => setWordCount( wordCount - 1 );
 
 	const handleClick = () => startTransition( async () => {
-		const [ err, game ] = await createGame( { wordCount } );
-		if ( !err && game ) {
-			window.location.href = `/wordle/${ game.id }`;
+		const { error, data } = await createGame( { wordCount } );
+		if ( !error && data ) {
+			window.location.href = `/wordle/${ data.id }`;
 		}
 	} );
 

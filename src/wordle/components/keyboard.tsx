@@ -5,7 +5,7 @@ import { getAvailableLetters } from "@/libs/words/utils";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
 import { makeGuess } from "@/wordle/server/functions";
-import { backspaceCurrentGuess, resetCurrentGuess, store, updateCurrentGuess, updateGameData } from "@/wordle/store";
+import { backspaceCurrentGuess, resetCurrentGuess, store, updateCurrentGuess } from "@/wordle/store";
 import { useStore } from "@tanstack/react-store";
 import { DeleteIcon, LogOutIcon } from "lucide-react";
 import { useTransition } from "react";
@@ -25,10 +25,7 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 	const isLetterAvailable = letter.length !== 1 || availableLetters.includes( letter );
 
 	const handleEnter = () => startTransition( async () => {
-		const [ err, updatedGame ] = await makeGuess( { gameId: game.id, guess: currentGuess.join( "" ) } );
-		if ( !err && updatedGame ) {
-			updateGameData( updatedGame );
-		}
+		await makeGuess( { gameId: game.id, guess: currentGuess.join( "" ) } );
 		resetCurrentGuess();
 	} );
 

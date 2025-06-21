@@ -15,7 +15,7 @@ export function GamePage( props: { data: Wordle.Game } ) {
 
 	useEffect( () => {
 		updateGameData( props.data );
-	}, [] );
+	}, [ props.data ] );
 
 	return (
 		<div className={ `flex flex-col items-center mb-20` }>
