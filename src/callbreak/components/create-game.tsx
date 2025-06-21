@@ -24,9 +24,11 @@ export function CreateGame() {
 	const [ open, setOpen ] = useState( false );
 
 	const handleClick = () => startTransition( async () => {
-		const [ err, game ] = await createGame( { trumpSuit: selectedSuit!, dealCount } );
-		if ( !err && game ) {
-			window.location.href = `/callbreak/${ game.id }`;
+		const { error, data } = await createGame( { trumpSuit: selectedSuit!, dealCount } );
+		if ( !error && !!data ) {
+			window.location.href = `/callbreak/${ data.id }`;
+		} else {
+			alert( error );
 		}
 	} );
 

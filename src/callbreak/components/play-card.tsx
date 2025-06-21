@@ -50,8 +50,12 @@ export function PlayCard() {
 	};
 
 	const handleClick = () => startTransition( async () => {
-		await playCard( { gameId, dealId, roundId, cardId: selectedCard!, playerId } );
-		closeDrawer();
+		const { error } = await playCard( { gameId, dealId, roundId, cardId: selectedCard!, playerId } );
+		if ( !error ) {
+			closeDrawer();
+		} else {
+			alert( error );
+		}
 	} );
 
 	return (

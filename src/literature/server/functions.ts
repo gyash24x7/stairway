@@ -13,7 +13,7 @@ import {
 import * as service from "@/literature/server/service";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
-import { ORPCError, os } from "@orpc/server";
+import { os } from "@orpc/server";
 import { requestInfo } from "rwsdk/worker";
 
 const logger = createLogger( "Literature Functions" );
@@ -23,7 +23,7 @@ type MiddlewareData = { status?: Literature.GameStatus, turn?: true, isGameDataQ
 const gameMiddleware = ( data?: MiddlewareData ) => os.middleware( async ( { next }, input ) => {
 	if ( !requestInfo.ctx.authInfo ) {
 		logger.error( "No authInfo found in context!" );
-		throw new ORPCError( "UNAUTHORIZED", { message: "User not authenticated!" } );
+		throw "User not authenticated!";
 	}
 
 	const { gameId } = input as GameIdInput;
@@ -31,17 +31,17 @@ const gameMiddleware = ( data?: MiddlewareData ) => os.middleware( async ( { nex
 
 	if ( !players[ requestInfo.ctx.authInfo.id ] ) {
 		logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "User not part of this game!" } );
+		throw "User not part of this game!";
 	}
 
 	if ( !!data?.status && game.status !== data.status ) {
 		logger.error( "Game Status is not %s! GameId: %s", data.status, game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "Game is in incorrect status!" } );
+		throw "Game is in incorrect status!";
 	}
 
 	if ( !!data?.turn && game.currentTurn !== requestInfo.ctx.authInfo.id ) {
 		logger.error( "It's not your turn! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "It is not your turn!" } );
+		throw "It is not your turn!";
 	}
 
 	const cardCounts = game.status === "IN_PROGRESS"

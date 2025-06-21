@@ -26,27 +26,31 @@ export async function getActiveDeal( gameId: string ) {
 		.orderBy( desc( schema.deals.createdAt ) )
 		.limit( 1 );
 
-	const rounds = await db.select().from( schema.rounds ).where( and(
-		eq( schema.rounds.dealId, deal.id ),
-		eq( schema.rounds.gameId, gameId )
-	) );
+	if ( !!deal ) {
+		const rounds = await db.select().from( schema.rounds ).where( and(
+			eq( schema.rounds.dealId, deal.id ),
+			eq( schema.rounds.gameId, gameId )
+		) );
 
-	const scores = await db.select().from( schema.dealScores ).where( and(
-		eq( schema.dealScores.dealId, deal.id ),
-		eq( schema.dealScores.gameId, gameId )
-	) );
+		const scores = await db.select().from( schema.dealScores ).where( and(
+			eq( schema.dealScores.dealId, deal.id ),
+			eq( schema.dealScores.gameId, gameId )
+		) );
 
-	return {
-		...deal,
-		rounds,
-		scores: scores.reduce(
-			( acc, score ) => {
-				acc[ score.playerId ] = score;
-				return acc;
-			},
-			{} as Record<string, { declarations: number, wins: number }>
-		)
-	};
+		return {
+			...deal,
+			rounds,
+			scores: scores.reduce(
+				( acc, score ) => {
+					acc[ score.playerId ] = score;
+					return acc;
+				},
+				{} as Record<string, { declarations: number, wins: number }>
+			)
+		};
+	}
+
+	return undefined;
 }
 
 export async function getActiveRound( dealId: string, gameId: string ) {

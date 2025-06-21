@@ -4,7 +4,6 @@ import type { AskCardInput, CallSetInput, JoinGameInput, TransferTurnInput } fro
 import * as repository from "@/literature/server/repository";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
-import { ORPCError } from "@orpc/server";
 
 const logger = createLogger( "LiteratureValidations" );
 
@@ -14,7 +13,7 @@ export async function validateJoinGame( input: JoinGameInput, authInfo: AuthInfo
 	const game = await repository.getGameByCode( input.code );
 	if ( !game ) {
 		logger.error( "Game Not Found!" );
-		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
+		throw "Game Not Found!";
 	}
 
 	logger.debug( "Found Game: %o", game.players.length );
@@ -27,7 +26,7 @@ export async function validateJoinGame( input: JoinGameInput, authInfo: AuthInfo
 
 	if ( game.players.length >= game.playerCount ) {
 		logger.error( "The Game already has required players! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "The Game already has required players!" } );
+		throw "The Game already has required players!";
 	}
 
 	logger.debug( "<< validateJoinGame()" );
@@ -41,7 +40,7 @@ export async function validateAddBots( game: Literature.Game, players: Literatur
 
 	if ( remainingPlayers <= 0 ) {
 		logger.error( "The Game already has required players! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "The Game already has required players!" } );
+		throw "The Game already has required players!";
 	}
 
 	logger.debug( "<< validateAddBotsRequest()" );
@@ -53,7 +52,7 @@ export async function validateCreateTeams( game: Literature.Game, players: Liter
 
 	if ( Object.keys( players ).length !== game.playerCount ) {
 		logger.error( "The Game doesn't have enough players! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "The Game doesn't have enough players!" } );
+		throw "The Game doesn't have enough players!";
 	}
 
 	logger.debug( "<< validateCreateTeamsRequest()" );
@@ -65,7 +64,7 @@ export async function validateAskCard( input: AskCardInput, game: Literature.Gam
 	const cardMapping = await repository.getCardMappingForCard( input.gameId, input.card );
 	if ( !cardMapping ) {
 		logger.error( "Card Not Part of Game! GameId: %s CardId: %s", game.id, input.card );
-		throw new ORPCError( "BAD_REQUEST", { message: "Card Not Part of Game!" } );
+		throw "Card Not Part of Game!";
 	}
 
 	const askedPlayer = players[ input.from ];
@@ -73,17 +72,17 @@ export async function validateAskCard( input: AskCardInput, game: Literature.Gam
 
 	if ( !askedPlayer ) {
 		logger.debug( "The Player is not part of the Game! GameId: %s, PlayerId: %s", game.id, input.from );
-		throw new ORPCError( "BAD_REQUEST", { message: "The Player is not part of the Game!" } );
+		throw "The Player is not part of the Game!";
 	}
 
 	if ( playerWithAskedCard.id === game.currentTurn ) {
 		logger.debug( "The asked card is with asking player itself! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "The asked card is with asking player itself!" } );
+		throw "The asked card is with asking player itself!";
 	}
 
 	if ( players[ game.currentTurn ].teamId === askedPlayer.teamId ) {
 		logger.debug( "The asked player is from the same team! GameId: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "The asked player is from the same team!" } );
+		throw "The asked player is from the same team!";
 	}
 
 	logger.debug( "<< validateAskCardRequest()" );
@@ -101,19 +100,19 @@ export async function validateCallSet( input: CallSetInput, game: Literature.Gam
 		const player = players[ playerId ];
 		if ( !player ) {
 			logger.error( "The Player is not part of the Game! GameId: %s, PlayerId: %s", game.id, playerId );
-			throw new ORPCError( "BAD_REQUEST", { message: "The Player is not part of the Game!" } );
+			throw "The Player is not part of the Game!";
 		}
 		return player;
 	} );
 
 	if ( !Object.values( input.data ).includes( game.currentTurn ) ) {
 		logger.error( "Calling Player did not call own cards! UserId: %s", game.currentTurn );
-		throw new ORPCError( "BAD_REQUEST", { message: "Calling Player did not call own cards!" } );
+		throw "Calling Player did not call own cards!";
 	}
 
 	if ( cardSets.size !== 1 ) {
 		logger.error( "Cards Called from multiple sets! UserId: %s", game.currentTurn );
-		throw new ORPCError( "BAD_REQUEST", { message: "Cards Called from multiple sets!" } );
+		throw "Cards Called from multiple sets!";
 	}
 
 	const [ calledSet ] = cardSets;
@@ -132,19 +131,19 @@ export async function validateCallSet( input: CallSetInput, game: Literature.Gam
 
 	if ( !isCardSetWithCallingPlayer ) {
 		logger.error( "Set called without cards from that set! UserId: %s, Set: %s", game.currentTurn, calledSet );
-		throw new ORPCError( "BAD_REQUEST", { message: "Set called without cards from that set!" } );
+		throw "Set called without cards from that set!";
 	}
 
 	const calledTeams = new Set( calledPlayers.map( player => player.teamId ) );
 
 	if ( calledTeams.size !== 1 ) {
 		logger.error( "Set called from multiple teams! UserId: %s", game.currentTurn );
-		throw new ORPCError( "BAD_REQUEST", { message: "Set called from multiple teams!" } );
+		throw "Set called from multiple teams!";
 	}
 
 	if ( calledCards.length !== 6 ) {
 		logger.error( "All Cards not called for the set! UserId: %s, Set: %s", game.currentTurn, calledSet );
-		throw new ORPCError( "BAD_REQUEST", { message: "All Cards not called for the set!" } );
+		throw "All Cards not called for the set!";
 	}
 
 	logger.debug( "<< validateCallSetRequest()" );
@@ -162,7 +161,7 @@ export async function validateTransferTurn(
 	const lastMove = await repository.getCallMove( game.lastMoveId );
 	if ( !lastMove ) {
 		logger.error( "Turn can only be transferred after a successful call!" );
-		throw new ORPCError( "BAD_REQUEST", { message: "Turn can only be transferred after a successful call!" } );
+		throw "Turn can only be transferred after a successful call!";
 	}
 
 	const transferringPlayer = players[ game.currentTurn ];
@@ -170,17 +169,17 @@ export async function validateTransferTurn(
 
 	if ( !receivingPlayer ) {
 		logger.error( "The Receiving Player is not part of the Game!" );
-		throw new ORPCError( "BAD_REQUEST", { message: "The Receiving Player is not part of the Game!" } );
+		throw "The Receiving Player is not part of the Game!";
 	}
 
 	if ( cardCounts[ input.transferTo ] === 0 ) {
 		logger.error( "Turn can only be transferred to a player with cards!" );
-		throw new ORPCError( "BAD_REQUEST", { message: "Turn can only be transferred to a player with cards!" } );
+		throw "Turn can only be transferred to a player with cards!";
 	}
 
 	if ( receivingPlayer.teamId !== transferringPlayer.teamId ) {
 		logger.error( "Turn can only be transferred to member of your team!" );
-		throw new ORPCError( "BAD_REQUEST", { message: "Turn can only be transferred to member of your team!" } );
+		throw "Turn can only be transferred to member of your team!";
 	}
 
 	logger.debug( "<< validateTransferTurnRequest()" );

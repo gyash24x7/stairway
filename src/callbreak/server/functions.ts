@@ -1,6 +1,6 @@
 "use server";
 
-import type { GameIdInput } from "@/callbreak/server/inputs";
+import type { CreateGameInput, DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "@/callbreak/server/inputs";
 import {
 	createGameInputSchema,
 	declareDealWinsInputSchema,
@@ -10,58 +10,126 @@ import {
 } from "@/callbreak/server/inputs";
 import * as service from "@/callbreak/server/service";
 import { createLogger } from "@/shared/utils/logger";
-import { ORPCError, os } from "@orpc/server";
 import { requestInfo } from "rwsdk/worker";
 
-const logger = createLogger( "Callbreak Functions" );
+const logger = createLogger( "Callbreak:Functions" );
 
-const gameMiddleware = os.middleware( async ( { next }, input ) => {
-	if ( !requestInfo.ctx.authInfo ) {
-		logger.error( "No auth info found in request context!" );
-		throw new ORPCError( "UNAUTHORIZED", { message: "User not authenticated!" } );
+export async function createGame( input: CreateGameInput ) {
+	const { error, success } = await createGameInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid Input!" );
+		return { error: error?.message };
 	}
 
-	const { gameId } = input as GameIdInput;
-	const { game, players } = await service.getBaseGameData( gameId );
+	try {
+		const data = await service.createGame( input, requestInfo.ctx.authInfo! );
+		return { data };
+	} catch ( err ) {
+		logger.error( "Error creating game!" );
+		return { error: ( err as Error ).message };
+	}
+}
 
-	if ( !players[ requestInfo.ctx.authInfo.id ] ) {
-		logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "User not part of this game!" } );
+export async function joinGame( input: JoinGameInput ) {
+	const { success, error } = await joinGameInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid Input!" );
+		return { error: error?.message };
 	}
 
-	return next( { context: { game, players } } );
-} );
+	try {
+		const data = await service.joinGame( input, requestInfo.ctx.authInfo! );
+		return { data };
+	} catch ( err ) {
+		logger.error( "Unable to join the game!" );
+		return { error: ( err as Error ).message };
+	}
+}
 
-export const createGame = os
-	.input( createGameInputSchema )
-	.handler( async ( { input } ) => service.createGame( input, requestInfo.ctx.authInfo! ) )
-	.actionable();
+export async function getGameData( gameId: string ) {
+	const { success, error } = await gameIdInputSchema.safeParseAsync( { gameId } );
+	if ( !success || !!error ) {
+		logger.error( "Invalid Game Id!" );
+		return { error: error?.message };
+	}
 
-export const joinGame = os
-	.input( joinGameInputSchema )
-	.handler( async ( { input } ) => service.joinGame( input, requestInfo.ctx.authInfo! ) )
-	.actionable();
+	try {
+		const { game, players } = await service.getBaseGameData( gameId );
+		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
+			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
+			return { error: "User not part of this game!" };
+		}
 
-export const getGameData = os
-	.use( gameMiddleware )
-	.input( gameIdInputSchema )
-	.handler( async ( { context } ) => service.getGameData( { ...context, authInfo: requestInfo.ctx.authInfo! } ) )
-	.actionable();
+		const data = await service.getGameData( { game, players, authInfo: requestInfo.ctx.authInfo! } );
+		return { data };
+	} catch ( err ) {
+		logger.error( "Unable to get game data!", err );
+		return { error: ( err as Error ).message };
+	}
+}
 
-export const addBots = os
-	.use( gameMiddleware )
-	.input( gameIdInputSchema )
-	.handler( async ( { context } ) => service.addBots( context ) )
-	.actionable();
+export async function addBots( gameId: string ) {
+	const { success, error } = await gameIdInputSchema.safeParseAsync( { gameId } );
+	if ( !success || !!error ) {
+		logger.error( "Invalid Game Id!" );
+		return { error: error?.message };
+	}
 
-export const declareDealWins = os
-	.use( gameMiddleware )
-	.input( declareDealWinsInputSchema )
-	.handler( async ( { input, context } ) => service.declareDealWins( input, context ) )
-	.actionable();
+	try {
+		const { game, players } = await service.getBaseGameData( gameId );
+		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
+			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
+			return { error: "User not part of this game!" };
+		}
 
-export const playCard = os
-	.use( gameMiddleware )
-	.input( playCardInputSchema )
-	.handler( async ( { input, context } ) => service.playCard( input, context ) )
-	.actionable();
+		const data = await service.addBots( { game, players } );
+		return { data };
+	} catch ( err ) {
+		logger.error( "Unable to add bots!" );
+		return { error: ( err as Error ).message };
+	}
+}
+
+export async function declareDealWins( input: DeclareDealWinsInput ) {
+	const { success, error } = await declareDealWinsInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid Input!" );
+		return { error: error?.message };
+	}
+
+	try {
+		const { game, players } = await service.getBaseGameData( input.gameId );
+		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
+			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
+			return { error: "User not part of this game!" };
+		}
+
+		const data = await service.declareDealWins( input, { game, players } );
+		return { data };
+	} catch ( err ) {
+		logger.error( "Unable to declare deal wins!" );
+		return { error: ( err as Error ).message };
+	}
+}
+
+export async function playCard( input: PlayCardInput ) {
+	const { success, error } = await playCardInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid Input!" );
+		return { error: error?.message };
+	}
+
+	try {
+		const { game, players } = await service.getBaseGameData( input.gameId );
+		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
+			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
+			return { error: "User not part of this game!" };
+		}
+
+		const data = await service.playCard( input, { game, players } );
+		return { data };
+	} catch ( err ) {
+		logger.error( "Unable to play card!" );
+		return { error: ( err as Error ).message };
+	}
+}

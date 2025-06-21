@@ -9,7 +9,8 @@ import { generateDeck, generateHands } from "@/libs/cards/hand";
 import { CardSuit, type PlayingCard } from "@/libs/cards/types";
 import { getBestCardPlayed } from "@/libs/cards/utils";
 import { createLogger } from "@/shared/utils/logger";
-import { ORPCError } from "@orpc/server";
+import { env } from "cloudflare:workers";
+import { renderRealtimeClients } from "rwsdk/realtime/worker";
 
 const logger = createLogger( "CallbreakService" );
 
@@ -19,7 +20,7 @@ export async function getBaseGameData( gameId: string ) {
 	const data = await repository.getGameById( gameId );
 	if ( !data ) {
 		logger.error( "Game Not Found!" );
-		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
+		throw "Game Not Found!";
 	}
 
 	const { players, ...game } = data;
@@ -277,6 +278,10 @@ export async function playCard( input: PlayCardInput, { game, players }: Callbre
 	);
 
 	let deal = await repository.getActiveDeal( game.id );
+	if ( !deal ) {
+		logger.error( "No Active Deal Found!" );
+		throw "No Active Deal Found!";
+	}
 
 	const nextPlayer = players[ round.playerOrder[ round.turnIdx ] ];
 	if ( nextPlayer?.isBot ) {
@@ -397,5 +402,9 @@ async function publishCallbreakEvent<E extends Callbreak.Event>(
 	data: Callbreak.EventPayloads[E],
 	playerId?: string
 ) {
-	console.log( "callbreak", { gameId, event, data, playerId } );
+	logger.info( `Published event ${ event } for Game ${ gameId } and Player ${ playerId }`, { data } );
+	await renderRealtimeClients( {
+		durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+		key: `/callbreak/${ gameId }`
+	} );
 }

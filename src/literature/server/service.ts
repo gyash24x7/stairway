@@ -25,7 +25,6 @@ import {
 import { type Literature, LiteratureEvent } from "@/literature/types";
 import { generateGameCode } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { ORPCError } from "@orpc/server";
 
 const logger = createLogger( "LiteratureService" );
 const MAX_ASK_WEIGHT = 720;
@@ -37,7 +36,7 @@ export async function getGameData( gameId: string ) {
 
 	if ( !data ) {
 		logger.error( "Game Not Found!" );
-		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
+		throw "Game Not Found!";
 	}
 
 	logger.debug( "<< getGameData()" );

@@ -19,9 +19,11 @@ export function JoinGame() {
 	const [ code, setCode ] = useState( "" );
 
 	const handleClick = () => startTransition( async () => {
-		const [ err, game ] = await joinGame( { code } );
-		if ( !err && game ) {
-			window.location.href = `/callbreak/${ game.id }`;
+		const { error, data } = await joinGame( { code } );
+		if ( !error && !!data ) {
+			window.location.href = `/callbreak/${ data.id }`;
+		} else {
+			alert( error );
 		}
 	} );
 

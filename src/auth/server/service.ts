@@ -3,7 +3,6 @@ import * as repository from "@/auth/server/repository";
 import * as validators from "@/auth/server/validators";
 import type { Passkey, Session } from "@/auth/types";
 import { createLogger } from "@/shared/utils/logger";
-import { ORPCError } from "@orpc/server";
 import { sha256 } from "@oslojs/crypto/sha2";
 import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from "@oslojs/encoding";
 import type { VerifiedAuthenticationResponse, VerifiedRegistrationResponse } from "@simplewebauthn/server";
@@ -82,7 +81,7 @@ export async function verifyWebAuthnRegistration( { username, name, response }: 
 
 	if ( !verification || !verification.verified || !verification.registrationInfo ) {
 		logger.error( "WebAuthn registration verification failed for user:", username );
-		throw new ORPCError( "INVALID_REQUEST", { message: "WebAuthn registration verification failed" } );
+		throw "WebAuthn registration verification failed";
 	}
 
 	let user = await repository.getUserByUsername( username );
@@ -135,7 +134,7 @@ export async function verifyWebAuthnLogin( { username, response }: VerifyLoginIn
 
 	if ( !verification || !verification.verified || !verification.authenticationInfo ) {
 		logger.error( "WebAuthn authentication verification failed for user:", username );
-		throw new ORPCError( "INVALID_REQUEST", { message: "WebAuthn authentication verification failed" } );
+		throw "WebAuthn authentication verification failed";
 	}
 
 	logger.info( "WebAuthn login verified for user:", username );

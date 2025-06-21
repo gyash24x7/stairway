@@ -20,7 +20,10 @@ export function ActionPanel() {
 	const gameId = useStore( store, state => state.game.id );
 
 	const handleClick = () => startTransition( async () => {
-		await addBots( { gameId } );
+		const { error } = await addBots( gameId );
+		if ( !!error ) {
+			alert( error );
+		}
 	} );
 
 	return (

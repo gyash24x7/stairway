@@ -6,9 +6,8 @@ import { getCardFromId } from "@/libs/cards/card";
 import { isCardInHand } from "@/libs/cards/hand";
 import { getBestCardPlayed, getPlayableCards } from "@/libs/cards/utils";
 import { createLogger } from "@/shared/utils/logger";
-import { ORPCError } from "@orpc/server";
 
-const logger = createLogger( "CallbreakValidators" );
+const logger = createLogger( "Callbreak:Validators" );
 
 export async function validateJoinGame( input: JoinGameInput, { id }: AuthInfo ) {
 	logger.debug( ">> validateJoinGame()" );
@@ -16,7 +15,7 @@ export async function validateJoinGame( input: JoinGameInput, { id }: AuthInfo )
 	const game = await repository.getGameByCode( input.code );
 	if ( !game ) {
 		logger.error( "Game Not Found: %s", input.code );
-		throw new ORPCError( "NOT_FOUND", { message: "Game Not Found!" } );
+		throw "Game Not Found!";
 	}
 
 	if ( game.players.find( player => player.id === id ) ) {
@@ -26,7 +25,7 @@ export async function validateJoinGame( input: JoinGameInput, { id }: AuthInfo )
 
 	if ( game.players.length >= 4 ) {
 		logger.error( "Game Full: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "Game Full!" } );
+		throw "Game Full!";
 	}
 
 	logger.debug( "<< validateJoinGame()" );
@@ -40,7 +39,7 @@ export async function validateAddBots( game: Callbreak.Game, players: Callbreak.
 
 	if ( botCount <= 0 ) {
 		logger.error( "Game Full: %s", game.id );
-		throw new ORPCError( "BAD_REQUEST", { message: "Game Full!" } );
+		throw "Game Full!";
 	}
 
 	logger.debug( "<< validateAddBots()" );
@@ -53,12 +52,12 @@ export async function validateDealWinDeclaration( input: DeclareDealWinsInput ) 
 	const deal = await repository.getActiveDeal( input.gameId );
 	if ( !deal ) {
 		logger.error( "Active Deal Not Found: %s", input.gameId );
-		throw new ORPCError( "NOT_FOUND", { message: "Deal Not Found!" } );
+		throw "Deal Not Found!";
 	}
 
 	if ( deal.playerOrder[ deal.turnIdx ] !== input.playerId ) {
 		logger.error( "Not Your Turn: %s", input.playerId );
-		throw new ORPCError( "BAD_REQUEST", { message: "Not Your Turn!" } );
+		throw "Not Your Turn!";
 	}
 
 	logger.debug( "<< validateDealWinDeclaration()" );
@@ -73,12 +72,12 @@ export async function validatePlayCard( input: PlayCardInput, game: Callbreak.Ga
 	const round = await repository.getActiveRound( input.dealId, game.id );
 	if ( !round ) {
 		logger.error( "Round Not Found: %s", input.roundId );
-		throw new ORPCError( "NOT_FOUND", { message: "Round Not Found!" } );
+		throw "Round Not Found!";
 	}
 
 	if ( round.playerOrder[ round.turnIdx ] !== input.playerId ) {
 		logger.error( "Not Your Turn: %s", input.playerId );
-		throw new ORPCError( "BAD_REQUEST", { message: "Not Your Turn!" } );
+		throw "Not Your Turn!";
 	}
 
 	const cardMappings = await repository.getCardMappingsForPlayer( input.dealId, game.id, input.playerId );
@@ -86,7 +85,7 @@ export async function validatePlayCard( input: PlayCardInput, game: Callbreak.Ga
 
 	if ( !isCardInHand( hand, playedCard ) ) {
 		logger.error( "Card Not Yours: %s", input.cardId );
-		throw new ORPCError( "BAD_REQUEST", { message: "Card Not Yours!" } );
+		throw "Card Not Yours!";
 	}
 
 	const cardsPlayedInRound = Object.values( round.cards ).map( getCardFromId );
@@ -95,7 +94,7 @@ export async function validatePlayCard( input: PlayCardInput, game: Callbreak.Ga
 
 	if ( !isCardInHand( playableCards, playedCard ) ) {
 		logger.error( "Invalid Card: %s", input.cardId );
-		throw new ORPCError( "BAD_REQUEST", { message: "Invalid Card!" } );
+		throw "Invalid Card!";
 	}
 
 	logger.debug( "<< validatePlayCard()" );
