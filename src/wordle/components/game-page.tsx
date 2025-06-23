@@ -8,7 +8,7 @@ import type { Wordle } from "@/wordle/types";
 import { useStore } from "@tanstack/react-store";
 import { useEffect } from "react";
 
-export function GamePage( props: { data: Wordle.Game } ) {
+export function GamePage( props: { data: Wordle.Store["game"] } ) {
 	const game = useStore( store, state => state.game );
 	const isGameCompleted = ( game.words.length !== 0 && game.words.length === game.completedWords.length )
 		|| game.guesses.length === ( game.words.length + game.wordLength );

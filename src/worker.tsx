@@ -17,6 +17,7 @@ import { layout, render, route, type RouteMiddleware } from "rwsdk/router";
 import { defineApp } from "rwsdk/worker";
 
 export { RealtimeDurableObject } from "rwsdk/realtime/durableObject";
+export { WordleDurableObject } from "@/wordle/server/durable.object";
 
 const logger = createLogger( "Worker" );
 
