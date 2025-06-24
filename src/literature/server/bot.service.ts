@@ -1,4 +1,4 @@
-import { getCardFromId, getCardId, getCardSet } from "@/libs/cards/card";
+import { getCardId, getCardSet } from "@/libs/cards/card";
 import { cardSetMap } from "@/libs/cards/constants";
 import { getAskableCardsOfSet, isCardInHand, isCardSetInHand } from "@/libs/cards/hand";
 import type { CardSet, PlayingCard } from "@/libs/cards/types";
@@ -15,21 +15,20 @@ type WeightedCardSet = { cardSet: CardSet, weight: number };
 
 const MAX_ASK_WEIGHT = 720;
 
-export function suggestCardSets( cardLocations: Literature.CardLocation[], hand: PlayingCard[] ): CardSet[] {
+export function suggestCardSets( cardLocations: Literature.CardLocationData, hand: PlayingCard[] ): CardSet[] {
 	const weightedCardSets: WeightedCardSet[] = [];
-	const cardSetsInGame = new Set( cardLocations.map( l => getCardSet( getCardFromId( l.cardId ) ) ) );
+	const cardSetsInGame = new Set( Object.keys( cardLocations ).map( getCardSet ) );
 
 	for ( const cardSet of cardSetsInGame ) {
 		let weight = 0;
 
 		for ( const card of cardSetMap[ cardSet ] ) {
-			const cardLocation = cardLocations.find( ( { cardId } ) => cardId === getCardId( card ) );
-
-			if ( !cardLocation || cardLocation.playerIds.length === 0 ) {
+			const cardLocation = cardLocations[ getCardId( card ) ];
+			if ( !cardLocation || Object.keys( cardLocation ).length === 0 ) {
 				continue;
 			}
 
-			weight += MAX_ASK_WEIGHT / cardLocation.playerIds.length;
+			weight += MAX_ASK_WEIGHT / Object.keys( cardLocation ).length;
 		}
 
 		weightedCardSets.push( { cardSet, weight } );
@@ -40,36 +39,24 @@ export function suggestCardSets( cardLocations: Literature.CardLocation[], hand:
 	return weightedCardSets.map( w => w.cardSet ).filter( ( cardSet ) => isCardSetInHand( hand, cardSet ) );
 }
 
-export function suggestTransfer(
-	game: Literature.Game,
-	players: Literature.PlayerData,
-	cardCounts: Literature.CardCounts
-): WeightedTransfer[] {
+export function suggestTransfer( { game, players }: Literature.GameData ): WeightedTransfer[] {
 	const teamId = players[ game.currentTurn ].teamId;
 	const myTeamMembers = Object.values( players )
-		.filter( player => player.teamId === teamId && player.id !== game.currentTurn )
-		.filter( player => cardCounts[ player.id ] > 0 )
+		.filter( player => player.teamId === teamId && player.id !== game.currentTurn && player.cardCount > 0 )
 		.map( player => player.id );
 
 	const weightedTransfers = myTeamMembers.map( transferTo => {
-		return { weight: 720 / myTeamMembers.length + cardCounts[ transferTo ], transferTo };
+		return { weight: 720 / myTeamMembers.length + players[ transferTo ].cardCount, transferTo };
 	} );
 
 	logger.debug( "Weighted Transfers: %o", weightedTransfers );
 	return weightedTransfers.toSorted( ( a, b ) => b.weight - a.weight );
 }
 
-export function canCardSetBeCalled(
-	game: Literature.Game,
-	players: Literature.PlayerData,
-	cardCounts: Literature.CardCounts,
-	cardSet: CardSet,
-	cardLocations: Literature.CardLocation[],
-	hand: PlayingCard[]
-) {
-	const teamId = players[ game.currentTurn ].teamId;
+export function canCardSetBeCalled( cardSet: CardSet, { game, players, cardLocations }: Literature.GameData ) {
+	const currentPlayer = players[ game.currentTurn ];
 	const oppositeTeamMembers = Object.values( players )
-		.filter( player => player.teamId !== teamId )
+		.filter( player => player.teamId !== currentPlayer.teamId )
 		.map( player => player.id );
 
 	const cardPossibilityMap: Record<string, string[]> = {};
@@ -78,22 +65,23 @@ export function canCardSetBeCalled(
 	for ( const card of shuffle( cardSetMap[ cardSet ] ) ) {
 
 		const cardId = getCardId( card );
-		if ( isCardInHand( hand, card ) ) {
+		if ( isCardInHand( currentPlayer.hand, card ) ) {
 			cardPossibilityMap[ cardId ] = [ game.currentTurn ];
 			continue;
 		}
 
-		const cardLocation = cardLocations.find( cl => cardId === cl.cardId );
-		if ( !cardLocation || cardLocation.playerIds.length === 0 ) {
+		if ( !cardLocations[ cardId ] || Object.keys( cardLocations[ cardId ] ).length === 0 ) {
 			continue;
 		}
 
-		cardPossibilityMap[ cardId ] = cardLocation.playerIds.split( "," );
-		cardLocation.playerIds.split( "," ).filter( playerId => cardCounts[ playerId ] > 0 ).forEach( playerId => {
-			if ( oppositeTeamMembers.includes( playerId ) ) {
-				isCardSetWithUs = false;
-			}
-		} );
+		cardPossibilityMap[ cardId ] = Object.keys( cardLocations[ cardId ] );
+		Object.keys( cardLocations[ cardId ] )
+			.filter( playerId => players[ playerId ].cardCount > 0 )
+			.forEach( playerId => {
+				if ( oppositeTeamMembers.includes( playerId ) ) {
+					isCardSetWithUs = false;
+				}
+			} );
 	}
 
 	const totalCardsCalled = Object.keys( cardPossibilityMap ).length;
@@ -102,22 +90,13 @@ export function canCardSetBeCalled(
 	return [ canCardSetBeCalled, cardPossibilityMap ] as const;
 }
 
-export function suggestCalls(
-	game: Literature.Game,
-	players: Literature.PlayerData,
-	cardCounts: Literature.CardCounts,
-	cardSetsInGame: CardSet[],
-	cardLocations: Literature.CardLocation[],
-	hand: PlayingCard[]
-) {
+export function suggestCalls( cardSetsInGame: CardSet[], data: Literature.GameData ) {
 	const weightedCalls: WeightedCall[] = [];
 	logger.info( "CardSets in Game: %o", cardSetsInGame );
 
 	for ( const cardSet of cardSetsInGame ) {
 
-		const [ canCardSetBeCalledValue, cardPossibilityMap ] =
-			canCardSetBeCalled( game, players, cardCounts, cardSet, cardLocations, hand );
-
+		const [ canCardSetBeCalledValue, cardPossibilityMap ] = canCardSetBeCalled( cardSet, data );
 		if ( !canCardSetBeCalledValue ) {
 			logger.info( "This card set is not with my team. Cannot Call! CardSet: %s", cardSet );
 			continue;
@@ -134,7 +113,7 @@ export function suggestCalls(
 		for ( const card of shuffle( cardSetMap[ cardSet ] ) ) {
 			const cardId = getCardId( card );
 			const callablePlayersForCard = cardPossibilityMap[ cardId ]
-				.filter( playerId => cardCounts[ playerId ] > 0 );
+				.filter( playerId => data.players[ playerId ].cardCount > 0 );
 
 			const randIdx = Math.floor( Math.random() * callablePlayersForCard.length );
 			callData[ cardId ] = callablePlayersForCard[ randIdx ];
@@ -147,43 +126,35 @@ export function suggestCalls(
 	return weightedCalls.toSorted( ( a, b ) => b.weight - a.weight );
 }
 
-export function suggestAsks(
-	game: Literature.Game,
-	players: Literature.PlayerData,
-	cardCounts: Literature.CardCounts,
-	cardSets: CardSet[],
-	cardLocations: Literature.CardLocation[],
-	hand: PlayingCard[]
-) {
-	const teamId = players[ game.currentTurn ].teamId;
+export function suggestAsks( cardSets: CardSet[], { game, players, cardLocations }: Literature.GameData ) {
+	const currentPlayer = players[ game.currentTurn ];
 	const oppositeTeamMembers = Object.values( players )
-		.filter( player => player.teamId !== teamId )
+		.filter( player => player.teamId !== currentPlayer.teamId )
 		.map( player => player.id );
 
 	const weightedAskMap: Record<string, WeightedAsk[]> = {};
 	const weightedAsks: WeightedAsk[] = [];
 
 	for ( const cardSet of cardSets ) {
-		if ( !isCardSetInHand( hand, cardSet ) ) {
+		if ( !isCardSetInHand( currentPlayer.hand, cardSet ) ) {
 			continue;
 		}
 
-		const cardsOfSet = shuffle( getAskableCardsOfSet( hand, cardSet ) );
+		const cardsOfSet = shuffle( getAskableCardsOfSet( currentPlayer.hand, cardSet ) );
 		weightedAskMap[ cardSet ] = [];
 
 		for ( const card of cardsOfSet ) {
 
 			const cardId = getCardId( card );
-			const cardLocation = cardLocations.find( ( cl ) => cardId === cl.cardId );
-			if ( !cardLocation || cardLocation.playerIds.length === 0 ) {
+			if ( !cardLocations[ cardId ] || Object.keys( cardLocations[ cardId ] ).length === 0 ) {
 				continue;
 			}
 
-			const possibleAsks: WeightedAsk[] = cardLocation.playerIds.split( "," )
+			const possibleAsks: WeightedAsk[] = Object.keys( cardLocations[ cardId ] )
 				.filter( playerId => oppositeTeamMembers.includes( playerId ) )
-				.filter( playerId => cardCounts[ playerId ] > 0 )
+				.filter( playerId => players[ playerId ].cardCount > 0 )
 				.map( playerId => {
-					const weight = MAX_ASK_WEIGHT / cardLocation.playerIds.length;
+					const weight = MAX_ASK_WEIGHT / Object.keys( cardLocations[ cardId ] ).length;
 					return { cardId, playerId, weight };
 				} );
 

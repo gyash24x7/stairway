@@ -19,9 +19,9 @@ export function JoinGame() {
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleJoinGame = () => startTransition( async () => {
-		const [ err, game ] = await joinGame( { code } );
-		if ( !err && game ) {
-			window.location.href = `/literature/${ game.id }`;
+		const { success, error, data } = await joinGame( { code } );
+		if ( success && !error && !!data ) {
+			window.location.href = `/literature/${ data }`;
 		}
 	} );
 

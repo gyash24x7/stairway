@@ -21,8 +21,10 @@ export function ActionPanel() {
 	const playerId = useStore( store, state => state.playerId );
 	const players = useStore( store, state => state.players );
 	const gameId = useStore( store, state => state.game.id );
-	const isLastMoveSuccessfulCall = useStore( store, state => state.lastMoveData?.isCall
-		&& state.lastMoveData?.move.success );
+	const isLastMoveSuccessfulCall = useStore(
+		store,
+		( { lastMoveType, lastCall } ) => lastMoveType === "CALL" && lastCall?.success
+	);
 
 	const handleAddBots = () => startTransition( async () => {
 		await addBots( { gameId } );
@@ -67,7 +69,7 @@ export function ActionPanel() {
 						{ playerId === currentTurn && <AskCard/> }
 						{ playerId === currentTurn && <CallSet/> }
 						{ playerId === currentTurn && isLastMoveSuccessfulCall && <TransferTurn/> }
-						{ !!players[ currentTurn ].isBot && (
+						{ players[ currentTurn ].isBot && (
 							<Button
 								onClick={ handleExecuteBotMove }
 								disabled={ isPending }

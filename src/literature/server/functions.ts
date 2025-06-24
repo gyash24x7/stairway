@@ -1,126 +1,198 @@
 "use server";
 
 import {
+	type AskCardInput,
 	askCardInputSchema,
+	type CallSetInput,
 	callSetInputSchema,
+	type CreateGameInput,
 	createGameInputSchema,
+	type CreateTeamsInput,
 	createTeamsInputSchema,
 	type GameIdInput,
 	gameIdInputSchema,
+	type JoinGameInput,
 	joinGameInputSchema,
+	type TransferTurnInput,
 	transferTurnInputSchema
 } from "@/literature/server/inputs";
-import * as service from "@/literature/server/service";
-import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
-import { os } from "@orpc/server";
+import { env } from "cloudflare:workers";
 import { requestInfo } from "rwsdk/worker";
 
-const logger = createLogger( "Literature Functions" );
+const logger = createLogger( "Literature:Functions" );
 
-type MiddlewareData = { status?: Literature.GameStatus, turn?: true, isGameDataQuery?: true };
+function getStub() {
+	const durableObjectId = env.LITERATURE_DURABLE_OBJECT.idFromName( "stairway" );
+	return env.LITERATURE_DURABLE_OBJECT.get( durableObjectId );
+}
 
-const gameMiddleware = ( data?: MiddlewareData ) => os.middleware( async ( { next }, input ) => {
-	if ( !requestInfo.ctx.authInfo ) {
-		logger.error( "No authInfo found in context!" );
-		throw "User not authenticated!";
+export async function createGame( input: CreateGameInput ) {
+	const { error, success } = await createGameInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for createGame", { error, input } );
+		return { error: error.message, success: false as const };
 	}
 
-	const { gameId } = input as GameIdInput;
-	const { players, teams, ...game } = await service.getGameData( gameId );
+	try {
+		const stub = getStub();
+		const data = await stub.createGame( input, requestInfo.ctx.authInfo! );
+		return { data, success: true as const };
+	} catch ( err ) {
+		logger.error( "Error creating game", { error: err, input } );
+		return { error: "Failed to create game. Please try again later.", success: false as const };
+	}
+}
 
-	if ( !players[ requestInfo.ctx.authInfo.id ] ) {
-		logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo.id );
-		throw "User not part of this game!";
+export async function joinGame( input: JoinGameInput ) {
+	const { error, success } = await joinGameInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for join game", { error, input } );
+		return { error: error.message, success: false as const };
 	}
 
-	if ( !!data?.status && game.status !== data.status ) {
-		logger.error( "Game Status is not %s! GameId: %s", data.status, game.id );
-		throw "Game is in incorrect status!";
+	try {
+		const stub = getStub();
+		const data = await stub.joinGame( input, requestInfo.ctx.authInfo! );
+		return { data, success: true as const };
+	} catch ( err ) {
+		logger.error( "Error joining game", { error: err, input } );
+		return { error: "Failed to join game. Please try again later.", success: false as const };
+	}
+}
+
+export async function getGameData( input: GameIdInput ) {
+	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for getGameData", { error, input } );
+		return { error: error.message, success: false as const };
 	}
 
-	if ( !!data?.turn && game.currentTurn !== requestInfo.ctx.authInfo.id ) {
-		logger.error( "It's not your turn! GameId: %s", game.id );
-		throw "It is not your turn!";
+	try {
+		const stub = getStub();
+		const data = await stub.getGameStore( input.gameId, requestInfo.ctx.authInfo! );
+		return { data, success: true as const };
+	} catch ( err ) {
+		logger.error( "Error getting game", { error: err, input } );
+		return { error: "Failed to get game. Please try again later.", success: false as const };
+	}
+}
+
+export async function addBots( input: GameIdInput ) {
+	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for addBots", { error, input } );
+		return { error: error.message, success: false as const };
 	}
 
-	const cardCounts = game.status === "IN_PROGRESS"
-		? await service.getCardCounts( game.id )
-		: {};
+	try {
+		const stub = getStub();
+		await stub.addBots( input, requestInfo.ctx.authInfo! );
+		return { success: true as const };
+	} catch ( err ) {
+		logger.error( "Error creating game", { error: err, input } );
+		return { error: "Failed to create game. Please try again later.", success: false as const };
+	}
+}
 
-	const hand = data?.isGameDataQuery
-		? await service.getPlayerHand( game.id, requestInfo.ctx.authInfo.id )
-		: [];
+export async function createTeams( input: CreateTeamsInput ) {
+	const { error, success } = await createTeamsInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for create teams", { error, input } );
+		return { error: error.message, success: false as const };
+	}
 
-	const lastMoveData = data?.isGameDataQuery
-		? await service.getLastMoveData( game.lastMoveId )
-		: undefined;
+	try {
+		const stub = getStub();
+		await stub.createTeams( input, requestInfo.ctx.authInfo! );
+		return { success: true as const };
+	} catch ( err ) {
+		logger.error( "Error creating teams", { error: err, input } );
+		return { error: "Failed to create teams. Please try again later.", success: false as const };
+	}
+}
 
-	const asks = data?.isGameDataQuery
-		? await service.getPreviousAsks( game.id )
-		: [];
+export async function startGame( input: GameIdInput ) {
+	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for start game", { error, input } );
+		return { error: error.message, success: false as const };
+	}
 
-	const metrics = data?.isGameDataQuery
-		? await service.getMetrics( game, players, teams )
-		: { player: [], team: [] };
+	try {
+		const stub = getStub();
+		await stub.startGame( input, requestInfo.ctx.authInfo! );
+		return { success: true as const };
+	} catch ( err ) {
+		logger.error( "Error starting game", { error: err, input } );
+		return { error: "Failed to start game. Please try again later.", success: false as const };
+	}
+}
 
-	return next( { context: { game, players, teams, cardCounts, hand, lastMoveData, asks, metrics } } );
-} );
+export async function askCard( input: AskCardInput ) {
+	const { error, success } = await askCardInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for ask card", { error, input } );
+		return { error: error.message, success: false as const };
+	}
 
-export const createGame = os
-	.input( createGameInputSchema )
-	.handler( async ( { input } ) => service.createGame( input, requestInfo.ctx.authInfo! ) )
-	.actionable();
+	try {
+		const stub = getStub();
+		await stub.askCard( input, requestInfo.ctx.authInfo! );
+		return { success: true as const };
+	} catch ( err ) {
+		logger.error( "Error asking card", { error: err, input } );
+		return { error: "Failed to ask card. Please try again later.", success: false as const };
+	}
+}
 
-export const joinGame = os
-	.input( joinGameInputSchema )
-	.handler( async ( { input } ) => service.joinGame( input, requestInfo.ctx.authInfo! ) )
-	.actionable();
+export async function callSet( input: CallSetInput ) {
+	const { error, success } = await callSetInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for call set", { error, input } );
+		return { error: error.message, success: false as const };
+	}
 
-export const getGameData = os
-	.use( gameMiddleware( { isGameDataQuery: true } ) )
-	.input( gameIdInputSchema )
-	.handler( async ( { context } ) => ( { ...context, playerId: requestInfo.ctx.authInfo!.id } ) )
-	.actionable();
+	try {
+		const stub = getStub();
+		await stub.callSet( input, requestInfo.ctx.authInfo! );
+		return { success: true as const };
+	} catch ( err ) {
+		logger.error( "Error calling set", { error: err, input } );
+		return { error: "Failed to call set. Please try again later.", success: false as const };
+	}
+}
 
-export const addBots = os
-	.use( gameMiddleware( { status: "CREATED" } ) )
-	.input( gameIdInputSchema )
-	.handler( async ( { context } ) => service.addBots( context ) )
-	.actionable();
+export async function transferTurn( input: TransferTurnInput ) {
+	const { error, success } = await transferTurnInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for transfer turn", { error, input } );
+		return { error: error.message, success: false as const };
+	}
 
-export const createTeams = os
-	.use( gameMiddleware( { status: "PLAYERS_READY" } ) )
-	.input( createTeamsInputSchema )
-	.handler( async ( { input, context } ) => service.createTeams( input, context ) )
-	.actionable();
+	try {
+		const stub = getStub();
+		await stub.transferTurn( input, requestInfo.ctx.authInfo! );
+		return { success: true as const };
+	} catch ( err ) {
+		logger.error( "Error transferring turn", { error: err, input } );
+		return { error: "Failed to transfer turn. Please try again later.", success: false as const };
+	}
+}
 
-export const startGame = os
-	.use( gameMiddleware( { status: "TEAMS_CREATED" } ) )
-	.input( gameIdInputSchema )
-	.handler( async ( { context } ) => service.startGame( context ) )
-	.actionable();
+export async function executeBotMove( input: GameIdInput ) {
+	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
+	if ( !success || !!error ) {
+		logger.error( "Invalid input for execute bot move", { error, input } );
+		return { error: error.message, success: false as const };
+	}
 
-export const askCard = os
-	.use( gameMiddleware( { status: "IN_PROGRESS" } ) )
-	.input( askCardInputSchema )
-	.handler( async ( { input, context } ) => service.askCard( input, context ) )
-	.actionable();
-
-export const callSet = os
-	.use( gameMiddleware( { status: "IN_PROGRESS" } ) )
-	.input( callSetInputSchema )
-	.handler( async ( { input, context } ) => service.callSet( input, context ) )
-	.actionable();
-
-export const transferTurn = os
-	.use( gameMiddleware( { status: "IN_PROGRESS" } ) )
-	.input( transferTurnInputSchema )
-	.handler( async ( { input, context } ) => service.transferTurn( input, context ) )
-	.actionable();
-
-export const executeBotMove = os
-	.use( gameMiddleware( { status: "IN_PROGRESS" } ) )
-	.input( gameIdInputSchema )
-	.handler( async ( { context } ) => service.executeBotMove( context ) )
-	.actionable();
+	try {
+		const stub = getStub();
+		await stub.executeBotMove( input, requestInfo.ctx.authInfo! );
+		return { success: true as const };
+	} catch ( err ) {
+		logger.error( "Error executing bot move", { error: err, input } );
+		return { error: "Failed to execute bot move. Please try again later.", success: false as const };
+	}
+}

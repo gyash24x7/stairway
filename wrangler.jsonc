@@ -45,6 +45,10 @@
 			{
 				"name": "WORDLE_DURABLE_OBJECT",
 				"class_name": "WordleDurableObject"
+			},
+			{
+				"name": "LITERATURE_DURABLE_OBJECT",
+				"class_name": "LiteratureDurableObject"
 			}
 		]
 	},
@@ -56,7 +60,11 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": [ "RealtimeDurableObject", "WordleDurableObject" ]
+			"new_sqlite_classes": [
+				"RealtimeDurableObject",
+				"WordleDurableObject",
+				"LiteratureDurableObject"
+			]
 		}
 	]
 }

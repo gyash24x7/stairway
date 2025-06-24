@@ -20,9 +20,9 @@ export function CreateGame() {
 	const [ open, setOpen ] = useState( false );
 
 	const handleClick = () => startTransition( async () => {
-		const [ err, game ] = await createGame( { playerCount } );
-		if ( !err && game ) {
-			window.location.href = `/literature/game/${ game.id }`;
+		const { error, data, success } = await createGame( { playerCount } );
+		if ( success && !error && !!data ) {
+			window.location.href = `/literature/${ data }`;
 		}
 	} );
 

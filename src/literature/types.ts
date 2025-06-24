@@ -1,40 +1,7 @@
 import type { CardSet, PlayingCard } from "@/libs/cards/types";
-import type * as schema from "@/literature/schema";
 
 export namespace Literature {
-	export type Player = typeof schema.players.$inferSelect;
-	export type Team = typeof schema.teams.$inferSelect;
-	export type CardMapping = typeof schema.cardMappings.$inferSelect;
-	export type Game = typeof schema.games.$inferSelect;
-	export type CardLocation = typeof schema.cardLocations.$inferSelect;
-	export type Ask = typeof schema.asks.$inferSelect;
-	export type Call = typeof schema.calls.$inferSelect;
-	export type Transfer = typeof schema.transfers.$inferSelect;
-
-	export type PlayerData = Record<string, Player>;
-	export type TeamData = Record<string, Team>;
-	export type CardCounts = Record<string, number>;
-	export type ScoreUpdate = { teamId: string; score: number; setWon: CardSet; isLastSet: boolean }
-	export type GameStatus = Game["status"];
-
-	export type GameData = {
-		id: string;
-		code: string;
-		status: GameStatus;
-		playerCount: number;
-		currentTurn: string;
-		players: PlayerData;
-		teams: TeamData;
-		cardCounts: CardCounts;
-		asks: Ask[];
-		isLastMoveSuccessfulCall: boolean;
-		lastMove: { description: string };
-	}
-
-	export type Context = { game: Game; players: PlayerData; teams: TeamData; cardCounts: CardCounts }
-
-	export type PlayerMetrics = {
-		playerId: string;
+	export type Metrics = {
 		totalAsks: number;
 		cardsTaken: number;
 		cardsGiven: number;
@@ -43,42 +10,89 @@ export namespace Literature {
 		totalTransfers: number;
 	}
 
-	export type TeamMetrics = {
-		teamId: string;
+	export type Player = {
+		id: string;
+		name: string;
+		avatar: string;
+		hand: PlayingCard[];
+		teamId?: string;
+		isBot: boolean;
+		cardCount: number;
+		metrics: Metrics;
+	};
+
+	export type Team = {
+		id: string;
+		name: string;
 		score: number;
-		setsWon: string[];
+		setsWon: CardSet[];
+		members: string[];
 	}
 
-	export type Metrics = {
-		player: PlayerMetrics[];
-		team: TeamMetrics[];
+	export type Ask = {
+		id: string;
+		success: boolean;
+		description: string;
+		playerId: string;
+		askedFrom: string;
+		cardId: string;
+		timestamp: Date;
 	}
 
-	export type Event =
-		"player-joined"
-		| "teams-created"
-		| "status-updated"
-		| "card-asked"
-		| "set-called"
-		| "turn-updated"
-		| "turn-transferred"
-		| "score-updated"
-		| "card-count-updated"
-		| "game-completed"
-		| "cards-dealt";
+	export type Call = {
+		id: string;
+		success: boolean;
+		description: string;
+		playerId: string;
+		cardSet: CardSet;
+		actualCall: Record<string, string>;
+		correctCall: Record<string, string>;
+		timestamp: Date;
+	}
 
-	export type EventPayloads = {
-		"player-joined": Literature.Player;
-		"teams-created": Literature.TeamData;
-		"status-updated": Literature.GameStatus;
-		"card-asked": Literature.Ask;
-		"set-called": Literature.Call;
-		"turn-updated": string;
-		"turn-transferred": Literature.Transfer;
-		"score-updated": Literature.ScoreUpdate;
-		"card-count-updated": Literature.CardCounts;
-		"game-completed": Literature.Metrics
-		"cards-dealt": PlayingCard[];
+	export type Transfer = {
+		id: string;
+		description: string;
+		playerId: string;
+		transferTo: string;
+		timestamp: Date;
+	}
+
+	export type CardLocationForPlayer = {
+		playerIds: string[];
+		weight: number;
+	}
+
+	export type CardLocationsForCard = Record<string, CardLocationForPlayer>; // Record<playerId, CardLocationForPlayer>
+
+	export type GameStatus = "CREATED" | "PLAYERS_READY" | "TEAMS_CREATED" | "IN_PROGRESS" | "COMPLETED";
+
+	export type Game = {
+		id: string;
+		code: string;
+		status: GameStatus;
+		playerCount: number;
+		currentTurn: string;
+	}
+
+	export type InternalPlayerData = Record<string, Player>;
+	export type PlayerData = Record<string, Omit<Player, "cardLocations" | "hand">>
+	export type TeamData = Record<string, Team>;
+	export type CardMappings = Record<string, string>;
+	export type CardLocationData = Record<string, CardLocationsForCard>; // Record<cardId, CardLocationsForCard>
+	export type MoveType = "ASK" | "CALL" | "TRANSFER";
+
+	export type GameData = {
+		game: Game;
+		players: InternalPlayerData;
+		teams: TeamData;
+		cardMappings: CardMappings;
+		cardLocations: CardLocationData;
+		asks: Ask[];
+		calls: Call[];
+		transfers: Transfer[];
+		lastMoveType?: MoveType;
+		lastCall?: Call;
 	}
 
 	export type Store = {
@@ -86,24 +100,9 @@ export namespace Literature {
 		game: Game;
 		players: PlayerData;
 		teams: TeamData;
-		cardCounts: CardCounts;
 		hand: PlayingCard[];
-		lastMoveData?: { move?: Ask | Transfer, isCall: false } | { move: Call, isCall: true };
 		asks: Ask[];
-		metrics: Metrics;
+		lastMoveType?: MoveType;
+		lastCall?: Call;
 	}
-}
-
-export enum LiteratureEvent {
-	PLAYER_JOINED = "player-joined",
-	TEAMS_CREATED = "teams-created",
-	STATUS_UPDATED = "status-updated",
-	CARD_ASKED = "card-asked",
-	SET_CALLED = "set-called",
-	TURN_UPDATED = "turn-updated",
-	TURN_TRANSFERRED = "turn-transferred",
-	SCORE_UPDATED = "score-updated",
-	CARD_COUNT_UPDATED = "card-count-updated",
-	GAME_COMPLETED = "game-completed",
-	CARDS_DEALT = "cards-dealt"
 }

@@ -1,16 +1,17 @@
 import { CARD_RANKS, UPPER_CARD_RANKS } from "@/libs/cards/constants";
 import { CardRank, CardSet, CardSuit, type PlayingCard } from "@/libs/cards/types";
 
-export function getCardSet( card: PlayingCard ) {
-	switch ( card.suit ) {
+export function getCardSet( card: PlayingCard | string ) {
+	let temp = typeof card === "string" ? getCardFromId( card ) : card;
+	switch ( temp.suit ) {
 		case CardSuit.HEARTS:
-			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_HEARTS : CardSet.LOWER_HEARTS;
+			return UPPER_CARD_RANKS.includes( temp.rank ) ? CardSet.UPPER_HEARTS : CardSet.LOWER_HEARTS;
 		case CardSuit.CLUBS:
-			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_CLUBS : CardSet.LOWER_CLUBS;
+			return UPPER_CARD_RANKS.includes( temp.rank ) ? CardSet.UPPER_CLUBS : CardSet.LOWER_CLUBS;
 		case CardSuit.DIAMONDS:
-			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_DIAMONDS : CardSet.LOWER_DIAMONDS;
+			return UPPER_CARD_RANKS.includes( temp.rank ) ? CardSet.UPPER_DIAMONDS : CardSet.LOWER_DIAMONDS;
 		case CardSuit.SPADES:
-			return UPPER_CARD_RANKS.includes( card.rank ) ? CardSet.UPPER_SPADES : CardSet.LOWER_SPADES;
+			return UPPER_CARD_RANKS.includes( temp.rank ) ? CardSet.UPPER_SPADES : CardSet.LOWER_SPADES;
 	}
 }
 

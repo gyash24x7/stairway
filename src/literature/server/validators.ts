@@ -1,45 +1,36 @@
 import type { AuthInfo } from "@/auth/types";
 import { getCardFromId, getCardSet } from "@/libs/cards/card";
-import type { AskCardInput, CallSetInput, JoinGameInput, TransferTurnInput } from "@/literature/server/inputs";
-import * as repository from "@/literature/server/repository";
+import type { AskCardInput, CallSetInput, TransferTurnInput } from "@/literature/server/inputs";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
 
 const logger = createLogger( "LiteratureValidations" );
 
-export async function validateJoinGame( input: JoinGameInput, authInfo: AuthInfo ) {
+export async function validateJoinGame( data: Literature.GameData, authInfo: AuthInfo ) {
 	logger.debug( ">> validateJoinGame()" );
 
-	const game = await repository.getGameByCode( input.code );
-	if ( !game ) {
-		logger.error( "Game Not Found!" );
-		throw "Game Not Found!";
-	}
-
-	logger.debug( "Found Game: %o", game.players.length );
-
-	const isUserAlreadyInGame = !!game.players.find( player => player.id === authInfo.id );
+	const isUserAlreadyInGame = !!Object.values( data.players ).find( player => player.id === authInfo.id );
 	if ( isUserAlreadyInGame ) {
-		logger.warn( "The User is already part of the Game! GameId: %s", game.id );
-		return { game, isUserAlreadyInGame };
+		logger.warn( "The User is already part of the Game! GameId: %s", data.game.id );
+		return { isUserAlreadyInGame };
 	}
 
-	if ( game.players.length >= game.playerCount ) {
-		logger.error( "The Game already has required players! GameId: %s", game.id );
+	if ( Object.keys( data.players ).length >= data.game.playerCount ) {
+		logger.error( "The Game already has required players! GameId: %s", data.game.id );
 		throw "The Game already has required players!";
 	}
 
 	logger.debug( "<< validateJoinGame()" );
-	return { game, isUserAlreadyInGame };
+	return { game: data, isUserAlreadyInGame };
 }
 
-export async function validateAddBots( game: Literature.Game, players: Literature.PlayerData ) {
+export async function validateAddBots( data: Literature.GameData ) {
 	logger.debug( ">> validateAddBotsRequest()" );
 
-	const remainingPlayers = game.playerCount - Object.keys( players ).length;
+	const remainingPlayers = data.game.playerCount - Object.keys( data.players ).length;
 
 	if ( remainingPlayers <= 0 ) {
-		logger.error( "The Game already has required players! GameId: %s", game.id );
+		logger.error( "The Game already has required players! GameId: %s", data.game.id );
 		throw "The Game already has required players!";
 	}
 
@@ -47,41 +38,40 @@ export async function validateAddBots( game: Literature.Game, players: Literatur
 	return remainingPlayers;
 }
 
-export async function validateCreateTeams( game: Literature.Game, players: Literature.PlayerData ) {
+export async function validateCreateTeams( data: Literature.GameData ) {
 	logger.debug( ">> validateCreateTeamsRequest()" );
 
-	if ( Object.keys( players ).length !== game.playerCount ) {
-		logger.error( "The Game doesn't have enough players! GameId: %s", game.id );
+	if ( Object.keys( data.players ).length !== data.game.playerCount ) {
+		logger.error( "The Game doesn't have enough players! GameId: %s", data.game.id );
 		throw "The Game doesn't have enough players!";
 	}
 
 	logger.debug( "<< validateCreateTeamsRequest()" );
 }
 
-export async function validateAskCard( input: AskCardInput, game: Literature.Game, players: Literature.PlayerData ) {
+export async function validateAskCard( input: AskCardInput, data: Literature.GameData ) {
 	logger.debug( ">> validateAskCardRequest()" );
 
-	const cardMapping = await repository.getCardMappingForCard( input.gameId, input.card );
-	if ( !cardMapping ) {
-		logger.error( "Card Not Part of Game! GameId: %s CardId: %s", game.id, input.card );
+	if ( !Object.keys( data.cardMappings ).includes( input.card ) ) {
+		logger.error( "Card Not Part of Game! GameId: %s CardId: %s", data.game.id, input.card );
 		throw "Card Not Part of Game!";
 	}
 
-	const askedPlayer = players[ input.from ];
-	const playerWithAskedCard = players[ cardMapping.playerId ];
+	const askedPlayer = data.players[ input.from ];
+	const playerWithAskedCard = data.players[ data.cardMappings[ input.card ] ];
 
 	if ( !askedPlayer ) {
-		logger.debug( "The Player is not part of the Game! GameId: %s, PlayerId: %s", game.id, input.from );
+		logger.debug( "The Player is not part of the Game! GameId: %s, PlayerId: %s", data.game.id, input.from );
 		throw "The Player is not part of the Game!";
 	}
 
-	if ( playerWithAskedCard.id === game.currentTurn ) {
-		logger.debug( "The asked card is with asking player itself! GameId: %s", game.id );
+	if ( playerWithAskedCard.id === data.game.currentTurn ) {
+		logger.debug( "The asked card is with asking player itself! GameId: %s", data.game.id );
 		throw "The asked card is with asking player itself!";
 	}
 
-	if ( players[ game.currentTurn ].teamId === askedPlayer.teamId ) {
-		logger.debug( "The asked player is from the same team! GameId: %s", game.id );
+	if ( data.players[ data.game.currentTurn ].teamId === askedPlayer.teamId ) {
+		logger.debug( "The asked player is from the same team! GameId: %s", data.game.id );
 		throw "The asked player is from the same team!";
 	}
 
@@ -89,29 +79,28 @@ export async function validateAskCard( input: AskCardInput, game: Literature.Gam
 	return { askedPlayer, playerWithAskedCard };
 }
 
-export async function validateCallSet( input: CallSetInput, game: Literature.Game, players: Literature.PlayerData ) {
+export async function validateCallSet( input: CallSetInput, data: Literature.GameData ) {
 	logger.debug( ">> validateCallSetRequest()" );
 
-	const cardMappings = await repository.getCardMappingsForCards( input.gameId, Object.keys( input.data ) );
 	const calledCards = Object.keys( input.data ).map( getCardFromId );
 	const cardSets = new Set( calledCards.map( getCardSet ) );
 
 	const calledPlayers = Array.from( new Set( Object.values( input.data ) ) ).map( playerId => {
-		const player = players[ playerId ];
+		const player = data.players[ playerId ];
 		if ( !player ) {
-			logger.error( "The Player is not part of the Game! GameId: %s, PlayerId: %s", game.id, playerId );
+			logger.error( "The Player is not part of the Game! GameId: %s, PlayerId: %s", data.game.id, playerId );
 			throw "The Player is not part of the Game!";
 		}
 		return player;
 	} );
 
-	if ( !Object.values( input.data ).includes( game.currentTurn ) ) {
-		logger.error( "Calling Player did not call own cards! UserId: %s", game.currentTurn );
+	if ( !Object.values( input.data ).includes( data.game.currentTurn ) ) {
+		logger.error( "Calling Player did not call own cards! UserId: %s", data.game.currentTurn );
 		throw "Calling Player did not call own cards!";
 	}
 
 	if ( cardSets.size !== 1 ) {
-		logger.error( "Cards Called from multiple sets! UserId: %s", game.currentTurn );
+		logger.error( "Cards Called from multiple sets! UserId: %s", data.game.currentTurn );
 		throw "Cards Called from multiple sets!";
 	}
 
@@ -119,30 +108,28 @@ export async function validateCallSet( input: CallSetInput, game: Literature.Gam
 	const correctCall: Record<string, string> = {};
 	let isCardSetWithCallingPlayer = false;
 
-	cardMappings.forEach( ( { cardId, playerId } ) => {
-		const card = getCardFromId( cardId );
-		if ( getCardSet( card ) === calledSet ) {
-			correctCall[ cardId ] = playerId;
-			if ( playerId === game.currentTurn ) {
-				isCardSetWithCallingPlayer = true;
-			}
+	Object.keys( input.data ).forEach( cardId => {
+		const playerId = data.cardMappings[ cardId ];
+		correctCall[ cardId ] = playerId;
+		if ( playerId === data.game.currentTurn ) {
+			isCardSetWithCallingPlayer = true;
 		}
 	} );
 
 	if ( !isCardSetWithCallingPlayer ) {
-		logger.error( "Set called without cards from that set! UserId: %s, Set: %s", game.currentTurn, calledSet );
+		logger.error( "Set called without cards from that set! UserId: %s, Set: %s", data.game.currentTurn, calledSet );
 		throw "Set called without cards from that set!";
 	}
 
 	const calledTeams = new Set( calledPlayers.map( player => player.teamId ) );
 
 	if ( calledTeams.size !== 1 ) {
-		logger.error( "Set called from multiple teams! UserId: %s", game.currentTurn );
+		logger.error( "Set called from multiple teams! UserId: %s", data.game.currentTurn );
 		throw "Set called from multiple teams!";
 	}
 
 	if ( calledCards.length !== 6 ) {
-		logger.error( "All Cards not called for the set! UserId: %s, Set: %s", game.currentTurn, calledSet );
+		logger.error( "All Cards not called for the set! UserId: %s, Set: %s", data.game.currentTurn, calledSet );
 		throw "All Cards not called for the set!";
 	}
 
@@ -150,29 +137,23 @@ export async function validateCallSet( input: CallSetInput, game: Literature.Gam
 	return { correctCall, calledSet };
 }
 
-export async function validateTransferTurn(
-	input: TransferTurnInput,
-	game: Literature.Game,
-	players: Literature.PlayerData,
-	cardCounts: Literature.CardCounts
-) {
+export async function validateTransferTurn( input: TransferTurnInput, data: Literature.GameData ) {
 	logger.debug( ">> validateTransferTurnRequest()" );
 
-	const lastMove = await repository.getCallMove( game.lastMoveId );
-	if ( !lastMove ) {
+	if ( !data.lastCall ) {
 		logger.error( "Turn can only be transferred after a successful call!" );
 		throw "Turn can only be transferred after a successful call!";
 	}
 
-	const transferringPlayer = players[ game.currentTurn ];
-	const receivingPlayer = players[ input.transferTo ];
+	const transferringPlayer = data.players[ data.game.currentTurn ];
+	const receivingPlayer = data.players[ input.transferTo ];
 
 	if ( !receivingPlayer ) {
 		logger.error( "The Receiving Player is not part of the Game!" );
 		throw "The Receiving Player is not part of the Game!";
 	}
 
-	if ( cardCounts[ input.transferTo ] === 0 ) {
+	if ( data.players[ input.transferTo ].cardCount === 0 ) {
 		logger.error( "Turn can only be transferred to a player with cards!" );
 		throw "Turn can only be transferred to a player with cards!";
 	}

@@ -5,6 +5,8 @@ import { Document } from "@/document";
 import { Home } from "@/routes";
 import { CallbreakHome } from "@/routes/callbreak";
 import { CallbreakGame } from "@/routes/callbreak.$gameId";
+import { LiteratureHome } from "@/routes/literature";
+import { LiteratureGame } from "@/routes/literature.$gameId";
 import { Settings } from "@/routes/settings";
 import { WordleHome } from "@/routes/wordle";
 import { WordleGame } from "@/routes/wordle.$gameId";
@@ -18,6 +20,7 @@ import { defineApp } from "rwsdk/worker";
 
 export { RealtimeDurableObject } from "rwsdk/realtime/durableObject";
 export { WordleDurableObject } from "@/wordle/server/durable.object";
+export { LiteratureDurableObject } from "@/literature/server/durable.object";
 
 const logger = createLogger( "Worker" );
 
@@ -74,6 +77,8 @@ export default defineApp( [
 			route( "/settings", Settings ),
 			route( "/callbreak", CallbreakHome ),
 			route( "/callbreak/:gameId", [ requireAuthInfo(), CallbreakGame ] ),
+			route( "/literature", LiteratureHome ),
+			route( "/literature/:gameId", [ requireAuthInfo(), LiteratureGame ] ),
 			route( "/wordle", WordleHome ),
 			route( "/wordle/:gameId", [ requireAuthInfo(), WordleGame ] )
 		] )

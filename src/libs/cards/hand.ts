@@ -35,7 +35,10 @@ export function addCardToHand( hand: PlayingCard[], card: PlayingCard ) {
 	return [ ...hand, card ];
 }
 
-export function removeCardFromHand( hand: PlayingCard[], card: PlayingCard ) {
+export function removeCardFromHand( hand: PlayingCard[], card: PlayingCard | string ) {
+	if ( typeof card === "string" ) {
+		return hand.filter( c => getCardId( c ) !== card );
+	}
 	return hand.filter( c => getCardId( c ) !== getCardId( card ) );
 }
 

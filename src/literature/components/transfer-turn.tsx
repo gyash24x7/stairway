@@ -16,7 +16,6 @@ export function TransferTurn() {
 	const gameId = useStore( store, state => state.game.id );
 	const players = useStore( store, state => state.players );
 	const playerId = useStore( store, state => state.playerId );
-	const cardCounts = useStore( store, state => state.cardCounts );
 	const myTeam = useStore( store, state => {
 		const player = state.players[ state.playerId ];
 		if ( !player.teamId ) {
@@ -28,9 +27,9 @@ export function TransferTurn() {
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ showDrawer, setShowDrawer ] = useState( false );
 
-	const myTeamMembersWithCards = myTeam?.memberIds.split( "," )
+	const myTeamMembersWithCards = myTeam?.members
 		.map( memberId => players[ memberId ] )
-		.filter( member => !!cardCounts[ member.id ] && member.id !== playerId ) ?? [];
+		.filter( member => !!players[ member.id ].cardCount && member.id !== playerId ) ?? [];
 
 	const openDrawer = () => setShowDrawer( true );
 	const closeDrawer = () => setShowDrawer( false );

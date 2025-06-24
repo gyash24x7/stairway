@@ -1,22 +1,18 @@
 "use client";
 
-import { DisplayPlayer, type DisplayPlayerProps } from "@/shared/components/display-player";
 import { store } from "@/literature/store";
-import type { Literature } from "@/literature/types";
+import { DisplayPlayer, type DisplayPlayerProps } from "@/shared/components/display-player";
 import { cn } from "@/shared/utils/cn";
 import { useStore } from "@tanstack/react-store";
 
 export type PlayerLobbyProps = Omit<DisplayPlayerProps, "player" | "cardCount"> & { playerIds?: string[]; }
 
-const sortByTeam = ( a: Literature.Player, b: Literature.Player ) => a.teamId?.localeCompare( b?.teamId ?? "" ) ?? 0;
-
 export function PlayerLobby( props: PlayerLobbyProps ) {
 	const players = useStore( store, state => state.players );
 	const playerCount = useStore( store, state => state.game.playerCount );
-	const cardCounts = useStore( store, state => state.cardCounts );
 
 	const playerList = !props.playerIds
-		? Object.values( players ).toSorted( sortByTeam )
+		? Object.values( players ).toSorted( ( a, b ) => a.teamId?.localeCompare( b?.teamId ?? "" ) ?? 0 )
 		: Object.values( players ).filter( p => props.playerIds?.includes( p.id ) );
 
 	return (
@@ -34,7 +30,12 @@ export function PlayerLobby( props: PlayerLobbyProps ) {
 			) }
 		>
 			{ playerList.map( player => (
-				<DisplayPlayer { ...props } player={ player } key={ player.id } cardCount={ cardCounts[ player.id ] }/>
+				<DisplayPlayer
+					{ ...props }
+					player={ player }
+					key={ player.id }
+					cardCount={ players[ player.id ].cardCount }
+				/>
 			) ) }
 		</div>
 	);

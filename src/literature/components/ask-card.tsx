@@ -20,7 +20,6 @@ export function AskCard() {
 	const gameId = useStore( store, state => state.game.id );
 	const players = useStore( store, state => state.players );
 	const hand = useStore( store, state => state.hand );
-	const cardCounts = useStore( store, state => state.cardCounts );
 	const oppositeTeam = useStore( store, state => {
 		const player = state.players[ state.playerId ];
 		if ( !player.teamId ) {
@@ -42,9 +41,9 @@ export function AskCard() {
 		return cards.length !== 6;
 	} );
 
-	const oppositeTeamMembersWithCards = oppositeTeam?.memberIds.split( "," )
+	const oppositeTeamMembersWithCards = oppositeTeam?.members
 		.map( memberId => players[ memberId ] )
-		.filter( member => !!cardCounts[ member.id ] ) ?? [];
+		.filter( member => !!players[ member.id ].cardCount ) ?? [];
 
 	const handleCardSetSelect = ( value?: string ) => () => {
 		if ( !value ) {

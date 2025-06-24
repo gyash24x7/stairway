@@ -6,7 +6,6 @@ import { useStore } from "@tanstack/react-store";
 
 export function GameCompleted() {
 	const players = useStore( store, state => state.players );
-	const metrics = useStore( store, state => state.metrics );
 
 	return (
 		<div className={ "flex flex-col gap-3" }>
@@ -31,9 +30,9 @@ export function GameCompleted() {
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{ metrics.player.map( ( metrics ) => (
-							<TableRow key={ metrics.playerId } className={ "font-semibold" }>
-								<TableCell>{ players[ metrics.playerId ].name }</TableCell>
+						{ Object.values( players ).map( ( { metrics, id, name } ) => (
+							<TableRow key={ id } className={ "font-semibold" }>
+								<TableCell>{ name }</TableCell>
 								<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>
 								<TableCell className={ "text-center" }>{ metrics.cardsTaken }</TableCell>
 								<TableCell className={ "text-center" }>{ metrics.cardsGiven }</TableCell>
