@@ -18,6 +18,7 @@ import {
 } from "@/literature/server/inputs";
 import { createLogger } from "@/shared/utils/logger";
 import { env } from "cloudflare:workers";
+import { renderRealtimeClients } from "rwsdk/realtime/worker";
 import { requestInfo } from "rwsdk/worker";
 
 const logger = createLogger( "Literature:Functions" );
@@ -54,6 +55,12 @@ export async function joinGame( input: JoinGameInput ) {
 	try {
 		const stub = getStub();
 		const data = await stub.joinGame( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ data }`
+		} );
+
 		return { data, success: true as const };
 	} catch ( err ) {
 		logger.error( "Error joining game", { error: err, input } );
@@ -88,6 +95,12 @@ export async function addBots( input: GameIdInput ) {
 	try {
 		const stub = getStub();
 		await stub.addBots( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ input.gameId }`
+		} );
+
 		return { success: true as const };
 	} catch ( err ) {
 		logger.error( "Error creating game", { error: err, input } );
@@ -105,6 +118,12 @@ export async function createTeams( input: CreateTeamsInput ) {
 	try {
 		const stub = getStub();
 		await stub.createTeams( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ input.gameId }`
+		} );
+
 		return { success: true as const };
 	} catch ( err ) {
 		logger.error( "Error creating teams", { error: err, input } );
@@ -122,6 +141,12 @@ export async function startGame( input: GameIdInput ) {
 	try {
 		const stub = getStub();
 		await stub.startGame( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ input.gameId }`
+		} );
+
 		return { success: true as const };
 	} catch ( err ) {
 		logger.error( "Error starting game", { error: err, input } );
@@ -139,6 +164,12 @@ export async function askCard( input: AskCardInput ) {
 	try {
 		const stub = getStub();
 		await stub.askCard( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ input.gameId }`
+		} );
+
 		return { success: true as const };
 	} catch ( err ) {
 		logger.error( "Error asking card", { error: err, input } );
@@ -156,6 +187,12 @@ export async function callSet( input: CallSetInput ) {
 	try {
 		const stub = getStub();
 		await stub.callSet( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ input.gameId }`
+		} );
+
 		return { success: true as const };
 	} catch ( err ) {
 		logger.error( "Error calling set", { error: err, input } );
@@ -173,6 +210,12 @@ export async function transferTurn( input: TransferTurnInput ) {
 	try {
 		const stub = getStub();
 		await stub.transferTurn( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ input.gameId }`
+		} );
+
 		return { success: true as const };
 	} catch ( err ) {
 		logger.error( "Error transferring turn", { error: err, input } );
@@ -190,6 +233,12 @@ export async function executeBotMove( input: GameIdInput ) {
 	try {
 		const stub = getStub();
 		await stub.executeBotMove( input, requestInfo.ctx.authInfo! );
+
+		await renderRealtimeClients( {
+			durableObjectNamespace: env.REALTIME_DURABLE_OBJECT,
+			key: `/literature/${ input.gameId }`
+		} );
+
 		return { success: true as const };
 	} catch ( err ) {
 		logger.error( "Error executing bot move", { error: err, input } );

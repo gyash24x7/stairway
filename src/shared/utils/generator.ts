@@ -15,8 +15,8 @@ export function generateName() {
 	return uniqueNamesGenerator( namesConfig );
 }
 
-export function generateAvatar() {
-	return `https://api.dicebear.com/7.x/open-peeps/png?seed=${ Date.now() }&r=50`;
+export function generateAvatar( seed?: string ) {
+	return `https://api.dicebear.com/7.x/open-peeps/png?seed=${ seed ?? Date.now() }&r=50`;
 }
 
 export function generateGameCode() {

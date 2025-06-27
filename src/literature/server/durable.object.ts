@@ -61,7 +61,7 @@ export class LiteratureDurableObject extends DurableObject {
 			hand: players[ authInfo.id ].hand,
 			lastCall,
 			lastMoveType,
-			players: {},
+			players,
 			teams,
 			playerId: authInfo.id,
 			game
@@ -260,6 +260,10 @@ export class LiteratureDurableObject extends DurableObject {
 			const otherPlayerIds = playerIds.filter( id => id !== playerId );
 			deck.forEach( c => {
 				const cardId = getCardId( c );
+				if ( !data.cardLocations[ cardId ] ) {
+					data.cardLocations[ cardId ] = {};
+				}
+
 				if ( isCardInHand( hand, c ) ) {
 					data.cardLocations[ cardId ][ playerId ] = { playerIds: [ playerId ], weight: 0 };
 				}
@@ -310,8 +314,11 @@ export class LiteratureDurableObject extends DurableObject {
 
 		if ( ask.success ) {
 			data.cardMappings[ ask.cardId ] = ask.playerId;
+			data.players[ ask.playerId ].hand.push( askedCard );
 			data.players[ ask.playerId ].cardCount++;
+
 			data.players[ ask.askedFrom ].cardCount--;
+			data.players[ ask.askedFrom ].hand = removeCardFromHand( data.players[ ask.askedFrom ].hand, askedCard );
 		}
 
 		Object.keys( data.cardLocations[ ask.cardId ] ).map( playerId => {

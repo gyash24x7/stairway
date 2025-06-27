@@ -4,11 +4,10 @@ import { type RequestInfo } from "rwsdk/worker";
 
 export async function LiteratureGame( { params }: RequestInfo<{ gameId: string }> ) {
 	const { error, data } = await getGameData( params );
-	console.log( "data", data );
 
 	if ( !!error || !data ) {
 		throw "Game not found!";
 	}
 
-	return <GamePage data={ data }/>;
+	return <GamePage data={ { ...data } }/>;
 }
