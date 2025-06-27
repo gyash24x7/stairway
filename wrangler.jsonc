@@ -66,5 +66,12 @@
 				"LiteratureDurableObject"
 			]
 		}
+	],
+	"workflows": [
+		{
+			"name": "literature-workflow",
+			"binding": "LITERATURE_WORKFLOW",
+			"class_name": "LiteratureWorkflow"
+		}
 	]
 }
