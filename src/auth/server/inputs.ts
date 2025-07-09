@@ -1,21 +1,24 @@
-import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
-import { z } from "zod/v4";
+import * as v from "valibot";
 
-export const usernameInput = z.object( { username: z.string() } );
+const username = () => v.pipe( v.string(), v.trim(), v.minLength( 3 ) );
 
-export type UsernameInput = z.infer<typeof usernameInput>;
-
-export const registrationVerificationInput = z.object( {
-	username: z.string(),
-	name: z.string(),
-	response: z.custom<RegistrationResponseJSON>()
+export const usernameInput = v.object( {
+	username: username()
 } );
 
-export type VerifyRegistrationInput = z.infer<typeof registrationVerificationInput>;
+export type UsernameInput = v.InferOutput<typeof usernameInput>;
 
-export const loginVerificationInput = z.object( {
-	username: z.string(),
-	response: z.custom<AuthenticationResponseJSON>()
+export const registrationVerificationInput = v.object( {
+	username: username(),
+	name: v.string(),
+	response: v.any()
 } );
 
-export type VerifyLoginInput = z.infer<typeof loginVerificationInput>;
+export type VerifyRegistrationInput = v.InferOutput<typeof registrationVerificationInput>;
+
+export const loginVerificationInput = v.object( {
+	username: username(),
+	response: v.any()
+} );
+
+export type VerifyLoginInput = v.InferOutput<typeof loginVerificationInput>;
