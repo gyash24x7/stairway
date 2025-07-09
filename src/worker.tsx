@@ -11,7 +11,6 @@ import { Settings } from "@/routes/settings";
 import { WordleHome } from "@/routes/wordle";
 import { WordleGame } from "@/routes/wordle.$gameId";
 import { RootLayout } from "@/shared/components/root-layout";
-import { generateId, generateName } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import { env } from "cloudflare:workers";
 import { IS_DEV } from "rwsdk/constants";
@@ -22,7 +21,7 @@ import { defineApp } from "rwsdk/worker";
 export { RealtimeDurableObject } from "rwsdk/realtime/durableObject";
 export { WordleDurableObject } from "@/wordle/server/durable.object";
 export { LiteratureDurableObject } from "@/literature/server/durable.object";
-export { LiteratureWorkflow } from "@/literature/server/workflow";
+export { CallbreakDurableObject } from "@/callbreak/server/durable.object";
 
 const logger = createLogger( "Worker" );
 
@@ -70,49 +69,6 @@ export default defineApp( [
 	setCommonHeaders(),
 	loadAuthInfo(),
 	realtimeRoute( () => env.REALTIME_DURABLE_OBJECT ),
-	route( "/messages", async ( { request } ) => {
-		logger.info( "Received request for messages" );
-		let url = new URL( request.url );
-
-		let id = url.searchParams.get( "instanceId" );
-		if ( id ) {
-			let instance = await env.LITERATURE_WORKFLOW.get( id );
-			return Response.json( {
-				status: await instance.status()
-			} );
-		}
-
-		const instance = await env.LITERATURE_WORKFLOW.create( {
-			id: generateId(),
-			params: { name: generateName() }
-		} );
-
-		return Response.json( {
-			status: await instance.status(),
-			replyLink: `/reply?instanceId=${ instance.id }`
-		} );
-	} ),
-	route( "/reply", async ( { request } ) => {
-		logger.info( "Received reply request" );
-		let url = new URL( request.url );
-		let id = url.searchParams.get( "instanceId" );
-		if ( !id ) {
-			logger.warn( "No instanceId provided in reply request" );
-			return new Response( null, { status: 400, statusText: "Bad Request" } );
-		}
-
-		const instance = await env.LITERATURE_WORKFLOW.get( id );
-		if ( !instance ) {
-			logger.warn( `No instance found with id: ${ id }` );
-			return new Response( null, { status: 404, statusText: "Not Found" } );
-		}
-
-		logger.info( `Sending reply to instance: ${ id }` );
-		await instance.sendEvent( { type: "reply", payload: { message: "Hello from the reply!" } } );
-		return Response.json( {
-			status: await instance.status()
-		} );
-	} ),
 	route( "/auth/logout", [ verifyMethod( "DELETE" ), handleLogout ] ),
 	route( "/auth/registration", [ verifyMethod( "POST" ), handleRegistrationVerification ] ),
 	route( "/auth/login", [ verifyMethod( "POST" ), handleLoginVerification ] ),

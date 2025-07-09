@@ -25,10 +25,9 @@ export function DeclareDealWins() {
 
 	const gameId = useStore( store, state => state.game.id );
 	const dealId = useStore( store, state => state.currentDeal!.id );
-	const playerId = useStore( store, state => state.playerId );
 
 	const handleClick = () => startTransition( async () => {
-		const { error } = await declareDealWins( { gameId, dealId, wins, playerId } );
+		const { error } = await declareDealWins( { gameId, dealId, wins } );
 		if ( !error ) {
 			reset();
 			setOpen( false );

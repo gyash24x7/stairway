@@ -1,23 +1,26 @@
 import type { Callbreak } from "@/callbreak/types";
-import { compareCards, getCardFromId } from "@/libs/cards/card";
-import { CARD_SUITS } from "@/libs/cards/constants";
-import { generateDeck, getSuitGroupsFromHand } from "@/libs/cards/hand";
-import { CardRank, CardSuit, type PlayingCard } from "@/libs/cards/types";
-import { getBestCardPlayed, getPlayableCards } from "@/libs/cards/utils";
+import { CARD_RANKS, CARD_SUITS } from "@/libs/cards/constants";
+import type { CardRank, CardSuit, PlayingCard } from "@/libs/cards/types";
+import {
+	compareCards,
+	generateDeck,
+	getBestCardPlayed,
+	getCardFromId,
+	getCardsOfSuit,
+	getPlayableCards
+} from "@/libs/cards/utils";
 import { createLogger } from "@/shared/utils/logger";
 
 const logger = createLogger( "CallbreakBotService" );
 
-const BIG_RANKS = [ CardRank.ACE, CardRank.KING, CardRank.QUEEN ];
+const BIG_RANKS: CardRank[] = [ CARD_RANKS.ACE, CARD_RANKS.KING, CARD_RANKS.QUEEN ];
 
 export function suggestDealWins( hand: PlayingCard[], trumpSuit: CardSuit ) {
 	logger.debug( ">> suggestDealWins()" );
 
-	const cardsBySuit = getSuitGroupsFromHand( hand );
 	let possibleWins = 0;
-
-	for ( const suit of CARD_SUITS ) {
-		const cards = cardsBySuit[ suit ];
+	for ( const suit of Object.values( CARD_SUITS ) ) {
+		const cards = getCardsOfSuit( suit, hand );
 		const bigRanks = cards.filter( card => BIG_RANKS.includes( card.rank ) );
 
 		if ( suit === trumpSuit ) {
@@ -44,7 +47,7 @@ export function suggestDealWins( hand: PlayingCard[], trumpSuit: CardSuit ) {
 
 export function suggestCardToPlay(
 	hand: PlayingCard[],
-	activeRound: Callbreak.RoundWithCards,
+	activeRound: Callbreak.Round,
 	cardsAlreadyPlayed: PlayingCard[],
 	trumpSuit: CardSuit
 ) {

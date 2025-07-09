@@ -1,6 +1,5 @@
 "use server";
 
-import type { CreateGameInput, DeclareDealWinsInput, JoinGameInput, PlayCardInput } from "@/callbreak/server/inputs";
 import {
 	createGameInputSchema,
 	declareDealWinsInputSchema,
@@ -8,128 +7,125 @@ import {
 	joinGameInputSchema,
 	playCardInputSchema
 } from "@/callbreak/server/inputs";
-import * as service from "@/callbreak/server/service";
+import type { Callbreak } from "@/callbreak/types";
 import { createLogger } from "@/shared/utils/logger";
+import { env } from "cloudflare:workers";
 import { requestInfo } from "rwsdk/worker";
+import * as v from "valibot";
 
 const logger = createLogger( "Callbreak:Functions" );
 
-export async function createGame( input: CreateGameInput ) {
-	const { error, success } = await createGameInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid Input!" );
-		return { error: error?.message };
-	}
-
-	try {
-		const data = await service.createGame( input, requestInfo.ctx.authInfo! );
-		return { data };
-	} catch ( err ) {
-		logger.error( "Error creating game!" );
-		return { error: ( err as Error ).message };
-	}
+function getStub() {
+	const durableObjectId = env.CALLBREAK_DURABLE_OBJECT.idFromName( "stairway" );
+	return env.CALLBREAK_DURABLE_OBJECT.get( durableObjectId );
 }
 
-export async function joinGame( input: JoinGameInput ) {
-	const { success, error } = await joinGameInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid Input!" );
-		return { error: error?.message };
-	}
-
-	try {
-		const data = await service.joinGame( input, requestInfo.ctx.authInfo! );
-		return { data };
-	} catch ( err ) {
-		logger.error( "Unable to join the game!" );
-		return { error: ( err as Error ).message };
-	}
+/**
+ * Creates a new Callbreak game.
+ * Validates the input against the schema and
+ * calls the durable object to create the game.
+ *
+ * @param {Callbreak.CreateGameInput} input - The input for creating a game, excluding authInfo.
+ * @returns {Promise<Callbreak.DataResponse<string>>} - Returns an object containing the gameId or an error message.
+ */
+export async function createGame( input: Callbreak.CreateGameInput ): Promise<Callbreak.DataResponse<string>> {
+	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
+	return v.parseAsync( createGameInputSchema, input )
+		.then( () => stub.createGame( input, authInfo ) )
+		.then( data => stub.saveGameData( data.game.id, data ) )
+		.then( data => ( { data: data.game.id } ) )
+		.catch( err => {
+			logger.error( "Error creating game!", err );
+			return { error: ( err as Error ).message };
+		} );
 }
 
-export async function getGameData( gameId: string ) {
-	const { success, error } = await gameIdInputSchema.safeParseAsync( { gameId } );
-	if ( !success || !!error ) {
-		logger.error( "Invalid Game Id!" );
-		return { error: error?.message };
-	}
-
-	try {
-		const { game, players } = await service.getBaseGameData( gameId );
-		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
-			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
-			return { error: "User not part of this game!" };
-		}
-
-		const data = await service.getGameData( { game, players, authInfo: requestInfo.ctx.authInfo! } );
-		return { data };
-	} catch ( err ) {
-		logger.error( "Unable to get game data!", err );
-		return { error: ( err as Error ).message };
-	}
+/**
+ * Joins an existing Callbreak game.
+ * Validates the input against the schema and
+ * calls the durable object to join the game.
+ *
+ * @param {Callbreak.JoinGameInput} input - The input for joining a game, including the game code.
+ * @returns {Promise<Callbreak.DataResponse<string>>} - Returns an object containing the gameId or an error message.
+ */
+export async function joinGame( input: Callbreak.JoinGameInput ): Promise<Callbreak.DataResponse<string>> {
+	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
+	return v.parseAsync( joinGameInputSchema, input )
+		.then( () => stub.getGameByCode( input.code ) )
+		.then( data => stub.validateJoinGame( data, authInfo ) )
+		.then( data => stub.joinGame( data, authInfo ) )
+		.then( data => stub.saveGameData( data.game.id, data ) )
+		.then( data => ( { data: data.game.id } ) )
+		.catch( err => {
+			logger.error( "Error joining game!", err );
+			return { error: ( err as Error ).message };
+		} );
 }
 
-export async function addBots( gameId: string ) {
-	const { success, error } = await gameIdInputSchema.safeParseAsync( { gameId } );
-	if ( !success || !!error ) {
-		logger.error( "Invalid Game Id!" );
-		return { error: error?.message };
-	}
-
-	try {
-		const { game, players } = await service.getBaseGameData( gameId );
-		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
-			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
-			return { error: "User not part of this game!" };
-		}
-
-		const data = await service.addBots( { game, players } );
-		return { data };
-	} catch ( err ) {
-		logger.error( "Unable to add bots!" );
-		return { error: ( err as Error ).message };
-	}
+/**
+ * Retrieves the game data for a specific Callbreak game.
+ * Validates the input against the schema and
+ * calls the durable object to get the game data.
+ *
+ * @param {Callbreak.GameIdInput} input - The input containing the gameId.
+ * @returns {Promise<Callbreak.DataResponse<Callbreak.GameData>>} - Returns an object containing the game data or an error message.
+ */
+export async function getGameData( input: Callbreak.GameIdInput ): Promise<Callbreak.DataResponse<Callbreak.GameData>> {
+	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
+	return v.parseAsync( gameIdInputSchema, input )
+		.then( () => stub.getGameData( input.gameId, authInfo.id ) )
+		.then( data => ( { data } ) )
+		.catch( err => {
+			logger.error( "Error getting game data!", err );
+			return { error: ( err as Error ).message };
+		} );
 }
 
-export async function declareDealWins( input: DeclareDealWinsInput ) {
-	const { success, error } = await declareDealWinsInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid Input!" );
-		return { error: error?.message };
-	}
-
-	try {
-		const { game, players } = await service.getBaseGameData( input.gameId );
-		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
-			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
-			return { error: "User not part of this game!" };
-		}
-
-		const data = await service.declareDealWins( input, { game, players } );
-		return { data };
-	} catch ( err ) {
-		logger.error( "Unable to declare deal wins!" );
-		return { error: ( err as Error ).message };
-	}
+/**
+ * Declares the deal wins for a specific Callbreak game.
+ * Validates the input against the schema and
+ * calls the durable object to declare the deal wins.
+ *
+ * @param {Callbreak.DeclareDealWinsInput} input - The input for declaring deal wins, including gameId and dealId.
+ * @returns {Promise<Callbreak.ErrorOnlyResponse>} - Returns an object containing an error message if any.
+ */
+export async function declareDealWins( input: Callbreak.DeclareDealWinsInput ): Promise<Callbreak.ErrorOnlyResponse> {
+	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
+	return v.parseAsync( declareDealWinsInputSchema, input )
+		.then( () => stub.getGameData( input.gameId, authInfo.id ) )
+		.then( data => stub.validateDealWinDeclaration( input, data, authInfo ) )
+		.then( data => stub.declareDealWins( input, data ) )
+		.then( data => stub.saveGameData( data.game.id, data ) )
+		.then( () => ( { error: undefined } ) )
+		.catch( err => {
+			logger.error( "Error declaring deal wins!", err );
+			return { error: ( err as Error ).message };
+		} );
 }
 
-export async function playCard( input: PlayCardInput ) {
-	const { success, error } = await playCardInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid Input!" );
-		return { error: error?.message };
-	}
-
-	try {
-		const { game, players } = await service.getBaseGameData( input.gameId );
-		if ( !players[ requestInfo.ctx.authInfo!.id ] ) {
-			logger.error( "Logged In User not part of this game! UserId: %s", requestInfo.ctx.authInfo!.id );
-			return { error: "User not part of this game!" };
-		}
-
-		const data = await service.playCard( input, { game, players } );
-		return { data };
-	} catch ( err ) {
-		logger.error( "Unable to play card!" );
-		return { error: ( err as Error ).message };
-	}
+/**
+ * Plays a card in a specific Callbreak game.
+ * Validates the input against the schema and
+ * calls the durable object to play the card.
+ *
+ * @param {Callbreak.PlayCardInput} input - The input for playing a card, including gameId, dealId, and roundId.
+ * @returns {Promise<Callbreak.ErrorOnlyResponse>} - Returns an object containing an error message if any.
+ */
+export async function playCard( input: Callbreak.PlayCardInput ): Promise<Callbreak.ErrorOnlyResponse> {
+	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
+	return v.parseAsync( playCardInputSchema, input )
+		.then( () => stub.getGameData( input.gameId, authInfo.id ) )
+		.then( data => stub.validatePlayCard( input, data, authInfo ) )
+		.then( data => stub.playCard( input, data ) )
+		.then( data => stub.saveGameData( data.game.id, data ) )
+		.then( () => ( { error: undefined } ) )
+		.catch( err => {
+			logger.error( "Error playing card!", err );
+			return { error: ( err as Error ).message };
+		} );
 }

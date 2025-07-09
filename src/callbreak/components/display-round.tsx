@@ -1,19 +1,22 @@
+import { store } from "@/callbreak/store";
 import type { Callbreak } from "@/callbreak/types";
-import { getCardFromId } from "@/libs/cards/card";
+import { getCardFromId } from "@/libs/cards/utils";
 import { DisplayCard } from "@/shared/components/display-card";
 import { DisplayPlayer } from "@/shared/components/display-player";
 import { cn } from "@/shared/utils/cn";
+import { useStore } from "@tanstack/react-store";
 
 type DisplayRoundProps = {
-	round: Callbreak.RoundWithCards;
+	round: Callbreak.Round;
 	players: Callbreak.PlayerData;
 	playerOrder: string[];
 }
 
 export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps ) {
+	const currentTurn = useStore( store, ( state ) => state.game.currentTurn );
 	return (
 		<div className={ "grid gap-3 grid-cols-4" }>
-			{ playerOrder.map( ( playerId, i ) => {
+			{ playerOrder.map( ( playerId ) => {
 				const cardId = round.cards[ playerId ]!;
 				const card = !!cardId ? getCardFromId( cardId ) : undefined;
 				return (
@@ -21,7 +24,7 @@ export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps
 						key={ playerId }
 						className={ cn(
 							"w-full flex flex-col gap-3 p-3 rounded-md items-center border-2",
-							round.turnIdx === i && "border-main border-4"
+							currentTurn === playerId && "border-main border-4"
 						) }
 					>
 						<DisplayPlayer player={ players[ playerId ] } key={ playerId }/>

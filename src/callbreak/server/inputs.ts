@@ -1,40 +1,32 @@
-import { CardSuit } from "@/libs/cards/types";
-import { z } from "zod/v4";
+import { CARD_IDS, CARD_SUITS } from "@/libs/cards/constants";
+import * as v from "valibot";
 
-export const createGameInputSchema = z.object( {
-	dealCount: z.number().positive().optional(),
-	trumpSuit: z.enum( [ CardSuit.CLUBS, CardSuit.DIAMONDS, CardSuit.HEARTS, CardSuit.SPADES ] )
+const ulid = () => v.pipe( v.string(), v.trim(), v.ulid() );
+const cardId = () => v.pipe( v.string(), v.trim(), v.picklist( CARD_IDS ) );
+
+export const createGameInputSchema = v.object( {
+	dealCount: v.optional( v.pipe( v.number(), v.picklist( [ 5, 9, 13 ] ) ) ),
+	trumpSuit: v.picklist( Object.values( CARD_SUITS ) )
 } );
 
-export type CreateGameInput = z.infer<typeof createGameInputSchema>;
-
-export const joinGameInputSchema = z.object( {
-	code: z.string()
+export const joinGameInputSchema = v.object( {
+	code: v.pipe( v.string(), v.trim(), v.length( 6 ) )
 } );
 
-export type JoinGameInput = z.infer<typeof joinGameInputSchema>;
 
-export const declareDealWinsInputSchema = z.object( {
-	wins: z.number().positive().lte( 13 ),
-	dealId: z.ulid(),
-	gameId: z.ulid(),
-	playerId: z.ulid()
+export const declareDealWinsInputSchema = v.object( {
+	wins: v.pipe( v.number(), v.ltValue( 13 ) ),
+	dealId: ulid(),
+	gameId: ulid()
 } );
 
-export type DeclareDealWinsInput = z.infer<typeof declareDealWinsInputSchema>;
-
-export const playCardInputSchema = z.object( {
-	cardId: z.string(),
-	roundId: z.ulid(),
-	dealId: z.ulid(),
-	gameId: z.ulid(),
-	playerId: z.ulid()
+export const playCardInputSchema = v.object( {
+	cardId: cardId(),
+	roundId: ulid(),
+	dealId: ulid(),
+	gameId: ulid()
 } );
 
-export type PlayCardInput = z.infer<typeof playCardInputSchema>;
-
-export const gameIdInputSchema = z.object( {
-	gameId: z.ulid()
+export const gameIdInputSchema = v.object( {
+	gameId: ulid()
 } );
-
-export type GameIdInput = z.infer<typeof gameIdInputSchema>;

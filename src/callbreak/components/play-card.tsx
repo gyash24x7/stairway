@@ -2,9 +2,8 @@
 
 import { playCard } from "@/callbreak/server/functions";
 import { store } from "@/callbreak/store";
-import { getCardFromId, getCardId } from "@/libs/cards/card";
-import { getSortedHand } from "@/libs/cards/hand";
-import { getBestCardPlayed, getPlayableCards } from "@/libs/cards/utils";
+import type { CardId } from "@/libs/cards/types";
+import { getBestCardPlayed, getCardFromId, getCardId, getPlayableCards, getSortedHand } from "@/libs/cards/utils";
 import { DisplayCard } from "@/shared/components/display-card";
 import { Button } from "@/shared/primitives/button";
 import {
@@ -21,16 +20,15 @@ import { useState, useTransition } from "react";
 
 export function PlayCard() {
 	const [ isPending, startTransition ] = useTransition();
-	const [ selectedCard, setSelectedCard ] = useState<string>();
+	const [ selectedCard, setSelectedCard ] = useState<CardId>();
 	const [ open, setOpen ] = useState( false );
 
 	const gameId = useStore( store, state => state.game.id );
 	const dealId = useStore( store, state => state.currentDeal!.id );
 	const roundId = useStore( store, state => state.currentRound!.id );
-	const playerId = useStore( store, state => state.playerId );
 	const playableCards = useStore( store, state => {
 		const roundSuit = state.currentRound?.suit;
-		const trumpSuit = state.game.trumpSuit;
+		const trumpSuit = state.game.trump;
 		const cardsPlayed = Object.values( state.currentRound?.cards ?? {} ).map( getCardFromId );
 		const bestCardPlayed = getBestCardPlayed( cardsPlayed ?? [], trumpSuit, roundSuit );
 		return getPlayableCards( state.hand, trumpSuit, bestCardPlayed, roundSuit );
@@ -45,12 +43,12 @@ export function PlayCard() {
 		setOpen( false );
 	};
 
-	const handleCardSelect = ( cardId?: string ) => () => {
+	const handleCardSelect = ( cardId?: CardId ) => () => {
 		setSelectedCard( cardId );
 	};
 
 	const handleClick = () => startTransition( async () => {
-		const { error } = await playCard( { gameId, dealId, roundId, cardId: selectedCard!, playerId } );
+		const { error } = await playCard( { gameId, dealId, roundId, cardId: selectedCard! } );
 		if ( !error ) {
 			closeDrawer();
 		} else {

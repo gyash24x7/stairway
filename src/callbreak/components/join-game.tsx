@@ -21,7 +21,7 @@ export function JoinGame() {
 	const handleClick = () => startTransition( async () => {
 		const { error, data } = await joinGame( { code } );
 		if ( !error && !!data ) {
-			window.location.href = `/callbreak/${ data.id }`;
+			window.location.href = `/callbreak/${ data }`;
 		} else {
 			alert( error );
 		}

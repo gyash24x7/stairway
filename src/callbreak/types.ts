@@ -1,72 +1,92 @@
-import type * as schema from "@/callbreak/schema";
-import type { PlayingCard } from "@/libs/cards/types";
+import type { CardId, CardSuit, PlayingCard } from "@/libs/cards/types";
 
 export namespace Callbreak {
-	export type Player = typeof schema.players.$inferSelect;
-	export type CardMapping = typeof schema.cardMappings.$inferSelect;
-	export type Game = typeof schema.games.$inferSelect;
-	export type Deal = typeof schema.deals.$inferSelect;
-	export type DealScore = typeof schema.dealScores.$inferSelect;
-	export type Round = typeof schema.rounds.$inferSelect;
-
-	export type PlayerData = Record<string, Player>;
-	export type DealWithRounds = Deal & { rounds: Round[] };
-	export type DealWithScores = Deal & { scores: Record<string, { declarations: number; wins: number; }> };
-	export type RoundWithCards = Round & { cards: Record<string, string> };
-
-	export type Event =
-		"player-joined"
-		| "all-players-joined"
-		| "deal-created"
-		| "deal-win-declared"
-		| "all-deal-wins-declared"
-		| "round-created"
-		| "card-played"
-		| "round-completed"
-		| "deal-completed"
-		| "game-completed"
-		| "cards-dealt";
-
-	export type EventPayloads = {
-		"player-joined": Player;
-		"all-players-joined": Game;
-		"deal-created": DealWithScores;
-		"deal-win-declared": { deal: Deal; by: Player; wins: number };
-		"all-deal-wins-declared": Deal;
-		"round-created": Round;
-		"card-played": { round: Round; by: string; card: string };
-		"round-completed": { round: Round; winner: Player; deal: Deal };
-		"deal-completed": { deal: Deal; score: Record<string, number>; };
-		"game-completed": Game;
-		"cards-dealt": PlayingCard[];
+	export type Player = {
+		id: string;
+		name: string;
+		username: string;
+		avatar: string;
+		isBot: boolean;
 	}
 
-	export type Context = {
+	export type Round = {
+		id: string;
+		playerOrder: string[];
+		status: "CREATED" | "IN_PROGRESS" | "COMPLETED";
+		suit?: CardSuit;
+		cards: Record<string, CardId>;
+		winner?: string;
+		createdAt: number;
+	}
+
+	export type HandData = Record<string, PlayingCard[]>;
+
+	export type Deal = {
+		id: string;
+		playerOrder: string[];
+		status: "CREATED" | "IN_PROGRESS" | "COMPLETED";
+		hands: HandData;
+		declarations: Record<string, number>;
+		wins: Record<string, number>;
+		createdAt: number;
+	};
+
+	export type DealWithRounds = Deal & { rounds: Round[] };
+	export type PlayerData = Record<string, Player>;
+
+	export type Game = {
+		id: string;
+		code: string;
+		dealCount: number;
+		trump: CardSuit;
+		currentTurn: string;
+		status: "CREATED" | "IN_PROGRESS" | "COMPLETED";
+		scores: Record<string, number[]>;
+		createdBy: string;
+	};
+
+	export type GameData = {
 		game: Game;
 		players: PlayerData;
-	}
+		deals: DealWithRounds[];
+	};
 
 	export type Store = {
 		playerId: string;
-		game: Callbreak.Game;
-		players: Callbreak.PlayerData;
-		currentDeal?: Callbreak.DealWithScores | null;
-		currentRound?: Callbreak.RoundWithCards | null;
+		game: Game;
+		players: PlayerData;
+		currentDeal?: Omit<Deal, "hands">;
+		currentRound?: Round;
 		hand: PlayingCard[];
-		scores: Record<string, number>[];
 	}
-}
 
-export enum CallbreakEvent {
-	PLAYER_JOINED = "player-joined",
-	ALL_PLAYERS_JOINED = "all-players-joined",
-	DEAL_CREATED = "deal-created",
-	DEAL_WIN_DECLARED = "deal-win-declared",
-	ALL_DEAL_WINS_DECLARED = "all-deal-wins-declared",
-	ROUND_CREATED = "round-created",
-	CARD_PLAYED = "card-played",
-	ROUND_COMPLETED = "round-completed",
-	DEAL_COMPLETED = "deal-completed",
-	GAME_COMPLETED = "game-completed",
-	CARDS_DEALT = "cards-dealt"
+	export type GameIdInput = {
+		gameId: string;
+	}
+
+	export type CreateGameInput = {
+		dealCount?: number;
+		trumpSuit: CardSuit;
+	}
+
+	export type JoinGameInput = {
+		code: string;
+	}
+
+	export type DeclareDealWinsInput = {
+		wins: number;
+		dealId: string;
+		gameId: string;
+	}
+
+	export type PlayCardInput = {
+		cardId: CardId;
+		roundId: string;
+		dealId: string;
+		gameId: string;
+	}
+
+	export type ErrorOnlyResponse = { error?: string };
+
+	export type DataResponse<T> = { data?: T } & ErrorOnlyResponse;
 }

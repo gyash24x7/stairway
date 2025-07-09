@@ -8,17 +8,7 @@ import { useStore } from "@tanstack/react-store";
 export function DisplayScore() {
 	const status = useStore( store, state => state.game.status );
 	const deal = useStore( store, state => state.currentDeal );
-	const scoresByPlayer: Record<string, number[]> = useStore( store, state => {
-		const scores: Record<string, number[]> = {};
-		Object.keys( state.players ).forEach( playerId => {
-			if ( !scores[ playerId ] ) {
-				scores[ playerId ] = [];
-			}
-
-			scores[ playerId ].push( ...state.scores.toReversed().map( dealScore => dealScore[ playerId ] ) );
-		} );
-		return scores;
-	} );
+	const scores = useStore( store, state => state.game.scores );
 
 	const playerList = useStore( store, state => Object.values( state.players ).toSorted(
 		( a, b ) => a.id.localeCompare( b.id )
@@ -46,15 +36,14 @@ export function DisplayScore() {
 								<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>
 							</TableCell>
 							<TableCell className={ "hidden md:table-cell text-center" }>
-								{ scoresByPlayer[ player.id ].map( String ).join( ", " ) }
+								{ scores[ player.id ].map( String ).join( ", " ) }
 							</TableCell>
 							<TableCell className={ "text-center" }>
-								{ scoresByPlayer[ player.id ].reduce( ( sum, score ) => sum + score, 0 ) }
+								{ scores[ player.id ].reduce( ( sum, score ) => sum + score, 0 ) }
 							</TableCell>
-							{ status !== "COMPLETED" && (
+							{ status !== "COMPLETED" && !!deal && (
 								<TableCell className={ "text-center" }>
-									{ deal?.scores[ player.id ].wins ??
-										0 }&nbsp;/&nbsp;{ deal?.scores[ player.id ].declarations ?? 0 }
+									{ deal.wins[ player.id ] ?? 0 }&nbsp;/&nbsp;{ deal.declarations[ player.id ] ?? 0 }
 								</TableCell>
 							) }
 						</TableRow>

@@ -26,7 +26,7 @@ export function CreateGame() {
 	const handleClick = () => startTransition( async () => {
 		const { error, data } = await createGame( { trumpSuit: selectedSuit!, dealCount } );
 		if ( !error && !!data ) {
-			window.location.href = `/callbreak/${ data.id }`;
+			window.location.href = `/callbreak/${ data }`;
 		} else {
 			alert( error );
 		}
@@ -44,7 +44,7 @@ export function CreateGame() {
 				<div className={ "flex flex-col gap-3" }>
 					<h2>Select Trump Suit</h2>
 					<div className={ "flex gap-3 flex-wrap" }>
-						{ CARD_SUITS.map( ( item ) => (
+						{ Object.values( CARD_SUITS ).map( ( item ) => (
 							<div
 								key={ item }
 								onClick={ () => setSelectedSuit( selectedSuit === item ? undefined : item ) }
