@@ -5,57 +5,8 @@
 		{
 			"idx": 0,
 			"version": "6",
-			"when": 1748197368341,
-			"tag": "0000_sticky_mentor",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "6",
-			"when": 1748197549255,
-			"tag": "0001_bouncy_morph",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "6",
-			"when": 1748199190857,
-			"tag": "0002_rapid_nocturne",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "6",
-			"when": 1748200056982,
-			"tag": "0003_safe_vector",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "6",
-			"when": 1748488863766,
-			"tag": "0004_shiny_domino",
-			"breakpoints": true
-		},
-		{
-			"idx": 5,
-			"version": "6",
-			"when": 1748491679952,
-			"tag": "0005_lucky_xorn",
-			"breakpoints": true
-		},
-		{
-			"idx": 6,
-			"version": "6",
-			"when": 1748524733844,
-			"tag": "0006_open_oracle",
-			"breakpoints": true
-		},
-		{
-			"idx": 7,
-			"version": "6",
-			"when": 1749190296027,
-			"tag": "0007_right_patch",
+			"when": 1752028118134,
+			"tag": "0000_simple_squadron_supreme",
 			"breakpoints": true
 		}
 	]

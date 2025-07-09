@@ -49,6 +49,10 @@
 			{
 				"name": "LITERATURE_DURABLE_OBJECT",
 				"class_name": "LiteratureDurableObject"
+			},
+			{
+				"name": "CALLBREAK_DURABLE_OBJECT",
+				"class_name": "CallbreakDurableObject"
 			}
 		]
 	},
@@ -63,15 +67,9 @@
 			"new_sqlite_classes": [
 				"RealtimeDurableObject",
 				"WordleDurableObject",
-				"LiteratureDurableObject"
+				"LiteratureDurableObject",
+				"CallbreakDurableObject"
 			]
-		}
-	],
-	"workflows": [
-		{
-			"name": "literature-workflow",
-			"binding": "LITERATURE_WORKFLOW",
-			"class_name": "LiteratureWorkflow"
 		}
 	]
 }
