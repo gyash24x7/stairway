@@ -1,16 +1,12 @@
 "use server";
 
 import { createLogger } from "@/shared/utils/logger";
-import {
-	type CreateGameInput,
-	createGameInputSchema,
-	gameIdInputSchema,
-	type MakeGuessInput,
-	makeGuessInputSchema
-} from "@/wordle/server/inputs";
+import { gameIdInput } from "@/shared/utils/validation";
+import { createGameInputSchema, makeGuessInputSchema } from "@/wordle/server/inputs";
 import { env } from "cloudflare:workers";
 import { requestInfo } from "rwsdk/worker";
-import * as v from "valibot";
+import { parseAsync } from "valibot";
+import type { Wordle } from "../types";
 
 const logger = createLogger( "Wordle:Functions" );
 
@@ -19,69 +15,63 @@ function getStub() {
 	return env.WORDLE_DURABLE_OBJECT.get( durableObjectId );
 }
 
-export async function createGame( input: CreateGameInput ) {
-	const { issues, success } = await v.safeParseAsync( createGameInputSchema, input );
-	if ( !success || !!issues ) {
-		logger.error( "Invalid input for createGame", { issues, input } );
-		return { error: issues, success: false as const };
-	}
-
-	try {
-		const stub = getStub();
-		const { id } = await stub.createGame( input, requestInfo.ctx.authInfo! );
-		return { data: id, success: true as const };
-	} catch ( err ) {
-		logger.error( "Error creating game", { error: err, input } );
-		return { error: "Failed to create game. Please try again later.", success: false as const };
-	}
+/**
+ * Creates a new Wordle game.
+ * Validates the input against the schema and
+ * calls the durable object to create the game.
+ *
+ * @param {Wordle.CreateGameInput} input - The input for creating a game, including word count and length.
+ * @returns {Promise<DataResponse<Wordle.Game>>} response containing the game data or an error message
+ */
+export async function createGame( input: Wordle.CreateGameInput ): Promise<DataResponse<Wordle.Game>> {
+	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
+	return parseAsync( createGameInputSchema, input )
+		.then( () => stub.createGame( input, authInfo ) )
+		.then( data => stub.saveGameData( data.id, data ) )
+		.then( data => ( { data } ) )
+		.catch( err => {
+			logger.error( "Error creating game!", err );
+			return { error: ( err as Error ).message, success: false as const };
+		} );
 }
 
-export async function getGameData( gameId: string ) {
-	const { issues, success } = await v.safeParseAsync( gameIdInputSchema, { gameId } );
-	if ( !success || !!issues ) {
-		logger.error( "Invalid input for getGameData", { issues, gameId } );
-		return { error: issues, success: false as const };
-	}
-
-	try {
-		const stub = getStub();
-		const data = await stub.getGameData( gameId );
-		if ( !data ) {
-			logger.warn( "Game not found!" );
-			return { error: "Game not found!", success: false as const };
-		}
-
-		return {
-			success: true as const,
-			data: {
-				id: data.id,
-				playerId: data.playerId,
-				wordCount: data.wordCount,
-				wordLength: data.wordLength,
-				words: data.words,
-				guesses: data.guesses,
-				completedWords: data.completedWords
-			}
-		};
-	} catch ( err ) {
-		logger.error( "Error fetching game data", { error: err, gameId } );
-		return { error: "Failed to fetch game data. Please try again later.", success: false as const };
-	}
+/**
+ * Fetches game data for a given game ID.
+ * Validates the game ID against the schema and
+ * calls the durable object to retrieve the game data.
+ *
+ * @param {string} gameId - The ID of the game to fetch data for.
+ * @returns {Promise<DataResponse<Wordle.Game>>} response containing the game data or an error message
+ * */
+export async function getGameData( gameId: string ): Promise<DataResponse<Wordle.Game>> {
+	const stub = getStub();
+	return parseAsync( gameIdInput, { gameId } )
+		.then( () => stub.getGameData( gameId ) )
+		.then( data => ( { data } ) )
+		.catch( err => {
+			logger.error( "Error fetching game data", { error: err, gameId } );
+			return { error: "Failed to fetch game data. Please try again later.", success: false as const };
+		} );
 }
 
-export async function makeGuess( input: MakeGuessInput ) {
-	const { issues, success } = await v.safeParseAsync( makeGuessInputSchema, input );
-	if ( !success || !!issues ) {
-		logger.error( "Invalid input for makeGuess", { issues, input } );
-		return { error: issues, success: false as const };
-	}
-
-	try {
-		const stub = getStub();
-		await stub.makeGuess( input, requestInfo.ctx.authInfo!.id );
-		return { success: true as const };
-	} catch ( err ) {
-		logger.error( "Error making guess", { error: err, input } );
-		return { error: "Failed to make guess. Please try again later.", success: false as const };
-	}
+/**
+ * Makes a guess in the Wordle game.
+ * Validates the input against the schema and
+ * calls the durable object to process the guess.
+ *
+ * @param {Wordle.MakeGuessInput} input - The input for making a guess, including game ID and guess word.
+ * @returns {Promise<DataResponse<Wordle.Game>>} response containing the updated game data or an error message
+ */
+export async function makeGuess( input: Wordle.MakeGuessInput ): Promise<DataResponse<Wordle.Game>> {
+	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
+	return parseAsync( makeGuessInputSchema, input )
+		.then( () => stub.makeGuess( input, authInfo.id ) )
+		.then( data => stub.saveGameData( data.id, data ) )
+		.then( data => ( { data } ) )
+		.catch( err => {
+			logger.error( "Error making guess!", err );
+			return { error: ( err as Error ).message, success: false as const };
+		} );
 }

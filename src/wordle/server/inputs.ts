@@ -1,21 +1,12 @@
-import * as v from "valibot";
+import { ulid } from "@/shared/utils/validation";
+import { gtValue, length, number, object, picklist, pipe, string } from "valibot";
 
-const ulid = () => v.pipe( v.string(), v.trim(), v.ulid() );
-
-export const createGameInputSchema = v.object( {
-	wordCount: v.pipe( v.number(), v.gtValue( 0 ) ),
-	wordLength: v.pipe( v.number(), v.picklist( [ 5 ] ) )
+export const createGameInputSchema = object( {
+	wordCount: pipe( number(), gtValue( 0 ) ),
+	wordLength: pipe( number(), picklist( [ 5 ] ) )
 } );
 
-export type CreateGameInput = v.InferOutput<typeof createGameInputSchema>;
-
-export const makeGuessInputSchema = v.object( {
+export const makeGuessInputSchema = object( {
 	gameId: ulid(),
-	guess: v.pipe( v.string(), v.length( 5 ) )
+	guess: pipe( string(), length( 5 ) )
 } );
-
-export type MakeGuessInput = v.InferOutput<typeof makeGuessInputSchema>;
-
-export const gameIdInputSchema = v.object( { gameId: ulid() } );
-
-export type GameIdInput = v.InferOutput<typeof gameIdInputSchema>;

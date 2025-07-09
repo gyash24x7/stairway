@@ -2,7 +2,6 @@ import type { AuthInfo } from "@/auth/types";
 import { dictionary } from "@/libs/words/dictionary";
 import { generateId } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import type { CreateGameInput, MakeGuessInput } from "@/wordle/server/inputs";
 import type { Wordle } from "@/wordle/types";
 import { DurableObject } from "cloudflare:workers";
 
@@ -16,7 +15,21 @@ export class WordleDurableObject extends DurableObject {
 		this.state = state;
 	}
 
-	async createGame( { wordCount = 2, wordLength = 5 }: CreateGameInput, authInfo: AuthInfo ) {
+	async getGameData( gameId: string ) {
+		this.logger.debug( ">> getGameData()" );
+		const game = await this.state.storage.get<Wordle.Game>( gameId );
+		this.logger.debug( "<< getGameData()" );
+		return game;
+	}
+
+	async saveGameData( gameId: string, game: Wordle.Game ) {
+		this.logger.debug( ">> saveGameData()" );
+		await this.state.storage.put( gameId, game );
+		this.logger.debug( "<< saveGameData()" );
+		return game;
+	}
+
+	async createGame( { wordCount = 2, wordLength = 5 }: Wordle.CreateGameInput, authInfo: AuthInfo ) {
 		this.logger.debug( ">> createGame()" );
 
 		const words: string[] = [];
@@ -34,21 +47,11 @@ export class WordleDurableObject extends DurableObject {
 			completedWords: []
 		};
 
-		await this.state.storage.put( game.id, game );
-
 		this.logger.debug( "<< createGame()" );
 		return game;
 	}
 
-	async getGameData( gameId: string ) {
-		this.logger.debug( ">> getGameData()" );
-		const game = await this.state.storage.get<Wordle.Game>( gameId );
-		this.logger.debug( "<< getGameData()" );
-		return game;
-	}
-
-
-	async makeGuess( input: MakeGuessInput, playerId: string ) {
+	async makeGuess( input: Wordle.MakeGuessInput, playerId: string ) {
 		this.logger.debug( ">> makeGuess()" );
 
 		const game = await this.getGameData( input.gameId );

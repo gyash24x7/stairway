@@ -1,3 +1,4 @@
+import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { ulid } from "ulid";
 import { type Config, names, uniqueNamesGenerator } from "unique-names-generator";
 
@@ -25,6 +26,12 @@ export function generateBotInfo() {
 	const username = generateId();
 	const avatar = generateAvatar();
 	return { id, name, username, avatar };
+}
+
+export function generateSessionToken() {
+	const bytes = new Uint8Array( 20 );
+	crypto.getRandomValues( bytes );
+	return encodeBase32LowerCaseNoPadding( bytes );
 }
 
 export function generateGameCode( length: number = 6 ) {

@@ -13,4 +13,18 @@ export namespace Wordle {
 		game: Game;
 		currentGuess: string[];
 	}
+
+	export type CreateGameInput = {
+		wordCount?: number;
+		wordLength?: number;
+	}
+
+	export type MakeGuessInput = {
+		gameId: string;
+		guess: string;
+	}
+
+	export type GameIdInput = {
+		gameId: string;
+	}
 }
