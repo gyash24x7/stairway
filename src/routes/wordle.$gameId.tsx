@@ -3,9 +3,9 @@ import { getGameData } from "@/wordle/server/functions";
 
 export async function WordleGame( { params }: { params: Promise<{ gameId: string }> } ) {
 	const { gameId } = await params;
-	const { error, data, success } = await getGameData( gameId );
+	const { error, data } = await getGameData( gameId );
 
-	if ( !success || !!error || !data ) {
+	if ( !!error || !data ) {
 		throw "Game not found!";
 	}
 

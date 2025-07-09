@@ -11,7 +11,7 @@ import type { Callbreak } from "@/callbreak/types";
 import { createLogger } from "@/shared/utils/logger";
 import { env } from "cloudflare:workers";
 import { requestInfo } from "rwsdk/worker";
-import * as v from "valibot";
+import { parseAsync } from "valibot";
 
 const logger = createLogger( "Callbreak:Functions" );
 
@@ -26,12 +26,12 @@ function getStub() {
  * calls the durable object to create the game.
  *
  * @param {Callbreak.CreateGameInput} input - The input for creating a game, excluding authInfo.
- * @returns {Promise<Callbreak.DataResponse<string>>} - Returns an object containing the gameId or an error message.
+ * @returns {Promise<DataResponse<string>>} - Returns an object containing the gameId or an error message.
  */
-export async function createGame( input: Callbreak.CreateGameInput ): Promise<Callbreak.DataResponse<string>> {
+export async function createGame( input: Callbreak.CreateGameInput ): Promise<DataResponse<string>> {
 	const stub = getStub();
 	const authInfo = requestInfo.ctx.authInfo!;
-	return v.parseAsync( createGameInputSchema, input )
+	return parseAsync( createGameInputSchema, input )
 		.then( () => stub.createGame( input, authInfo ) )
 		.then( data => stub.saveGameData( data.game.id, data ) )
 		.then( data => ( { data: data.game.id } ) )
@@ -47,12 +47,12 @@ export async function createGame( input: Callbreak.CreateGameInput ): Promise<Ca
  * calls the durable object to join the game.
  *
  * @param {Callbreak.JoinGameInput} input - The input for joining a game, including the game code.
- * @returns {Promise<Callbreak.DataResponse<string>>} - Returns an object containing the gameId or an error message.
+ * @returns {Promise<DataResponse<string>>} - Returns an object containing the gameId or an error message.
  */
-export async function joinGame( input: Callbreak.JoinGameInput ): Promise<Callbreak.DataResponse<string>> {
+export async function joinGame( input: Callbreak.JoinGameInput ): Promise<DataResponse<string>> {
 	const stub = getStub();
 	const authInfo = requestInfo.ctx.authInfo!;
-	return v.parseAsync( joinGameInputSchema, input )
+	return parseAsync( joinGameInputSchema, input )
 		.then( () => stub.getGameByCode( input.code ) )
 		.then( data => stub.validateJoinGame( data, authInfo ) )
 		.then( data => stub.joinGame( data, authInfo ) )
@@ -70,12 +70,12 @@ export async function joinGame( input: Callbreak.JoinGameInput ): Promise<Callbr
  * calls the durable object to get the game data.
  *
  * @param {Callbreak.GameIdInput} input - The input containing the gameId.
- * @returns {Promise<Callbreak.DataResponse<Callbreak.GameData>>} - Returns an object containing the game data or an error message.
+ * @returns {Promise<DataResponse<Callbreak.GameData>>} - Returns an object containing the game data or an error message.
  */
-export async function getGameData( input: Callbreak.GameIdInput ): Promise<Callbreak.DataResponse<Callbreak.GameData>> {
+export async function getGameData( input: Callbreak.GameIdInput ): Promise<DataResponse<Callbreak.GameData>> {
 	const stub = getStub();
 	const authInfo = requestInfo.ctx.authInfo!;
-	return v.parseAsync( gameIdInputSchema, input )
+	return parseAsync( gameIdInputSchema, input )
 		.then( () => stub.getGameData( input.gameId, authInfo.id ) )
 		.then( data => ( { data } ) )
 		.catch( err => {
@@ -90,12 +90,12 @@ export async function getGameData( input: Callbreak.GameIdInput ): Promise<Callb
  * calls the durable object to declare the deal wins.
  *
  * @param {Callbreak.DeclareDealWinsInput} input - The input for declaring deal wins, including gameId and dealId.
- * @returns {Promise<Callbreak.ErrorOnlyResponse>} - Returns an object containing an error message if any.
+ * @returns {Promise<ErrorOnlyResponse>} - Returns an object containing an error message if any.
  */
-export async function declareDealWins( input: Callbreak.DeclareDealWinsInput ): Promise<Callbreak.ErrorOnlyResponse> {
+export async function declareDealWins( input: Callbreak.DeclareDealWinsInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	const authInfo = requestInfo.ctx.authInfo!;
-	return v.parseAsync( declareDealWinsInputSchema, input )
+	return parseAsync( declareDealWinsInputSchema, input )
 		.then( () => stub.getGameData( input.gameId, authInfo.id ) )
 		.then( data => stub.validateDealWinDeclaration( input, data, authInfo ) )
 		.then( data => stub.declareDealWins( input, data ) )
@@ -113,12 +113,12 @@ export async function declareDealWins( input: Callbreak.DeclareDealWinsInput ): 
  * calls the durable object to play the card.
  *
  * @param {Callbreak.PlayCardInput} input - The input for playing a card, including gameId, dealId, and roundId.
- * @returns {Promise<Callbreak.ErrorOnlyResponse>} - Returns an object containing an error message if any.
+ * @returns {Promise<ErrorOnlyResponse>} - Returns an object containing an error message if any.
  */
-export async function playCard( input: Callbreak.PlayCardInput ): Promise<Callbreak.ErrorOnlyResponse> {
+export async function playCard( input: Callbreak.PlayCardInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	const authInfo = requestInfo.ctx.authInfo!;
-	return v.parseAsync( playCardInputSchema, input )
+	return parseAsync( playCardInputSchema, input )
 		.then( () => stub.getGameData( input.gameId, authInfo.id ) )
 		.then( data => stub.validatePlayCard( input, data, authInfo ) )
 		.then( data => stub.playCard( input, data ) )

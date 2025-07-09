@@ -85,8 +85,4 @@ export namespace Callbreak {
 		dealId: string;
 		gameId: string;
 	}
-
-	export type ErrorOnlyResponse = { error?: string };
-
-	export type DataResponse<T> = { data?: T } & ErrorOnlyResponse;
 }
