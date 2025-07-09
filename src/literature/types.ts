@@ -8,7 +8,7 @@ export namespace Literature {
 		totalCalls: number;
 		successfulCalls: number;
 		totalTransfers: number;
-	}
+	};
 
 	export type Player = {
 		id: string;
@@ -27,7 +27,7 @@ export namespace Literature {
 		score: number;
 		setsWon: CardSet[];
 		members: string[];
-	}
+	};
 
 	export type Ask = {
 		id: string;
@@ -37,7 +37,7 @@ export namespace Literature {
 		askedFrom: string;
 		cardId: CardId;
 		timestamp: Date;
-	}
+	};
 
 	export type Call = {
 		id: string;
@@ -48,7 +48,7 @@ export namespace Literature {
 		actualCall: Record<CardId, string>;
 		correctCall: Record<CardId, string>;
 		timestamp: Date;
-	}
+	};
 
 	export type Transfer = {
 		id: string;
@@ -56,12 +56,12 @@ export namespace Literature {
 		playerId: string;
 		transferTo: string;
 		timestamp: Date;
-	}
+	};
 
 	export type CardLocationForPlayer = {
 		playerIds: string[];
 		weight: number;
-	}
+	};
 
 	export type CardLocationsForCard = Record<string, CardLocationForPlayer>; // Record<playerId, CardLocationForPlayer>
 
@@ -73,7 +73,7 @@ export namespace Literature {
 		status: GameStatus;
 		playerCount: number;
 		currentTurn: string;
-	}
+	};
 
 	export type InternalPlayerData = Record<string, Player>;
 	export type PlayerData = Record<string, Omit<Player, "cardLocations" | "hand">>
@@ -93,10 +93,10 @@ export namespace Literature {
 		transfers: Transfer[];
 		lastMoveType?: MoveType;
 		lastCall?: Call;
-	}
+	};
 
-	export type WeightedAsk = { cardId: CardId, playerId: string, weight: number }
-	export type WeightedCall = { cardSet: CardSet, callData: Record<CardId, string>, weight: number }
+	export type WeightedAsk = { cardId: CardId, playerId: string, weight: number };
+	export type WeightedCall = { cardSet: CardSet, callData: Record<CardId, string>, weight: number };
 	export type WeightedTransfer = { weight: number, transferTo: string };
 	export type WeightedCardSet = { cardSet: CardSet, weight: number };
 
@@ -109,5 +109,39 @@ export namespace Literature {
 		asks: Ask[];
 		lastMoveType?: MoveType;
 		lastCall?: Call;
+	};
+
+	export type CreateGameInput = {
+		playerCount?: 2 | 4 | 6 | 8;
+	};
+
+	export type JoinGameInput = {
+		code: string;
+		isUserAlreadyInGame?: boolean;
+	};
+
+	export type CreateTeamsInput = {
+		gameId: string;
+		data: Record<string, string[]>; // Record<teamId, playerIds>
+	};
+
+	export type TransferTurnInput = {
+		gameId: string;
+		transferTo: string; // playerId
+	};
+
+	export type CallSetInput = {
+		gameId: string;
+		data: Record<CardId, string>; // Record<cardId, playerId>
+	};
+
+	export type AskCardInput = {
+		gameId: string;
+		from: string; // playerId
+		card: CardId;
+	};
+
+	export type GameIdInput = {
+		gameId: string;
 	}
 }

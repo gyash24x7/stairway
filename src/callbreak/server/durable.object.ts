@@ -53,6 +53,7 @@ export class CallbreakDurableObject extends DurableObject {
 	async saveGameData( gameId: string, data: Callbreak.GameData ) {
 		this.logger.debug( ">> saveGameData()" );
 		await this.state.storage.put( gameId, data );
+		await this.state.storage.put( `code_${ data.game.code }`, gameId );
 		this.logger.debug( "<< saveGameData()" );
 		return data;
 	}
