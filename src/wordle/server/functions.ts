@@ -10,6 +10,7 @@ import {
 } from "@/wordle/server/inputs";
 import { env } from "cloudflare:workers";
 import { requestInfo } from "rwsdk/worker";
+import * as v from "valibot";
 
 const logger = createLogger( "Wordle:Functions" );
 
@@ -19,10 +20,10 @@ function getStub() {
 }
 
 export async function createGame( input: CreateGameInput ) {
-	const { error, success } = await createGameInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for createGame", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( createGameInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for createGame", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -36,10 +37,10 @@ export async function createGame( input: CreateGameInput ) {
 }
 
 export async function getGameData( gameId: string ) {
-	const { error, success } = await gameIdInputSchema.safeParseAsync( { gameId } );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for getGameData", { error, gameId } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( gameIdInputSchema, { gameId } );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for getGameData", { issues, gameId } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -69,10 +70,10 @@ export async function getGameData( gameId: string ) {
 }
 
 export async function makeGuess( input: MakeGuessInput ) {
-	const { error, success } = await makeGuessInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for makeGuess", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( makeGuessInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for makeGuess", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
