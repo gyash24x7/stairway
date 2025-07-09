@@ -20,6 +20,12 @@ import { generateAvatar, generateGameCode, generateId, generateName } from "@/sh
 import { createLogger } from "@/shared/utils/logger";
 import { DurableObject } from "cloudflare:workers";
 
+/**
+ * Durable Object for managing Literature game state.
+ * This object handles game creation, joining, and various game actions like asking for cards,
+ * calling sets, and transferring turns.
+ * It also provides methods for validating game actions and executing bot moves.
+ */
 export class LiteratureDurableObject extends DurableObject {
 
 	private readonly MAX_ASK_WEIGHT = 720;
@@ -32,7 +38,12 @@ export class LiteratureDurableObject extends DurableObject {
 		this.state = state;
 	}
 
-	async getGameData( gameId: string ) {
+	/**
+	 * Retrieves game data by game ID.
+	 * @param {string} gameId - The ID of the game to retrieve.
+	 * @returns {Promise<Literature.GameData>} - A promise that resolves to the game data.
+	 */
+	async getGameData( gameId: string ): Promise<Literature.GameData> {
 		this.logger.debug( ">> getGameData()" );
 
 		const data = await this.state.storage.get<Literature.GameData>( gameId );
@@ -45,7 +56,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	async getGameStore( gameId: string, authInfo: AuthInfo ) {
+	/**
+	 * Retrieves the game store for a specific game ID and authenticated user.
+	 * @param {string} gameId - The ID of the game to retrieve the store for.
+	 * @param {AuthInfo} authInfo - The authentication information of the user.
+	 * @returns {Promise<Literature.Store>} - A promise that resolves to the game store.
+	 */
+	async getGameStore( gameId: string, authInfo: AuthInfo ): Promise<Literature.Store> {
 		this.logger.debug( ">> getGameStore()" );
 
 		const { game, players, teams, lastCall, lastMoveType, asks } = await this.getGameData( gameId );
@@ -64,7 +81,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return store;
 	}
 
-	async saveGameData( gameId: string, data: Literature.GameData ) {
+	/**
+	 * Saves game data to the storage.
+	 * @param {string} gameId - The ID of the game to save data for.
+	 * @param {Literature.GameData} data - The game data to save.
+	 * @returns {Promise<Literature.GameData>} - A promise that resolves to the saved game data.
+	 */
+	async saveGameData( gameId: string, data: Literature.GameData ): Promise<Literature.GameData> {
 		this.logger.debug( ">> saveGameData()" );
 		await this.state.storage.put( gameId, data );
 		await this.state.storage.put( `code_${ data.game.code }`, gameId );
@@ -72,7 +95,12 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	async getGameByCode( code: string ) {
+	/**
+	 * Retrieves game data by game code.
+	 * @param {string} code - The code of the game to retrieve.
+	 * @returns {Promise<Literature.GameData>} - A promise that resolves to the game data.
+	 */
+	async getGameByCode( code: string ): Promise<Literature.GameData> {
 		this.logger.debug( ">> getGameByCode()" );
 
 		const gameId = await this.state.storage.get<string>( `code_${ code }` );
@@ -86,7 +114,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	createGame( { playerCount }: Literature.CreateGameInput, authInfo: AuthInfo ) {
+	/**
+	 * Creates a new game with the specified player count and authenticated user information.
+	 * @param {Literature.CreateGameInput} input - The input containing player count.
+	 * @param {AuthInfo} authInfo - The authentication information of the user creating the game.
+	 * @returns {Literature.GameData} - The newly created game data.
+	 */
+	createGame( { playerCount }: Literature.CreateGameInput, authInfo: AuthInfo ): Literature.GameData {
 		this.logger.debug( ">> createGame()" );
 
 		const data: Literature.GameData = {
@@ -112,7 +146,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	joinGame( data: Literature.GameData, authInfo: AuthInfo ) {
+	/**
+	 * Joins a game with the specified game data and authenticated user information.
+	 * @param {Literature.GameData} data - The game data to join.
+	 * @param {AuthInfo} authInfo - The authentication information of the user joining the game.
+	 * @returns {Literature.GameData} - The updated game data after joining.
+	 */
+	joinGame( data: Literature.GameData, authInfo: AuthInfo ): Literature.GameData {
 		this.logger.debug( ">> joinGame()" );
 
 		const isUserAlreadyInGame = !!Object.values( data.players ).find( player => player.id === authInfo.id );
@@ -138,7 +178,12 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	addBots( data: Literature.GameData ) {
+	/**
+	 * Adds bots to the game based on the player count and existing players.
+	 * @param {Literature.GameData} data - The game data to add bots to.
+	 * @returns {Literature.GameData} - The updated game data after adding bots.
+	 */
+	addBots( data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> addBots()" );
 
 		const botCount = data.game.playerCount - Object.keys( data.players ).length;
@@ -161,7 +206,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	createTeams( input: Literature.CreateTeamsInput, data: Literature.GameData ) {
+	/**
+	 * Creates teams based on the input data and updates the game data.
+	 * @param {Literature.CreateTeamsInput} input - The input containing team data.
+	 * @param {Literature.GameData} data - The game data to update with teams.
+	 * @returns {Literature.GameData} - The updated game data after creating teams.
+	 */
+	createTeams( input: Literature.CreateTeamsInput, data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> createTeams()" );
 
 		data.teams = Object.keys( input.data )
@@ -185,7 +236,12 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	startGame( data: Literature.GameData ) {
+	/**
+	 * Starts the game by initializing player hands and card mappings.
+	 * @param {Literature.GameData} data - The game data to start.
+	 * @returns {Literature.GameData} - The updated game data after starting the game.
+	 */
+	startGame( data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> startGame()" );
 
 		const deck = removeCards( card => card.rank === CARD_RANKS.SEVEN, generateDeck() );
@@ -224,7 +280,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	askCard( input: Literature.AskCardInput, data: Literature.GameData ) {
+	/**
+	 * Asks for a card from another player and updates the game state accordingly.
+	 * @param {Literature.AskCardInput} input - The input containing the card and player information.
+	 * @param {Literature.GameData} data - The game data to update with the ask action.
+	 * @returns {Literature.GameData} - The updated game data after the ask action.
+	 */
+	askCard( input: Literature.AskCardInput, data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> askCard()" );
 
 		const askedPlayer = data.players[ input.from ];
@@ -286,7 +348,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	callSet( input: Literature.CallSetInput, data: Literature.GameData ) {
+	/**
+	 * Calls a set of cards and updates the game state accordingly.
+	 * @param {Literature.CallSetInput} input - The input containing the called set and player information.
+	 * @param {Literature.GameData} data - The game data to update with the call action.
+	 * @returns {Literature.GameData} - The updated game data after the call action.
+	 */
+	callSet( input: Literature.CallSetInput, data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> callSet()" );
 
 		const cardSets = new Set( Object.keys( input.data ).map( key => key as CardId ).map( getCardSet ) );
@@ -390,7 +458,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	transferTurn( input: Literature.TransferTurnInput, data: Literature.GameData ) {
+	/**
+	 * Transfers the turn to another player and updates the game state accordingly.
+	 * @param {Literature.TransferTurnInput} input - The input containing transfer information.
+	 * @param {Literature.GameData} data - The game data to update with the transfer action.
+	 * @returns {Literature.GameData} - The updated game data after the transfer action.
+	 */
+	transferTurn( input: Literature.TransferTurnInput, data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> transferTurn()" );
 
 		const transferringPlayer = data.players[ data.game.currentTurn ];
@@ -412,7 +486,17 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	executeBotMove( data: Literature.GameData ) {
+	/**
+	 * Executes a bot move based on the current game state and returns the updated game data.
+	 * This method simulates a bot's turn by suggesting card sets, making calls, and asking for cards.
+	 * It first checks if the last move was a successful call, allowing the bot to transfer its turn.
+	 * If no transfer is made, it suggests card sets and attempts to call a set.
+	 * If no call is made, it suggests asking for a card from another player.
+	 *
+	 * @param {Literature.GameData} data - The current game data.
+	 * @returns {Literature.GameData} - The updated game data after executing the bot move.
+	 */
+	executeBotMove( data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> executeBotMove()" );
 
 		const cardSets = this.suggestCardSets( data.cardLocations, data.players[ data.game.currentTurn ].hand );
@@ -447,7 +531,17 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateJoinGame( data: Literature.GameData, authInfo: AuthInfo ) {
+	/**
+	 * Validates the game data for joining a game.
+	 * This method checks if the game is in the CREATED state,
+	 * if the user is already part of the game,
+	 * and if the game has enough players to allow joining.
+	 *
+	 * @param {Literature.GameData} data - The game data to validate.
+	 * @param {AuthInfo} authInfo - The authentication information of the user joining the game.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateJoinGame( data: Literature.GameData, authInfo: AuthInfo ): Literature.GameData {
 		this.logger.debug( ">> validateJoinGame()" );
 
 		if ( data.game.status !== "CREATED" ) {
@@ -470,7 +564,14 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateAddBots( data: Literature.GameData ) {
+	/**
+	 * Validates the game data for adding bots.
+	 * This method checks if the game is in the CREATED state and if there are remaining players to be added.
+	 *
+	 * @param {Literature.GameData} data - The game data to validate for adding bots.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateAddBots( data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> validateAddBotsRequest()" );
 
 		if ( data.game.status !== "CREATED" ) {
@@ -488,7 +589,14 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateCreateTeams( data: Literature.GameData ) {
+	/**
+	 * Validates the game data for creating teams.
+	 * This method checks if the game is in the PLAYERS_READY state and if there are enough players to form teams.
+	 *
+	 * @param {Literature.GameData} data - The game data to validate for creating teams.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateCreateTeams( data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> validateCreateTeamsRequest()" );
 
 		if ( data.game.status !== "PLAYERS_READY" ) {
@@ -505,7 +613,14 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateStartGame( data: Literature.GameData ) {
+	/**
+	 * Validates the game data for starting the game.
+	 * This method checks if the game is in the TEAMS_CREATED state before starting.
+	 *
+	 * @param {Literature.GameData} data - The game data to validate for starting the game.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateStartGame( data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> validateStartGameRequest()" );
 
 		if ( data.game.status !== "TEAMS_CREATED" ) {
@@ -517,7 +632,16 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateAskCard( input: Literature.AskCardInput, data: Literature.GameData ) {
+	/**
+	 * Validates the ask card request.
+	 * This method checks if the game is in progress, if the card is part of the game,
+	 * if the asked player exists, and if the asked player is not from the same team as the asking player.
+	 *
+	 * @param {Literature.AskCardInput} input - The input containing card and player information.
+	 * @param {Literature.GameData} data - The game data to validate against.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateAskCard( input: Literature.AskCardInput, data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> validateAskCardRequest()" );
 
 		if ( data.game.status !== "IN_PROGRESS" ) {
@@ -556,7 +680,16 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateCallSet( input: Literature.CallSetInput, data: Literature.GameData ) {
+	/**
+	 * Validates the call set request.
+	 * This method checks if the game is in progress, if the called cards are from a single set,
+	 * if the calling player has called their own cards, and if all cards of the set are called.
+	 *
+	 * @param {Literature.CallSetInput} input - The input containing called cards and player information.
+	 * @param {Literature.GameData} data - The game data to validate against.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateCallSet( input: Literature.CallSetInput, data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> validateCallSetRequest()" );
 
 		if ( data.game.status !== "IN_PROGRESS" ) {
@@ -623,7 +756,16 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateTransferTurn( input: Literature.TransferTurnInput, data: Literature.GameData ) {
+	/**
+	 * Validates the transfer turn request.
+	 * This method checks if the game is in progress, if the last call was successful,
+	 * if the receiving player exists, if they have cards, and if they are from the same team.
+	 *
+	 * @param {Literature.TransferTurnInput} input - The input containing transfer information.
+	 * @param {Literature.GameData} data - The game data to validate against.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateTransferTurn( input: Literature.TransferTurnInput, data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> validateTransferTurnRequest()" );
 
 		if ( data.game.status !== "IN_PROGRESS" ) {
@@ -658,7 +800,14 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
-	validateExecuteBotMove( data: Literature.GameData ) {
+	/**
+	 * Validates the bot move execution request.
+	 * This method checks if the game is in progress and if the current player is a bot.
+	 *
+	 * @param {Literature.GameData} data - The game data to validate for executing a bot move.
+	 * @returns {Literature.GameData} - The validated game data.
+	 */
+	validateExecuteBotMove( data: Literature.GameData ): Literature.GameData {
 		this.logger.debug( ">> validateExecuteBotMove()" );
 
 		if ( data.game.status !== "IN_PROGRESS" ) {
@@ -675,6 +824,12 @@ export class LiteratureDurableObject extends DurableObject {
 		return data;
 	}
 
+	/**
+	 * Retrieves player information based on the authenticated user's information.
+	 * @param {AuthInfo} authInfo - The authentication information of the user.
+	 * @returns {Literature.Player} - The player information object.
+	 * @private
+	 */
 	private getPlayerInfo( authInfo: AuthInfo ): Literature.Player {
 		return {
 			id: authInfo.id,
@@ -687,6 +842,11 @@ export class LiteratureDurableObject extends DurableObject {
 		};
 	}
 
+	/**
+	 * Generates default card mappings for the game.
+	 * @returns {Literature.CardMappings} - The default card mappings object.
+	 * @private
+	 */
 	private getDefaultCardMappings(): Literature.CardMappings {
 		return SORTED_DECK.reduce(
 			( acc, card ) => {
@@ -698,6 +858,11 @@ export class LiteratureDurableObject extends DurableObject {
 		);
 	}
 
+	/**
+	 * Generates default card locations for the game.
+	 * @returns {Literature.CardLocationData} - The default card locations object.
+	 * @private
+	 */
 	private getDefaultCardLocations(): Literature.CardLocationData {
 		return SORTED_DECK.reduce(
 			( acc, card ) => {
@@ -709,6 +874,11 @@ export class LiteratureDurableObject extends DurableObject {
 		);
 	}
 
+	/**
+	 * Generates default metrics for a player.
+	 * @returns {Literature.Metrics} - The default metrics object.
+	 * @private
+	 */
 	private getDefaultMetrics(): Literature.Metrics {
 		return {
 			totalAsks: 0,
@@ -720,11 +890,19 @@ export class LiteratureDurableObject extends DurableObject {
 		};
 	}
 
+	/**
+	 * Retrieves the correct call and called set based on the input data and game data.
+	 * @param {CardSet[]} cardSets - The card sets available in the game.
+	 * @param {Literature.CallSetInput} input - The input containing called cards and player information.
+	 * @param {Literature.GameData} data - The game data to validate against.
+	 * @returns {{ correctCall: Record<CardId, string>, calledSet: CardSet, isCardSetWithCallingPlayer: boolean }} - The correct call, called set, and whether the calling player has cards in the called set.
+	 * @private
+	 */
 	private getCorrectCallAndCalledSet(
 		cardSets: CardSet[],
 		input: Literature.CallSetInput,
 		data: Literature.GameData
-	) {
+	): { correctCall: Record<CardId, string>; calledSet: CardSet; isCardSetWithCallingPlayer: boolean; } {
 		const [ calledSet ] = cardSets;
 		let isCardSetWithCallingPlayer = false;
 
@@ -740,6 +918,14 @@ export class LiteratureDurableObject extends DurableObject {
 		return { correctCall, calledSet, isCardSetWithCallingPlayer };
 	}
 
+	/**
+	 * Suggests card sets based on the current card locations and player's hand.
+	 * It calculates the weight of each card set based on the number of cards available in the game.
+	 * @param {Literature.CardLocationData} cardLocations - The current card locations in the game.
+	 * @param {PlayingCard[]} hand - The player's hand of cards.
+	 * @returns {CardSet[]} - An array of suggested card sets that can be called.
+	 * @private
+	 */
 	private suggestCardSets( cardLocations: Literature.CardLocationData, hand: PlayingCard[] ): CardSet[] {
 		const weightedCardSets: Literature.WeightedCardSet[] = [];
 		const cardSetsInGame = new Set( Object.keys( cardLocations ).map( key => key as CardId ).map( getCardSet ) );
@@ -764,6 +950,13 @@ export class LiteratureDurableObject extends DurableObject {
 		return weightedCardSets.map( w => w.cardSet ).filter( ( cardSet ) => isCardSetInHand( hand, cardSet ) );
 	}
 
+	/**
+	 * Suggests transfers based on the current game state.
+	 * It calculates the weight of each transfer based on the number of cards held by team members.
+	 * @param {Literature.GameData} data - The current game data.
+	 * @returns {Literature.WeightedTransfer[]} - An array of suggested transfers with weights.
+	 * @private
+	 */
 	private suggestTransfer( { game, players }: Literature.GameData ): Literature.WeightedTransfer[] {
 		const teamId = players[ game.currentTurn ].teamId;
 		const myTeamMembers = Object.values( players )
@@ -778,7 +971,18 @@ export class LiteratureDurableObject extends DurableObject {
 		return weightedTransfers.toSorted( ( a, b ) => b.weight - a.weight );
 	}
 
-	private canCardSetBeCalled( cardSet: CardSet, { game, players, cardLocations }: Literature.GameData ) {
+	/**
+	 * Checks if a card set can be called based on the current game state.
+	 * It verifies if the calling player has cards from the set and if the set is with their team.
+	 * @param {CardSet} cardSet - The card set to check.
+	 * @param {Literature.GameData} data - The current game data.
+	 * @returns {[boolean, Record<string, string[]>]} - A tuple containing a boolean indicating if the card set can be called and a map of card possibilities.
+	 * @private
+	 */
+	private canCardSetBeCalled(
+		cardSet: CardSet,
+		{ game, players, cardLocations }: Literature.GameData
+	): [ boolean, Record<string, string[]> ] {
 		const currentPlayer = players[ game.currentTurn ];
 		const oppositeTeamMembers = Object.values( players )
 			.filter( player => player.teamId !== currentPlayer.teamId )
@@ -815,7 +1019,15 @@ export class LiteratureDurableObject extends DurableObject {
 		return [ canCardSetBeCalled, cardPossibilityMap ] as const;
 	}
 
-	private suggestCalls( cardSetsInGame: CardSet[], data: Literature.GameData ) {
+	/**
+	 * Suggests calls based on the card sets available in the game.
+	 * It calculates the weight of each call based on the number of players who can be called for each card.
+	 * @param {CardSet[]} cardSetsInGame - The card sets available in the game.
+	 * @param {Literature.GameData} data - The current game data.
+	 * @returns {Literature.WeightedCall[]} - An array of suggested calls with weights.
+	 * @private
+	 */
+	private suggestCalls( cardSetsInGame: CardSet[], data: Literature.GameData ): Literature.WeightedCall[] {
 		const weightedCalls: Literature.WeightedCall[] = [];
 		this.logger.info( "CardSets in Game: %o", cardSetsInGame );
 
@@ -851,7 +1063,18 @@ export class LiteratureDurableObject extends DurableObject {
 		return weightedCalls.toSorted( ( a, b ) => b.weight - a.weight );
 	}
 
-	private suggestAsks( cardSets: CardSet[], { game, players, cardLocations }: Literature.GameData ) {
+	/**
+	 * Suggests asks based on the card sets available in the player's hand.
+	 * It calculates the weight of each ask based on the number of players who can be asked for each card.
+	 * @param {CardSet[]} cardSets - The card sets available in the player's hand.
+	 * @param {Literature.GameData} data - The current game data.
+	 * @returns {Literature.WeightedAsk[]} - An array of suggested asks with weights.
+	 * @private
+	 */
+	private suggestAsks(
+		cardSets: CardSet[],
+		{ game, players, cardLocations }: Literature.GameData
+	): Literature.WeightedAsk[] {
 		const currentPlayer = players[ game.currentTurn ];
 		const oppositeTeamMembers = Object.values( players )
 			.filter( player => player.teamId !== currentPlayer.teamId )

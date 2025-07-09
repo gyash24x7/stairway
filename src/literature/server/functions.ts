@@ -22,7 +22,12 @@ function getStub() {
 	return env.LITERATURE_DURABLE_OBJECT.get( durableObjectId );
 }
 
-export async function createGame( input: Literature.CreateGameInput ) {
+/**
+ * Creates a new game in the Literature application.
+ * @param {Literature.CreateGameInput} input - The input data for creating a game
+ * @returns {Promise<DataResponse<string>>} - A promise that resolves to the game ID or an error message
+ */
+export async function createGame( input: Literature.CreateGameInput ): Promise<DataResponse<string>> {
 	const stub = getStub();
 	return parseAsync( createGameInputSchema, input )
 		.then( () => stub.createGame( input, requestInfo.ctx.authInfo! ) )
@@ -34,7 +39,12 @@ export async function createGame( input: Literature.CreateGameInput ) {
 		} );
 }
 
-export async function joinGame( input: Literature.JoinGameInput ) {
+/**
+ * Joins an existing game in the Literature application.
+ * @param {Literature.JoinGameInput} input - The input data for joining a game
+ * @returns {Promise<DataResponse<string>>} - A promise that resolves to the game ID or an error message
+ */
+export async function joinGame( input: Literature.JoinGameInput ): Promise<DataResponse<string>> {
 	const stub = getStub();
 	const authInfo = requestInfo.ctx.authInfo!;
 	return parseAsync( joinGameInputSchema, input )
@@ -49,10 +59,16 @@ export async function joinGame( input: Literature.JoinGameInput ) {
 		} );
 }
 
-export async function getGameData( input: Literature.GameIdInput ) {
+/**
+ * Retrieves the game data for a specific game in the Literature application.
+ * @param {Literature.GameIdInput} input - The input data containing the game ID
+ * @returns {Promise<DataResponse<Literature.Store>} - A promise that resolves to the game data or an error message
+ */
+export async function getGameData( input: Literature.GameIdInput ): Promise<DataResponse<Literature.Store>> {
 	const stub = getStub();
+	const authInfo = requestInfo.ctx.authInfo!;
 	return parseAsync( gameIdInput, input )
-		.then( () => stub.getGameData( input.gameId ) )
+		.then( () => stub.getGameStore( input.gameId, authInfo ) )
 		.then( data => ( { data } ) )
 		.catch( err => {
 			logger.error( "Error getting game data!", err );
@@ -60,7 +76,12 @@ export async function getGameData( input: Literature.GameIdInput ) {
 		} );
 }
 
-export async function addBots( input: Literature.GameIdInput ) {
+/**
+ * Adds bots to a game in the Literature application.
+ * @param {Literature.GameIdInput} input - The input data containing the game ID
+ * @returns {Promise<ErrorOnlyResponse>} - A promise that resolves to an error message if any error occurs
+ */
+export async function addBots( input: Literature.GameIdInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	return parseAsync( gameIdInput, input )
 		.then( () => stub.getGameData( input.gameId ) )
@@ -74,7 +95,12 @@ export async function addBots( input: Literature.GameIdInput ) {
 		} );
 }
 
-export async function createTeams( input: Literature.CreateTeamsInput ) {
+/**
+ * Creates teams for a game in the Literature application.
+ * @param {Literature.CreateTeamsInput} input - The input data for creating teams
+ * @returns {Promise<ErrorOnlyResponse>} - A promise that resolves to an error message if any error occurs
+ */
+export async function createTeams( input: Literature.CreateTeamsInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	return parseAsync( createTeamsInputSchema, input )
 		.then( () => stub.getGameData( input.gameId ) )
@@ -88,7 +114,12 @@ export async function createTeams( input: Literature.CreateTeamsInput ) {
 		} );
 }
 
-export async function startGame( input: Literature.GameIdInput ) {
+/**
+ * Starts a game in the Literature application.
+ * @param {Literature.GameIdInput} input - The input data containing the game ID
+ * @returns {Promise<ErrorOnlyResponse>} - A promise that resolves to an error message if any error occurs
+ */
+export async function startGame( input: Literature.GameIdInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	return parseAsync( gameIdInput, input )
 		.then( () => stub.getGameData( input.gameId ) )
@@ -102,7 +133,12 @@ export async function startGame( input: Literature.GameIdInput ) {
 		} );
 }
 
-export async function askCard( input: Literature.AskCardInput ) {
+/**
+ * Asks a card in the Literature application.
+ * @param {Literature.AskCardInput} input - The input data for asking a card
+ * @returns {Promise<ErrorOnlyResponse>} - A promise that resolves to an error message if any error occurs
+ */
+export async function askCard( input: Literature.AskCardInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	return parseAsync( askCardInputSchema, input )
 		.then( () => stub.getGameData( input.gameId ) )
@@ -116,7 +152,12 @@ export async function askCard( input: Literature.AskCardInput ) {
 		} );
 }
 
-export async function callSet( input: Literature.CallSetInput ) {
+/**
+ * Calls a set in the Literature application.
+ * @param {Literature.CallSetInput} input - The input data for calling a set
+ * @returns {Promise<ErrorOnlyResponse>} - A promise that resolves to an error message if any error occurs
+ */
+export async function callSet( input: Literature.CallSetInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	return parseAsync( callSetInputSchema, input )
 		.then( () => stub.getGameData( input.gameId ) )
@@ -130,7 +171,12 @@ export async function callSet( input: Literature.CallSetInput ) {
 		} );
 }
 
-export async function transferTurn( input: Literature.TransferTurnInput ) {
+/**
+ * Transfers the turn in the Literature application.
+ * @param {Literature.TransferTurnInput} input - The input data for transferring the turn
+ * @returns {Promise<ErrorOnlyResponse>} - A promise that resolves to an error message if any error occurs
+ */
+export async function transferTurn( input: Literature.TransferTurnInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	return parseAsync( transferTurnInputSchema, input )
 		.then( () => stub.getGameData( input.gameId ) )
@@ -144,7 +190,12 @@ export async function transferTurn( input: Literature.TransferTurnInput ) {
 		} );
 }
 
-export async function executeBotMove( input: Literature.GameIdInput ) {
+/**
+ * Executes a bot move in the Literature application.
+ * @param {Literature.GameIdInput} input - The input data containing the game ID
+ * @returns {Promise<ErrorOnlyResponse>} - A promise that resolves to an error message if any error occurs
+ */
+export async function executeBotMove( input: Literature.GameIdInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	return parseAsync( gameIdInput, input )
 		.then( () => stub.getGameData( input.gameId ) )
