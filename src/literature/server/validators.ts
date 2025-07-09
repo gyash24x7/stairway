@@ -1,5 +1,6 @@
 import type { AuthInfo } from "@/auth/types";
-import { getCardFromId, getCardSet } from "@/libs/cards/card";
+import type { CardId } from "@/libs/cards/types";
+import { getCardFromId, getCardSet } from "@/libs/cards/utils";
 import type { AskCardInput, CallSetInput, TransferTurnInput } from "@/literature/server/inputs";
 import type { Literature } from "@/literature/types";
 import { createLogger } from "@/shared/utils/logger";
@@ -82,7 +83,7 @@ export async function validateAskCard( input: AskCardInput, data: Literature.Gam
 export async function validateCallSet( input: CallSetInput, data: Literature.GameData ) {
 	logger.debug( ">> validateCallSetRequest()" );
 
-	const calledCards = Object.keys( input.data ).map( getCardFromId );
+	const calledCards = Object.keys( input.data ).map( key => key as CardId ).map( getCardFromId );
 	const cardSets = new Set( calledCards.map( getCardSet ) );
 
 	const calledPlayers = Array.from( new Set( Object.values( input.data ) ) ).map( playerId => {
@@ -105,16 +106,16 @@ export async function validateCallSet( input: CallSetInput, data: Literature.Gam
 	}
 
 	const [ calledSet ] = cardSets;
-	const correctCall: Record<string, string> = {};
 	let isCardSetWithCallingPlayer = false;
 
-	Object.keys( input.data ).forEach( cardId => {
+	const correctCall = Object.keys( input.data ).map( key => key as CardId ).reduce( ( acc, cardId ) => {
 		const playerId = data.cardMappings[ cardId ];
-		correctCall[ cardId ] = playerId;
 		if ( playerId === data.game.currentTurn ) {
 			isCardSetWithCallingPlayer = true;
 		}
-	} );
+		acc[ cardId ] = playerId;
+		return acc;
+	}, {} as Record<CardId, string> );
 
 	if ( !isCardSetWithCallingPlayer ) {
 		logger.error( "Set called without cards from that set! UserId: %s, Set: %s", data.game.currentTurn, calledSet );

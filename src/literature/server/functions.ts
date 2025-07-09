@@ -20,6 +20,7 @@ import { createLogger } from "@/shared/utils/logger";
 import { env } from "cloudflare:workers";
 import { renderRealtimeClients } from "rwsdk/realtime/worker";
 import { requestInfo } from "rwsdk/worker";
+import * as v from "valibot";
 
 const logger = createLogger( "Literature:Functions" );
 
@@ -29,10 +30,10 @@ function getStub() {
 }
 
 export async function createGame( input: CreateGameInput ) {
-	const { error, success } = await createGameInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for createGame", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( createGameInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for createGame", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -46,10 +47,10 @@ export async function createGame( input: CreateGameInput ) {
 }
 
 export async function joinGame( input: JoinGameInput ) {
-	const { error, success } = await joinGameInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for join game", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( joinGameInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for join game", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -69,10 +70,10 @@ export async function joinGame( input: JoinGameInput ) {
 }
 
 export async function getGameData( input: GameIdInput ) {
-	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for getGameData", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( gameIdInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for getGameData", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -86,10 +87,10 @@ export async function getGameData( input: GameIdInput ) {
 }
 
 export async function addBots( input: GameIdInput ) {
-	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for addBots", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( gameIdInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for addBots", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -109,10 +110,10 @@ export async function addBots( input: GameIdInput ) {
 }
 
 export async function createTeams( input: CreateTeamsInput ) {
-	const { error, success } = await createTeamsInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for create teams", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( createTeamsInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for create teams", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -132,10 +133,10 @@ export async function createTeams( input: CreateTeamsInput ) {
 }
 
 export async function startGame( input: GameIdInput ) {
-	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for start game", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( gameIdInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for start game", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -155,10 +156,10 @@ export async function startGame( input: GameIdInput ) {
 }
 
 export async function askCard( input: AskCardInput ) {
-	const { error, success } = await askCardInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for ask card", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( askCardInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for ask card", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -178,10 +179,10 @@ export async function askCard( input: AskCardInput ) {
 }
 
 export async function callSet( input: CallSetInput ) {
-	const { error, success } = await callSetInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for call set", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( callSetInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for call set", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -201,10 +202,10 @@ export async function callSet( input: CallSetInput ) {
 }
 
 export async function transferTurn( input: TransferTurnInput ) {
-	const { error, success } = await transferTurnInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for transfer turn", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( transferTurnInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for transfer turn", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {
@@ -224,10 +225,10 @@ export async function transferTurn( input: TransferTurnInput ) {
 }
 
 export async function executeBotMove( input: GameIdInput ) {
-	const { error, success } = await gameIdInputSchema.safeParseAsync( input );
-	if ( !success || !!error ) {
-		logger.error( "Invalid input for execute bot move", { error, input } );
-		return { error: error.message, success: false as const };
+	const { issues, success } = await v.safeParseAsync( gameIdInputSchema, input );
+	if ( !success || !!issues ) {
+		logger.error( "Invalid input for execute bot move", { issues, input } );
+		return { error: issues, success: false as const };
 	}
 
 	try {

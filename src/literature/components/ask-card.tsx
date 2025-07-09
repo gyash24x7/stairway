@@ -1,8 +1,14 @@
 "use client";
 
-import { getCardDisplayString, getCardFromId, getCardId } from "@/libs/cards/card";
-import { getAskableCardsOfSet, getCardsOfSet, getSetsInHand } from "@/libs/cards/hand";
-import type { CardSet } from "@/libs/cards/types";
+import type { CardId, CardSet } from "@/libs/cards/types";
+import {
+	getAskableCardsOfSet,
+	getCardDisplayString,
+	getCardFromId,
+	getCardId,
+	getCardsOfSet,
+	getSetsInHand
+} from "@/libs/cards/utils";
 import { askCard } from "@/literature/server/functions";
 import { store } from "@/literature/store";
 import { DisplayCard, DisplayCardSet } from "@/shared/components/display-card";
@@ -29,7 +35,7 @@ export function AskCard() {
 	} );
 
 	const [ selectedCardSet, setSelectedCardSet ] = useState<CardSet>();
-	const [ selectedCard, setSelectedCard ] = useState<string>();
+	const [ selectedCard, setSelectedCard ] = useState<CardId>();
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ open, setOpen ] = useState( false );
 	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
@@ -37,7 +43,7 @@ export function AskCard() {
 	const openDrawer = () => setOpen( true );
 
 	const askableCardSets = Array.from( getSetsInHand( hand ) ).filter( cardSet => {
-		const cards = getCardsOfSet( hand, cardSet );
+		const cards = getCardsOfSet( cardSet, hand );
 		return cards.length !== 6;
 	} );
 
@@ -54,7 +60,7 @@ export function AskCard() {
 		}
 	};
 
-	const handleCardSelect = ( cardId?: string ) => () => {
+	const handleCardSelect = ( cardId?: CardId ) => () => {
 		if ( !cardId ) {
 			setSelectedCard( undefined );
 		} else {

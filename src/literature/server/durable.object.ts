@@ -1,9 +1,16 @@
 import type { AuthInfo } from "@/auth/types";
-import { getCardDisplayString, getCardFromId, getCardId } from "@/libs/cards/card";
-import { cardSetMap } from "@/libs/cards/constants";
-import { generateDeck, generateHands, isCardInHand, removeCardFromHand, removeCardsOfRank } from "@/libs/cards/hand";
-import { CardRank, type CardSet } from "@/libs/cards/types";
-import { shuffle } from "@/libs/cards/utils";
+import { CARD_RANKS, SORTED_DECK } from "@/libs/cards/constants";
+import type { CardId, CardSet } from "@/libs/cards/types";
+import {
+	generateDeck,
+	generateHands,
+	getCardDisplayString,
+	getCardFromId,
+	getCardId,
+	getCardsOfSet,
+	isCardInHand,
+	removeCards
+} from "@/libs/cards/utils";
 import { suggestAsks, suggestCalls, suggestCardSets, suggestTransfer } from "@/literature/server/bot.service";
 import type {
 	AskCardInput,
@@ -23,6 +30,7 @@ import {
 	validateTransferTurn
 } from "@/literature/server/validators";
 import type { Literature } from "@/literature/types";
+import { shuffle } from "@/shared/utils/array";
 import { generateAvatar, generateGameCode, generateId, generateName } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import { DurableObject } from "cloudflare:workers";
@@ -83,26 +91,11 @@ export class LiteratureDurableObject extends DurableObject {
 				currentTurn: authInfo.id
 			},
 			players: {
-				[ authInfo.id ]: {
-					id: authInfo.id,
-					name: authInfo.name,
-					avatar: authInfo.avatar,
-					isBot: false,
-					hand: [],
-					cardCount: 0,
-					metrics: {
-						totalAsks: 0,
-						cardsTaken: 0,
-						cardsGiven: 0,
-						totalCalls: 0,
-						successfulCalls: 0,
-						totalTransfers: 0
-					}
-				}
+				[ authInfo.id ]: this.getPlayerInfo( authInfo )
 			},
 			teams: {},
-			cardMappings: {},
-			cardLocations: {},
+			cardMappings: this.getDefaultCardMappings(),
+			cardLocations: this.getDefaultCardLocations(),
 			asks: [],
 			calls: [],
 			transfers: []
@@ -242,7 +235,7 @@ export class LiteratureDurableObject extends DurableObject {
 			throw "Game not found!";
 		}
 
-		const deck = removeCardsOfRank( generateDeck(), CardRank.SEVEN );
+		const deck = removeCards( card => card.rank === CARD_RANKS.SEVEN, generateDeck() );
 		const playerIds = Object.keys( data.players );
 		const hands = generateHands( deck, data.game.playerCount );
 
@@ -318,7 +311,10 @@ export class LiteratureDurableObject extends DurableObject {
 			data.players[ ask.playerId ].cardCount++;
 
 			data.players[ ask.askedFrom ].cardCount--;
-			data.players[ ask.askedFrom ].hand = removeCardFromHand( data.players[ ask.askedFrom ].hand, askedCard );
+			data.players[ ask.askedFrom ].hand = removeCards(
+				card => getCardId( card ) === ask.cardId,
+				data.players[ ask.askedFrom ].hand
+			);
 		}
 
 		Object.keys( data.cardLocations[ ask.cardId ] ).map( playerId => {
@@ -359,7 +355,7 @@ export class LiteratureDurableObject extends DurableObject {
 		let success = true;
 		let successString = "correctly!";
 
-		for ( const card of cardSetMap[ calledSet ] ) {
+		for ( const card of getCardsOfSet( calledSet ) ) {
 			const cardId = getCardId( card );
 			if ( correctCall[ cardId ] !== input.data[ cardId ] ) {
 				success = false;
@@ -379,9 +375,12 @@ export class LiteratureDurableObject extends DurableObject {
 			timestamp: new Date()
 		};
 
-		Object.keys( correctCall ).forEach( cardId => {
+		Object.keys( correctCall ).map( key => key as CardId ).forEach( ( cardId ) => {
 			const playerWithCard = data.cardMappings[ cardId ];
-			data.players[ playerWithCard ].hand = removeCardFromHand( data.players[ playerWithCard ].hand, cardId );
+			data.players[ playerWithCard ].hand = removeCards(
+				card => getCardId( card ) === cardId,
+				data.players[ playerWithCard ].hand
+			);
 			data.players[ playerWithCard ].cardCount--;
 
 			delete data.cardMappings[ cardId ];
@@ -518,5 +517,46 @@ export class LiteratureDurableObject extends DurableObject {
 		await this.askCard( { from: bestAsk.playerId, card: bestAsk.cardId, gameId: data.game.id }, authInfo );
 
 		this.logger.debug( "<< executeBotMove()" );
+	}
+
+	private getPlayerInfo( authInfo: AuthInfo ): Literature.Player {
+		return {
+			id: authInfo.id,
+			name: authInfo.name,
+			avatar: authInfo.avatar,
+			isBot: false,
+			hand: [],
+			cardCount: 0,
+			metrics: {
+				totalAsks: 0,
+				cardsTaken: 0,
+				cardsGiven: 0,
+				totalCalls: 0,
+				successfulCalls: 0,
+				totalTransfers: 0
+			}
+		};
+	}
+
+	private getDefaultCardMappings(): Literature.CardMappings {
+		return SORTED_DECK.reduce(
+			( acc, card ) => {
+				const cardId = getCardId( card );
+				acc[ cardId ] = "";
+				return acc;
+			},
+			{} as Literature.CardMappings
+		);
+	}
+
+	private getDefaultCardLocations(): Literature.CardLocationData {
+		return SORTED_DECK.reduce(
+			( acc, card ) => {
+				const cardId = getCardId( card );
+				acc[ cardId ] = {};
+				return acc;
+			},
+			{} as Literature.CardLocationData
+		);
 	}
 }

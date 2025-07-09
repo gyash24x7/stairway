@@ -1,6 +1,5 @@
 "use client";
 
-import { chunk, shuffle } from "@/libs/cards/utils";
 import { PlayerLobby } from "@/literature/components/player-lobby";
 import { createTeams } from "@/literature/server/functions";
 import { store } from "@/literature/store";
@@ -15,6 +14,7 @@ import {
 } from "@/shared/primitives/dialog";
 import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
+import { chunk, shuffle } from "@/shared/utils/array";
 import { useStore } from "@tanstack/react-store";
 import { useState, useTransition } from "react";
 

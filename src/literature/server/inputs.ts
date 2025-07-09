@@ -1,46 +1,58 @@
-import { z } from "zod/v4";
+import { CARD_IDS } from "@/libs/cards/constants";
+import type { CardId } from "@/libs/cards/types";
+import * as v from "valibot";
 
-export const createGameInputSchema = z.object( {
-	playerCount: z.number().positive().multipleOf( 2 ).lte( 8 ).optional()
+const ulid = () => v.pipe( v.string(), v.trim(), v.ulid() );
+const cardId = () => v.custom<CardId>( ( value ) => CARD_IDS.includes( value as CardId ) );
+
+export const createGameInputSchema = v.object( {
+	playerCount: v.optional( v.pipe( v.number(), v.picklist( [ 2, 4, 6, 8 ] ) ) )
 } );
 
-export type CreateGameInput = z.infer<typeof createGameInputSchema>;
+export type CreateGameInput = v.InferOutput<typeof createGameInputSchema>;
 
-export const joinGameInputSchema = z.object( { code: z.string().length( 6 ) } );
-
-export type JoinGameInput = z.infer<typeof joinGameInputSchema>;
-
-export const createTeamsInputSchema = z.object( {
-	gameId: z.string(),
-	data: z.record( z.string(), z.string().array() )
+export const joinGameInputSchema = v.object( {
+	code: v.pipe( v.string(), v.trim(), v.length( 6 ) )
 } );
 
-export type CreateTeamsInput = z.infer<typeof createTeamsInputSchema>;
+export type JoinGameInput = v.InferOutput<typeof joinGameInputSchema>;
 
-export const transferTurnInputSchema = z.object( {
-	gameId: z.string(),
-	transferTo: z.string()
+export const createTeamsInputSchema = v.object( {
+	gameId: ulid(),
+	data: v.record( v.string(), v.array( ulid() ) )
 } );
 
-export type TransferTurnInput = z.infer<typeof transferTurnInputSchema>;
+export type CreateTeamsInput = v.InferOutput<typeof createTeamsInputSchema>;
 
-export const callSetInputSchema = z.object( {
-	gameId: z.string(),
-	data: z.record( z.string(), z.string() )
+export const startGameInputSchema = v.object( {
+	gameId: ulid(),
+	teams: v.record( v.string(), v.array( ulid() ) )
 } );
 
-export type CallSetInput = z.infer<typeof callSetInputSchema>;
+export type StartGameInput = v.InferOutput<typeof startGameInputSchema>;
 
-export const askCardInputSchema = z.object( {
-	gameId: z.string(),
-	from: z.string(),
-	card: z.string()
+export const transferTurnInputSchema = v.object( {
+	gameId: ulid(),
+	transferTo: ulid()
 } );
 
-export type AskCardInput = z.infer<typeof askCardInputSchema>;
+export type TransferTurnInput = v.InferOutput<typeof transferTurnInputSchema>;
 
-export const gameIdInputSchema = z.object( {
-	gameId: z.ulid()
+export const callSetInputSchema = v.object( {
+	gameId: ulid(),
+	data: v.custom<Record<CardId, string>>( ( value ) => CARD_IDS.includes( value as CardId ) )
 } );
 
-export type GameIdInput = z.infer<typeof gameIdInputSchema>;
+export type CallSetInput = v.InferOutput<typeof callSetInputSchema>;
+
+export const askCardInputSchema = v.object( {
+	gameId: ulid(),
+	from: ulid(),
+	card: cardId()
+} );
+
+export type AskCardInput = v.InferOutput<typeof askCardInputSchema>;
+
+
+export const gameIdInputSchema = v.object( { gameId: ulid() } );
+export type GameIdInput = v.InferOutput<typeof gameIdInputSchema>;

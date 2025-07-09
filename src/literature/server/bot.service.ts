@@ -1,28 +1,29 @@
-import { getCardId, getCardSet } from "@/libs/cards/card";
-import { cardSetMap } from "@/libs/cards/constants";
-import { getAskableCardsOfSet, isCardInHand, isCardSetInHand } from "@/libs/cards/hand";
-import type { CardSet, PlayingCard } from "@/libs/cards/types";
-import { shuffle } from "@/libs/cards/utils";
+import type { CardId, CardSet, PlayingCard } from "@/libs/cards/types";
+import {
+	getAskableCardsOfSet,
+	getCardId,
+	getCardSet,
+	getCardsOfSet,
+	isCardInHand,
+	isCardSetInHand
+} from "@/libs/cards/utils";
 import type { Literature } from "@/literature/types";
+import { shuffle } from "@/shared/utils/array";
 import { createLogger } from "@/shared/utils/logger";
 
 const logger = createLogger( "LiteratureBotService" );
 
-type WeightedAsk = { cardId: string, playerId: string, weight: number }
-type WeightedCall = { cardSet: CardSet, callData: Record<string, string>, weight: number }
-type WeightedTransfer = { weight: number, transferTo: string };
-type WeightedCardSet = { cardSet: CardSet, weight: number };
 
 const MAX_ASK_WEIGHT = 720;
 
 export function suggestCardSets( cardLocations: Literature.CardLocationData, hand: PlayingCard[] ): CardSet[] {
-	const weightedCardSets: WeightedCardSet[] = [];
-	const cardSetsInGame = new Set( Object.keys( cardLocations ).map( getCardSet ) );
+	const weightedCardSets: Literature.WeightedCardSet[] = [];
+	const cardSetsInGame = new Set( Object.keys( cardLocations ).map( key => key as CardId ).map( getCardSet ) );
 
 	for ( const cardSet of cardSetsInGame ) {
 		let weight = 0;
 
-		for ( const card of cardSetMap[ cardSet ] ) {
+		for ( const card of getCardsOfSet( cardSet ) ) {
 			const cardLocation = cardLocations[ getCardId( card ) ];
 			if ( !cardLocation || Object.keys( cardLocation ).length === 0 ) {
 				continue;
@@ -39,7 +40,7 @@ export function suggestCardSets( cardLocations: Literature.CardLocationData, han
 	return weightedCardSets.map( w => w.cardSet ).filter( ( cardSet ) => isCardSetInHand( hand, cardSet ) );
 }
 
-export function suggestTransfer( { game, players }: Literature.GameData ): WeightedTransfer[] {
+export function suggestTransfer( { game, players }: Literature.GameData ): Literature.WeightedTransfer[] {
 	const teamId = players[ game.currentTurn ].teamId;
 	const myTeamMembers = Object.values( players )
 		.filter( player => player.teamId === teamId && player.id !== game.currentTurn && player.cardCount > 0 )
@@ -62,7 +63,7 @@ export function canCardSetBeCalled( cardSet: CardSet, { game, players, cardLocat
 	const cardPossibilityMap: Record<string, string[]> = {};
 	let isCardSetWithUs = true;
 
-	for ( const card of shuffle( cardSetMap[ cardSet ] ) ) {
+	for ( const card of shuffle( getCardsOfSet( cardSet ) ) ) {
 
 		const cardId = getCardId( card );
 		if ( isCardInHand( currentPlayer.hand, card ) ) {
@@ -91,7 +92,7 @@ export function canCardSetBeCalled( cardSet: CardSet, { game, players, cardLocat
 }
 
 export function suggestCalls( cardSetsInGame: CardSet[], data: Literature.GameData ) {
-	const weightedCalls: WeightedCall[] = [];
+	const weightedCalls: Literature.WeightedCall[] = [];
 	logger.info( "CardSets in Game: %o", cardSetsInGame );
 
 	for ( const cardSet of cardSetsInGame ) {
@@ -110,7 +111,7 @@ export function suggestCalls( cardSetsInGame: CardSet[], data: Literature.GameDa
 		}
 
 		const callData: Record<string, string> = {};
-		for ( const card of shuffle( cardSetMap[ cardSet ] ) ) {
+		for ( const card of shuffle( getCardsOfSet( cardSet ) ) ) {
 			const cardId = getCardId( card );
 			const callablePlayersForCard = cardPossibilityMap[ cardId ]
 				.filter( playerId => data.players[ playerId ].cardCount > 0 );
@@ -132,8 +133,8 @@ export function suggestAsks( cardSets: CardSet[], { game, players, cardLocations
 		.filter( player => player.teamId !== currentPlayer.teamId )
 		.map( player => player.id );
 
-	const weightedAskMap: Record<string, WeightedAsk[]> = {};
-	const weightedAsks: WeightedAsk[] = [];
+	const weightedAskMap: Record<string, Literature.WeightedAsk[]> = {};
+	const weightedAsks: Literature.WeightedAsk[] = [];
 
 	for ( const cardSet of cardSets ) {
 		if ( !isCardSetInHand( currentPlayer.hand, cardSet ) ) {
@@ -150,7 +151,7 @@ export function suggestAsks( cardSets: CardSet[], { game, players, cardLocations
 				continue;
 			}
 
-			const possibleAsks: WeightedAsk[] = Object.keys( cardLocations[ cardId ] )
+			const possibleAsks: Literature.WeightedAsk[] = Object.keys( cardLocations[ cardId ] )
 				.filter( playerId => oppositeTeamMembers.includes( playerId ) )
 				.filter( playerId => players[ playerId ].cardCount > 0 )
 				.map( playerId => {

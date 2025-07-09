@@ -1,4 +1,4 @@
-import type { CardSet, PlayingCard } from "@/libs/cards/types";
+import type { CardId, CardSet, PlayingCard } from "@/libs/cards/types";
 
 export namespace Literature {
 	export type Metrics = {
@@ -35,7 +35,7 @@ export namespace Literature {
 		description: string;
 		playerId: string;
 		askedFrom: string;
-		cardId: string;
+		cardId: CardId;
 		timestamp: Date;
 	}
 
@@ -45,8 +45,8 @@ export namespace Literature {
 		description: string;
 		playerId: string;
 		cardSet: CardSet;
-		actualCall: Record<string, string>;
-		correctCall: Record<string, string>;
+		actualCall: Record<CardId, string>;
+		correctCall: Record<CardId, string>;
 		timestamp: Date;
 	}
 
@@ -78,8 +78,8 @@ export namespace Literature {
 	export type InternalPlayerData = Record<string, Player>;
 	export type PlayerData = Record<string, Omit<Player, "cardLocations" | "hand">>
 	export type TeamData = Record<string, Team>;
-	export type CardMappings = Record<string, string>;
-	export type CardLocationData = Record<string, CardLocationsForCard>; // Record<cardId, CardLocationsForCard>
+	export type CardMappings = Record<CardId, string>;
+	export type CardLocationData = Record<CardId, CardLocationsForCard>; // Record<cardId, CardLocationsForCard>
 	export type MoveType = "ASK" | "CALL" | "TRANSFER";
 
 	export type GameData = {
@@ -94,6 +94,11 @@ export namespace Literature {
 		lastMoveType?: MoveType;
 		lastCall?: Call;
 	}
+
+	export type WeightedAsk = { cardId: CardId, playerId: string, weight: number }
+	export type WeightedCall = { cardSet: CardSet, callData: Record<CardId, string>, weight: number }
+	export type WeightedTransfer = { weight: number, transferTo: string };
+	export type WeightedCardSet = { cardSet: CardSet, weight: number };
 
 	export type Store = {
 		playerId: string;

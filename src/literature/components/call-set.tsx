@@ -1,9 +1,7 @@
 "use client";
 
-import { getCardDisplayString, getCardFromId, getCardId } from "@/libs/cards/card";
-import { cardSetMap } from "@/libs/cards/constants";
-import { getCardsOfSet, getSetsInHand } from "@/libs/cards/hand";
-import type { CardSet, PlayingCard } from "@/libs/cards/types";
+import type { CardId, CardSet, PlayingCard } from "@/libs/cards/types";
+import { getCardDisplayString, getCardId, getCardsOfSet, getSetsInHand } from "@/libs/cards/utils";
 import { callSet } from "@/literature/server/functions";
 import { store } from "@/literature/store";
 import { DisplayCard, DisplayCardSet } from "@/shared/components/display-card";
@@ -53,10 +51,10 @@ export function CallSet() {
 		} else {
 			const cardSet: CardSet = value as CardSet;
 			setSelectedCardSet( cardSet );
-			setCardOptions( cardSetMap[ cardSet ] );
+			setCardOptions( getCardsOfSet( cardSet ) );
 
 			const myCardMap: Record<string, string> = {};
-			getCardsOfSet( hand, cardSet ).map( getCardId ).forEach( cardId => {
+			getCardsOfSet( cardSet, hand ).map( getCardId ).forEach( cardId => {
 				myCardMap[ cardId ] = playerId;
 			} );
 			setCardMap( myCardMap );
@@ -64,10 +62,10 @@ export function CallSet() {
 		}
 	};
 
-	const handleCardSelectForPlayer = ( cardId: string, playerId?: string ) => () => {
+	const handleCardSelectForPlayer = ( cardId: CardId, playerId?: string ) => () => {
 		if ( !playerId ) {
 			setCardMap( data => {
-				delete data[ cardId ];
+				delete ( data ?? {} )[ cardId ];
 				return { ...data };
 			} );
 		} else {
@@ -140,10 +138,9 @@ export function CallSet() {
 						) }
 						{ currentStep === 3 && (
 							<div className={ "flex flex-col gap-3" }>
-								{ Object.keys( cardMap ).map( cardId => (
+								{ Object.keys( cardMap ).map( key => key as CardId ).map( cardId => (
 									<h3 key={ cardId } className={ "text-center" }>
-										{ getCardDisplayString( getCardFromId( cardId ) ) } is
-										with { players[ cardMap[ cardId ] ].name }
+										{ getCardDisplayString( cardId ) } is with { players[ cardMap[ cardId ] ].name }
 									</h3>
 								) ) }
 							</div>
