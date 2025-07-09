@@ -38,7 +38,12 @@ export function Login() {
 		}
 
 		console.log( "User exists, proceeding with login" );
-		const data = await getLoginOptions( { username } );
+		const { error, data } = await getLoginOptions( { username } );
+		if ( error || !data ) {
+			console.error( "Failed to get login options:", error );
+			return;
+		}
+
 		const response = await startAuthentication( { optionsJSON: data } );
 
 		const { url, status } = await axios.post(
@@ -52,14 +57,14 @@ export function Login() {
 	};
 
 	const passkeyRegister = async ( username: string ) => {
-		const options = await getRegistrationOptions( { username } );
+		const { error, data } = await getRegistrationOptions( { username } );
 
-		if ( !options ) {
+		if ( !!error || !data ) {
 			console.error( "Failed to get registration options." );
 			return;
 		}
 
-		const response = await startRegistration( { optionsJSON: options } );
+		const response = await startRegistration( { optionsJSON: data } );
 		const { url, status } = await axios.post(
 			"/auth/registration",
 			{ username, name, response },

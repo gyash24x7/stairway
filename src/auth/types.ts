@@ -1,4 +1,5 @@
 import type * as schema from "@/auth/schema";
+import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 
 export type AuthInfo = {
 	id: string;
@@ -20,4 +21,21 @@ export type Session = {
 	id: string;
 	userId: string;
 	expiresAt: string;
+}
+
+export type SessionValidationResult = { session: Session | undefined, user: User | undefined };
+
+export type UsernameInput = {
+	username: string;
+}
+
+export type VerifyRegistrationInput = {
+	username: string;
+	name: string;
+	response: RegistrationResponseJSON;
+}
+
+export type VerifyLoginInput = {
+	username: string;
+	response: AuthenticationResponseJSON;
 }

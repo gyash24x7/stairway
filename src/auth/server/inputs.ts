@@ -1,24 +1,17 @@
-import * as v from "valibot";
+import { username } from "@/shared/utils/validation";
+import { any, object, string } from "valibot";
 
-const username = () => v.pipe( v.string(), v.trim(), v.minLength( 3 ) );
-
-export const usernameInput = v.object( {
+export const usernameInput = object( {
 	username: username()
 } );
 
-export type UsernameInput = v.InferOutput<typeof usernameInput>;
-
-export const registrationVerificationInput = v.object( {
+export const registrationVerificationInput = object( {
 	username: username(),
-	name: v.string(),
-	response: v.any()
+	name: string(),
+	response: any()
 } );
 
-export type VerifyRegistrationInput = v.InferOutput<typeof registrationVerificationInput>;
-
-export const loginVerificationInput = v.object( {
+export const loginVerificationInput = object( {
 	username: username(),
-	response: v.any()
+	response: any()
 } );
-
-export type VerifyLoginInput = v.InferOutput<typeof loginVerificationInput>;
