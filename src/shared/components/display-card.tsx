@@ -1,24 +1,14 @@
-import { getCardFromId } from "@/libs/cards/card";
-import type { CardRank, CardSet, CardSuit } from "@/libs/cards/types";
+import type { CardId, CardRank, CardSet, CardSuit } from "@/libs/cards/types";
+import { getCardFromId } from "@/libs/cards/utils";
 import { cn } from "@/shared/utils/cn";
 
 export type DisplayCardProps = { focused?: boolean; rank: CardRank; suit: CardSuit; cardId?: undefined; }
-	| { cardId: string; focused?: boolean; rank?: undefined; suit?: undefined; };
+	| { cardId: CardId; focused?: boolean; rank?: undefined; suit?: undefined; };
 
-export const suitIconMap: Record<CardSuit, string> = {
-	Clubs: "♣",
-	Spades: "♠",
-	Hearts: "♥",
-	Diamonds: "♦"
-};
-
-export const rankTextMap: Record<CardRank, string> = {
-	Ace: "A", Two: "2", Ten: "10", Three: "3", Five: "5", Four: "4", Seven: "7", Six: "6",
-	Eight: "8", Nine: "9", Jack: "J", Queen: "Q", King: "K"
-};
+export const suitIconMap: Record<CardSuit, string> = { C: "♣", S: "♠", H: "♥", D: "♦" };
 
 function isRed( suit: CardSuit ) {
-	return suit === "Hearts" || suit === "Diamonds";
+	return suit === "H" || suit === "D";
 }
 
 export function DisplayCardSet( { cardSet }: { cardSet: CardSet } ) {
@@ -67,7 +57,7 @@ export function DisplayCard( { rank, suit, cardId, focused }: DisplayCardProps )
 			) }
 		>
 			<div className={ cn( "text-left", isRed( card.suit ) ? "text-red-600" : "text-black" ) }>
-				{ rankTextMap[ card.rank ] }
+				{ card.rank }
 			</div>
 			<div
 				className={ cn(
@@ -78,7 +68,7 @@ export function DisplayCard( { rank, suit, cardId, focused }: DisplayCardProps )
 				{ suitIconMap[ card.suit ] }
 			</div>
 			<div className={ cn( "text-right", isRed( card.suit ) ? "text-red-600" : "text-black" ) }>
-				{ rankTextMap[ card.rank ] }
+				{ card.rank }
 			</div>
 		</div>
 	);

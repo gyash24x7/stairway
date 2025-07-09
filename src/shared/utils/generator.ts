@@ -19,10 +19,18 @@ export function generateAvatar( seed?: string ) {
 	return `https://api.dicebear.com/7.x/open-peeps/png?seed=${ seed ?? Date.now() }&r=50`;
 }
 
-export function generateGameCode() {
+export function generateBotInfo() {
+	const id = generateId();
+	const name = generateName();
+	const username = generateId();
+	const avatar = generateAvatar();
+	return { id, name, username, avatar };
+}
+
+export function generateGameCode( length: number = 6 ) {
 	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	let result = "";
-	for ( let i = 0; i < 6; i++ ) {
+	for ( let i = 0; i < length; i++ ) {
 		result += chars[ Math.floor( Math.random() * 36 ) ];
 	}
 	return result;
