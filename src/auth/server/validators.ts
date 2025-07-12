@@ -11,6 +11,7 @@ const logger = createLogger( "Auth:Validators" );
  * and parses them.
  * If the options are not found, it throws an error.
  *
+ * @throws {Error} If no WebAuthn options are found for the username.
  * @param {string} username - The username for which to validate WebAuthn options.
  * @returns {Promise<WebAuthnOptions>} WebAuthn options for the user.
  */
@@ -28,6 +29,7 @@ export async function validateWebAuthnOptions( username: string ): Promise<WebAu
  * Validates if a user exists by checking their username.
  * If the user does not exist, it throws an error.
  *
+ * @throws {Error} If the user does not exist.
  * @param {string} username - The username to validate.
  * @returns {Promise<User>} The existing user object.
  */
@@ -45,6 +47,7 @@ export async function validateUserExists( username: string ): Promise<User> {
  * Validates if a passkey exists for a given user.
  * If the passkey does not exist, it throws an error.
  *
+ * @throws {Error} If the passkey does not exist for the user.
  * @param {string} passkeyId - The ID of the passkey to validate.
  * @param {string} userId - The ID of the user to check against.
  * @returns {Promise<Passkey>} The existing passkey object.
@@ -63,6 +66,7 @@ export async function validatePasskeyExists( passkeyId: string, userId: string )
  * Validates that a user has at least one passkey.
  * If no passkeys are found, it throws an error.
  *
+ * @throws {Error} If no passkeys are found for the user.
  * @param {string} userId - The ID of the user to check.
  * @returns {Promise<Passkey[]>} An array of passkeys for the user.
  */

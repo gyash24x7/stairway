@@ -23,7 +23,7 @@ export type Session = {
 	expiresAt: string;
 }
 
-export type SessionValidationResult = { session: Session | undefined, user: User | undefined };
+export type SessionValidationResult = { session: Session, user: User };
 
 export type UsernameInput = {
 	username: string;
