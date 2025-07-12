@@ -29,10 +29,10 @@ export async function createGame( input: Wordle.CreateGameInput ): Promise<DataR
 	return parseAsync( createGameInputSchema, input )
 		.then( () => stub.createGame( input, authInfo ) )
 		.then( data => stub.saveGameData( data.id, data ) )
-		.then( data => ( { data } ) )
+		.then( data => ( { data: { ...data } } ) )
 		.catch( err => {
 			logger.error( "Error creating game!", err );
-			return { error: ( err as Error ).message, success: false as const };
+			return { error: ( err as Error ).message };
 		} );
 }
 
@@ -48,10 +48,20 @@ export async function getGameData( gameId: string ): Promise<DataResponse<Wordle
 	const stub = getStub();
 	return parseAsync( gameIdInput, { gameId } )
 		.then( () => stub.getGameData( gameId ) )
-		.then( data => ( { data } ) )
+		.then( data => ( {
+			data: !!data ? {
+				id: data.id,
+				playerId: data.playerId,
+				guesses: data.guesses,
+				words: data.words,
+				completedWords: data.completedWords,
+				wordCount: data.wordCount,
+				wordLength: data.wordLength
+			} : undefined
+		} ) )
 		.catch( err => {
 			logger.error( "Error fetching game data", { error: err, gameId } );
-			return { error: "Failed to fetch game data. Please try again later.", success: false as const };
+			return { error: "Failed to fetch game data. Please try again later." };
 		} );
 }
 
@@ -61,17 +71,17 @@ export async function getGameData( gameId: string ): Promise<DataResponse<Wordle
  * calls the durable object to process the guess.
  *
  * @param {Wordle.MakeGuessInput} input - The input for making a guess, including game ID and guess word.
- * @returns {Promise<DataResponse<Wordle.Game>>} response containing the updated game data or an error message
+ * @returns {Promise<ErrorOnlyResponse>} response containing an error message
  */
-export async function makeGuess( input: Wordle.MakeGuessInput ): Promise<DataResponse<Wordle.Game>> {
+export async function makeGuess( input: Wordle.MakeGuessInput ): Promise<ErrorOnlyResponse> {
 	const stub = getStub();
 	const authInfo = requestInfo.ctx.authInfo!;
 	return parseAsync( makeGuessInputSchema, input )
 		.then( () => stub.makeGuess( input, authInfo.id ) )
 		.then( data => stub.saveGameData( data.id, data ) )
-		.then( data => ( { data } ) )
+		.then( () => ( { error: undefined } ) )
 		.catch( err => {
 			logger.error( "Error making guess!", err );
-			return { error: ( err as Error ).message, success: false as const };
+			return { error: ( err as Error ).message };
 		} );
 }
