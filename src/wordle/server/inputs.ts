@@ -3,7 +3,8 @@ import { gtValue, length, number, object, optional, picklist, pipe, string } fro
 
 export const createGameInputSchema = object( {
 	wordCount: optional( pipe( number(), gtValue( 0 ) ) ),
-	wordLength: optional( pipe( number(), picklist( [ 5 ] ) ) )
+	wordLength: optional( pipe( number(), picklist( [ 5 ] ) ) ),
+	gameId: optional( ulid() )
 } );
 
 export const makeGuessInputSchema = object( {

@@ -3,81 +3,89 @@ import { dictionary } from "@/libs/words/dictionary";
 import { generateId } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import type { Wordle } from "@/wordle/types";
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, env } from "cloudflare:workers";
 
 export class WordleDurableObject extends DurableObject {
 
 	private readonly logger = createLogger( "Wordle:DO" );
-	private readonly state: DurableObjectState;
+	private data: Wordle.Game | null = null;
+	private readonly id: string;
 
 	constructor( state: DurableObjectState, env: Env ) {
 		super( state, env );
-		this.state = state;
+		this.id = state.id.toString();
+		this.ctx.blockConcurrencyWhile( async () => {
+			this.logger.debug( "Fetching game data from KV for GameId: %s", this.id );
+			this.data = await env.WORDLE_KV.get( this.id ).then( d => d ? JSON.parse( d ) as Wordle.Game : null );
+		} );
 	}
 
-	async getGameData( gameId: string ) {
-		this.logger.debug( ">> getGameData()" );
-		const game = await this.state.storage.get<Wordle.Game>( gameId );
-		this.logger.debug( "<< getGameData()" );
-		return game;
-	}
-
-	async saveGameData( gameId: string, game: Wordle.Game ) {
-		this.logger.debug( ">> saveGameData()" );
-		await this.state.storage.put( gameId, game );
-		this.logger.debug( "<< saveGameData()" );
-		return game;
-	}
-
-	async createGame( { wordCount = 2, wordLength = 5 }: Wordle.CreateGameInput, authInfo: AuthInfo ) {
+	/**
+	 * Creates a new Wordle game with the specified parameters.
+	 * This method generates a random set of words based on the provided word count and length,
+	 * and initializes the game state with the player's ID and the generated words.
+	 * Defaults to 2 words of length 5 if not specified.
+	 *
+	 * @param {Wordle.CreateGameInput} input - The input parameters containing word count and length.
+	 * @param {AuthInfo} authInfo - The authentication information of the player creating the game.
+	 */
+	async createGame( input: Wordle.CreateGameInput, { id: playerId }: AuthInfo ) {
 		this.logger.debug( ">> createGame()" );
 
+		const { wordCount = 2, wordLength = 5, gameId = generateId() } = input;
 		const words: string[] = [];
 		for ( let i = 0; i < wordCount; i++ ) {
 			words.push( dictionary[ Math.floor( Math.random() * dictionary.length ) ] );
 		}
 
-		const game = {
-			id: generateId(),
-			playerId: authInfo.id,
-			words,
-			wordLength,
-			wordCount,
-			guesses: [],
-			completedWords: []
-		};
+		this.data = { id: gameId, playerId, wordLength, wordCount, words, guesses: [], completedWords: [] };
+		await this.saveGameData();
 
 		this.logger.debug( "<< createGame()" );
-		return game;
 	}
 
+	/**
+	 * Adds a guess to the game.
+	 * @param {Wordle.MakeGuessInput} input - The input containing the guess word.
+	 * @param {string} playerId - The ID of the player making the guess.
+	 */
 	async makeGuess( input: Wordle.MakeGuessInput, playerId: string ) {
 		this.logger.debug( ">> makeGuess()" );
 
-		const game = await this.getGameData( input.gameId );
-		if ( !game || game.playerId !== playerId ) {
+		if ( !this.data || this.data.playerId !== playerId ) {
 			this.logger.error( "Game Not Found!" );
 			throw "Game not found!";
 		}
 
-		if ( game.guesses.length >= game.wordLength + game.wordCount ) {
-			this.logger.error( "No More Guesses Left! GameId: %s", game.id );
+		if ( this.data.guesses.length >= this.data.wordLength + this.data.wordCount ) {
+			this.logger.error( "No More Guesses Left! GameId: %s", this.data.id );
 			throw "No More Guesses Left!";
 		}
 
 		if ( !dictionary.includes( input.guess ) ) {
-			this.logger.error( "The guess is not a valid word! GameId: %s", game.id );
+			this.logger.error( "The guess is not a valid word! GameId: %s", this.data.id );
 			throw "The guess is not a valid word!";
 		}
 
-		if ( !game.completedWords.includes( input.guess ) && game.words.includes( input.guess ) ) {
-			game.completedWords.push( input.guess );
+		if ( !this.data.completedWords.includes( input.guess ) && this.data.words.includes( input.guess ) ) {
+			this.data.completedWords.push( input.guess );
 		}
 
-		game.guesses.push( input.guess );
-		await this.state.storage.put( input.gameId, game );
+		this.data.guesses.push( input.guess );
+		await this.saveGameData();
 
 		this.logger.debug( "<< makeGuess()" );
-		return game;
+	}
+
+	/**
+	 * Saves the game data for a specific game ID.
+	 */
+	private async saveGameData() {
+		this.logger.debug( ">> saveGameData()" );
+		if ( this.data ) {
+			await env.WORDLE_KV.put( this.id, JSON.stringify( this.data ) );
+			this.logger.debug( "Game data saved for GameId: %s", this.id );
+		}
+		this.logger.debug( "<< saveGameData()" );
 	}
 }

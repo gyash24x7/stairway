@@ -33,6 +33,11 @@
 			"binding": "SESSION_KV",
 			"id": "15cd97e160d742a4869b45efe0163da1",
 			"preview_id": "stairway-session"
+		},
+		{
+			"binding": "WORDLE_KV",
+			"id": "b02426284b354ce19fdb31b61c9673cb",
+			"preview_id": "stairway-wordle"
 		}
 	],
 	// Durable Objects configuration
