@@ -1,5 +1,5 @@
-import { CARD_RANKS, CARD_SETS, SORTED_DECK, UPPER_CARD_RANKS } from "@/libs/cards/constants";
-import type { CardDisplay, CardId, CardRank, CardSet, CardSuit, PlayingCard } from "@/libs/cards/types";
+import { CARD_RANKS, SORTED_DECK } from "@/libs/cards/constants";
+import type { CardDisplay, CardId, CardRank, CardSuit, PlayingCard } from "@/libs/cards/types";
 import { chunk, shuffle } from "@/shared/utils/array";
 
 // Utility functions for card operations
@@ -33,7 +33,25 @@ export function getCardDisplayString( card: PlayingCard | CardId ): CardDisplay 
 	if ( typeof card === "string" ) {
 		card = getCardFromId( card );
 	}
-	return card.rank.concat( " of " ).concat( card.suit ) as CardDisplay;
+	return card.rank.concat( { C: "♣", S: "♠", H: "♥", D: "♦" }[ card.suit ] ) as CardDisplay;
+}
+
+/**
+ * Returns the image URL for a playing card based on its identifier or PlayingCard object.
+ * If the input is a PlayingCard object, it first converts it to a CardId.
+ *
+ * @example
+ * getCardImage({ rank: "A", suit: "H" }) // returns "https://deckofcardsapi.com/static/img/AH.png"
+ * getCardImage("AH") // returns "https://deckofcardsapi.com/static/img/AH.png"
+ *
+ * @param {PlayingCard | CardId} card Either a PlayingCard object or a string identifier of the card.
+ * @returns {string} URL of the card image
+ */
+export function getCardImage( card: PlayingCard | CardId ): string {
+	if ( typeof card !== "string" ) {
+		card = getCardId( card );
+	}
+	return `/cards/${ card }.svg`;
 }
 
 /**
@@ -52,31 +70,6 @@ export function getCardSuit( card: PlayingCard | CardId ): CardSuit {
 		return card.charAt( card.length - 1 ) as CardSuit;
 	}
 	return card.suit;
-}
-
-/**
- * Returns the set of a playing card based on its suit and rank.
- * The set is determined by whether the card's rank is in the upper or lower half of the ranks.
- *
- * @example
- * getCardSet({ rank: "A", suit: "H" }) // returns "UH" (Upper Hearts)
- * getCardSet("AH") // returns "UH" (Upper Hearts)
- *
- * @param {PlayingCard | string} card Either a PlayingCard object or a string identifier of the card.
- * @returns {CardSet} The set of the card, which can be one of the predefined card sets.
- */
-export function getCardSet( card: PlayingCard | CardId ): CardSet {
-	let temp = typeof card === "string" ? getCardFromId( card ) : card;
-	switch ( temp.suit ) {
-		case "H":
-			return UPPER_CARD_RANKS.includes( temp.rank ) ? CARD_SETS.UPPER_HEARTS : CARD_SETS.LOWER_HEARTS;
-		case "C":
-			return UPPER_CARD_RANKS.includes( temp.rank ) ? CARD_SETS.UPPER_CLUBS : CARD_SETS.LOWER_CLUBS;
-		case "D":
-			return UPPER_CARD_RANKS.includes( temp.rank ) ? CARD_SETS.UPPER_DIAMONDS : CARD_SETS.LOWER_DIAMONDS;
-		case "S":
-			return UPPER_CARD_RANKS.includes( temp.rank ) ? CARD_SETS.UPPER_SPADES : CARD_SETS.LOWER_SPADES;
-	}
 }
 
 /**
@@ -142,36 +135,8 @@ export function getCardFromId( id: CardId ): PlayingCard {
  * @param {PlayingCard[]} hand Optional hand of cards to filter from
  * @returns {PlayingCard[]} Cards of the specified suit
  */
-export function getCardsOfSuit( suit: CardSuit, hand?: PlayingCard[] ): PlayingCard[] {
-	return ( hand ?? SORTED_DECK ).filter( card => card.suit === suit );
-}
-
-/**
- * Returns all cards of a specific set from a hand or the entire sorted deck.
- * If no hand is provided, it defaults to using the sorted deck.
- *
- * @example
- * getCardsOfSet(CardSet.UPPER_HEARTS) // returns all Upper Hearts cards from the sorted deck
- * getCardsOfSet(CardSet.LOWER_CLUBS, hand) // returns all Lower Clubs cards from the provided hand
- *
- * @param {CardSet} set Card set to filter by
- * @param {PlayingCard[]} hand Optional hand of cards to filter from
- * @returns {PlayingCard[]} Cards of the specified set
- */
-export function getCardsOfSet( set: CardSet, hand?: PlayingCard[] ): PlayingCard[] {
-	return ( hand ?? SORTED_DECK ).filter( card => getCardSet( card ) === set );
-}
-
-/**
- * Returns a set of all unique card sets present in a hand.
- * @example
- * getSetsInHand( hand ) // returns a Set of card sets like {"LC", "UC", "LS", "US", "LD", "UD", "LH", "UH"}
- *
- * @param {PlayingCard[]} hand Array of PlayingCard objects representing the hand
- * @returns {Set<CardSet>} Set of unique card sets present in the hand
- */
-export function getSetsInHand( hand: PlayingCard[] ): Set<CardSet> {
-	return new Set( hand.map( getCardSet ) );
+export function getCardsOfSuit( suit: CardSuit, hand: PlayingCard[] = SORTED_DECK ): PlayingCard[] {
+	return hand.filter( card => card.suit === suit );
 }
 
 /**
@@ -179,39 +144,24 @@ export function getSetsInHand( hand: PlayingCard[] ): Set<CardSet> {
  * @example
  * getSuitsInHand( hand ) // returns a Set of suits like {"C", "D", "H", "S"}
  *
- * @param {PlayingCard[]} hand Array of PlayingCard objects representing the hand
+ * @param {Set<PlayingCard>} hand Array of PlayingCard objects representing the hand
  * @returns {Set<CardSuit>} Set of unique suits present in the hand
  */
-export function getSuitsInHand( hand: PlayingCard[] ): Set<CardSuit> {
-	return new Set( hand.map( card => card.suit ) );
+export function getSuitsInHand( hand: Set<PlayingCard> ): Set<CardSuit> {
+	return new Set( Array.from( hand ).map( card => card.suit ) );
 }
 
 /**
- * Checks if a specific card set is present in a hand.
+ * Checks if a specific card suit is present in a hand.
  * @example
- * isCardSetInHand( hand, CardSet.UPPER_HEARTS ) // returns true if Upper Hearts is in the hand
+ * isCardSuitInHand( hand, CardSuit.Hearts ) // returns true if Hearts is in the hand
  *
- * @param {PlayingCard[]} hand Array of PlayingCard objects representing the hand
- * @param {CardSet} set Card set to check for
- * @returns {boolean} True if the card set is present in the hand, false otherwise
+ * @param {Set<PlayingCard>} hand Array of PlayingCard objects representing the hand
+ * @param {CardSuit} suit Card suit to check for
+ * @returns {boolean} True if the card suit is present in the hand, false otherwise
  */
-export function isCardSetInHand( hand: PlayingCard[], set: CardSet ): boolean {
-	return getSetsInHand( hand ).has( set );
-}
-
-/**
- * Returns all cards of a specific set that are not present in the hand.
- * This is useful for determining which cards can be asked for in a game.
- *
- * @example
- * getAskableCardsOfSet( hand, CardSet.UPPER_HEARTS ) // returns all Upper Hearts cards not in the hand
- *
- * @param {PlayingCard[]} hand Array of PlayingCard objects representing the hand
- * @param {CardSet} set Card set to filter by
- * @returns {PlayingCard[]} Cards of the specified set that are not in the hand
- */
-export function getAskableCardsOfSet( hand: PlayingCard[], set: CardSet ): PlayingCard[] {
-	return getCardsOfSet( set ).filter( card => !hand.map( getCardId ).includes( getCardId( card ) ) );
+export function isCardSuitInHand( hand: Set<PlayingCard>, suit: CardSuit ): boolean {
+	return getSuitsInHand( hand ).has( suit );
 }
 
 /**
@@ -219,15 +169,12 @@ export function getAskableCardsOfSet( hand: PlayingCard[], set: CardSet ): Playi
  * @example
  * isCardInHand( hand, { rank: "A", suit: "H" } ) // returns true if Ace of Hearts is in the hand
  *
- * @param {PlayingCard[]} hand Array of PlayingCard objects representing the hand
- * @param {PlayingCard | CardId} card Card object or string identifier to check for
+ * @param {Set<PlayingCard>} hand Array of PlayingCard objects representing the hand
+ * @param {CardId} cardId Card id to check for
  * @returns {boolean} True if the card is present in the hand, false otherwise
  */
-export function isCardInHand( hand: PlayingCard[], card: PlayingCard | CardId ): boolean {
-	if ( typeof card === "string" ) {
-		return hand.map( getCardId ).includes( card );
-	}
-	return hand.map( getCardId ).includes( getCardId( card ) );
+export function isCardInHand( hand: PlayingCard[], cardId: CardId ): boolean {
+	return hand.map( getCardId ).includes( cardId );
 }
 
 /**
@@ -241,7 +188,7 @@ export function isCardInHand( hand: PlayingCard[], card: PlayingCard | CardId ):
  * @returns {PlayingCard[]} Sorted array of PlayingCard objects
  */
 export function getSortedHand( hand: PlayingCard[] ): PlayingCard[] {
-	return SORTED_DECK.filter( card => hand.map( getCardId ).includes( getCardId( card ) ) );
+	return SORTED_DECK.filter( card => isCardInHand( hand, getCardId( card ) ) );
 }
 
 /**
@@ -276,18 +223,6 @@ export function generateHands( deck: PlayingCard[], handCount: number ): Playing
 
 	const handSize = deck.length / handCount;
 	return chunk( deck, handSize );
-}
-
-/**
- * Removes cards from a hand based on a provided function.
- * If no hand is provided, it defaults to using the sorted deck.
- *
- * @param {(card: PlayingCard) => boolean} fn Function to determine which cards to remove
- * @param {PlayingCard[]} hand Optional hand of cards to filter from
- * @returns {PlayingCard[]} Array of PlayingCard objects that do not match the criteria defined by the function
- */
-export function removeCards( fn: ( card: PlayingCard ) => boolean, hand?: PlayingCard[] ): PlayingCard[] {
-	return ( hand ?? SORTED_DECK ).filter( card => !fn( card ) );
 }
 
 /**
@@ -402,7 +337,7 @@ export function getPlayableCards(
  * @returns {boolean} True if the card can be played, false otherwise
  */
 export function canCardBePlayed(
-	card: PlayingCard | CardId,
+	card: CardId,
 	hand: PlayingCard[],
 	trumpSuit: CardSuit,
 	cardsAlreadyPlayed: PlayingCard[],

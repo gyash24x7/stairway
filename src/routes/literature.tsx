@@ -1,5 +1,5 @@
-import { CreateGame } from "@/literature/components/create-game";
-import { JoinGame } from "@/literature/components/join-game";
+import { CreateGame } from "@/fish/components/create-game";
+import { JoinGame } from "@/fish/components/join-game";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
 import type { AppContext } from "@/worker";

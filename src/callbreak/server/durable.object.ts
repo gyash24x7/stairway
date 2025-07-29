@@ -15,8 +15,8 @@ import {
 	getCardSuit,
 	getPlayableCards,
 	isCardInHand,
-	removeCards
 } from "@/libs/cards/utils";
+import { remove } from "@/shared/utils/array";
 import { generateBotInfo, generateGameCode, generateId } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import { DurableObject } from "cloudflare:workers";
@@ -33,7 +33,7 @@ export class CallbreakDurableObject extends DurableObject {
 	}
 
 	async getGameData( gameId: string, playerId?: string ) {
-		this.logger.debug( ">> getGameData()" );
+		this.logger.debug( ">> getGameStore()" );
 
 		const data = await this.state.storage.get<Callbreak.GameData>( gameId );
 		if ( !data ) {
@@ -46,7 +46,7 @@ export class CallbreakDurableObject extends DurableObject {
 			throw "Player not part of this game!";
 		}
 
-		this.logger.debug( "<< getGameData()" );
+		this.logger.debug( "<< getGameStore()" );
 		return data;
 	}
 
@@ -300,7 +300,7 @@ export class CallbreakDurableObject extends DurableObject {
 		}
 
 		activeDeal.rounds[ 0 ] = activeRound;
-		activeDeal.hands[ playerInfo.id ] = removeCards(
+		activeDeal.hands[ playerInfo.id ] = remove(
 			card => getCardId( card ) === input.cardId,
 			activeDeal.hands[ playerInfo.id ]
 		);

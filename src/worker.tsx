@@ -18,7 +18,7 @@ import { defineApp } from "rwsdk/worker";
 
 export { RealtimeDurableObject } from "rwsdk/realtime/durableObject";
 export { WordleDurableObject } from "@/wordle/server/durable.object";
-export { LiteratureDurableObject } from "@/literature/server/durable.object";
+export { FishWorkflow } from "@/fish/server/workflow";
 export { CallbreakDurableObject } from "@/callbreak/server/durable.object";
 
 export type AppContext = {

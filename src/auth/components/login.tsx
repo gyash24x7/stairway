@@ -56,7 +56,7 @@ export function Login() {
 		window.location.href = url;
 	};
 
-	const passkeyRegister = async ( username: string ) => {
+	const passkeyRegister = async () => {
 		const { error, data } = await getRegistrationOptions( { username } );
 
 		if ( !!error || !data ) {
@@ -64,7 +64,7 @@ export function Login() {
 			return;
 		}
 
-		const response = await startRegistration( { optionsJSON: data } );
+		const response = await startRegistration( { optionsJSON: data } ).catch( error => console.log( error ) );
 		const { url, status } = await axios.post(
 			"/auth/registration",
 			{ username, name, response },
@@ -82,7 +82,7 @@ export function Login() {
 					alert( "Please enter a username and name to register." );
 					return;
 				} else {
-					void passkeyRegister( username );
+					void passkeyRegister();
 				}
 			} else if ( !username ) {
 				alert( "Please enter a username to login." );

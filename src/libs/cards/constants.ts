@@ -16,21 +16,7 @@ export const CARD_RANKS = {
 	KING: "K"
 } as const;
 
-export const LOWER_CARD_RANKS = Object.values( CARD_RANKS ).slice( 0, 6 );
-export const UPPER_CARD_RANKS = Object.values( CARD_RANKS ).slice( 6 );
-
 export const CARD_SUITS = { CLUBS: "C", SPADES: "S", HEARTS: "H", DIAMONDS: "D" } as const;
-
-export const CARD_SETS = {
-	LOWER_CLUBS: "LC",
-	UPPER_CLUBS: "UC",
-	LOWER_SPADES: "LS",
-	UPPER_SPADES: "US",
-	LOWER_DIAMONDS: "LD",
-	UPPER_DIAMONDS: "UD",
-	LOWER_HEARTS: "LH",
-	UPPER_HEARTS: "UH"
-} as const;
 
 export const SORTED_DECK: PlayingCard[] = Object.values( CARD_SUITS ).flatMap(
 	suit => Object.values( CARD_RANKS ).map( rank => ( { rank, suit } ) )

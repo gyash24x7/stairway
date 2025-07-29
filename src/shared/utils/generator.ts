@@ -1,13 +1,7 @@
 import type { AuthInfo } from "@/auth/types";
 import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { ulid } from "ulid";
-import { type Config, names, uniqueNamesGenerator } from "unique-names-generator";
-
-const namesConfig: Config = {
-	dictionaries: [ names ],
-	separator: " ",
-	length: 1
-};
+import { adjectives, names, uniqueNamesGenerator } from "unique-names-generator";
 
 /**
  * Generates a unique identifier using ULID.
@@ -22,7 +16,23 @@ export function generateId(): string {
  * @returns {string} A unique name.
  */
 export function generateName(): string {
-	return uniqueNamesGenerator( namesConfig );
+	return uniqueNamesGenerator( {
+		dictionaries: [ names ],
+		separator: " ",
+		length: 1
+	} );
+}
+
+/**
+ * Generates a unique teams name using the unique-names-generator package.
+ * @returns {string} A unique name.
+ */
+export function generateTeamName(): string {
+	return uniqueNamesGenerator( {
+		dictionaries: [ adjectives, names ],
+		separator: " ",
+		length: 2
+	} );
 }
 
 /**

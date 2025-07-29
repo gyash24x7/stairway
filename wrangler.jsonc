@@ -35,6 +35,11 @@
 			"preview_id": "stairway-session"
 		},
 		{
+			"binding": "FISH_KV",
+			"id": "15cd97e160d742a4869b45efe0163da1",
+			"preview_id": "stairway-literature"
+		},
+		{
 			"binding": "WORDLE_KV",
 			"id": "b02426284b354ce19fdb31b61c9673cb",
 			"preview_id": "stairway-wordle"
@@ -50,10 +55,6 @@
 			{
 				"name": "WORDLE_DURABLE_OBJECT",
 				"class_name": "WordleDurableObject"
-			},
-			{
-				"name": "LITERATURE_DURABLE_OBJECT",
-				"class_name": "LiteratureDurableObject"
 			},
 			{
 				"name": "CALLBREAK_DURABLE_OBJECT",
@@ -75,6 +76,13 @@
 				"LiteratureDurableObject",
 				"CallbreakDurableObject"
 			]
+		}
+	],
+	"workflows": [
+		{
+			"name": "fish",
+			"binding": "FISH_WORKFLOW",
+			"class_name": "FishWorkflow"
 		}
 	]
 }

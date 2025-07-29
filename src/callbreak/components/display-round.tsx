@@ -28,7 +28,7 @@ export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps
 						) }
 					>
 						<DisplayPlayer player={ players[ playerId ] } key={ playerId }/>
-						{ card && <DisplayCard rank={ card.rank } suit={ card.suit } focused/> }
+						{ card && <DisplayCard cardId={ cardId } focused/> }
 						{ !card && (
 							<div
 								className={ cn(
