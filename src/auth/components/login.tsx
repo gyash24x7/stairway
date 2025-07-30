@@ -58,6 +58,7 @@ export function Login() {
 
 	const passkeyRegister = async () => {
 		const { error, data } = await getRegistrationOptions( { username } );
+		console.log( error, data );
 
 		if ( !!error || !data ) {
 			console.error( "Failed to get registration options." );

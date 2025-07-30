@@ -47,32 +47,18 @@ export class WordleDurableObject extends DurableObject {
 	/**
 	 * Adds a guess to the game.
 	 * @param {Wordle.MakeGuessInput} input - The input containing the guess word.
-	 * @param {string} playerId - The ID of the player making the guess.
 	 */
-	async makeGuess( input: Wordle.MakeGuessInput, playerId: string ) {
+	async makeGuess( input: Wordle.MakeGuessInput ) {
 		this.logger.debug( ">> makeGuess()" );
 
-		if ( !this.data || this.data.playerId !== playerId ) {
-			this.logger.error( "Game Not Found!" );
-			throw "Game not found!";
-		}
+		if ( this.data ) {
+			if ( !this.data.completedWords.includes( input.guess ) && this.data.words.includes( input.guess ) ) {
+				this.data.completedWords.push( input.guess );
+			}
 
-		if ( this.data.guesses.length >= this.data.wordLength + this.data.wordCount ) {
-			this.logger.error( "No More Guesses Left! GameId: %s", this.data.id );
-			throw "No More Guesses Left!";
+			this.data.guesses.push( input.guess );
+			await this.saveGameData();
 		}
-
-		if ( !dictionary.includes( input.guess ) ) {
-			this.logger.error( "The guess is not a valid word! GameId: %s", this.data.id );
-			throw "The guess is not a valid word!";
-		}
-
-		if ( !this.data.completedWords.includes( input.guess ) && this.data.words.includes( input.guess ) ) {
-			this.data.completedWords.push( input.guess );
-		}
-
-		this.data.guesses.push( input.guess );
-		await this.saveGameData();
 
 		this.logger.debug( "<< makeGuess()" );
 	}

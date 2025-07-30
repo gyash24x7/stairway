@@ -1,5 +1,6 @@
 "use server";
 
+import { dictionary } from "@/libs/words/dictionary";
 import { generateId } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import { gameIdInput } from "@/shared/utils/validation";
@@ -21,19 +22,15 @@ const logger = createLogger( "Wordle:Functions" );
  */
 export async function createGame( input: Wordle.CreateGameInput ): Promise<DataResponse<string>> {
 	const authInfo = requestInfo.ctx.authInfo!;
-	try {
-		await parseAsync( createGameInputSchema, input );
 
-		const gameId = generateId();
-		const durableObjectId = env.WORDLE_DURABLE_OBJECT.idFromName( gameId );
+	await parseAsync( createGameInputSchema, input );
 
-		const stub = env.WORDLE_DURABLE_OBJECT.get( durableObjectId );
-		await stub.createGame( { ...input, gameId }, authInfo );
-		return { data: gameId };
-	} catch ( err ) {
-		logger.error( "Error creating game!", err );
-		return { error: ( err as Error ).message };
-	}
+	const gameId = generateId();
+	const durableObjectId = env.WORDLE_DURABLE_OBJECT.idFromName( gameId );
+
+	const stub = env.WORDLE_DURABLE_OBJECT.get( durableObjectId );
+	await stub.createGame( { ...input, gameId }, authInfo );
+	return { data: gameId };
 }
 
 /**
@@ -45,15 +42,10 @@ export async function createGame( input: Wordle.CreateGameInput ): Promise<DataR
  * @returns {Promise<DataResponse<Wordle.Game>>} response containing the game data or an error message
  * */
 export async function getGameData( gameId: string ): Promise<DataResponse<Wordle.Game>> {
-	try {
-		await parseAsync( gameIdInput, { gameId } );
-		const key = env.WORDLE_DURABLE_OBJECT.idFromName( gameId ).toString();
-		const data = await env.WORDLE_KV.get( key ).then( d => d ? JSON.parse( d ) as Wordle.Game : null );
-		return { data: data ?? undefined, error: !!data ? undefined : "Game not found" };
-	} catch ( err ) {
-		logger.error( "Error fetching game data", { error: err, gameId } );
-		return { error: "Failed to fetch game data. Please try again later." };
-	}
+	await parseAsync( gameIdInput, { gameId } );
+	const key = env.WORDLE_DURABLE_OBJECT.idFromName( gameId ).toString();
+	const data = await env.WORDLE_KV.get( key ).then( d => d ? JSON.parse( d ) as Wordle.Game : null );
+	return { data: data ?? undefined, error: !!data ? undefined : "Game not found" };
 }
 
 /**
@@ -66,14 +58,28 @@ export async function getGameData( gameId: string ): Promise<DataResponse<Wordle
  */
 export async function makeGuess( input: Wordle.MakeGuessInput ): Promise<ErrorOnlyResponse> {
 	const authInfo = requestInfo.ctx.authInfo!;
-	try {
-		await parseAsync( makeGuessInputSchema, input );
-		const durableObjectId = env.WORDLE_DURABLE_OBJECT.idFromName( input.gameId );
-		const stub = env.WORDLE_DURABLE_OBJECT.get( durableObjectId );
-		await stub.makeGuess( input, authInfo.id );
-		return { error: undefined };
-	} catch ( err ) {
-		logger.error( "Error making guess!", err );
-		return { error: ( err as Error ).message };
+
+	await parseAsync( makeGuessInputSchema, input );
+	const durableObjectId = env.WORDLE_DURABLE_OBJECT.idFromName( input.gameId );
+	const stub = env.WORDLE_DURABLE_OBJECT.get( durableObjectId );
+	const data = await env.WORDLE_KV.get( durableObjectId.toString() )
+		.then( d => d ? JSON.parse( d ) as Wordle.Game : null );
+
+	if ( !data || data.playerId !== authInfo.id ) {
+		logger.error( "Game Not Found!" );
+		return { error: "Game not found!" };
 	}
+
+	if ( data.guesses.length >= data.wordLength + data.wordCount ) {
+		logger.error( "No More Guesses Left! GameId: %s", data.id );
+		return { error: "No more guesses left!" };
+	}
+
+	if ( !dictionary.includes( input.guess ) ) {
+		logger.error( "The guess is not a valid word! GameId: %s", data.id );
+		return { error: "The guess is not a valid word!" };
+	}
+
+	await stub.makeGuess( input );
+	return { error: undefined };
 }

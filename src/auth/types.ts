@@ -23,10 +23,16 @@ export type Session = {
 	expiresAt: string;
 }
 
+export type SessionParts = {
+	unsignedSessionId: string;
+	signature: string;
+}
+
 export type SessionValidationResult = { session: Session, user: User };
 
 export type UsernameInput = {
 	username: string;
+	name?: string;
 }
 
 export type VerifyRegistrationInput = {

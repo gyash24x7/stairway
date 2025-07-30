@@ -26,17 +26,17 @@
 	"kv_namespaces": [
 		{
 			"binding": "WEBAUTHN_KV",
-			"id": "7ad7fc41c4d047fe8f6893e6cb1cd75a",
+			"id": "e9ca5b8a680c4535892ecd4947969a38",
 			"preview_id": "stairway-webauthn"
 		},
 		{
 			"binding": "SESSION_KV",
-			"id": "15cd97e160d742a4869b45efe0163da1",
+			"id": "a940d80d281c48aa99fc7b0531f88c47",
 			"preview_id": "stairway-session"
 		},
 		{
 			"binding": "FISH_KV",
-			"id": "15cd97e160d742a4869b45efe0163da1",
+			"id": "6f483f12ab2040618719310828ab4e53",
 			"preview_id": "stairway-literature"
 		},
 		{

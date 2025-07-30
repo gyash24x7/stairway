@@ -1,10 +1,8 @@
 import { loginVerificationInput, registrationVerificationInput } from "@/auth/server/inputs";
-import { createPasskey, getOrCreateUser } from "@/auth/server/repository";
+import { createPasskey, getOrCreateUser, updatePasskeyCounter } from "@/auth/server/repository";
+import { createSessionCookie } from "@/auth/server/utils";
 import { validatePasskeyExists, validateUserExists, validateWebAuthnOptions } from "@/auth/server/validators";
-import { generateSessionToken } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { sha256 } from "@oslojs/crypto/sha2";
-import { encodeHexLowerCase } from "@oslojs/encoding";
 import { verifyAuthenticationResponse, verifyRegistrationResponse } from "@simplewebauthn/server";
 import { env } from "cloudflare:workers";
 import * as cookie from "cookie";
@@ -56,7 +54,7 @@ export async function handleRegistrationVerification( { request }: RequestInfo )
 		} );
 		logger.info( "Passkey created for user:", user.id );
 
-		const headers = await startSession( passkey.userId );
+		const headers = await createSessionCookie( passkey.userId );
 		headers.set( "Location", "/" );
 		logger.info( "Session started and redirecting user:", user.id );
 
@@ -101,7 +99,13 @@ export async function handleLoginVerification( { request }: RequestInfo ): Promi
 		}
 		logger.info( "WebAuthn authentication verified for user:", user.username );
 
-		const headers = await startSession( user.id );
+		await updatePasskeyCounter( {
+			id: passkey.id,
+			userId: user.id,
+			counter: verification.authenticationInfo.newCounter
+		} );
+
+		const headers = await createSessionCookie( user.id );
 		headers.set( "Location", "/" );
 		logger.info( "Session started and redirecting user:", user.id );
 
@@ -135,31 +139,4 @@ export async function handleLogout( { ctx }: RequestInfo ): Promise<Response> {
 		logger.error( "Error during logout:", err );
 		return new Response( "Logout failed", { status: 500 } );
 	}
-}
-
-async function startSession( userId: string ): Promise<Headers> {
-	const expirationTtl = 60 * 60 * 24 * 30;
-	const token = generateSessionToken();
-	const sessionId = encodeHexLowerCase( sha256( new TextEncoder().encode( token ) ) );
-	const session = {
-		id: sessionId,
-		userId,
-		expiresAt: new Date( Date.now() + 1000 * expirationTtl )
-	};
-
-	await env.SESSION_KV.put( session.id, JSON.stringify( session ), { expirationTtl } );
-	logger.info( "Session stored in KV for user:", userId );
-
-	const headers = new Headers();
-	const sessionTokenCookie = cookie.serialize( "session-id", token, {
-		httpOnly: true,
-		sameSite: "lax",
-		secure: process.env[ "NODE_ENV" ] === "production",
-		expires: session.expiresAt,
-		path: "/"
-	} );
-
-	headers.set( "Set-Cookie", sessionTokenCookie );
-	logger.info( "Session cookie set for user:", userId, "Session ID:", session.id );
-	return headers;
 }

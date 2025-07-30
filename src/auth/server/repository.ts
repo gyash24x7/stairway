@@ -8,7 +8,7 @@ import { and, eq } from "drizzle-orm";
  * @param {string} username - The username of the user to retrieve.
  * @returns {Promise<User|undefined>} User object if found, otherwise undefined.
  */
-export async function getUserByUsername( username: string ): Promise<User> {
+export async function getUserByUsername( username: string ): Promise<User | undefined> {
 	const db = getDb();
 	return db.select().from( schema.users )
 		.where( eq( schema.users.username, username ) )
@@ -78,4 +78,18 @@ export async function createUser( data: typeof schema.users.$inferInsert ): Prom
 export async function createPasskey( data: typeof schema.passkeys.$inferInsert ): Promise<Passkey> {
 	const db = getDb();
 	return db.insert( schema.passkeys ).values( data ).returning().then( ( [ newPasskey ] ) => newPasskey );
+}
+
+/**
+ * Update the counter for a passkey.
+ * @param {Pick<Passkey, "id" | "userId" | "counter">} data - The passkey data containing id, userId, and new counter value.
+ * @returns {Promise<Passkey|undefined>} Returns the updated passkey object if successful, otherwise undefined.
+ */
+export async function updatePasskeyCounter( data: Pick<Passkey, "id" | "userId" | "counter"> ): Promise<Passkey | undefined> {
+	const db = getDb();
+	return db.update( schema.passkeys )
+		.set( { counter: data.counter } )
+		.where( and( eq( schema.passkeys.id, data.id ), eq( schema.passkeys.userId, data.userId ) ) )
+		.returning()
+		.then( ( [ updatedPasskey ] ) => updatedPasskey );
 }

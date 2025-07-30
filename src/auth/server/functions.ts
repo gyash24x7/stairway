@@ -2,11 +2,10 @@
 
 import { usernameInput } from "@/auth/server/inputs";
 import { getUserById, getUserByUsername, getUserPasskeys } from "@/auth/server/repository";
+import { EXPIRATION_TTL, getSessionCookie, isValidSessionId } from "@/auth/server/utils";
 import { validatePasskeys, validateUserExists } from "@/auth/server/validators";
-import type { Session, SessionValidationResult, UsernameInput } from "@/auth/types";
+import type { Passkey, Session, SessionValidationResult, UsernameInput } from "@/auth/types";
 import { createLogger } from "@/shared/utils/logger";
-import { sha256 } from "@oslojs/crypto/sha2";
-import { encodeHexLowerCase } from "@oslojs/encoding";
 import {
 	generateAuthenticationOptions,
 	generateRegistrationOptions,
@@ -14,7 +13,6 @@ import {
 	type PublicKeyCredentialRequestOptionsJSON
 } from "@simplewebauthn/server";
 import { env } from "cloudflare:workers";
-import * as cookie from "cookie";
 import { parseAsync } from "valibot";
 
 const logger = createLogger( "Auth:Functions" );
@@ -51,13 +49,16 @@ export async function checkIfUserExists( input: UsernameInput ): Promise<boolean
 export async function getRegistrationOptions( input: UsernameInput ): Promise<DataResponse<PublicKeyCredentialCreationOptionsJSON>> {
 	try {
 		await parseAsync( usernameInput, input );
+		let existingPasskeys = [] as Passkey[];
+
 		const user = await getUserByUsername( input.username );
-		if ( !user ) {
-			logger.info( "No user found for registration options:", input.username );
-			return { error: undefined, data: [] as any };
+		if ( user ) {
+			existingPasskeys = await getUserPasskeys( user.id );
 		}
-		const existingPasskeys = await getUserPasskeys( user.id );
+
 		const options = await generateRegistrationOptions( {
+			userID: user?.id ? new TextEncoder().encode( user.id ) : undefined,
+			userDisplayName: input.name,
 			rpID: env.WEBAUTHN_RP_ID,
 			rpName: env.APP_NAME,
 			userName: input.username,
@@ -97,6 +98,7 @@ export async function getLoginOptions( input: UsernameInput ): Promise<DataRespo
 		const existingPasskeys = await validatePasskeys( existingUser.id );
 		const options = await generateAuthenticationOptions( {
 			rpID: env.WEBAUTHN_RP_ID,
+			userVerification: "preferred",
 			allowCredentials: existingPasskeys.map( passkey => ( {
 				id: passkey.id,
 				type: "public-key" as const,
@@ -122,8 +124,9 @@ export async function getLoginOptions( input: UsernameInput ): Promise<DataRespo
  * If the session is expired or invalid, it throws an error.
  * This function also extends the session if it's about to expire within the next 15 days.
  *
- * @throws {Error} If the session token is not found.
- * @throws {Error} If no session is found for the token.
+ * @throws {Error} If the session id is not found.
+ * @throws {Error} If the session id is invalid.
+ * @throws {Error} If no session is found for the id.
  * @throws {Error} If no user is found for the session.
  * @throws {Error} If the session has expired.
  *
@@ -131,15 +134,18 @@ export async function getLoginOptions( input: UsernameInput ): Promise<DataRespo
  * @returns {Promise<SessionValidationResult>} - An object containing the session and user data if the session is valid.
  */
 export async function validateSessionToken( request: Request ): Promise<SessionValidationResult> {
-	const expirationTtl = 60 * 60 * 24 * 30;
-	const cookies = cookie.parse( request.headers.get( "Cookie" ) || "" );
-	const token = cookies[ "session-id" ];
-	if ( !token ) {
+	const sessionId = getSessionCookie( request );
+	if ( !sessionId ) {
 		logger.debug( "No session token found in cookies" );
 		throw new Error( "No session token found" );
 	}
 
-	const sessionId = encodeHexLowerCase( sha256( new TextEncoder().encode( token ) ) );
+	const isValid = await isValidSessionId( sessionId );
+	if ( !isValid ) {
+		logger.debug( "Invalid session token:", sessionId );
+		throw new Error( "Invalid session token" );
+	}
+
 	const v = await env.SESSION_KV.get( sessionId );
 	const session = v ? ( JSON.parse( v ) as Session ) : undefined;
 	if ( !session ) {
@@ -161,9 +167,9 @@ export async function validateSessionToken( request: Request ): Promise<SessionV
 		throw new Error( "Session expired" );
 	}
 
-	if ( Date.now() >= expiresAt.getTime() - 1000 * expirationTtl / 2 ) {
-		session.expiresAt = new Date( Date.now() + 1000 * expirationTtl ).toISOString();
-		await env.SESSION_KV.put( session.id, JSON.stringify( session ), { expirationTtl } );
+	if ( Date.now() >= expiresAt.getTime() - 1000 * EXPIRATION_TTL / 2 ) {
+		session.expiresAt = new Date( Date.now() + 1000 * EXPIRATION_TTL ).toISOString();
+		await env.SESSION_KV.put( session.id, JSON.stringify( session ), { expirationTtl: EXPIRATION_TTL } );
 		logger.info( "Session extended for user:", user.id );
 		return { session, user };
 	}
