@@ -1,24 +1,23 @@
 import { cn } from "@/shared/utils/cn";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
-import { Select as SelectPrimitive } from "radix-ui";
+import { Select as SelectPrimitive } from "@base-ui-components/react/select";
+import { Check, ChevronDown } from "lucide-react";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
 
 const {
-	Content,
 	Group,
 	Icon,
 	Item,
 	ItemIndicator,
 	ItemText,
-	Label,
+	Popup,
 	Portal,
+	Positioner,
 	Root,
-	ScrollDownButton,
-	ScrollUpButton,
+	ScrollDownArrow,
+	ScrollUpArrow,
 	Separator,
 	Trigger,
-	Value,
-	Viewport
+	Value
 } = SelectPrimitive;
 
 export const Select = Root;
@@ -28,102 +27,58 @@ export const SelectValue = Value;
 export const SelectTrigger = forwardRef<ComponentRef<typeof Trigger>, ComponentPropsWithoutRef<typeof Trigger>>(
 	( { className, children, ...props }, ref ) => (
 		<Trigger
-			ref={ ref }
 			className={ cn(
-				"flex h-10 w-full items-center text-main-foreground bg-main justify-between rounded-base",
-				"border-2 border-border px-3 py-2 text-sm font-base ring-offset-white",
-				"placeholder:text-main-foreground placeholder:opacity-50 focus:outline-hidden",
-				"disabled:cursor-not-allowed disabled:opacity-50 transition-all",
-				"[&>span]:line-clamp-1 cursor-pointer shadow-shadow",
-				"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none",
-				className
+				"flex h-10 min-w-36 items-center justify-between gap-3 rounded-md",
+				"border-2 border-border px-3 py-2 text-sm font-base select-none",
+				"bg-main shadow-shadow cursor-pointer"
 			) }
+			ref={ ref }
 			{ ...props }
 		>
-			{ children }
-			<Icon asChild>
-				<ChevronDown className={ "h-4 w-4" }/>
+			<Value/>
+			<Icon className="flex">
+				<ChevronDown/>
 			</Icon>
 		</Trigger>
 	)
 );
 
-export const SelectScrollUpButton = forwardRef<
-	ComponentRef<typeof ScrollUpButton>,
-	ComponentPropsWithoutRef<typeof ScrollUpButton>
->( ( { className, ...props }, ref ) => (
-	<ScrollUpButton
-		ref={ ref }
-		className={ cn(
-			"flex cursor-default text-main-foreground items-center justify-center py-1 font-base",
-			className
-		) }
-		{ ...props }
-	>
-		<ChevronUp className={ "h-4 w-4" }/>
-	</ScrollUpButton>
-) );
-
-export const SelectScrollDownButton = forwardRef<
-	ComponentRef<typeof ScrollDownButton>,
-	ComponentPropsWithoutRef<typeof ScrollDownButton>
->( ( { className, ...props }, ref ) => (
-	<ScrollDownButton
-		ref={ ref }
-		className={ cn(
-			"flex cursor-default text-main-foreground items-center justify-center py-1 font-base",
-			className
-		) }
-		{ ...props }
-	>
-		<ChevronDown className={ "h-4 w-4" }/>
-	</ScrollDownButton>
-) );
-
-export const SelectContent = forwardRef<ComponentRef<typeof Content>, ComponentPropsWithoutRef<typeof Content>>(
-	( { className, children, position = "popper", ...props }, ref ) => (
+export const SelectContent = forwardRef<ComponentRef<typeof Positioner>, ComponentPropsWithoutRef<typeof Positioner>>(
+	( { className, children, ...props }, ref ) => (
 		<Portal>
-			<Content
-				ref={ ref }
-				className={ cn(
-					"relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-base border-2",
-					"border-border bg-main font-base text-main-foreground data-[state=open]:animate-in",
-					"data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
-					"data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2",
-					"data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2",
-					"data-[side=top]:slide-in-from-bottom-2",
-					position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1",
-					position === "popper" && "data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-					className
-				) }
-				position={ position }
-				{ ...props }
-			>
-				<SelectScrollUpButton/>
-				<Viewport
+			<Positioner className="outline-none select-none z-10" sideOffset={ 8 } ref={ ref } { ...props }>
+				<ScrollUpArrow
 					className={ cn(
-						"p-1",
-						position === "popper" && "h-[var(--radix-select-trigger-height)]",
-						position === "popper" && "w-full min-w-[var(--radix-select-trigger-width)]"
+						"top-0 z-[1] flex h-4 w-full cursor-default items-center justify-center",
+						"rounded-mdbg-main text-center text-xs before:absolute before:top-[-100%]",
+						"before:left-0 before:h-full before:w-full before:content-['']",
+						"data-[direction=down]:bottom-0 data-[direction=down]:before:bottom-[-100%]"
+					) }/>
+				<Popup
+					className={ cn(
+						"group max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto",
+						"rounded-md py-1 text-gray-900 shadow-shadow bg-main border-border border-2",
+						"transition-[transform,scale,opacity] data-[ending-style]:scale-90",
+						"data-[ending-style]:opacity-0 data-[side=none]:data-[ending-style]:transition-none",
+						"data-[starting-style]:scale-90 data-[starting-style]:opacity-0",
+						"data-[side=none]:data-[starting-style]:scale-100",
+						"data-[side=none]:data-[starting-style]:opacity-100",
+						"data-[side=none]:data-[starting-style]:transition-none",
+						"dark:shadow-none dark:-outline-offset-1 dark:outline-gray-300"
 					) }
 				>
 					{ children }
-				</Viewport>
-			</Content>
+				</Popup>
+				<ScrollDownArrow
+					className={ cn(
+						"bottom-0 z-[1] flex h-4 w-full cursor-default items-center justify-center",
+						"rounded-md bg-[canvas] text-center text-xs before:absolute before:top-[-100%]",
+						"before:left-0 before:h-full before:w-full before:content-['']",
+						"data-[direction=down]:bottom-0 data-[direction=down]:before:bottom-[-100%]"
+					) }
+				/>
+			</Positioner>
 		</Portal>
-	)
-);
-
-export const SelectLabel = forwardRef<ComponentRef<typeof Label>, ComponentPropsWithoutRef<typeof Label>>(
-	( { className, ...props }, ref ) => (
-		<Label
-			ref={ ref }
-			className={ cn(
-				"border-2 border-transparent py-1.5 pl-8 pr-2 text-sm font-base text-main-foreground/80",
-				className
-			) }
-			{ ...props }
-		/>
 	)
 );
 
@@ -131,20 +86,24 @@ export const SelectItem = forwardRef<ComponentRef<typeof Item>, ComponentPropsWi
 	( { className, children, ...props }, ref ) => (
 		<Item
 			ref={ ref }
-			className={ cn(
-				"relative flex w-full text-main-foreground select-none items-center cursor-pointer",
-				"rounded-base border-2 border-transparent py-1.5 pl-8 pr-2 text-sm font-base",
-				"outline-none focus:border-border data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-				className
-			) }
 			{ ...props }
+			className={ cn(
+				"grid min-w-[var(--anchor-width)] cursor-default grid-cols-[1rem_1fr]",
+				"items-center gap-3 py-3 pl-2 pr-4 text-sm leading-4 outline-none",
+				"select-none group-data-[side=none]:min-w-[calc(var(--anchor-width)+1rem)]",
+				"group-data-[side=none]:pr-12 group-data-[side=none]:text-base",
+				"group-data-[side=none]:leading-4 data-[highlighted]:relative",
+				"data-[highlighted]:z-0 data-[highlighted]:text-gray-50",
+				"data-[highlighted]:before:absolute data-[highlighted]:before:inset-x-1",
+				"data-[highlighted]:before:inset-y-0 data-[highlighted]:before:z-[-1]",
+				"data-[highlighted]:before:rounded-sm data-[highlighted]:before:bg-gray-900",
+				"pointer-coarse:py-2.5 pointer-coarse:text-[0.925rem]"
+			) }
 		>
-			<span className={ "absolute left-2 flex h-3.5 w-3.5 items-center justify-center" }>
-				<ItemIndicator>
-					<Check className={ "h-4 w-4" }/>
-				</ItemIndicator>
-			</span>
-			<ItemText>{ children }</ItemText>
+			<ItemIndicator className="col-start-1">
+				<Check className="size-5"/>
+			</ItemIndicator>
+			<ItemText className="col-start-2">{ props.label }</ItemText>
 		</Item>
 	)
 );

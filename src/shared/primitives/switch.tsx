@@ -1,5 +1,5 @@
 import { cn } from "@/shared/utils/cn";
-import { Switch as SwitchPrimitive } from "radix-ui";
+import { Switch as SwitchPrimitive } from "@base-ui-components/react/switch";
 import type { ComponentProps } from "react";
 
 const { Root, Thumb } = SwitchPrimitive;

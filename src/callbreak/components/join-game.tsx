@@ -5,6 +5,7 @@ import { Button } from "@/shared/primitives/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -29,12 +30,13 @@ export function JoinGame() {
 
 	return (
 		<Dialog>
-			<DialogTrigger asChild>
+			<DialogTrigger>
 				<Button>JOIN GAME</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className={ "text-xl text-center" }>Join Game</DialogTitle>
+					<DialogDescription/>
 				</DialogHeader>
 				<Input
 					name={ "code" }

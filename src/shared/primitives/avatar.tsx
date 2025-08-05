@@ -1,5 +1,5 @@
 import { cn } from "@/shared/utils/cn";
-import { Avatar as AvatarPrimitive } from "radix-ui";
+import { Avatar as AvatarPrimitive } from "@base-ui-components/react/avatar";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
 
 const { Fallback, Image, Root } = AvatarPrimitive;

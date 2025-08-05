@@ -12,7 +12,14 @@ import {
 	DialogTitle,
 	DialogTrigger
 } from "@/shared/primitives/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/primitives/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue
+} from "@/shared/primitives/select";
 import { Spinner } from "@/shared/primitives/spinner";
 import { useStore } from "@tanstack/react-store";
 import { useState, useTransition } from "react";
@@ -32,7 +39,7 @@ export function StartGame() {
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
-			<DialogTrigger asChild>
+			<DialogTrigger>
 				<Button className={ "flex-1 max-w-lg" }>START GAME</Button>
 			</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
@@ -45,10 +52,11 @@ export function StartGame() {
 						onValueChange={ ( value ) => setType( value as FishBookType ) }
 					>
 						<SelectTrigger className={ "w-full" }>
-							<SelectValue placeholder={ "Select Deck Type" }/>
+							<SelectValue/>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="NORMAL">Normal Fish, Books grouped by ranks of size 4</SelectItem>
+							<SelectSeparator/>
 							<SelectItem value="CANANDIAN">Canadian Fish, Books grouped by suits of size 6</SelectItem>
 						</SelectContent>
 					</Select>
@@ -57,10 +65,11 @@ export function StartGame() {
 						onValueChange={ ( value ) => setDeckType( parseInt( value ) as DeckType ) }
 					>
 						<SelectTrigger className={ "w-full" }>
-							<SelectValue placeholder={ "Select Deck Type" }/>
+							<SelectValue/>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="48">48 Cards, 7s Removed</SelectItem>
+							<SelectSeparator/>
 							<SelectItem value="52">52 Cards</SelectItem>
 						</SelectContent>
 					</Select>

@@ -1,5 +1,4 @@
 import type { AuthInfo } from "@/auth/types";
-import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import { ulid } from "ulid";
 import { adjectives, names, uniqueNamesGenerator } from "unique-names-generator";
 
@@ -54,16 +53,6 @@ export function generateBotInfo(): AuthInfo {
 	const username = generateId();
 	const avatar = generateAvatar();
 	return { id, name, username, avatar };
-}
-
-/**
- * Generates a session token using a random byte array encoded in Base32.
- * @returns {string} A session token.
- */
-export function generateSessionToken(): string {
-	const bytes = new Uint8Array( 20 );
-	crypto.getRandomValues( bytes );
-	return encodeBase32LowerCaseNoPadding( bytes );
 }
 
 /**

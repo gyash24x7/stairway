@@ -8,6 +8,7 @@ import { Button } from "@/shared/primitives/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -34,12 +35,13 @@ export function CreateGame() {
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
-			<DialogTrigger asChild>
+			<DialogTrigger>
 				<Button>CREATE GAME</Button>
 			</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
 					<DialogTitle>Create Game</DialogTitle>
+					<DialogDescription/>
 				</DialogHeader>
 				<div className={ "flex flex-col gap-3" }>
 					<h2>Select Trump Suit</h2>

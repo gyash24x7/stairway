@@ -8,13 +8,21 @@ import { Button } from "@/shared/primitives/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DialogTrigger
 } from "@/shared/primitives/dialog";
 import { Input } from "@/shared/primitives/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/primitives/select";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectSeparator,
+	SelectTrigger,
+	SelectValue
+} from "@/shared/primitives/select";
 import { Spinner } from "@/shared/primitives/spinner";
 import { chunk, shuffle } from "@/shared/utils/array";
 import { useStore } from "@tanstack/react-store";
@@ -50,12 +58,13 @@ export function CreateTeams() {
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
-			<DialogTrigger asChild>
+			<DialogTrigger>
 				<Button className={ "flex-1 max-w-lg" }>CREATE TEAMS</Button>
 			</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
 					<DialogTitle>CREATE TEAMS</DialogTitle>
+					<DialogDescription/>
 				</DialogHeader>
 				<div className={ "flex flex-col gap-3" }>
 					<Select
@@ -63,13 +72,17 @@ export function CreateTeams() {
 						onValueChange={ ( value ) => setTeamCount( parseInt( value ) as FishTeamCount ) }
 					>
 						<SelectTrigger className={ "w-full" }>
-							<SelectValue placeholder={ "Select Team Count" }/>
+							<SelectValue/>
 						</SelectTrigger>
 						<SelectContent>
 							<SelectItem value="2">2 TEAMS</SelectItem>
+							<SelectSeparator/>
 							<SelectItem value="3">3 TEAMS</SelectItem>
+							<SelectSeparator/>
 							<SelectItem value="4">4 TEAMS</SelectItem>
+							<SelectSeparator/>
 							<SelectItem value="5">5 TEAMS</SelectItem>
+							<SelectSeparator/>
 							<SelectItem value="6">6 TEAMS</SelectItem>
 						</SelectContent>
 					</Select>

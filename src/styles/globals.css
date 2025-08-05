@@ -48,6 +48,10 @@
 	}
 }
 
+#root {
+	isolation: isolate;
+}
+
 @view-transition {
 	navigation: auto;
 }
