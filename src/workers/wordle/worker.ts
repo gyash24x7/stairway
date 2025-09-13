@@ -1,16 +1,18 @@
 import { dictionary } from "@/core/wordle/dictionary";
 import { engine } from "@/core/wordle/engine";
-import type { CreateGameInput, GameData, GameIdInput, MakeGuessInput } from "@/core/wordle/schema";
+import type { CreateGameInput, GameData, GameIdInput, MakeGuessInput, PlayerGameInfo } from "@/core/wordle/schema";
 import { createLogger } from "@/utils/logger";
 import type { AuthInfo } from "@/workers/auth/schema";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 export interface IWordleRPC extends WorkerEntrypoint {
-	getGameData( input: GameIdInput, authInfo: AuthInfo ): Promise<DataResponse<GameData | undefined>>;
+	getGameData( input: GameIdInput, authInfo: AuthInfo ): Promise<DataResponse<PlayerGameInfo | undefined>>;
 
-	createGame( input: CreateGameInput, authInfo: AuthInfo ): Promise<DataResponse<GameData>>;
+	createGame( input: CreateGameInput, authInfo: AuthInfo ): Promise<DataResponse<PlayerGameInfo>>;
 
-	makeGuess( input: MakeGuessInput, authInfo: AuthInfo ): Promise<DataResponse<GameData>>;
+	makeGuess( input: MakeGuessInput, authInfo: AuthInfo ): Promise<DataResponse<PlayerGameInfo>>;
+
+	getWords( input: GameIdInput, authInfo: AuthInfo ): Promise<DataResponse<string[]>>;
 }
 
 export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> implements IWordleRPC {
@@ -26,12 +28,13 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 
 		const data = await this.loadGameData( input.gameId );
 		const { error } = this.validateGameData( authInfo, data );
-		if ( error ) {
+		if ( error || !data ) {
 			return { error };
 		}
 
+		const { words, ...rest } = data;
 		this.logger.debug( "<< getGameData()" );
-		return { data };
+		return { data: rest };
 	}
 
 	async createGame( input: CreateGameInput, authInfo: AuthInfo ) {
@@ -39,7 +42,8 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 		const data = engine.createGame( input, authInfo.id );
 		await this.saveGameData( data );
 		this.logger.debug( "<< createGame()" );
-		return { data };
+		const { words, ...rest } = data;
+		return { data: rest };
 	}
 
 	async makeGuess( input: MakeGuessInput, authInfo: AuthInfo ) {
@@ -55,7 +59,21 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 		await this.saveGameData( updatedData );
 
 		this.logger.debug( "<< makeGuess()" );
-		return { data: updatedData };
+		const { words, ...rest } = updatedData;
+		return { data: rest };
+	}
+
+	async getWords( input: GameIdInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> getWords()" );
+
+		const data = await this.loadGameData( input.gameId );
+		const { error } = this.validateGetWords( authInfo, data );
+		if ( error || !data ) {
+			return { error };
+		}
+
+		this.logger.debug( "<< getWords()" );
+		return { data: data.words };
 	}
 
 	private validateGameData( authInfo: AuthInfo, data?: GameData ) {
@@ -64,6 +82,23 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 			return { error: "Game not found" };
 		}
 
+		return {};
+	}
+
+	private validateGetWords( authInfo: AuthInfo, data?: GameData ) {
+		this.logger.debug( ">> validateGetWords()" );
+
+		const { error } = this.validateGameData( authInfo, data );
+		if ( error || !data ) {
+			return { error };
+		}
+
+		if ( !data.completed ) {
+			this.logger.error( "Cannot show words before completion! GameId: %s", data.id );
+			return { error: "Cannot show words before completion!" };
+		}
+
+		this.logger.debug( "<< validateGetWords()" );
 		return {};
 	}
 

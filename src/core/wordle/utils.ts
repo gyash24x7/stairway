@@ -18,30 +18,15 @@ export function getAvailableLetters( guesses: string[] ): string[] {
 /**
  * Returns a map of words to their corresponding position data based on the current data state.
  * @param {GameData} data - The current data state containing words and guesses.
- * @param {string} currentGuess - The current guess being made by the player.
- * @returns {Record<string, PositionData[][]>} - A map where each key is a word and the value is an array of position data arrays.
+ * @returns {PositionData[][][]>} - Array of guess blocks for each word
  */
-export function getGuessBlocks( data: GameData, currentGuess: string ): Record<string, PositionData[][]> {
-	const map: Record<string, PositionData[][]> = {};
-	data.words.forEach( word => {
-		const completedIndex = data.guesses.indexOf( word );
-		map[ word ] = new Array( data.wordLength + data.wordCount ).fill( 0 ).map(
-			( _, i ) => i < data.guesses.length
-				? calculatePositions( word, data.guesses[ i ], completedIndex !== -1 && i > completedIndex )
-				: new Array( data.wordLength ).fill( 0 ).map( ( _, index ) => {
-					if ( completedIndex > -1 ) {
-						return { letter: "", state: "empty", index };
-					}
-
-					if ( i === data.guesses.length ) {
-						return { letter: currentGuess[ index ], state: "empty", index };
-					}
-
-					return { letter: "", state: "empty", index };
-				} )
-		);
+export function getGuessBlocks( { guesses, wordCount, wordLength, words }: GameData ): PositionData[][][] {
+	return words.map( word => {
+		const completedIndex = guesses.indexOf( word );
+		return new Array( wordLength + wordCount ).fill( 0 ).map( ( _, i ) => i < guesses.length
+			? calculatePositions( word, guesses[ i ], completedIndex !== -1 && i > completedIndex )
+			: new Array( wordLength ).fill( 0 ).map( ( _, index ) => ( { letter: "", state: "empty", index } ) ) );
 	} );
-	return map;
 }
 
 /**

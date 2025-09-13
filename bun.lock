@@ -80,7 +80,7 @@
 
     "@aws-sdk/credential-provider-process": ["@aws-sdk/credential-provider-process@3.888.0", "", { "dependencies": { "@aws-sdk/core": "3.888.0", "@aws-sdk/types": "3.887.0", "@smithy/property-provider": "^4.0.5", "@smithy/shared-ini-file-loader": "^4.0.5", "@smithy/types": "^4.5.0", "tslib": "^2.6.2" } }, "sha512-+aX6piSukPQ8DUS4JAH344GePg8/+Q1t0+kvSHAZHhYvtQ/1Zek3ySOJWH2TuzTPCafY4nmWLcQcqvU1w9+4Lw=="],
 
-    "@aws-sdk/credential-provider-sso": ["@aws-sdk/credential-provider-sso@3.888.0", "", { "dependencies": { "@aws-sdk/client-sso": "3.888.0", "@aws-sdk/core": "3.888.0", "@aws-sdk/token-providers": "3.888.0", "@aws-sdk/types": "3.887.0", "@smithy/property-provider": "^4.0.5", "@smithy/shared-ini-file-loader": "^4.0.5", "@smithy/types": "^4.5.0", "tslib": "^2.6.2" } }, "sha512-b1ZJji7LJ6E/j1PhFTyvp51in2iCOQ3VP6mj5H6f5OUnqn7efm41iNMoinKr87n0IKZw7qput5ggXVxEdPhouA=="],
+    "@aws-sdk/credential-provider-sso": ["@aws-sdk/credential-provider-sso@3.888.0", "", { "dependencies": { "@aws-sdk/client-sso": "3.888.0", "@aws-sdk/core": "3.888.0", "@aws-sdk/sessionId-providers": "3.888.0", "@aws-sdk/types": "3.887.0", "@smithy/property-provider": "^4.0.5", "@smithy/shared-ini-file-loader": "^4.0.5", "@smithy/types": "^4.5.0", "tslib": "^2.6.2" } }, "sha512-b1ZJji7LJ6E/j1PhFTyvp51in2iCOQ3VP6mj5H6f5OUnqn7efm41iNMoinKr87n0IKZw7qput5ggXVxEdPhouA=="],
 
     "@aws-sdk/credential-provider-web-identity": ["@aws-sdk/credential-provider-web-identity@3.888.0", "", { "dependencies": { "@aws-sdk/core": "3.888.0", "@aws-sdk/nested-clients": "3.888.0", "@aws-sdk/types": "3.887.0", "@smithy/property-provider": "^4.0.5", "@smithy/types": "^4.5.0", "tslib": "^2.6.2" } }, "sha512-7P0QNtsDzMZdmBAaY/vY1BsZHwTGvEz3bsn2bm5VSKFAeMmZqsHK1QeYdNsFjLtegnVh+wodxMq50jqLv3LFlA=="],
 
@@ -98,7 +98,7 @@
 
     "@aws-sdk/region-config-resolver": ["@aws-sdk/region-config-resolver@3.887.0", "", { "dependencies": { "@aws-sdk/types": "3.887.0", "@smithy/node-config-provider": "^4.2.1", "@smithy/types": "^4.5.0", "@smithy/util-config-provider": "^4.0.0", "@smithy/util-middleware": "^4.1.1", "tslib": "^2.6.2" } }, "sha512-VdSMrIqJ3yjJb/fY+YAxrH/lCVv0iL8uA+lbMNfQGtO5tB3Zx6SU9LEpUwBNX8fPK1tUpI65CNE4w42+MY/7Mg=="],
 
-    "@aws-sdk/token-providers": ["@aws-sdk/token-providers@3.888.0", "", { "dependencies": { "@aws-sdk/core": "3.888.0", "@aws-sdk/nested-clients": "3.888.0", "@aws-sdk/types": "3.887.0", "@smithy/property-provider": "^4.0.5", "@smithy/shared-ini-file-loader": "^4.0.5", "@smithy/types": "^4.5.0", "tslib": "^2.6.2" } }, "sha512-WA3NF+3W8GEuCMG1WvkDYbB4z10G3O8xuhT7QSjhvLYWQ9CPt3w4VpVIfdqmUn131TCIbhCzD0KN/1VJTjAjyw=="],
+    "@aws-sdk/sessionId-providers": ["@aws-sdk/sessionId-providers@3.888.0", "", { "dependencies": { "@aws-sdk/core": "3.888.0", "@aws-sdk/nested-clients": "3.888.0", "@aws-sdk/types": "3.887.0", "@smithy/property-provider": "^4.0.5", "@smithy/shared-ini-file-loader": "^4.0.5", "@smithy/types": "^4.5.0", "tslib": "^2.6.2" } }, "sha512-WA3NF+3W8GEuCMG1WvkDYbB4z10G3O8xuhT7QSjhvLYWQ9CPt3w4VpVIfdqmUn131TCIbhCzD0KN/1VJTjAjyw=="],
 
     "@aws-sdk/types": ["@aws-sdk/types@3.887.0", "", { "dependencies": { "@smithy/types": "^4.5.0", "tslib": "^2.6.2" } }, "sha512-fmTEJpUhsPsovQ12vZSpVTEP/IaRoJAMBGQXlQNjtCpkBp6Iq3KQDa/HDaPINE+3xxo6XvTdtibsNOd5zJLV9A=="],
 

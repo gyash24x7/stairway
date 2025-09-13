@@ -8,6 +8,7 @@
 		"deploy": "alchemy deploy",
 		"destroy": "alchemy destroy",
 		"dev": "alchemy dev",
+		"clean": "rm -rf ./node_modules/.vite",
 		"preview": "vite preview",
 		"migrate:new": "drizzle-kit generate"
 	},

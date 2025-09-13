@@ -31,15 +31,15 @@ export const router = os.router( {
 			deleteCookie( context.resHeaders, "auth_session" );
 		} ),
 
-		userExists: os.auth.userExists.handler( async ( { input, context } ) => handleRPCResponse(
+		userExists: os.auth.userExists.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.AUTH_WORKER.userExists( input )
 		) ),
 
-		getRegistrationOptions: os.auth.getRegistrationOptions.handler( async ( { input, context } ) => {
+		getRegistrationOptions: os.auth.getRegistrationOptions.handler( ( { input, context } ) => {
 			return handleRPCResponse( () => context.env.AUTH_WORKER.getRegistrationOptions( input ) );
 		} ),
 
-		getLoginOptions: os.auth.getLoginOptions.handler( async ( { input, context } ) => handleRPCResponse(
+		getLoginOptions: os.auth.getLoginOptions.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.AUTH_WORKER.getLoginOptions( input )
 		) ),
 
@@ -54,7 +54,7 @@ export const router = os.router( {
 			setCookie(
 				context.resHeaders,
 				"auth_session",
-				await sign( session.token, context.env.AUTH_SECRET_KEY ),
+				await sign( session.id, context.env.AUTH_SECRET_KEY ),
 				cookieOptions
 			);
 		} ),
@@ -70,32 +70,35 @@ export const router = os.router( {
 			setCookie(
 				context.resHeaders,
 				"auth_session",
-				await sign( session.token, context.env.AUTH_SECRET_KEY ),
+				await sign( session.id, context.env.AUTH_SECRET_KEY ),
 				cookieOptions
 			);
 		} )
 	},
 
 	wordle: {
-		createGame: os.wordle.createGame.handler( async ( { input, context } ) => handleRPCResponse(
+		createGame: os.wordle.createGame.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.WORDLE_WORKER.createGame( input, context.session?.authInfo! )
 		) ),
-		getGameData: os.wordle.getGameData.handler( async ( { input, context } ) => handleRPCResponse(
+		getGameData: os.wordle.getGameData.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.WORDLE_WORKER.getGameData( input, context.session?.authInfo! )
 		) ),
 		makeGuess: os.wordle.makeGuess.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.WORDLE_WORKER.makeGuess( input, context.session?.authInfo! )
+		) ),
+		getWords: os.wordle.getWords.handler( ( { input, context } ) => handleRPCResponse(
+			() => context.env.WORDLE_WORKER.getWords( input, context.session?.authInfo! )
 		) )
 	},
 
 	callbreak: {
-		createGame: os.callbreak.createGame.handler( async ( { input, context } ) => handleRPCResponse(
+		createGame: os.callbreak.createGame.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.CALLBREAK_WORKER.createGame( input, context.session?.authInfo! )
 		) ),
-		joinGame: os.callbreak.joinGame.handler( async ( { input, context } ) => handleRPCResponse(
+		joinGame: os.callbreak.joinGame.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.CALLBREAK_WORKER.joinGame( input, context.session?.authInfo! )
 		) ),
-		getGameData: os.callbreak.getGameData.handler( async ( { input, context } ) => handleRPCResponse(
+		getGameData: os.callbreak.getGameData.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.CALLBREAK_WORKER.getGameData( input, context.session?.authInfo! )
 		) ),
 		declareDealWins: os.callbreak.declareDealWins.handler( ( { input, context } ) => handleRPCResponse(
@@ -107,28 +110,28 @@ export const router = os.router( {
 	},
 
 	fish: {
-		createGame: os.fish.createGame.handler( async ( { input, context } ) => handleRPCResponse(
+		createGame: os.fish.createGame.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.createGame( input, context.session?.authInfo! )
 		) ),
-		getGameData: os.fish.getGameData.handler( async ( { input, context } ) => handleRPCResponse(
+		getGameData: os.fish.getGameData.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.getGameData( input, context.session?.authInfo! )
 		) ),
-		joinGame: os.fish.joinGame.handler( async ( { input, context } ) => handleRPCResponse(
+		joinGame: os.fish.joinGame.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.joinGame( input, context.session?.authInfo! )
 		) ),
-		createTeams: os.fish.createTeams.handler( async ( { input, context } ) => handleRPCResponse(
+		createTeams: os.fish.createTeams.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.createTeams( input, context.session?.authInfo! )
 		) ),
-		startGame: os.fish.startGame.handler( async ( { input, context } ) => handleRPCResponse(
+		startGame: os.fish.startGame.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.startGame( input, context.session?.authInfo! )
 		) ),
-		askCard: os.fish.askCard.handler( async ( { input, context } ) => handleRPCResponse(
+		askCard: os.fish.askCard.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.askCard( input, context.session?.authInfo! )
 		) ),
-		claimBook: os.fish.claimBook.handler( async ( { input, context } ) => handleRPCResponse(
+		claimBook: os.fish.claimBook.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.claimBook( input, context.session?.authInfo! )
 		) ),
-		transferTurn: os.fish.transferTurn.handler( async ( { input, context } ) => handleRPCResponse(
+		transferTurn: os.fish.transferTurn.handler( ( { input, context } ) => handleRPCResponse(
 			() => context.env.FISH_WORKER.transferTurn( input, context.session?.authInfo! )
 		) )
 	}

@@ -1,5 +1,6 @@
 import { dictionary } from "@/core/wordle/dictionary";
 import type { CreateGameInput, GameData } from "@/core/wordle/schema";
+import { getGuessBlocks } from "@/core/wordle/utils";
 import { generateId } from "@/utils/generator";
 import { createLogger } from "@/utils/logger";
 import { produce } from "immer";
@@ -32,9 +33,12 @@ function createGame( input: CreateGameInput, playerId: string ): GameData {
 		wordCount,
 		words,
 		guesses: [],
+		guessBlocks: [],
 		completedWords: [],
 		completed: false
 	};
+
+	game.guessBlocks = getGuessBlocks( game );
 
 	logger.debug( "<< createGame()" );
 	return game;
@@ -58,6 +62,7 @@ function makeGuess( guess: string, data: GameData ): GameData {
 		}
 
 		draft.guesses.push( guess );
+		draft.guessBlocks = getGuessBlocks( draft );
 		const allWordsGuessed = draft.words.every( word => draft.completedWords.includes( word ) );
 		const maxGuessesReached = draft.guesses.length >= ( draft.wordCount + draft.wordLength );
 

@@ -19,6 +19,7 @@ const LINES = [
 export function KeyboardKey( { letter }: { letter: string } ) {
 	const { currentGuess, game } = useStore( store );
 	const { mutateAsync, isPending } = useMutation( orpc.wordle.makeGuess.mutationOptions( {
+		onSuccess: ( game ) => store.setState( ( state ) => ( { ...state, game } ) ),
 		onSettled: () => resetCurrentGuess()
 	} ) );
 

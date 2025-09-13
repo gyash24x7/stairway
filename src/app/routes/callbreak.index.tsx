@@ -4,7 +4,7 @@ import { Separator } from "@/app/primitives/separator";
 import { cn } from "@/utils/cn";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 
-export const Route = createFileRoute( "/callbreak" )( {
+export const Route = createFileRoute( "/callbreak/" )( {
 	component: () => {
 		const rootRoute = getRouteApi( "__root__" );
 		const authInfo = rootRoute.useLoaderData();
@@ -58,6 +58,6 @@ export const Route = createFileRoute( "/callbreak" )( {
 					can play any card.
 				</p>
 			</div>
-		);
+		)
 	}
 } );

@@ -7,11 +7,19 @@ import {
 	length,
 	number,
 	object,
+	omit,
 	optional,
 	picklist,
 	pipe,
 	string
 } from "valibot";
+
+export type PositionData = InferInput<typeof positionDataSchema>;
+export const positionDataSchema = object( {
+	letter: string(),
+	state: picklist( [ "correct", "wrongPlace", "wrong", "empty" ] ),
+	index: number()
+} );
 
 export type GameData = InferInput<typeof gameDataSchema>;
 export const gameDataSchema = object( {
@@ -21,9 +29,13 @@ export const gameDataSchema = object( {
 	wordLength: pipe( number(), picklist( [ 5 ] ) ),
 	words: array( pipe( string(), length( 5 ) ) ),
 	guesses: array( pipe( string(), length( 5 ) ) ),
+	guessBlocks: array( array( array( positionDataSchema ) ) ),
 	completedWords: array( pipe( string(), length( 5 ) ) ),
 	completed: boolean()
 } );
+
+export type PlayerGameInfo = InferInput<typeof playerGameInfoSchema>;
+export const playerGameInfoSchema = omit( gameDataSchema, [ "words" ] );
 
 export type GameIdInput = { gameId: string };
 
@@ -39,9 +51,3 @@ export const makeGuessInputSchema = object( {
 	gameId: ulidSchema(),
 	guess: pipe( string(), length( 5 ) )
 } );
-
-export type PositionData = {
-	letter: string;
-	state: "correct" | "wrongPlace" | "wrong" | "empty";
-	index: number
-}

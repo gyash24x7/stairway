@@ -1,9 +1,9 @@
-import { CreateGame } from "@/app/components/fish/create-game";
+import { CreateGame } from "@/app/components/wordle/create-game";
 import { Separator } from "@/app/primitives/separator";
 import { cn } from "@/utils/cn";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 
-export const Route = createFileRoute( "/wordle" )( {
+export const Route = createFileRoute( "/wordle/" )( {
 	component: () => {
 		const rootRoute = getRouteApi( "__root__" );
 		const authInfo = rootRoute.useLoaderData();
@@ -29,6 +29,6 @@ export const Route = createFileRoute( "/wordle" )( {
 				</div>
 				<Separator/>
 			</div>
-		);
+		)
 	}
 } );
