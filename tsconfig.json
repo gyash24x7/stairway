@@ -9,6 +9,8 @@
 		"isolatedModules": true,
 		"jsx": "react-jsx",
 		"paths": {
+			"@/generated/prisma": [ "./prisma/generated/client" ],
+			"@alchemy/run": [ "./alchemy.run.ts" ],
 			"@/*": [ "./src/*" ]
 		},
 		"incremental": true,
@@ -16,14 +18,13 @@
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
 		"types": [
-			"node",
+			"bun-types",
 			"vitest/globals",
-			"./worker-configuration.d.ts",
-			"./types/rw.d.ts",
-			"./types/vite.d.ts"
+			"@cloudflare/workers-types",
+			"./types/env.d.ts"
 		],
 		"erasableSyntaxOnly": true
 	},
-	"include": [ "src", "tests", "vite.config.ts", "vitest.config.ts" ],
+	"include": [ "src", "tests", "vite.config.ts", "alchemy.run.ts" ],
 	"exclude": [ "node_modules" ]
 }

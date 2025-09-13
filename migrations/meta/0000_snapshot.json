@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "f4ea0287-0857-4505-9796-e584bb14bc64",
+	"id": "022c4045-19c4-403e-add3-58922039e07a",
 	"prevId": "00000000-0000-0000-0000-000000000000",
 	"tables": {
 		"auth_passkeys": {
@@ -14,22 +14,15 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"public_key": {
-					"name": "public_key",
-					"type": "blob",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"user_id": {
-					"name": "user_id",
+				"publicKey": {
+					"name": "publicKey",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
 				},
-				"webauthn_user_id": {
-					"name": "webauthn_user_id",
+				"webauthnUserId": {
+					"name": "webauthnUserId",
 					"type": "text",
 					"primaryKey": false,
 					"notNull": true,
@@ -42,37 +35,29 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"device_type": {
-					"name": "device_type",
-					"type": "text",
+				"createdAt": {
+					"name": "createdAt",
+					"type": "integer",
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false
 				},
-				"backed_up": {
-					"name": "backed_up",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false,
-					"default": 0
-				},
-				"transports": {
-					"name": "transports",
+				"userId": {
+					"name": "userId",
 					"type": "text",
 					"primaryKey": false,
-					"notNull": false,
+					"notNull": true,
 					"autoincrement": false
 				}
 			},
 			"indexes": { },
 			"foreignKeys": {
-				"auth_passkeys_user_id_auth_users_id_fk": {
-					"name": "auth_passkeys_user_id_auth_users_id_fk",
+				"auth_passkeys_userId_auth_users_id_fk": {
+					"name": "auth_passkeys_userId_auth_users_id_fk",
 					"tableFrom": "auth_passkeys",
 					"tableTo": "auth_users",
 					"columnsFrom": [
-						"user_id"
+						"userId"
 					],
 					"columnsTo": [
 						"id"
