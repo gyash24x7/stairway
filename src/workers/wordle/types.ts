@@ -32,3 +32,5 @@ export type MakeGuessInput = {
 	gameId: string;
 	guess: string;
 };
+
+export type SaveFn = ( data: GameData ) => Promise<void>;

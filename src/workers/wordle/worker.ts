@@ -1,7 +1,6 @@
 import { createLogger } from "@/utils/logger";
 import type { AuthInfo } from "@/workers/auth/types";
-import { dictionary } from "@/workers/wordle/dictionary";
-import { engine } from "@/workers/wordle/engine";
+import { WordleEngine } from "@/workers/wordle/engine.ts";
 import type { CreateGameInput, GameData, GameIdInput, MakeGuessInput, PlayerGameInfo } from "@/workers/wordle/types";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
@@ -19,108 +18,61 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 
 	private readonly logger = createLogger( "Wordle:RPC" );
 
-	constructor( ctx: ExecutionContext, env: WordleWorkerEnv ) {
-		super( ctx, env );
+	async createGame( input: CreateGameInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> createGame()" );
+		const engine = WordleEngine.create( input, authInfo.id, this.saveGameData );
+		await engine.saveGameData();
+		this.logger.debug( "<< createGame()" );
+		return { data: engine.getPlayerData() };
 	}
 
 	async getGameData( input: GameIdInput, authInfo: AuthInfo ) {
 		this.logger.debug( ">> getGameData()" );
-
-		const data = await this.loadGameData( input.gameId );
-		const { error } = this.validateGameData( authInfo, data );
-		if ( error || !data ) {
-			return { error };
-		}
-
-		const { words, ...rest } = data;
-		this.logger.debug( "<< getGameData()" );
-		return { data: rest };
-	}
-
-	async createGame( input: CreateGameInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> createGame()" );
-		const data = engine.createGame( input, authInfo.id );
-		await this.saveGameData( data );
-		this.logger.debug( "<< createGame()" );
-		const { words, ...rest } = data;
-		return { data: rest };
-	}
-
-	async makeGuess( input: MakeGuessInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> makeGuess()" );
-
-		const data = await this.loadGameData( input.gameId );
-		const { error } = this.validateMakeGuess( input, authInfo, data );
-		if ( error || !data ) {
-			return { error: error ?? "Invalid Game!" };
-		}
-
-		const updatedData = engine.makeGuess( input.guess, data );
-		await this.saveGameData( updatedData );
-
-		this.logger.debug( "<< makeGuess()" );
-		const { words, ...rest } = updatedData;
-		return { data: rest };
+		return this.initializeEngine( input.gameId, authInfo.id )
+			.then( data => ( { data: data.getPlayerData() } ) )
+			.catch( error => {
+				this.logger.error( "Error initializing engine:", error );
+				return { error: ( error as Error ).message };
+			} )
+			.finally( () => this.logger.debug( "<< getGameData()" ) );
 	}
 
 	async getWords( input: GameIdInput, authInfo: AuthInfo ) {
 		this.logger.debug( ">> getWords()" );
+		return this.initializeEngine( input.gameId, authInfo.id )
+			.then( data => ( { data: data.getWords() } ) )
+			.catch( error => {
+				this.logger.error( "Error initializing engine:", error );
+				return { error: ( error as Error ).message };
+			} )
+			.finally( () => this.logger.debug( "<< getWords()" ) );
 
-		const data = await this.loadGameData( input.gameId );
-		const { error } = this.validateGetWords( authInfo, data );
-		if ( error || !data ) {
-			return { error };
-		}
-
-		this.logger.debug( "<< getWords()" );
-		return { data: data.words };
 	}
 
-	private validateGameData( authInfo: AuthInfo, data?: GameData ) {
-		if ( !data || data.playerId !== authInfo.id ) {
+	async makeGuess( input: MakeGuessInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> makeGuess()" );
+		return this.initializeEngine( input.gameId, authInfo.id )
+			.then( async engine => {
+				engine.makeGuess( input.guess );
+				await engine.saveGameData();
+				return { data: engine.getPlayerData() };
+			} )
+			.catch( error => {
+				this.logger.error( "Error making a guess:", error );
+				return { error: ( error as Error ).message };
+			} )
+			.finally( () => this.logger.debug( "<< makeGuess()" ) );
+	}
+
+
+	private async initializeEngine( gameId: string, playerId: string ) {
+		const data = await this.loadGameData( gameId );
+		if ( !data || data.playerId !== playerId ) {
 			this.logger.error( "Game Not Found!" );
-			return { error: "Game not found" };
+			throw "Game not found";
 		}
 
-		return {};
-	}
-
-	private validateGetWords( authInfo: AuthInfo, data?: GameData ) {
-		this.logger.debug( ">> validateGetWords()" );
-
-		const { error } = this.validateGameData( authInfo, data );
-		if ( error || !data ) {
-			return { error };
-		}
-
-		if ( !data.completed ) {
-			this.logger.error( "Cannot show words before completion! GameId: %s", data.id );
-			return { error: "Cannot show words before completion!" };
-		}
-
-		this.logger.debug( "<< validateGetWords()" );
-		return {};
-	}
-
-	private validateMakeGuess( input: MakeGuessInput, authInfo: AuthInfo, data?: GameData ) {
-		this.logger.debug( ">> validateMakeGuess()" );
-
-		const { error } = this.validateGameData( authInfo, data );
-		if ( error || !data ) {
-			return { error };
-		}
-
-		if ( data.guesses.length >= data.wordLength + data.wordCount ) {
-			this.logger.error( "No More Guesses Left! GameId: %s", data.id );
-			return { error: "No more guesses left" };
-		}
-
-		if ( !dictionary.includes( input.guess ) ) {
-			this.logger.error( "The guess is not a valid word! GameId: %s", data.id );
-			return { error: "The guess is not a valid word" };
-		}
-
-		return {};
+		return new WordleEngine( data, this.saveGameData );
 	}
 
 	private async loadGameData( gameId: string ) {
