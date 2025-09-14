@@ -1,8 +1,8 @@
 "use client";
 
 import { store } from "@/app/components/wordle/store";
-import { dictionary } from "@/core/wordle/dictionary";
 import { cn } from "@/utils/cn";
+import { dictionary } from "@/workers/wordle/dictionary";
 import { useStore } from "@tanstack/react-store";
 
 function getBlockColor( state: string ) {

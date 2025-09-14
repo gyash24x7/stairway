@@ -1,8 +1,10 @@
-import type { CardId } from "@/core/cards/types";
-import { getCardFromId, isCardInHand } from "@/core/cards/utils";
-import { botEngine } from "@/core/fish/bot";
-import { GAME_STATUS } from "@/core/fish/constants";
-import { engine } from "@/core/fish/engine";
+import { chunk } from "@/utils/array";
+import type { CardId } from "@/utils/cards";
+import { getCardFromId, isCardInHand } from "@/utils/cards";
+import { generateTeamName } from "@/utils/generator";
+import { createLogger } from "@/utils/logger";
+import type { AuthInfo } from "@/workers/auth/types";
+import { engine } from "@/workers/fish/engine";
 import type {
 	AskEventInput,
 	ClaimEventInput,
@@ -17,12 +19,8 @@ import type {
 	StartGameInput,
 	TeamCount,
 	TransferEventInput
-} from "@/core/fish/schema";
-import { getBookForCard } from "@/core/fish/utils";
-import { chunk } from "@/utils/fns";
-import { generateTeamName } from "@/utils/generator";
-import { createLogger } from "@/utils/logger";
-import type { AuthInfo } from "@/workers/auth/schema";
+} from "@/workers/fish/types";
+import { GAME_STATUS, getBookForCard } from "@/workers/fish/utils";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 export interface IFishRPC extends WorkerEntrypoint {
@@ -512,14 +510,14 @@ export default class FishRPC extends WorkerEntrypoint<FishWorkerEnv> implements 
 				const currentPlayer = data.players[ data.currentTurn ];
 				if ( currentPlayer.isBot ) {
 					const playerGameInfo = this.getPlayerGameInfo( data, data.currentTurn );
-					const weightedBooks = botEngine.suggestBooks( playerGameInfo );
+					const weightedBooks = engine.suggestBooks( playerGameInfo );
 
 					const isLastMoveSuccessfulClaim = data.lastMoveType === "claim"
 						&& data.claimHistory[ 0 ]?.success
 						&& data.claimHistory[ 0 ]?.playerId === data.currentTurn;
 
 					if ( isLastMoveSuccessfulClaim ) {
-						const weightedTransfers = botEngine.suggestTransfers( weightedBooks, playerGameInfo );
+						const weightedTransfers = engine.suggestTransfers( weightedBooks, playerGameInfo );
 						if ( weightedTransfers.length > 0 ) {
 							const transferTo = weightedTransfers[ 0 ].transferTo;
 							this.logger.info( "Bot %s transferring turn to %s", currentPlayer.id, transferTo );
@@ -534,7 +532,7 @@ export default class FishRPC extends WorkerEntrypoint<FishWorkerEnv> implements 
 
 					this.logger.info( "Bot %s skipping transfer!", currentPlayer.id );
 
-					const weightedClaims = botEngine.suggestClaims( weightedBooks, playerGameInfo );
+					const weightedClaims = engine.suggestClaims( weightedBooks, playerGameInfo );
 					if ( weightedClaims.length > 0 ) {
 						const claim = weightedClaims[ 0 ].claim;
 						this.logger.info( "Bot %s claiming book with cards: %o", currentPlayer.id, claim );
@@ -548,7 +546,7 @@ export default class FishRPC extends WorkerEntrypoint<FishWorkerEnv> implements 
 
 					this.logger.info( "Bot %s skipping claim!", currentPlayer.id );
 
-					const weightedAsks = botEngine.suggestAsks( weightedBooks, playerGameInfo );
+					const weightedAsks = engine.suggestAsks( weightedBooks, playerGameInfo );
 					if ( weightedAsks.length > 0 ) {
 						const { playerId, cardId } = weightedAsks[ 0 ];
 						this.logger.info( "Bot %s asking %s for card %s", currentPlayer.id, playerId, cardId );

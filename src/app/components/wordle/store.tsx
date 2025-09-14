@@ -1,6 +1,6 @@
 "use client";
 
-import type { PlayerGameInfo } from "@/core/wordle/schema";
+import type { PlayerGameInfo } from "@/workers/wordle/types";
 import { Store } from "@tanstack/react-store";
 import { produce } from "immer";
 import { Fragment, type ReactNode, useEffect } from "react";

@@ -1,8 +1,8 @@
 "use client";
 
 import { DisplayPlayer } from "@/app/components/shared/display-player";
-import type { Player } from "@/core/fish/schema";
 import { cn } from "@/utils/cn";
+import type { Player } from "@/workers/fish/types";
 import type { Dispatch, SetStateAction } from "react";
 
 export type SelectPlayerProps = {

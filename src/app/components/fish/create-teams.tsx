@@ -23,8 +23,8 @@ import {
 	SelectValue
 } from "@/app/primitives/select";
 import { Spinner } from "@/app/primitives/spinner";
-import type { TeamCount } from "@/core/fish/schema";
-import { chunk, shuffle } from "@/utils/fns";
+import { chunk, shuffle } from "@/utils/array";
+import type { TeamCount } from "@/workers/fish/types";
 import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";

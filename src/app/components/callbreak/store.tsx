@@ -1,6 +1,6 @@
 "use client";
 
-import type { PlayerGameInfo } from "@/core/callbreak/schema";
+import type { PlayerGameInfo } from "@/workers/callbreak/types";
 import { Store } from "@tanstack/react-store";
 import { Fragment, type ReactNode, useEffect } from "react";
 

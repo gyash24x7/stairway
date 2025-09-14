@@ -2,7 +2,7 @@
 
 import { orpc } from "@/app/client/orpc";
 import { DisplayCardSuit } from "@/app/components/shared/display-card";
-import { Button } from "@/app/primitives/button";
+import { Button, buttonVariants } from "@/app/primitives/button";
 import {
 	Dialog,
 	DialogContent,
@@ -13,8 +13,8 @@ import {
 	DialogTrigger
 } from "@/app/primitives/dialog";
 import { Spinner } from "@/app/primitives/spinner";
-import { CARD_SUITS } from "@/core/cards/constants";
-import type { CardSuit } from "@/core/cards/types";
+import type { CardSuit } from "@/utils/cards";
+import { CARD_SUITS } from "@/utils/cards";
 import { cn } from "@/utils/cn";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -36,9 +36,7 @@ export function CreateGame() {
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
-			<DialogTrigger>
-				<Button>CREATE GAME</Button>
-			</DialogTrigger>
+			<DialogTrigger className={ buttonVariants() }>CREATE GAME</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
 					<DialogTitle>Create Game</DialogTitle>

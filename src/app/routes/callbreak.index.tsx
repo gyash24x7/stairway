@@ -58,6 +58,6 @@ export const Route = createFileRoute( "/callbreak/" )( {
 					can play any card.
 				</p>
 			</div>
-		)
+		);
 	}
 } );

@@ -1,16 +1,14 @@
 import { generateSecureRandomString } from "@/utils/generator";
 import { createLogger } from "@/utils/logger";
-import { type AuthInfo, authInfoSchema } from "@/workers/auth/schema";
-import { type InferInput, number, object, string } from "valibot";
+import type { AuthInfo } from "@/workers/auth/types";
 
 const logger = createLogger( "Web:Session" );
 
-export type Session = InferInput<typeof sessionSchema>;
-export const sessionSchema = object( {
-	id: string(),
-	authInfo: authInfoSchema,
-	createdAt: number()
-} );
+export type Session = {
+	id: string;
+	authInfo: AuthInfo;
+	createdAt: number;
+}
 
 export async function createSession( authInfo: AuthInfo ) {
 	const sessionId = generateSecureRandomString();

@@ -13,7 +13,7 @@ import {
 	SelectValue
 } from "@/app/primitives/select";
 import { Spinner } from "@/app/primitives/spinner";
-import type { BookType, DeckType } from "@/core/fish/schema";
+import type { BookType, DeckType } from "@/workers/fish/types";
 import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";

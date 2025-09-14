@@ -1,6 +1,6 @@
 import { DisplayCard } from "@/app/components/shared/display-card";
-import type { PlayingCard } from "@/core/cards/types";
-import { getCardId, getSortedHand } from "@/core/cards/utils";
+import type { PlayingCard } from "@/utils/cards";
+import { getCardId, getSortedHand } from "@/utils/cards";
 
 export function DisplayHand( { hand }: { hand: PlayingCard[] } ) {
 	return (

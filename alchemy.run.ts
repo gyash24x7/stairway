@@ -54,7 +54,7 @@ export const callbreakWorker = await Worker( "callbreak", {
 	compatibilityFlags: [ "nodejs_compat" ],
 	rpc: type<ICallbreakRPC>,
 	bindings: {
-		CALLBREAK_KV: callbreakKV
+		KV: callbreakKV
 	}
 } );
 

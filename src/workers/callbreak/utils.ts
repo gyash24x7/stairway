@@ -1,5 +1,5 @@
-import type { CardId, CardSuit, PlayingCard } from "@/core/cards/types";
-import { compareCards, getCardId, getCardsOfSuit, isCardInHand } from "@/core/cards/utils";
+import type { CardId, CardSuit, PlayingCard } from "@/utils/cards";
+import { compareCards, getCardId, getCardsOfSuit, isCardInHand } from "@/utils/cards";
 
 /**
  * Returns the best card played in a round based on the trump suit and the round suit.

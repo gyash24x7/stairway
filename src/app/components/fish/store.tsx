@@ -1,4 +1,4 @@
-import type { Book, BookState, PlayerGameInfo } from "@/core/fish/schema";
+import type { Book, BookState, PlayerGameInfo } from "@/workers/fish/types";
 import { Store } from "@tanstack/react-store";
 import { Fragment, type ReactNode, useEffect } from "react";
 

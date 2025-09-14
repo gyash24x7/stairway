@@ -1,7 +1,7 @@
 "use client";
 
 import { orpc } from "@/app/client/orpc";
-import { Button } from "@/app/primitives/button";
+import { Button, buttonVariants } from "@/app/primitives/button";
 import {
 	Dialog,
 	DialogContent,
@@ -28,9 +28,7 @@ export function JoinGame() {
 
 	return (
 		<Dialog>
-			<DialogTrigger>
-				<Button>JOIN GAME</Button>
-			</DialogTrigger>
+			<DialogTrigger className={ buttonVariants() }>JOIN GAME</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
 					<DialogTitle className={ "font-bold" }>JOIN GAME</DialogTitle>

@@ -3,9 +3,8 @@
 import { orpc } from "@/app/client/orpc";
 import { backspaceCurrentGuess, resetCurrentGuess, store, updateCurrentGuess } from "@/app/components/wordle/store";
 import { Spinner } from "@/app/primitives/spinner";
-import { dictionary } from "@/core/wordle/dictionary";
-import { getAvailableLetters } from "@/core/wordle/utils";
 import { cn } from "@/utils/cn";
+import { dictionary } from "@/workers/wordle/dictionary";
 import { useMutation } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import { DeleteIcon, LogOutIcon } from "lucide-react";
@@ -15,6 +14,16 @@ const LINES = [
 	[ "a", "s", "d", "f", "g", "h", "j", "k", "l" ],
 	[ "enter", "z", "x", "c", "v", "b", "n", "m", "back" ]
 ];
+
+function getAvailableLetters( guesses: string[] ): string[] {
+	let letters = "abcdefghijklmnopqrstuvwxyz".split( "" );
+	for ( const guess of guesses ) {
+		for ( const letter of guess.toLowerCase().split( "" ) ) {
+			letters = letters.filter( ( l ) => l !== letter );
+		}
+	}
+	return letters;
+}
 
 export function KeyboardKey( { letter }: { letter: string } ) {
 	const { currentGuess, game } = useStore( store );

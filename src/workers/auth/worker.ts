@@ -1,18 +1,19 @@
 import { createLogger } from "@/utils/logger";
+import { passkeys, users } from "@/workers/auth/schema";
 import type {
 	AuthInfo,
-	GetAuthOptionsInput,
+	LoginOptions,
+	NameInput,
+	RegistrationOptions,
+	UsernameInput,
 	VerifyLoginInput,
 	VerifyRegistrationInput,
 	WebauthnOptions
-} from "@/workers/auth/schema";
-import { passkeys, users } from "@/workers/auth/schema";
+} from "@/workers/auth/types";
 import {
 	type AuthenticationResponseJSON,
 	generateAuthenticationOptions,
 	generateRegistrationOptions,
-	type PublicKeyCredentialCreationOptionsJSON,
-	type PublicKeyCredentialRequestOptionsJSON,
 	type RegistrationResponseJSON,
 	verifyAuthenticationResponse,
 	verifyRegistrationResponse
@@ -24,9 +25,9 @@ import { drizzle, DrizzleD1Database } from "drizzle-orm/d1";
 export interface IAuthRPC extends WorkerEntrypoint {
 	userExists( username: string ): Promise<DataResponse<{ exists: boolean }>>;
 
-	getRegistrationOptions( input: GetAuthOptionsInput ): Promise<DataResponse<PublicKeyCredentialCreationOptionsJSON>>;
+	getRegistrationOptions( input: UsernameInput & NameInput ): Promise<DataResponse<RegistrationOptions>>;
 
-	getLoginOptions( input: GetAuthOptionsInput ): Promise<DataResponse<PublicKeyCredentialRequestOptionsJSON>>;
+	getLoginOptions( input: UsernameInput ): Promise<DataResponse<LoginOptions>>;
 
 	verifyRegistration( input: VerifyRegistrationInput ): Promise<DataResponse<AuthInfo>>;
 
@@ -35,7 +36,7 @@ export interface IAuthRPC extends WorkerEntrypoint {
 
 export default class AuthRPC extends WorkerEntrypoint<AuthWorkerEnv> implements IAuthRPC {
 
-	private readonly logger = createLogger( "Auth:Rpc" );
+	private readonly logger = createLogger( "Auth:RPC" );
 	private readonly db: DrizzleD1Database<{ users: typeof users, passkeys: typeof passkeys }>;
 
 	constructor( ctx: ExecutionContext, env: AuthWorkerEnv ) {
@@ -50,7 +51,7 @@ export default class AuthRPC extends WorkerEntrypoint<AuthWorkerEnv> implements 
 		return { data: { exists: !!user }, error: undefined };
 	}
 
-	async getRegistrationOptions( input: GetAuthOptionsInput ) {
+	async getRegistrationOptions( input: UsernameInput & NameInput ) {
 		this.logger.debug( ">> getRegistrationOptions()" );
 
 		if ( !input.name ) {
@@ -78,7 +79,7 @@ export default class AuthRPC extends WorkerEntrypoint<AuthWorkerEnv> implements 
 		return { data: options };
 	}
 
-	async getLoginOptions( input: GetAuthOptionsInput ) {
+	async getLoginOptions( input: UsernameInput ) {
 		this.logger.debug( ">> getLoginOptions()" );
 
 		const user = await this.db.query.users.findFirst( {

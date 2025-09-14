@@ -1,11 +1,53 @@
-import { dictionary } from "@/core/wordle/dictionary";
-import type { CreateGameInput, GameData } from "@/core/wordle/schema";
-import { getGuessBlocks } from "@/core/wordle/utils";
 import { generateId } from "@/utils/generator";
 import { createLogger } from "@/utils/logger";
+import { dictionary } from "@/workers/wordle/dictionary";
+import type { CreateGameInput, GameData, PositionData } from "@/workers/wordle/types";
 import { produce } from "immer";
 
 const logger = createLogger( "Wordle:Engine" );
+
+/**
+ * Returns a map of words to their corresponding position data based on the current data state.
+ * @param {GameData} data - The current data state containing words and guesses.
+ * @returns {PositionData[][][]>} - Array of guess blocks for each word
+ */
+function getGuessBlocks( { guesses, wordCount, wordLength, words }: GameData ): PositionData[][][] {
+	return words.map( word => {
+		const completedIndex = guesses.indexOf( word );
+		return new Array( wordLength + wordCount ).fill( 0 ).map( ( _, i ) => i < guesses.length
+			? calculatePositions( word, guesses[ i ], completedIndex !== -1 && i > completedIndex )
+			: new Array( wordLength ).fill( 0 ).map( ( _, index ) => ( { letter: "", state: "empty", index } ) ) );
+	} );
+}
+
+/**
+ * Calculates the positions of letters in a word based on the input string.
+ * @param {string} word - The target word to compare against.
+ * @param {string} input - The player's input string.
+ * @param {boolean} isCompleted - Indicates if the word has already been guessed correctly.
+ * @returns {PositionData[]} - An array of position data for each letter in the input.
+ */
+function calculatePositions( word: string, input: string, isCompleted: boolean = false ): PositionData[] {
+	const correctLetters = word.toLowerCase().split( "" );
+	const inputLetters = input.toLowerCase().split( "" );
+
+	if ( isCompleted ) {
+		return inputLetters.map( ( _, index ) => ( { letter: "", state: "empty", index } ) );
+	}
+
+	let remainingCharacters = [ ...correctLetters ];
+	return inputLetters.map( ( letter, index ) => {
+		let state: PositionData["state"] = "wrong";
+		if ( correctLetters[ index ] === letter ) {
+			state = "correct";
+			remainingCharacters.splice( remainingCharacters.indexOf( letter ), 1 );
+		} else if ( remainingCharacters.includes( letter ) ) {
+			state = "wrongPlace";
+			remainingCharacters.splice( remainingCharacters.indexOf( letter ), 1 );
+		}
+		return { letter, state, index };
+	} );
+}
 
 /**
  * Creates a new Wordle game with the specified parameters.

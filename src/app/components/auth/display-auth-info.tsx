@@ -3,7 +3,7 @@
 import { LogoutButton } from "@/app/components/auth/logout-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/primitives/avatar";
 import { Card, CardContent } from "@/app/primitives/card";
-import type { AuthInfo } from "@/workers/auth/schema";
+import type { AuthInfo } from "@/workers/auth/types";
 
 export function DisplayAuthInfo( { authInfo }: { authInfo: AuthInfo } ) {
 	return (

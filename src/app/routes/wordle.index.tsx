@@ -29,6 +29,6 @@ export const Route = createFileRoute( "/wordle/" )( {
 				</div>
 				<Separator/>
 			</div>
-		)
+		);
 	}
 } );

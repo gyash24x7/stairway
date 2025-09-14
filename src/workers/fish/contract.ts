@@ -1,24 +1,55 @@
-import {
-	askEventInputSchema,
-	claimEventInputSchema,
-	createGameInputSchema,
-	createTeamsInputSchema,
-	joinGameInputSchema,
-	playerGameInfoSchema,
-	startGameInputSchema,
-	transferEventInputSchema
-} from "@/core/fish/schema";
-import { gameIdSchema } from "@/utils/schema";
+import { CARD_IDS } from "@/utils/cards";
+import type { PlayerGameInfo } from "@/workers/fish/types";
 import { oc } from "@orpc/contract";
-import { void_ } from "valibot";
+import { array, custom, length, object, optional, picklist, pipe, record, string, trim, ulid, void_ } from "valibot";
 
 export const contract = {
-	createGame: oc.input( createGameInputSchema ).output( gameIdSchema() ),
-	joinGame: oc.input( joinGameInputSchema ).output( gameIdSchema() ),
-	getGameData: oc.input( gameIdSchema() ).output( playerGameInfoSchema ),
-	createTeams: oc.input( createTeamsInputSchema ).output( void_() ),
-	startGame: oc.input( startGameInputSchema ).output( void_() ),
-	askCard: oc.input( askEventInputSchema ).output( void_() ),
-	claimBook: oc.input( claimEventInputSchema ).output( void_() ),
-	transferTurn: oc.input( transferEventInputSchema ).output( void_() )
+	createGame: oc
+		.input( object( { playerCount: optional( picklist( [ 3, 4, 6, 8 ] ) ) } ) )
+		.output( object( { gameId: pipe( string(), ulid() ) } ) ),
+
+	joinGame: oc
+		.input( object( { code: pipe( string(), trim(), length( 6 ) ) } ) )
+		.output( object( { gameId: pipe( string(), ulid() ) } ) ),
+
+	getGameData: oc
+		.input( object( { gameId: pipe( string(), ulid() ) } ) )
+		.output( custom<PlayerGameInfo>( () => true ) ),
+
+	createTeams: oc
+		.input( object( {
+			gameId: pipe( string(), ulid() ),
+			data: record( string(), array( pipe( string(), ulid() ) ) )
+		} ) )
+		.output( void_() ),
+
+	startGame: oc
+		.input( object( {
+			gameId: pipe( string(), ulid() ),
+			type: pipe( picklist( [ "NORMAL", "CANADIAN" ] ) ),
+			deckType: pipe( picklist( [ 48, 52 ] ) )
+		} ) )
+		.output( void_() ),
+
+	askCard: oc
+		.input( object( {
+			gameId: pipe( string(), ulid() ),
+			from: pipe( string(), ulid() ),
+			cardId: picklist( CARD_IDS )
+		} ) )
+		.output( void_() ),
+
+	claimBook: oc
+		.input( object( {
+			gameId: pipe( string(), ulid() ),
+			claim: record( picklist( CARD_IDS ), pipe( string(), ulid() ) )
+		} ) )
+		.output( void_() ),
+
+	transferTurn: oc
+		.input( object( {
+			gameId: pipe( string(), ulid() ),
+			transferTo: pipe( string(), ulid() )
+		} ) )
+		.output( void_() )
 };

@@ -1,9 +1,9 @@
 import { store } from "@/app/components/callbreak/store";
 import { DisplayCard } from "@/app/components/shared/display-card";
 import { DisplayPlayer } from "@/app/components/shared/display-player";
-import type { PlayerData, Round } from "@/core/callbreak/schema";
-import { getCardFromId } from "@/core/cards/utils";
+import { getCardFromId } from "@/utils/cards";
 import { cn } from "@/utils/cn";
+import type { PlayerData, Round } from "@/workers/callbreak/types";
 import { useStore } from "@tanstack/react-store";
 
 type DisplayRoundProps = {

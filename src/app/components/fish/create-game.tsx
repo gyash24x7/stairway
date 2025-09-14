@@ -1,7 +1,7 @@
 "use client";
 
 import { orpc } from "@/app/client/orpc";
-import { Button } from "@/app/primitives/button";
+import { Button, buttonVariants } from "@/app/primitives/button";
 import {
 	Dialog,
 	DialogContent,
@@ -12,8 +12,8 @@ import {
 	DialogTrigger
 } from "@/app/primitives/dialog";
 import { Spinner } from "@/app/primitives/spinner";
-import type { PlayerCount } from "@/core/fish/schema";
 import { cn } from "@/utils/cn";
+import type { PlayerCount } from "@/workers/fish/types";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -31,9 +31,7 @@ export function CreateGame() {
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
-			<DialogTrigger>
-				<Button>CREATE GAME</Button>
-			</DialogTrigger>
+			<DialogTrigger className={ buttonVariants() }>CREATE GAME</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
 					<DialogTitle className={ "font-bold" }>CREATE GAME</DialogTitle>

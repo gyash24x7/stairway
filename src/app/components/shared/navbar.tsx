@@ -5,7 +5,7 @@ import { ThemeSwitcher } from "@/app/components/shared/theme-switcher";
 import { Button } from "@/app/primitives/button";
 import { Separator } from "@/app/primitives/separator";
 import { cn } from "@/utils/cn";
-import type { AuthInfo } from "@/workers/auth/schema";
+import type { AuthInfo } from "@/workers/auth/types";
 import { CogIcon, HomeIcon } from "lucide-react";
 
 export function Navbar( props: { authInfo?: AuthInfo | null } ) {

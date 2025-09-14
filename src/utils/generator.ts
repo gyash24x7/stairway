@@ -1,4 +1,4 @@
-import type { AuthInfo } from "@/workers/auth/schema";
+import type { AuthInfo } from "@/workers/auth/types";
 import { ulid } from "ulid";
 import { adjectives, names, uniqueNamesGenerator } from "unique-names-generator";
 

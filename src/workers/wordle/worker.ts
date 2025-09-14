@@ -1,8 +1,8 @@
-import { dictionary } from "@/core/wordle/dictionary";
-import { engine } from "@/core/wordle/engine";
-import type { CreateGameInput, GameData, GameIdInput, MakeGuessInput, PlayerGameInfo } from "@/core/wordle/schema";
 import { createLogger } from "@/utils/logger";
-import type { AuthInfo } from "@/workers/auth/schema";
+import type { AuthInfo } from "@/workers/auth/types";
+import { dictionary } from "@/workers/wordle/dictionary";
+import { engine } from "@/workers/wordle/engine";
+import type { CreateGameInput, GameData, GameIdInput, MakeGuessInput, PlayerGameInfo } from "@/workers/wordle/types";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 export interface IWordleRPC extends WorkerEntrypoint {

@@ -1,5 +1,7 @@
-import { botEngine } from "@/core/callbreak/bot";
-import { engine } from "@/core/callbreak/engine";
+import { getCardFromId, getCardId, isCardInHand } from "@/utils/cards";
+import { createLogger } from "@/utils/logger";
+import type { AuthInfo } from "@/workers/auth/types";
+import { engine } from "@/workers/callbreak/engine";
 import type {
 	CreateGameInput,
 	DeclareDealWinsInput,
@@ -9,11 +11,8 @@ import type {
 	PlayCardInput,
 	PlayerGameInfo,
 	PlayerId
-} from "@/core/callbreak/schema";
-import { canCardBePlayed } from "@/core/callbreak/utils";
-import { getCardFromId, getCardId, isCardInHand } from "@/core/cards/utils";
-import { createLogger } from "@/utils/logger";
-import type { AuthInfo } from "@/workers/auth/schema";
+} from "@/workers/callbreak/types";
+import { canCardBePlayed } from "@/workers/callbreak/utils";
 import { WorkerEntrypoint } from "cloudflare:workers";
 
 export interface ICallbreakRPC extends WorkerEntrypoint {
@@ -52,6 +51,7 @@ export default class CallbreakRPC extends WorkerEntrypoint<CallbreakWorkerEnv> i
 	async createGame( input: CreateGameInput, authInfo: AuthInfo ) {
 		this.logger.debug( ">> createGame()" );
 		const data = engine.createGame( input, authInfo.id );
+
 		await this.saveGameData( data );
 		this.logger.debug( "<< createGame()" );
 		return { data: { gameId: data.id }, error: undefined };
@@ -60,7 +60,7 @@ export default class CallbreakRPC extends WorkerEntrypoint<CallbreakWorkerEnv> i
 	async joinGame( input: JoinGameInput, authInfo: AuthInfo ) {
 		this.logger.debug( ">> joinGame()" );
 
-		const gameId = await this.env.CALLBREAK_KV.get( `code:${ input.code }` );
+		const gameId = await this.env.KV.get( `code:${ input.code }` );
 		if ( !gameId ) {
 			this.logger.debug( "Game not found for code %s!", input.code );
 			return { error: "Game not found!" };
@@ -252,7 +252,7 @@ export default class CallbreakRPC extends WorkerEntrypoint<CallbreakWorkerEnv> i
 
 	private validateGameData( authInfo: AuthInfo, data?: GameData ) {
 		if ( !data || !data.players[ authInfo.id ] ) {
-			this.logger.error( "Game Not Found!" );
+			this.logger.error( "Game Not Found!", data?.players );
 			return { error: "Game not found" };
 		}
 
@@ -260,12 +260,12 @@ export default class CallbreakRPC extends WorkerEntrypoint<CallbreakWorkerEnv> i
 	}
 
 	private async loadGameData( gameId: string ) {
-		return this.env.CALLBREAK_KV.get( gameId )
+		return this.env.KV.get( gameId )
 			.then( d => !!d ? JSON.parse( d ) as GameData : undefined );
 	}
 
 	private async saveGameData( data: GameData ) {
-		await this.env.CALLBREAK_KV.put( data.id, JSON.stringify( data ) );
+		await this.env.KV.put( data.id, JSON.stringify( data ) );
 	}
 
 	private async alarm( data: GameData ) {
@@ -292,7 +292,7 @@ export default class CallbreakRPC extends WorkerEntrypoint<CallbreakWorkerEnv> i
 				const currentPlayer = data.players[ data.currentTurn ];
 				if ( currentPlayer.isBot ) {
 					const hand = currentDeal.hands[ currentPlayer.id ];
-					const wins = botEngine.suggestDealWins( hand, data.trump );
+					const wins = engine.suggestDealWins( hand, data.trump );
 					const input = { gameId: data.id, dealId: currentDeal.id, wins };
 					data = engine.declareDealWins( input, data );
 					await this.saveGameData( data );
@@ -311,7 +311,7 @@ export default class CallbreakRPC extends WorkerEntrypoint<CallbreakWorkerEnv> i
 				const currentRound = currentDeal.rounds[ 0 ];
 				const currentPlayer = data.players[ data.currentTurn ];
 				if ( currentPlayer.isBot ) {
-					const card = botEngine.suggestCardToPlay(
+					const card = engine.suggestCardToPlay(
 						currentDeal.hands[ currentPlayer.id ],
 						currentRound,
 						Object.values( currentRound.cards ).map( getCardFromId ),

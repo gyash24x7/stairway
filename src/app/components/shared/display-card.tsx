@@ -1,5 +1,5 @@
-import type { CardId, CardSuit } from "@/core/cards/types";
-import { getCardImage } from "@/core/cards/utils";
+import type { CardId, CardSuit } from "@/utils/cards";
+import { getCardImage } from "@/utils/cards";
 import { cn } from "@/utils/cn";
 
 function isRed( suit: CardSuit ) {
