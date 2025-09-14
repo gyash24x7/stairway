@@ -23,9 +23,9 @@ export function DisplayScore() {
 						<TableHead>PLAYER</TableHead>
 						<TableHead className={ "hidden md:table-cell text-center" }>PREVIOUS DEALS</TableHead>
 						<TableHead className={ "text-center" }>SCORE</TableHead>
-						{ status !==
-							"GAME_COMPLETED" &&
-							<TableHead className={ "text-center" }>ACTIVE DEAL</TableHead> }
+						{ status !== "GAME_COMPLETED" && (
+							<TableHead className={ "text-center" }>ACTIVE DEAL</TableHead>
+						) }
 					</TableRow>
 				</TableHeader>
 				<TableBody>

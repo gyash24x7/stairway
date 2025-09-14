@@ -1,15 +1,17 @@
 import { remove } from "@/utils/array";
-import type { CardRank, CardSuit, PlayingCard } from "@/utils/cards";
 import {
 	CARD_RANKS,
 	CARD_SUITS,
+	type CardRank,
 	compareCards,
 	generateDeck,
 	generateHands,
 	getCardFromId,
 	getCardId,
 	getCardsOfSuit,
-	getCardSuit
+	getCardSuit,
+	isCardInHand,
+	type PlayingCard
 } from "@/utils/cards";
 import { generateBotInfo, generateGameCode, generateId } from "@/utils/generator";
 import { createLogger } from "@/utils/logger";
@@ -20,110 +22,411 @@ import type {
 	DeclareDealWinsInput,
 	GameData,
 	PlayCardInput,
+	PlayerGameInfo,
 	PlayerId,
-	Round
+	Round,
+	SaveFn
 } from "@/workers/callbreak/types";
-import { getBestCardPlayed, getPlayableCards } from "@/workers/callbreak/utils";
-import { produce } from "immer";
-
-const logger = createLogger( "Callbreak:Engine" );
+import { canCardBePlayed, getBestCardPlayed, getPlayableCards } from "@/workers/callbreak/utils";
 
 /**
- * Creates a new game with the specified parameters.
- * method initializes the game data with the provided deal count and trump suit,
- * and sets the initial state of the game.
- *
- * @param {CreateGameInput} input The input containing deal count and trump suit.
- * @param {PlayerId} playerId The ID of the player creating the game.
- * @return {GameData} The initialized game data with the new game and player information.
+ * @class CallbreakEngine
+ * The CallbreakEngine class encapsulates the core logic of the Callbreak card game.
+ * It manages the game state, processes player actions, and enforces game rules.
+ * The engine provides methods to create a new game, add players, declare wins,
+ * play cards, and automatically progress the game through its various states.
+ * It ensures that the game rules are followed and maintains the integrity of the game state.
  */
-function createGame( { dealCount = 5, trumpSuit, gameId }: CreateGameInput, playerId: PlayerId ): GameData {
-	logger.debug( ">> createGame()" );
-	const data: GameData = {
-		id: gameId ?? generateId(),
-		code: generateGameCode(),
-		dealCount,
-		trump: trumpSuit,
-		currentTurn: playerId,
-		status: "GAME_CREATED",
-		scores: {},
-		createdBy: playerId,
-		players: {},
-		deals: []
-	};
+export class CallbreakEngine {
 
-	logger.debug( "<< createGame()" );
-	return data;
-}
+	private readonly logger = createLogger( "Callbreak:Engine" );
+	private readonly data: GameData;
+	private readonly save: SaveFn;
 
-/**
- * Adds the player to the game data.
- * method is called after successful validation of the join game request.
- * It updates the players in the game data with the authenticated user's information.
- *
- * @param {GameData} data The current game data.
- * @param {BasePlayerInfo} playerInfo The authenticated user's information.
- * @return {GameData} The updated game data with the new player added.
- */
-function addPlayer( data: GameData, playerInfo: AuthInfo ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> addPlayer()" );
-		draft.players[ playerInfo.id ] = { ...playerInfo, isBot: false };
-		draft.scores[ playerInfo.id ] = [];
+	/**
+	 * Initializes a new instance of the CallbreakEngine with the provided game data.
+	 * It sets up the initial game state and prepares the engine for gameplay.
+	 *
+	 * @constructor
+	 * @param data {GameData} - The initial game data to set up the engine.
+	 * @param saveFn {SaveFn} - A function to save the game data, typically to a database or storage.
+	 */
+	constructor( data: GameData, saveFn: SaveFn ) {
+		this.data = data;
+		this.save = saveFn;
+	}
 
-		if ( Object.keys( draft.players ).length === 4 ) {
-			draft.status = "PLAYERS_READY";
+	get id() {
+		return this.data.id;
+	}
+
+	/**
+	 * Creates a new Callbreak game with the specified parameters.
+	 * This function initializes the game state with the player's ID, deal count, and trump suit.
+	 * Defaults to a deal count of 5 if not specified.
+	 *
+	 * @param input {CreateGameInput} - The input parameters containing deal count and trump suit.
+	 * @param playerId {PlayerId} - The ID of the player creating the game.
+	 * @param saveFn {SaveFn} - A function to save the game data, typically to a database or storage.
+	 * @return {CallbreakEngine} - A new instance of the CallbreakEngine initialized with the created game data.
+	 */
+	public static create( input: CreateGameInput, playerId: PlayerId, saveFn: SaveFn ): CallbreakEngine {
+		const { dealCount = 5, trumpSuit } = input;
+		const data: GameData = {
+			id: generateId(),
+			code: generateGameCode(),
+			dealCount,
+			trump: trumpSuit,
+			currentTurn: playerId,
+			status: "GAME_CREATED",
+			scores: {},
+			createdBy: playerId,
+			players: {},
+			deals: []
+		};
+
+		return new CallbreakEngine( data, saveFn );
+	}
+
+	/**
+	 * Retrieves the game data specific to a player.
+	 * This function returns the game state including the current deal, current round,
+	 * and the player's hand, while excluding sensitive information like other players' hands.
+	 *
+	 * @param playerId {PlayerId} - The ID of the player requesting the game data.
+	 * @return {PlayerGameInfo} - The player-specific game data.
+	 */
+	public getPlayerData( playerId: PlayerId ): PlayerGameInfo {
+		const { deals, players, ...rest } = this.data;
+		const { rounds, hands, ...currentDeal } = deals[ 0 ];
+		const currentRound = rounds[ 0 ];
+		return { ...rest, playerId, currentDeal, currentRound, hand: hands[ playerId ] || [], players };
+	}
+
+	/**
+	 * Adds a player to the game using the provided authentication information.
+	 * This function updates the game state to include the new player and initializes their score.
+	 * If the maximum number of players (4) is reached, the game status is updated to "PLAYERS_READY".
+	 *
+	 * @param playerInfo {AuthInfo} - The authentication information of the player to be added.
+	 */
+	public addPlayer( playerInfo: AuthInfo ) {
+		this.logger.debug( ">> addPlayer()" );
+
+		this.validateJoinGame( playerInfo );
+
+		this.data.players[ playerInfo.id ] = { ...playerInfo, isBot: false };
+		this.data.scores[ playerInfo.id ] = [];
+
+		if ( Object.keys( this.data.players ).length === 4 ) {
+			this.data.status = "PLAYERS_READY";
 		}
 
-		logger.debug( "<< addPlayer()" );
-	} );
-}
+		this.logger.debug( "<< addPlayer()" );
+	}
 
-/**
- * Adds bots to the game data.
- * method is called when the game has less than 4 players.
- * It generates bot player information and adds them to the game data.
- *
- * @param {GameData} data The current game data.
- * @return {GameData} The updated game data with bots added.
- */
-function addBots( data: GameData ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> addBots()" );
+	/**
+	 * Allows the current player to declare their expected wins for the active deal.
+	 * This function updates the deal's declarations and advances the turn to the next player.
+	 * If all players have declared their wins, the game status is updated to "WINS_DECLARED".
+	 *
+	 * @param input {DeclareDealWinsInput} - The input containing the number of wins declared by the current player.
+	 * @param authInfo {AuthInfo} - The authentication information of the player declaring wins.
+	 */
+	public declareDealWins( input: DeclareDealWinsInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> declareDealWins()" );
 
-		const botCount = 4 - Object.keys( draft.players ).length;
+		this.validateDealWinDeclaration( input, authInfo );
+
+		if ( Object.keys( this.data.deals[ 0 ].declarations ).length === 0 ) {
+			this.data.deals[ 0 ].status = "IN_PROGRESS";
+		}
+
+		const nextPlayerIdx = ( this.data.deals[ 0 ].playerOrder.indexOf( this.data.currentTurn ) + 1 ) % 4;
+		this.data.deals[ 0 ].declarations[ this.data.currentTurn ] = input.wins;
+		this.data.currentTurn = this.data.deals[ 0 ].playerOrder[ nextPlayerIdx ];
+
+		if ( Object.keys( this.data.deals[ 0 ].declarations ).length === 4 ) {
+			this.data.status = "WINS_DECLARED";
+		}
+
+		this.logger.debug( "<< declareDealWins()" );
+	}
+
+	/**
+	 * Processes the action of a player playing a card during their turn in the active round.
+	 * This function updates the round's state with the played card, removes the card from the player's hand,
+	 * and advances the turn to the next player. If all players have played their cards,
+	 * the game status is updated to "CARDS_PLAYED".
+	 *
+	 * @param input {PlayCardInput} - The input containing the ID of the card played by the current player.
+	 * @param authInfo {AuthInfo} - The authentication information of the player playing the card.
+	 */
+	public playCard( input: PlayCardInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> playCard()" );
+
+		this.validatePlayCard( input, authInfo );
+
+		const activeDeal = this.data.deals[ 0 ];
+		const activeRound = activeDeal.rounds[ 0 ];
+		const playerInfo = this.data.players[ this.data.currentTurn ];
+
+		activeRound.cards[ playerInfo.id ] = input.cardId;
+		if ( !activeRound.suit ) {
+			activeRound.status = "IN_PROGRESS";
+			activeRound.suit = getCardSuit( input.cardId );
+		}
+
+		activeDeal.rounds[ 0 ] = activeRound;
+		activeDeal.hands[ playerInfo.id ] = remove(
+			card => getCardId( card ) === input.cardId,
+			activeDeal.hands[ playerInfo.id ]
+		);
+
+		if ( Object.keys( activeRound.cards ).length === 4 ) {
+			this.data.status = "CARDS_PLAYED";
+		}
+
+		const nextPlayerIdx = ( activeRound.playerOrder.indexOf( this.data.currentTurn ) + 1 ) % 4;
+		this.data.currentTurn = activeRound.playerOrder[ nextPlayerIdx ];
+		this.data.deals[ 0 ] = activeDeal;
+
+		this.logger.debug( "<< playCard()" );
+	}
+
+	public async autoPlay() {
+		this.logger.debug( ">> autoPlay()" );
+
+		switch ( this.data.status ) {
+			case "GAME_CREATED": {
+				this.addBots();
+				await this.saveGameData();
+				break;
+			}
+
+			case "PLAYERS_READY": {
+				this.createDeal();
+				await this.saveGameData();
+				break;
+			}
+
+			case "CARDS_DEALT": {
+				const currentDeal = this.data.deals[ 0 ];
+				const currentPlayer = this.data.players[ this.data.currentTurn ];
+				if ( currentPlayer.isBot ) {
+					const wins = this.suggestDealWins();
+					const input = { gameId: this.data.id, dealId: currentDeal.id, wins };
+					this.declareDealWins( input, currentPlayer );
+					await this.saveGameData();
+				}
+				break;
+			}
+
+			case "WINS_DECLARED": {
+				this.createRound();
+				await this.saveGameData();
+				break;
+			}
+
+			case "ROUND_STARTED": {
+				const currentDeal = this.data.deals[ 0 ];
+				const currentRound = currentDeal.rounds[ 0 ];
+				const currentPlayer = this.data.players[ this.data.currentTurn ];
+				if ( currentPlayer.isBot ) {
+					const card = this.suggestCardToPlay();
+					const input = {
+						gameId: this.data.id,
+						dealId: currentDeal.id,
+						roundId: currentRound.id,
+						cardId: getCardId( card )
+					};
+					this.playCard( input, currentPlayer );
+					await this.saveGameData();
+				}
+				break;
+			}
+
+			case "CARDS_PLAYED": {
+				this.completeRound();
+				await this.saveGameData();
+				break;
+			}
+
+			case "ROUND_COMPLETED": {
+				const currentDeal = this.data.deals[ 0 ];
+				if ( currentDeal.rounds.length === 13 ) {
+					this.completeDeal();
+				} else {
+					this.createRound();
+				}
+				await this.saveGameData();
+				break;
+			}
+
+			case "DEAL_COMPLETED": {
+				if ( this.data.deals.length < this.data.dealCount ) {
+					this.createDeal();
+				} else {
+					this.data.status = "GAME_COMPLETED";
+				}
+				await this.saveGameData();
+				break;
+			}
+		}
+
+		this.logger.debug( "<< autoPlay()" );
+	}
+
+	/**
+	 * Saves the current game data using the provided save function.
+	 * This function needs to be called after making any changes to the game state
+	 * to ensure that the updated state is persisted.
+	 */
+	public async saveGameData() {
+		await this.save( this.data );
+	}
+
+	/**
+	 * Validates the join game request.
+	 * Checks if the game exists, if the player is already in the game,
+	 * and if the game is full.
+	 * If any validation fails, it returns an error.
+	 *
+	 * @private
+	 * @param {AuthInfo} authInfo - The authentication information of the player.
+	 */
+	private validateJoinGame( authInfo: AuthInfo ) {
+		this.logger.debug( ">> validateJoinGame()" );
+
+		if ( this.data.players[ authInfo.id ] ) {
+			this.logger.warn( "Already in Game: %s", authInfo.id );
+			return;
+		}
+
+		if ( Object.keys( this.data.players ).length >= 4 ) {
+			this.logger.error( "Game Full: %s", this.data.id );
+			throw "Game full!";
+		}
+
+		this.logger.debug( "<< validateJoinGame()" );
+	}
+
+	/**
+	 * Validates the declaration of deal wins.
+	 * Checks if the deal exists, if it has no rounds,
+	 * and if it's the player's turn.
+	 * If any validation fails, it returns an error.
+	 *
+	 * @private
+	 * @param {DeclareDealWinsInput} input - The input containing deal ID, wins and authInfo
+	 * @param {AuthInfo} authInfo - The authentication information of the player.
+	 */
+	private validateDealWinDeclaration( input: DeclareDealWinsInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> validateDealWinDeclaration()" );
+
+		if ( this.data.currentTurn !== authInfo.id ) {
+			this.logger.error( "Not Your Turn: %s", authInfo.id );
+			throw "Not your turn!";
+		}
+
+		const deal = this.data.deals[ 0 ];
+		if ( !deal || deal.rounds.length !== 0 || deal.id !== input.dealId ) {
+			this.logger.error( "Active Deal Not Found: %s", this.data.id );
+			throw "Active deal not found!";
+		}
+
+		this.logger.debug( "<< validateDealWinDeclaration()" );
+	}
+
+	/**
+	 * Validates the play card action.
+	 * Checks if it's the player's turn, if the deal exists,
+	 * if the round exists, if the card is in the player's hand,
+	 * and if the card can be played according to the game rules.
+	 * If any validation fails, it returns an error.
+	 *
+	 * @private
+	 * @param {PlayCardInput} input - The input containing card ID, round ID, deal ID and authInfo
+	 * @param {AuthInfo} authInfo - The authentication information of the player.
+	 */
+	private validatePlayCard( input: PlayCardInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> validatePlayCard()" );
+
+		if ( this.data.currentTurn !== authInfo.id ) {
+			this.logger.error( "Not Your Turn: %s", authInfo.id );
+			throw "Not your turn!";
+		}
+
+		const deal = this.data.deals[ 0 ];
+		if ( !deal || deal.id !== input.dealId ) {
+			this.logger.error( "Deal Not Found: %s", input.dealId );
+			throw "Deal not found!";
+		}
+
+		const round = deal.rounds[ 0 ];
+		if ( !round ) {
+			this.logger.error( "Round Not Found: %s", input.roundId );
+			throw "Round not found!";
+		}
+
+		const hand = deal.hands[ authInfo.id ];
+		if ( !isCardInHand( hand, input.cardId ) ) {
+			this.logger.error( "Card Not Yours: %s", input.cardId );
+			throw "Card not in hand!";
+		}
+
+		const cardsPlayed = Object.values( round.cards ).map( getCardFromId );
+		const isCardPlayAllowed = canCardBePlayed( input.cardId, hand, this.data.trump, cardsPlayed, round.suit );
+
+		if ( !isCardPlayAllowed ) {
+			this.logger.error( "Invalid Card: %s", input.cardId );
+			throw "Card cannot be played!";
+		}
+
+		this.logger.debug( "<< validatePlayCard()" );
+	}
+
+	/**
+	 * Adds bot players to the game until the total number of players reaches 4.
+	 * This function generates bot player information and updates the game state accordingly.
+	 * Once the maximum number of players is reached, the game status is updated to "PLAYERS_READY".
+	 *
+	 * @private
+	 */
+	private addBots() {
+		this.logger.debug( ">> addBots()" );
+
+		const botCount = 4 - Object.keys( this.data.players ).length;
 		for ( let i = 0; i < botCount; i++ ) {
 			const botInfo = generateBotInfo();
-			draft.players[ botInfo.id ] = { ...botInfo, isBot: true };
-			draft.scores[ botInfo.id ] = [];
+			this.data.players[ botInfo.id ] = { ...botInfo, isBot: true };
+			this.data.scores[ botInfo.id ] = [];
 		}
 
-		draft.status = "PLAYERS_READY";
-		logger.debug( "<< addBots()" );
-	} );
-}
+		this.data.status = "PLAYERS_READY";
+		this.logger.debug( "<< addBots()" );
+	}
 
-/**
- * Creates a new deal in the game.
- * method generates a deck of cards, shuffles it, and deals hands to the players.
- * It also sets the player order based on the current game state.
- *
- * @param {GameData} data The current game data.
- * @return {GameData} The updated game data with the new deal created.
- */
-function createDeal( data: GameData ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> createDeal()" );
+	/**
+	 * Creates a new deal in the game by generating a deck of cards, shuffling them,
+	 * and distributing them among the players. The player order is determined based on
+	 * the creator of the game for the first deal, and subsequently rotates for each new deal.
+	 * The game status is updated to "CARDS_DEALT" and the current turn is set to the first player in the order.
+	 *
+	 * @private
+	 */
+	private createDeal() {
+		this.logger.debug( ">> createDeal()" );
 
 		const deck = generateDeck();
 		const hands = generateHands( deck, 4 );
-		const playerIds = Object.keys( draft.players ).toSorted();
-		const playerOrder = draft.deals.length === 0 ?
-			[
-				...playerIds.slice( playerIds.indexOf( draft.createdBy ) ),
-				...playerIds.slice( 0, playerIds.indexOf( draft.createdBy ) )
-			] :
-			[ ...draft.deals[ 0 ].playerOrder.slice( 1 ), draft.deals[ 0 ].playerOrder[ 0 ] ];
+		const playerIds = Object.keys( this.data.players ).toSorted();
+		const playerOrder = this.data.deals.length === 0
+			? [
+				...playerIds.slice( playerIds.indexOf( this.data.createdBy ) ),
+				...playerIds.slice( 0, playerIds.indexOf( this.data.createdBy ) )
+			]
+			: [ ...this.data.deals[ 0 ].playerOrder.slice( 1 ), this.data.deals[ 0 ].playerOrder[ 0 ] ];
 
 		const deal: DealWithRounds = {
 			id: generateId(),
@@ -142,56 +445,24 @@ function createDeal( data: GameData ): GameData {
 			)
 		};
 
-		draft.deals.unshift( deal );
-		draft.status = "CARDS_DEALT";
-		draft.currentTurn = deal.playerOrder[ 0 ];
+		this.data.deals.unshift( deal );
+		this.data.status = "CARDS_DEALT";
+		this.data.currentTurn = deal.playerOrder[ 0 ];
 
-		logger.debug( "<< createDeal()" );
-	} );
-}
+		this.logger.debug( "<< createDeal()" );
+	}
 
-/**
- * Declares the number of wins for the current deal.
- * method updates the current deal's declarations with the player's input.
- * It also updates the current turn to the next player in the order.
- *
- * @param {DeclareDealWinsInput} input The input containing the number of wins declared by the player.
- * @param {GameData} data The current game data.
- * @returns {GameData} The updated game data with the declared wins.
- */
-function declareDealWins( input: DeclareDealWinsInput, data: GameData ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> declareDealWins()" );
+	/**
+	 * Creates a new round within the active deal, setting up the player order based on the winner of the last round.
+	 * The game status is updated to "ROUND_STARTED" and the current turn is set to the first player
+	 * in the new round's order.
+	 *
+	 * @private
+	 */
+	private createRound() {
+		this.logger.debug( ">> createRound()" );
 
-		if ( Object.keys( draft.deals[ 0 ].declarations ).length === 0 ) {
-			draft.deals[ 0 ].status = "IN_PROGRESS";
-		}
-
-		const nextPlayerIdx = ( draft.deals[ 0 ].playerOrder.indexOf( draft.currentTurn ) + 1 ) % 4;
-		draft.deals[ 0 ].declarations[ draft.currentTurn ] = input.wins;
-		draft.currentTurn = draft.deals[ 0 ].playerOrder[ nextPlayerIdx ];
-
-		if ( Object.keys( draft.deals[ 0 ].declarations ).length === 4 ) {
-			draft.status = "WINS_DECLARED";
-		}
-
-		logger.debug( "<< declareDealWins()" );
-	} );
-}
-
-/**
- * Creates a new round in the current deal.
- * method initializes a new round with the player order based on the winner of the last round.
- * It also sets the current turn to the first player in the order.
- *
- * @param {GameData} data The current game data containing the active deal.
- * @returns {GameData} The updated game data with the new round created.
- */
-function createRound( data: GameData ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> createRound()" );
-
-		const activeDeal = draft.deals[ 0 ];
+		const activeDeal = this.data.deals[ 0 ];
 		const lastRound = activeDeal.rounds[ 0 ];
 		const playerOrder = !lastRound ? activeDeal.playerOrder : [
 			...lastRound.playerOrder.slice( lastRound.playerOrder.indexOf( lastRound.winner! ) ),
@@ -207,213 +478,157 @@ function createRound( data: GameData ): GameData {
 		};
 
 		activeDeal.rounds.unshift( round );
-		draft.deals[ 0 ] = activeDeal;
-		draft.currentTurn = playerOrder[ 0 ];
-		draft.status = "ROUND_STARTED";
+		this.data.deals[ 0 ] = activeDeal;
+		this.data.currentTurn = playerOrder[ 0 ];
+		this.data.status = "ROUND_STARTED";
 
-		logger.debug( "<< createRound()" );
-	} );
-}
+		this.logger.debug( "<< createRound()" );
+	}
 
-/**
- * Plays a card in the current round.
- * method updates the round's cards with the player's played card,
- * sets the suit if it's the first card played,
- * and updates the player's hand by removing the played card.
- * It also updates the current turn to the next player in the order.
- *
- * @param {PlayCardInput} input The input containing the card ID, round ID, deal ID, and authInfo.
- * @param {GameData} data The current game data containing the active deal and round.
- * @returns {GameData} The updated game data with the played card and updated turn.
- */
-function playCard( input: PlayCardInput, data: GameData ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> playCard()" );
+	/**
+	 * Completes the active round by determining the winning card and player,
+	 * updating the round and deal states accordingly, and setting the game status to "ROUND_COMPLETED".
+	 * The winning player is determined based on the best card played considering the trump suit and round suit.
+	 * The number of wins for the winning player is incremented in the active deal.
+	 *
+	 * @private
+	 */
+	private completeRound() {
+		this.logger.debug( ">> completeRound()" );
 
-		const activeDeal = draft.deals[ 0 ];
-		const activeRound = activeDeal.rounds[ 0 ];
-		const playerInfo = draft.players[ draft.currentTurn ];
-
-		activeRound.cards[ playerInfo.id ] = input.cardId;
-		if ( !activeRound.suit ) {
-			activeRound.status = "IN_PROGRESS";
-			activeRound.suit = getCardSuit( input.cardId );
-		}
-
-		activeDeal.rounds[ 0 ] = activeRound;
-		activeDeal.hands[ playerInfo.id ] = remove(
-			card => getCardId( card ) === input.cardId,
-			activeDeal.hands[ playerInfo.id ]
-		);
-
-		if ( Object.keys( activeRound.cards ).length === 4 ) {
-			draft.status = "CARDS_PLAYED";
-		}
-
-		const nextPlayerIdx = ( activeRound.playerOrder.indexOf( draft.currentTurn ) + 1 ) % 4;
-		draft.currentTurn = activeRound.playerOrder[ nextPlayerIdx ];
-		draft.deals[ 0 ] = activeDeal;
-
-		logger.debug( "<< playCard()" );
-	} );
-}
-
-/**
- * Completes the current round by determining the winning card.
- * method finds the best card played in the round,
- * updates the round's status to completed,
- * and records the winner.
- *
- * @param {GameData} data The current game data containing the active deal and round.
- * @returns {GameData} The updated game data with the completed round and winner recorded.
- */
-function completeRound( data: GameData ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> completeRound()" );
-
-		const activeDeal = draft.deals[ 0 ];
+		const activeDeal = this.data.deals[ 0 ];
 		const activeRound = activeDeal.rounds[ 0 ];
 
 		const winningCard = getBestCardPlayed(
 			Object.values( activeRound.cards ).map( getCardFromId ),
-			draft.trump,
+			this.data.trump,
 			activeRound.suit
 		);
 
-		logger.info( "Winning Card: %s", winningCard );
+		this.logger.info( "Winning Card: %s", winningCard );
 
 		const winningPlayer = activeRound.playerOrder.find( p => activeRound.cards[ p ] === getCardId( winningCard! ) );
-		logger.info( "Player %s won the round", winningPlayer );
+		this.logger.info( "Player %s won the round", winningPlayer );
 
 		activeRound.status = "COMPLETED";
 		activeRound.winner = winningPlayer;
 		activeDeal.wins[ winningPlayer! ] = ( activeDeal.wins[ winningPlayer! ] || 0 ) + 1;
 
 		activeDeal.rounds[ 0 ] = activeRound;
-		draft.deals[ 0 ] = activeDeal;
-		draft.status = "ROUND_COMPLETED";
+		this.data.deals[ 0 ] = activeDeal;
+		this.data.status = "ROUND_COMPLETED";
 
-		logger.debug( "<< completeRound()" );
-	} );
-}
+		this.logger.debug( "<< completeRound()" );
+	}
 
-/**
- * Completes the current deal by calculating scores for each player.
- * method iterates through the players' declarations and wins,
- * calculates the score based on the rules,
- * and updates the game scores accordingly.
- * It also marks the deal as completed.
- *
- * @param {GameData} data The current game data containing the active deal.
- * @returns {GameData} The updated game data with the completed deal and scores calculated.
- */
-function completeDeal( data: GameData ): GameData {
-	return produce( data, draft => {
-		logger.debug( ">> completeDeal()" );
+	/**
+	 * Completes the active deal by calculating and updating the scores for each player
+	 * based on their declared and actual wins. The deal status is set to "COMPLETED"
+	 * and the game status is updated to "DEAL_COMPLETED".
+	 * The scoring system penalizes players for not able to meet their declared wins
+	 * and rewards them for exceeding their declarations.
+	 * The score formula is as follows:
+	 * - If declared wins > actual wins: score = -10 * declared wins
+	 * - If declared wins <= actual wins: score = (10 * declared wins) + (2 * (actual wins - declared wins))
+	 *
+	 * @private
+	 */
+	private completeDeal() {
+		this.logger.debug( ">> completeDeal()" );
 
-		const activeDeal = draft.deals[ 0 ];
-		Object.keys( draft.players ).forEach( playerId => {
+		const activeDeal = this.data.deals[ 0 ];
+		Object.keys( this.data.players ).forEach( playerId => {
 			const declared = activeDeal.declarations[ playerId ];
 			const won = activeDeal.wins[ playerId ] ?? 0;
 			const score = declared > won ? ( -10 * declared ) : ( 10 * declared ) + ( 2 * ( won - declared ) );
-			draft.scores[ playerId ].push( score );
+			this.data.scores[ playerId ].push( score );
 		} );
 
 		activeDeal.status = "COMPLETED";
-		draft.deals[ 0 ] = activeDeal;
-		draft.status = "DEAL_COMPLETED";
+		this.data.deals[ 0 ] = activeDeal;
+		this.data.status = "DEAL_COMPLETED";
 
-		logger.debug( "<< completeDeal()" );
-	} );
-}
-
-/**
- * Suggests the number of wins a player can declare based on their hand and the trump suit.
- * This method analyzes the player's hand, counts the possible winning cards,
- * and returns a suggested number of wins.
- *
- * @param {PlayingCard[]} hand - The player's hand of cards.
- * @param {CardSuit} trumpSuit - The current trump suit in the game.
- * @returns {number} The suggested number of wins for the player.
- */
-function suggestDealWins( hand: PlayingCard[], trumpSuit: CardSuit ): number {
-	logger.debug( ">> suggestDealWins()" );
-
-	let possibleWins = 0;
-	const BIG_RANKS = [ CARD_RANKS.ACE, CARD_RANKS.KING, CARD_RANKS.QUEEN ] as CardRank[];
-	for ( const suit of Object.values( CARD_SUITS ) ) {
-		const cards = getCardsOfSuit( suit, hand );
-		const bigRanks = cards.filter( card => BIG_RANKS.includes( card.rank ) );
-
-		if ( suit === trumpSuit ) {
-			possibleWins += bigRanks.length;
-			continue;
-		}
-
-		if ( cards.length >= 3 ) {
-			possibleWins += Math.min( bigRanks.length, 2 );
-		} else if ( cards.length === 2 ) {
-			possibleWins += 1 + Math.min( bigRanks.length, 1 );
-		} else {
-			possibleWins += 2 + bigRanks.length;
-		}
+		this.logger.debug( "<< completeDeal()" );
 	}
 
-	if ( possibleWins < 2 ) {
-		possibleWins = 2;
+	/**
+	 * Suggests the number of wins a player might achieve based on their current hand.
+	 * This function analyzes the player's hand, considering the trump suit and high-ranking cards,
+	 * to estimate a realistic number of wins they could declare for the active deal.
+	 * The suggestion is based on the distribution of cards across suits and the presence of
+	 * high-value cards (Ace, King, Queen).
+	 *
+	 * @private
+	 * @return {number} - The suggested number of wins for the player.
+	 */
+	private suggestDealWins(): number {
+		this.logger.debug( ">> suggestDealWins()" );
+
+		let possibleWins = 0;
+		const activeDeal = this.data.deals[ 0 ];
+		const hand = activeDeal.hands[ this.data.currentTurn ];
+		const BIG_RANKS = [ CARD_RANKS.ACE, CARD_RANKS.KING, CARD_RANKS.QUEEN ] as CardRank[];
+
+		for ( const suit of Object.values( CARD_SUITS ) ) {
+			const cards = getCardsOfSuit( suit, hand );
+			const bigRanks = cards.filter( card => BIG_RANKS.includes( card.rank ) );
+
+			if ( suit === this.data.trump ) {
+				possibleWins += bigRanks.length;
+				continue;
+			}
+
+			if ( cards.length >= 3 ) {
+				possibleWins += Math.min( bigRanks.length, 2 );
+			} else if ( cards.length === 2 ) {
+				possibleWins += 1 + Math.min( bigRanks.length, 1 );
+			} else {
+				possibleWins += 2 + bigRanks.length;
+			}
+		}
+
+		if ( possibleWins < 2 ) {
+			possibleWins = 2;
+		}
+
+		this.logger.debug( "<< suggestDealWins()" );
+		return possibleWins;
 	}
 
-	logger.debug( "<< suggestDealWins()" );
-	return possibleWins;
+	/**
+	 * Suggests a card for the current player to play based on the game state.
+	 * This function analyzes the player's hand, the cards already played in the active round,
+	 * and the best card played so far to determine a strategic card to play.
+	 * The suggestion aims to play an unbeatable card if possible, otherwise selects a random playable card.
+	 *
+	 * @private
+	 * @return {PlayingCard} - The suggested card for the player to play.
+	 */
+	private suggestCardToPlay(): PlayingCard {
+		this.logger.debug( ">> suggestCardToPlay()" );
+
+		const activeDeal = this.data.deals[ 0 ];
+		const activeRound = activeDeal.rounds[ 0 ];
+		const hand = activeDeal.hands[ this.data.currentTurn ];
+		const cardsAlreadyPlayed = activeDeal.rounds
+			.flatMap( round => Object.values( round.cards ) )
+			.map( getCardFromId );
+
+		const cardsPlayedInActiveRound = Object.values( activeRound.cards ).map( getCardFromId );
+		const bestCardInActiveRound = getBestCardPlayed( cardsPlayedInActiveRound, this.data.trump, activeRound.suit );
+		const playableCards = getPlayableCards( hand, this.data.trump, bestCardInActiveRound, activeRound.suit );
+
+		const deck = generateDeck();
+		const unbeatableCards = playableCards.filter( card => {
+			const greaterCards = deck.filter( deckCard => compareCards( deckCard, card ) );
+			return greaterCards.every( greaterCard => cardsAlreadyPlayed.includes( greaterCard ) );
+		} );
+
+		const cardToPlay = unbeatableCards.length > 0
+			? unbeatableCards[ Math.floor( Math.random() * unbeatableCards.length ) ]
+			: playableCards[ Math.floor( Math.random() * playableCards.length ) ];
+
+		this.logger.debug( "<< suggestCardToPlay()" );
+		return cardToPlay;
+	}
 }
-
-/**
- * Suggests a card to play based on the player's hand, the active round, and the cards already played.
- * This method analyzes the playable cards in the hand, checks for unbeatable cards,
- * and returns a suggested card to play.
- *
- * @param {PlayingCard[]} hand - The player's hand of cards.
- * @param {Round} activeRound - The current active round in the game.
- * @param {PlayingCard[]} cardsAlreadyPlayed - The cards that have already been played in the current round.
- * @param {CardSuit} trumpSuit - The current trump suit in the game.
- * @returns {PlayingCard} The suggested card to play.
- */
-function suggestCardToPlay(
-	hand: PlayingCard[],
-	activeRound: Round,
-	cardsAlreadyPlayed: PlayingCard[],
-	trumpSuit: CardSuit
-): PlayingCard {
-	logger.debug( ">> suggestCardToPlay()" );
-
-	const cardsPlayedInActiveRound = Object.values( activeRound.cards ).map( getCardFromId );
-	const bestCardInActiveRound = getBestCardPlayed( cardsPlayedInActiveRound, trumpSuit, activeRound.suit );
-	const playableCards = getPlayableCards( hand, trumpSuit, bestCardInActiveRound, activeRound.suit );
-
-	const deck = generateDeck();
-	const unbeatableCards = playableCards.filter( card => {
-		const greaterCards = deck.filter( deckCard => compareCards( deckCard, card ) );
-		return greaterCards.every( greaterCard => cardsAlreadyPlayed.includes( greaterCard ) );
-	} );
-
-	const cardToPlay = unbeatableCards.length > 0
-		? unbeatableCards[ Math.floor( Math.random() * unbeatableCards.length ) ]
-		: playableCards[ Math.floor( Math.random() * playableCards.length ) ];
-
-	logger.debug( "<< suggestCardToPlay()" );
-	return cardToPlay;
-}
-
-export const engine = {
-	createGame,
-	addPlayer,
-	addBots,
-	createDeal,
-	declareDealWins,
-	createRound,
-	playCard,
-	completeRound,
-	completeDeal,
-	suggestCardToPlay,
-	suggestDealWins
-};

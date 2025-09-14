@@ -89,3 +89,4 @@ export type PlayCardInput = {
 	gameId: string;
 };
 
+export type SaveFn = ( game: GameData ) => Promise<void>;

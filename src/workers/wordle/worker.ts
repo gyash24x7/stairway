@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 import { createLogger } from "@/utils/logger";
 import type { AuthInfo } from "@/workers/auth/types";
 import { WordleEngine } from "@/workers/wordle/engine.ts";
@@ -18,14 +20,6 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 
 	private readonly logger = createLogger( "Wordle:RPC" );
 
-	async createGame( input: CreateGameInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> createGame()" );
-		const engine = WordleEngine.create( input, authInfo.id, this.saveGameData );
-		await engine.saveGameData();
-		this.logger.debug( "<< createGame()" );
-		return { data: engine.getPlayerData() };
-	}
-
 	async getGameData( input: GameIdInput, authInfo: AuthInfo ) {
 		this.logger.debug( ">> getGameData()" );
 		return this.initializeEngine( input.gameId, authInfo.id )
@@ -37,16 +31,12 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 			.finally( () => this.logger.debug( "<< getGameData()" ) );
 	}
 
-	async getWords( input: GameIdInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> getWords()" );
-		return this.initializeEngine( input.gameId, authInfo.id )
-			.then( data => ( { data: data.getWords() } ) )
-			.catch( error => {
-				this.logger.error( "Error initializing engine:", error );
-				return { error: ( error as Error ).message };
-			} )
-			.finally( () => this.logger.debug( "<< getWords()" ) );
-
+	async createGame( input: CreateGameInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> createGame()" );
+		const engine = WordleEngine.create( input, authInfo.id, this.saveGameData );
+		await engine.saveGameData();
+		this.logger.debug( "<< createGame()" );
+		return { data: engine.getPlayerData() };
 	}
 
 	async makeGuess( input: MakeGuessInput, authInfo: AuthInfo ) {
@@ -64,6 +54,17 @@ export default class WordleRPC extends WorkerEntrypoint<WordleWorkerEnv> impleme
 			.finally( () => this.logger.debug( "<< makeGuess()" ) );
 	}
 
+	async getWords( input: GameIdInput, authInfo: AuthInfo ) {
+		this.logger.debug( ">> getWords()" );
+		return this.initializeEngine( input.gameId, authInfo.id )
+			.then( data => ( { data: data.getWords() } ) )
+			.catch( error => {
+				this.logger.error( "Error initializing engine:", error );
+				return { error: ( error as Error ).message };
+			} )
+			.finally( () => this.logger.debug( "<< getWords()" ) );
+
+	}
 
 	private async initializeEngine( gameId: string, playerId: string ) {
 		const data = await this.loadGameData( gameId );

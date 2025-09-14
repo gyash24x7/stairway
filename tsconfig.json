@@ -9,7 +9,6 @@
 		"isolatedModules": true,
 		"jsx": "react-jsx",
 		"paths": {
-			"@/generated/prisma": [ "./prisma/generated/client" ],
 			"@alchemy/run": [ "./alchemy.run.ts" ],
 			"@/*": [ "./src/*" ]
 		},
