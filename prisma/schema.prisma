@@ -1,0 +1,32 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider     = "prisma-client"
+    output       = "generated"
+    engineType   = "client"
+    runtime      = "workerd"
+    moduleFormat = "esm"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id       String    @id
+    name     String
+    username String    @unique
+    avatar   String
+    passkeys Passkey[]
+}
+
+model Passkey {
+    id        String   @id
+    publicKey Bytes
+    counter   Int
+    createdAt DateTime @default(now())
+    userId    String
+    user      User     @relation(fields: [userId], references: [id])
+}

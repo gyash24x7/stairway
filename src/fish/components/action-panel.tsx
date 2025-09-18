@@ -1,0 +1,52 @@
+"use client";
+
+import { AskCard } from "@/fish/components/ask-card";
+import { AskHistory } from "@/fish/components/ask-history";
+import { ClaimBook } from "@/fish/components/claim-book";
+import { CreateTeams } from "@/fish/components/create-teams";
+import { StartGame } from "@/fish/components/start-game";
+import { store } from "@/fish/components/store";
+import { TransferTurn } from "@/fish/components/transfer-turn";
+import { cn } from "@/shared/utils/cn";
+import { useStore } from "@tanstack/react-store";
+import { Fragment } from "react";
+
+export function ActionPanel() {
+	const status = useStore( store, state => state.status );
+	const currentTurn = useStore( store, state => state.currentTurn );
+	const playerId = useStore( store, state => state.playerId );
+	const players = useStore( store, state => state.players );
+	const isLastMoveSuccessfulCall = useStore(
+		store,
+		( { lastMoveType, claimHistory } ) => lastMoveType === "claim" && claimHistory[ 0 ]?.success
+	);
+
+	return (
+		<div
+			className={ cn(
+				"fixed left-0 right-0 bottom-0 bg-muted border-t-4 shadow-sm",
+				"rounded-t-xl flex flex-col gap-2 px-3 py-5 items-center bg-white"
+			) }
+		>
+			{ status === "IN_PROGRESS" && (
+				<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-bg max-w-lg" }>
+					<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
+						IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
+					</p>
+				</div>
+			) }
+			<div className={ "flex gap-3 flex-wrap justify-center w-full max-w-lg" }>
+				{ status === "PLAYERS_READY" && playerId === currentTurn && <CreateTeams/> }
+				{ status === "TEAMS_CREATED" && playerId === currentTurn && <StartGame/> }
+				{ status === "IN_PROGRESS" && (
+					<Fragment>
+						{ playerId === currentTurn && <AskCard/> }
+						{ playerId === currentTurn && <ClaimBook/> }
+						{ playerId === currentTurn && isLastMoveSuccessfulCall && <TransferTurn/> }
+						<AskHistory/>
+					</Fragment>
+				) }
+			</div>
+		</div>
+	);
+}

@@ -9,7 +9,7 @@
 		"isolatedModules": true,
 		"jsx": "react-jsx",
 		"paths": {
-			"@alchemy/run": [ "./alchemy.run.ts" ],
+			"@/prisma/*": [ "./prisma/generated/*" ],
 			"@/*": [ "./src/*" ]
 		},
 		"incremental": true,
@@ -19,11 +19,11 @@
 		"types": [
 			"bun-types",
 			"vitest/globals",
-			"@cloudflare/workers-types",
-			"./types/env.d.ts"
+			"./types/cf-env.d.ts",
+			"./types/vite-env.d.ts"
 		],
 		"erasableSyntaxOnly": true
 	},
-	"include": [ "src", "tests", "vite.config.ts", "alchemy.run.ts" ],
+	"include": [ "src", "prisma", "tests", "vite.config.ts" ],
 	"exclude": [ "node_modules" ]
 }
