@@ -43,9 +43,9 @@ export function DisplayScore() {
 							<TableCell className={ "text-center" }>
 								{ scores[ player.id ].reduce( ( sum, score ) => sum + score, 0 ) }
 							</TableCell>
-							{ status !== "GAME_COMPLETED" && !!deal && (
+							{ status !== "GAME_COMPLETED" && (
 								<TableCell className={ "text-center" }>
-									{ deal.wins[ player.id ] ?? 0 }&nbsp;/&nbsp;{ deal.declarations[ player.id ] ?? 0 }
+									{ deal?.wins[ player.id ] ?? 0 }/{ deal?.declarations[ player.id ] ?? 0 }
 								</TableCell>
 							) }
 						</TableRow>

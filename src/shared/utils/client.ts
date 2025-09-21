@@ -7,7 +7,7 @@ import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 import { QueryClient } from "@tanstack/react-query";
 
 const link = new RPCLink( {
-	url: window.location.href + "api",
+	url: window.location.origin + "/api",
 	fetch: ( request, init ) => fetch( request, { ...init, credentials: "include" } ),
 	interceptors: [
 		onError( ( error ) => {

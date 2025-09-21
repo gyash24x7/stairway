@@ -1,7 +1,7 @@
 import type { AuthInfo, Session } from "@/auth/types";
 import { generateSecureRandomString } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { getCookie, setCookie, sign } from "@orpc/server/helpers";
+import { getCookie, setCookie, sign, unsign } from "@orpc/server/helpers";
 import { env } from "cloudflare:workers";
 
 const expirationTtl = 7 * 24 * 60 * 60; // 7 days
@@ -34,7 +34,7 @@ export async function validateSession( headers: Headers ) {
 		return undefined;
 	}
 
-	const sessionId = await sign( sessionCookie, env.AUTH_SECRET_KEY );
+	const sessionId = await unsign( sessionCookie, env.AUTH_SECRET_KEY );
 	if ( !sessionId ) {
 		logger.warn( "Invalid Session Id!" );
 		return undefined;

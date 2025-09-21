@@ -69,7 +69,6 @@ export type GameIdInput = {
 export type CreateGameInput = {
 	dealCount?: 5 | 9 | 13;
 	trumpSuit: CardSuit;
-	gameId?: string;
 };
 
 export type JoinGameInput = {
@@ -90,3 +89,4 @@ export type PlayCardInput = {
 };
 
 export type SaveFn = ( game: GameData ) => Promise<void>;
+export type AlarmFn = ( ms: number ) => Promise<void>;

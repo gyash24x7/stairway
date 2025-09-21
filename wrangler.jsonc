@@ -41,6 +41,22 @@
 			"id": "542857462292455b9c4731a46fdfc55c"
 		}
 	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "CALLBREAK_DO",
+				"class_name": "CallbreakDO"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"CallbreakDO"
+			]
+		}
+	],
 	"vars": {
 		"APP_NAME": "stairway"
 	}

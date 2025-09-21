@@ -5,12 +5,10 @@ import type {
 	DeclareDealWinsInput,
 	GameData,
 	PlayCardInput,
-	PlayerGameInfo,
 	PlayerId,
-	Round,
-	SaveFn
+	Round
 } from "@/callbreak/types";
-import { canCardBePlayed, getBestCardPlayed, getPlayableCards } from "@/callbreak/utils";
+import { getBestCardPlayed, getPlayableCards } from "@/callbreak/utils";
 import { remove } from "@/shared/utils/array";
 import {
 	CARD_RANKS,
@@ -23,7 +21,6 @@ import {
 	getCardId,
 	getCardsOfSuit,
 	getCardSuit,
-	isCardInHand,
 	type PlayingCard
 } from "@/shared/utils/cards";
 import { generateBotInfo, generateGameCode, generateId } from "@/shared/utils/generator";
@@ -42,7 +39,6 @@ export class CallbreakEngine {
 
 	private readonly logger = createLogger( "Callbreak:Engine" );
 	private readonly data: GameData;
-	private readonly save: SaveFn;
 
 	/**
 	 * Initializes a new instance of the CallbreakEngine with the provided game data.
@@ -50,17 +46,14 @@ export class CallbreakEngine {
 	 *
 	 * @constructor
 	 * @param data {GameData} - The initial game data to set up the engine.
-	 * @param saveFn {SaveFn} - A function to save the game data, typically to a database or storage.
 	 */
-	public constructor( data: GameData, saveFn: SaveFn ) {
+	public constructor( data: GameData ) {
 		this.data = data;
-		this.save = saveFn;
 	}
 
 	/**
 	 * Gets the unique identifier of the game.
 	 * This ID is used to reference the game in various operations and is immutable once the game is created.
-	 *
 	 * @return {string} - The unique identifier of the game.
 	 */
 	public get id(): string {
@@ -73,41 +66,44 @@ export class CallbreakEngine {
 	 * Defaults to a deal count of 5 if not specified.
 	 *
 	 * @param input {CreateGameInput} - The input parameters containing deal count and trump suit.
-	 * @param playerId {PlayerId} - The ID of the player creating the game.
-	 * @param saveFn {SaveFn} - A function to save the game data, typically to a database or storage.
 	 * @return {CallbreakEngine} - A new instance of the CallbreakEngine initialized with the created game data.
 	 */
-	public static create( input: CreateGameInput, playerId: PlayerId, saveFn: SaveFn ): CallbreakEngine {
+	public static create( input: CreateGameInput ): CallbreakEngine {
 		const { dealCount = 5, trumpSuit } = input;
 		const data: GameData = {
 			id: generateId(),
 			code: generateGameCode(),
 			dealCount,
 			trump: trumpSuit,
-			currentTurn: playerId,
+			currentTurn: "",
 			status: "GAME_CREATED",
 			scores: {},
-			createdBy: playerId,
+			createdBy: "",
 			players: {},
 			deals: []
 		};
 
-		return new CallbreakEngine( data, saveFn );
+		return new CallbreakEngine( data );
 	}
 
 	/**
-	 * Retrieves the game data specific to a player.
-	 * This function returns the game state including the current deal, current round,
-	 * and the player's hand, while excluding sensitive information like other players' hands.
-	 *
-	 * @param playerId {PlayerId} - The ID of the player requesting the game data.
-	 * @return {PlayerGameInfo} - The player-specific game data.
+	 * Gets the current game data.
+	 * @returns {GameData} - The current state of the game.
 	 */
-	public getPlayerData( playerId: PlayerId ): PlayerGameInfo {
-		const { deals, players, ...rest } = this.data;
-		const { rounds, hands, ...currentDeal } = deals[ 0 ];
-		const currentRound = rounds[ 0 ];
-		return { ...rest, playerId, currentDeal, currentRound, hand: hands[ playerId ] || [], players };
+	public getData(): GameData {
+		return this.data;
+	}
+
+	public updateConfig( input: Partial<CreateGameInput> & { playerId: string } ) {
+		if ( this.data.status !== "GAME_CREATED" ) {
+			this.logger.error( "Cannot update config after game has started: %s", this.data.id );
+			return;
+		}
+
+		this.data.dealCount = input.dealCount ?? this.data.dealCount;
+		this.data.trump = input.trumpSuit ?? this.data.trump;
+		this.data.currentTurn = input.playerId;
+		this.data.createdBy = input.playerId;
 	}
 
 	/**
@@ -119,8 +115,6 @@ export class CallbreakEngine {
 	 */
 	public addPlayer( playerInfo: AuthInfo ) {
 		this.logger.debug( ">> addPlayer()" );
-
-		this.validateJoinGame( playerInfo );
 
 		this.data.players[ playerInfo.id ] = { ...playerInfo, isBot: false };
 		this.data.scores[ playerInfo.id ] = [];
@@ -138,12 +132,9 @@ export class CallbreakEngine {
 	 * If all players have declared their wins, the game status is updated to "WINS_DECLARED".
 	 *
 	 * @param input {DeclareDealWinsInput} - The input containing the number of wins declared by the current player.
-	 * @param authInfo {AuthInfo} - The authentication information of the player declaring wins.
 	 */
-	public declareDealWins( input: DeclareDealWinsInput, authInfo: AuthInfo ) {
+	public declareDealWins( input: DeclareDealWinsInput ) {
 		this.logger.debug( ">> declareDealWins()" );
-
-		this.validateDealWinDeclaration( input, authInfo );
 
 		if ( Object.keys( this.data.deals[ 0 ].declarations ).length === 0 ) {
 			this.data.deals[ 0 ].status = "IN_PROGRESS";
@@ -167,12 +158,9 @@ export class CallbreakEngine {
 	 * the game status is updated to "CARDS_PLAYED".
 	 *
 	 * @param input {PlayCardInput} - The input containing the ID of the card played by the current player.
-	 * @param authInfo {AuthInfo} - The authentication information of the player playing the card.
 	 */
-	public playCard( input: PlayCardInput, authInfo: AuthInfo ) {
+	public playCard( input: PlayCardInput ) {
 		this.logger.debug( ">> playCard()" );
-
-		this.validatePlayCard( input, authInfo );
 
 		const activeDeal = this.data.deals[ 0 ];
 		const activeRound = activeDeal.rounds[ 0 ];
@@ -208,19 +196,20 @@ export class CallbreakEngine {
 	 * It ensures that the game flows smoothly without manual intervention,
 	 * especially when bot players are involved.
 	 */
-	public async autoplay() {
+	public autoplay() {
 		this.logger.debug( ">> autoplay()" );
 
+		let setNextAlarm = false;
 		switch ( this.data.status ) {
 			case "GAME_CREATED": {
 				this.addBots();
-				await this.saveGameData();
+				setNextAlarm = true;
 				break;
 			}
 
 			case "PLAYERS_READY": {
 				this.createDeal();
-				await this.saveGameData();
+				setNextAlarm = true;
 				break;
 			}
 
@@ -230,15 +219,15 @@ export class CallbreakEngine {
 				if ( currentPlayer.isBot ) {
 					const wins = this.suggestDealWins();
 					const input = { gameId: this.data.id, dealId: currentDeal.id, wins };
-					this.declareDealWins( input, currentPlayer );
-					await this.saveGameData();
+					this.declareDealWins( input );
+					setNextAlarm = true;
 				}
 				break;
 			}
 
 			case "WINS_DECLARED": {
 				this.createRound();
-				await this.saveGameData();
+				setNextAlarm = true;
 				break;
 			}
 
@@ -254,15 +243,15 @@ export class CallbreakEngine {
 						roundId: currentRound.id,
 						cardId: getCardId( card )
 					};
-					this.playCard( input, currentPlayer );
-					await this.saveGameData();
+					this.playCard( input );
+					setNextAlarm = true;
 				}
 				break;
 			}
 
 			case "CARDS_PLAYED": {
 				this.completeRound();
-				await this.saveGameData();
+				setNextAlarm = true;
 				break;
 			}
 
@@ -273,131 +262,23 @@ export class CallbreakEngine {
 				} else {
 					this.createRound();
 				}
-				await this.saveGameData();
+				setNextAlarm = true;
 				break;
 			}
 
 			case "DEAL_COMPLETED": {
 				if ( this.data.deals.length < this.data.dealCount ) {
 					this.createDeal();
+					setNextAlarm = true;
 				} else {
 					this.data.status = "GAME_COMPLETED";
 				}
-				await this.saveGameData();
 				break;
 			}
 		}
 
 		this.logger.debug( "<< autoplay()" );
-	}
-
-	/**
-	 * Saves the current game data using the provided save function.
-	 * This function needs to be called after making any changes to the game state
-	 * to ensure that the updated state is persisted.
-	 */
-	public async saveGameData() {
-		await this.save( this.data );
-	}
-
-	/**
-	 * Validates the join game request.
-	 * Checks if the game exists, if the player is already in the game,
-	 * and if the game is full.
-	 * If any validation fails, it returns an error.
-	 *
-	 * @private
-	 * @param {AuthInfo} authInfo - The authentication information of the player.
-	 */
-	private validateJoinGame( authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateJoinGame()" );
-
-		if ( this.data.players[ authInfo.id ] ) {
-			this.logger.warn( "Already in Game: %s", authInfo.id );
-			return;
-		}
-
-		if ( Object.keys( this.data.players ).length >= 4 ) {
-			this.logger.error( "Game Full: %s", this.data.id );
-			throw "Game full!";
-		}
-
-		this.logger.debug( "<< validateJoinGame()" );
-	}
-
-	/**
-	 * Validates the declaration of deal wins.
-	 * Checks if the deal exists, if it has no rounds,
-	 * and if it's the player's turn.
-	 * If any validation fails, it returns an error.
-	 *
-	 * @private
-	 * @param {DeclareDealWinsInput} input - The input containing deal ID, wins and authInfo
-	 * @param {AuthInfo} authInfo - The authentication information of the player.
-	 */
-	private validateDealWinDeclaration( input: DeclareDealWinsInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateDealWinDeclaration()" );
-
-		if ( this.data.currentTurn !== authInfo.id ) {
-			this.logger.error( "Not Your Turn: %s", authInfo.id );
-			throw "Not your turn!";
-		}
-
-		const deal = this.data.deals[ 0 ];
-		if ( !deal || deal.rounds.length !== 0 || deal.id !== input.dealId ) {
-			this.logger.error( "Active Deal Not Found: %s", this.data.id );
-			throw "Active deal not found!";
-		}
-
-		this.logger.debug( "<< validateDealWinDeclaration()" );
-	}
-
-	/**
-	 * Validates the play card action.
-	 * Checks if it's the player's turn, if the deal exists,
-	 * if the round exists, if the card is in the player's hand,
-	 * and if the card can be played according to the game rules.
-	 * If any validation fails, it returns an error.
-	 *
-	 * @private
-	 * @param {PlayCardInput} input - The input containing card ID, round ID, deal ID and authInfo
-	 * @param {AuthInfo} authInfo - The authentication information of the player.
-	 */
-	private validatePlayCard( input: PlayCardInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> validatePlayCard()" );
-
-		if ( this.data.currentTurn !== authInfo.id ) {
-			this.logger.error( "Not Your Turn: %s", authInfo.id );
-			throw "Not your turn!";
-		}
-
-		const deal = this.data.deals[ 0 ];
-		if ( !deal || deal.id !== input.dealId ) {
-			this.logger.error( "Deal Not Found: %s", input.dealId );
-			throw "Deal not found!";
-		}
-
-		const round = deal.rounds[ 0 ];
-		if ( !round ) {
-			this.logger.error( "Round Not Found: %s", input.roundId );
-			throw "Round not found!";
-		}
-
-		const hand = deal.hands[ authInfo.id ];
-		if ( !isCardInHand( hand, input.cardId ) ) {
-			this.logger.error( "Card Not Yours: %s", input.cardId );
-			throw "Card not in hand!";
-		}
-
-		const cardsPlayed = Object.values( round.cards ).map( getCardFromId );
-		const isCardPlayAllowed = canCardBePlayed( input.cardId, hand, this.data.trump, cardsPlayed, round.suit );
-
-		if ( !isCardPlayAllowed ) {
-			this.logger.error( "Invalid Card: %s", input.cardId );
-			throw "Card cannot be played!";
-		}
-
-		this.logger.debug( "<< validatePlayCard()" );
+		return setNextAlarm;
 	}
 
 	/**
