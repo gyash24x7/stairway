@@ -1,5 +1,12 @@
 import type { AuthInfo } from "@/auth/types";
-import type { CreateGameInput, DeclareDealWinsInput, GameData, PlayCardInput } from "@/callbreak/types";
+import type {
+	CreateGameInput,
+	DeclareDealWinsInput,
+	GameData,
+	PlayCardInput,
+	PlayerGameInfo,
+	PlayerId
+} from "@/callbreak/types";
 import { CallbreakEngine } from "@/callbreak/worker/engine";
 import { CARD_SUITS } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
@@ -29,15 +36,8 @@ export class CallbreakDO extends DurableObject {
 
 	public async getPlayerData( playerId: string ) {
 		this.logger.debug( ">> getPlayerData()" );
-		const { deals, players, ...rest } = this.data;
-		if ( !deals[ 0 ] ) {
-			return { data: { ...rest, playerId, hand: [], players } };
-		}
-
-		const { rounds, hands, ...currentDeal } = deals[ 0 ];
-		const currentRound = rounds[ 0 ];
-		const data = { ...rest, playerId, currentDeal, currentRound, hand: hands[ playerId ] || [], players };
-
+		const playerDataMap = this.getPlayerDataMap();
+		const data = playerDataMap[ playerId ];
 		this.logger.debug( "<< getPlayerData()" );
 		return { data };
 	}
@@ -59,6 +59,7 @@ export class CallbreakDO extends DurableObject {
 		engine.addPlayer( authInfo );
 		this.data = engine.getData();
 		await this.saveGameData();
+		await this.broadcastGameData();
 		this.logger.debug( "<< addPlayer()" );
 	}
 
@@ -68,6 +69,7 @@ export class CallbreakDO extends DurableObject {
 		engine.declareDealWins( input );
 		this.data = engine.getData();
 		await this.saveGameData();
+		await this.broadcastGameData();
 		await this.setAlarm( 5000 );
 		this.logger.debug( "<< declareDealWins()" );
 	}
@@ -78,6 +80,7 @@ export class CallbreakDO extends DurableObject {
 		engine.playCard( input );
 		this.data = engine.getData();
 		await this.saveGameData();
+		await this.broadcastGameData();
 		await this.setAlarm( 5000 );
 		this.logger.debug( "<< playCard()" );
 	}
@@ -88,6 +91,7 @@ export class CallbreakDO extends DurableObject {
 		const setNextAlarm = engine.autoplay();
 		this.data = engine.getData();
 		await this.saveGameData();
+		await this.broadcastGameData();
 
 		if ( setNextAlarm ) {
 			await this.setAlarm( 5000 );
@@ -102,6 +106,30 @@ export class CallbreakDO extends DurableObject {
 
 	private async loadGameData() {
 		return this.env.CALLBREAK_KV.get<GameData>( this.key, "json" );
+	}
+
+	private async broadcastGameData() {
+		await this.env.WS_DO.getByName( `callbreak:${ this.data.id }` ).broadcast( this.getPlayerDataMap() );
+	}
+
+	private getPlayerDataMap(): Record<PlayerId, PlayerGameInfo> {
+		return Object.keys( this.data.players ).reduce(
+			( acc, playerId ) => {
+				const { deals, players, ...rest } = this.data;
+				if ( !deals[ 0 ] ) {
+					acc[ playerId ] = { ...rest, playerId, hand: [], players };
+					return acc;
+				}
+
+				const { rounds, hands, ...currentDeal } = deals[ 0 ];
+				const hand = hands[ playerId ] ?? [];
+				const currentRound = rounds[ 0 ];
+				acc[ playerId ] = { ...rest, playerId, currentDeal, currentRound, hand, players };
+
+				return acc;
+			},
+			{} as Record<string, PlayerGameInfo>
+		);
 	}
 
 	private async saveGameData() {

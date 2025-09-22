@@ -1,7 +1,7 @@
 import type { PlayerGameInfo } from "@/fish/types";
 import { service } from "@/fish/worker/service";
 import { CARD_IDS } from "@/shared/utils/cards";
-import { requireAuth } from "@/worker";
+import { requireAuth } from "@/shared/utils/orpc";
 import { os } from "@orpc/server";
 import { array, custom, length, object, optional, picklist, pipe, record, string, trim, ulid, void_ } from "valibot";
 

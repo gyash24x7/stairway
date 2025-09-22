@@ -1,4 +1,4 @@
-import type { ORPCRouter } from "@/worker";
+import type { ORPCRouter } from "@/shared/utils/orpc";
 import { createORPCClient, onError } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import { SimpleCsrfProtectionLinkPlugin } from "@orpc/client/plugins";

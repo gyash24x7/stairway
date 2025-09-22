@@ -1,7 +1,7 @@
 import { type PlayerGameInfo } from "@/callbreak/types";
 import { service } from "@/callbreak/worker/service";
 import { CARD_IDS, CARD_SUITS } from "@/shared/utils/cards";
-import { requireAuth } from "@/worker";
+import { requireAuth } from "@/shared/utils/orpc";
 import { os } from "@orpc/server";
 import { custom, length, ltValue, number, object, optional, picklist, pipe, string, trim, ulid, void_ } from "valibot";
 

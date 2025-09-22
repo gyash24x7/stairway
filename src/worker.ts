@@ -1,35 +1,29 @@
-import { router as auth } from "@/auth/worker/router";
 import { validateSession } from "@/auth/worker/sessions";
-import { router as callbreak } from "@/callbreak/worker/router";
-import { router as fish } from "@/fish/worker/router";
+import { handler } from "@/shared/utils/orpc";
 import { setupPrisma } from "@/shared/utils/prisma";
-import { router as wordle } from "@/wordle/worker/router";
-import { ORPCError, os } from "@orpc/server";
-import { RPCHandler } from "@orpc/server/fetch";
-import { ResponseHeadersPlugin, SimpleCsrfProtectionHandlerPlugin } from "@orpc/server/plugins";
 
 export { CallbreakDO } from "@/callbreak/worker/durable.object";
-
-export const requireAuth = os.$context<Ctx>().middleware( ( { context, next } ) => {
-	if ( !context.session ) {
-		throw new ORPCError( "FORBIDDEN" );
-	}
-
-	return next( { context: { session: context.session } } );
-} );
-
-export type ORPCRouter = typeof router;
-const router = { auth, callbreak, fish, wordle };
-const handler = new RPCHandler( router, {
-	plugins: [
-		new SimpleCsrfProtectionHandlerPlugin(),
-		new ResponseHeadersPlugin()
-	]
-} );
+export { WebsocketDO } from "@/shared/utils/ws";
 
 export default {
 	async fetch( request, env ) {
 		const url = new URL( request.url );
+
+		if ( url.pathname.startsWith( "/ws" ) ) {
+			const upgradeHeader = request.headers.get( "Upgrade" );
+			if ( !upgradeHeader || upgradeHeader !== "websocket" ) {
+				return new Response( "Worker expected Upgrade: websocket", { status: 426 } );
+			}
+
+			if ( request.method !== "GET" ) {
+				return new Response( "Worker expected GET method", { status: 400 } );
+			}
+
+			const [ _, _ws, game, gameId ] = url.pathname.split( "/" );
+			const durableObjectId = env.WS_DO.idFromName( `${ game }:${ gameId }` );
+			const stub = env.WS_DO.get( durableObjectId );
+			return stub.fetch( request );
+		}
 
 		if ( url.pathname.startsWith( "/api" ) ) {
 			await setupPrisma( env );

@@ -1,6 +1,6 @@
+import { requireAuth } from "@/shared/utils/orpc";
 import type { PlayerGameInfo } from "@/wordle/types";
 import { service } from "@/wordle/worker/service";
-import { requireAuth } from "@/worker";
 import { os } from "@orpc/server";
 import { array, custom, gtValue, length, number, object, optional, picklist, pipe, string, ulid } from "valibot";
 
