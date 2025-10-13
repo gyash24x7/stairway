@@ -48,6 +48,10 @@
 				"class_name": "CallbreakDO"
 			},
 			{
+				"name": "FISH_DO",
+				"class_name": "FishDO"
+			},
+			{
 				"name": "WS_DO",
 				"class_name": "WebsocketDO"
 			}
@@ -58,6 +62,7 @@
 			"tag": "v1",
 			"new_sqlite_classes": [
 				"CallbreakDO",
+				"FishDO",
 				"WebsocketDO"
 			]
 		}

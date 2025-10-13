@@ -4,7 +4,7 @@ import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
 import { createFileRoute, getRouteApi } from "@tanstack/react-router";
 
-export const Route = createFileRoute( "/fish" )( {
+export const Route = createFileRoute( "/fish/" )( {
 	component: () => {
 		const rootRoute = getRouteApi( "__root__" );
 		const authInfo = rootRoute.useLoaderData();
@@ -105,6 +105,6 @@ export const Route = createFileRoute( "/fish" )( {
 					records about the game.
 				</p>
 			</div>
-		);
+		)
 	}
 } );

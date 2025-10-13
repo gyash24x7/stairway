@@ -3,6 +3,7 @@ import { handler } from "@/shared/utils/orpc";
 import { setupPrisma } from "@/shared/utils/prisma";
 
 export { CallbreakDO } from "@/callbreak/worker/durable.object";
+export { FishDO } from "@/fish/worker/durable.object";
 export { WebsocketDO } from "@/shared/utils/ws";
 
 export default {

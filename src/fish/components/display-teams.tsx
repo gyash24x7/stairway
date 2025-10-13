@@ -1,6 +1,8 @@
 "use client";
 
 import { store } from "@/fish/components/store";
+import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
+import { Table, TableBody, TableCell, TableRow } from "@/shared/primitives/table";
 import { useStore } from "@tanstack/react-store";
 
 export function DisplayTeams() {
@@ -8,29 +10,34 @@ export function DisplayTeams() {
 	const teams = useStore( store, state => Object.values( state.teams )
 		.toSorted( ( a, b ) => a.id.localeCompare( b.id ) ) );
 
-	const getFirstName = ( name: string ) => {
-		return name.split( " " )[ 0 ].toUpperCase();
-	};
-
 	return (
 		<div className={ "flex flex-col border-2 rounded-md" }>
-			{ teams.map( team => (
-				<div>
-					<div>
-						<h2 className={ "lg:text-4xl sm:text-3xl text-2xl" }>
-							{ team.name.toUpperCase() }
-						</h2>
-						<div className={ "w-full p-2 border-r-2 text-xs md:text-md text-left" }>
-							{ team.players.map( playerId => getFirstName( players[ playerId ].name ) ).join( ", " ) }
-						</div>
-					</div>
-					<div>
-						<h2 className={ "lg:text-6xl sm:text-4xl text-3xl" }>
-							{ team.score }
-						</h2>
-					</div>
-				</div>
-			) ) }
+			<Table>
+				<TableBody>
+					{ teams.map( team => (
+						<TableRow key={ team.id }>
+							<TableCell className={ "text-2xl md:text-4xl uppercase font-heading" }>
+								{ team.name }
+							</TableCell>
+							<TableCell>
+								<div className={ "flex gap-3 items-center" }>
+									{ team.players.map( pid => players[ pid ] ).map( player => (
+										<div key={ player.id } className={ "gap-2 items-center hidden sm:flex" }>
+											<Avatar className={ "rounded-full w-7 h-7" }>
+												<AvatarImage src={ player.avatar } alt={ "" }/>
+											</Avatar>
+											<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>
+										</div>
+									) ) }
+								</div>
+							</TableCell>
+							<TableCell className={ "text-center text-2xl md:text-4xl font-heading" }>
+								{ team.score }
+							</TableCell>
+						</TableRow>
+					) ) }
+				</TableBody>
+			</Table>
 		</div>
 	);
 }

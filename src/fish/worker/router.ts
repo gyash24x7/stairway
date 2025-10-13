@@ -44,7 +44,7 @@ const askCard = os.$context<Ctx>().use( requireAuth )
 		cardId: picklist( CARD_IDS )
 	} ) )
 	.output( void_() )
-	.handler( ( { input, context } ) => service.askCard( input, context.session.authInfo ) );
+	.handler( ( { input, context } ) => service.handleAskEvent( input, context.session.authInfo ) );
 
 const claimBook = os.$context<Ctx>().use( requireAuth )
 	.input( object( {
@@ -52,7 +52,7 @@ const claimBook = os.$context<Ctx>().use( requireAuth )
 		claim: record( picklist( CARD_IDS ), pipe( string(), ulid() ) )
 	} ) )
 	.output( void_() )
-	.handler( ( { input, context } ) => service.claimBook( input, context.session.authInfo ) );
+	.handler( ( { input, context } ) => service.handleClaimEvent( input, context.session.authInfo ) );
 
 const transferTurn = os.$context<Ctx>().use( requireAuth )
 	.input( object( {
@@ -60,7 +60,7 @@ const transferTurn = os.$context<Ctx>().use( requireAuth )
 		transferTo: pipe( string(), ulid() )
 	} ) )
 	.output( void_() )
-	.handler( ( { input, context } ) => service.transferTurn( input, context.session.authInfo ) );
+	.handler( ( { input, context } ) => service.handleTransferEvent( input, context.session.authInfo ) );
 
 export const router = {
 	createGame,

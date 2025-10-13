@@ -24,7 +24,7 @@ export function StoreLoader( props: { children: ReactNode; data: PlayerGameInfo 
 	const host = window.location.host;
 	const socketUrl = `${ protocol }://${ host }/ws/callbreak/${ props.data.id }`;
 
-	const {} = useWebSocket( socketUrl, {
+	useWebSocket( socketUrl, {
 		shouldReconnect: () => true,
 		onOpen: () => console.log( "WebSocket connection established" ),
 		onClose: () => console.log( "WebSocket connection closed" ),

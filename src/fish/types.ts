@@ -183,5 +183,3 @@ export type TransferEventInput = {
 	gameId: GameId;
 	transferTo: string;
 };
-
-export type SaveFn = ( gameData: GameData ) => Promise<void>;

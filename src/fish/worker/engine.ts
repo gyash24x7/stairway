@@ -10,7 +10,6 @@ import type {
 	NormalBook,
 	PlayerGameInfo,
 	PlayerId,
-	SaveFn,
 	StartGameInput,
 	TeamCount,
 	TransferEventInput,
@@ -57,16 +56,13 @@ export class FishEngine {
 
 	private readonly logger = createLogger( "Fish:Engine" );
 	private readonly data: GameData;
-	private readonly save: SaveFn;
 
 	/**
 	 * Creates an instance of FishEngine.
 	 * @param data - The initial game data.
-	 * @param saveFn - A function to save the game state.
 	 */
-	public constructor( data: GameData, saveFn: SaveFn ) {
+	public constructor( data: GameData ) {
 		this.data = data;
-		this.save = saveFn;
 	}
 
 	/**
@@ -81,16 +77,14 @@ export class FishEngine {
 	/**
 	 * Creates a new game instance with the provided configuration
 	 * and initializes the game state.
-	 * @param input - Configuration input for creating the game.
-	 * @param authInfo - Authentication information of the game creator.
-	 * @param saveFn - A function to save the game state.
+	 * @param input - Configuration input for creating the game
 	 */
-	public static create( input: CreateGameInput, authInfo: AuthInfo, saveFn: SaveFn ) {
+	public static create( input: CreateGameInput ) {
 		const game: GameData = {
 			id: generateId(),
 			code: generateGameCode(),
 			status: GAME_STATUS.CREATED,
-			currentTurn: authInfo.id,
+			currentTurn: "",
 			config: {
 				type: "NORMAL",
 				playerCount: input.playerCount ?? 6,
@@ -116,7 +110,7 @@ export class FishEngine {
 			metrics: {}
 		};
 
-		return new FishEngine( game, saveFn );
+		return new FishEngine( game );
 	}
 
 	/**
@@ -145,9 +139,42 @@ export class FishEngine {
 	 * @private
 	 */
 	private static getDefaultBookStates( bookType: BookType, playerIds: PlayerId[] = [] ): GameData["bookStates"] {
-		const { knownOwners, possibleOwners, inferredOwners } = SORTED_DECK.reduce(
-			( acc, card ) => {
-				const cardId = getCardId( card );
+		if ( bookType === "NORMAL" ) {
+			return Object.keys( NORMAL_BOOKS ).map( k => k as NormalBook ).reduce(
+				( acc, book ) => {
+					const ownerState = this.getDefaultBookCardsState( NORMAL_BOOKS[ book ], playerIds );
+					acc[ book ] = {
+						cards: NORMAL_BOOKS[ book ],
+						knownOwners: ownerState.knownOwners,
+						possibleOwners: ownerState.possibleOwners,
+						inferredOwners: ownerState.inferredOwners,
+						knownCounts: {}
+					};
+					return acc;
+				},
+				{} as GameData["bookStates"]
+			);
+		} else {
+			return Object.keys( CANADIAN_BOOKS ).map( k => k as CanadianBook ).reduce(
+				( acc, book ) => {
+					const ownerState = this.getDefaultBookCardsState( CANADIAN_BOOKS[ book ], playerIds );
+					acc[ book ] = {
+						cards: CANADIAN_BOOKS[ book ],
+						knownOwners: ownerState.knownOwners,
+						possibleOwners: ownerState.possibleOwners,
+						inferredOwners: ownerState.inferredOwners,
+						knownCounts: {}
+					};
+					return acc;
+				},
+				{} as GameData["bookStates"]
+			);
+		}
+	}
+
+	private static getDefaultBookCardsState( cardIds: CardId[], playerIds: PlayerId[] = [] ) {
+		return cardIds.reduce(
+			( acc, cardId ) => {
 				acc.knownOwners[ cardId ] = "";
 				acc.possibleOwners[ cardId ] = playerIds;
 				acc.inferredOwners[ cardId ] = "";
@@ -159,36 +186,6 @@ export class FishEngine {
 				inferredOwners: {} as Record<CardId, PlayerId>
 			}
 		);
-
-		if ( bookType === "NORMAL" ) {
-			return Object.keys( NORMAL_BOOKS ).map( k => k as NormalBook ).reduce(
-				( acc, book ) => {
-					acc[ book ] = {
-						cards: NORMAL_BOOKS[ book ],
-						knownOwners,
-						possibleOwners,
-						inferredOwners,
-						knownCounts: {}
-					};
-					return acc;
-				},
-				{} as GameData["bookStates"]
-			);
-		} else {
-			return Object.keys( CANADIAN_BOOKS ).map( k => k as CanadianBook ).reduce(
-				( acc, book ) => {
-					acc[ book ] = {
-						cards: CANADIAN_BOOKS[ book ],
-						knownOwners,
-						possibleOwners,
-						inferredOwners,
-						knownCounts: {}
-					};
-					return acc;
-				},
-				{} as GameData["bookStates"]
-			);
-		}
 	}
 
 	/**
@@ -210,14 +207,32 @@ export class FishEngine {
 	}
 
 	/**
+	 * Gets the current game data.
+	 * @returns {GameData} - The current state of the game.
+	 */
+	public getData(): GameData {
+		return this.data;
+	}
+
+	public updateConfig( input: Partial<CreateGameInput> & { playerId: string } ) {
+		this.logger.debug( ">> updateConfig()" );
+
+		if ( this.data.status !== GAME_STATUS.CREATED ) {
+			this.logger.error( "Cannot update config after game has started! GameId: %s", this.data.id );
+			return;
+		}
+
+		this.data.config.playerCount = input.playerCount ?? this.data.config.playerCount;
+		this.data.currentTurn = input.playerId;
+	}
+
+	/**
 	 * Adds a player to the game if there is space and the player is not already part of the game.
 	 * This method updates the game state to include the new player and checks if the game is ready to start.
 	 * @param playerInfo - The authentication information of the player to be added.s
 	 */
 	public addPlayer( playerInfo: AuthInfo ) {
 		this.logger.debug( ">> addPlayer()" );
-
-		this.validateJoinGame( playerInfo );
 
 		this.data.playerIds.push( playerInfo.id );
 		this.data.players[ playerInfo.id ] = {
@@ -265,6 +280,14 @@ export class FishEngine {
 				opponents: [],
 				isBot: true
 			};
+
+			this.data.metrics[ botId ] = {
+				totalAsks: 0,
+				cardsTaken: 0,
+				cardsGiven: 0,
+				totalClaims: 0,
+				successfulClaims: 0
+			};
 		}
 
 		this.data.status = GAME_STATUS.PLAYERS_READY;
@@ -276,12 +299,9 @@ export class FishEngine {
 	 * updating their team-related information. This method also transitions
 	 * the game state to TEAMS_CREATED.
 	 * @param input - The input containing team names and their respective player IDs.
-	 * @param authInfo - The authentication information of the player creating the teams.
 	 */
-	public createTeams( input: CreateTeamsInput, authInfo: AuthInfo ) {
+	public createTeams( input: CreateTeamsInput ) {
 		this.logger.debug( ">> createTeams()" );
-
-		this.validateCreateTeams( input, authInfo );
 
 		this.data.config.teamCount = Object.keys( input.data ).length as TeamCount;
 		Object.entries( input.data ).forEach( ( [ name, players ] ) => {
@@ -289,10 +309,11 @@ export class FishEngine {
 			this.data.teamIds.push( id );
 			this.data.teams[ id ] = { id, name, players, score: 0, booksWon: [] };
 			players.forEach( playerId => {
+				const teamMates = remove( p => p === playerId, players );
+				const opponents = remove( p => p === playerId || teamMates.includes( p ), this.data.playerIds );
 				this.data.players[ playerId ].teamId = id;
-				const teamMates = remove( p => p !== playerId, players );
 				this.data.players[ playerId ].teamMates = teamMates;
-				this.data.players[ playerId ].opponents = this.data.playerIds.filter( p => !teamMates.includes( p ) );
+				this.data.players[ playerId ].opponents = opponents;
 			} );
 		} );
 
@@ -308,10 +329,8 @@ export class FishEngine {
 	 * @param type - The type of game (e.g., NORMAL or CANADIAN).
 	 * @param authInfo - The authentication information of the player starting the game.
 	 */
-	public startGame( { deckType, type }: StartGameInput, authInfo: AuthInfo ) {
+	public startGame( { deckType, type }: StartGameInput ) {
 		this.logger.debug( ">> startGame()" );
-
-		this.validateStartGame( authInfo );
 
 		this.data.config.deckType = deckType;
 		this.data.config.type = type;
@@ -344,12 +363,9 @@ export class FishEngine {
 	 * This method updates the game state based on the outcome of the ask,
 	 * including card ownership and turn management.
 	 * @param event - The ask event input containing details of the ask action.
-	 * @param authInfo - The authentication information of the player making the ask.
 	 */
-	public handleAskEvent( event: AskEventInput, authInfo: AuthInfo ) {
+	public handleAskEvent( event: AskEventInput ) {
 		this.logger.debug( ">> handleAskEvent()" );
-
-		this.validateAskEvent( event, authInfo );
 
 		const playerId = this.data.currentTurn;
 		const askedBook = getBookForCard( event.cardId, this.data.config.type );
@@ -417,12 +433,9 @@ export class FishEngine {
 	 * This method updates the game state based on the validity of the claim,
 	 * including score updates and turn management.
 	 * @param event - The claim event input containing details of the claim action.
-	 * @param authInfo - The authentication information of the player making the claim.
 	 */
-	public handleClaimEvent( event: ClaimEventInput, authInfo: AuthInfo ) {
+	public handleClaimEvent( event: ClaimEventInput ) {
 		this.logger.debug( ">> handleClaimEvent()" );
-
-		this.validateClaimEvent( event, authInfo );
 
 		const playerId = this.data.currentTurn;
 		const calledCards = Object.keys( event.claim ).map( cardId => cardId as CardId );
@@ -510,12 +523,9 @@ export class FishEngine {
 	 * Handles a transfer event where a player transfers their turn to a teammate.
 	 * This method updates the game state to reflect the transfer of turn.
 	 * @param event - The transfer event input containing details of the transfer action.
-	 * @param authInfo - The authentication information of the player making the transfer.
 	 */
-	public handleTransferEvent( event: TransferEventInput, authInfo: AuthInfo ) {
+	public handleTransferEvent( event: TransferEventInput ) {
 		this.logger.debug( ">> handleTransferEvent()" );
-
-		this.validateTransferEvent( event, authInfo );
 
 		const transferringPlayer = this.data.players[ this.data.currentTurn ];
 		const receivingPlayer = this.data.players[ event.transferTo ];
@@ -546,42 +556,36 @@ export class FishEngine {
 	}
 
 	/**
-	 * Saves the current game data using the provided save function.
-	 * This function is to be called whenever the game state changes and needs to be persisted.
-	 */
-	public async saveGameData() {
-		await this.save( this.data );
-	}
-
-	/**
 	 * Automates game actions for bot players based on the current game state.
 	 * This method checks the game status and performs appropriate actions for bot players,
 	 * such as joining the game, creating teams, starting the game, and making moves during their turn.
 	 */
-	public async autoplay() {
+	public autoplay() {
 		this.logger.debug( ">> autoplay()" );
 
+		let setNextAlarm = false;
 		const currentPlayer = this.data.players[ this.data.currentTurn ];
 		switch ( this.data.status ) {
 			case "CREATED": {
 				this.addBots();
-				await this.saveGameData();
+				setNextAlarm = true;
 				break;
 			}
 			case "PLAYERS_READY": {
 				const teamData = FishEngine.getDefaultTeamData( this.data.config.teamCount, this.data.playerIds );
-				this.createTeams( { gameId: this.data.id, data: teamData }, currentPlayer );
-				await this.saveGameData();
+				this.createTeams( { gameId: this.data.id, data: teamData } );
+				setNextAlarm = true;
 				break;
 			}
 			case "TEAMS_CREATED": {
 				const input: StartGameInput = { type: "NORMAL", deckType: 48, gameId: this.data.id };
-				this.startGame( input, currentPlayer );
-				await this.saveGameData();
+				this.startGame( input );
+				setNextAlarm = true;
 				break;
 			}
 			case "IN_PROGRESS": {
 				if ( currentPlayer.isBot ) {
+					setNextAlarm = true;
 					const weightedBooks = this.suggestBooks();
 
 					const isLastMoveSuccessfulClaim = this.data.lastMoveType === "claim"
@@ -594,8 +598,7 @@ export class FishEngine {
 							const transferTo = weightedTransfers[ 0 ].transferTo;
 							this.logger.info( "Bot %s transferring turn to %s", currentPlayer.id, transferTo );
 							const input: TransferEventInput = { gameId: this.data.id, transferTo };
-							this.handleTransferEvent( input, currentPlayer );
-							await this.saveGameData();
+							this.handleTransferEvent( input );
 							break;
 						}
 					}
@@ -607,8 +610,7 @@ export class FishEngine {
 						const claim = weightedClaims[ 0 ].claim;
 						this.logger.info( "Bot %s claiming book with cards: %o", currentPlayer.id, claim );
 						const input: ClaimEventInput = { gameId: this.data.id, claim };
-						this.handleClaimEvent( input, currentPlayer );
-						await this.saveGameData();
+						this.handleClaimEvent( input );
 						break;
 					}
 
@@ -619,8 +621,7 @@ export class FishEngine {
 						const { playerId, cardId } = weightedAsks[ 0 ];
 						this.logger.info( "Bot %s asking %s for card %s", currentPlayer.id, playerId, cardId );
 						const event: AskEventInput = { gameId: this.data.id, from: playerId, cardId };
-						this.handleAskEvent( event, currentPlayer );
-						await this.saveGameData();
+						this.handleAskEvent( event );
 						break;
 					}
 
@@ -634,274 +635,7 @@ export class FishEngine {
 		}
 
 		this.logger.debug( "<< autoplay()" );
-	}
-
-	/**
-	 * Suggests possible ask actions for the current player based on their hand and the game state.
-	 * @param authInfo - The authentication information of the player for whom to suggest asks.
-	 * @throws {Error} error if the game is not in progress or if it's not the player's turn.
-	 * @private
-	 */
-	private validateJoinGame( authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateJoinGame()" );
-
-
-		if ( this.data.players[ authInfo.id ] ) {
-			this.logger.warn( "Already in Game: %s", authInfo.id );
-			return;
-		}
-
-		if ( this.data.playerIds.length >= this.data.config.playerCount ) {
-			this.logger.error( "Game Full: %s", this.data.id );
-			throw "Game full!";
-		}
-
-		this.logger.debug( "<< validateJoinGame()" );
-	}
-
-	/**
-	 * Validates the input for creating teams, ensuring that the game state and player assignments are correct.
-	 * @param input - The input containing team names and their respective player IDs.
-	 * @param authInfo - The authentication information of the player creating the teams.
-	 * @throws {Error} error if the game is not in the correct state or if the team assignments are invalid.
-	 * @private
-	 */
-	private validateCreateTeams( input: CreateTeamsInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateCreateTeams()" );
-
-		const currentPlayer = this.data.players[ this.data.currentTurn ];
-		if ( !currentPlayer || currentPlayer.id !== authInfo.id ) {
-			this.logger.error( "Not your turn! GameId: %s, PlayerId: %s", this.data.id, authInfo.id );
-			throw "Not your turn!";
-		}
-
-		if ( this.data.status !== GAME_STATUS.PLAYERS_READY ) {
-			this.logger.error( "The Game is not in PLAYERS_READY state! GameId: %s", this.data.id );
-			throw "The Game is not in PLAYERS_READY state!";
-		}
-
-		if ( this.data.playerIds.length !== this.data.config.playerCount ) {
-			this.logger.error( "The Game does not have required players! GameId: %s", this.data.id );
-			throw "The Game does not have required players!";
-		}
-
-		const playersSpecified = new Set( Object.values( input.data ).flat() );
-		if ( playersSpecified.size !== this.data.config.playerCount ) {
-			this.logger.error( "Not all players are divided into teams! GameId: %s", this.data.id );
-			throw "Not all players are divided into teams!";
-		}
-
-		const teamCount = Object.keys( input.data ).length;
-		const playersPerTeam = this.data.config.playerCount / teamCount;
-		for ( const [ teamId, playerIds ] of Object.entries( input.data ) ) {
-			if ( playerIds.length !== playersPerTeam ) {
-				this.logger.error(
-					"The number of players in team does not match the required count! GameId: %s",
-					this.data.id
-				);
-				throw `The number of players in team ${ teamId } does not match the required count!`;
-			}
-
-			for ( const playerId of playerIds ) {
-				if ( !this.data.players[ playerId ] ) {
-					this.logger.error( "Player %s is not part of the game! GameId: %s", playerId, this.data.id );
-					throw `Player ${ playerId } is not part of the game!`;
-				}
-			}
-		}
-
-		this.logger.debug( "<< validateCreateTeams()" );
-	}
-
-	/**
-	 * Validates the conditions required to start the game, ensuring that the game state
-	 * and player turn are appropriate.
-	 * @param authInfo - The authentication information of the player starting the game.
-	 * @throws {Error} error if the game is not in the correct state or if it's not the player's turn.
-	 * @private
-	 */
-	private validateStartGame( authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateStartGame()" );
-
-		const currentPlayer = this.data.players[ this.data.currentTurn ];
-		if ( !currentPlayer || currentPlayer.id !== authInfo.id ) {
-			this.logger.error( "Not your turn! GameId: %s, PlayerId: %s", this.data.id, authInfo.id );
-			throw "Not your turn!";
-		}
-
-		if ( this.data.status !== GAME_STATUS.TEAMS_CREATED ) {
-			this.logger.error( "The Game is not in TEAMS_CREATED state! GameId: %s", this.data.id );
-			throw "The Game is not in TEAMS_CREATED state!";
-		}
-
-		this.logger.debug( "<< validateStartGame()" );
-	}
-
-	/**
-	 * Validates the conditions required for a player to ask another player for a card,
-	 * ensuring that the game state and player turn are appropriate.
-	 * @param event - The ask event input containing details of the ask action.
-	 * @param authInfo - The authentication information of the player making the ask.
-	 * @throws {Error} error if the game is not in progress, if it's not the player's turn,
-	 * or if the ask action is invalid. Asked player must be from opposing team and
-	 * the asking player must not have the asked card in their hand.
-	 * @private
-	 */
-	private validateAskEvent( event: AskEventInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateAskEvent()" );
-
-		const currentPlayer = this.data.players[ this.data.currentTurn ];
-		if ( !currentPlayer || currentPlayer.id !== authInfo.id ) {
-			this.logger.error( "Not your turn! GameId: %s, PlayerId: %s", this.data.id, authInfo.id );
-			throw "Not your turn!";
-		}
-
-		const currentPlayerHand = this.data.hands[ this.data.currentTurn ];
-
-		if ( this.data.status !== GAME_STATUS.IN_PROGRESS ) {
-			this.logger.error( "The Game is not in IN_PROGRESS state! GameId: %s", this.data.id );
-			throw "The Game is not in IN_PROGRESS state!";
-		}
-
-		if ( !this.data.players[ event.from ] ) {
-			this.logger.error( "Asked player %s is not part of the game! GameId: %s", event.from, this.data.id );
-			throw `Asked player ${ event.from } is not part of the game!` ;
-		}
-
-		const book = getBookForCard( event.cardId, this.data.config.type );
-		if ( !this.data.bookStates[ book ] ) {
-			this.logger.error( "Card %s does not exist in the game! GameId: %s", event.cardId, this.data.id );
-			throw `Card ${ event.cardId } does not exist in the game!` ;
-		}
-
-		if ( isCardInHand( currentPlayerHand.map( getCardFromId ), event.cardId ) ) {
-			this.logger.debug( "The asked card is with asking player itself! GameId: %s", this.data.id );
-			throw "The asked card is with asking player itself!";
-		}
-
-		const askingPlayerTeam = this.data.teams[ this.data.players[ authInfo.id ].teamId ];
-		const askedPlayerTeam = this.data.teams[ this.data.players[ event.from ].teamId ];
-		if ( askedPlayerTeam === askingPlayerTeam ) {
-			this.logger.debug( "The asked player is from the same team! GameId: %s", this.data.id );
-			throw "The asked player is from the same team!";
-		}
-
-		this.logger.debug( "<< validateAskEvent()" );
-	}
-
-	/**
-	 * Validates the conditions required for a player to make a claim,
-	 * ensuring that the game state and player turn are appropriate.
-	 * @param event - The claim event input containing details of the claim action.
-	 * @param authInfo - The authentication information of the player making the claim.
-	 * @throws {Error} error if the game is not in progress, if it's not the player's turn,
-	 * or if the claim action is invalid. Claim must be for all cards of a book and
-	 * must include the claiming player. Cards must be from the same book and
-	 * must be claimed for players from the same team.
-	 * @private
-	 */
-	private validateClaimEvent( event: ClaimEventInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateDeclareBookEvent()" );
-
-		const currentPlayer = this.data.players[ this.data.currentTurn ];
-		if ( !currentPlayer || currentPlayer.id !== authInfo.id ) {
-			this.logger.error( "Not your turn! GameId: %s, PlayerId: %s", this.data.id, authInfo.id );
-			throw "Not your turn!";
-		}
-
-		if ( this.data.status !== GAME_STATUS.IN_PROGRESS ) {
-			this.logger.error( "The Game is not in IN_PROGRESS state! GameId: %s", this.data.id );
-			throw "The Game is not in IN_PROGRESS state!";
-		}
-
-		const calledCards = Object.keys( event.claim ).map( key => key as CardId );
-
-		if ( this.data.config.type === "NORMAL" && calledCards.length !== 4 ) {
-			this.logger.error( "Normal Fish requires exactly 4 cards to be declared! GameId: %s", this.data.id );
-			throw "Normal Fish requires exactly 4 cards to be declared!";
-		}
-
-		if ( this.data.config.type === "CANADIAN" && calledCards.length !== 6 ) {
-			this.logger.error( "Canadian Fish requires exactly 6 cards to be declared! GameId: %s", this.data.id );
-			throw "Canadian Fish requires exactly 6 cards to be declared!";
-		}
-
-		for ( const pid of Object.values( event.claim ) ) {
-			if ( !this.data.players[ pid ] ) {
-				this.logger.error( "Player %s is not part of the game! GameId: %s", pid, this.data.id );
-				throw `Player ${ pid } is not part of the game!` ;
-			}
-		}
-
-		if ( !Object.values( event.claim ).includes( authInfo.id ) ) {
-			this.logger.error( "Calling Player did not call own cards! UserId: %s", authInfo.id );
-			throw "Calling Player did not call own cards!";
-		}
-
-		const calledBooks = calledCards.map( cardId => getBookForCard( cardId, this.data.config.type ) );
-		if ( calledBooks.length !== 1 ) {
-			this.logger.error( "Cards Called from multiple books! UserId: %s", this.data.currentTurn );
-			throw "Cards Called from multiple books!";
-		}
-
-		const calledTeams = new Set( Object.values( event.claim ).map( pid => this.data.players[ pid ].teamId ) );
-		if ( calledTeams.size !== 1 ) {
-			this.logger.error( "Set called from multiple teams! UserId: %s", this.data.currentTurn );
-			throw "Set called from multiple teams!";
-		}
-
-		this.logger.debug( "<< validateDeclareBookEvent()" );
-	}
-
-	/**
-	 * Validates the conditions required for a player to transfer their turn to a teammate,
-	 * ensuring that the game state and player turn are appropriate.
-	 * @param event - The transfer event input containing details of the transfer action.
-	 * @param authInfo - The authentication information of the player making the transfer.
-	 * @throws {Error} error if the game is not in progress, if it's not the player's turn,
-	 * or if the transfer action is invalid. Transfer can only be made after a successful claim
-	 * to a player with cards from the same team.
-	 * @private
-	 */
-	private validateTransferEvent( event: TransferEventInput, authInfo: AuthInfo ) {
-		this.logger.debug( ">> validateTransferTurnRequest()" );
-
-		const currentPlayer = this.data.players[ this.data.currentTurn ];
-		if ( !currentPlayer || currentPlayer.id !== authInfo.id ) {
-			this.logger.error( "Not your turn! GameId: %s, PlayerId: %s", this.data.id, authInfo.id );
-			throw "Not your turn!";
-		}
-
-		if ( this.data.status !== GAME_STATUS.IN_PROGRESS ) {
-			this.logger.error( "The Game is not in IN_PROGRESS state! GameId: %s", this.data.id );
-			throw "The Game is not in IN_PROGRESS state!";
-		}
-
-		const lastClaim = this.data.claimHistory[ 0 ];
-		if ( this.data.lastMoveType !== "claim" || !lastClaim || !lastClaim.success ) {
-			this.logger.error( "Turn can only be transferred after a successful call!" );
-			throw "Turn can only be transferred after a successful call!";
-		}
-
-		const transferringPlayer = this.data.players[ this.data.currentTurn ];
-		const receivingPlayer = this.data.players[ event.transferTo ];
-
-		if ( !receivingPlayer ) {
-			this.logger.error( "The Receiving Player is not part of the Game!" );
-			throw "The Receiving Player is not part of the Game!";
-		}
-
-		if ( this.data.cardCounts[ event.transferTo ] === 0 ) {
-			this.logger.error( "Turn can only be transferred to a player with cards!" );
-			throw "Turn can only be transferred to a player with cards!";
-		}
-
-		if ( receivingPlayer.teamId !== transferringPlayer.teamId ) {
-			this.logger.error( "Turn can only be transferred to member of your team!" );
-			throw "Turn can only be transferred to member of your team!";
-		}
-
-		this.logger.debug( "<< validateTransferTurnRequest()" );
+		return setNextAlarm;
 	}
 
 	/**

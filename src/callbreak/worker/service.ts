@@ -13,18 +13,16 @@ import { createLogger } from "@/shared/utils/logger";
 import { ORPCError } from "@orpc/server";
 import { env } from "cloudflare:workers";
 
-const logger = createLogger( "Callbreak:Service" );
-
 export class CallbreakService {
 
 	private readonly logger = createLogger( "Callbreak:Service" );
 
 	public async getGameData( input: GameIdInput, authInfo: AuthInfo ) {
-		logger.debug( ">> getGameData()" );
+		this.logger.debug( ">> getGameData()" );
 
 		const stub = await this.initializeStub( input.gameId, authInfo.id, async data => {
 			if ( !data.players[ authInfo.id ] ) {
-				logger.error( "Player Not in Game: %s", authInfo.id );
+				this.logger.error( "Player Not in Game: %s", authInfo.id );
 				throw new ORPCError( "FORBIDDEN", { message: "Player not in game!" } );
 			}
 		} );
@@ -34,7 +32,7 @@ export class CallbreakService {
 	}
 
 	public async createGame( input: CreateGameInput, authInfo: AuthInfo ) {
-		logger.debug( ">> createGame()" );
+		this.logger.debug( ">> createGame()" );
 
 		const durableObjectId = env.CALLBREAK_DO.newUniqueId();
 		const stub = env.CALLBREAK_DO.get( durableObjectId );
@@ -42,16 +40,16 @@ export class CallbreakService {
 		const { data } = await stub.getPlayerData( authInfo.id );
 		await this.saveDurableObjectId( { code: data.code, gameId: data.id, durableObjectId } );
 
-		logger.debug( "<< createGame()" );
+		this.logger.debug( "<< createGame()" );
 		return { gameId: data.id };
 	}
 
 	public async joinGame( input: JoinGameInput, authInfo: AuthInfo ) {
-		logger.debug( ">> joinGame()" );
+		this.logger.debug( ">> joinGame()" );
 
 		const gameId = await this.getGameIdByCode( input.code );
 		if ( !gameId ) {
-			logger.debug( "Game not found for code %s!", input.code );
+			this.logger.debug( "Game not found for code %s!", input.code );
 			throw new ORPCError( "BAD_REQUEST", { message: "Game not found!" } );
 		}
 
@@ -61,7 +59,7 @@ export class CallbreakService {
 
 		await stub.addPlayer( authInfo );
 
-		logger.debug( "<< joinGame()" );
+		this.logger.debug( "<< joinGame()" );
 		return { gameId };
 	}
 
@@ -207,7 +205,7 @@ export class CallbreakService {
 	) {
 		const durableObjectId = await this.getDurableObjectIdByGameId( gameId );
 		if ( !durableObjectId ) {
-			logger.debug( "Game not found for gameId %s!", gameId );
+			this.logger.debug( "Game not found for gameId %s!", gameId );
 			throw new ORPCError( "BAD_REQUEST", { message: "Game not found!" } );
 		}
 
@@ -215,7 +213,7 @@ export class CallbreakService {
 		const { data } = await stub.getPlayerData( playerId );
 
 		runChecks( data ).catch( error => {
-			logger.error( "Error during checks:", error );
+			this.logger.error( "Error during checks:", error );
 			throw new ORPCError( "BAD_REQUEST", { message: ( error as Error ).message } );
 		} );
 

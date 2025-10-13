@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as FishRouteImport } from './routes/fish'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WordleIndexRouteImport } from './routes/wordle.index'
+import { Route as FishIndexRouteImport } from './routes/fish.index'
 import { Route as CallbreakIndexRouteImport } from './routes/callbreak.index'
 import { Route as WordleGameIdRouteImport } from './routes/wordle.$gameId'
 import { Route as FishGameIdRouteImport } from './routes/fish.$gameId'
@@ -23,11 +23,6 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FishRoute = FishRouteImport.update({
-  id: '/fish',
-  path: '/fish',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -36,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const WordleIndexRoute = WordleIndexRouteImport.update({
   id: '/wordle/',
   path: '/wordle/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FishIndexRoute = FishIndexRouteImport.update({
+  id: '/fish/',
+  path: '/fish/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CallbreakIndexRoute = CallbreakIndexRouteImport.update({
@@ -49,9 +49,9 @@ const WordleGameIdRoute = WordleGameIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const FishGameIdRoute = FishGameIdRouteImport.update({
-  id: '/$gameId',
-  path: '/$gameId',
-  getParentRoute: () => FishRoute,
+  id: '/fish/$gameId',
+  path: '/fish/$gameId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CallbreakGameIdRoute = CallbreakGameIdRouteImport.update({
   id: '/callbreak/$gameId',
@@ -61,75 +61,76 @@ const CallbreakGameIdRoute = CallbreakGameIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/fish': typeof FishRouteWithChildren
   '/settings': typeof SettingsRoute
   '/callbreak/$gameId': typeof CallbreakGameIdRoute
   '/fish/$gameId': typeof FishGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/callbreak': typeof CallbreakIndexRoute
+  '/fish': typeof FishIndexRoute
   '/wordle': typeof WordleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/fish': typeof FishRouteWithChildren
   '/settings': typeof SettingsRoute
   '/callbreak/$gameId': typeof CallbreakGameIdRoute
   '/fish/$gameId': typeof FishGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/callbreak': typeof CallbreakIndexRoute
+  '/fish': typeof FishIndexRoute
   '/wordle': typeof WordleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/fish': typeof FishRouteWithChildren
   '/settings': typeof SettingsRoute
   '/callbreak/$gameId': typeof CallbreakGameIdRoute
   '/fish/$gameId': typeof FishGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/callbreak/': typeof CallbreakIndexRoute
+  '/fish/': typeof FishIndexRoute
   '/wordle/': typeof WordleIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/fish'
     | '/settings'
     | '/callbreak/$gameId'
     | '/fish/$gameId'
     | '/wordle/$gameId'
     | '/callbreak'
+    | '/fish'
     | '/wordle'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/fish'
     | '/settings'
     | '/callbreak/$gameId'
     | '/fish/$gameId'
     | '/wordle/$gameId'
     | '/callbreak'
+    | '/fish'
     | '/wordle'
   id:
     | '__root__'
     | '/'
-    | '/fish'
     | '/settings'
     | '/callbreak/$gameId'
     | '/fish/$gameId'
     | '/wordle/$gameId'
     | '/callbreak/'
+    | '/fish/'
     | '/wordle/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  FishRoute: typeof FishRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   CallbreakGameIdRoute: typeof CallbreakGameIdRoute
+  FishGameIdRoute: typeof FishGameIdRoute
   WordleGameIdRoute: typeof WordleGameIdRoute
   CallbreakIndexRoute: typeof CallbreakIndexRoute
+  FishIndexRoute: typeof FishIndexRoute
   WordleIndexRoute: typeof WordleIndexRoute
 }
 
@@ -140,13 +141,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/fish': {
-      id: '/fish'
-      path: '/fish'
-      fullPath: '/fish'
-      preLoaderRoute: typeof FishRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -161,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/wordle'
       fullPath: '/wordle'
       preLoaderRoute: typeof WordleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fish/': {
+      id: '/fish/'
+      path: '/fish'
+      fullPath: '/fish'
+      preLoaderRoute: typeof FishIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/callbreak/': {
@@ -179,10 +180,10 @@ declare module '@tanstack/react-router' {
     }
     '/fish/$gameId': {
       id: '/fish/$gameId'
-      path: '/$gameId'
+      path: '/fish/$gameId'
       fullPath: '/fish/$gameId'
       preLoaderRoute: typeof FishGameIdRouteImport
-      parentRoute: typeof FishRoute
+      parentRoute: typeof rootRouteImport
     }
     '/callbreak/$gameId': {
       id: '/callbreak/$gameId'
@@ -194,23 +195,14 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface FishRouteChildren {
-  FishGameIdRoute: typeof FishGameIdRoute
-}
-
-const FishRouteChildren: FishRouteChildren = {
-  FishGameIdRoute: FishGameIdRoute,
-}
-
-const FishRouteWithChildren = FishRoute._addFileChildren(FishRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  FishRoute: FishRouteWithChildren,
   SettingsRoute: SettingsRoute,
   CallbreakGameIdRoute: CallbreakGameIdRoute,
+  FishGameIdRoute: FishGameIdRoute,
   WordleGameIdRoute: WordleGameIdRoute,
   CallbreakIndexRoute: CallbreakIndexRoute,
+  FishIndexRoute: FishIndexRoute,
   WordleIndexRoute: WordleIndexRoute,
 }
 export const routeTree = rootRouteImport
