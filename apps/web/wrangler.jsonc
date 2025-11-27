@@ -15,7 +15,8 @@
 	"vars": {
 		"APP_NAME": "stairway",
 		"WEBAUTHN_RP_ID": "localhost",
-		"AUTH_SECRET_KEY": "<from-env>"
+		"AUTH_SECRET_KEY": "<from-env>",
+		"WEBAUTHN_ORIGIN": "http://localhost:5173"
 	},
 	"d1_databases": [
 		{
