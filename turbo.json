@@ -1,0 +1,35 @@
+{
+	"$schema": "https://turborepo.com/schema.json",
+	"tasks": {
+		"generate": {
+			"inputs": [ "./wrangler.jsonc" ],
+			"outputs": [ "./env.d.ts" ]
+		},
+		"migrate:new": {
+			"inputs": [ "./drizzle.config.ts", "../../packages/workers/auth/src/schema.ts" ],
+			"outputs": [ "./migrations" ]
+		},
+		"migrate:dev": {
+			"dependsOn": [ "migrate:new" ],
+			"cache": false
+		},
+		"dev": {
+			"dependsOn": [ "generate", "migrate:dev" ],
+			"cache": false,
+			"persistent": true
+		},
+		"test": {
+			"dependsOn": [ "generate" ]
+		},
+		"build": {
+			"dependsOn": [ "generate", "^build" ],
+			"inputs": [ "$TURBO_DEFAULT$", ".env*" ],
+			"outputs": [ "dist" ]
+		},
+		"start": {
+			"dependsOn": [ "build" ],
+			"cache": false,
+			"persistent": true
+		}
+	}
+}

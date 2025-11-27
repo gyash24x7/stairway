@@ -1,0 +1,69 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "stairway",
+	"main": "src/worker.ts",
+	"compatibility_date": "2025-08-21",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"assets": {
+		"not_found_handling": "single-page-application"
+	},
+	"observability": {
+		"enabled": true
+	},
+	"vars": {
+		"APP_NAME": "stairway"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "stairway",
+			"database_id": "f8156d94-8c52-4c8d-aa85-45d2b839626e"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "SESSION_KV",
+			"id": "5612a18b5e4647208f0c5bf02840ec4f"
+		},
+		{
+			"binding": "WEBAUTHN_KV",
+			"id": "8aabdc1f8578463c9221454867826f87"
+		},
+		{
+			"binding": "WORDLE_KV",
+			"id": "d4e0250599ba4ccfbdb2fbfeb5fa7d7a"
+		},
+		{
+			"binding": "CALLBREAK_KV",
+			"id": "208a8e18e3624f57b268529d2fcce621"
+		},
+		{
+			"binding": "FISH_KV",
+			"id": "fde96426ac5f4424af6e75491b2a266e"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "WSS",
+				"class_name": "WebsocketServer"
+			},
+			{
+				"name": "CALLBREAK_DO",
+				"class_name": "CallbreakEngine"
+			},
+			{
+				"name": "FISH_DO",
+				"class_name": "FishEngine"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [ "WebsocketServer", "CallbreakEngine", "FishEngine" ]
+		}
+	]
+}
