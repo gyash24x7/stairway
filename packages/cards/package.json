@@ -1,0 +1,21 @@
+{
+	"name": "@s2h/cards",
+	"version": "1.0.0",
+	"description": "Cards Library for Card Games",
+	"type": "module",
+	"scripts": {
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@s2h/utils": "workspace:*"
+	},
+	"exports": {
+		"./*": {
+			"import": "./src/*.ts",
+			"types": "./src/*.ts"
+		}
+	},
+	"keywords": [ ],
+	"author": "Yash Gupta",
+	"license": "ISC"
+}

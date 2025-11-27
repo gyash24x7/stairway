@@ -1,0 +1,17 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"types": [ "bun", "@cloudflare/workers-types", "./env.d.ts" ],
+		"target": "esnext",
+		"lib": [ "dom", "dom.iterable", "esnext" ],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"isolatedModules": true,
+		"jsx": "react-jsx",
+		"exactOptionalPropertyTypes": false,
+		"noUncheckedIndexedAccess": false
+	},
+	"include": [ "src", "tests", "vite.config.ts", "drizzle.config.ts" ],
+	"exclude": [ "node_modules" ]
+}

@@ -1,0 +1,28 @@
+{
+	"name": "@s2h/client",
+	"version": "1.0.0",
+	"description": "Web Worker for S2H Application",
+	"type": "module",
+	"exports": {
+		"./query": {
+			"import": "./src/query.tsx",
+			"types": "./src/query.tsx"
+		},
+		"./*": {
+			"import": "./src/*.ts",
+			"types": "./src/*.ts"
+		}
+	},
+	"dependencies": {
+		"@orpc/client": "1.11.3",
+		"@orpc/tanstack-query": "1.11.3",
+		"@s2h/api": "workspace:*",
+		"@tanstack/react-query": "5.90.10"
+	},
+	"devDependencies": {
+		"@types/react": "19.2.6"
+	},
+	"peerDependencies": {
+		"react": "19.2.0"
+	}
+}

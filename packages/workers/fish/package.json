@@ -1,0 +1,25 @@
+{
+	"name": "@s2h/fish",
+	"version": "1.0.0",
+	"description": "Fish Worker for S2H Application",
+	"type": "module",
+	"scripts": {
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@orpc/contract": "1.11.3",
+		"@s2h/cards": "workspace:*",
+		"@s2h/utils": "workspace:*",
+		"valibot": "1.2.0"
+	},
+	"exports": {
+		"./*": {
+			"import": "./src/*.ts",
+			"types": "./src/*.ts"
+		}
+	},
+	"keywords": [ ],
+	"author": "Yash Gupta",
+	"license": "ISC"
+}
+

@@ -1,0 +1,25 @@
+{
+	"name": "@s2h-ui/auth",
+	"version": "1.0.0",
+	"description": "Web Worker for S2H Application",
+	"type": "module",
+	"exports": {
+		"./*": {
+			"import": "./src/*.tsx",
+			"types": "./src/*.tsx"
+		}
+	},
+	"dependencies": {
+		"@s2h/auth": "workspace:*",
+		"@s2h/cards": "workspace:*",
+		"@s2h/client": "workspace:*",
+		"@s2h-ui/primitives": "workspace:*",
+		"@simplewebauthn/browser": "13.2.2"
+	},
+	"devDependencies": {
+		"@types/react": "19.2.6"
+	},
+	"peerDependencies": {
+		"react": "19.2.0"
+	}
+}

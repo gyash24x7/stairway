@@ -1,0 +1,23 @@
+{
+	"name": "@s2h/utils",
+	"version": "1.0.0",
+	"description": "Utilities for Stairway App",
+	"type": "module",
+	"scripts": {
+		"test": "bun test"
+	},
+	"dependencies": {
+		"tslog": "4.10.2",
+		"ulid": "3.0.1",
+		"unique-names-generator": "4.7.1"
+	},
+	"exports": {
+		"./*": {
+			"import": "./src/*.ts",
+			"types": "./src/*.ts"
+		}
+	},
+	"keywords": [ ],
+	"author": "Yash Gupta",
+	"license": "ISC"
+}
