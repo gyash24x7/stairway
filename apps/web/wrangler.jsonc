@@ -13,7 +13,9 @@
 		"enabled": true
 	},
 	"vars": {
-		"APP_NAME": "stairway"
+		"APP_NAME": "stairway",
+		"WEBAUTHN_RP_ID": "localhost",
+		"AUTH_SECRET_KEY": "<from-env>"
 	},
 	"d1_databases": [
 		{
