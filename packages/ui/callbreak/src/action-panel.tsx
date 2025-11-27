@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@s2h-ui/primitives/utils";
 import { useStore } from "@tanstack/react-store";
 import { DeclareDealWins } from "./declare-deal-wins";

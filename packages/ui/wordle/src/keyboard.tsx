@@ -1,5 +1,3 @@
-"use client";
-
 import { DeleteIcon, LogOutIcon } from "@s2h-ui/primitives/icons";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";

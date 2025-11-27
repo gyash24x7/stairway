@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayPlayer } from "@s2h-ui/shared/display-player";
 import type { Player } from "@s2h/fish/types";

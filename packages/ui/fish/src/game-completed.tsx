@@ -1,5 +1,3 @@
-"use client";
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@s2h-ui/primitives/table";
 import { useStore } from "@tanstack/react-store";
 import { store } from "./store";

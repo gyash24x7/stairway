@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayHand } from "@s2h-ui/shared/display-hand";
 import { GameCode } from "@s2h-ui/shared/game-code";

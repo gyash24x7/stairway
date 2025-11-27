@@ -1,5 +1,3 @@
-"use client";
-
 import { DisplayHand } from "@s2h-ui/shared/display-hand";
 import { GameCode } from "@s2h-ui/shared/game-code";
 import { useStore } from "@tanstack/react-store";

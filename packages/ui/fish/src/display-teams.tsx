@@ -1,5 +1,3 @@
-"use client";
-
 import { Avatar, AvatarImage } from "@s2h-ui/primitives/avatar";
 import { Table, TableBody, TableCell, TableRow } from "@s2h-ui/primitives/table";
 import { useStore } from "@tanstack/react-store";

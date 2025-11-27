@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@s2h-ui/primitives/button";
 import { LogOutIcon } from "@s2h-ui/primitives/icons";
 import { Spinner } from "@s2h-ui/primitives/spinner";

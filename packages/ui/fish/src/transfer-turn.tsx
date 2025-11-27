@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@s2h-ui/primitives/button";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@s2h-ui/primitives/drawer";
 import { Spinner } from "@s2h-ui/primitives/spinner";

@@ -1,5 +1,3 @@
-"use client";
-
 import {
 	Select,
 	SelectContent,
@@ -10,7 +8,8 @@ import {
 	SelectValue
 } from "@s2h-ui/primitives/select";
 import { cn } from "@s2h-ui/primitives/utils";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect } from "react";
+import { useLocalStorage } from "usehooks-ts";
 
 const colors = {
 	APPLE: [ "#ff6b6b", "#fcd7d7" ] as const,
@@ -25,7 +24,7 @@ const colors = {
 };
 
 export function ThemeSwitcher() {
-	const [ theme, setTheme ] = useState<keyof typeof colors>( "APPLE" );
+	const [ theme, setTheme ] = useLocalStorage<keyof typeof colors>( "theme", "APPLE" );
 
 	useEffect( () => {
 		const root = document.documentElement;

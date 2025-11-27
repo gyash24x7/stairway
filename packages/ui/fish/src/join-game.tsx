@@ -1,5 +1,3 @@
-"use client";
-
 import { Button, buttonVariants } from "@s2h-ui/primitives/button";
 import {
 	Dialog,

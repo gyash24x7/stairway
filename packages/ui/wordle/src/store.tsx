@@ -1,5 +1,3 @@
-"use client";
-
 import type { PlayerGameInfo } from "@s2h/wordle/types";
 import { Store } from "@tanstack/react-store";
 import { produce } from "immer";

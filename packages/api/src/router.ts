@@ -45,14 +45,16 @@ const router = os.router( {
 		getRegistrationOptions: os.auth.getRegistrationOptions.handler( ( { input, context } ) => {
 			return context.services.auth.getRegistrationOptions( input );
 		} ),
-		verifyRegistration: os.auth.verifyRegistration.handler( ( { input, context } ) => {
-			return context.services.auth.verifyRegistration( input );
+		verifyRegistration: os.auth.verifyRegistration.handler( async ( { input, context } ) => {
+			const authInfo = await context.services.auth.verifyRegistration( input );
+			await context.services.session.createSession( authInfo, context.resHeaders );
 		} ),
 		getLoginOptions: os.auth.getLoginOptions.handler( ( { input, context } ) => {
 			return context.services.auth.getLoginOptions( input );
 		} ),
-		verifyLogin: os.auth.verifyLogin.handler( ( { input, context } ) => {
-			return context.services.auth.verifyLogin( input );
+		verifyLogin: os.auth.verifyLogin.handler( async ( { input, context } ) => {
+			const authInfo = await context.services.auth.verifyLogin( input );
+			await context.services.session.createSession( authInfo, context.resHeaders );
 		} )
 	},
 	callbreak: {

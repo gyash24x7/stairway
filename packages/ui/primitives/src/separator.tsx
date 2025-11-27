@@ -1,5 +1,3 @@
-"use client";
-
 import { Separator as Root } from "@base-ui-components/react/separator";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
 import { cn } from "./utils";

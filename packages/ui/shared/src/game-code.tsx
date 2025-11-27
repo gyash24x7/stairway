@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@s2h-ui/primitives/button";
 import { CopyIcon } from "@s2h-ui/primitives/icons";
 import { Separator } from "@s2h-ui/primitives/separator";

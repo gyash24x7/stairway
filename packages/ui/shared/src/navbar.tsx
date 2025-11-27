@@ -1,9 +1,8 @@
-"use client";
-
 import { useAuth } from "@s2h-ui/auth/context";
+import { DisplayAuthInfo } from "@s2h-ui/auth/display-auth-info";
 import { Login } from "@s2h-ui/auth/login";
 import { Button } from "@s2h-ui/primitives/button";
-import { CogIcon, HomeIcon } from "@s2h-ui/primitives/icons";
+import { HomeIcon } from "@s2h-ui/primitives/icons";
 import { Separator } from "@s2h-ui/primitives/separator";
 import { cn } from "@s2h-ui/primitives/utils";
 import { useNavigate } from "@tanstack/react-router";
@@ -27,16 +26,10 @@ export function Navbar() {
 				>
 					<HomeIcon className={ "w-4 h-4" }/>
 				</Button>
-				<Button
-					className={ cn( "w-8 h-8 md:w-10 md:h-10" ) }
-					size={ "icon" }
-					onClick={ () => navigate( { to: "/settings" } ) }
-				>
-					<CogIcon className={ "w-4 h-4" }/>
-				</Button>
+				<Separator orientation={ "vertical" } className={ "h-12" }/>
+				{ isLoggedIn ? <DisplayAuthInfo/> : <Login/> }
 				<Separator orientation={ "vertical" } className={ "h-12" }/>
 				<ThemeSwitcher/>
-				{ !isLoggedIn && <Login/> }
 			</div>
 		</div>
 	);
