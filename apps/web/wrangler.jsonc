@@ -12,6 +12,7 @@
 	"observability": {
 		"enabled": true
 	},
+	"keep_vars": true,
 	"vars": {
 		"APP_NAME": "stairway",
 		"WEBAUTHN_RP_ID": "localhost",
