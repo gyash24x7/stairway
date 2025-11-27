@@ -10,7 +10,8 @@
 		"generate": "wrangler types ./env.d.ts --include-runtime=false",
 		"migrate:new": "drizzle-kit generate",
 		"migrate:dev": "wrangler d1 migrations apply DB --local",
-		"migrate:prod": "wrangler d1 migrations apply DB --remote"
+		"migrate:prod": "wrangler d1 migrations apply DB --remote",
+		"deploy": "wrangler deploy"
 	},
 	"dependencies": {
 		"@s2h/auth": "workspace:*",
