@@ -28,6 +28,7 @@ export class AuthService {
 	constructor(
 		database: D1Database,
 		private readonly rpId: string,
+		private readonly rpOrigin: string,
 		private readonly kv: KVNamespace
 	) {
 		this.db = drizzle( database, { schema } );
@@ -113,9 +114,7 @@ export class AuthService {
 		const verification = await verifyRegistrationResponse( {
 			response: response,
 			expectedChallenge: options.challenge,
-			expectedOrigin: process.env.NODE_ENV !== "development"
-				? "https://stairway.workers.dev"
-				: "http://localhost:5173",
+			expectedOrigin: this.rpOrigin,
 			expectedRPID: this.rpId
 		} )
 			.catch( ( error: Error ) => {
@@ -178,9 +177,7 @@ export class AuthService {
 		const verification = await verifyAuthenticationResponse( {
 			response,
 			expectedChallenge: options.challenge,
-			expectedOrigin: process.env.NODE_ENV !== "development"
-				? "https://stairway.workers.dev"
-				: "http://localhost:5173",
+			expectedOrigin: this.rpOrigin,
 			expectedRPID: this.rpId,
 			credential: {
 				id: passkey.id,
