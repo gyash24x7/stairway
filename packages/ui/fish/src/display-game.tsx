@@ -1,11 +1,11 @@
 import { DisplayHand } from "@s2h-ui/shared/display-hand";
 import { GameCode } from "@s2h-ui/shared/game-code";
 import { useStore } from "@tanstack/react-store";
-import { ActionPanel } from "./action-panel";
-import { DisplayTeams } from "./display-teams";
-import { GameCompleted } from "./game-completed";
-import { PlayerLobby } from "./player-lobby";
-import { store } from "./store";
+import { ActionPanel } from "./action-panel.tsx";
+import { DisplayTeams } from "./display-teams.tsx";
+import { GameCompleted } from "./game-completed.tsx";
+import { PlayerLobby } from "./player-lobby.tsx";
+import { store } from "./store.tsx";
 
 export function DisplayGame() {
 	const status = useStore( store, state => state.status );

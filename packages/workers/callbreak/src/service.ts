@@ -1,6 +1,6 @@
 import { getCardFromId, isCardInHand } from "@s2h/cards/utils";
 import { createLogger } from "@s2h/utils/logger";
-import type { CallbreakEngine } from "./engine";
+import type { CallbreakEngine } from "./engine.ts";
 import type {
 	BasePlayerInfo,
 	CreateGameInput,
@@ -9,8 +9,8 @@ import type {
 	JoinGameInput,
 	PlayCardInput,
 	PlayerGameInfo
-} from "./types";
-import { canCardBePlayed } from "./utils";
+} from "./types.ts";
+import { canCardBePlayed } from "./utils.ts";
 
 export class CallbreakService {
 

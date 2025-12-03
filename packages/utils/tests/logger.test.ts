@@ -1,13 +1,13 @@
-import { describe, expect, test } from "bun:test";
-import { createLogger } from "../src/logger";
+import { describe, expect, it } from "vitest";
+import { createLogger } from "../src/logger.ts";
 
 describe( "logger", () => {
-	test( "createLogger returns a logger with the specified name", () => {
+	it( "createLogger returns a logger with the specified name", () => {
 		const logger = createLogger( "TestLogger" );
 		expect( logger.settings.name ).toBe( "TestLogger" );
 	} );
 
-	test( "createLogger returns different loggers for different names", () => {
+	it( "createLogger returns different loggers for different names", () => {
 		const loggerA = createLogger( "A" );
 		const loggerB = createLogger( "B" );
 		expect( loggerA.settings.name ).toBe( "A" );

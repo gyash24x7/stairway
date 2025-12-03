@@ -2,8 +2,8 @@ import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayPlayer } from "@s2h-ui/shared/display-player";
 import { useStore } from "@tanstack/react-store";
 import { Fragment } from "react";
-import { DisplayRound } from "./display-round";
-import { store } from "./store";
+import { DisplayRound } from "./display-round.tsx";
+import { store } from "./store.tsx";
 
 export function DisplayDeal() {
 	const currentTurn = useStore( store, state => state.currentTurn );

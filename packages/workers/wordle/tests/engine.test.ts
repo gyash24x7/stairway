@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from "bun:test";
-import { WordleEngine } from "../src/engine";
-import type { GameData } from "../src/types";
+import { beforeEach, describe, expect, it } from "vitest";
+import { WordleEngine } from "../src/engine.ts";
+import type { GameData } from "../src/types.ts";
 
 describe( "WordleEngine", () => {
 	let gameData: GameData;
@@ -36,8 +36,16 @@ describe( "WordleEngine", () => {
 				} )
 			);
 
-			expect( playerData.guessBlocks.length ).toBe( 2 );
-			expect( playerData.guessBlocks.flat().flat().every( pos => pos.state === "empty" ) ).toBe( true );
+			expect( playerData.guessBlocks.length ).toEqual( 2 );
+			expect( playerData.guessBlocks.flat().flat().every( pos => pos.state === "empty" ) ).toBeTruthy();
+		} );
+	} );
+
+	describe( "getGameData()", () => {
+		it( "should return full game data", () => {
+			const engine = new WordleEngine( gameData );
+			const data = engine.getData();
+			expect( data ).toEqual( gameData );
 		} );
 	} );
 
@@ -73,10 +81,10 @@ describe( "WordleEngine", () => {
 			expect( playerData.completedWords ).toContain( "apple" );
 			expect( playerData.completed ).toBe( false );
 			// For the first word, all letters should be correct
-			expect( playerData.guessBlocks[ 0 ][ 0 ].every( pos => pos.state === "correct" ) ).toBe( true );
+			expect( playerData.guessBlocks[ 0 ][ 0 ].every( pos => pos.state === "correct" ) ).toBeTruthy();
 			// For the second word, states should be wrong or wrongPlace
 			expect( playerData.guessBlocks[ 1 ][ 0 ].some( pos => [ "wrong", "wrongPlace" ].includes( pos.state ) ) )
-				.toBe( true );
+				.toBeTruthy();
 
 		} );
 
@@ -84,7 +92,7 @@ describe( "WordleEngine", () => {
 			const engine = new WordleEngine( gameData );
 			engine.makeGuess( "apple" );
 			engine.makeGuess( "grape" );
-			expect( engine.getPlayerData().completed ).toBe( true );
+			expect( engine.getPlayerData().completed ).toBeTruthy();
 		} );
 
 		it( "should mark game as completed if max guesses reached", () => {
@@ -92,7 +100,7 @@ describe( "WordleEngine", () => {
 			for ( let i = 0; i < 7; i++ ) {
 				engine.makeGuess( "apple" );
 			}
-			expect( engine.getPlayerData().completed ).toBe( true );
+			expect( engine.getPlayerData().completed ).toBeTruthy();
 		} );
 
 		it( "should throw if guess is not in dictionary", () => {

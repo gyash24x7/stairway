@@ -6,7 +6,7 @@ import { DisplayPlayer } from "@s2h-ui/shared/display-player";
 import { useTransferTurnMutation } from "@s2h/client/fish";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function TransferTurn() {
 	const gameId = useStore( store, state => state.id );

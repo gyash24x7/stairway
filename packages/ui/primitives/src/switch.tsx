@@ -1,6 +1,6 @@
 import { Switch as SwitchPrimitive } from "@base-ui-components/react/switch";
 import type { ComponentProps } from "react";
-import { cn } from "./utils";
+import { cn } from "./utils.tsx";
 
 const { Root, Thumb } = SwitchPrimitive;
 

@@ -23,14 +23,21 @@ import type {
 	PlayerGameInfo,
 	PlayerId,
 	Round
-} from "./types";
-import { getBestCardPlayed, getPlayableCards } from "./utils";
+} from "./types.ts";
+import { getBestCardPlayed, getPlayableCards } from "./utils.ts";
 
 type CloudflareEnv = {
 	CALLBREAK_KV: KVNamespace;
-	WSS: DurableObjectNamespace<import("../../../api/src/wss").WebsocketServer>;
+	WSS: DurableObjectNamespace<import("../../../api/src/wss.ts").WebsocketServer>;
 }
 
+/**
+ * @class CallbreakEngine
+ * @description Durable Object that manages the state and logic of a Callbreak game.
+ * It handles player actions, game progression, and state persistence.
+ * The engine supports adding players, declaring wins, playing cards, and automatically
+ * progressing the game through alarms.
+ */
 export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 
 	private readonly logger = createLogger( "Callbreak:Engine" );
@@ -93,6 +100,7 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		this.data.currentTurn = playerId;
 		this.data.createdBy = playerId;
 
+		await this.saveGameData();
 		await this.setAlarm( 60000 );
 
 		this.logger.debug( "<< updateConfig()" );

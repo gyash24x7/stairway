@@ -1,5 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
-import { Navbar } from "./navbar";
+import { Navbar } from "./navbar.tsx";
 
 export function Shell() {
 	return (

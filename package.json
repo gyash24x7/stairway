@@ -7,21 +7,22 @@
 		"lint": "turbo run lint",
 		"generate": "turbo run generate",
 		"start": "turbo run start",
-		"deploy": "cd ./apps/web && bun run deploy"
+		"deploy": "cd ./apps/web && pnpm run deploy",
+		"test": "turbo run test"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "4.20251121.0",
-		"@tsconfig/bun": "1.0.10",
+		"@cloudflare/workers-types": "4.20251202.0",
+		"@tsconfig/node22": "22.0.5",
 		"@tsconfig/strictest": "2.0.8",
-		"@types/bun": "1.3.3",
+		"@types/node": "24.10.1",
+		"@vitest/coverage-v8": "4.0.15",
 		"turbo": "2.6.1",
-		"typescript": "5.9.3"
+		"typescript": "5.9.3",
+		"vitest": "4.0.15",
+		"vitest-mock-extended": "3.1.0"
 	},
-	"packageManager": "bun@1.3.1",
-	"workspaces": [
-		"apps/*",
-		"packages/*",
-		"packages/ui/*",
-		"packages/workers/*"
-	]
+	"packageManager": "pnpm@10.24.0",
+	"engines": {
+		"node": ">=18"
+	}
 }

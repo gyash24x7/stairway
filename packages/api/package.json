@@ -4,10 +4,10 @@
 	"description": "Router for Public API",
 	"type": "module",
 	"scripts": {
-		"test": "bun test"
+		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
-		"@orpc/server": "1.11.3",
+		"@orpc/server": "1.12.2",
 		"@s2h/auth": "workspace:*",
 		"@s2h/callbreak": "workspace:*",
 		"@s2h/fish": "workspace:*",

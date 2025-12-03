@@ -2,7 +2,7 @@ import { Button } from "@s2h-ui/primitives/button";
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@s2h-ui/primitives/drawer";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function AskHistory() {
 	const [ showDrawer, setShowDrawer ] = useState( false );

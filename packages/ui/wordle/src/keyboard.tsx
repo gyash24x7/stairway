@@ -4,7 +4,7 @@ import { cn } from "@s2h-ui/primitives/utils";
 import { useMakeGuessMutation } from "@s2h/client/wordle";
 import { dictionary } from "@s2h/wordle/dictionary";
 import { useStore } from "@tanstack/react-store";
-import { backspaceCurrentGuess, resetCurrentGuess, store, updateCurrentGuess } from "./store";
+import { backspaceCurrentGuess, resetCurrentGuess, store, updateCurrentGuess } from "./store.tsx";
 
 const LINES = [
 	[ "q", "w", "e", "r", "t", "y", "u", "i", "o", "p" ],

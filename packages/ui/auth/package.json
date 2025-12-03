@@ -10,14 +10,14 @@
 		}
 	},
 	"dependencies": {
+		"@s2h-ui/primitives": "workspace:*",
 		"@s2h/auth": "workspace:*",
 		"@s2h/cards": "workspace:*",
 		"@s2h/client": "workspace:*",
-		"@s2h-ui/primitives": "workspace:*",
 		"@simplewebauthn/browser": "13.2.2"
 	},
 	"devDependencies": {
-		"@types/react": "19.2.6"
+		"@types/react": "19.2.7"
 	},
 	"peerDependencies": {
 		"react": "19.2.0"

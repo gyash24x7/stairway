@@ -1,6 +1,6 @@
 import { chunk, shuffle } from "@s2h/utils/array";
-import { CARD_RANKS, CARD_SUITS, SORTED_DECK } from "./constants";
-import type { CardDisplay, CardId, CardRank, CardSuit, PlayingCard } from "./types";
+import { CARD_RANKS, CARD_SUITS, SORTED_DECK } from "./constants.ts";
+import type { CardDisplay, CardId, CardRank, CardSuit, PlayingCard } from "./types.ts";
 
 /**
  * Generates a unique identifier for a playing card.

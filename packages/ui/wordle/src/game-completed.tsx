@@ -3,8 +3,8 @@ import { cn } from "@s2h-ui/primitives/utils";
 import { useGetWordsQuery } from "@s2h/client/wordle";
 import { Link } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
-import { GuessDiagramBlocks } from "./guess-blocks";
-import { store } from "./store";
+import { GuessDiagramBlocks } from "./guess-blocks.tsx";
+import { store } from "./store.tsx";
 
 export function GameCompleted() {
 	const gameId = useStore( store, state => state.game.id );

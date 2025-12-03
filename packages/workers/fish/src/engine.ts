@@ -32,7 +32,7 @@ import type {
 	WeightedBook,
 	WeightedClaim,
 	WeightedTransfer
-} from "./types";
+} from "./types.ts";
 import {
 	CANADIAN_BOOKS,
 	GAME_STATUS,
@@ -41,13 +41,13 @@ import {
 	getCardsOfBook,
 	getMissingCards,
 	NORMAL_BOOKS
-} from "./utils";
+} from "./utils.ts";
 
 const MAX_WEIGHT = 720;
 
 type CloudflareEnv = {
 	FISH_KV: KVNamespace;
-	WSS: DurableObjectNamespace<import("../../../api/src/wss").WebsocketServer>;
+	WSS: DurableObjectNamespace<import("../../../api/src/wss.ts").WebsocketServer>;
 }
 
 /**

@@ -1,6 +1,6 @@
 import type { CardId, PlayingCard } from "@s2h/cards/types";
 import { getCardFromId, getCardId, isCardInHand } from "@s2h/cards/utils";
-import type { Book, BookType, CanadianBook, NormalBook } from "./types";
+import type { Book, BookType, CanadianBook, NormalBook } from "./types.ts";
 
 export const NORMAL_BOOKS = {
 	"ACES": [ "AC", "AD", "AH", "AS" ] as CardId[],

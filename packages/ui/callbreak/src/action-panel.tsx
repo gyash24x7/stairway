@@ -1,8 +1,8 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import { useStore } from "@tanstack/react-store";
-import { DeclareDealWins } from "./declare-deal-wins";
-import { PlayCard } from "./play-card";
-import { store } from "./store";
+import { DeclareDealWins } from "./declare-deal-wins.tsx";
+import { PlayCard } from "./play-card.tsx";
+import { store } from "./store.tsx";
 
 export function ActionPanel() {
 	const status = useStore( store, state => state.status );

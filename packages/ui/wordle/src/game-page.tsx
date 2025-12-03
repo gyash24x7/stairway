@@ -1,8 +1,8 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import type { PlayerGameInfo } from "@s2h/wordle/types";
 import { useEffect } from "react";
-import { DisplayGame } from "./display-game";
-import { updateGameData } from "./store";
+import { DisplayGame } from "./display-game.tsx";
+import { updateGameData } from "./store.tsx";
 
 export function WordleGamePage( props: { data: PlayerGameInfo } ) {
 	useEffect( () => {

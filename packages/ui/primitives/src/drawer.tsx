@@ -6,7 +6,7 @@ import {
 	type HTMLAttributes
 } from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
-import { cn } from "./utils";
+import { cn } from "./utils.tsx";
 
 const { Trigger, Portal, Close, Overlay, Content, Title, Description, Root } = DrawerPrimitive;
 

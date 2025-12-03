@@ -1,7 +1,7 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import { dictionary } from "@s2h/wordle/dictionary";
 import { useStore } from "@tanstack/react-store";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 function getBlockColor( state: string ) {
 	switch ( state ) {

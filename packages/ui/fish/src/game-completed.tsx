@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@s2h-ui/primitives/table";
 import { useStore } from "@tanstack/react-store";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function GameCompleted() {
 	const players = useStore( store, state => state.players );

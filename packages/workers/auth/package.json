@@ -4,10 +4,10 @@
 	"description": "Auth Worker for S2H Application",
 	"type": "module",
 	"scripts": {
-		"test": "bun test"
+		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
-		"@orpc/contract": "1.11.3",
+		"@orpc/contract": "1.12.2",
 		"@s2h/utils": "workspace:*",
 		"@simplewebauthn/server": "13.2.2",
 		"drizzle-orm": "0.44.7",

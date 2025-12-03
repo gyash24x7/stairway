@@ -2,10 +2,10 @@ import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayHand } from "@s2h-ui/shared/display-hand";
 import { GameCode } from "@s2h-ui/shared/game-code";
 import { useStore } from "@tanstack/react-store";
-import { ActionPanel } from "./action-panel";
-import { DisplayDeal } from "./display-deal";
-import { DisplayScore } from "./display-score";
-import { store } from "./store";
+import { ActionPanel } from "./action-panel.tsx";
+import { DisplayDeal } from "./display-deal.tsx";
+import { DisplayScore } from "./display-score.tsx";
+import { store } from "./store.tsx";
 
 export function DisplayGame() {
 	const status = useStore( store, state => state.status );

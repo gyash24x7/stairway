@@ -8,7 +8,7 @@ import {
 } from "@simplewebauthn/server";
 import { and, eq } from "drizzle-orm";
 import { drizzle, DrizzleD1Database } from "drizzle-orm/d1";
-import * as schema from "./schema";
+import * as schema from "./schema.ts";
 import type {
 	AuthInfo,
 	LoginOptions,
@@ -18,7 +18,7 @@ import type {
 	VerifyLoginInput,
 	VerifyRegistrationInput,
 	WebauthnOptions
-} from "./types";
+} from "./types.ts";
 
 export class AuthService {
 

@@ -1,9 +1,10 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"extends": [ "@tsconfig/node22", "@tsconfig/strictest" ],
 	"compilerOptions": {
-		"types": [ "bun" ],
-		"noUncheckedIndexedAccess": false
+		"types": [ "node" ],
+		"noUncheckedIndexedAccess": false,
+		"allowImportingTsExtensions": true
 	},
 	"include": [ "src", "tests" ],
 	"exclude": [ "node_modules" ]

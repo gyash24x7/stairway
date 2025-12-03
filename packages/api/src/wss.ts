@@ -1,7 +1,7 @@
 import type { AuthInfo } from "@s2h/auth/types";
 import { createLogger } from "@s2h/utils/logger";
 import { DurableObject } from "cloudflare:workers";
-import { SessionService } from "./sessions";
+import { SessionService } from "./sessions.ts";
 
 type CloudflareEnv = {
 	SESSION_KV: KVNamespace;

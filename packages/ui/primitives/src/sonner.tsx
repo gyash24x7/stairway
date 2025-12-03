@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { Toaster as Sonner } from "sonner";
-import { cn } from "./utils";
+import { cn } from "./utils.tsx";
 
 export const Toaster = ( { ...props }: ComponentProps<typeof Sonner> ) => {
 	return (

@@ -1,7 +1,7 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayPlayer, type DisplayPlayerProps } from "@s2h-ui/shared/display-player";
 import { useStore } from "@tanstack/react-store";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export type PlayerLobbyProps = Omit<DisplayPlayerProps, "player" | "cardCount"> & { playerIds?: string[]; }
 

@@ -1,6 +1,6 @@
 import type { PlayingCard } from "@s2h/cards/types";
 import { getCardId, getSortedHand } from "@s2h/cards/utils";
-import { DisplayCard } from "./display-card";
+import { DisplayCard } from "./display-card.tsx";
 
 export function DisplayHand( { hand }: { hand: PlayingCard[] } ) {
 	return (

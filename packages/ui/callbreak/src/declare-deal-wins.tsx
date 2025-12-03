@@ -13,7 +13,7 @@ import { useDeclareDealWinsMutation } from "@s2h/client/callbreak";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
 import { useCounter } from "usehooks-ts";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function DeclareDealWins() {
 	const [ open, setOpen ] = useState( false );

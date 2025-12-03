@@ -15,7 +15,7 @@ import { getCardFromId, getCardId, getSortedHand } from "@s2h/cards/utils";
 import { usePlayCardMutation } from "@s2h/client/callbreak";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function PlayCard() {
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
