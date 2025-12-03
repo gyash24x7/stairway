@@ -1,7 +1,7 @@
 import { useAuth } from "@s2h-ui/auth/context";
 import { Separator } from "@s2h-ui/primitives/separator";
 import { cn } from "@s2h-ui/primitives/utils";
-import { CreateGame } from "./create-game";
+import { CreateGame } from "./create-game.tsx";
 
 export function WordleHomePage() {
 	const { isLoggedIn } = useAuth();

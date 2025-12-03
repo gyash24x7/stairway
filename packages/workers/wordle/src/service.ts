@@ -1,6 +1,6 @@
 import { createLogger } from "@s2h/utils/logger";
-import { WordleEngine } from "./engine";
-import type { CreateGameInput, GameData, GameId, MakeGuessInput, PlayerGameInfo, PlayerId } from "./types";
+import { WordleEngine } from "./engine.ts";
+import type { CreateGameInput, GameData, GameId, MakeGuessInput, PlayerGameInfo, PlayerId } from "./types.ts";
 
 export class WordleService {
 

@@ -4,11 +4,11 @@
 	"description": "Utilities for Stairway App",
 	"type": "module",
 	"scripts": {
-		"test": "bun test"
+		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
 		"tslog": "4.10.2",
-		"ulid": "3.0.1",
+		"ulid": "3.0.2",
 		"unique-names-generator": "4.7.1"
 	},
 	"exports": {

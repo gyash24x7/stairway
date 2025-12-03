@@ -1,9 +1,9 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import { useStore } from "@tanstack/react-store";
-import { GameCompleted } from "./game-completed";
-import { GuessBlocks } from "./guess-blocks";
-import { Keyboard } from "./keyboard";
-import { store } from "./store";
+import { GameCompleted } from "./game-completed.tsx";
+import { GuessBlocks } from "./guess-blocks.tsx";
+import { Keyboard } from "./keyboard.tsx";
+import { store } from "./store.tsx";
 
 export function DisplayGame() {
 	const completed = useStore( store, state => state.game.completed );

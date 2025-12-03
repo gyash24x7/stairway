@@ -1,7 +1,7 @@
 import { Avatar, AvatarImage } from "@s2h-ui/primitives/avatar";
 import { Table, TableBody, TableCell, TableRow } from "@s2h-ui/primitives/table";
 import { useStore } from "@tanstack/react-store";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function DisplayTeams() {
 	const players = useStore( store, state => state.players );

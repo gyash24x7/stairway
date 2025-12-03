@@ -8,7 +8,7 @@ const cookieOptions = {
 	maxAge: expirationTtl,
 	path: "/",
 	httpOnly: true,
-	secure: process.env.NODE_ENV === "production"
+	secure: process.env[ "NODE_ENV" ] === "production"
 };
 
 export class SessionService {

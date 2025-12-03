@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { orpc } from "./orpc";
-import { queryClient } from "./query";
+import { orpc } from "./orpc.ts";
+import { queryClient } from "./query.tsx";
 
 export const useUserExistMutation = () => useMutation( orpc.auth.userExists.mutationOptions() );
 export const useGetRegistrationOptionsMutation = () => useMutation( orpc.auth.getRegistrationOptions.mutationOptions() );

@@ -6,7 +6,7 @@ import { HomeIcon } from "@s2h-ui/primitives/icons";
 import { Separator } from "@s2h-ui/primitives/separator";
 import { cn } from "@s2h-ui/primitives/utils";
 import { useNavigate } from "@tanstack/react-router";
-import { ThemeSwitcher } from "./theme-switcher";
+import { ThemeSwitcher } from "./theme-switcher.tsx";
 
 export function Navbar() {
 	const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import { generateId } from "@s2h/utils/generator";
 import { createLogger } from "@s2h/utils/logger";
-import { dictionary } from "./dictionary";
-import type { CreateGameInput, GameData, MakeGuessInput, PlayerGameInfo, PositionData } from "./types";
+import { dictionary } from "./dictionary.ts";
+import type { CreateGameInput, GameData, MakeGuessInput, PlayerGameInfo, PositionData } from "./types.ts";
 
 /**
  * @class WordleEngine

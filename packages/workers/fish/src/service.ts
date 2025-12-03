@@ -1,7 +1,7 @@
 import type { CardId } from "@s2h/cards/types";
 import { isCardInHand } from "@s2h/cards/utils";
 import { createLogger } from "@s2h/utils/logger";
-import type { FishEngine } from "./engine";
+import type { FishEngine } from "./engine.ts";
 import type {
 	AskEventInput,
 	BasePlayerInfo,
@@ -13,8 +13,8 @@ import type {
 	PlayerGameInfo,
 	StartGameInput,
 	TransferEventInput
-} from "./types";
-import { GAME_STATUS, getBookForCard } from "./utils";
+} from "./types.ts";
+import { GAME_STATUS, getBookForCard } from "./utils.ts";
 
 export class FishService {
 

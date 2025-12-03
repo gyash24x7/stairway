@@ -11,7 +11,7 @@ import { getBooksInHand, getCardsOfBook } from "@s2h/fish/utils";
 import { useStore } from "@tanstack/react-store";
 import { Fragment, useState } from "react";
 import { useStep } from "usehooks-ts";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function ClaimBook() {
 	const gameId = useStore( store, state => state.id );

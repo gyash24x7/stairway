@@ -20,7 +20,7 @@ import { useStartGameMutation } from "@s2h/client/fish";
 import type { BookType, DeckType } from "@s2h/fish/types";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function StartGame() {
 	const gameId = useStore( store, state => state.id );

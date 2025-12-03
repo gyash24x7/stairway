@@ -1,7 +1,7 @@
 import { Select as SelectPrimitive } from "@base-ui-components/react/select";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
-import { cn } from "./utils";
+import { cn } from "./utils.tsx";
 
 const {
 	Group,

@@ -1,6 +1,6 @@
 {
 	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"extends": [ "@tsconfig/node22", "@tsconfig/strictest" ],
 	"compilerOptions": {
 		"target": "esnext",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
@@ -8,6 +8,7 @@
 		"moduleResolution": "bundler",
 		"isolatedModules": true,
 		"jsx": "react-jsx",
+		"allowImportingTsExtensions": true,
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false
 	},

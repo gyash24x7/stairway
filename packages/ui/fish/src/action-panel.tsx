@@ -1,13 +1,13 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import { useStore } from "@tanstack/react-store";
 import { Fragment } from "react";
-import { AskCard } from "./ask-card";
-import { AskHistory } from "./ask-history";
-import { ClaimBook } from "./claim-book";
-import { CreateTeams } from "./create-teams";
-import { StartGame } from "./start-game";
-import { store } from "./store";
-import { TransferTurn } from "./transfer-turn";
+import { AskCard } from "./ask-card.tsx";
+import { AskHistory } from "./ask-history.tsx";
+import { ClaimBook } from "./claim-book.tsx";
+import { CreateTeams } from "./create-teams.tsx";
+import { StartGame } from "./start-game.tsx";
+import { store } from "./store.tsx";
+import { TransferTurn } from "./transfer-turn.tsx";
 
 export function ActionPanel() {
 	const status = useStore( store, state => state.status );

@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
-import { orpc } from "./orpc";
-import { queryClient } from "./query";
+import { orpc } from "./orpc.ts";
+import { queryClient } from "./query.tsx";
 
 export const useCreateGameMutation = ( params: Parameters<typeof orpc.fish.createGame.mutationOptions>[0] ) => {
 	return useMutation( orpc.fish.createGame.mutationOptions( params ) );

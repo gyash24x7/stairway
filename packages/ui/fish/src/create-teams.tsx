@@ -23,8 +23,8 @@ import type { TeamCount } from "@s2h/fish/types";
 import { chunk, shuffle } from "@s2h/utils/array";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
-import { PlayerLobby } from "./player-lobby";
-import { store } from "./store";
+import { PlayerLobby } from "./player-lobby.tsx";
+import { store } from "./store.tsx";
 
 export function CreateTeams() {
 	const gameId = useStore( store, state => state.id );

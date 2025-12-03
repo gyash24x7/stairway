@@ -12,7 +12,7 @@ import { getBooksInHand, getCardsOfBook, getMissingCards } from "@s2h/fish/utils
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function AskCard() {
 	const gameId = useStore( store, state => state.id );

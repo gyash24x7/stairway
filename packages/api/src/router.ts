@@ -11,7 +11,7 @@ import fish from "@s2h/fish/contract";
 import type { FishService } from "@s2h/fish/service";
 import wordle from "@s2h/wordle/contract";
 import type { WordleService } from "@s2h/wordle/service";
-import type { SessionService } from "./sessions";
+import type { SessionService } from "./sessions.ts";
 
 export type Ctx = RequestHeadersPluginContext & ResponseHeadersPluginContext & {
 	session?: Session;

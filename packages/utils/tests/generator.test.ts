@@ -1,5 +1,5 @@
-import { describe, expect, mock, setSystemTime, test } from "bun:test";
 import { isValid } from "ulid";
+import { describe, expect, it, vi } from "vitest";
 import {
 	generateAvatar,
 	generateBotInfo,
@@ -8,10 +8,10 @@ import {
 	generateName,
 	generateSecureRandomString,
 	generateTeamName
-} from "../src/generator";
+} from "../src/generator.ts";
 
-mock.module( "unique-names-generator", () => ( {
-	uniqueNamesGenerator: mock( ( opts ) => {
+vi.mock( "unique-names-generator", () => ( {
+	uniqueNamesGenerator: vi.fn( ( opts ) => {
 		if ( opts.dictionaries.length === 1 ) {
 			return "MockName";
 		}
@@ -25,55 +25,56 @@ mock.module( "unique-names-generator", () => ( {
 } ) );
 
 describe( "generator utils", () => {
-	test( "generateId returns a ULID string", () => {
-		expect( isValid( generateId() ) ).toBeTrue();
+	it( "generateId returns a ULID string", () => {
+		expect( isValid( generateId() ) ).toBeTruthy();
 	} );
 
-	test( "generateName returns a unique name", () => {
+	it( "generateName returns a unique name", () => {
 		expect( generateName() ).toBe( "MockName" );
 	} );
 
-	test( "generateTeamName returns a unique team name", () => {
+	it( "generateTeamName returns a unique team name", () => {
 		expect( generateTeamName() ).toBe( "MockAdjective MockName" );
 	} );
 
-	test( "generateAvatar returns a URL with provided seed", () => {
+	it( "generateAvatar returns a URL with provided seed", () => {
 		expect( generateAvatar( "seed123" ) ).toMatch(
 			/^https:\/\/api\.dicebear\.com\/7\.x\/open-peeps\/png\?seed=seed123&r=50$/
 		);
 	} );
 
-	test( "generateAvatar returns a URL with timestamp if no seed", () => {
-		setSystemTime( 1234567890 );
-		expect( generateAvatar() ).toContain( "seed=1234567890" );
+	it( "generateAvatar returns a URL with ulid if no seed", () => {
+		expect( generateAvatar() ).toMatch(
+			/^https:\/\/api\.dicebear\.com\/7\.x\/open-peeps\/png\?seed=.+&r=50$/
+		);
 	} );
 
-	test( "generateBotInfo returns an object with id, name, username, avatar", () => {
+	it( "generateBotInfo returns an object with id, name, username, avatar", () => {
 		const bot = generateBotInfo();
-		expect( isValid( bot.id ) ).toBeTrue();
-		expect( isValid( bot.username ) ).toBeTrue();
+		expect( isValid( bot.id ) ).toBeTruthy();
+		expect( isValid( bot.username ) ).toBeTruthy();
 		expect( bot.name ).toBe( "MockName" );
 		expect( bot.avatar ).toMatch(
 			/^https:\/\/api\.dicebear\.com\/7\.x\/open-peeps\/png\?seed=.+&r=50$/
 		);
 	} );
 
-	test( "generateGameCode returns a string of given length", () => {
+	it( "generateGameCode returns a string of given length", () => {
 		expect( generateGameCode( 8 ) ).toHaveLength( 8 );
 		expect( generateGameCode( 4 ) ).toHaveLength( 4 );
 	} );
 
-	test( "generateGameCode defaults to length 6", () => {
+	it( "generateGameCode defaults to length 6", () => {
 		expect( generateGameCode() ).toHaveLength( 6 );
 	} );
 
-	test( "generateSecureRandomString returns a string of length 24", () => {
+	it( "generateSecureRandomString returns a string of length 24", () => {
 		const str = generateSecureRandomString();
 		expect( typeof str ).toBe( "string" );
 		expect( str ).toHaveLength( 24 );
 	} );
 
-	test( "generateSecureRandomString only contains allowed characters", () => {
+	it( "generateSecureRandomString only contains allowed characters", () => {
 		const allowed = "abcdefghijkmnpqrstuvwxyz23456789";
 		const str = generateSecureRandomString();
 		for ( const char of str ) {

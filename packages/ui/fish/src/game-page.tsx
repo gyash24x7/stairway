@@ -1,8 +1,8 @@
 import type { PlayerGameInfo } from "@s2h/fish/types";
 import { useEffect } from "react";
 import useWebSocket from "react-use-websocket";
-import { DisplayGame } from "./display-game";
-import { store } from "./store";
+import { DisplayGame } from "./display-game.tsx";
+import { store } from "./store.tsx";
 
 export function FishGamePage( props: { data: PlayerGameInfo } ) {
 	const protocol = window.location.protocol === "https:" ? "wss" : "ws";

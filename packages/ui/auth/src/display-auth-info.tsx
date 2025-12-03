@@ -2,8 +2,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@s2h-ui/primitives/avatar";
 import { Card, CardContent } from "@s2h-ui/primitives/card";
 import { Drawer, DrawerContent, DrawerTrigger } from "@s2h-ui/primitives/drawer";
 import { useState } from "react";
-import { useAuth } from "./context";
-import { LogoutButton } from "./logout-button";
+import { useAuth } from "./context.tsx";
+import { LogoutButton } from "./logout-button.tsx";
 
 export function DisplayAuthInfo() {
 	const { authInfo } = useAuth();

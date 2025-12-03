@@ -1,9 +1,0 @@
-[test]
-root = "tests"
-coverage = true
-coverageReporter = ["text"]
-coverageThreshold = { lines = 0.90, functions = 0.90, statements = 0.90 }
-coveragePathIgnorePatterns = [
-    "**/*.spec.ts",
-    "**/*.test.ts"
-]

@@ -1,7 +1,7 @@
 import { Avatar, AvatarImage } from "@s2h-ui/primitives/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@s2h-ui/primitives/table";
 import { useStore } from "@tanstack/react-store";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 export function DisplayScore() {
 	const status = useStore( store, state => state.status );

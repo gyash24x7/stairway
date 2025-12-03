@@ -4,7 +4,7 @@ import { DisplayPlayer } from "@s2h-ui/shared/display-player";
 import type { PlayerData, Round } from "@s2h/callbreak/types";
 import { getCardFromId } from "@s2h/cards/utils";
 import { useStore } from "@tanstack/react-store";
-import { store } from "./store";
+import { store } from "./store.tsx";
 
 type DisplayRoundProps = {
 	round: Round;

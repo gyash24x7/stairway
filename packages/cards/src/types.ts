@@ -1,4 +1,4 @@
-import type { CARD_RANKS, CARD_SUITS } from "./constants";
+import type { CARD_RANKS, CARD_SUITS } from "./constants.ts";
 
 export type CardRank = typeof CARD_RANKS[keyof typeof CARD_RANKS];
 export type CardSuit = typeof CARD_SUITS[keyof typeof CARD_SUITS];

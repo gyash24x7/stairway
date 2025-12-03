@@ -1,8 +1,8 @@
 import { useAuth } from "@s2h-ui/auth/context";
 import { Separator } from "@s2h-ui/primitives/separator";
 import { cn } from "@s2h-ui/primitives/utils";
-import { CreateGame } from "./create-game";
-import { JoinGame } from "./join-game";
+import { CreateGame } from "./create-game.tsx";
+import { JoinGame } from "./join-game.tsx";
 
 export function FishHomePage() {
 	const { isLoggedIn } = useAuth();

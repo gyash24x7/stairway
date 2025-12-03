@@ -7,7 +7,7 @@ import {
 	forwardRef,
 	type HTMLAttributes
 } from "react";
-import { cn } from "./utils";
+import { cn } from "./utils.tsx";
 
 const { Close, Description, Backdrop, Portal, Root, Title, Trigger, Popup } = DialogPrimitive;
 
