@@ -7,6 +7,6 @@
 		"noUncheckedIndexedAccess": false,
 		"types": [ "node", "@cloudflare/workers-types" ]
 	},
-	"include": [ "src", "tests", "../../../apps/web/drizzle.config.ts" ],
+	"include": [ "src", "tests" ],
 	"exclude": [ "node_modules" ]
 }

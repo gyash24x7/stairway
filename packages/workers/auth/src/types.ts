@@ -4,6 +4,9 @@ import type {
 	PublicKeyCredentialRequestOptionsJSON,
 	RegistrationResponseJSON
 } from "@simplewebauthn/server";
+import { DrizzleD1Database } from "drizzle-orm/d1";
+import type { Context } from "hono";
+import * as schema from "./schema.ts";
 
 export type WebauthnOptions = { webauthnUserId?: string; challenge: string; };
 
@@ -26,8 +29,24 @@ export type UsernameInput = { username: string; };
 
 export type LoginOptions = PublicKeyCredentialRequestOptionsJSON;
 
-export type RegistrationOptions = PublicKeyCredentialCreationOptionsJSON;
+export type RegisterOptions = PublicKeyCredentialCreationOptionsJSON;
 
 export type VerifyLoginInput = UsernameInput & { response: AuthenticationResponseJSON; };
 
 export type VerifyRegistrationInput = UsernameInput & NameInput & { response: RegistrationResponseJSON };
+
+export type HonoEnv = {
+	Bindings: {
+		DB: D1Database;
+		WEBAUTHN_KV: KVNamespace;
+		SESSION_KV: KVNamespace;
+		AUTH_SECRET_KEY: string;
+	},
+	Variables: {
+		db: DrizzleD1Database<typeof schema>
+		rpId: string;
+		rpOrigin: string;
+	}
+}
+
+export type HonoCtx = Context<HonoEnv>;

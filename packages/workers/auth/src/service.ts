@@ -7,224 +7,216 @@ import {
 	verifyRegistrationResponse
 } from "@simplewebauthn/server";
 import { and, eq } from "drizzle-orm";
-import { drizzle, DrizzleD1Database } from "drizzle-orm/d1";
 import * as schema from "./schema.ts";
 import type {
 	AuthInfo,
+	HonoCtx,
 	LoginOptions,
 	NameInput,
-	RegistrationOptions,
+	RegisterOptions,
 	UsernameInput,
 	VerifyLoginInput,
 	VerifyRegistrationInput,
 	WebauthnOptions
 } from "./types.ts";
 
-export class AuthService {
+const logger = createLogger( "Auth:Service" );
 
-	private readonly logger = createLogger( "Auth:RPC" );
-	private readonly db: DrizzleD1Database<typeof schema>;
+/**
+ * Check if a user exists by username
+ * @param username {string} - The username to check
+ * @param ctx {HonoCtx} - The Hono context
+ * @returns {Promise<boolean>} True if the user exists, false otherwise
+ */
+export async function userExists( username: string, ctx: HonoCtx ): Promise<boolean> {
+	logger.debug( ">> userExists()" );
+	const user = await ctx.var.db.query.users.findFirst( { where: eq( schema.users.username, username ) } );
+	logger.debug( "<< userExists()" );
+	return !!user;
+}
 
-	constructor(
-		database: D1Database,
-		private readonly rpId: string,
-		private readonly rpOrigin: string,
-		private readonly kv: KVNamespace
-	) {
-		this.db = drizzle( database, { schema } );
-	}
+/**
+ * Get WebAuthn registration options for given name and username
+ * @param input {UsernameInput & NameInput} - The input containing username and name
+ * @param ctx {HonoCtx} - The Hono context
+ * @returns {Promise<RegisterOptions>} The WebAuthn registration options
+ */
+export async function getRegisterOptions( input: UsernameInput & NameInput, ctx: HonoCtx ): Promise<RegisterOptions> {
+	logger.debug( ">> getRegisterOptions()" );
 
-	/**
-	 * Check if a user exists by username
-	 * @param username {string} - The username to check
-	 * @returns {Promise<boolean>} True if the user exists, false otherwise
-	 */
-	async userExists( username: string ): Promise<boolean> {
-		this.logger.debug( ">> userExists()" );
-		const [ user ] = await this.db.select().from( schema.users ).where( eq( schema.users.username, username ) );
-		this.logger.debug( "<< userExists()" );
-		return !!user;
-	}
-
-	/**
-	 * Get WebAuthn registration options for given name and username
-	 * @param input {UsernameInput & NameInput} - The input containing username and name
-	 * @returns {Promise<RegistrationOptions>} The WebAuthn registration options
-	 */
-	async getRegistrationOptions( input: UsernameInput & NameInput ): Promise<RegistrationOptions> {
-		this.logger.debug( ">> getRegistrationOptions()" );
-
-		const options = await generateRegistrationOptions( {
-			userDisplayName: input.name,
-			rpID: this.rpId,
-			rpName: "stairway",
-			userName: input.username,
-			attestationType: "none",
-			authenticatorSelection: {
-				residentKey: "preferred",
-				userVerification: "preferred"
-			}
-		} );
-
-		const webAuthnOptions = { challenge: options.challenge, webauthnUserId: options.user.id };
-		await this.kv.put( input.username, JSON.stringify( webAuthnOptions ) );
-		this.logger.info( "Stored WebAuthn options in KV for user:", input.username );
-
-		this.logger.debug( "<< getRegistrationOptions()" );
-		return options;
-	}
-
-	/**
-	 * Get WebAuthn login options for given username
-	 * @param input {UsernameInput} - The input containing username
-	 * @returns {Promise<LoginOptions>} The WebAuthn login options
-	 */
-	async getLoginOptions( { username }: UsernameInput ): Promise<LoginOptions> {
-		this.logger.debug( ">> getLoginOptions()" );
-
-		const [ user ] = await this.db.select().from( schema.users ).where( eq( schema.users.username, username ) );
-		if ( !user ) {
-			this.logger.error( "User not found for username:", username );
-			throw "User not found";
+	const options = await generateRegistrationOptions( {
+		userDisplayName: input.name,
+		rpID: ctx.var.rpId,
+		rpName: "stairway",
+		userName: input.username,
+		attestationType: "none",
+		authenticatorSelection: {
+			residentKey: "preferred",
+			userVerification: "preferred"
 		}
+	} );
 
-		const options = await generateAuthenticationOptions( {
-			rpID: this.rpId,
-			userVerification: "preferred",
-			allowCredentials: []
-		} );
+	const webAuthnOptions = { challenge: options.challenge, webauthnUserId: options.user.id };
+	await ctx.env.WEBAUTHN_KV.put( input.username, JSON.stringify( webAuthnOptions ) );
+	logger.info( "Stored WebAuthn options in KV for user:", input.username );
 
-		const webAuthnOptions = { challenge: options.challenge };
-		await this.kv.put( username, JSON.stringify( webAuthnOptions ) );
-		this.logger.info( "Stored WebAuthn options in KV for user:", username );
+	logger.debug( "<< getRegisterOptions()" );
+	return options;
+}
 
-		this.logger.debug( "<< getLoginOptions()" );
-		return options;
+/**
+ * Get WebAuthn login options for given username
+ * @param input {UsernameInput} - The input containing username
+ * @param ctx {HonoCtx} - The Hono context
+ * @returns {Promise<LoginOptions>}  The WebAuthn login options
+ */
+export async function getLoginOptions( { username }: UsernameInput, ctx: HonoCtx ): Promise<LoginOptions> {
+	logger.debug( ">> getLoginOptions()" );
+
+	const user = await ctx.var.db.query.users.findFirst( { where: eq( schema.users.username, username ) } );
+	if ( !user ) {
+		logger.error( "User not found for username:", username );
+		throw "User not found";
 	}
 
-	/**
-	 * Verify WebAuthn registration response
-	 * @param input {VerifyRegistrationInput} - The input containing username, name, and response
-	 * @returns {Promise<AuthInfo>} The created user
-	 */
-	async verifyRegistration( { username, name, response }: VerifyRegistrationInput ): Promise<AuthInfo> {
-		this.logger.debug( ">> verifyRegistration()" );
+	const options = await generateAuthenticationOptions( {
+		rpID: ctx.var.rpId,
+		userVerification: "preferred",
+		allowCredentials: []
+	} );
 
-		const options = await this.getWebAuthnOptions( username );
-		const verification = await verifyRegistrationResponse( {
-			response: response,
-			expectedChallenge: options.challenge,
-			expectedOrigin: this.rpOrigin,
-			expectedRPID: this.rpId
-		} )
-			.catch( ( error: Error ) => {
-				this.logger.error( "Error verifying registration response:", error.message );
-				throw "Error verifying registration response";
-			} );
+	const webAuthnOptions = { challenge: options.challenge };
+	await ctx.env.WEBAUTHN_KV.put( username, JSON.stringify( webAuthnOptions ) );
+	logger.info( "Stored WebAuthn options in KV for user:", username );
 
-		if ( !verification || !verification.verified || !verification.registrationInfo ) {
-			this.logger.error( "WebAuthn verification failed for user:", username );
-			throw "WebAuthn verification failed";
-		}
+	logger.debug( "<< getLoginOptions()" );
+	return options;
+}
 
-		const [ user ] = await this.db.insert( schema.users )
-			.values( { name, username, id: generateId(), avatar: generateAvatar() } )
-			.returning();
+/**
+ * Verify WebAuthn registration response
+ * @param input {VerifyRegistrationInput} - The input containing username, name, and response
+ * @param ctx {HonoCtx} - The Hono context
+ * @returns {Promise<AuthInfo>} The created user
+ */
+export async function verifyRegistration( input: VerifyRegistrationInput, ctx: HonoCtx ): Promise<AuthInfo> {
+	logger.debug( ">> verifyRegistration()" );
 
-		this.logger.info( "User created for WebAuthn registration:", user.id );
+	const options = await getWebAuthnOptions( input.username, ctx );
+	const verification = await verifyRegistrationResponse( {
+		response: input.response,
+		expectedChallenge: options.challenge,
+		expectedRPID: ctx.var.rpId,
+		expectedOrigin: ctx.var.rpOrigin
+	} );
 
-		await this.db.insert( schema.passkeys ).values( {
-			id: verification.registrationInfo.credential.id,
-			publicKey: verification.registrationInfo.credential.publicKey,
-			userId: user.id,
-			counter: verification.registrationInfo.credential.counter
-		} );
-
-		await this.kv.delete( username );
-		this.logger.info( "Deleted WebAuthn options from KV for user:", username );
-
-		this.logger.debug( "<< verifyRegistration()" );
-		return user;
+	if ( !verification.verified || !verification.registrationInfo ) {
+		logger.error( "WebAuthn verification failed for user:", input.username );
+		throw "WebAuthn verification failed";
 	}
 
-	/**
-	 * Verify WebAuthn login response
-	 * @param input {VerifyLoginInput} - The input containing username and response
-	 * @returns {Promise<AuthInfo>} The authenticated user
-	 */
-	async verifyLogin( { username, response }: VerifyLoginInput ): Promise<AuthInfo> {
-		this.logger.debug( ">> verifyLogin()" );
+	const [ user ] = await ctx.var.db.insert( schema.users )
+		.values( { name: input.name, username: input.username, id: generateId(), avatar: generateAvatar() } )
+		.returning();
 
-		const options = await this.getWebAuthnOptions( username );
+	logger.info( "User created for WebAuthn registration:", user.id );
 
-		const [ user ] = await this.db.select().from( schema.users ).where( eq( schema.users.username, username ) );
-		if ( !user ) {
-			this.logger.error( "User not found for username:", username );
-			throw "User not found";
-		}
+	await ctx.var.db.insert( schema.passkeys ).values( {
+		id: verification.registrationInfo.credential.id,
+		publicKey: verification.registrationInfo.credential.publicKey,
+		userId: user.id,
+		counter: verification.registrationInfo.credential.counter
+	} );
 
-		const [ passkey ] = await this.db.select()
-			.from( schema.passkeys )
-			.where( and( eq( schema.passkeys.id, response.id ), eq( schema.passkeys.userId, user.id ) ) );
+	await ctx.env.WEBAUTHN_KV.delete( input.username );
+	logger.info( "Deleted WebAuthn options from KV for user:", input.username );
 
-		if ( !passkey ) {
-			this.logger.error( "Passkey not found for user:", user.id, "with ID:", response.id );
-			throw "Passkey not found for user";
-		}
+	logger.debug( "<< verifyRegistration()" );
+	return user;
+}
 
-		this.logger.info( "Passkey exists for user:", user.id );
+/**
+ * Verify WebAuthn login response
+ * @param input {VerifyLoginInput} - The input containing username and response
+ * @param ctx {HonoCtx} - The Hono context
+ * @returns {Promise<AuthInfo>} The authenticated user
+ */
+export async function verifyLogin( input: VerifyLoginInput, ctx: HonoCtx ): Promise<AuthInfo> {
+	logger.debug( ">> verifyLogin()" );
 
-		const verification = await verifyAuthenticationResponse( {
-			response,
-			expectedChallenge: options.challenge,
-			expectedOrigin: this.rpOrigin,
-			expectedRPID: this.rpId,
-			credential: {
-				id: passkey.id,
-				publicKey: passkey.publicKey,
-				counter: passkey.counter
-			}
-		} );
+	const options = await getWebAuthnOptions( input.username, ctx );
 
-		if ( !verification || !verification.verified || !verification.authenticationInfo ) {
-			this.logger.error( "WebAuthn authentication verification failed for user:", user.username );
-			throw "WebAuthn authentication verification failed";
-		}
-
-		this.logger.info( "WebAuthn authentication verified for user:", user.username );
-
-		await this.db.update( schema.passkeys )
-			.set( { counter: verification.authenticationInfo.newCounter } )
-			.where( eq( schema.passkeys.id, passkey.id ) );
-
-		this.logger.info( "Passkey counter updated for user:", user.id );
-
-		await this.kv.delete( username );
-		this.logger.info( "Deleted WebAuthn options from KV for user:", username );
-
-		this.logger.debug( "<< verifyLogin()" );
-		return user;
+	const user = await ctx.var.db.query.users.findFirst( { where: eq( schema.users.username, input.username ) } );
+	if ( !user ) {
+		logger.error( "User not found for username:", input.username );
+		throw "User not found";
 	}
 
-	/**
-	 * Retrieve WebAuthn options from KV for given username
-	 * @param username {string} - The username to retrieve options for
-	 * @returns {Promise<WebauthnOptions>} The WebAuthn options
-	 * @private
-	 */
-	private async getWebAuthnOptions( username: string ): Promise<WebauthnOptions> {
-		this.logger.debug( ">> getWebAuthnOptions()" );
+	const passkey = await ctx.var.db.query.passkeys.findFirst( {
+		where: and(
+			eq( schema.passkeys.id, input.response.id ),
+			eq( schema.passkeys.userId, user.id )
+		)
+	} );
 
-		const optionsJSON = await this.kv.get( username );
-		if ( !optionsJSON ) {
-			this.logger.error( "No WebAuthn options found for username:", username );
-			throw "No WebAuthn options found for user";
-		}
-
-		const options = JSON.parse( optionsJSON ) as WebauthnOptions;
-		this.logger.info( "Validated WebAuthn options for user:", username );
-
-		this.logger.debug( "<< getWebAuthnOptions()" );
-		return options;
+	if ( !passkey ) {
+		logger.error( "Passkey not found for user:", user.id, "with ID:", input.response.id );
+		throw "Passkey not found for user";
 	}
+
+	logger.info( "Passkey exists for user:", user.id );
+
+	const verification = await verifyAuthenticationResponse( {
+		response: input.response,
+		expectedChallenge: options.challenge,
+		expectedOrigin: ctx.var.rpOrigin,
+		expectedRPID: ctx.var.rpId,
+		credential: {
+			id: passkey.id,
+			publicKey: passkey.publicKey,
+			counter: passkey.counter
+		}
+	} );
+
+	if ( !verification.verified || !verification.authenticationInfo ) {
+		logger.error( "WebAuthn authentication verification failed for user:", user.username );
+		throw "WebAuthn authentication verification failed";
+	}
+
+	logger.info( "WebAuthn authentication verified for user:", user.username );
+
+	await ctx.var.db.update( schema.passkeys )
+		.set( { counter: verification.authenticationInfo.newCounter } )
+		.where( eq( schema.passkeys.id, passkey.id ) );
+
+	logger.info( "Passkey counter updated for user:", user.id );
+
+	await ctx.env.WEBAUTHN_KV.delete( input.username );
+	logger.info( "Deleted WebAuthn options from KV for user:", input.username );
+
+	logger.debug( "<< verifyLogin()" );
+	return user;
+}
+
+/**
+ * Retrieve WebAuthn options from KV for given username
+ * @param username {string} - The username to retrieve options for
+ * @param ctx {HonoCtx} - The Hono context
+ * @returns {Promise<WebauthnOptions>} The WebAuthn options
+ * @private
+ */
+async function getWebAuthnOptions( username: string, ctx: HonoCtx ): Promise<WebauthnOptions> {
+	logger.debug( ">> getWebAuthnOptions()" );
+
+	const optionsJSON = await ctx.env.WEBAUTHN_KV.get( username );
+	if ( !optionsJSON ) {
+		logger.error( "No WebAuthn options found for username:", username );
+		throw "No WebAuthn options found for user";
+	}
+
+	const options = JSON.parse( optionsJSON ) as WebauthnOptions;
+	logger.info( "Validated WebAuthn options for user:", username );
+
+	logger.debug( "<< getWebAuthnOptions()" );
+	return options;
 }

@@ -376,9 +376,9 @@ importers:
 
   packages/workers/auth:
     dependencies:
-      '@orpc/contract':
-        specifier: 1.12.2
-        version: 1.12.2
+      '@hono/standard-validator':
+        specifier: 0.2.0
+        version: 0.2.0(@standard-schema/spec@1.0.0)(hono@4.10.7)
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../utils
@@ -387,7 +387,10 @@ importers:
         version: 13.2.2
       drizzle-orm:
         specifier: 0.44.7
-        version: 0.44.7(@cloudflare/workers-types@4.20251202.0)
+        version: 0.44.7(@cloudflare/workers-types@4.20251202.0)(kysely@0.28.8)
+      hono:
+        specifier: 4.10.7
+        version: 4.10.7
       valibot:
         specifier: 1.2.0
         version: 1.2.0(typescript@5.9.3)
@@ -1007,6 +1010,12 @@ packages:
 
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
+
+  '@hono/standard-validator@0.2.0':
+    resolution: {integrity: sha512-pFq0UVAnjzXcDAgqFpDeVL3MOUPrlIh/kPqBDvbCYoThVhhS+Vf37VcdsakdOFFGiqoiYVxp3LifXFhGhp/rgQ==}
+    peerDependencies:
+      '@standard-schema/spec': 1.0.0
+      hono: '>=3.9.0'
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -2062,6 +2071,10 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
+  hono@4.10.7:
+    resolution: {integrity: sha512-icXIITfw/07Q88nLSkB9aiUrd8rYzSweK681Kjo/TSggaGbOX4RRyxxm71v+3PC8C/j+4rlxGeoTRxQDkaJkUw==}
+    engines: {node: '>=16.9.0'}
+
   html-escaper@2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
 
@@ -2101,6 +2114,10 @@ packages:
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
+
+  kysely@0.28.8:
+    resolution: {integrity: sha512-QUOgl5ZrS9IRuhq5FvOKFSsD/3+IA6MLE81/bOOTRA/YQpKDza2sFdN5g6JCB9BOpqMJDGefLCQ9F12hRS13TA==}
+    engines: {node: '>=20.0.0'}
 
   lightningcss-android-arm64@1.30.2:
     resolution: {integrity: sha512-BH9sEdOCahSgmkVhBLeU7Hc9DWeZ1Eb6wNS6Da8igvUwAe0sqROHddIlvU06q3WyXVEOYDZ6ykBZQnjTbmo4+A==}
@@ -2998,6 +3015,11 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
+  '@hono/standard-validator@0.2.0(@standard-schema/spec@1.0.0)(hono@4.10.7)':
+    dependencies:
+      '@standard-schema/spec': 1.0.0
+      hono: 4.10.7
+
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
       '@img/sharp-libvips-darwin-arm64': 1.0.4
@@ -3855,9 +3877,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.7(@cloudflare/workers-types@4.20251202.0):
+  drizzle-orm@0.44.7(@cloudflare/workers-types@4.20251202.0)(kysely@0.28.8):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20251202.0
+      kysely: 0.28.8
 
   enhanced-resolve@5.18.3:
     dependencies:
@@ -3986,6 +4009,8 @@ snapshots:
 
   has-flag@4.0.0: {}
 
+  hono@4.10.7: {}
+
   html-escaper@2.0.2: {}
 
   immer@11.0.1: {}
@@ -4020,6 +4045,9 @@ snapshots:
   js-tokens@9.0.1: {}
 
   kleur@4.1.5: {}
+
+  kysely@0.28.8:
+    optional: true
 
   lightningcss-android-arm64@1.30.2:
     optional: true
