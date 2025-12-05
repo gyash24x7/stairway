@@ -16,8 +16,8 @@ const logger = createLogger( "Auth:Sessions" );
 
 /**
  * Create a new session for the authenticated user.
- * @param authInfo {AuthInfo} - Information about the authenticated user.
- * @param ctx {HonoCtx} - Hono context.
+ * @param authInfo - Information about the authenticated user.
+ * @param ctx - Hono context.
  */
 export async function createSession( authInfo: AuthInfo, ctx: HonoCtx ) {
 	logger.debug( ">> createSession()" );
@@ -32,8 +32,8 @@ export async function createSession( authInfo: AuthInfo, ctx: HonoCtx ) {
 
 /**
  * Delete an existing session.
- * @param sessionId {string} - The ID of the session to delete.
- * @param ctx {HonoCtx} - Hono context.
+ * @param sessionId - The ID of the session to delete.
+ * @param ctx - Hono context.
  */
 export async function deleteSession( sessionId: string, ctx: HonoCtx ) {
 	await ctx.env.SESSION_KV.delete( sessionId );
@@ -42,8 +42,8 @@ export async function deleteSession( sessionId: string, ctx: HonoCtx ) {
 
 /**
  * Validate the current session from the request cookies.
- * @param ctx {HonoCtx} - Hono context.
- * @returns {Promise<Session | undefined>} - The valid session or undefined if invalid/expired.
+ * @param ctx - Hono context.
+ * @returns The valid session or undefined if invalid/expired.
  */
 export async function validateSession( ctx: HonoCtx ): Promise<Session | undefined> {
 	logger.debug( ">> validateSession()" );

@@ -1,9 +1,7 @@
 import { handler } from "@s2h/api/router";
 import { SessionService } from "@s2h/api/sessions";
-import { AuthService } from "@s2h/auth/service";
 import { CallbreakService } from "@s2h/callbreak/service";
 import { FishService } from "@s2h/fish/service";
-import { WordleService } from "@s2h/wordle/service";
 
 export { CallbreakEngine } from "@s2h/callbreak/engine";
 export { FishEngine } from "@s2h/fish/engine";
@@ -14,10 +12,8 @@ export default {
 		const url = new URL( request.url );
 		const services = {
 			session: new SessionService( env.SESSION_KV, env.AUTH_SECRET_KEY ),
-			auth: new AuthService( env.DB, env.WEBAUTHN_RP_ID, env.WEBAUTHN_ORIGIN, env.WEBAUTHN_KV ),
 			callbreak: new CallbreakService( env.CALLBREAK_DO, env.CALLBREAK_KV ),
-			fish: new FishService( env.FISH_DO, env.FISH_KV ),
-			wordle: new WordleService( env.WORDLE_KV )
+			fish: new FishService( env.FISH_DO, env.FISH_KV )
 		};
 
 

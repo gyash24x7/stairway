@@ -7,8 +7,9 @@
 		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
-		"@orpc/contract": "1.12.2",
+		"@hono/standard-validator": "0.2.0",
 		"@s2h/utils": "workspace:*",
+		"hono": "4.10.7",
 		"valibot": "1.2.0"
 	},
 	"exports": {

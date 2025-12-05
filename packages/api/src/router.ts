@@ -7,8 +7,6 @@ import callbreak from "@s2h/callbreak/contract";
 import type { CallbreakService } from "@s2h/callbreak/service";
 import fish from "@s2h/fish/contract";
 import type { FishService } from "@s2h/fish/service";
-import wordle from "@s2h/wordle/contract";
-import type { WordleService } from "@s2h/wordle/service";
 import type { SessionService } from "./sessions.ts";
 
 export type Ctx = RequestHeadersPluginContext & ResponseHeadersPluginContext & {
@@ -17,11 +15,10 @@ export type Ctx = RequestHeadersPluginContext & ResponseHeadersPluginContext & {
 		session: SessionService;
 		callbreak: CallbreakService;
 		fish: FishService;
-		wordle: WordleService;
 	}
 }
 
-const os = implement( { callbreak, fish, wordle } ).$context<Ctx>();
+const os = implement( { callbreak, fish } ).$context<Ctx>();
 
 function withAuth() {
 	return os.use( ( { context, next } ) => {
@@ -74,20 +71,6 @@ const router = os.router( {
 		} ),
 		transferTurn: withAuth().fish.transferTurn.handler( async ( { input, context } ) => {
 			await context.services.fish.handleTransferEvent( input, context.session.authInfo );
-		} )
-	},
-	wordle: {
-		createGame: withAuth().wordle.createGame.handler( ( { input, context } ) => {
-			return context.services.wordle.createGame( input, context.session.authInfo.id );
-		} ),
-		getGame: withAuth().wordle.getGame.handler( ( { input, context } ) => {
-			return context.services.wordle.getGame( input, context.session.authInfo.id );
-		} ),
-		getWords: withAuth().wordle.getWords.handler( ( { input, context } ) => {
-			return context.services.wordle.getWords( input, context.session.authInfo.id );
-		} ),
-		makeGuess: withAuth().wordle.makeGuess.handler( ( { input, context } ) => {
-			return context.services.wordle.makeGuess( input, context.session.authInfo.id );
 		} )
 	}
 } );

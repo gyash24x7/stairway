@@ -9,11 +9,8 @@ import {
 import { and, eq } from "drizzle-orm";
 import * as schema from "./schema.ts";
 import type {
-	AuthInfo,
 	HonoCtx,
-	LoginOptions,
 	NameInput,
-	RegisterOptions,
 	UsernameInput,
 	VerifyLoginInput,
 	VerifyRegistrationInput,
@@ -24,11 +21,11 @@ const logger = createLogger( "Auth:Service" );
 
 /**
  * Check if a user exists by username
- * @param username {string} - The username to check
- * @param ctx {HonoCtx} - The Hono context
- * @returns {Promise<boolean>} True if the user exists, false otherwise
+ * @param username - The username to check
+ * @param ctx - The Hono context
+ * @returns True if the user exists, false otherwise
  */
-export async function userExists( username: string, ctx: HonoCtx ): Promise<boolean> {
+export async function userExists( username: string, ctx: HonoCtx ) {
 	logger.debug( ">> userExists()" );
 	const user = await ctx.var.db.query.users.findFirst( { where: eq( schema.users.username, username ) } );
 	logger.debug( "<< userExists()" );
@@ -37,11 +34,11 @@ export async function userExists( username: string, ctx: HonoCtx ): Promise<bool
 
 /**
  * Get WebAuthn registration options for given name and username
- * @param input {UsernameInput & NameInput} - The input containing username and name
- * @param ctx {HonoCtx} - The Hono context
- * @returns {Promise<RegisterOptions>} The WebAuthn registration options
+ * @param input - The input containing username and name
+ * @param ctx - The Hono context
+ * @returns The WebAuthn registration options
  */
-export async function getRegisterOptions( input: UsernameInput & NameInput, ctx: HonoCtx ): Promise<RegisterOptions> {
+export async function getRegisterOptions( input: UsernameInput & NameInput, ctx: HonoCtx ) {
 	logger.debug( ">> getRegisterOptions()" );
 
 	const options = await generateRegistrationOptions( {
@@ -66,11 +63,11 @@ export async function getRegisterOptions( input: UsernameInput & NameInput, ctx:
 
 /**
  * Get WebAuthn login options for given username
- * @param input {UsernameInput} - The input containing username
- * @param ctx {HonoCtx} - The Hono context
- * @returns {Promise<LoginOptions>}  The WebAuthn login options
+ * @param input - The input containing username
+ * @param ctx - The Hono context
+ * @returns The WebAuthn login options
  */
-export async function getLoginOptions( { username }: UsernameInput, ctx: HonoCtx ): Promise<LoginOptions> {
+export async function getLoginOptions( { username }: UsernameInput, ctx: HonoCtx ) {
 	logger.debug( ">> getLoginOptions()" );
 
 	const user = await ctx.var.db.query.users.findFirst( { where: eq( schema.users.username, username ) } );
@@ -95,11 +92,11 @@ export async function getLoginOptions( { username }: UsernameInput, ctx: HonoCtx
 
 /**
  * Verify WebAuthn registration response
- * @param input {VerifyRegistrationInput} - The input containing username, name, and response
- * @param ctx {HonoCtx} - The Hono context
- * @returns {Promise<AuthInfo>} The created user
+ * @param input - The input containing username, name, and response
+ * @param ctx - The Hono context
+ * @returns The created user
  */
-export async function verifyRegistration( input: VerifyRegistrationInput, ctx: HonoCtx ): Promise<AuthInfo> {
+export async function verifyRegistration( input: VerifyRegistrationInput, ctx: HonoCtx ) {
 	logger.debug( ">> verifyRegistration()" );
 
 	const options = await getWebAuthnOptions( input.username, ctx );
@@ -137,11 +134,11 @@ export async function verifyRegistration( input: VerifyRegistrationInput, ctx: H
 
 /**
  * Verify WebAuthn login response
- * @param input {VerifyLoginInput} - The input containing username and response
- * @param ctx {HonoCtx} - The Hono context
- * @returns {Promise<AuthInfo>} The authenticated user
+ * @param input - The input containing username and response
+ * @param ctx - The Hono context
+ * @returns The authenticated user
  */
-export async function verifyLogin( input: VerifyLoginInput, ctx: HonoCtx ): Promise<AuthInfo> {
+export async function verifyLogin( input: VerifyLoginInput, ctx: HonoCtx ) {
 	logger.debug( ">> verifyLogin()" );
 
 	const options = await getWebAuthnOptions( input.username, ctx );
@@ -200,12 +197,12 @@ export async function verifyLogin( input: VerifyLoginInput, ctx: HonoCtx ): Prom
 
 /**
  * Retrieve WebAuthn options from KV for given username
- * @param username {string} - The username to retrieve options for
- * @param ctx {HonoCtx} - The Hono context
- * @returns {Promise<WebauthnOptions>} The WebAuthn options
+ * @param username - The username to retrieve options for
+ * @param ctx - The Hono context
+ * @returns The WebAuthn options
  * @private
  */
-async function getWebAuthnOptions( username: string, ctx: HonoCtx ): Promise<WebauthnOptions> {
+async function getWebAuthnOptions( username: string, ctx: HonoCtx ) {
 	logger.debug( ">> getWebAuthnOptions()" );
 
 	const optionsJSON = await ctx.env.WEBAUTHN_KV.get( username );
