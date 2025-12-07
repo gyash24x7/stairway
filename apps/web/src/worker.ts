@@ -1,6 +1,5 @@
 import { handler } from "@s2h/api/router";
 import { SessionService } from "@s2h/api/sessions";
-import { CallbreakService } from "@s2h/callbreak/service";
 import { FishService } from "@s2h/fish/service";
 
 export { CallbreakEngine } from "@s2h/callbreak/engine";
@@ -12,7 +11,6 @@ export default {
 		const url = new URL( request.url );
 		const services = {
 			session: new SessionService( env.SESSION_KV, env.AUTH_SECRET_KEY ),
-			callbreak: new CallbreakService( env.CALLBREAK_DO, env.CALLBREAK_KV ),
 			fish: new FishService( env.FISH_DO, env.FISH_KV )
 		};
 

@@ -1,87 +1,108 @@
-import type { CardId, CardSuit, PlayingCard } from "@s2h/cards/types";
-import { compareCards, getCardId, getCardsOfSuit, isCardInHand } from "@s2h/cards/utils";
+import {
+	CARD_RANKS,
+	CARD_SUITS,
+	type CardId,
+	type CardRank,
+	type CardSuit,
+	getCardRank,
+	getCardSuit,
+	SORTED_DECK
+} from "@s2h/utils/cards";
+import type { Round, StartedRound } from "./types.ts";
 
 /**
- * Returns the best card played in a round based on the trump suit and the round suit.
- * The best card is determined by the highest rank of cards played in the round suit or trump suit.
+ * Compare two cards of the same suit to determine if card1 outranks card2.
  *
- * @example
- * getBestCardPlayed(cardsPlayed, "H", "C") // returns the best card played in when
- * the trump suit is Hearts and the round suit is Clubs
+ * Rules:
+ * - Cards of different suits are considered non-comparable and function returns false.
+ * - Ace is treated as the highest rank.
+ * - Otherwise uses CARD_RANKS ordering to determine higher card.
  *
- * @param {PlayingCard[]} cardsPlayed Array of cards played in the round
- * @param {string} trumpSuit The suit that is considered trump for this round
- * @param {string | null} roundSuit The suit that was led in this round, or null if no suit was led
- * @returns {PlayingCard | undefined} The best card played, or undefined if no cards were played yet
+ * @param card1 CardId to test as potentially greater.
+ * @param card2 CardId to compare against.
+ * @returns true if card1 outranks card2 according to game ranking rules, false otherwise.
  */
-export function getBestCardPlayed(
-	cardsPlayed: PlayingCard[],
-	trumpSuit: CardSuit,
-	roundSuit?: CardSuit
-): PlayingCard | undefined {
-	if ( cardsPlayed.length === 0 || !roundSuit ) {
-		return undefined;
+export function compareCards( card1: CardId, card2: CardId ) {
+	if ( getCardSuit( card1 ) !== getCardSuit( card2 ) ) {
+		return false;
 	}
 
-	const trumpCards = cardsPlayed.filter( card => card.suit === trumpSuit );
-	const roundSuitCards = cardsPlayed.filter( card => card.suit === roundSuit );
-	const otherCards = cardsPlayed.filter( card => card.suit !== trumpSuit && card.suit !== roundSuit );
+	if ( getCardRank( card2 ) === CARD_RANKS.ACE ) {
+		return false;
+	}
+
+	if ( getCardRank( card1 ) === CARD_RANKS.ACE ) {
+		return true;
+	}
+
+	const ranks = Object.values( CARD_RANKS );
+	return ranks.indexOf( getCardRank( card1 ) ) > ranks.indexOf( getCardRank( card2 ) );
+}
+
+/**
+ * Determine the best (winning) card among those played in a started round.
+ *
+ * Selection priority:
+ * 1. Any trump-suit cards -> highest trump wins.
+ * 2. If no trump, highest card of the round suit wins.
+ * 3. Otherwise, highest card among remaining cards wins.
+ *
+ * Does not mutate inputs.
+ *
+ * @param trumpSuit CardSuit considered trump for this deal.
+ * @param round StartedRound containing played cards and round suit.
+ * @returns CardId of the best card played in the round.
+ * @public
+ */
+export function getBestCardPlayed( trumpSuit: CardSuit, round: StartedRound ) {
+	const cardsPlayed = Object.values( round.cards );
+	const trumpCards = cardsPlayed.filter( card => getCardSuit( card ) === trumpSuit );
+	const roundSuitCards = cardsPlayed.filter( card => getCardSuit( card ) === round.suit );
 
 	if ( trumpCards.length > 0 ) {
 		return trumpCards.reduce( ( bestCard, card ) => compareCards( card, bestCard ) ? card : bestCard );
 	}
 
-	if ( roundSuitCards.length > 0 ) {
-		return roundSuitCards.reduce( ( bestCard, card ) => compareCards( card, bestCard ) ? card : bestCard );
-	}
-
-	return otherCards.reduce( ( bestCard, card ) => compareCards( card, bestCard ) ? card : bestCard );
+	return roundSuitCards.reduce( ( bestCard, card ) => compareCards( card, bestCard ) ? card : bestCard );
 }
 
 /**
- * Returns the cards that can be played from a hand based on the current round's suit and the trump suit.
- * If the round suit is the same as the trump suit, it returns cards of that suit that are greater
- * than the greatest card played.
- * If the round suit is different from the trump suit, it returns cards of the round suit that are
- * greater than the greatest card played.
- * If no cards of the round suit are available, it returns cards of the trump suit that are
- * greater than the greatest card played.
- * If no cards of the trump suit are available, it returns all cards in hand.
+ * Compute the set of cards from a player's hand that are legal to play given the active round.
  *
- * @example
- * getPlayableCards(hand, "H", greatestCard, "C") // returns playable cards from hand
+ * Behavior:
+ * - If the round has no leading suit (first play), any card in hand is playable.
+ * - If the round has a suit, the function enforces playing a bigger card of that suit if possible.
+ * - If no bigger card of the round suit is available, players must follow suit if possible.
+ * - If unable to follow suit, players must play a trump card if possible.
+ * - If no trump cards are available, any card from hand may be played.
  *
- * @param {PlayingCard[]} hand Array of PlayingCard objects representing the player's hand
- * @param {CardSuit} trumpSuit The suit that is considered trump for this round
- * @param {PlayingCard} greatest The greatest card played in the current round
- * @param {CardSuit} roundSuit The suit that was led in this round, or undefined if no suit was led
- * @returns {PlayingCard[]} Array of playable cards from the hand based on the current round's suit and trump suit
+ * @param hand Array of CardId representing the player's current hand.
+ * @param trumpSuit CardSuit designated as trump for the deal.
+ * @param round Round object describing current round state (may be not-started).
+ * @returns Array of CardId from hand that are legal to play this turn.
+ * @public
  */
-export function getPlayableCards(
-	hand: PlayingCard[],
-	trumpSuit: CardSuit,
-	greatest?: PlayingCard,
-	roundSuit?: CardSuit
-): PlayingCard[] {
-	if ( !greatest || !roundSuit ) {
+export function getPlayableCards( hand: CardId[], trumpSuit: CardSuit, round: Round ) {
+	if ( !round.suit ) {
 		return hand;
 	}
 
-	const cardsOfRoundSuit = getCardsOfSuit( roundSuit, hand );
-	const trumpCards = getCardsOfSuit( trumpSuit, hand );
+	const trumpCards = hand.filter( card => getCardSuit( card ) === trumpSuit );
+	const roundSuitCards = hand.filter( card => getCardSuit( card ) === round.suit );
+	const greatest = getBestCardPlayed( trumpSuit, round as StartedRound );
 
-	if ( roundSuit === trumpSuit ) {
-		if ( cardsOfRoundSuit.length === 0 ) {
+	if ( round.suit === trumpSuit ) {
+		if ( roundSuitCards.length === 0 ) {
 			return hand;
 		}
 
-		const greaterCards = cardsOfRoundSuit.filter( card => compareCards( card, greatest ) );
-		return greaterCards.length > 0 ? greaterCards : cardsOfRoundSuit;
+		const greaterCards = roundSuitCards.filter( card => compareCards( card, greatest ) );
+		return greaterCards.length > 0 ? greaterCards : roundSuitCards;
 	}
 
-	if ( cardsOfRoundSuit.length === 0 ) {
+	if ( roundSuitCards.length === 0 ) {
 
-		if ( greatest.suit !== trumpSuit ) {
+		if ( getCardSuit( greatest ) !== trumpSuit ) {
 			return trumpCards.length > 0 ? trumpCards : hand;
 		}
 
@@ -89,45 +110,88 @@ export function getPlayableCards(
 		return greaterTrumpCards.length > 0 ? greaterTrumpCards : hand;
 	}
 
-	if ( greatest.suit !== trumpSuit ) {
-		const greaterCards = cardsOfRoundSuit.filter( card => compareCards( card, greatest ) );
-		return greaterCards.length > 0 ? greaterCards : cardsOfRoundSuit;
+	if ( getCardSuit( greatest ) !== trumpSuit ) {
+		const greaterCards = roundSuitCards.filter( card => compareCards( card, greatest ) );
+		return greaterCards.length > 0 ? greaterCards : roundSuitCards;
 	}
 
-	return cardsOfRoundSuit;
+	return roundSuitCards;
 }
 
 /**
- * Checks if a specific card can be played from a hand based on the current round's suit and the trump suit.
- * It first checks if the card is in the hand, then checks if it is among the playable cards based on the
- * greatest card played and the round suit.
+ * Heuristic to suggest how many tricks (wins) a player might reasonably declare for a deal.
  *
- * @example
- * canCardBePlayed({ rank: "A", suit: "H" }, hand, "H", greatestCard, "C") // returns true if the card can be played
+ * Uses:
+ * - Counts high ranks (Ace, King, Queen) per suit and gives extra weight to trumps.
+ * - Applies simple heuristics based on suit length to estimate potential wins.
  *
- * @param {PlayingCard | CardId} card Card object or card identifier to check for
- * @param {PlayingCard[]} hand Array of PlayingCard objects representing the player's hand
- * @param {CardSuit} trumpSuit The suit that is considered trump for this round
- * @param {PlayingCard[]} cardsAlreadyPlayed Array of PlayingCard objects that have already been played in the current round
- * @param {CardSuit} roundSuit The suit that was led in this round, or undefined if no suit was led
- * @returns {boolean} True if the card can be played, false otherwise
+ * @param hand Array of CardId representing player's hand for the deal.
+ * @param trumpSuit CardSuit currently designated as trump.
+ * @returns Suggested integer number of wins the player could declare (minimum of 2).
+ * @public
  */
-export function canCardBePlayed(
-	card: PlayingCard | CardId,
-	hand: PlayingCard[],
+export function suggestDealWins( hand: CardId[], trumpSuit: CardSuit ) {
+	let possibleWins = 0;
+	const BIG_RANKS = [ CARD_RANKS.ACE, CARD_RANKS.KING, CARD_RANKS.QUEEN ] as CardRank[];
+
+	for ( const suit of Object.values( CARD_SUITS ) ) {
+		const cards = hand.filter( card => getCardSuit( card ) === suit );
+		const bigRanks = cards.filter( card => BIG_RANKS.includes( getCardRank( card ) ) );
+
+		if ( suit === trumpSuit ) {
+			possibleWins += bigRanks.length;
+			continue;
+		}
+
+		if ( cards.length >= 4 ) {
+			possibleWins += Math.min( bigRanks.length, 1 );
+		} else if ( cards.length === 3 ) {
+			possibleWins += Math.min( bigRanks.length, 2 );
+		} else if ( cards.length === 2 ) {
+			possibleWins += 1 + bigRanks.length;
+		} else {
+			possibleWins += 2 + bigRanks.length;
+		}
+	}
+
+	if ( possibleWins < 2 ) {
+		possibleWins = 2;
+	}
+
+	return possibleWins;
+}
+
+/**
+ * Suggest a card for the current player to play.
+ *
+ * Strategy:
+ * - Compute playable cards for the active round.
+ * - Identify "unbeatable" cards by checking whether any higher card remains in the deck
+ *   that is not already out of play or not in the player's hand.
+ * - If any unbeatable cards exist, prefer the smallest such card; otherwise select randomly
+ *   from playable cards.
+ *
+ * @param hand Array of CardId representing player's hand.
+ * @param trumpSuit CardSuit designated as trump.
+ * @param cardsOffTheGame Array of CardId that have been played / removed from contention.
+ * @param activeRound Current Round (may include suit and played cards).
+ * @returns CardId chosen to play.
+ * @public
+ */
+export function suggestCardToPlay(
+	hand: CardId[],
 	trumpSuit: CardSuit,
-	cardsAlreadyPlayed: PlayingCard[],
-	roundSuit?: CardSuit
-): boolean {
-	if ( typeof card !== "string" ) {
-		card = getCardId( card );
-	}
+	cardsOffTheGame: CardId[],
+	activeRound: Round
+) {
+	const playableCards = getPlayableCards( hand, trumpSuit, activeRound );
 
-	const greatest = getBestCardPlayed( cardsAlreadyPlayed, trumpSuit, roundSuit );
-	if ( !greatest || !roundSuit ) {
-		return isCardInHand( hand, card );
-	}
+	const unbeatableCards = playableCards.filter( card => {
+		const higherCards = SORTED_DECK.filter( deckCard => compareCards( deckCard, card ) );
+		return higherCards.every( c => cardsOffTheGame.includes( c ) || hand.includes( c ) );
+	} );
 
-	const playableCards = getPlayableCards( hand, trumpSuit, greatest, roundSuit );
-	return isCardInHand( playableCards, card );
+	return unbeatableCards.length > 0
+		? unbeatableCards[ unbeatableCards.length - 1 ]
+		: playableCards[ Math.floor( Math.random() * playableCards.length ) ];
 }

@@ -8,7 +8,6 @@
 	},
 	"dependencies": {
 		"@orpc/contract": "1.12.2",
-		"@s2h/cards": "workspace:*",
 		"@s2h/utils": "workspace:*",
 		"valibot": "1.2.0"
 	},

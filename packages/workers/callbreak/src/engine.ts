@@ -1,20 +1,11 @@
-import { CARD_RANKS, CARD_SUITS } from "@s2h/cards/constants";
-import type { CardRank, PlayingCard } from "@s2h/cards/types";
-import {
-	compareCards,
-	generateDeck,
-	generateHands,
-	getCardFromId,
-	getCardId,
-	getCardsOfSuit,
-	getCardSuit
-} from "@s2h/cards/utils";
 import { remove } from "@s2h/utils/array";
+import { CARD_SUITS, type CardId, generateDeck, generateHands, getCardSuit } from "@s2h/utils/cards";
 import { generateBotInfo, generateGameCode, generateId } from "@s2h/utils/generator";
 import { createLogger } from "@s2h/utils/logger";
 import { DurableObject } from "cloudflare:workers";
 import type {
 	BasePlayerInfo,
+	Bindings,
 	CreateGameInput,
 	DealWithRounds,
 	DeclareDealWinsInput,
@@ -22,32 +13,41 @@ import type {
 	PlayCardInput,
 	PlayerGameInfo,
 	PlayerId,
-	Round
+	Round,
+	StartedRound
 } from "./types.ts";
-import { getBestCardPlayed, getPlayableCards } from "./utils.ts";
-
-type CloudflareEnv = {
-	CALLBREAK_KV: KVNamespace;
-	WSS: DurableObjectNamespace<import("../../../api/src/wss.ts").WebsocketServer>;
-}
+import { getBestCardPlayed, getPlayableCards, suggestCardToPlay, suggestDealWins } from "./utils.ts";
 
 /**
+ * Durable Object that manages the authoritative Callbreak game state and logic.
+ *
+ * Responsibilities:
+ * - Hold the canonical GameData for a single game instance.
+ * - Accept player actions (join, declare wins, play cards), enforce rules, and progress the
+ *   game through deals/rounds.
+ * - Persist GameData to the CALLBREAK_KV namespace and broadcast player-facing views over WSS.
+ *
+ * Side effects:
+ * - Many methods mutate `this.data`. Persist changes by calling saveGameData()
+ *   (most public mutating methods do this internally).
+ *
+ * Notes:
+ * - Constructed within a Durable Object runtime. Initial state is loaded during construction
+ *   via ctx.blockConcurrencyWhile(...) to avoid races.
+ *
  * @class CallbreakEngine
- * @description Durable Object that manages the state and logic of a Callbreak game.
- * It handles player actions, game progression, and state persistence.
- * The engine supports adding players, declaring wins, playing cards, and automatically
- * progressing the game through alarms.
+ * @public
  */
-export class CallbreakEngine extends DurableObject<CloudflareEnv> {
+export class CallbreakEngine extends DurableObject<Bindings> {
 
+	protected data: GameData;
 	private readonly logger = createLogger( "Callbreak:Engine" );
 	private readonly key: string;
-	private data: GameData;
 
-	constructor( ctx: DurableObjectState, env: CloudflareEnv ) {
+	constructor( ctx: DurableObjectState, env: Bindings ) {
 		super( ctx, env );
 		this.key = ctx.id.toString();
-		this.data = CallbreakEngine.initialGameData( { dealCount: 5, trumpSuit: CARD_SUITS.HEARTS } );
+		this.data = CallbreakEngine.defaultGameData();
 
 		ctx.blockConcurrencyWhile( async () => {
 			const data = await this.loadGameData();
@@ -61,22 +61,21 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 	}
 
 	/**
-	 * Creates a new Callbreak game with the specified parameters.
-	 * This function initializes the game state with the player's ID, deal count, and trump suit.
-	 * Defaults to a deal count of 5 if not specified.
+	 * Create a new default GameData object.
+	 * Side effects: none (pure factory). Caller should assign the returned object to this.data
+	 * and persist it if desired.
 	 *
-	 * @param input {CreateGameInput} - The input parameters containing deal count and trump suit.
-	 * @return {GameData} - Default GameData
+	 * @returns New GameData object populated with deterministic defaults.
+	 * @private
 	 */
-	public static initialGameData( input: CreateGameInput ): GameData {
-		const { dealCount = 5, trumpSuit } = input;
+	private static defaultGameData() {
 		return {
 			id: generateId(),
 			code: generateGameCode(),
-			dealCount,
-			trump: trumpSuit,
+			dealCount: 5 as const,
+			trump: CARD_SUITS.HEARTS,
 			currentTurn: "",
-			status: "GAME_CREATED",
+			status: "GAME_CREATED" as const,
 			scores: {},
 			createdBy: "",
 			players: {},
@@ -84,38 +83,87 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		};
 	}
 
+	/**
+	 * Return a player-safe snapshot of the current game state.
+	 * This omits secret/internal-only details where appropriate and computes per-player views.
+	 * No state mutation or persistence occurs.
+	 *
+	 * @param playerId ID of the requesting player.
+	 * @returns Object containing either PlayerGameInfo or error message
+	 * @public
+	 */
 	public async getPlayerData( playerId: PlayerId ) {
 		this.logger.debug( ">> getPlayerData()" );
 		const playerDataMap = this.getPlayerDataMap();
+
+		if ( !playerDataMap[ playerId ] ) {
+			this.logger.error( "Player Not in Game: %s", playerId );
+			return { error: "Player not in game!" };
+		}
+
 		const data = playerDataMap[ playerId ];
 		this.logger.debug( "<< getPlayerData()" );
 		return { data };
 	}
 
-	public async updateConfig( input: Partial<CreateGameInput>, playerId: PlayerId ) {
-		this.logger.debug( ">> updateConfig()" );
+	/**
+	 * Initialize or reconfigure a game instance.
+	 *
+	 * Behaviour / side effects:
+	 * - Mutates this.data.createdBy, this.data.dealCount, this.data.trump, and this.data.currentTurn.
+	 * - Persists changes to CALLBREAK_KV and stores mappings for lookup.
+	 *
+	 * Validation: This method assumes sensible input and will overwrite current configuration.
+	 *
+	 * @param input Parameters for game creation (dealCount, trumpSuit, etc).
+	 * @param playerId ID of the player creating the game.
+	 * @returns Object with the game id.
+	 * @public
+	 */
+	public async initialize( input: CreateGameInput, playerId: PlayerId ) {
+		this.logger.debug( ">> initialize()" );
 
 		this.data.dealCount = input.dealCount ?? this.data.dealCount;
-		this.data.trump = input.trumpSuit ?? this.data.trump;
+		this.data.trump = input.trumpSuit;
 		this.data.currentTurn = playerId;
 		this.data.createdBy = playerId;
 
 		await this.saveGameData();
-		await this.setAlarm( 60000 );
+		await this.saveDurableObjectId();
+		await this.broadcastGameData();
 
-		this.logger.debug( "<< updateConfig()" );
-		return { code: this.data.code, gameId: this.data.id };
+		this.logger.debug( "<< initialize()" );
+		return { data: this.data.id };
 	}
 
 	/**
-	 * Adds a player to the game using the provided authentication information.
-	 * This function updates the game state to include the new player and initializes their score.
-	 * If the maximum number of players (4) is reached, the game status is updated to "PLAYERS_READY".
+	 * Add a player to the game.
+	 * Returns the game id if player successfully added or already present.
 	 *
-	 * @param playerInfo {BasePlayerInfo} - The authentication information of the player to be added.
+	 * Side effects:
+	 * - Mutates this.data.players and this.data.scores.
+	 * - Persists the updated GameData and broadcasts the updated player views.
+	 *
+	 * Validation:
+	 * - Fails when the game is full.
+	 *
+	 * @param playerInfo Authentication/player metadata for the joining player.
+	 * @returns Object with game id or error message.
+	 * @public
 	 */
 	public async addPlayer( playerInfo: BasePlayerInfo ) {
 		this.logger.debug( ">> addPlayer()" );
+
+		if ( this.data.players[ playerInfo.id ] ) {
+			this.logger.warn( "Already in Game: %s", playerInfo.id );
+			return { data: this.data.id };
+		}
+
+		const { error } = this.validateJoinGame();
+		if ( error ) {
+			this.logger.error( "Cannot add player %s: %s", playerInfo.id, error );
+			return { error };
+		}
 
 		this.data.players[ playerInfo.id ] = { ...playerInfo, isBot: false };
 		this.data.scores[ playerInfo.id ] = [];
@@ -128,19 +176,65 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		await this.broadcastGameData();
 
 		this.logger.debug( "<< addPlayer()" );
+		return { data: this.data.id };
 	}
 
 	/**
-	 * Allows the current player to declare their expected wins for the active deal.
-	 * This function updates the deal's declarations and advances the turn to the next player.
-	 * If all players have declared their wins, the game status is updated to "WINS_DECLARED".
+	 * Add bot players until the table has 4 players.
+	 * Side effects:
+	 * - Mutates this.data.players and this.data.scores and sets this.data.status to PLAYERS_READY.
 	 *
-	 * @param input {DeclareDealWinsInput} - The input containing the number of wins declared by the current player.
+	 * @public
 	 */
-	public async declareDealWins( input: DeclareDealWinsInput ) {
+	public async addBots( playerInfo: BasePlayerInfo ) {
+		this.logger.debug( ">> addBots()" );
+
+		const { error } = this.validateAddBots( playerInfo );
+		if ( error ) {
+			this.logger.error( "Cannot add bots: %s", error );
+			return { error };
+		}
+
+		const botCount = 4 - Object.keys( this.data.players ).length;
+		for ( let i = 0; i < botCount; i++ ) {
+			const botInfo = generateBotInfo();
+			this.data.players[ botInfo.id ] = { ...botInfo, isBot: true };
+			this.data.scores[ botInfo.id ] = [];
+		}
+
+		this.data.status = "PLAYERS_READY";
+
+		await this.saveGameData();
+		await this.broadcastGameData();
+		await this.setAlarm( 5000 );
+
+		this.logger.debug( "<< addBots()" );
+		return {};
+	}
+
+	/**
+	 * Declare expected wins for the active deal on behalf of authInfo.
+	 *
+	 * Behaviour / side effects:
+	 * - Validates turn & deal, updates declarations and currentTurn, may change this.data.status.
+	 * - Persists changes and triggers broadcasting and an alarm to progress the game.
+	 *
+	 * @param input Object containing dealId and wins declared.
+	 * @param authInfo Authentication/player metadata for the declaring player.
+	 * @returns Error message on validation failure or empty object on success.
+	 * @public
+	 */
+	public async declareDealWins( input: DeclareDealWinsInput, authInfo: BasePlayerInfo ) {
 		this.logger.debug( ">> declareDealWins()" );
 
-		if ( Object.keys( this.data.deals[ 0 ].declarations ).length === 0 ) {
+		const { error } = this.validateDealWinDeclaration( input, authInfo );
+		if ( error ) {
+			this.logger.error( "Cannot declare wins for player %s: %s", authInfo.id, error );
+			return { error };
+		}
+
+		let nonZeroDeclarations = Object.values( this.data.deals[ 0 ].declarations ).filter( v => v > 0 );
+		if ( nonZeroDeclarations.length === 0 ) {
 			this.data.deals[ 0 ].status = "IN_PROGRESS";
 		}
 
@@ -148,7 +242,8 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		this.data.deals[ 0 ].declarations[ this.data.currentTurn ] = input.wins;
 		this.data.currentTurn = this.data.deals[ 0 ].playerOrder[ nextPlayerIdx ];
 
-		if ( Object.keys( this.data.deals[ 0 ].declarations ).length === 4 ) {
+		nonZeroDeclarations = Object.values( this.data.deals[ 0 ].declarations ).filter( v => v > 0 );
+		if ( nonZeroDeclarations.length === 4 ) {
 			this.data.status = "WINS_DECLARED";
 		}
 
@@ -157,18 +252,30 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		await this.setAlarm( 5000 );
 
 		this.logger.debug( "<< declareDealWins()" );
+		return {};
 	}
 
 	/**
-	 * Processes the action of a player playing a card during their turn in the active round.
-	 * This function updates the round's state with the played card, removes the card from the player's hand,
-	 * and advances the turn to the next player. If all players have played their cards,
-	 * the game status is updated to "CARDS_PLAYED".
+	 * Play a card for the current player in the active round.
 	 *
-	 * @param input {PlayCardInput} - The input containing the ID of the card played by the current player.
+	 * Behaviour / side effects:
+	 * - Validates turn, deal, round, card ownership and playability.
+	 * - Mutates round.cards, deal.hands, currentTurn and possibly this.data.status.
+	 * - Persists changes and broadcasts player views; sets an alarm to continue progression.
+	 *
+	 * @param input Object containing gameId, dealId, roundId and cardId.
+	 * @param authInfo Authentication/player metadata for the playing player.
+	 * @returns Error message on validation failure or empty object on success.
+	 * @public
 	 */
-	public async playCard( input: PlayCardInput ) {
+	public async playCard( input: PlayCardInput, authInfo: BasePlayerInfo ) {
 		this.logger.debug( ">> playCard()" );
+
+		const { error } = this.validatePlayCard( input, authInfo );
+		if ( error ) {
+			this.logger.error( "Cannot play card for player %s: %s", authInfo.id, error );
+			return { error };
+		}
 
 		const activeDeal = this.data.deals[ 0 ];
 		const activeRound = activeDeal.rounds[ 0 ];
@@ -182,7 +289,7 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 
 		activeDeal.rounds[ 0 ] = activeRound;
 		activeDeal.hands[ playerInfo.id ] = remove(
-			card => getCardId( card ) === input.cardId,
+			card => card === input.cardId,
 			activeDeal.hands[ playerInfo.id ]
 		);
 
@@ -199,26 +306,27 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		await this.setAlarm( 5000 );
 
 		this.logger.debug( "<< playCard()" );
+		return {};
 	}
 
 	/**
-	 * Automatically progresses the game based on its current data.
-	 * This function handles various game states such as adding bots, creating deals and rounds,
-	 * declaring wins, playing cards, and completing rounds and deals.
-	 * It ensures that the game flows smoothly without manual intervention,
-	 * especially when bot players are involved.
+	 * Durable Object alarm handler that advances game state automatically.
+	 *
+	 * Behaviour:
+	 * - Observes this.data.status and steps the game forward (add bots, create deal/round,
+	 *   auto-declare wins/play cards for bots, complete rounds/deals/games).
+	 *
+	 * Side effects:
+	 * - Mutates this.data and persists/broadcasts as needed.
+	 *
+	 * @public
+	 * @override
 	 */
 	override async alarm() {
 		this.logger.debug( ">> alarm()" );
 
 		let setNextAlarm = false;
 		switch ( this.data.status ) {
-			case "GAME_CREATED": {
-				this.addBots();
-				setNextAlarm = true;
-				break;
-			}
-
 			case "PLAYERS_READY": {
 				this.createDeal();
 				setNextAlarm = true;
@@ -229,9 +337,9 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 				const currentDeal = this.data.deals[ 0 ];
 				const currentPlayer = this.data.players[ this.data.currentTurn ];
 				if ( currentPlayer.isBot ) {
-					const wins = this.suggestDealWins();
-					const input = { gameId: this.data.id, dealId: currentDeal.id, wins };
-					await this.declareDealWins( input );
+					const wins = suggestDealWins( currentDeal.hands[ currentPlayer.id ], this.data.trump );
+					const input: DeclareDealWinsInput = { dealId: currentDeal.id, wins };
+					await this.declareDealWins( input, currentPlayer );
 					setNextAlarm = true;
 				}
 				break;
@@ -247,15 +355,17 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 				const currentDeal = this.data.deals[ 0 ];
 				const currentRound = currentDeal.rounds[ 0 ];
 				const currentPlayer = this.data.players[ this.data.currentTurn ];
+
+				const hand = currentDeal.hands[ currentPlayer.id ];
+				const cardsOffTheGame = currentDeal.rounds.flatMap( round => Object.values( round.cards ) );
+
 				if ( currentPlayer.isBot ) {
-					const card = this.suggestCardToPlay();
-					const input = {
-						gameId: this.data.id,
+					const input: PlayCardInput = {
 						dealId: currentDeal.id,
 						roundId: currentRound.id,
-						cardId: getCardId( card )
+						cardId: suggestCardToPlay( hand, this.data.trump, cardsOffTheGame, currentRound )
 					};
-					await this.playCard( input );
+					await this.playCard( input, currentPlayer );
 					setNextAlarm = true;
 				}
 				break;
@@ -299,6 +409,13 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		this.logger.debug( "<< alarm()" );
 	}
 
+	/**
+	 * Produce a map of playerId -> PlayerGameInfo (player-facing view).
+	 * Does not mutate state.
+	 *
+	 * @returns Key value map of playerId to PlayerGameInfo.
+	 * @private
+	 */
 	private getPlayerDataMap(): Record<PlayerId, PlayerGameInfo> {
 		return Object.keys( this.data.players ).reduce(
 			( acc, playerId ) => {
@@ -309,7 +426,7 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 				}
 
 				const { rounds, hands, ...currentDeal } = deals[ 0 ];
-				const hand = hands[ playerId ] ?? [];
+				const hand = hands[ playerId ];
 				const currentRound = rounds[ 0 ];
 				acc[ playerId ] = { ...rest, playerId, currentDeal, currentRound, hand, players };
 
@@ -320,31 +437,10 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 	}
 
 	/**
-	 * Adds bot players to the game until the total number of players reaches 4.
-	 * This function generates bot player information and updates the game state accordingly.
-	 * Once the maximum number of players is reached, the game status is updated to "PLAYERS_READY".
-	 * @private
-	 */
-	private addBots() {
-		this.logger.debug( ">> addBots()" );
-
-		const botCount = 4 - Object.keys( this.data.players ).length;
-		for ( let i = 0; i < botCount; i++ ) {
-			const botInfo = generateBotInfo();
-			this.data.players[ botInfo.id ] = { ...botInfo, isBot: true };
-			this.data.scores[ botInfo.id ] = [];
-		}
-
-		this.data.status = "PLAYERS_READY";
-
-		this.logger.debug( "<< addBots()" );
-	}
-
-	/**
-	 * Creates a new deal in the game by generating a deck of cards, shuffling them,
-	 * and distributing them among the players. The player order is determined based on
-	 * the creator of the game for the first deal, and subsequently rotates for each new deal.
-	 * The game status is updated to "CARDS_DEALT" and the current turn is set to the first player in the order.
+	 * Create a new deal: shuffle & distribute cards and set up deal metadata.
+	 * Side effects:
+	 * - Mutates this.data.deals, this.data.currentTurn and this.data.status.
+	 *
 	 * @private
 	 */
 	private createDeal() {
@@ -364,8 +460,20 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 			id: generateId(),
 			playerOrder,
 			status: "CREATED",
-			declarations: {},
-			wins: {},
+			declarations: playerIds.reduce(
+				( acc, playerId ) => {
+					acc[ playerId ] = 0;
+					return acc;
+				},
+				{} as DealWithRounds["declarations"]
+			),
+			wins: playerIds.reduce(
+				( acc, playerId ) => {
+					acc[ playerId ] = 0;
+					return acc;
+				},
+				{} as DealWithRounds["wins"]
+			),
 			createdAt: Date.now(),
 			rounds: [],
 			hands: hands.reduce(
@@ -373,7 +481,7 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 					acc[ playerOrder[ index ] ] = value;
 					return acc;
 				},
-				{} as Record<PlayerId, PlayingCard[]>
+				{} as Record<PlayerId, CardId[]>
 			)
 		};
 
@@ -385,9 +493,10 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 	}
 
 	/**
-	 * Creates a new round within the active deal, setting up the player order based on the winner of the last round.
-	 * The game status is updated to "ROUND_STARTED" and the current turn is set to the first player
-	 * in the new round's order.
+	 * Create a new round within the active deal and set the player order.
+	 * Side effects:
+	 * - Mutates active deal's rounds, this.data.currentTurn and this.data.status.
+	 *
 	 * @private
 	 */
 	private createRound() {
@@ -417,28 +526,26 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 	}
 
 	/**
-	 * Completes the active round by determining the winning card and player,
-	 * updating the round and deal states accordingly, and setting the game status to "ROUND_COMPLETED".
-	 * The winning player is determined based on the best card played considering the trump suit and round suit.
-	 * The number of wins for the winning player is incremented in the active deal.
+	 * Complete the active round by selecting the winner and updating wins.
+	 *
+	 * Behaviour:
+	 * - Determines winning card/player based on trump & suit and increments win counters.
+	 *
+	 * Side effects:
+	 * - Mutates the active round and active deal structures and sets this.data.status.
+	 *
 	 * @private
 	 */
 	private completeRound() {
 		this.logger.debug( ">> completeRound()" );
 
 		const activeDeal = this.data.deals[ 0 ];
-		const activeRound = activeDeal.rounds[ 0 ];
+		const activeRound = activeDeal.rounds[ 0 ] as StartedRound;
 
-		const winningCard = getBestCardPlayed(
-			Object.values( activeRound.cards ).map( getCardFromId ),
-			this.data.trump,
-			activeRound.suit
-		);
-
+		const winningCard = getBestCardPlayed( this.data.trump, activeRound );
 		this.logger.info( "Winning Card: %s", winningCard );
 
-		const winningPlayer = activeRound.playerOrder.find( p => activeRound.cards[ p ] ===
-			getCardId( winningCard! ) );
+		const winningPlayer = activeRound.playerOrder.find( p => activeRound.cards[ p ] === winningCard! );
 		this.logger.info( "Player %s won the round", winningPlayer );
 
 		activeRound.status = "COMPLETED";
@@ -453,14 +560,16 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 	}
 
 	/**
-	 * Completes the active deal by calculating and updating the scores for each player
-	 * based on their declared and actual wins. The deal status is set to "COMPLETED"
-	 * and the game status is updated to "DEAL_COMPLETED".
-	 * The scoring system penalizes players for not able to meet their declared wins
-	 * and rewards them for exceeding their declarations.
-	 * The score formula is as follows:
-	 * - If declared wins > actual wins: score = -10 * declared wins
-	 * - If declared wins <= actual wins: score = (10 * declared wins) + (2 * (actual wins - declared wins))
+	 * Finalize the active deal, compute scores for each player based on declared vs actual wins,
+	 * and update the game status.
+	 *
+	 * Scoring:
+	 * - Declared > won: score = -10 * declared
+	 * - Declared <= won: score = (10 * declared) + (2 * (won - declared))
+	 *
+	 * Side effects:
+	 * - Mutates this.data.scores and sets deal/status flags.
+	 *
 	 * @private
 	 */
 	private completeDeal() {
@@ -469,7 +578,7 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		const activeDeal = this.data.deals[ 0 ];
 		Object.keys( this.data.players ).forEach( playerId => {
 			const declared = activeDeal.declarations[ playerId ];
-			const won = activeDeal.wins[ playerId ] ?? 0;
+			const won = activeDeal.wins[ playerId ];
 			const score = declared > won ? ( -10 * declared ) : ( 10 * declared ) + ( 2 * ( won - declared ) );
 			this.data.scores[ playerId ].push( score );
 		} );
@@ -481,6 +590,13 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		this.logger.debug( "<< completeDeal()" );
 	}
 
+	/**
+	 * Mark the game as completed and perform any game-level cleanup.
+	 * Side effects:
+	 * - Mutates this.data.status to GAME_COMPLETED.
+	 *
+	 * @private
+	 */
 	private async completeGame() {
 		this.logger.debug( ">> completeGame()" );
 		this.data.status = "GAME_COMPLETED";
@@ -488,88 +604,152 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 	}
 
 	/**
-	 * Suggests the number of wins a player might achieve based on their current hand.
-	 * This function analyzes the player's hand, considering the trump suit and high-ranking cards,
-	 * to estimate a realistic number of wins they could declare for the active deal.
-	 * The suggestion is based on the distribution of cards across suits and the presence of
-	 * high-value cards (Ace, King, Queen).
+	 * Validate whether a new player can join.
+	 * Does not mutate state.
+	 *
+	 * @returns Error message if the game is full, otherwise empty object.
 	 * @private
-	 * @return {number} - The suggested number of wins for the player.
 	 */
-	private suggestDealWins(): number {
-		this.logger.debug( ">> suggestDealWins()" );
+	private validateJoinGame() {
+		this.logger.debug( ">> validateJoinGame()" );
 
-		let possibleWins = 0;
-		const activeDeal = this.data.deals[ 0 ];
-		const hand = activeDeal.hands[ this.data.currentTurn ];
-		const BIG_RANKS = [ CARD_RANKS.ACE, CARD_RANKS.KING, CARD_RANKS.QUEEN ] as CardRank[];
-
-		for ( const suit of Object.values( CARD_SUITS ) ) {
-			const cards = getCardsOfSuit( suit, hand );
-			const bigRanks = cards.filter( card => BIG_RANKS.includes( card.rank ) );
-
-			if ( suit === this.data.trump ) {
-				possibleWins += bigRanks.length;
-				continue;
-			}
-
-			if ( cards.length >= 3 ) {
-				possibleWins += Math.min( bigRanks.length, 2 );
-			} else if ( cards.length === 2 ) {
-				possibleWins += 1 + Math.min( bigRanks.length, 1 );
-			} else {
-				possibleWins += 2 + bigRanks.length;
-			}
+		if ( Object.keys( this.data.players ).length >= 4 ) {
+			this.logger.error( "Game Full: %s", this.data.id );
+			return { error: "Game full!" };
 		}
 
-		if ( possibleWins < 2 ) {
-			possibleWins = 2;
-		}
-
-		this.logger.debug( "<< suggestDealWins()" );
-		return possibleWins;
+		this.logger.debug( "<< validateJoinGame()" );
+		return {};
 	}
 
 	/**
-	 * Suggests a card for the current player to play based on the game data.
-	 * This function analyzes the player's hand, the cards already played in the active round,
-	 * and the best card played so far to determine a strategic card to play.
-	 * The suggestion aims to play an unbeatable card if possible, otherwise selects a random playable card.
+	 * Validate whether bots can be added by the requesting player.
+	 * Does not mutate state.
+	 *
+	 * Checks:
+	 * - Requesting player is the game creator.
+	 * - Game is not already full.
+	 *
+	 * @param authInfo Player authentication metadata.
+	 * @returns Error message on validation failure or empty object on success.
 	 * @private
-	 * @return {PlayingCard} - The suggested card for the player to play.
 	 */
-	private suggestCardToPlay(): PlayingCard {
-		this.logger.debug( ">> suggestCardToPlay()" );
+	private validateAddBots( authInfo: BasePlayerInfo ) {
+		this.logger.debug( ">> validateAddBots()" );
 
-		const activeDeal = this.data.deals[ 0 ];
-		const activeRound = activeDeal.rounds[ 0 ];
-		const hand = activeDeal.hands[ this.data.currentTurn ];
-		const cardsAlreadyPlayed = activeDeal.rounds
-			.flatMap( round => Object.values( round.cards ) )
-			.map( getCardFromId );
+		if ( this.data.createdBy !== authInfo.id ) {
+			this.logger.error( "Only Creator Can Add Bots: %s", authInfo.id );
+			return { error: "Only the game creator can add bots!" };
+		}
 
-		const cardsPlayedInActiveRound = Object.values( activeRound.cards ).map( getCardFromId );
-		const bestCardInActiveRound = getBestCardPlayed(
-			cardsPlayedInActiveRound,
-			this.data.trump,
-			activeRound.suit
-		);
-		const playableCards = getPlayableCards( hand, this.data.trump, bestCardInActiveRound, activeRound.suit );
+		if ( Object.keys( this.data.players ).length >= 4 ) {
+			this.logger.error( "Game Full: %s", this.data.id );
+			return { error: "Game already has 4 players!" };
+		}
 
-		const deck = generateDeck();
-		const unbeatableCards = playableCards.filter( card => {
-			const greaterCards = deck.filter( deckCard => compareCards( deckCard, card ) );
-			return greaterCards.every( greaterCard => cardsAlreadyPlayed.includes( greaterCard ) );
-		} );
-
-		const cardToPlay = unbeatableCards.length > 0
-			? unbeatableCards[ Math.floor( Math.random() * unbeatableCards.length ) ]
-			: playableCards[ Math.floor( Math.random() * playableCards.length ) ];
-
-		this.logger.debug( "<< suggestCardToPlay()" );
-		return cardToPlay;
+		this.logger.debug( "<< validateAddBots()" );
+		return {};
 	}
 
+	/**
+	 * Validate a declare-deal-wins request.
+	 * Does not mutate state.
+	 *
+	 * Checks:
+	 * - Player is in game.
+	 * - It is the player's turn.
+	 * - Active deal exists and matches input.dealId.
+	 *
+	 * @param input The DeclareDealWinsInput containing dealId and wins.
+	 * @param authInfo Player authentication metadata.
+	 * @returns Error message on validation failure or empty object on success.
+	 * @private
+	 */
+	private validateDealWinDeclaration( input: DeclareDealWinsInput, authInfo: BasePlayerInfo ) {
+		this.logger.debug( ">> validateDealWinDeclaration()" );
+
+		if ( !this.data.players[ authInfo.id ] ) {
+			this.logger.error( "Player Not in Game: %s", authInfo.id );
+			return { error: "Player not in game!" };
+		}
+
+		if ( this.data.currentTurn !== authInfo.id ) {
+			this.logger.error( "Not Your Turn: %s", authInfo.id );
+			return { error: "Not your turn!" };
+		}
+
+		const currentDeal = this.data.deals[ 0 ];
+		if ( !currentDeal || currentDeal.id !== input.dealId ) {
+			this.logger.error( "Active Deal Not Found: %s", this.data.id );
+			return { error: "Active deal not found!" };
+		}
+
+		this.logger.debug( "<< validateDealWinDeclaration()" );
+		return {};
+	}
+
+	/**
+	 * Validate a play-card request.
+	 * Does not mutate state.
+	 *
+	 * Checks:
+	 * - Player is part of the game and it is their turn.
+	 * - Deal and round exist and match IDs in the input.
+	 * - The card played is in the player's hand and is playable given current suit/trump/cards played.
+	 *
+	 * @param input The PlayCardInput containing gameId, dealId, roundId and cardId.
+	 * @param authInfo Player authentication metadata.
+	 * @returns Error message on validation failure or empty object on success.
+	 * @private
+	 */
+	private validatePlayCard( input: PlayCardInput, authInfo: BasePlayerInfo ) {
+		this.logger.debug( ">> validatePlayCard()" );
+
+		if ( !this.data.players[ authInfo.id ] ) {
+			this.logger.error( "Player Not in Game: %s", authInfo.id );
+			return { error: "Player not in game!" };
+		}
+
+		if ( this.data.currentTurn !== authInfo.id ) {
+			this.logger.error( "Not Your Turn: %s", authInfo.id );
+			return { error: "Not your turn!" };
+		}
+
+		const currentDeal = this.data.deals[ 0 ];
+		if ( !currentDeal || currentDeal.id !== input.dealId ) {
+			this.logger.error( "Deal Not Found: %s", input.dealId );
+			return { error: "Deal not found!" };
+		}
+
+		const currentRound = currentDeal.rounds[ 0 ];
+		if ( !currentRound || currentRound.id !== input.roundId ) {
+			this.logger.error( "Round Not Found: %s", input.roundId );
+			return { error: "Round not found!" };
+		}
+
+		const hand = currentDeal.hands[ authInfo.id ];
+		if ( !hand.includes( input.cardId ) ) {
+			this.logger.error( "Card Not Yours: %s", input.cardId );
+			return { error: "Card not in hand!" };
+		}
+
+		const playableCards = getPlayableCards( hand, this.data.trump, currentRound );
+		if ( !playableCards.includes( input.cardId ) ) {
+			this.logger.error( "Invalid Card: %s", input.cardId );
+			return { error: "Card cannot be played!" };
+		}
+
+		this.logger.debug( "<< validatePlayCard()" );
+		return {};
+	}
+
+	/**
+	 * Broadcast player-facing game snapshots over the WSS Durable Object.
+	 * Side effects:
+	 * - Reads this.data and calls the WSS object's broadcast method.
+	 *
+	 * @private
+	 */
 	private async broadcastGameData() {
 		this.logger.debug( ">> broadcast()" );
 
@@ -580,17 +760,51 @@ export class CallbreakEngine extends DurableObject<CloudflareEnv> {
 		this.logger.debug( "<< broadcast()" );
 	}
 
+	/**
+	 * Helper to set a storage alarm after deleting any existing alarm.
+	 * Side effects:
+	 * - Calls ctx.storage.deleteAlarm() and ctx.storage.setAlarm().
+	 *
+	 * @param ms Milliseconds in the future to fire the alarm.
+	 * @private
+	 */
 	private async setAlarm( ms: number ) {
 		this.logger.info( "Setting alarm for gameId:", this.data.id, "in", ms, "ms" );
 		await this.ctx.storage.deleteAlarm();
 		await this.ctx.storage.setAlarm( Date.now() + ms );
 	}
 
+	/**
+	 * Load persisted GameData from CALLBREAK_KV.
+	 *
+	 * @returns Parsed GameData or undefined if not present.
+	 * @private
+	 */
 	private async loadGameData() {
 		return this.env.CALLBREAK_KV.get<GameData>( this.key, "json" );
 	}
 
+	/**
+	 * Persist the current in-memory GameData to CALLBREAK_KV.
+	 * Side effects:
+	 * - Serializes and writes this.data to the CALLBREAK_KV namespace.
+	 *
+	 * @private
+	 */
 	private async saveGameData() {
 		await this.env.CALLBREAK_KV.put( this.key, JSON.stringify( this.data ) );
 	}
+
+	/**
+	 * Persist durable object mappings (code -> DO id, gameId -> DO id) into KV.
+	 * Side effects:
+	 * - Writes keys to CALLBREAK_KV.
+	 *
+	 * @private
+	 */
+	private async saveDurableObjectId() {
+		await this.env.CALLBREAK_KV.put( `code:${ this.data.code }`, this.key );
+		await this.env.CALLBREAK_KV.put( `gameId:${ this.data.id }`, this.key );
+	}
 }
+

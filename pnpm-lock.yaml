@@ -139,12 +139,6 @@ importers:
         specifier: workspace:*
         version: link:../workers/wordle
 
-  packages/cards:
-    dependencies:
-      '@s2h/utils':
-        specifier: workspace:*
-        version: link:../utils
-
   packages/client:
     dependencies:
       '@orpc/client':
@@ -175,9 +169,6 @@ importers:
       '@s2h/auth':
         specifier: workspace:*
         version: link:../../workers/auth
-      '@s2h/cards':
-        specifier: workspace:*
-        version: link:../../cards
       '@s2h/client':
         specifier: workspace:*
         version: link:../../client
@@ -206,12 +197,12 @@ importers:
       '@s2h/callbreak':
         specifier: workspace:*
         version: link:../../workers/callbreak
-      '@s2h/cards':
-        specifier: workspace:*
-        version: link:../../cards
       '@s2h/client':
         specifier: workspace:*
         version: link:../../client
+      '@s2h/utils':
+        specifier: workspace:*
+        version: link:../../utils
       '@tanstack/react-router':
         specifier: 1.139.14
         version: 1.139.14(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -243,9 +234,6 @@ importers:
       '@s2h-ui/shared':
         specifier: workspace:*
         version: link:../shared
-      '@s2h/cards':
-        specifier: workspace:*
-        version: link:../../cards
       '@s2h/client':
         specifier: workspace:*
         version: link:../../client
@@ -314,9 +302,9 @@ importers:
       '@s2h-ui/primitives':
         specifier: workspace:*
         version: link:../primitives
-      '@s2h/cards':
+      '@s2h/utils':
         specifier: workspace:*
-        version: link:../../cards
+        version: link:../../utils
       '@tanstack/react-router':
         specifier: 1.139.14
         version: 1.139.14(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -397,15 +385,15 @@ importers:
 
   packages/workers/callbreak:
     dependencies:
-      '@orpc/contract':
-        specifier: 1.12.2
-        version: 1.12.2
-      '@s2h/cards':
-        specifier: workspace:*
-        version: link:../../cards
+      '@hono/standard-validator':
+        specifier: 0.2.0
+        version: 0.2.0(@standard-schema/spec@1.0.0)(hono@4.10.7)
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../utils
+      hono:
+        specifier: 4.10.7
+        version: 4.10.7
       valibot:
         specifier: 1.2.0
         version: 1.2.0(typescript@5.9.3)
@@ -415,9 +403,6 @@ importers:
       '@orpc/contract':
         specifier: 1.12.2
         version: 1.12.2
-      '@s2h/cards':
-        specifier: workspace:*
-        version: link:../../cards
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../utils

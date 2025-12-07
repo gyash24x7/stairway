@@ -3,8 +3,6 @@ import { RPCHandler } from "@orpc/server/fetch";
 import type { RequestHeadersPluginContext, ResponseHeadersPluginContext } from "@orpc/server/plugins";
 import { RequestHeadersPlugin, ResponseHeadersPlugin, SimpleCsrfProtectionHandlerPlugin } from "@orpc/server/plugins";
 import type { Session } from "@s2h/auth/types";
-import callbreak from "@s2h/callbreak/contract";
-import type { CallbreakService } from "@s2h/callbreak/service";
 import fish from "@s2h/fish/contract";
 import type { FishService } from "@s2h/fish/service";
 import type { SessionService } from "./sessions.ts";
@@ -13,12 +11,11 @@ export type Ctx = RequestHeadersPluginContext & ResponseHeadersPluginContext & {
 	session?: Session;
 	services: {
 		session: SessionService;
-		callbreak: CallbreakService;
 		fish: FishService;
 	}
 }
 
-const os = implement( { callbreak, fish } ).$context<Ctx>();
+const os = implement( { fish } ).$context<Ctx>();
 
 function withAuth() {
 	return os.use( ( { context, next } ) => {
@@ -30,23 +27,6 @@ function withAuth() {
 }
 
 const router = os.router( {
-	callbreak: {
-		createGame: withAuth().callbreak.createGame.handler( ( { input, context } ) => {
-			return context.services.callbreak.createGame( input, context.session.authInfo );
-		} ),
-		joinGame: withAuth().callbreak.joinGame.handler( ( { input, context } ) => {
-			return context.services.callbreak.joinGame( input, context.session.authInfo );
-		} ),
-		getGameData: withAuth().callbreak.getGameData.handler( ( { input, context } ) => {
-			return context.services.callbreak.getGameData( input, context.session.authInfo );
-		} ),
-		declareDealWins: withAuth().callbreak.declareDealWins.handler( async ( { input, context } ) => {
-			await context.services.callbreak.declareDealWins( input, context.session.authInfo );
-		} ),
-		playCard: withAuth().callbreak.playCard.handler( async ( { input, context } ) => {
-			await context.services.callbreak.playCard( input, context.session.authInfo );
-		} )
-	},
 	fish: {
 		createGame: withAuth().fish.createGame.handler( ( { input, context } ) => {
 			return context.services.fish.createGame( input, context.session.authInfo );

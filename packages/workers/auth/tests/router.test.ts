@@ -78,11 +78,11 @@ describe( "Auth:Router", () => {
 		} );
 	} );
 
-	describe( "POST /auth/user/exists", () => {
+	describe( "POST /user/exists", () => {
 
 		it( "should throw 400 error for invalid username", async () => {
 			const response = await auth.request(
-				"/auth/user/exists",
+				"/user/exists",
 				{ method: "POST", headers, body: JSON.stringify( { username: "ab" } ) },
 				mockEnv
 			);
@@ -93,7 +93,7 @@ describe( "Auth:Router", () => {
 			vi.mocked( userExists ).mockResolvedValue( true );
 
 			const response = await auth.request(
-				"/auth/user/exists",
+				"/user/exists",
 				{ method: "POST", headers, body: JSON.stringify( { username: "abc123" } ) },
 				mockEnv
 			);
@@ -105,12 +105,12 @@ describe( "Auth:Router", () => {
 
 	} );
 
-	describe( "GET /auth/info", () => {
+	describe( "GET /info", () => {
 
 		it( "should return null when not authenticated", async () => {
 			vi.mocked( validateSession ).mockResolvedValue( undefined );
 
-			const response = await auth.request( "/auth/info", {}, mockEnv );
+			const response = await auth.request( "/info", {}, mockEnv );
 			const data = await response.json();
 
 			expect( data ).toEqual( { authInfo: null } );
@@ -120,7 +120,7 @@ describe( "Auth:Router", () => {
 		it( "should return authentication information", async () => {
 			vi.mocked( validateSession ).mockResolvedValue( mockSession );
 
-			const response = await auth.request( "/auth/info", {}, mockEnv );
+			const response = await auth.request( "/info", {}, mockEnv );
 			const data = await response.json();
 
 			expect( data ).toEqual( { authInfo: mockUser } );
@@ -129,12 +129,12 @@ describe( "Auth:Router", () => {
 
 	} );
 
-	describe( "DELETE /auth/logout", () => {
+	describe( "DELETE /logout", () => {
 
 		it( "should return 401 if no valid session found", async () => {
 			vi.mocked( validateSession ).mockResolvedValue( undefined );
 
-			const response = await auth.request( "/auth/logout", { method: "DELETE" }, mockEnv );
+			const response = await auth.request( "/logout", { method: "DELETE" }, mockEnv );
 
 			expect( response.status ).toBe( 401 );
 			expect( validateSession ).toHaveBeenCalledWith( expect.objectContaining( { env: mockEnv } ) );
@@ -143,7 +143,7 @@ describe( "Auth:Router", () => {
 		it( "should log out the user", async () => {
 			vi.mocked( validateSession ).mockResolvedValue( mockSession );
 
-			const response = await auth.request( "/auth/logout", { method: "DELETE" }, mockEnv );
+			const response = await auth.request( "/logout", { method: "DELETE" }, mockEnv );
 
 			expect( response.status ).toBe( 204 );
 			expect( validateSession ).toHaveBeenCalledWith( expect.objectContaining( { env: mockEnv } ) );
@@ -152,11 +152,11 @@ describe( "Auth:Router", () => {
 
 	} );
 
-	describe( "POST /auth/registration/options", () => {
+	describe( "POST /registration/options", () => {
 
 		it( "should throw 400 error for invalid input", async () => {
 			const response = await auth.request(
-				"/auth/registration/options",
+				"/registration/options",
 				{ method: "POST", headers, body: JSON.stringify( { username: "ab", name: "Nu" } ) },
 				mockEnv
 			);
@@ -168,7 +168,7 @@ describe( "Auth:Router", () => {
 			vi.mocked( getRegisterOptions ).mockResolvedValue( { challenge: "challengeData" } as any );
 
 			const response = await auth.request(
-				"/auth/registration/options",
+				"/registration/options",
 				{ method: "POST", headers, body: JSON.stringify( { username: "newUser", name: "New User" } ) },
 				mockEnv
 			);
@@ -184,11 +184,11 @@ describe( "Auth:Router", () => {
 
 	} );
 
-	describe( "POST /auth/registration/verify", () => {
+	describe( "POST /registration/verify", () => {
 
 		it( "should throw 400 error for invalid input", async () => {
 			const response = await auth.request(
-				"/auth/registration/verify",
+				"/registration/verify",
 				{ method: "POST", headers, body: JSON.stringify( { username: "ab", name: "Nu", response: {} } ) },
 				mockEnv
 			);
@@ -200,7 +200,7 @@ describe( "Auth:Router", () => {
 			vi.mocked( verifyRegistration ).mockResolvedValue( mockUser );
 
 			const response = await auth.request(
-				"/auth/registration/verify",
+				"/registration/verify",
 				{
 					method: "POST",
 					headers,
@@ -220,11 +220,11 @@ describe( "Auth:Router", () => {
 
 	} );
 
-	describe( "POST /auth/login/options", () => {
+	describe( "POST /login/options", () => {
 
 		it( "should throw 400 error for invalid input", async () => {
 			const response = await auth.request(
-				"/auth/login/options",
+				"/login/options",
 				{ method: "POST", headers, body: JSON.stringify( { username: "ab" } ) },
 				mockEnv
 			);
@@ -236,7 +236,7 @@ describe( "Auth:Router", () => {
 			vi.mocked( getLoginOptions ).mockResolvedValue( { challenge: "loginChallengeData" } as any );
 
 			const response = await auth.request(
-				"/auth/login/options",
+				"/login/options",
 				{ method: "POST", headers, body: JSON.stringify( { username: "existingUser" } ) },
 				mockEnv
 			);
@@ -252,11 +252,11 @@ describe( "Auth:Router", () => {
 
 	} );
 
-	describe( "POST /auth/login/verify", () => {
+	describe( "POST /login/verify", () => {
 
 		it( "should throw 400 error for invalid input", async () => {
 			const response = await auth.request(
-				"/auth/login/verify",
+				"/login/verify",
 				{ method: "POST", headers, body: JSON.stringify( { username: "ab", response: {} } ) },
 				mockEnv
 			);
@@ -268,7 +268,7 @@ describe( "Auth:Router", () => {
 			vi.mocked( verifyLogin ).mockResolvedValue( mockUser );
 
 			const response = await auth.request(
-				"/auth/login/verify",
+				"/login/verify",
 				{ method: "POST", headers, body: JSON.stringify( { username: "existingUser", response: {} } ) },
 				mockEnv
 			);

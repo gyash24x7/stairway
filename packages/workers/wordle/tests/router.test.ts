@@ -84,7 +84,7 @@ describe( "Wordle:Router", () => {
 			const data = await response.json();
 			expect( data ).toEqual( { gameId: mockGameId } );
 			expect( mockEnv.WORDLE_DO.newUniqueId ).toHaveBeenCalled();
-			expect( mockEnv.WORDLE_DO.get ).toHaveBeenCalledWith( expect.any( Object ) );
+			expect( mockEnv.WORDLE_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.initialize ).toHaveBeenCalledWith( { wordCount: 5, wordLength: 5 }, mockAuthInfo.id );
 		} );
 

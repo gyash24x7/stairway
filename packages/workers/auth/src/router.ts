@@ -11,7 +11,7 @@ import { createSession, deleteSession, validateSession } from "./sessions.ts";
 import type { HonoCtx, HonoEnv } from "./types.ts";
 
 const logger = createLogger( "Auth:Router" );
-const app = new Hono<HonoEnv>().basePath( "/auth" );
+const app = new Hono<HonoEnv>();
 
 export function initializeContext( ctx: HonoCtx ) {
 	ctx.set( "db", drizzle( ctx.env.DB, { schema } ) );

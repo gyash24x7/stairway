@@ -9,10 +9,10 @@ import {
 } from "@s2h-ui/primitives/drawer";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { DisplayCard } from "@s2h-ui/shared/display-card";
-import { getBestCardPlayed, getPlayableCards } from "@s2h/callbreak/utils";
-import type { CardId } from "@s2h/cards/types";
-import { getCardFromId, getCardId, getSortedHand } from "@s2h/cards/utils";
+import { getPlayableCards } from "@s2h/callbreak/utils";
 import { usePlayCardMutation } from "@s2h/client/callbreak";
+import type { CardId } from "@s2h/utils/cards";
+import { getSortedHand } from "@s2h/utils/cards";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
 import { store } from "./store.tsx";
@@ -24,13 +24,7 @@ export function PlayCard() {
 	const gameId = useStore( store, state => state.id );
 	const dealId = useStore( store, state => state.currentDeal!.id );
 	const roundId = useStore( store, state => state.currentRound!.id );
-	const playableCards = useStore( store, state => {
-		const roundSuit = state.currentRound?.suit;
-		const trumpSuit = state.trump;
-		const cardsPlayed = Object.values( state.currentRound?.cards ?? {} ).map( getCardFromId );
-		const bestCardPlayed = getBestCardPlayed( cardsPlayed ?? [], trumpSuit, roundSuit );
-		return getPlayableCards( state.hand, trumpSuit, bestCardPlayed, roundSuit );
-	} );
+	const playableCards = useStore( store, state => getPlayableCards( state.hand, state.trump, state.currentRound! ) );
 
 	const { mutateAsync, isPending } = usePlayCardMutation( {
 		onSuccess: () => closeDrawer(),
@@ -64,7 +58,7 @@ export function PlayCard() {
 					</DrawerHeader>
 					<div className={ "px-3 md:px-4" }>
 						<div className={ "flex gap-3 flex-wrap justify-center" }>
-							{ getSortedHand( playableCards ).map( getCardId ).map( ( cardId ) => (
+							{ getSortedHand( playableCards ).map( ( cardId ) => (
 								<div
 									key={ cardId }
 									onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }

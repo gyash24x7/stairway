@@ -1,4 +1,6 @@
-import type { CardId, CardSuit, PlayingCard } from "@s2h/cards/types";
+import type { CardId, CardSuit } from "@s2h/utils/cards";
+import type { Context } from "hono";
+import type { CallbreakEngine } from "./engine.ts";
 
 export type PlayerId = string;
 export type BasePlayerInfo = {
@@ -19,11 +21,14 @@ export type Round = {
 	createdAt: number;
 };
 
+export type StartedRound = Round & { suit: CardSuit };
+export type CompletedRound = StartedRound & { winner: string };
+
 export type Deal = {
 	id: string;
 	playerOrder: string[];
 	status: "CREATED" | "IN_PROGRESS" | "COMPLETED";
-	hands: Record<PlayerId, PlayingCard[]>;
+	hands: Record<PlayerId, CardId[]>;
 	declarations: Record<PlayerId, number>;
 	wins: Record<PlayerId, number>;
 	createdAt: number;
@@ -60,7 +65,7 @@ export type PlayerGameInfo = Omit<GameData, "deals"> & {
 	playerId: PlayerId;
 	currentDeal?: Omit<Deal, "hands">;
 	currentRound?: Round;
-	hand: PlayingCard[];
+	hand: CardId[];
 };
 
 export type CreateGameInput = {
@@ -68,19 +73,28 @@ export type CreateGameInput = {
 	trumpSuit: CardSuit;
 };
 
-export type JoinGameInput = {
-	code: string;
-};
-
 export type DeclareDealWinsInput = {
 	wins: number;
 	dealId: string;
-	gameId: string;
 };
 
 export type PlayCardInput = {
 	cardId: CardId;
 	roundId: string;
 	dealId: string;
-	gameId: string;
 };
+
+export type Bindings = {
+	CALLBREAK_DO: DurableObjectNamespace<CallbreakEngine>;
+	CALLBREAK_KV: KVNamespace;
+	WSS: DurableObjectNamespace<import("../../../api/src/wss.ts").WebsocketServer>;
+}
+
+export type HonoEnv = {
+	Bindings: Bindings,
+	Variables: {
+		authInfo: BasePlayerInfo;
+	}
+}
+
+export type HonoCtx = Context<HonoEnv>;
