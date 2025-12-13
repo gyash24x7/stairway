@@ -47,7 +47,7 @@ class MockCallbreakEngine extends CallbreakEngine {
 	}
 }
 
-describe( "Wordle:Engine", () => {
+describe( "Callbreak:Engine", () => {
 
 	const mockDurableObjectState = {
 		id: { toString: () => "mock-do-id" },

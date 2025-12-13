@@ -1,6 +1,23 @@
-import type { CardId, PlayingCard } from "@s2h/cards/types";
-import { getCardFromId, getCardId, isCardInHand } from "@s2h/cards/utils";
-import type { Book, BookType, CanadianBook, NormalBook } from "./types.ts";
+import { type CardId } from "@s2h/utils/cards";
+import { generateGameCode, generateId } from "@s2h/utils/generator";
+import { createLogger } from "@s2h/utils/logger";
+import type {
+	Book,
+	BookType,
+	CanadianBook,
+	Metrics,
+	NormalBook,
+	PlayerGameInfo,
+	PlayerId,
+	WeightedAsk,
+	WeightedBook,
+	WeightedClaim,
+	WeightedTransfer
+} from "./types.ts";
+
+const logger = createLogger( "Fish:Utils" );
+
+const MAX_WEIGHT = 720;
 
 export const NORMAL_BOOKS = {
 	"ACES": [ "AC", "AD", "AH", "AS" ] as CardId[],
@@ -37,17 +54,22 @@ export const GAME_STATUS = {
 	COMPLETED: "COMPLETED"
 } as const;
 
+export const DEFAULT_METRICS: Metrics = {
+	totalAsks: 0,
+	cardsTaken: 0,
+	cardsGiven: 0,
+	totalClaims: 0,
+	successfulClaims: 0
+};
+
 /**
  * Returns the book for a given card based on the book type.
- * @param {PlayingCard | CardId} card - The card to find the book for
- * @param {BookType} bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
- * @returns {Book} The book that contains the card
+ * @param card - The card to find the book for
+ * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
+ * @returns The book that contains the card
+ * @public
  */
-export function getBookForCard( card: PlayingCard | CardId, bookType: BookType ): Book {
-	if ( typeof card !== "string" ) {
-		card = getCardId( card );
-	}
-
+export function getBookForCard( card: CardId, bookType: BookType ) {
 	switch ( bookType ) {
 		case "NORMAL":
 			return Object.keys( NORMAL_BOOKS ).map( book => book as keyof typeof NORMAL_BOOKS )
@@ -61,50 +83,323 @@ export function getBookForCard( card: PlayingCard | CardId, bookType: BookType )
 
 /**
  * Returns all books in a player's hand based on the book type.
- * @param {PlayingCard[]} hand - The player's hand of cards
- * @param {BookType} bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
- * @returns {Book[]} An array of unique books found in the hand
+ * @param hand - The player's hand of cards
+ * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
+ * @returns An array of unique books found in the hand
+ * @public
  */
-export function getBooksInHand( hand: PlayingCard[], bookType: BookType ): Book[] {
-	const books = new Set<Book>( hand.map( getCardId ).map( cardId => getBookForCard( cardId, bookType ) ) );
+export function getBooksInHand( hand: CardId[], bookType: BookType ) {
+	const books = new Set<Book>( hand.map( cardId => getBookForCard( cardId, bookType ) ) );
 	return Array.from( books );
 }
 
 /**
  * Checks if a specific book is present in a player's hand.
- * @param {PlayingCard[]} hand - The player's hand of cards
- * @param {Book} book - The book to check for
- * @param {BookType} bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
- * @returns {boolean} True if the book is in hand, false otherwise
+ * @param hand - The player's hand of cards
+ * @param book - The book to check for
+ * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
+ * @returns True if the book is in hand, false otherwise
+ * @public
  */
-export function isBookInHand( hand: PlayingCard[], book: Book, bookType: BookType ): boolean {
+export function isBookInHand( hand: CardId[], book: Book, bookType: BookType ) {
 	return getBooksInHand( hand, bookType ).includes( book );
 }
 
 /**
  * Returns the cards that are missing from a player's hand for a specific book.
- * @param {PlayingCard[]} hand - The player's hand of cards
- * @param {Book} book - The book to check for missing cards
- * @param {BookType} bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
- * @returns {CardId[]} An array of card IDs that are missing from the hand for the specified book
+ * @param hand - The player's hand of cards
+ * @param book - The book to check for missing cards
+ * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
+ * @returns An array of card IDs that are missing from the hand for the specified book
+ * @public
  */
-export function getMissingCards( hand: PlayingCard[], book: Book, bookType: BookType ): CardId[] {
+export function getMissingCards( hand: CardId[], book: Book, bookType: BookType ) {
 	return bookType === "NORMAL"
-		? NORMAL_BOOKS[ book as NormalBook ].filter( ( cardId ) => !isCardInHand( hand, cardId ) )
-		: CANADIAN_BOOKS[ book as CanadianBook ].filter( ( cardId ) => !isCardInHand( hand, cardId ) );
+		? NORMAL_BOOKS[ book as NormalBook ].filter( ( cardId ) => !hand.includes( cardId ) )
+		: CANADIAN_BOOKS[ book as CanadianBook ].filter( ( cardId ) => !hand.includes( cardId ) );
 }
 
 /**
  * Returns the cards of a specific book, optionally filtered by the player's hand.
- * @param {Book} book - The book to get cards from
- * @param {BookType} bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
- * @param {PlayingCard[]} hand - Optional player's hand of cards to filter the results
- * @returns {PlayingCard[]} An array of PlayingCard objects from the specified book, filtered by the hand if provided
+ * @param book - The book to get cards from
+ * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
+ * @param hand - Optional player's hand of cards to filter the results
+ * @returns An array of PlayingCard objects from the specified book, filtered by the hand if provided
+ * @public
  */
-export function getCardsOfBook( book: Book, bookType: BookType, hand?: PlayingCard[] ): PlayingCard[] {
+export function getCardsOfBook( book: Book, bookType: BookType, hand?: CardId[] ) {
 	const cards = bookType === "NORMAL"
 		? NORMAL_BOOKS[ book as NormalBook ]
 		: CANADIAN_BOOKS[ book as CanadianBook ];
 
-	return cards.filter( card => !hand || isCardInHand( hand, card ) ).map( getCardFromId );
+	return cards.filter( card => !hand || hand.includes( card ) );
+}
+
+/**
+ * Create a fresh default GameData object.Returns a fully-initialized,
+ * deterministic data shape used as the engine's starting state.
+ * @returns a new default game data object (id, code, empty structures).
+ * @public
+ */
+export function getDefaultGameData() {
+	return {
+		id: generateId(),
+		code: generateGameCode(),
+		status: GAME_STATUS.CREATED,
+		currentTurn: "",
+		createdBy: "",
+		config: {
+			type: "NORMAL" as const,
+			playerCount: 6 as const,
+			teamCount: 2 as const,
+			books: [],
+			deckType: 48 as const,
+			bookSize: 4 as const
+		},
+
+		playerIds: [],
+		players: {},
+
+		teamIds: [],
+		teams: {},
+
+		hands: {},
+		cardCounts: {},
+		cardMappings: {},
+		cardLocations: {},
+
+		askHistory: [],
+		claimHistory: [],
+		transferHistory: [],
+		metrics: {}
+	};
+}
+
+/**
+ * Suggests books to the player based on their hand and known card locations.
+ * Logic for weighting books:
+ * - Each card in the book that the player has in hand adds maximum weight.
+ * - Each card with a known owner adds maximum weight.
+ * - Each card with possible owners adds weight inversely proportional to the number of possible owners.
+ * - Books that have all cards known or in hand with team members are marked as being with the team.
+ * - Books that can be fully claimed (all cards known or in hand) are marked as claimable.
+ * - Books with the team cannot be claimed if don't know the exact owners of all cards.
+ *
+ * @param data - The player's game info including hand, players, card locations, and config.
+ * @returns sorted list of weighted book suggestions.
+ * @public
+ */
+export function suggestBooks( { playerId, hand, players, cardLocations, config }: PlayerGameInfo ) {
+	logger.debug( ">> suggestBooks()" );
+
+	const booksInGame = new Set( Object.keys( cardLocations ).map( k => getBookForCard( k as CardId, config.type ) ) );
+	const booksInHand = getBooksInHand( hand, config.type );
+	const validBooks = Array.from( booksInGame ).filter( book => booksInHand.includes( book ) );
+	const { teamMates } = players[ playerId ];
+	const weightedBooks: WeightedBook[] = [];
+
+	for ( const book of validBooks ) {
+
+		const weightedBook = { book, weight: 0, isBookWithTeam: true, isClaimable: true, isKnown: true };
+		const cardsInBook = getCardsOfBook( book, config.type );
+
+		for ( const cardId of cardsInBook ) {
+			const possibleOwners = cardLocations[ cardId ]!;
+
+			if ( hand.includes( cardId ) ) {
+				weightedBook.weight += MAX_WEIGHT;
+				continue;
+			}
+
+			const isCardLocationKnown = possibleOwners.length === 1;
+			const isCardWithTeam = possibleOwners.every( pid => teamMates.includes( pid ) );
+
+			weightedBook.weight += MAX_WEIGHT / possibleOwners.length;
+			weightedBook.isKnown = weightedBook.isKnown && isCardLocationKnown;
+			weightedBook.isBookWithTeam = weightedBook.isBookWithTeam && isCardWithTeam;
+			weightedBook.isClaimable = weightedBook.isClaimable && weightedBook.isKnown && isCardLocationKnown;
+		}
+
+		weightedBooks.push( { ...weightedBook, weight: weightedBook.weight / cardsInBook.length } );
+	}
+
+	logger.debug( "<< suggestBooks()" );
+	return weightedBooks
+		.filter( a => a.weight > 0 )
+		.toSorted( ( a, b ) => b.weight - a.weight );
+}
+
+/**
+ * Suggest ask proposals for missing cards in the given books.
+ * Logic for weighting asks:
+ * - If the card has a known owner who is not on the player's team, assign maximum weight.
+ * - If the card has possible owners not on the player's team, distribute weight equally among them.
+ *
+ * @param books weighted book suggestions to consider.
+ * @param data - The player's game info including hand, players, card locations, and config.
+ * @returns ordered list of weighted ask proposals.
+ * @public
+ */
+export function suggestAsks(
+	books: WeightedBook[],
+	{ playerId, hand, players, cardLocations, config }: PlayerGameInfo
+) {
+	logger.debug( ">> suggestAsks()" );
+
+	const { teamMates } = players[ playerId ];
+	const weightedAsks: WeightedAsk[] = [];
+
+	for ( const { book } of books ) {
+		const missingCards = getMissingCards( hand, book, config.type );
+		const asksForBook: WeightedAsk[] = [];
+
+		for ( const cardId of missingCards ) {
+			const possibleOwners = cardLocations[ cardId ]!;
+			for ( const pid of possibleOwners ) {
+				if ( pid !== playerId && !teamMates.includes( pid ) ) {
+					asksForBook.push( { playerId: pid, cardId, weight: MAX_WEIGHT / possibleOwners.length } );
+				}
+			}
+		}
+
+		weightedAsks.push( ...asksForBook.toSorted( ( a, b ) => b.weight - a.weight ) );
+	}
+
+	logger.debug( "<< suggestAsks()" );
+	return weightedAsks;
+}
+
+/**
+ * Suggest claim proposals for fully known books.
+ * Logic for weighting claims:
+ * - Each card in the book with a known owner adds maximum weight.
+ * - A claim is only viable if all cards in the book have known owners.
+ *
+ * @param books weighted book suggestions to consider.
+ * @param data - The player's game info including hand, players, card locations, and config.
+ * @returns list of viable claims ordered by confidence weight.
+ * @public
+ */
+export function suggestClaims( books: WeightedBook[], { cardLocations, config }: PlayerGameInfo ) {
+	logger.debug( ">> suggestClaims()" );
+
+	const validBooks = books.filter( book => book.isClaimable && book.isBookWithTeam );
+	const claims: WeightedClaim[] = [];
+
+	for ( const { book } of validBooks ) {
+		let weight = 0;
+		const claim = {} as Record<CardId, PlayerId>;
+		const cardsInBook = getCardsOfBook( book, config.type );
+
+		for ( const cardId of cardsInBook ) {
+			const possibleOwners = cardLocations[ cardId ]!;
+
+			if ( possibleOwners.length === 1 ) {
+				weight += MAX_WEIGHT;
+				claim[ cardId ] = possibleOwners[ 0 ];
+			}
+		}
+
+		if ( Object.keys( claim ).length === cardsInBook.length ) {
+			claims.push( { book, claim, weight: weight / cardsInBook.length } );
+		}
+	}
+
+	logger.debug( "<< suggestClaims()" );
+	return claims.sort( ( a, b ) => b.weight - a.weight );
+}
+
+/**
+ * Suggest risky claim proposals for books that are with the team but not fully known.
+ * Logic for weighting claims:
+ * - Each card in the book with a known owner adds maximum weight.
+ * - Each card with possible owners adds weight inversely proportional to the number of possible owners.
+ * - A claim is generated for all combinations of possible owners for the cards in the book.
+ *
+ * @param books weighted book suggestions to consider.
+ * @param data - The player's game info including hand, players, card locations, and config.
+ * @returns list of risky claims ordered by confidence weight.
+ * @public
+ */
+export function suggestRiskyClaims( books: WeightedBook[], { cardLocations, config }: PlayerGameInfo ) {
+	logger.debug( ">> suggestRiskyClaims()" );
+
+	const validBooks = books.filter( book => book.isBookWithTeam && !book.isClaimable );
+	const claims: WeightedClaim[] = [];
+
+	for ( const { book } of validBooks ) {
+		const cardsInBook = getCardsOfBook( book, config.type );
+		const possibleOwners: Partial<Record<CardId, PlayerId[]>> = {};
+
+		for ( const cardId of cardsInBook ) {
+			possibleOwners[ cardId ] = cardLocations[ cardId ]!;
+		}
+
+		const generateClaims = ( index: number, currentClaim: Partial<Record<CardId, PlayerId>> ) => {
+			if ( index === cardsInBook.length ) {
+				let weight = 0;
+				for ( const cardId of cardsInBook ) {
+					const owners = possibleOwners[ cardId ];
+					if ( owners!.length === 1 ) {
+						weight += MAX_WEIGHT;
+					} else {
+						weight += MAX_WEIGHT / owners!.length;
+					}
+				}
+				claims.push( { book, claim: { ...currentClaim }, weight: weight / cardsInBook.length } );
+				return;
+			}
+
+			const cardId = cardsInBook[ index ];
+			for ( const owner of possibleOwners[ cardId ]! ) {
+				currentClaim[ cardId ] = owner;
+				generateClaims( index + 1, currentClaim );
+				delete currentClaim[ cardId ];
+			}
+		};
+
+		generateClaims( 0, {} );
+	}
+
+	logger.debug( "<< suggestRiskyClaims()" );
+	return claims.sort( ( a, b ) => b.weight - a.weight );
+}
+
+/**
+ * Suggest transfer targets for cards in known books.
+ * Logic for weighting transfers:
+ * - Each card in the book that is known to be with a team member adds maximum weight to that member.
+ *
+ * @param data - The player's game info including hand, players, card locations, and config.
+ * @returns sorted list of transfer recommendations.
+ * @public
+ */
+export function suggestTransfers( { playerId, players, cardLocations, config }: PlayerGameInfo ) {
+	logger.debug( ">> suggestTransfers()" );
+
+	const { teamMates } = players[ playerId ];
+	const validBooks = new Set( Object.keys( cardLocations ).map( k => getBookForCard( k as CardId, config.type ) ) );
+	const weightedTransfers = {} as Record<PlayerId, number>;
+
+	for ( const book of validBooks ) {
+		const cardsInBook = getCardsOfBook( book, config.type );
+		for ( const cardId of cardsInBook ) {
+			const possibleOwners = cardLocations[ cardId ];
+			if ( !possibleOwners ) {
+				continue;
+			}
+
+			if ( possibleOwners.length === 1 && teamMates.includes( possibleOwners[ 0 ] ) ) {
+				weightedTransfers[ possibleOwners[ 0 ] ] =
+					( weightedTransfers[ possibleOwners[ 0 ] ] ?? 0 ) + MAX_WEIGHT;
+			}
+		}
+	}
+
+	const transfers: WeightedTransfer[] = Object.entries( weightedTransfers )
+		.map( ( [ transferTo, weight ] ) => ( { transferTo, weight } ) )
+		.toSorted( ( a, b ) => b.weight - a.weight );
+
+	logger.debug( "<< suggestTransfers()" );
+	return transfers;
 }

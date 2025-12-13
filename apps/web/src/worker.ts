@@ -1,6 +1,5 @@
 import { handler } from "@s2h/api/router";
 import { SessionService } from "@s2h/api/sessions";
-import { FishService } from "@s2h/fish/service";
 
 export { CallbreakEngine } from "@s2h/callbreak/engine";
 export { FishEngine } from "@s2h/fish/engine";
@@ -10,8 +9,7 @@ export default {
 	async fetch( request: Request, env: Env ): Promise<Response> {
 		const url = new URL( request.url );
 		const services = {
-			session: new SessionService( env.SESSION_KV, env.AUTH_SECRET_KEY ),
-			fish: new FishService( env.FISH_DO, env.FISH_KV )
+			session: new SessionService( env.SESSION_KV, env.AUTH_SECRET_KEY )
 		};
 
 

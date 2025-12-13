@@ -400,12 +400,15 @@ importers:
 
   packages/workers/fish:
     dependencies:
-      '@orpc/contract':
-        specifier: 1.12.2
-        version: 1.12.2
+      '@hono/standard-validator':
+        specifier: 0.2.0
+        version: 0.2.0(@standard-schema/spec@1.0.0)(hono@4.10.7)
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../utils
+      hono:
+        specifier: 4.10.7
+        version: 4.10.7
       valibot:
         specifier: 1.2.0
         version: 1.2.0(typescript@5.9.3)
