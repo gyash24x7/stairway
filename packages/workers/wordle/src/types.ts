@@ -1,4 +1,3 @@
-import type { Context } from "hono";
 import type { WordleEngine } from "./engine.ts";
 
 export type PositionData = {
@@ -37,11 +36,4 @@ export type Bindings = {
 	WORDLE_KV: KVNamespace;
 }
 
-export type HonoEnv = {
-	Bindings: Bindings,
-	Variables: {
-		authInfo: BasePlayerInfo;
-	}
-}
-
-export type HonoCtx = Context<HonoEnv>;
+export type Context = { env: Bindings } & { authInfo: BasePlayerInfo };

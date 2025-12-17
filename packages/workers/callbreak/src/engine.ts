@@ -116,17 +116,19 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 	 * Validation: This method assumes sensible input and will overwrite current configuration.
 	 *
 	 * @param input Parameters for game creation (dealCount, trumpSuit, etc).
-	 * @param playerId ID of the player creating the game.
+	 * @param player Authentication/player metadata for the creating player.
 	 * @returns Object with the game id.
 	 * @public
 	 */
-	public async initialize( input: CreateGameInput, playerId: PlayerId ) {
+	public async initialize( input: CreateGameInput, player: BasePlayerInfo ) {
 		this.logger.debug( ">> initialize()" );
 
 		this.data.dealCount = input.dealCount ?? this.data.dealCount;
 		this.data.trump = input.trumpSuit;
-		this.data.currentTurn = playerId;
-		this.data.createdBy = playerId;
+		this.data.currentTurn = player.id;
+		this.data.createdBy = player.id;
+
+		await this.addPlayer( player );
 
 		await this.saveGameData();
 		await this.saveDurableObjectId();
@@ -338,7 +340,7 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 				const currentPlayer = this.data.players[ this.data.currentTurn ];
 				if ( currentPlayer.isBot ) {
 					const wins = suggestDealWins( currentDeal.hands[ currentPlayer.id ], this.data.trump );
-					const input: DeclareDealWinsInput = { dealId: currentDeal.id, wins };
+					const input = { dealId: currentDeal.id, wins, gameId: this.data.id };
 					await this.declareDealWins( input, currentPlayer );
 					setNextAlarm = true;
 				}
@@ -361,6 +363,7 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 
 				if ( currentPlayer.isBot ) {
 					const input: PlayCardInput = {
+						gameId: this.data.id,
 						dealId: currentDeal.id,
 						roundId: currentRound.id,
 						cardId: suggestCardToPlay( hand, this.data.trump, cardsOffTheGame, currentRound )

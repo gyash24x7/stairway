@@ -14,7 +14,7 @@
 		"@s2h-ui/primitives": "workspace:*",
 		"@s2h/client": "workspace:*",
 		"@s2h/wordle": "workspace:*",
-		"@tanstack/react-router": "1.139.14",
+		"@tanstack/react-router": "1.141.4",
 		"@tanstack/react-store": "0.8.0",
 		"immer": "11.0.1"
 	},
@@ -22,6 +22,6 @@
 		"@types/react": "19.2.7"
 	},
 	"peerDependencies": {
-		"react": "19.2.0"
+		"react": "19.2.3"
 	}
 }

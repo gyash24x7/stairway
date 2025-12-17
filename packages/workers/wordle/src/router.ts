@@ -1,91 +1,74 @@
-import { sValidator as validator } from "@hono/standard-validator";
+import { ORPCError, os, type RouterClient } from "@orpc/server";
+import { RPCHandler } from "@orpc/server/fetch";
 import { createLogger } from "@s2h/utils/logger";
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
-import { nonEmpty, number, object, optional, picklist, pipe, string, ulid } from "valibot";
-import type { HonoCtx, HonoEnv } from "./types.ts";
+import { gtValue, nonEmpty, number, object, optional, picklist, pipe, string, ulid } from "valibot";
+import type { Context } from "./types.ts";
 
 const logger = createLogger( "Wordle:Router" );
-const app = new Hono<HonoEnv>();
 
-async function loadEngine( gameId: string, ctx: HonoCtx ) {
-	const id = await ctx.env.WORDLE_KV.get( `gameId:${ gameId }` );
-	if ( !id ) {
+async function loadEngine( gameId: string, context: Context ) {
+	const key = await context.env.WORDLE_KV.get( `gameId:${ gameId }` );
+	if ( !key ) {
 		logger.error( "No Durable Object ID found for gameId:", gameId );
-		throw new HTTPException( 404, { message: "Game not found." } );
+		throw new ORPCError( "NOT_FOUND", { message: "Game not found." } );
 	}
 
-	const durableObjectId = ctx.env.WORDLE_DO.idFromString( id );
-	return ctx.env.WORDLE_DO.get( durableObjectId );
+	const durableObjectId = context.env.WORDLE_DO.idFromString( key );
+	return context.env.WORDLE_DO.get( durableObjectId );
 }
 
-app.use( async ( ctx, next ) => {
-	logger.debug( `>> ${ ctx.req.method } ${ ctx.req.url }` );
-	await next();
-	logger.debug( `<< ${ ctx.req.method } ${ ctx.req.url }` );
-} );
+const base = os.$context<Context>();
 
-app.post(
-	"/",
-	validator( "json", object( {
-		wordCount: optional( number() ),
+const createGame = base
+	.input( object( {
+		wordCount: optional( pipe( number(), gtValue( 0 ) ) ),
 		wordLength: optional( picklist( [ 4, 5, 6 ] ) )
-	} ) ),
-	async ctx => {
-		const durableObjectId = ctx.env.WORDLE_DO.newUniqueId();
-		const engine = ctx.env.WORDLE_DO.get( durableObjectId );
-		const { data: gameId } = await engine.initialize( ctx.req.valid( "json" ), ctx.var.authInfo.id );
-		return ctx.json( { gameId } );
-	}
-);
+	} ) )
+	.handler( async ( { input, context } ) => {
+		const durableObjectId = context.env.WORDLE_DO.newUniqueId();
+		const engine = context.env.WORDLE_DO.get( durableObjectId );
+		const { data: gameId } = await engine.initialize( input, context.authInfo.id );
+		return { gameId };
+	} );
 
-app.get(
-	"/:gameId",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { data, error } = await engine.getPlayerData( ctx.var.authInfo.id );
-
+const getGameData = base
+	.input( object( { gameId: pipe( string(), ulid() ) } ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { data, error } = await engine.getPlayerData( context.authInfo.id );
 		if ( error ) {
 			logger.error( "Error fetching player data:", error );
-			throw new HTTPException( 400, { message: "Failed to fetch player data." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to fetch player data." } );
 		}
+		return data;
+	} );
 
-		return ctx.json( data );
-	}
-);
-
-app.get(
-	"/:gameId/words",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { data: words, error } = await engine.getWords( ctx.var.authInfo.id );
-
+const getWords = base
+	.input( object( { gameId: pipe( string(), ulid() ) } ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { data: words, error } = await engine.getWords( context.authInfo.id );
 		if ( error ) {
 			logger.error( "Error fetching words:", error );
-			throw new HTTPException( 400, { message: "Failed to fetch words." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to fetch words." } );
 		}
+		return { words };
+	} );
 
-		return ctx.json( { words } );
-	}
-);
-
-app.put(
-	"/:gameId/guess",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	validator( "json", object( { guess: pipe( string(), nonEmpty() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { data, error } = await engine.makeGuess( ctx.req.valid( "json" ), ctx.var.authInfo.id );
-
+const makeGuess = base
+	.input( object( { gameId: pipe( string(), ulid() ), guess: pipe( string(), nonEmpty() ) } ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { data, error } = await engine.makeGuess( { guess: input.guess }, context.authInfo.id );
 		if ( error ) {
 			logger.error( "Error making guess:", error );
-			throw new HTTPException( 400, { message: "Failed to make guess." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to make guess." } );
 		}
+		return data;
+	} );
 
-		return ctx.json( data );
-	}
-);
+export const wordle = base.router( { createGame, getGameData, getWords, makeGuess } );
+export const handler = new RPCHandler( wordle );
 
-export const wordle = app;
+export type WordleRouter = typeof wordle;
+export type WordleClient = RouterClient<WordleRouter>;

@@ -45,6 +45,10 @@ class MockCallbreakEngine extends CallbreakEngine {
 	public isBot( playerId: PlayerId ) {
 		return this.data.players[ playerId ].isBot || false;
 	}
+
+	public gameId() {
+		return this.data.id;
+	}
 }
 
 describe( "Callbreak:Engine", () => {
@@ -118,8 +122,7 @@ describe( "Callbreak:Engine", () => {
 		it.sequential( "should initialize game with default settings", async () => {
 			expect( mockEnv.CALLBREAK_KV.put ).toHaveBeenCalledWith( "mock-do-id", expect.any( String ) );
 
-			await engine.initialize( { trumpSuit: "S" }, player1.id );
-			await engine.addPlayer( player1 );
+			await engine.initialize( { trumpSuit: "S" }, player1 );
 			const { data } = await engine.getPlayerData( player1.id );
 
 			expect( data ).toBeDefined();
@@ -169,13 +172,21 @@ describe( "Callbreak:Engine", () => {
 		} );
 
 		it.sequential( "should return error when trying to declare before deal created", async () => {
-			const { error } = await engine.declareDealWins( { dealId: "deal-1", wins: 3 }, player1 );
+			const { error } = await engine.declareDealWins(
+				{ dealId: "deal-1", wins: 3, gameId: engine.gameId() },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Active deal not found!" );
 		} );
 
 		it.sequential( "should return error when trying to play card before deal created", async () => {
-			const { error } = await engine.playCard( { dealId: "deal-1", roundId: "round-1", cardId: "AH" }, player1 );
+			const { error } = await engine.playCard( {
+				dealId: "deal-1",
+				roundId: "round-1",
+				cardId: "AH",
+				gameId: engine.gameId()
+			}, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Deal not found!" );
 		} );
@@ -207,7 +218,10 @@ describe( "Callbreak:Engine", () => {
 
 		it.sequential( "should return error when non-existent player tries to declare wins", async () => {
 			const deal = engine.getCurrentDeal();
-			const { error } = await engine.declareDealWins( { dealId: deal.id, wins: 2 }, player2 );
+			const { error } = await engine.declareDealWins(
+				{ dealId: deal.id, wins: 2, gameId: engine.gameId() },
+				player2
+			);
 
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Player not in game!" );
@@ -221,9 +235,12 @@ describe( "Callbreak:Engine", () => {
 
 		it.sequential( "should return error when player tries to declare out of turn", async () => {
 			const deal = engine.getCurrentDeal();
-			await engine.declareDealWins( { dealId: deal.id, wins: 5 }, player1 );
+			await engine.declareDealWins( { dealId: deal.id, wins: 5, gameId: engine.gameId() }, player1 );
 
-			const { error } = await engine.declareDealWins( { dealId: deal.id, wins: 2 }, player1 );
+			const { error } = await engine.declareDealWins(
+				{ dealId: deal.id, wins: 2, gameId: engine.gameId() },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Not your turn!" );
 		} );
@@ -231,7 +248,7 @@ describe( "Callbreak:Engine", () => {
 		it.sequential( "should declare wins for bots when alarm triggered", async () => {
 			const deal = engine.getCurrentDeal();
 
-			await engine.declareDealWins( { dealId: deal.id, wins: 5 }, player1 );
+			await engine.declareDealWins( { dealId: deal.id, wins: 5, gameId: engine.gameId() }, player1 );
 			await engine.alarm();
 			await engine.alarm();
 			await engine.alarm();
@@ -247,7 +264,12 @@ describe( "Callbreak:Engine", () => {
 
 		it.sequential( "should return error when player tries to play card before round created", async () => {
 			const deal = engine.getCurrentDeal();
-			const { error } = await engine.playCard( { dealId: deal.id, roundId: "round-1", cardId: "AH" }, player1 );
+			const { error } = await engine.playCard( {
+				dealId: deal.id,
+				roundId: "round-1",
+				cardId: "AH",
+				gameId: engine.gameId()
+			}, player1 );
 
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Round not found!" );
@@ -263,7 +285,12 @@ describe( "Callbreak:Engine", () => {
 		it.sequential( "should return error when non-existent player tries to play a card", async () => {
 			const deal = engine.getCurrentDeal();
 			const round = engine.getCurrentRound();
-			const { error } = await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "AH" }, player2 );
+			const { error } = await engine.playCard( {
+				dealId: deal.id,
+				roundId: round.id,
+				cardId: "AH",
+				gameId: engine.gameId()
+			}, player2 );
 
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Player not in game!" );
@@ -278,7 +305,12 @@ describe( "Callbreak:Engine", () => {
 		it.sequential( "should return error when player tries to play a card not in hand", async () => {
 			const deal = engine.getCurrentDeal();
 			const round = engine.getCurrentRound();
-			const { error } = await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "2H" }, player1 );
+			const { error } = await engine.playCard( {
+				dealId: deal.id,
+				roundId: round.id,
+				cardId: "2H",
+				gameId: engine.gameId()
+			}, player1 );
 
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Card not in hand!" );
@@ -288,8 +320,16 @@ describe( "Callbreak:Engine", () => {
 			const deal = engine.getCurrentDeal();
 			const round = engine.getCurrentRound();
 
-			await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "6H" }, player1 );
-			const { error } = await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "AH" }, player1 );
+			await engine.playCard(
+				{ dealId: deal.id, roundId: round.id, cardId: "6H", gameId: engine.gameId() },
+				player1
+			);
+			const { error } = await engine.playCard( {
+				dealId: deal.id,
+				roundId: round.id,
+				cardId: "AH",
+				gameId: engine.gameId()
+			}, player1 );
 
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Not your turn!" );
@@ -344,7 +384,8 @@ describe( "Callbreak:Engine", () => {
 						const input: PlayCardInput = {
 							dealId: deal.id,
 							roundId: round.id,
-							cardId: suggestion
+							cardId: suggestion,
+							gameId: engine.gameId()
 						};
 
 						await engine.playCard( input, players[ playerId ] );
@@ -398,8 +439,7 @@ describe( "Callbreak:Engine", () => {
 		} );
 
 		it.sequential( "should initialize the game with provided settings", async () => {
-			await engine.initialize( { dealCount: 5, trumpSuit: "H" }, player1.id );
-			await engine.addPlayer( player1 );
+			await engine.initialize( { dealCount: 5, trumpSuit: "H" }, player1 );
 			const { data } = await engine.getPlayerData( player1.id );
 
 			expect( data ).toBeDefined();
@@ -459,19 +499,19 @@ describe( "Callbreak:Engine", () => {
 
 			let suggestion = suggestDealWins( deal.hands[ player1.id ], trump );
 			expect( suggestion ).toBe( 5 );
-			await engine.declareDealWins( { dealId: deal.id, wins: 5 }, player1 );
+			await engine.declareDealWins( { dealId: deal.id, wins: 5, gameId: engine.gameId() }, player1 );
 
 			suggestion = suggestDealWins( deal.hands[ player2.id ], trump );
 			expect( suggestion ).toBe( 2 );
-			await engine.declareDealWins( { dealId: deal.id, wins: 2 }, player2 );
+			await engine.declareDealWins( { dealId: deal.id, wins: 2, gameId: engine.gameId() }, player2 );
 
 			suggestion = suggestDealWins( deal.hands[ player3.id ], trump );
 			expect( suggestion ).toBe( 5 );
-			await engine.declareDealWins( { dealId: deal.id, wins: 5 }, player3 );
+			await engine.declareDealWins( { dealId: deal.id, wins: 5, gameId: engine.gameId() }, player3 );
 
 			suggestion = suggestDealWins( deal.hands[ player4.id ], trump );
 			expect( suggestion ).toBe( 4 );
-			await engine.declareDealWins( { dealId: deal.id, wins: 4 }, player4 );
+			await engine.declareDealWins( { dealId: deal.id, wins: 4, gameId: engine.gameId() }, player4 );
 
 			expect( engine.getStatus() ).toBe( "WINS_DECLARED" );
 		} );
@@ -487,17 +527,34 @@ describe( "Callbreak:Engine", () => {
 			const deal = engine.getCurrentDeal();
 			const round = engine.getCurrentRound();
 
-			await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "10D" }, player1 );
-			await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "3D" }, player2 );
+			await engine.playCard(
+				{ dealId: deal.id, roundId: round.id, cardId: "10D", gameId: engine.gameId() },
+				player1
+			);
+			await engine.playCard(
+				{ dealId: deal.id, roundId: round.id, cardId: "3D", gameId: engine.gameId() },
+				player2
+			);
 
-			const invalidInput: PlayCardInput = { dealId: deal.id, roundId: round.id, cardId: "8D" };
+			const invalidInput: PlayCardInput = {
+				dealId: deal.id,
+				roundId: round.id,
+				cardId: "8D",
+				gameId: engine.gameId()
+			};
 			const { error } = await engine.playCard( invalidInput, player3 );
 
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Card cannot be played!" );
 
-			await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "KD" }, player3 );
-			await engine.playCard( { dealId: deal.id, roundId: round.id, cardId: "4D" }, player4 );
+			await engine.playCard(
+				{ dealId: deal.id, roundId: round.id, cardId: "KD", gameId: engine.gameId() },
+				player3
+			);
+			await engine.playCard(
+				{ dealId: deal.id, roundId: round.id, cardId: "4D", gameId: engine.gameId() },
+				player4
+			);
 
 			await engine.alarm();
 			await engine.alarm();
@@ -521,7 +578,8 @@ describe( "Callbreak:Engine", () => {
 					const input: PlayCardInput = {
 						dealId: deal.id,
 						roundId: round.id,
-						cardId: cardPlays[ playerId ][ playedRounds ]
+						cardId: cardPlays[ playerId ][ playedRounds ],
+						gameId: engine.gameId()
 					};
 
 					const { error } = await engine.playCard( input, players[ playerId ] );

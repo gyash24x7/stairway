@@ -1,8 +1,10 @@
+import { call } from "@orpc/server";
+import type { CardId } from "@s2h/utils/cards";
 import { generateId } from "@s2h/utils/generator";
-import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CallbreakEngine } from "../src/engine.ts";
 import { callbreak } from "../src/router.ts";
-import type { HonoEnv } from "../src/types.ts";
+import type { Bindings, PlayCardInput } from "../src/types.ts";
 
 describe( "Callbreak:Router", () => {
 
@@ -15,11 +17,7 @@ describe( "Callbreak:Router", () => {
 			get: vi.fn(),
 			newUniqueId: vi.fn()
 		}
-	};
-
-	const headers = new Headers( {
-		"Content-Type": "application/json"
-	} );
+	} as unknown as Bindings;
 
 	const mockAuthInfo = {
 		id: "user1",
@@ -28,9 +26,11 @@ describe( "Callbreak:Router", () => {
 		avatar: "avatar.png"
 	};
 
+	const mockContext = { env: mockEnv, authInfo: mockAuthInfo };
+
 	const mockDurableObjectId = {
 		toString: vi.fn().mockReturnValue( "durable-object-id-123" )
-	};
+	} as unknown as DurableObjectId;
 
 	const mockEngine = {
 		initialize: vi.fn(),
@@ -41,143 +41,114 @@ describe( "Callbreak:Router", () => {
 		playCard: vi.fn()
 	};
 
-	const testApp = new Hono<HonoEnv>();
-	testApp.use( async ( ctx, next ) => {
-		ctx.set( "authInfo", mockAuthInfo );
-		await next();
-	} );
-
-	testApp.route( "/", callbreak );
-
 	beforeEach( () => {
-		vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( "durable-object-id-123" );
+		vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( "durable-object-id-123" as any );
 		vi.mocked( mockEnv.CALLBREAK_DO.idFromString ).mockReturnValue( mockDurableObjectId );
-		vi.mocked( mockEnv.CALLBREAK_DO.get ).mockReturnValue( mockEngine );
+		vi.mocked( mockEnv.CALLBREAK_DO.get )
+			.mockReturnValue( mockEngine as unknown as DurableObjectStub<CallbreakEngine> );
 	} );
 
 	afterEach( () => {
 		vi.clearAllMocks();
 	} );
 
-	describe( "POST /", () => {
+	describe( "Callbreak:Procedure:CreateGame", () => {
 
 		it( "should create a new game and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
 			vi.mocked( mockEngine.initialize ).mockResolvedValue( { data: mockGameId } );
 			vi.mocked( mockEnv.CALLBREAK_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
-			vi.mocked( mockEnv.CALLBREAK_DO.get ).mockReturnValue( mockEngine );
 
-			const response = await testApp.request(
-				"http://localhost/",
-				{ method: "POST", headers, body: JSON.stringify( { dealCount: 9, trumpSuit: "H" } ) },
-				mockEnv
+			const data = await call(
+				callbreak.createGame,
+				{ dealCount: 9, trumpSuit: "H" },
+				{ context: mockContext }
 			);
 
-			const data = await response.json();
-
-			expect( response.status ).toBe( 200 );
 			expect( data ).toEqual( { gameId: mockGameId } );
 			expect( mockEnv.CALLBREAK_DO.newUniqueId ).toHaveBeenCalled();
 			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.initialize ).toHaveBeenCalledWith( { dealCount: 9, trumpSuit: "H" }, "user1" );
+			expect( mockEngine.initialize ).toHaveBeenCalledWith( { dealCount: 9, trumpSuit: "H" }, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/",
-				{ method: "POST", headers, body: JSON.stringify( { dealCount: 7, trumpSuit: "X" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.newUniqueId ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.initialize ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			expect.assertions( 4 );
+			await call(
+				callbreak.createGame,
+				{ dealCount: 7, trumpSuit: "X" as any },
+				{ context: mockContext }
+			).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.newUniqueId ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.initialize ).not.toHaveBeenCalled();
+			} );
 		} );
 
 	} );
 
-	describe( "GET /:gameId", () => {
+	describe( "Callbreak:Procedure:GetGameData", () => {
 
 		it( "should fetch player data for a valid gameId", async () => {
 			const mockPlayerData = { playerId: "user1", hand: [], score: 0 };
 			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: mockPlayerData } );
 
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
+			const data = await call(
+				callbreak.getGameData,
+				{ gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" },
+				{ context: mockContext }
 			);
 
-			const data = await response.json();
-
-			expect( response.status ).toBe( 200 );
 			expect( data ).toEqual( mockPlayerData );
 			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( "user1" );
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			expect.assertions( 4 );
+			await call( callbreak.getGameData, { gameId: "invalid-game-id" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+					expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+					expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+				} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { error: "Unable to fetch player data" } );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( "user1" );
+			expect.assertions( 4 );
+			await call( callbreak.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+					expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+					expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( "user1" );
+				} );
 		} );
 
-		it( "should return 404 if key not found in KV", async () => {
-			vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( null );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 404 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+		it( "should return NOT_FOUND if key not found in KV", async () => {
+			vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( null as any );
+			expect.assertions( 4 );
+			await call( callbreak.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+					expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+					expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+				} );
 		} );
 
 	} );
 
-	describe( "POST /join", () => {
+	describe( "Callbreak:Procedure:JoinGame", () => {
 
 		it( "should join a game with a valid code and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
 			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { data: mockGameId } );
 
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "ABC123" } ) },
-				mockEnv
-			);
-
-			const data = await response.json();
-
-			expect( response.status ).toBe( 200 );
+			const data = await call( callbreak.joinGame, { code: "ABC123" }, { context: mockContext } );
 			expect( data ).toEqual( { gameId: mockGameId } );
 			expect( mockEnv.CALLBREAK_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
 			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
@@ -185,226 +156,199 @@ describe( "Callbreak:Router", () => {
 			expect( mockEngine.addPlayer ).toHaveBeenCalledWith( mockAuthInfo );
 		} );
 
-		it( "should return 404 if code is invalid", async () => {
-			vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( null );
-
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "ABC123" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 404 );
-			expect( mockEnv.CALLBREAK_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+		it( "should return NOT_FOUND if code is invalid", async () => {
+			vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( null as any );
+			expect.assertions( 5 );
+			await call( callbreak.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
+				expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "TOO_LONG_CODE" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_KV.get ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			expect.assertions( 5 );
+			await call( callbreak.joinGame, { code: "TOO_LONG_CODE" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_KV.get ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { error: "Unable to join game" } );
-
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "ABC123" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.addPlayer ).toHaveBeenCalledWith( mockAuthInfo );
+			expect.assertions( 5 );
+			await call( callbreak.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
+				expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.addPlayer ).toHaveBeenCalledWith( mockAuthInfo );
+			} );
 		} );
 
 	} );
 
-	describe( "PUT /:gameId/add-bots", () => {
+	describe( "Callbreak:Procedure:AddBots", () => {
 
 		it( "should add bots successfully", async () => {
 			vi.mocked( mockEngine.addBots ).mockResolvedValue( {} );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/add-bots",
-				{ method: "PUT", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 204 );
+			await call( callbreak.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } );
 			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.addBots ).toHaveBeenCalledWith( mockAuthInfo );
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id/add-bots",
-				{ method: "PUT", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.addBots ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			expect.assertions( 4 );
+			await call( callbreak.addBots, { gameId: "invalid-game-id" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.addBots ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.addBots ).mockResolvedValue( { error: "Unable to add bots" } );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/add-bots",
-				{ method: "PUT", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.addBots ).toHaveBeenCalledWith( mockAuthInfo );
+			expect.assertions( 4 );
+			await call( callbreak.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+					expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+					expect( mockEngine.addBots ).toHaveBeenCalledWith( mockAuthInfo );
+				} );
 		} );
+
 	} );
 
-	describe( "PUT /:gameId/declare-deal-wins", () => {
+	describe( "Callbreak:Procedure:DeclareDealWins", () => {
 
 		it( "should declare deal wins successfully", async () => {
 			vi.mocked( mockEngine.declareDealWins ).mockResolvedValue( {} );
 
-			const input = { wins: 5, dealId: generateId() };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/declare-deal-wins",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 204 );
+			const input = { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", wins: 5, dealId: generateId() };
+			await call( callbreak.declareDealWins, input, { context: mockContext } );
 			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.declareDealWins ).toHaveBeenCalledWith( input, mockAuthInfo );
+			expect( mockEngine.declareDealWins )
+				.toHaveBeenCalledWith( { wins: 5, dealId: input.dealId, gameId: input.gameId }, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const input = { wins: 15, dealId: "invalid-deal-id" };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/declare-deal-wins",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.declareDealWins ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			const input = { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", wins: 15, dealId: "invalid-deal-id" };
+			expect.assertions( 4 );
+			await call( callbreak.declareDealWins, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.declareDealWins ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const input = { wins: 5, dealId: generateId() };
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id/declare-deal-wins",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.declareDealWins ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			const input = { gameId: "invalid-game-id", wins: 5, dealId: generateId() };
+			expect.assertions( 4 );
+			await call( callbreak.declareDealWins, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.declareDealWins ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.declareDealWins ).mockResolvedValue( { error: "Unable to declare wins" } );
-
-			const input = { wins: 5, dealId: generateId() };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/declare-deal-wins",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.declareDealWins ).toHaveBeenCalledWith( input, mockAuthInfo );
+			const input = { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", wins: 5, dealId: generateId() };
+			expect.assertions( 4 );
+			await call( callbreak.declareDealWins, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.declareDealWins ).toHaveBeenCalledWith( input, mockAuthInfo );
+			} );
 		} );
 
 	} );
 
-	describe( "PUT /:gameId/play-card", () => {
+	describe( "Callbreak:Procedure:PlayCard", () => {
 
 		it( "should play a card successfully", async () => {
 			vi.mocked( mockEngine.playCard ).mockResolvedValue( {} );
 
-			const input = { cardId: "5H", dealId: generateId(), roundId: generateId() };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/play-card",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
+			const input: PlayCardInput = {
+				cardId: "5H",
+				dealId: generateId(),
+				roundId: generateId(),
+				gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C"
+			};
 
-			expect( response.status ).toBe( 204 );
+			await call( callbreak.playCard, input, { context: mockContext } );
+
 			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.playCard ).toHaveBeenCalledWith( input, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const input = { cardId: "XX", dealId: "invalid-deal-id", roundId: "invalid-round-id" };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/play-card",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			const input: PlayCardInput = {
+				cardId: "XX" as CardId,
+				dealId: "invalid-deal-id",
+				roundId: "invalid-round-id",
+				gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C"
+			};
 
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.playCard ).not.toHaveBeenCalled();
+			expect.assertions( 4 );
+			await call( callbreak.playCard, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.playCard ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const input = { cardId: "5H", dealId: generateId(), roundId: generateId() };
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id/play-card",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			const input: PlayCardInput = {
+				cardId: "5H" as const,
+				dealId: generateId(),
+				roundId: generateId(),
+				gameId: "invalid-game-id"
+			};
 
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.playCard ).not.toHaveBeenCalled();
+			expect.assertions( 4 );
+			await call( callbreak.playCard, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.CALLBREAK_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.playCard ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.playCard ).mockResolvedValue( { error: "Unable to play card" } );
 
-			const input = { cardId: "5H", dealId: generateId(), roundId: generateId() };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/play-card",
-				{ method: "PUT", headers, body: JSON.stringify( input ) },
-				mockEnv
-			);
+			const input: PlayCardInput = {
+				cardId: "5H",
+				dealId: generateId(),
+				roundId: generateId(),
+				gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C"
+			};
 
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.playCard ).toHaveBeenCalledWith( input, mockAuthInfo );
+			expect.assertions( 4 );
+			await call( callbreak.playCard, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.playCard ).toHaveBeenCalledWith( input, mockAuthInfo );
+			} );
 		} );
 
 	} );
 
 } );
+

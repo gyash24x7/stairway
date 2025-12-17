@@ -18,7 +18,7 @@ export function JoinGame() {
 	const [ code, setCode ] = useState( "" );
 	const navigate = useNavigate();
 	const { mutateAsync, isPending } = useJoinGameMutation( {
-		onSuccess: ( gameId ) => navigate( { to: `/fish/${ gameId }` } )
+		onSuccess: ( { gameId } ) => navigate( { to: `/fish/${ gameId }` } )
 	} );
 
 	const handleJoinGame = () => mutateAsync( { code } );

@@ -1,5 +1,4 @@
 import type { CardId } from "@s2h/utils/cards";
-import type { Context } from "hono";
 import type { FishEngine } from "./engine.ts";
 
 export type BookType = "NORMAL" | "CANADIAN";
@@ -152,30 +151,31 @@ export type CreateGameInput = {
 	teamCount: TeamCount;
 };
 
-export type CreateTeamsInput = Record<string, PlayerId[]>;
+export type CreateTeamsInput = {
+	teams: Record<string, PlayerId[ ]>;
+	gameId: GameId;
+};
 
 export type AskCardInput = {
+	gameId: GameId;
 	from: PlayerId;
 	cardId: CardId;
 };
 
-export type ClaimBookInput = Partial<Record<CardId, string>>;
+export type ClaimBookInput = {
+	claim: Partial<Record<CardId, string>>;
+	gameId: GameId;
+};
 
 export type TransferTurnInput = {
 	transferTo: PlayerId;
+	gameId: GameId;
 };
 
 export type Bindings = {
 	FISH_DO: DurableObjectNamespace<FishEngine>;
 	FISH_KV: KVNamespace;
-	WSS: DurableObjectNamespace<import("../../../api/src/wss.ts").WebsocketServer>;
+	WSS: DurableObjectNamespace<import("../../../../apps/web/src/wss.ts").WebsocketServer>;
 }
 
-export type HonoEnv = {
-	Bindings: Bindings,
-	Variables: {
-		authInfo: BasePlayerInfo;
-	}
-}
-
-export type HonoCtx = Context<HonoEnv>;
+export type Context = { env: Bindings } & { authInfo: BasePlayerInfo };

@@ -1,10 +1,11 @@
+import { call } from "@orpc/server";
 import { generateId } from "@s2h/utils/generator";
-import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { FishEngine } from "../src/engine.ts";
 import { fish } from "../src/router.ts";
-import type { HonoEnv } from "../src/types.ts";
+import type { Bindings } from "../src/types.ts";
 
-describe( "Fish:Router", () => {
+describe( "Fish:Procedure:Router", () => {
 
 	const mockEnv = {
 		FISH_KV: {
@@ -15,11 +16,7 @@ describe( "Fish:Router", () => {
 			get: vi.fn(),
 			newUniqueId: vi.fn()
 		}
-	};
-
-	const headers = new Headers( {
-		"Content-Type": "application/json"
-	} );
+	} as unknown as Bindings;
 
 	const mockAuthInfo = {
 		id: "user1",
@@ -30,7 +27,7 @@ describe( "Fish:Router", () => {
 
 	const mockDurableObjectId = {
 		toString: vi.fn().mockReturnValue( "durable-object-id-123" )
-	};
+	} as unknown as DurableObjectId;
 
 	const mockEngine = {
 		initialize: vi.fn(),
@@ -44,41 +41,31 @@ describe( "Fish:Router", () => {
 		transferTurn: vi.fn()
 	};
 
-	const testApp = new Hono<HonoEnv>();
-	testApp.use( async ( ctx, next ) => {
-		ctx.set( "authInfo", mockAuthInfo );
-		await next();
-	} );
-
-	testApp.route( "/", fish );
+	const mockContext = { env: mockEnv, authInfo: mockAuthInfo };
 
 	beforeEach( () => {
-		vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( "durable-object-id-123" );
+		vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( "durable-object-id-123" as any );
 		vi.mocked( mockEnv.FISH_DO.idFromString ).mockReturnValue( mockDurableObjectId );
-		vi.mocked( mockEnv.FISH_DO.get ).mockReturnValue( mockEngine );
+		vi.mocked( mockEnv.FISH_DO.get ).mockReturnValue( mockEngine as unknown as DurableObjectStub<FishEngine> );
 	} );
 
 	afterEach( () => {
 		vi.clearAllMocks();
 	} );
 
-	describe( "POST /", () => {
+	describe( "Fish:Procedure:CreateGame", () => {
 
 		it( "should create a new game and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
 			vi.mocked( mockEngine.initialize ).mockResolvedValue( { data: mockGameId } );
 			vi.mocked( mockEnv.FISH_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
-			vi.mocked( mockEnv.FISH_DO.get ).mockReturnValue( mockEngine );
 
-			const response = await testApp.request(
-				"http://localhost/",
-				{ method: "POST", headers, body: JSON.stringify( { playerCount: 4, type: "NORMAL", teamCount: 2 } ) },
-				mockEnv
+			const data = await call(
+				fish.createGame,
+				{ playerCount: 4, type: "NORMAL", teamCount: 2 },
+				{ context: mockContext }
 			);
 
-			const data = await response.json();
-
-			expect( response.status ).toBe( 200 );
 			expect( data ).toEqual( { gameId: mockGameId } );
 			expect( mockEnv.FISH_DO.newUniqueId ).toHaveBeenCalled();
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
@@ -86,120 +73,97 @@ describe( "Fish:Router", () => {
 				.toHaveBeenCalledWith( { playerCount: 4, type: "NORMAL", teamCount: 2 }, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/",
-				{ method: "POST", headers, body: JSON.stringify( { playerCount: 5, type: "WEIRD", teamCount: 7 } ) },
-				mockEnv
-			);
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			const input = { playerCount: 3 as const, type: "WEIRD" as any, teamCount: 4 as const };
 
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.newUniqueId ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.initialize ).not.toHaveBeenCalled();
+			expect.assertions( 4 );
+			await call( fish.createGame, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.newUniqueId ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.initialize ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.initialize ).mockResolvedValue( { error: "Unable to create game" } );
 			vi.mocked( mockEnv.FISH_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
-			vi.mocked( mockEnv.FISH_DO.get ).mockReturnValue( mockEngine );
 
-			const response = await testApp.request(
-				"http://localhost/",
-				{ method: "POST", headers, body: JSON.stringify( { playerCount: 4, type: "NORMAL", teamCount: 2 } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.newUniqueId ).toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.initialize )
-				.toHaveBeenCalledWith( { playerCount: 4, type: "NORMAL", teamCount: 2 }, mockAuthInfo );
+			expect.assertions( 4 );
+			await call( fish.createGame, { playerCount: 4, type: "NORMAL", teamCount: 2 }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.FISH_DO.newUniqueId ).toHaveBeenCalled();
+					expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+					expect( mockEngine.initialize )
+						.toHaveBeenCalledWith( { playerCount: 4, type: "NORMAL", teamCount: 2 }, mockAuthInfo );
+				} );
 		} );
 
 	} );
 
-	describe( "GET /:gameId", () => {
+	describe( "Fish:Procedure:GetGameData", () => {
 
 		it( "should fetch player data for a valid gameId", async () => {
 			const mockPlayerData = { playerId: "user1", hand: [], score: 0 };
 			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: mockPlayerData } );
 
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
+			const data = await call(
+				fish.getGameData,
+				{ gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" },
+				{ context: mockContext }
 			);
 
-			const data = await response.json();
-
-			expect( response.status ).toBe( 200 );
 			expect( data ).toEqual( mockPlayerData );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( "user1" );
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			expect.assertions( 4 );
+			await call( fish.getGameData, { gameId: "invalid-game-id" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { error: "Unable to fetch player data" } );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( "user1" );
+			expect.assertions( 4 );
+			await call( fish.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+					expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+					expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( "user1" );
+				} );
 		} );
 
-		it( "should return 404 if key not found in KV", async () => {
-			vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( null );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 404 );
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+		it( "should return NOT__FOUND if key not found in KV", async () => {
+			vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( null as any );
+			expect.assertions( 4 );
+			await call( fish.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+					expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+					expect( mockEngine.getPlayerData ).not.toHaveBeenCalled();
+				} );
 		} );
 
 	} );
 
-	describe( "POST /join", () => {
+	describe( "Fish:Procedure:JoinGame", () => {
 
 		it( "should join a game with a valid code and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
 			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { data: mockGameId } );
 
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "ABC123" } ) },
-				mockEnv
-			);
+			const data = await call( fish.joinGame, { code: "ABC123" }, { context: mockContext } );
 
-			const data = await response.json();
-
-			expect( response.status ).toBe( 200 );
 			expect( data ).toEqual( { gameId: mockGameId } );
 			expect( mockEnv.FISH_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
@@ -207,355 +171,277 @@ describe( "Fish:Router", () => {
 			expect( mockEngine.addPlayer ).toHaveBeenCalledWith( mockAuthInfo );
 		} );
 
-		it( "should return 404 if code is invalid", async () => {
-			vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( null );
-
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "ABC123" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 404 );
-			expect( mockEnv.FISH_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+		it( "should return NOT__FOUND if code is invalid", async () => {
+			vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( null as any );
+			expect.assertions( 5 );
+			await call( fish.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
+				expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "TOO_LONG_CODE" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_KV.get ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			expect.assertions( 5 );
+			await call( fish.joinGame, { code: "TOO_LONG_CODE" as any }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_KV.get ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.addPlayer ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { error: "Unable to join game" } );
-
-			const response = await testApp.request(
-				"http://localhost/join",
-				{ method: "POST", headers, body: JSON.stringify( { code: "ABC123" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.addPlayer ).toHaveBeenCalledWith( mockAuthInfo );
+			expect.assertions( 5 );
+			await call( fish.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_KV.get ).toHaveBeenCalledWith( "code:ABC123" );
+				expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.addPlayer ).toHaveBeenCalledWith( mockAuthInfo );
+			} );
 		} );
 
 	} );
 
-	describe( "PUT /:gameId/add-bots", () => {
+	describe( "Fish:Procedure:AddBots", () => {
 
 		it( "should add bots successfully", async () => {
 			vi.mocked( mockEngine.addBots ).mockResolvedValue( {} );
 
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/add-bots",
-				{ method: "PUT", headers },
-				mockEnv
-			);
+			await call( fish.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } );
 
-			expect( response.status ).toBe( 204 );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.addBots ).toHaveBeenCalledWith( mockAuthInfo );
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id/add-bots",
-				{ method: "PUT", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.addBots ).not.toHaveBeenCalled();
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			expect.assertions( 4 );
+			await call( fish.addBots, { gameId: "invalid-game-id" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+				expect( mockEngine.addBots ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.addBots ).mockResolvedValue( { error: "Unable to add bots" } );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/add-bots",
-				{ method: "PUT", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.addBots ).toHaveBeenCalledWith( mockAuthInfo );
+			expect.assertions( 4 );
+			await call( fish.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+					expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+					expect( mockEngine.addBots ).toHaveBeenCalledWith( mockAuthInfo );
+				} );
 		} );
 	} );
 
-	describe( "PUT /:gameId/create-teams", () => {
+	describe( "Fish:Procedure:CreateTeams", () => {
 
 		it( "should create teams successfully", async () => {
 			vi.mocked( mockEngine.createTeams ).mockResolvedValue( {} );
+			const input = {
+				teams: {
+					teamA: [ generateId(), generateId() ],
+					teamB: [ generateId(), generateId() ]
+				},
+				gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C"
+			};
 
-			const body = { teamA: [ generateId(), generateId() ], teamB: [ generateId(), generateId() ] };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/create-teams",
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
+			await call( fish.createTeams, input, { context: mockContext } );
 
-			expect( response.status ).toBe( 204 );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.createTeams ).toHaveBeenCalledWith( body, mockAuthInfo );
+			expect( mockEngine.createTeams ).toHaveBeenCalledWith( input, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const body = { teamA: [ "invalid-id" ] };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/create-teams",
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			const teams = { teamA: [ "invalid-id" as any ] };
+			expect.assertions( 3 );
+			await call( fish.createTeams, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", teams }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+				} );
 			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
 			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.createTeams ).not.toHaveBeenCalled();
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const body = { teamA: [ generateId() ] };
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id/create-teams",
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			const teams = { teamA: [ generateId() ] };
+			expect.assertions( 3 );
+			await call( fish.createTeams, { gameId: "invalid-game-id", teams }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+				} );
 			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
 			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.createTeams ).not.toHaveBeenCalled();
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.createTeams ).mockResolvedValue( { error: "Unable to create teams" } );
+			const input = { teams: { teamA: [ generateId() ] }, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
-			const body = { teamA: [ generateId() ] };
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/create-teams",
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.createTeams ).toHaveBeenCalledWith( body, mockAuthInfo );
+			expect.assertions( 4 );
+			await call( fish.createTeams, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.createTeams ).toHaveBeenCalledWith( input, mockAuthInfo );
+			} );
 		} );
 	} );
 
-	describe( "PUT /:gameId/start-game", () => {
+	describe( "Fish:Procedure:StartGame", () => {
 
 		it( "should start a game successfully", async () => {
 			vi.mocked( mockEngine.startGame ).mockResolvedValue( {} );
 
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/start-game",
-				{ method: "PUT", headers },
-				mockEnv
-			);
+			await call( fish.startGame, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } );
 
-			expect( response.status ).toBe( 204 );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.startGame ).toHaveBeenCalledWith( mockAuthInfo );
 		} );
 
-		it( "should return 400 if gameId is invalid", async () => {
-			const response = await testApp.request(
-				"http://localhost/invalid-game-id/start-game",
-				{ method: "PUT", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			expect.assertions( 3 );
+			await call( fish.startGame, { gameId: "invalid-game-id" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+			} );
 			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
 			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.startGame ).not.toHaveBeenCalled();
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.startGame ).mockResolvedValue( { error: "Unable to start game" } );
-
-			const response = await testApp.request(
-				"http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/start-game",
-				{ method: "PUT", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.startGame ).toHaveBeenCalledWith( mockAuthInfo );
+			expect.assertions( 4 );
+			await call( fish.startGame, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+					expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+					expect( mockEngine.startGame ).toHaveBeenCalledWith( mockAuthInfo );
+				} );
 		} );
 	} );
 
-	describe( "PUT /:gameId/ask-card", () => {
+	describe( "Fish:Procedure:AskCard", () => {
 
 		it( "should ask a card successfully", async () => {
 			vi.mocked( mockEngine.askCard ).mockResolvedValue( {} );
+			const input = { from: generateId(), cardId: "5H" as const, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
+			await call( fish.askCard, input, { context: mockContext } );
 
-			const body = { from: generateId(), cardId: "5H" };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/ask-card`,
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 204 );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.askCard ).toHaveBeenCalledWith( body, mockAuthInfo );
+			expect( mockEngine.askCard ).toHaveBeenCalledWith( input, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const body = { from: "invalid-id", cardId: "XX" };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/ask-card`,
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			const input = { from: "invalid-id", cardId: "XX" as any, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.askCard ).not.toHaveBeenCalled();
+			expect.assertions( 3 );
+			await call( fish.askCard, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.askCard ).mockResolvedValue( { error: "Unable to ask card" } );
+			const input = { from: generateId(), cardId: "5H" as const, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
-			const body = { from: generateId(), cardId: "5H" };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/ask-card`,
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.askCard ).toHaveBeenCalledWith( body, mockAuthInfo );
+			expect.assertions( 4 );
+			await call( fish.askCard, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.askCard ).toHaveBeenCalledWith( input, mockAuthInfo );
+			} );
 		} );
 	} );
 
-	describe( "PUT /:gameId/claim-book", () => {
+	describe( "Fish:Procedure:ClaimBook", () => {
 
 		it( "should claim book successfully", async () => {
 			vi.mocked( mockEngine.claimBook ).mockResolvedValue( {} );
 
-			const payload: Record<string, string> = { "5H": generateId() };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/claim-book`,
-				{ method: "PUT", headers, body: JSON.stringify( payload ) },
-				mockEnv
-			);
+			const input = { claim: { "5H": generateId() }, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
+			await call( fish.claimBook, input, { context: mockContext } );
 
-			expect( response.status ).toBe( 204 );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.claimBook ).toHaveBeenCalledWith( payload, mockAuthInfo );
+			expect( mockEngine.claimBook ).toHaveBeenCalledWith( input, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const payload = { "XX": "invalid-id" };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/claim-book`,
-				{ method: "PUT", headers, body: JSON.stringify( payload ) },
-				mockEnv
-			);
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			const input = { claim: { "XX": "invalid-id" }, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" } as any;
 
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.claimBook ).not.toHaveBeenCalled();
+			expect.assertions( 3 );
+			await call( fish.claimBook, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.claimBook ).mockResolvedValue( { error: "Unable to claim book" } );
+			const input = { claim: { "5H": generateId() }, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
-			const payload: Record<string, string> = { "5H": generateId() };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/claim-book`,
-				{ method: "PUT", headers, body: JSON.stringify( payload ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.claimBook ).toHaveBeenCalledWith( payload, mockAuthInfo );
+			expect.assertions( 4 );
+			await call( fish.claimBook, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.claimBook ).toHaveBeenCalledWith( input, mockAuthInfo );
+			} );
 		} );
 	} );
 
-	describe( "PUT /:gameId/transfer-turn", () => {
+	describe( "Fish:Procedure:TransferTurn", () => {
 
 		it( "should transfer turn successfully", async () => {
 			vi.mocked( mockEngine.transferTurn ).mockResolvedValue( {} );
+			const input = { transferTo: generateId(), gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
+			await call( fish.transferTurn, input, { context: mockContext } );
 
-			const body = { transferTo: generateId() };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/transfer-turn`,
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 204 );
 			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.transferTurn ).toHaveBeenCalledWith( body, mockAuthInfo );
+			expect( mockEngine.transferTurn ).toHaveBeenCalledWith( input, mockAuthInfo );
 		} );
 
-		it( "should return 400 if request body is invalid", async () => {
-			const body = { transferTo: "invalid-id" };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/transfer-turn`,
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
+		it( "should return BAD_REQUEST if request body is invalid", async () => {
+			const input = { transferTo: "invalid-id", gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" } as any;
 
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
-			expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.transferTurn ).not.toHaveBeenCalled();
+			expect.assertions( 3 );
+			await call( fish.transferTurn, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).not.toHaveBeenCalled();
+				expect( mockEnv.FISH_DO.get ).not.toHaveBeenCalled();
+			} );
 		} );
 
-		it( "should return 400 if engine returns an error", async () => {
+		it( "should return BAD_REQUEST if engine returns an error", async () => {
 			vi.mocked( mockEngine.transferTurn ).mockResolvedValue( { error: "Unable to transfer turn" } );
+			const input = { transferTo: generateId(), gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
-			const body = { transferTo: generateId() };
-			const response = await testApp.request(
-				`http://localhost/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/transfer-turn`,
-				{ method: "PUT", headers, body: JSON.stringify( body ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
-			expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
-			expect( mockEngine.transferTurn ).toHaveBeenCalledWith( body, mockAuthInfo );
+			expect.assertions( 4 );
+			await call( fish.transferTurn, input, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+				expect( mockEnv.FISH_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
+				expect( mockEnv.FISH_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
+				expect( mockEngine.transferTurn ).toHaveBeenCalledWith( input, mockAuthInfo );
+			} );
 		} );
 	} );
 
 } );
-

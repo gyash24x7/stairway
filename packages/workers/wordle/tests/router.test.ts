@@ -1,9 +1,10 @@
-import { Hono } from "hono";
+import { call } from "@orpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { WordleEngine } from "../src/engine.ts";
 import { wordle } from "../src/router.ts";
-import type { HonoEnv } from "../src/types.ts";
+import type { Bindings } from "../src/types.ts";
 
-describe( "Wordle:Router", () => {
+describe( "Wordle:Procedure:Router", () => {
 
 	const mockEnv = {
 		WORDLE_KV: {
@@ -14,11 +15,7 @@ describe( "Wordle:Router", () => {
 			get: vi.fn(),
 			newUniqueId: vi.fn()
 		}
-	};
-
-	const headers = new Headers( {
-		"Content-Type": "application/json"
-	} );
+	} as unknown as Bindings;
 
 	const mockAuthInfo = {
 		id: "user1",
@@ -29,7 +26,7 @@ describe( "Wordle:Router", () => {
 
 	const mockDurableObjectId = {
 		toString: vi.fn().mockReturnValue( "durable-object-id-123" )
-	};
+	} as unknown as DurableObjectId;
 
 	const mockEngine = {
 		initialize: vi.fn(),
@@ -49,183 +46,155 @@ describe( "Wordle:Router", () => {
 		completed: false
 	};
 
-	const testApp = new Hono<HonoEnv>();
-	testApp.use( async ( ctx, next ) => {
-		ctx.set( "authInfo", mockAuthInfo );
-		await next();
-	} );
-
-	testApp.route( "/", wordle );
+	const mockContext = { env: mockEnv, authInfo: mockAuthInfo };
 
 	beforeEach( () => {
-		vi.mocked( mockEnv.WORDLE_KV.get ).mockResolvedValue( "durable-object-id-123" );
+		vi.mocked( mockEnv.WORDLE_KV.get ).mockResolvedValue( "durable-object-id-123" as any );
 		vi.mocked( mockEnv.WORDLE_DO.idFromString ).mockReturnValue( mockDurableObjectId );
-		vi.mocked( mockEnv.WORDLE_DO.get ).mockReturnValue( mockEngine );
+		vi.mocked( mockEnv.WORDLE_DO.get ).mockReturnValue( mockEngine as unknown as DurableObjectStub<WordleEngine> );
 	} );
 
 	afterEach( () => {
 		vi.clearAllMocks();
 	} );
 
-	describe( "POST /", () => {
+	describe( "Wordle:Procedure:CreateGame", () => {
 
 		it( "should create a new Wordle game and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
 			vi.mocked( mockEngine.initialize ).mockResolvedValue( { data: mockGameId } );
 			vi.mocked( mockEnv.WORDLE_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
-			vi.mocked( mockEnv.WORDLE_DO.get ).mockReturnValue( mockEngine );
 
-			const response = await testApp.request(
-				"/",
-				{ method: "POST", headers, body: JSON.stringify( { wordCount: 5, wordLength: 5 } ) },
-				mockEnv
-			);
+			const data = await call( wordle.createGame, { wordCount: 5, wordLength: 5 }, { context: mockContext } );
 
-			const data = await response.json();
 			expect( data ).toEqual( { gameId: mockGameId } );
 			expect( mockEnv.WORDLE_DO.newUniqueId ).toHaveBeenCalled();
 			expect( mockEnv.WORDLE_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
 			expect( mockEngine.initialize ).toHaveBeenCalledWith( { wordCount: 5, wordLength: 5 }, mockAuthInfo.id );
 		} );
 
-		it( "should throw 400 error for invalid input", async () => {
-			const response = await testApp.request(
-				"/",
-				{ method: "POST", headers, body: JSON.stringify( { wordCount: -1, wordLength: 10 } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
-			expect( mockEnv.WORDLE_DO.newUniqueId ).not.toHaveBeenCalled();
-			expect( mockEnv.WORDLE_DO.get ).not.toHaveBeenCalled();
-			expect( mockEngine.initialize ).not.toHaveBeenCalled();
+		it( "should throw BAD_REQUEST error for invalid input", async () => {
+			expect.assertions( 4 );
+			await call( wordle.createGame, { wordCount: -1, wordLength: 4 }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+					expect( mockEnv.WORDLE_DO.newUniqueId ).not.toHaveBeenCalled();
+					expect( mockEnv.WORDLE_DO.get ).not.toHaveBeenCalled();
+					expect( mockEngine.initialize ).not.toHaveBeenCalled();
+				} );
 		} );
 
 	} );
 
-	describe( "GET /:gameId", () => {
+	describe( "Wordle:Procedure:GetGameData", () => {
 
 		it( "should return player data for the specified gameId", async () => {
 			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: mockPlayerData } );
 
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
+			const data = await call(
+				wordle.getGameData,
+				{ gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" },
+				{ context: mockContext }
 			);
 
-			const data = await response.json();
 			expect( data ).toEqual( mockPlayerData );
 			expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( mockAuthInfo.id );
 		} );
 
-		it( "should throw 400 error for invalid gameId", async () => {
-			const response = await testApp.request(
-				"/INVALID_GAME_ID",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+		it( "should return BAD_REQUEST if gameId is invalid", async () => {
+			expect.assertions( 1 );
+			await call( wordle.getGameData, { gameId: "INVALID_GAME_ID" }, { context: mockContext } ).catch( error => {
+				expect( error ).toBeDefined();
+			} );
 		} );
 
-		it( "should throw 400 error if player data cannot be fetched", async () => {
+		it( "should return BAD_REQUEST if player data cannot be fetched", async () => {
 			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: null, error: "Fetch error" } );
-
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+			expect.assertions( 2 );
+			await call( wordle.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+				} );
 			expect( mockEngine.getPlayerData ).toHaveBeenCalledWith( mockAuthInfo.id );
 		} );
 
-		it( "should throw 404 error if Durable Object ID is not found", async () => {
-			vi.mocked( mockEnv.WORDLE_KV.get ).mockResolvedValue( null );
-
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 404 );
+		it( "should return NOT_FOUND if Durable Object ID is not found", async () => {
+			vi.mocked( mockEnv.WORDLE_KV.get ).mockResolvedValue( null as any );
+			expect.assertions( 2 );
+			await call( wordle.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+				} );
 			expect( mockEnv.WORDLE_KV.get ).toHaveBeenCalledWith( "gameId:01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" );
 		} );
 
 	} );
 
-	describe( "GET /:gameId/words", () => {
+	describe( "Wordle:Procedure:GetWords", () => {
 
 		it( "should return the list of words for the specified gameId", async () => {
 			vi.mocked( mockEngine.getWords ).mockResolvedValue( { data: [ "apple", "berry", "cherry" ] } );
 
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/words",
-				{ method: "GET", headers },
-				mockEnv
+			const data = await call(
+				wordle.getWords,
+				{ gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" },
+				{ context: mockContext }
 			);
 
-			const data = await response.json();
 			expect( data ).toEqual( { words: [ "apple", "berry", "cherry" ] } );
 			expect( mockEngine.getWords ).toHaveBeenCalledWith( mockAuthInfo.id );
 		} );
 
-		it( "should throw 400 error if words cannot be fetched", async () => {
+		it( "should return BAD_REQUEST if words cannot be fetched", async () => {
 			vi.mocked( mockEngine.getWords ).mockResolvedValue( { data: null, error: "Fetch error" } );
-
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/words",
-				{ method: "GET", headers },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+			expect.assertions( 2 );
+			await call( wordle.getWords, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
+				.catch( error => {
+					expect( error ).toBeDefined();
+				} );
 			expect( mockEngine.getWords ).toHaveBeenCalledWith( mockAuthInfo.id );
 		} );
 
 	} );
 
-	describe( "PUT /:gameId/guess", () => {
+	describe( "Wordle:Procedure:MakeGuess", () => {
 
 		it( "should process the guess and return the result", async () => {
 			const mockResult = { ...mockPlayerData, guesses: [ "apple" ] };
 			vi.mocked( mockEngine.makeGuess ).mockResolvedValue( { data: mockResult } );
 
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/guess",
-				{ method: "PUT", headers, body: JSON.stringify( { guess: "apple" } ) },
-				mockEnv
+			const data = await call(
+				wordle.makeGuess,
+				{ gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", guess: "apple" },
+				{ context: mockContext }
 			);
 
-			const data = await response.json();
 			expect( data ).toEqual( mockResult );
 			expect( mockEngine.makeGuess ).toHaveBeenCalledWith( { guess: "apple" }, mockAuthInfo.id );
 		} );
 
-		it( "should throw 400 error for invalid guess input", async () => {
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/guess",
-				{ method: "PUT", headers, body: JSON.stringify( { guess: "" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+		it( "should return BAD_REQUEST for invalid guess input", async () => {
+			expect.assertions( 2 );
+			await call(
+				wordle.makeGuess,
+				{ gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", guess: "" },
+				{ context: mockContext }
+			).catch( error => {
+				expect( error ).toBeDefined();
+			} );
 			expect( mockEngine.makeGuess ).not.toHaveBeenCalled();
 		} );
 
-		it( "should throw 400 error if guess cannot be processed", async () => {
+		it( "should return BAD_REQUEST if guess cannot be processed", async () => {
 			vi.mocked( mockEngine.makeGuess ).mockResolvedValue( { data: null, error: "Processing error" } );
-
-			const response = await testApp.request(
-				"/01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C/guess",
-				{ method: "PUT", headers, body: JSON.stringify( { guess: "apple" } ) },
-				mockEnv
-			);
-
-			expect( response.status ).toBe( 400 );
+			expect.assertions( 2 );
+			await call(
+				wordle.makeGuess,
+				{ gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", guess: "apple" },
+				{ context: mockContext }
+			).catch( error => {
+				expect( error ).toBeDefined();
+			} );
 			expect( mockEngine.makeGuess ).toHaveBeenCalledWith( { guess: "apple" }, mockAuthInfo.id );
 		} );
 

@@ -61,13 +61,17 @@
 			{
 				"name": "FISH_DO",
 				"class_name": "FishEngine"
+			},
+			{
+				"name": "WORDLE_DO",
+				"class_name": "WordleEngine"
 			}
 		]
 	},
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": [ "WebsocketServer", "CallbreakEngine", "FishEngine" ]
+			"new_sqlite_classes": [ "WebsocketServer", "CallbreakEngine", "FishEngine", "WordleEngine" ]
 		}
 	]
 }

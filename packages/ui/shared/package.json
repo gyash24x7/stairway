@@ -10,16 +10,16 @@
 		}
 	},
 	"dependencies": {
-		"@s2h/utils": "workspace:*",
 		"@s2h-ui/auth": "workspace:*",
 		"@s2h-ui/primitives": "workspace:*",
-		"@tanstack/react-router": "1.139.14",
+		"@s2h/utils": "workspace:*",
+		"@tanstack/react-router": "1.141.4",
 		"usehooks-ts": "3.1.1"
 	},
 	"devDependencies": {
 		"@types/react": "19.2.7"
 	},
 	"peerDependencies": {
-		"react": "19.2.0"
+		"react": "19.2.3"
 	}
 }

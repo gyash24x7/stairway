@@ -1,20 +1,14 @@
+import { validateSession } from "@s2h/auth/sessions";
 import type { AuthInfo } from "@s2h/auth/types";
 import { createLogger } from "@s2h/utils/logger";
 import { DurableObject } from "cloudflare:workers";
-import { SessionService } from "./sessions.ts";
 
-type CloudflareEnv = {
-	SESSION_KV: KVNamespace;
-	AUTH_SECRET_KEY: string;
-}
-
-export class WebsocketServer extends DurableObject<CloudflareEnv> {
+export class WebsocketServer extends DurableObject {
 
 	private readonly logger = createLogger( "Websocket:DO" );
 	private readonly sessions = new Map<WebSocket, AuthInfo>();
-	private readonly sessionService;
 
-	constructor( ctx: DurableObjectState, env: CloudflareEnv ) {
+	constructor( ctx: DurableObjectState, env: Env ) {
 		super( ctx, env );
 		this.ctx.getWebSockets().forEach( ( ws ) => {
 			let attachment = ws.deserializeAttachment();
@@ -23,7 +17,6 @@ export class WebsocketServer extends DurableObject<CloudflareEnv> {
 			}
 		} );
 
-		this.sessionService = new SessionService( env.SESSION_KV, env.AUTH_SECRET_KEY );
 		const wsResponsePair = new WebSocketRequestResponsePair( "ping", "pong" );
 		this.ctx.setWebSocketAutoResponse( wsResponsePair );
 	}
@@ -31,7 +24,7 @@ export class WebsocketServer extends DurableObject<CloudflareEnv> {
 	override async fetch( request: Request ) {
 		this.logger.debug( ">> fetch()" );
 
-		const session = await this.sessionService.validateSession( request.headers );
+		const session = await validateSession( this.env, request.headers );
 		if ( !!session?.authInfo ) {
 			const webSocketPair = new WebSocketPair();
 			const [ client, server ] = Object.values( webSocketPair );

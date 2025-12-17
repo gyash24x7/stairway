@@ -1,193 +1,174 @@
-import { sValidator as validator } from "@hono/standard-validator";
+import { ORPCError, os, type RouterClient } from "@orpc/server";
+import { RPCHandler } from "@orpc/server/fetch";
 import { CARD_IDS } from "@s2h/utils/cards";
 import { createLogger } from "@s2h/utils/logger";
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { array, length, object, picklist, pipe, record, string, trim, ulid } from "valibot";
-import type { HonoCtx, HonoEnv } from "./types.ts";
+import type { Context } from "./types.ts";
 
 const logger = createLogger( "Fish:Router" );
-const app = new Hono<HonoEnv>();
 
-async function loadEngine( gameId: string, ctx: HonoCtx ) {
-	const key = await ctx.env.FISH_KV.get( `gameId:${ gameId }` );
+async function loadEngine( gameId: string, context: Context ) {
+	const key = await context.env.FISH_KV.get( `gameId:${ gameId }` );
 	if ( !key ) {
 		logger.error( "No Durable Object ID found for gameId:", gameId );
-		throw new HTTPException( 404, { message: "Game not found." } );
+		throw new ORPCError( "NOT_FOUND", { message: "Game not found." } );
 	}
 
-	const durableObjectId = ctx.env.FISH_DO.idFromString( key );
-	return ctx.env.FISH_DO.get( durableObjectId );
+	const durableObjectId = context.env.FISH_DO.idFromString( key );
+	return context.env.FISH_DO.get( durableObjectId );
 }
 
-app.use( async ( ctx, next ) => {
-	logger.debug( `>> ${ ctx.req.method } ${ ctx.req.url }` );
-	await next();
-	logger.debug( `<< ${ ctx.req.method } ${ ctx.req.url }` );
-} );
+const base = os.$context<Context>();
 
-app.post(
-	"/",
-	validator( "json", object( {
-		playerCount: picklist( [ 3, 4, 6, 8 ] ),
+const createGame = base
+	.input( object( {
+		playerCount: picklist( [ 3, 4, 6, 8 ] as const ),
 		type: picklist( [ "NORMAL", "CANADIAN" ] as const ),
-		teamCount: picklist( [ 2, 3, 4 ] )
-	} ) ),
-	async ctx => {
-		const durableObjectId = ctx.env.FISH_DO.newUniqueId();
-		const engine = ctx.env.FISH_DO.get( durableObjectId );
-		const { data: gameId, error } = await engine.initialize( ctx.req.valid( "json" ), ctx.var.authInfo );
+		teamCount: picklist( [ 2, 3, 4 ] as const )
+	} ) )
+	.handler( async ( { input, context } ) => {
+		const durableObjectId = context.env.FISH_DO.newUniqueId();
+		const engine = context.env.FISH_DO.get( durableObjectId );
+		const { data: gameId, error } = await engine.initialize( input, context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error creating game:", error );
-			throw new HTTPException( 400, { message: "Failed to create game." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to create game." } );
 		}
 
-		return ctx.json( { gameId } );
-	}
-);
+		return { gameId };
+	} );
 
-app.get(
-	"/:gameId",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { data, error } = await engine.getPlayerData( ctx.var.authInfo.id );
+const getGameData = base
+	.input( object( { gameId: pipe( string(), ulid() ) } ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { data, error } = await engine.getPlayerData( context.authInfo.id );
 
 		if ( error ) {
 			logger.error( "Error fetching player data:", error );
-			throw new HTTPException( 400, { message: "Failed to fetch player data." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to fetch player data." } );
 		}
 
-		return ctx.json( data );
-	}
-);
+		return data;
+	} );
 
-app.post(
-	"/join",
-	validator( "json", object( { code: pipe( string(), trim(), length( 6 ) ) } ) ),
-	async ctx => {
-		const key = await ctx.env.FISH_KV.get( `code:${ ctx.req.valid( "json" ).code }` );
+const joinGame = base
+	.input( object( { code: pipe( string(), trim(), length( 6 ) ) } ) )
+	.handler( async ( { input, context } ) => {
+		const key = await context.env.FISH_KV.get( `code:${ input.code }` );
 		if ( !key ) {
-			logger.error( "No game found for code:", ctx.req.valid( "json" ).code );
-			throw new HTTPException( 404, { message: "Game not found." } );
+			logger.error( "No game found for code:", input.code );
+			throw new ORPCError( "NOT_FOUND", { message: "Game not found." } );
 		}
 
-		const durableObjectId = ctx.env.FISH_DO.idFromString( key );
-		const engine = ctx.env.FISH_DO.get( durableObjectId );
-		const { data: gameId, error } = await engine.addPlayer( ctx.var.authInfo );
+		const durableObjectId = context.env.FISH_DO.idFromString( key );
+		const engine = context.env.FISH_DO.get( durableObjectId );
+		const { data: gameId, error } = await engine.addPlayer( context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error joining game:", error );
-			throw new HTTPException( 400, { message: "Failed to join game." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to join game." } );
 		}
 
-		return ctx.json( { gameId } );
-	}
-);
+		return { gameId };
+	} );
 
-app.put(
-	"/:gameId/add-bots",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.addBots( ctx.var.authInfo );
+const addBots = base
+	.input( object( { gameId: pipe( string(), ulid() ) } ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.addBots( context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error adding bots:", error );
-			throw new HTTPException( 400, { message: "Failed to add bots." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to add bots." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
-
-app.put(
-	"/:gameId/create-teams",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	validator( "json", record( string(), array( pipe( string(), ulid() ) ) ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.createTeams( ctx.req.valid( "json" ), ctx.var.authInfo );
+const createTeams = base
+	.input( object( {
+		gameId: pipe( string(), ulid() ),
+		teams: record( string(), array( pipe( string(), ulid() ) ) )
+	} ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.createTeams( input, context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error creating teams:", error );
-			throw new HTTPException( 400, { message: "Failed to create teams." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to create teams." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
-
-
-app.put(
-	"/:gameId/start-game",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.startGame( ctx.var.authInfo );
+const startGame = base
+	.input( object( { gameId: pipe( string(), ulid() ) } ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.startGame( context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error starting game:", error );
-			throw new HTTPException( 400, { message: "Failed to start game." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to start game." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
-
-app.put(
-	"/:gameId/ask-card",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	validator( "json", object( {
+const askCard = base
+	.input( object( {
+		gameId: pipe( string(), ulid() ),
 		from: pipe( string(), ulid() ),
 		cardId: picklist( CARD_IDS )
-	} ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.askCard( ctx.req.valid( "json" ), ctx.var.authInfo );
+	} ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.askCard( input, context.authInfo );
 
 		if ( error ) {
-			logger.error( "Error aking card:", error );
-			throw new HTTPException( 400, { message: "Failed to ask card" } );
+			logger.error( "Error asking card:", error );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to ask card" } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
-
-app.put(
-	"/:gameId/claim-book",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	validator( "json", record( picklist( CARD_IDS ), pipe( string(), ulid() ) ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.claimBook( ctx.req.valid( "json" ), ctx.var.authInfo );
+const claimBook = base
+	.input( object( {
+		gameId: pipe( string(), ulid() ),
+		claim: record( picklist( CARD_IDS ), pipe( string(), ulid() ) )
+	} ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.claimBook( input, context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error claiming book:", error );
-			throw new HTTPException( 400, { message: "Failed to claim book." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to claim book." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
-
-app.put(
-	"/:gameId/transfer-turn",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	validator( "json", object( { transferTo: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.transferTurn( ctx.req.valid( "json" ), ctx.var.authInfo );
+const transferTurn = base
+	.input( object( { gameId: pipe( string(), ulid() ), transferTo: pipe( string(), ulid() ) } ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.transferTurn( input, context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error transferring turn:", error );
-			throw new HTTPException( 400, { message: "Failed to transfer turn." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to transfer turn." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
+export const fish = base.router( {
+	createGame,
+	getGameData,
+	joinGame,
+	addBots,
+	createTeams,
+	startGame,
+	askCard,
+	claimBook,
+	transferTurn
+} );
 
-export const fish = app;
+export const handler = new RPCHandler( fish );
+
+export type FishRouter = typeof fish;
+export type FishClient = RouterClient<FishRouter>;

@@ -7,11 +7,10 @@
 		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
-		"@hono/standard-validator": "0.2.0",
+		"@orpc/server": "1.12.3",
 		"@s2h/utils": "workspace:*",
 		"@simplewebauthn/server": "13.2.2",
-		"drizzle-orm": "0.44.7",
-		"hono": "4.10.7",
+		"drizzle-orm": "0.45.1",
 		"valibot": "1.2.0"
 	},
 	"exports": {
@@ -20,7 +19,7 @@
 			"types": "./src/*.ts"
 		}
 	},
-	"keywords": [ ],
+	"keywords": [],
 	"author": "Yash Gupta",
 	"license": "ISC"
 }

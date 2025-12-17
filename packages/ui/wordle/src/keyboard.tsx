@@ -2,7 +2,7 @@ import { DeleteIcon, LogOutIcon } from "@s2h-ui/primitives/icons";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { useMakeGuessMutation } from "@s2h/client/wordle";
-import { dictionary } from "@s2h/wordle/dictionary";
+import { dictionaries } from "@s2h/wordle/dictionary";
 import { useStore } from "@tanstack/react-store";
 import { backspaceCurrentGuess, resetCurrentGuess, store, updateCurrentGuess } from "./store.tsx";
 
@@ -30,7 +30,7 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 	} );
 
 	const availableLetters = getAvailableLetters( game.guesses );
-	const isValidWord = dictionary.includes( currentGuess.join( "" ) );
+	const isValidWord = dictionaries[ game.wordLength ].includes( currentGuess.join( "" ) );
 	const isLetterAvailable = letter.length !== 1 || availableLetters.includes( letter );
 
 	const handleEnter = () => mutateAsync( { gameId: game.id, guess: currentGuess.join( "" ) } );

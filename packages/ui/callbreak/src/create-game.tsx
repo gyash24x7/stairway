@@ -11,9 +11,8 @@ import {
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCardSuit } from "@s2h-ui/shared/display-card";
-import { CARD_SUITS } from "@s2h/cards/constants";
-import type { CardSuit } from "@s2h/cards/types";
 import { useCreateGameMutation } from "@s2h/client/callbreak";
+import { CARD_SUITS, type CardSuit } from "@s2h/utils/cards";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
@@ -24,7 +23,7 @@ export function CreateGame() {
 	const navigate = useNavigate();
 
 	const { mutateAsync, isPending } = useCreateGameMutation( {
-		onSuccess: ( gameId ) => navigate( { to: `/callbreak/${ gameId }` } ),
+		onSuccess: ( { gameId } ) => navigate( { to: `/callbreak/${ gameId }` } ),
 		onError: ( err ) => alert( err.message ),
 		onSettled: () => setOpen( false )
 	} );

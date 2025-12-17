@@ -4,11 +4,10 @@ import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCard } from "@s2h-ui/shared/display-card";
 import { DisplayPlayer } from "@s2h-ui/shared/display-player";
-import type { CardId } from "@s2h/cards/types";
-import { getCardDisplayString, getCardFromId } from "@s2h/cards/utils";
 import { useAskCardMutation } from "@s2h/client/fish";
 import type { Book } from "@s2h/fish/types";
 import { getBooksInHand, getCardsOfBook, getMissingCards } from "@s2h/fish/utils";
+import { type CardId, getCardDisplayString } from "@s2h/utils/cards";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
@@ -38,7 +37,7 @@ export function AskCard() {
 		.filter( member => !!cardCounts[ member.id ] );
 
 	const confirmAskDrawerTitle = selectedPlayer && selectedCard
-		? `Ask ${ players[ selectedPlayer ].name } for ${ getCardDisplayString( getCardFromId( selectedCard ) ) }`
+		? `Ask ${ players[ selectedPlayer ].name } for ${ getCardDisplayString( selectedCard ) }`
 		: "";
 
 	const { mutateAsync, isPending } = useAskCardMutation( {

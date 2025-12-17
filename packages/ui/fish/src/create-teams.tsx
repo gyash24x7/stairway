@@ -31,7 +31,7 @@ export function CreateTeams() {
 	const players = useStore( store, state => state.players );
 	const playerCount = useStore( store, state => state.config.playerCount );
 
-	const [ teamCount, setTeamCount ] = useState<TeamCount>( 0 );
+	const [ teamCount, setTeamCount ] = useState<TeamCount>( 2 );
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ open, setOpen ] = useState( false );
@@ -51,7 +51,7 @@ export function CreateTeams() {
 		) );
 	};
 
-	const handleCreateTeams = () => mutateAsync( { gameId, data: teamMemberData } );
+	const handleCreateTeams = () => mutateAsync( { gameId, teams: teamMemberData } );
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
@@ -65,8 +65,8 @@ export function CreateTeams() {
 				</DialogHeader>
 				<div className={ "flex flex-col gap-3" }>
 					<Select
-						value={ teamCount.toString() }
-						onValueChange={ ( value ) => setTeamCount( parseInt( value ) as TeamCount ) }
+						value={ teamCount }
+						onValueChange={ ( value ) => setTeamCount( value ?? 2 ) }
 					>
 						<SelectTrigger className={ "w-full" }>
 							<SelectValue/>
@@ -99,7 +99,7 @@ export function CreateTeams() {
 					<Button
 						className={ "w-full" }
 						onClick={ groupPlayers }
-						disabled={ teamCount !== 0 || teamNames.length !== teamCount }
+						disabled={ teamNames.length !== teamCount }
 					>
 						GROUP PLAYERS
 					</Button>

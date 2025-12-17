@@ -1,5 +1,4 @@
 import type { CardId, CardSuit } from "@s2h/utils/cards";
-import type { Context } from "hono";
 import type { CallbreakEngine } from "./engine.ts";
 
 export type PlayerId = string;
@@ -22,7 +21,6 @@ export type Round = {
 };
 
 export type StartedRound = Round & { suit: CardSuit };
-export type CompletedRound = StartedRound & { winner: string };
 
 export type Deal = {
 	id: string;
@@ -74,11 +72,13 @@ export type CreateGameInput = {
 };
 
 export type DeclareDealWinsInput = {
+	gameId: GameId;
 	wins: number;
 	dealId: string;
 };
 
 export type PlayCardInput = {
+	gameId: GameId;
 	cardId: CardId;
 	roundId: string;
 	dealId: string;
@@ -87,14 +87,7 @@ export type PlayCardInput = {
 export type Bindings = {
 	CALLBREAK_DO: DurableObjectNamespace<CallbreakEngine>;
 	CALLBREAK_KV: KVNamespace;
-	WSS: DurableObjectNamespace<import("../../../api/src/wss.ts").WebsocketServer>;
+	WSS: DurableObjectNamespace<import("../../../../apps/web/src/wss.ts").WebsocketServer>;
 }
 
-export type HonoEnv = {
-	Bindings: Bindings,
-	Variables: {
-		authInfo: BasePlayerInfo;
-	}
-}
-
-export type HonoCtx = Context<HonoEnv>;
+export type Context = { authInfo: BasePlayerInfo, env: Bindings };

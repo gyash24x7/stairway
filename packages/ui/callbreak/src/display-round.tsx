@@ -2,7 +2,6 @@ import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCard } from "@s2h-ui/shared/display-card";
 import { DisplayPlayer } from "@s2h-ui/shared/display-player";
 import type { PlayerData, Round } from "@s2h/callbreak/types";
-import { getCardFromId } from "@s2h/cards/utils";
 import { useStore } from "@tanstack/react-store";
 import { store } from "./store.tsx";
 
@@ -17,8 +16,7 @@ export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps
 	return (
 		<div className={ "grid gap-3 grid-cols-4" }>
 			{ playerOrder.map( ( playerId ) => {
-				const cardId = round.cards[ playerId ]!;
-				const card = !!cardId ? getCardFromId( cardId ) : undefined;
+				const cardId = round.cards[ playerId ];
 				return (
 					<div
 						key={ playerId }
@@ -29,8 +27,8 @@ export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps
 						) }
 					>
 						<DisplayPlayer player={ players[ playerId ] } key={ playerId }/>
-						{ card && <DisplayCard cardId={ cardId } focused/> }
-						{ !card && (
+						{ cardId && <DisplayCard cardId={ cardId } focused/> }
+						{ !cardId && (
 							<div
 								className={ cn(
 									"w-12 md:w-14 xl:w-16 p-1 md:p-1.5 xl:p-2 md:text-lg xl:text-xl",

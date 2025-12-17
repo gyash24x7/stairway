@@ -1,5 +1,5 @@
 import { cn } from "@s2h-ui/primitives/utils";
-import { dictionary } from "@s2h/wordle/dictionary";
+import { dictionaries } from "@s2h/wordle/dictionary";
 import { useStore } from "@tanstack/react-store";
 import { store } from "./store.tsx";
 
@@ -23,7 +23,7 @@ export function GuessBlocks() {
 	const currentGuess = useStore( store, state => state.currentGuess );
 	const guessBlocks = useStore( store, state => state.game.guessBlocks );
 
-	const isValidWord = dictionary.includes( currentGuess.join( "" ) );
+	const isValidWord = dictionaries[ game.wordLength ].includes( currentGuess.join( "" ) );
 	const isValidGuessLength = currentGuess.length === game.wordLength;
 
 	const isInvalidGuess = ( i: number ) => (

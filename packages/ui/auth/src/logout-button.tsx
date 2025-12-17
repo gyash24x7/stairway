@@ -6,7 +6,7 @@ import { Fragment } from "react";
 
 export function LogoutButton() {
 	const { mutateAsync, isPending } = useLogoutMutation();
-	const handleLogout = () => mutateAsync();
+	const handleLogout = () => mutateAsync( {} );
 
 	return (
 		<Button className={ "flex gap-2 items-center" } onClick={ handleLogout }>

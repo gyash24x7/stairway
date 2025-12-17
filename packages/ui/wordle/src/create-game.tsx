@@ -20,7 +20,7 @@ export function CreateGame() {
 	const [ wordCount, setWordCount ] = useState( 2 );
 	const navigate = useNavigate();
 	const { mutateAsync, isPending } = useCreateGameMutation( {
-		onSuccess: ( data ) => navigate( { to: `/wordle/${ data.id }` } ),
+		onSuccess: ( data ) => navigate( { to: `/wordle/${ data.gameId }` } ),
 		onSettled: () => setOpen( false )
 	} );
 

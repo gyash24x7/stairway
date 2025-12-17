@@ -1,140 +1,121 @@
-import { sValidator as validator } from "@hono/standard-validator";
+import { ORPCError, os, type RouterClient } from "@orpc/server";
+import { RPCHandler } from "@orpc/server/fetch";
 import { CARD_IDS, CARD_SUITS } from "@s2h/utils/cards";
 import { createLogger } from "@s2h/utils/logger";
-import { Hono } from "hono";
-import { HTTPException } from "hono/http-exception";
 import { length, ltValue, number, object, optional, picklist, pipe, string, trim, ulid } from "valibot";
-import type { HonoCtx, HonoEnv } from "./types.ts";
+import type { Context } from "./types.ts";
 
 const logger = createLogger( "Callbreak:Router" );
-const app = new Hono<HonoEnv>();
 
-async function loadEngine( gameId: string, ctx: HonoCtx ) {
-	const key = await ctx.env.CALLBREAK_KV.get( `gameId:${ gameId }` );
+async function loadEngine( gameId: string, context: Context ) {
+	const key = await context.env.CALLBREAK_KV.get( `gameId:${ gameId }` );
 	if ( !key ) {
 		logger.error( "No Durable Object ID found for gameId:", gameId );
-		throw new HTTPException( 404, { message: "Game not found." } );
+		throw new ORPCError( "NOT_FOUND", { message: "Game not found." } );
 	}
 
-	const durableObjectId = ctx.env.CALLBREAK_DO.idFromString( key );
-	return ctx.env.CALLBREAK_DO.get( durableObjectId );
+	const durableObjectId = context.env.CALLBREAK_DO.idFromString( key );
+	return context.env.CALLBREAK_DO.get( durableObjectId );
 }
 
-app.use( async ( ctx, next ) => {
-	logger.debug( `>> ${ ctx.req.method } ${ ctx.req.url }` );
-	await next();
-	logger.debug( `<< ${ ctx.req.method } ${ ctx.req.url }` );
-} );
+const base = os.$context<Context>();
 
-app.post(
-	"/",
-	validator( "json", object( {
+const createGame = base
+	.input( object( {
 		dealCount: optional( pipe( number(), picklist( [ 5, 9, 13 ] ) ) ),
 		trumpSuit: picklist( Object.values( CARD_SUITS ) ),
 		gameId: optional( pipe( string(), ulid() ) )
-	} ) ),
-	async ctx => {
-		const durableObjectId = ctx.env.CALLBREAK_DO.newUniqueId();
-		const engine = ctx.env.CALLBREAK_DO.get( durableObjectId );
-		const { data: gameId } = await engine.initialize( ctx.req.valid( "json" ), ctx.var.authInfo.id );
-		return ctx.json( { gameId } );
-	}
-);
+	} ) )
+	.handler( async ( { context, input } ) => {
+		const durableObjectId = context.env.CALLBREAK_DO.newUniqueId();
+		const engine = context.env.CALLBREAK_DO.get( durableObjectId );
+		const { data: gameId } = await engine.initialize( input, context.authInfo );
+		return { gameId };
+	} );
 
-app.get(
-	"/:gameId",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { data, error } = await engine.getPlayerData( ctx.var.authInfo.id );
+const getGameData = base
+	.input( object( { gameId: pipe( string(), ulid() ) } ) )
+	.handler( async ( { context, input } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { data, error } = await engine.getPlayerData( context.authInfo.id );
 
 		if ( error ) {
 			logger.error( "Error fetching player data:", error );
-			throw new HTTPException( 400, { message: "Failed to fetch player data." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to fetch player data." } );
 		}
 
-		return ctx.json( data );
-	}
-);
+		return data;
+	} );
 
-app.post(
-	"/join",
-	validator( "json", object( { code: pipe( string(), trim(), length( 6 ) ) } ) ),
-	async ctx => {
-		const key = await ctx.env.CALLBREAK_KV.get( `code:${ ctx.req.valid( "json" ).code }` );
+const joinGame = base
+	.input( object( { code: pipe( string(), trim(), length( 6 ) ) } ) )
+	.handler( async ( { context, input } ) => {
+		const key = await context.env.CALLBREAK_KV.get( `code:${ input.code }` );
 		if ( !key ) {
-			logger.error( "No game found for code:", ctx.req.valid( "json" ).code );
-			throw new HTTPException( 404, { message: "Game not found." } );
+			logger.error( "No game found for code:", input.code );
+			throw new ORPCError( "NOT_FOUND", { message: "Game not found." } );
 		}
 
-		const durableObjectId = ctx.env.CALLBREAK_DO.idFromString( key );
-		const engine = ctx.env.CALLBREAK_DO.get( durableObjectId );
-		const { data: gameId, error } = await engine.addPlayer( ctx.var.authInfo );
+		const durableObjectId = context.env.CALLBREAK_DO.idFromString( key );
+		const engine = context.env.CALLBREAK_DO.get( durableObjectId );
+		const { data: gameId, error } = await engine.addPlayer( context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error joining game:", error );
-			throw new HTTPException( 400, { message: "Failed to join game." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to join game." } );
 		}
 
-		return ctx.json( { gameId } );
-	}
-);
+		return { gameId };
+	} );
 
-app.put(
-	"/:gameId/add-bots",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.addBots( ctx.var.authInfo );
+const addBots = base
+	.input( object( { gameId: pipe( string(), ulid() ) } ) )
+	.handler( async ( { context, input } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.addBots( context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error adding bots:", error );
-			throw new HTTPException( 400, { message: "Failed to add bots." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to add bots." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
-
-app.put(
-	"/:gameId/declare-deal-wins",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	validator( "json", object( {
+const declareDealWins = base
+	.input( object( {
+		gameId: pipe( string(), ulid() ),
 		wins: pipe( number(), ltValue( 13 ) ),
 		dealId: pipe( string(), ulid() )
-	} ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.declareDealWins( ctx.req.valid( "json" ), ctx.var.authInfo );
+	} ) )
+	.handler( async ( { input, context } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.declareDealWins( input, context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error declaring deal wins:", error );
-			throw new HTTPException( 400, { message: "Failed to declare deal wins." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to declare deal wins." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
 
-app.put(
-	"/:gameId/play-card",
-	validator( "param", object( { gameId: pipe( string(), ulid() ) } ) ),
-	validator( "json", object( {
+const playCard = base
+	.input( object( {
+		gameId: pipe( string(), ulid() ),
 		cardId: picklist( CARD_IDS ),
 		roundId: pipe( string(), ulid() ),
 		dealId: pipe( string(), ulid() )
-	} ) ),
-	async ctx => {
-		const engine = await loadEngine( ctx.req.valid( "param" ).gameId, ctx );
-		const { error } = await engine.playCard( ctx.req.valid( "json" ), ctx.var.authInfo );
+	} ) )
+	.handler( async ( { context, input } ) => {
+		const engine = await loadEngine( input.gameId, context );
+		const { error } = await engine.playCard( input, context.authInfo );
 
 		if ( error ) {
 			logger.error( "Error playing card:", error );
-			throw new HTTPException( 400, { message: "Failed to play card." } );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to play card." } );
 		}
+	} );
 
-		return ctx.body( null, { status: 204 } );
-	}
-);
+export const callbreak = base.router( { createGame, getGameData, joinGame, addBots, declareDealWins, playCard } );
+export const handler = new RPCHandler( callbreak );
 
-export const callbreak = app;
+export type CallbreakRouter = typeof callbreak;
+export type CallbreakClient = RouterClient<CallbreakRouter>;
