@@ -64,7 +64,7 @@ export default {
 			}
 
 			const result = await fishHandler.handle( request, {
-				context: { ...env, authInfo: session.authInfo },
+				context: { env, authInfo: session.authInfo },
 				prefix: "/api/fish"
 			} );
 
@@ -81,7 +81,7 @@ export default {
 			}
 
 			const result = await wordleHandler.handle( request, {
-				context: { ...env, authInfo: session.authInfo },
+				context: { env, authInfo: session.authInfo },
 				prefix: "/api/wordle"
 			} );
 

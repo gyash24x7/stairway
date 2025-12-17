@@ -28,7 +28,7 @@ export async function createSession( authInfo: AuthInfo, env: Bindings, headers 
 	const session = { id: sessionId, authInfo, createdAt: Date.now() };
 	await env.SESSION_KV.put( session.id, JSON.stringify( session ), { expirationTtl } );
 
-	const cookie = await sign( session.id, env.AUTH_SECRET_KEY );
+	const cookie = await sign( session.id, env.AUTH_SECRET );
 	setCookie( headers, "auth_session", cookie, cookieOptions );
 
 	logger.debug( "<< createSession()" );
@@ -63,7 +63,7 @@ export async function validateSession( env: Bindings, headers = new Headers() ):
 		return undefined;
 	}
 
-	const sessionId = await unsign( signedCookie, env.AUTH_SECRET_KEY );
+	const sessionId = await unsign( signedCookie, env.AUTH_SECRET );
 	if ( !sessionId ) {
 		logger.warn( "Invalid Session Id!" );
 		return undefined;

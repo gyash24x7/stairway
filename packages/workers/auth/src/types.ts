@@ -39,7 +39,7 @@ export type Bindings = {
 	DB: D1Database;
 	WEBAUTHN_KV: KVNamespace;
 	SESSION_KV: KVNamespace;
-	AUTH_SECRET_KEY: string;
+	AUTH_SECRET: string;
 }
 
 export type Variables = {

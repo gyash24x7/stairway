@@ -24,7 +24,7 @@ describe( "Auth:Sessions", () => {
 			DB: mockDeep<D1Database>(),
 			WEBAUTHN_KV: mockDeep<KVNamespace>(),
 			SESSION_KV: mockDeep<KVNamespace>(),
-			AUTH_SECRET_KEY: "auth_secret_key"
+			AUTH_SECRET: "AUTH_SECRET"
 		},
 		reqHeaders: new Headers(),
 		resHeaders: new Headers()
@@ -52,7 +52,7 @@ describe( "Auth:Sessions", () => {
 				{ expirationTtl: 604800 }
 			);
 
-			expect( vi.mocked( sign ) ).toHaveBeenCalledWith( expect.any( String ), "auth_secret_key" );
+			expect( vi.mocked( sign ) ).toHaveBeenCalledWith( expect.any( String ), "AUTH_SECRET" );
 			expect( vi.mocked( setCookie ) ).toHaveBeenCalledWith(
 				mockCtx.resHeaders,
 				"auth_session",
@@ -87,7 +87,7 @@ describe( "Auth:Sessions", () => {
 			const session = await validateSession( mockCtx.env, mockCtx.reqHeaders );
 			expect( session ).toEqual( validSession );
 			expect( vi.mocked( getCookie ) ).toHaveBeenCalledWith( mockCtx.reqHeaders, "auth_session" );
-			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "auth_secret_key" );
+			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "AUTH_SECRET" );
 			expect( mockCtx.env.SESSION_KV.get ).toHaveBeenCalledWith( "session123", { type: "json" } );
 		} );
 
@@ -104,7 +104,7 @@ describe( "Auth:Sessions", () => {
 			const session = await validateSession( mockCtx.env, mockCtx.reqHeaders );
 			expect( session ).toBeUndefined();
 			expect( vi.mocked( getCookie ) ).toHaveBeenCalledWith( mockCtx.reqHeaders, "auth_session" );
-			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "auth_secret_key" );
+			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "AUTH_SECRET" );
 		} );
 
 		it( "should return undefined when no session found", async () => {
@@ -115,7 +115,7 @@ describe( "Auth:Sessions", () => {
 			const session = await validateSession( mockCtx.env, mockCtx.reqHeaders );
 			expect( session ).toBeUndefined();
 			expect( vi.mocked( getCookie ) ).toHaveBeenCalledWith( mockCtx.reqHeaders, "auth_session" );
-			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "auth_secret_key" );
+			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "AUTH_SECRET" );
 			expect( mockCtx.env.SESSION_KV.get ).toHaveBeenCalledWith( "invalid_session_id", { type: "json" } );
 		} );
 
@@ -133,7 +133,7 @@ describe( "Auth:Sessions", () => {
 			const session = await validateSession( mockCtx.env, mockCtx.reqHeaders );
 			expect( session ).toBeUndefined();
 			expect( vi.mocked( getCookie ) ).toHaveBeenCalledWith( mockCtx.reqHeaders, "auth_session" );
-			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "auth_secret_key" );
+			expect( vi.mocked( unsign ) ).toHaveBeenCalledWith( "signed_session_id", "AUTH_SECRET" );
 			expect( mockCtx.env.SESSION_KV.get ).toHaveBeenCalledWith( "session123", { type: "json" } );
 			expect( mockCtx.env.SESSION_KV.delete ).toHaveBeenCalledWith( "session123" );
 		} );

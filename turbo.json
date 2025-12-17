@@ -3,7 +3,7 @@
 	"ui": "tui",
 	"tasks": {
 		"generate": {
-			"inputs": [ "./wrangler.jsonc", "./src/worker.ts" ],
+			"inputs": [ "./wrangler.jsonc", "./src/worker.ts", ".env" ],
 			"outputs": [ "./env.d.ts" ]
 		},
 		"migrate:new": {
