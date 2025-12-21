@@ -14,8 +14,8 @@
 		}
 	},
 	"dependencies": {
-		"@orpc/client": "1.12.3",
-		"@orpc/tanstack-query": "1.12.3",
+		"@orpc/client": "1.13.0",
+		"@orpc/tanstack-query": "1.13.0",
 		"@s2h/auth": "workspace:*",
 		"@s2h/callbreak": "workspace:*",
 		"@s2h/fish": "workspace:*",

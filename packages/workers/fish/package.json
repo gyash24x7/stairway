@@ -7,7 +7,7 @@
 		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
-		"@orpc/server": "1.12.3",
+		"@orpc/server": "1.13.0",
 		"@s2h/utils": "workspace:*",
 		"valibot": "1.2.0"
 	},
@@ -17,7 +17,7 @@
 			"types": "./src/*.ts"
 		}
 	},
-	"keywords": [ ],
+	"keywords": [],
 	"author": "Yash Gupta",
 	"license": "ISC"
 }
