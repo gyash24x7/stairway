@@ -14,7 +14,7 @@ export function ActionPanel() {
 	return (
 		<div
 			className={ cn(
-				"fixed left-0 right-0 bottom-0 bg-white border-t-4 shadow-sm",
+				"fixed left-0 right-0 bottom-0 bg-secondary-background border-t-4 shadow-sm",
 				"rounded-t-xl flex flex-col gap-2 px-3 py-5 items-center"
 			) }
 		>

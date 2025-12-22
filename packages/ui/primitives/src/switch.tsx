@@ -21,7 +21,7 @@ export function Switch( { className, ...props }: ComponentProps<typeof Root> ) {
 			<Thumb
 				data-slot="switch-thumb"
 				className={ cn(
-					"pointer-events-none block h-4 w-4 rounded-full bg-white border-2 border-border ring-0",
+					"pointer-events-none block h-4 w-4 rounded-full bg-secondary-background border-2 border-border ring-0",
 					"transition-transform data-[state=checked]:translate-x-6 data-[state=unchecked]:translate-x-1"
 				) }
 			/>

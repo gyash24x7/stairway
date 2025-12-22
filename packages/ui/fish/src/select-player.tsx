@@ -17,7 +17,7 @@ export function SelectPlayer( { setPlayer, player, options }: SelectPlayerProps 
 					key={ item.id }
 					onClick={ () => setPlayer( player === item.id ? undefined : item.id ) }
 					className={ cn(
-						player === item.id ? "bg-white" : "bg-bg",
+						player === item.id ? "bg-secondary-background" : "bg-bg",
 						"cursor-pointer border-2 rounded-md flex justify-center flex-1"
 					) }
 				>

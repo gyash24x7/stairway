@@ -27,7 +27,7 @@ export function DisplayCard( { cardId, focused }: DisplayCardProps ) {
 		<img
 			src={ `/cards/${ cardId }.svg` }
 			className={ cn(
-				"w-16 md:w-20 xl:w-24 rounded-lg border-border border-1",
+				"w-16 md:w-20 xl:w-24 rounded-lg border-border border",
 				focused && "border-components border-2"
 			) }
 			alt={ cardId }

@@ -19,7 +19,7 @@ export function HomePage() {
 					<div
 						className={ cn(
 							"absolute w-full h-full top-0 left-0 transition duration-300",
-							"bg-white opacity-30"
+							"bg-secondary-background opacity-30"
 						) }
 					/>
 					<div className={ "bg-primary px-6 py-3 mt-6" }>

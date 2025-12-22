@@ -16,7 +16,7 @@ export function DisplayPlayer( props: DisplayPlayerProps ) {
 		<div
 			className={ cn(
 				"flex flex-col gap-2 px-4 py-2 items-center w-full rounded-md",
-				props.withBg && "bg-white border-components border-4"
+				props.withBg && "bg-secondary-background border-components border-4"
 			) }
 			key={ props.player.id }
 		>

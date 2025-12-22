@@ -22,7 +22,11 @@ export function DisplayTeams() {
 									{ team.players.map( pid => players[ pid ] ).map( player => (
 										<div key={ player.id } className={ "gap-2 items-center hidden sm:flex" }>
 											<Avatar className={ "rounded-full w-7 h-7" }>
-												<AvatarImage src={ player.avatar } alt={ "" }/>
+												<AvatarImage
+													src={ player.avatar }
+													alt={ "" }
+													className={ "bg-secondary-background" }
+												/>
 											</Avatar>
 											<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>
 										</div>

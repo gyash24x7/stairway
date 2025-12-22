@@ -103,7 +103,7 @@ export function ClaimBook() {
 										key={ item }
 										onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 										className={ cn(
-											selectedBook === item ? "bg-white" : "bg-bg",
+											selectedBook === item ? "bg-secondary-background" : "bg-bg",
 											"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
 											"flex justify-center"
 										) }

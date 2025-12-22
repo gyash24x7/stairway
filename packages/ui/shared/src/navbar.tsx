@@ -13,7 +13,12 @@ export function Navbar() {
 	const { isLoggedIn } = useAuth();
 	return (
 		<div
-			className={ "flex bg-white w-full px-2 md:px-4 py-1 md:py-2 justify-between items-center border-b-4 fixed z-20 left-0 right-0" }>
+			className={
+				cn(
+					"justify-between items-center border-b-4 fixed z-20 left-0 right-0",
+					"flex bg-secondary-background w-full px-2 md:px-4 py-1 md:py-2"
+				) }
+		>
 			<div className={ "flex gap-2 items-center bg-main p-1 md:px-2 border-border rounded border-4" }>
 				<img src={ "/s2h.png" } alt={ "logo" } className={ "h-12 md:h-16" }/>
 				<h2 className={ "text-5xl font-heading text-main-foreground hidden md:block" }>STAIRWAY</h2>

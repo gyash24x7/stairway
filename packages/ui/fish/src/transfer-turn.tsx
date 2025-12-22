@@ -51,7 +51,7 @@ export function TransferTurn() {
 									key={ pid }
 									onClick={ handlePlayerSelect( selectedPlayer === pid ? undefined : pid ) }
 									className={ cn(
-										selectedPlayer === pid ? "bg-white" : "bg-bg",
+										selectedPlayer === pid ? "bg-secondary-background" : "bg-bg",
 										"cursor-pointer border-2 rounded-md flex justify-center flex-1"
 									) }
 								>

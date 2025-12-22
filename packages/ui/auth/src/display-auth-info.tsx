@@ -13,7 +13,7 @@ export function DisplayAuthInfo() {
 		<Drawer open={ open } onOpenChange={ setOpen }>
 			<DrawerTrigger>
 				<Avatar className="h-10 w-10 bg-bg cursor-pointer">
-					<AvatarImage src={ authInfo?.avatar } alt={ authInfo?.name }/>
+					<AvatarImage src={ authInfo?.avatar } alt={ authInfo?.name } className={ "bg-main" }/>
 					<AvatarFallback>
 						{ authInfo?.name.split( " " ).map( ( n: string ) => n[ 0 ] ).join( "" ).toUpperCase() }
 					</AvatarFallback>

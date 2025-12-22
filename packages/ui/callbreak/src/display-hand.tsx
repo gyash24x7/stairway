@@ -33,7 +33,7 @@ export function DisplayHand() {
 		<div
 			className={ cn(
 				"border-2 rounded-md p-2 md:p-3 flex gap-2 md:gap-3 flex-wrap justify-center",
-				isActiveRound && currentTurn === playerId && "bg-white border-main border-4"
+				isActiveRound && currentTurn === playerId && "bg-secondary-background border-main border-4"
 			) }
 		>
 			{ getSortedHand( hand ).map( ( cardId ) => (

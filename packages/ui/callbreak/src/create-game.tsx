@@ -46,9 +46,9 @@ export function CreateGame() {
 								key={ item }
 								onClick={ () => setSelectedSuit( selectedSuit === item ? undefined : item ) }
 								className={ cn(
-									selectedSuit === item ? "bg-white" : "bg-bg",
+									selectedSuit === item ? "bg-secondary-background" : "bg-bg",
 									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-									"hover:bg-white"
+									"hover:bg-secondary-background"
 								) }
 							>
 								<DisplayCardSuit suit={ item }/>
@@ -62,9 +62,9 @@ export function CreateGame() {
 								key={ item }
 								onClick={ () => setDealCount( dealCount === item ? undefined : item ) }
 								className={ cn(
-									dealCount === item ? "bg-white" : "bg-bg",
+									dealCount === item ? "bg-secondary-background" : "bg-bg",
 									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-									"hover:bg-white"
+									"hover:bg-secondary-background"
 								) }
 							>
 								{ item }

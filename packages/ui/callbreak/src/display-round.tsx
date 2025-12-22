@@ -34,7 +34,7 @@ export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps
 									className={ cn(
 										"w-16 md:w-20 p-1 md:p-1.5 md:text-lg",
 										`rounded-lg flex flex-col justify-between border-2 bg-bg border-dotted`,
-										"h-24 md:h-30 bg-white"
+										"h-24 md:h-30 bg-secondary-background"
 									) }
 								/>
 							</div>
