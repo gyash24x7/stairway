@@ -233,8 +233,8 @@ export class FishEngine extends DurableObject<Bindings> {
 			return { error };
 		}
 
-		this.data.config.teamCount = Object.keys( input ).length as TeamCount;
-		Object.entries( input ).forEach( ( [ name, members ] ) => {
+		this.data.config.teamCount = Object.keys( input.teams ).length as TeamCount;
+		Object.entries( input.teams ).forEach( ( [ name, members ] ) => {
 			const id = generateId();
 			this.data.teamIds.push( id );
 			this.data.teams[ id ] = { id, name, players: members, score: 0, booksWon: [] };
@@ -411,7 +411,7 @@ export class FishEngine extends DurableObject<Bindings> {
 		}
 
 		const playerId = this.data.currentTurn;
-		const calledCards = Object.keys( input ).map( cardId => cardId as CardId );
+		const calledCards = Object.keys( input.claim ).map( cardId => cardId as CardId );
 		const [ calledBook ] = calledCards.map( cardId => getBookForCard( cardId, this.data.config.type ) );
 		const correctClaim = calledCards.reduce(
 			( acc, cardId ) => {
@@ -423,7 +423,7 @@ export class FishEngine extends DurableObject<Bindings> {
 
 		let success = true;
 		for ( const cardId of calledCards ) {
-			if ( correctClaim[ cardId ] !== input[ cardId ] ) {
+			if ( correctClaim[ cardId ] !== input.claim[ cardId ] ) {
 				success = false;
 				break;
 			}
@@ -443,7 +443,7 @@ export class FishEngine extends DurableObject<Bindings> {
 			playerId,
 			book: calledBook,
 			correctClaim,
-			actualClaim: input,
+			actualClaim: input.claim,
 			timestamp: Date.now()
 		};
 
@@ -608,8 +608,7 @@ export class FishEngine extends DurableObject<Bindings> {
 		if ( isLastMoveSuccessfulClaim && weightedTransfers.length > 0 ) {
 			const transferTo = weightedTransfers[ 0 ].transferTo;
 			this.logger.info( "Bot %s transferring turn to %s", currentPlayer.id, transferTo );
-			const input: TransferTurnInput = { transferTo };
-			await this.transferTurn( input, currentPlayer );
+			await this.transferTurn( { transferTo, gameId: playerGameInfo.id }, currentPlayer );
 
 			await this.setAlarm( 5000 );
 			await this.saveGameData();
@@ -627,8 +626,7 @@ export class FishEngine extends DurableObject<Bindings> {
 		if ( weightedClaims.length > 0 ) {
 			const claim = weightedClaims[ 0 ].claim;
 			this.logger.info( "Bot %s claiming book with cards: %o", currentPlayer.id, claim );
-			const input: ClaimBookInput = claim;
-			await this.claimBook( input, currentPlayer );
+			await this.claimBook( { gameId: playerGameInfo.id, claim }, currentPlayer );
 
 			await this.setAlarm( 5000 );
 			await this.saveGameData();
@@ -645,7 +643,7 @@ export class FishEngine extends DurableObject<Bindings> {
 		if ( weightedAsks.length > 0 ) {
 			const { playerId, cardId } = weightedAsks[ 0 ];
 			this.logger.info( "Bot %s asking %s for card %s", currentPlayer.id, playerId, cardId );
-			const event: AskCardInput = { from: playerId, cardId };
+			const event: AskCardInput = { from: playerId, cardId, gameId: playerGameInfo.id };
 			await this.askCard( event, currentPlayer );
 
 			await this.setAlarm( 5000 );
@@ -661,9 +659,9 @@ export class FishEngine extends DurableObject<Bindings> {
 		const riskyClaims = suggestRiskyClaims( weightedBooks, playerGameInfo );
 		this.logger.debug( "Risky Claims Suggested: %o", riskyClaims.map( claim => claim.book ) );
 
-		const input = riskyClaims[ 0 ].claim;
-		this.logger.info( "Bot %s making risky claim for book with cards: %o", currentPlayer.id, input );
-		await this.claimBook( input, currentPlayer );
+		const claim = riskyClaims[ 0 ].claim;
+		this.logger.info( "Bot %s making risky claim for book with cards: %o", currentPlayer.id, claim );
+		await this.claimBook( { gameId: playerGameInfo.id, claim }, currentPlayer );
 
 		await this.setAlarm( 5000 );
 		await this.saveGameData();
@@ -779,20 +777,20 @@ export class FishEngine extends DurableObject<Bindings> {
 			return { error: "Not your turn!" };
 		}
 
-		const claimedCards = Object.keys( input ).map( key => key as CardId );
+		const claimedCards = Object.keys( input.claim ).map( key => key as CardId );
 		if ( claimedCards.length !== this.data.config.bookSize ) {
 			this.logger.error( "Incorrect number of cards claimed! UserId: %s", this.data.currentTurn );
 			return { error: "Incorrect number of cards claimed!" };
 		}
 
-		for ( const pid of Object.values( input ) ) {
+		for ( const pid of Object.values( input.claim ) ) {
 			if ( !this.data.players[ pid ] ) {
 				this.logger.error( "Player %s is not part of the game! GameId: %s", pid, this.data.id );
 				return { error: `Player ${ pid } is not part of the game!` };
 			}
 		}
 
-		if ( !Object.values( input ).includes( playerInfo.id ) ) {
+		if ( !Object.values( input.claim ).includes( playerInfo.id ) ) {
 			this.logger.error( "Claiming Player did not claim own cards! UserId: %s", playerInfo.id );
 			return { error: "Claiming Player did not claim own cards!" };
 		}
@@ -803,7 +801,7 @@ export class FishEngine extends DurableObject<Bindings> {
 			return { error: "Cards Claimed from multiple books!" };
 		}
 
-		const claimingTeams = new Set( Object.values( input ).map( pid => this.data.players[ pid ].teamId ) );
+		const claimingTeams = new Set( Object.values( input.claim ).map( pid => this.data.players[ pid ].teamId ) );
 		if ( claimingTeams.size !== 1 ) {
 			this.logger.error( "Book claimed from multiple teams! UserId: %s", this.data.currentTurn );
 			return { error: "Book claimed from multiple teams!" };
@@ -925,20 +923,20 @@ export class FishEngine extends DurableObject<Bindings> {
 			return { error: "The Game is not in PLAYERS_READY state!" };
 		}
 
-		const teamCount = Object.keys( input ).length;
+		const teamCount = Object.keys( input.teams ).length;
 		if ( teamCount !== this.data.config.teamCount ) {
 			this.logger.error( "Team count does not match the game configuration! GameId: %s", this.data.id );
 			return { error: "Team count does not match the game configuration!" };
 		}
 
-		const playersSpecified = new Set( Object.values( input ).flat() );
+		const playersSpecified = new Set( Object.values( input.teams ).flat() );
 		if ( playersSpecified.size !== this.data.config.playerCount ) {
 			this.logger.error( "Not all players are divided into teams! GameId: %s", this.data.id );
 			return { error: "Not all players are divided into teams!" };
 		}
 
 		const playersPerTeam = this.data.config.playerCount / teamCount;
-		for ( const [ teamName, playerIds ] of Object.entries( input ) ) {
+		for ( const [ teamName, playerIds ] of Object.entries( input.teams ) ) {
 			if ( playerIds.length !== playersPerTeam ) {
 				this.logger.error( "Invalid number of players in team %s! GameId: %s", teamName, this.data.id );
 				return { error: `Invalid number of players in team ${ teamName }!` };

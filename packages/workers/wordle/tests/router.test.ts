@@ -2,7 +2,7 @@ import { call } from "@orpc/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WordleEngine } from "../src/engine.ts";
 import { wordle } from "../src/router.ts";
-import type { Bindings } from "../src/types.ts";
+import type { Bindings, PlayerGameInfo } from "../src/types.ts";
 
 describe( "Wordle:Procedure:Router", () => {
 
@@ -15,7 +15,7 @@ describe( "Wordle:Procedure:Router", () => {
 			get: vi.fn(),
 			newUniqueId: vi.fn()
 		}
-	} as unknown as Bindings;
+	};
 
 	const mockAuthInfo = {
 		id: "user1",
@@ -35,7 +35,7 @@ describe( "Wordle:Procedure:Router", () => {
 		makeGuess: vi.fn()
 	};
 
-	const mockPlayerData = {
+	const mockPlayerData: PlayerGameInfo = {
 		id: "game1",
 		playerId: "user1",
 		wordCount: 5,
@@ -46,12 +46,12 @@ describe( "Wordle:Procedure:Router", () => {
 		completed: false
 	};
 
-	const mockContext = { env: mockEnv, authInfo: mockAuthInfo };
+	const mockContext = { env: mockEnv as unknown as Bindings, authInfo: mockAuthInfo };
 
 	beforeEach( () => {
-		vi.mocked( mockEnv.WORDLE_KV.get ).mockResolvedValue( "durable-object-id-123" as any );
-		vi.mocked( mockEnv.WORDLE_DO.idFromString ).mockReturnValue( mockDurableObjectId );
-		vi.mocked( mockEnv.WORDLE_DO.get ).mockReturnValue( mockEngine as unknown as DurableObjectStub<WordleEngine> );
+		mockEnv.WORDLE_KV.get.mockResolvedValue( "durable-object-id-123" as any );
+		mockEnv.WORDLE_DO.idFromString.mockReturnValue( mockDurableObjectId );
+		mockEnv.WORDLE_DO.get.mockReturnValue( mockEngine as unknown as DurableObjectStub<WordleEngine> );
 	} );
 
 	afterEach( () => {
@@ -62,8 +62,8 @@ describe( "Wordle:Procedure:Router", () => {
 
 		it( "should create a new Wordle game and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
-			vi.mocked( mockEngine.initialize ).mockResolvedValue( { data: mockGameId } );
-			vi.mocked( mockEnv.WORDLE_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
+			mockEngine.initialize.mockResolvedValue( { data: mockGameId } );
+			mockEnv.WORDLE_DO.newUniqueId.mockReturnValue( mockDurableObjectId );
 
 			const data = await call( wordle.createGame, { wordCount: 5, wordLength: 5 }, { context: mockContext } );
 
@@ -89,7 +89,7 @@ describe( "Wordle:Procedure:Router", () => {
 	describe( "Wordle:Procedure:GetGameData", () => {
 
 		it( "should return player data for the specified gameId", async () => {
-			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: mockPlayerData } );
+			mockEngine.getPlayerData.mockResolvedValue( { data: mockPlayerData } );
 
 			const data = await call(
 				wordle.getGameData,
@@ -109,7 +109,7 @@ describe( "Wordle:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if player data cannot be fetched", async () => {
-			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: null, error: "Fetch error" } );
+			mockEngine.getPlayerData.mockResolvedValue( { data: null, error: "Fetch error" } );
 			expect.assertions( 2 );
 			await call( wordle.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -119,7 +119,7 @@ describe( "Wordle:Procedure:Router", () => {
 		} );
 
 		it( "should return NOT_FOUND if Durable Object ID is not found", async () => {
-			vi.mocked( mockEnv.WORDLE_KV.get ).mockResolvedValue( null as any );
+			mockEnv.WORDLE_KV.get.mockResolvedValue( null as any );
 			expect.assertions( 2 );
 			await call( wordle.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -133,7 +133,7 @@ describe( "Wordle:Procedure:Router", () => {
 	describe( "Wordle:Procedure:GetWords", () => {
 
 		it( "should return the list of words for the specified gameId", async () => {
-			vi.mocked( mockEngine.getWords ).mockResolvedValue( { data: [ "apple", "berry", "cherry" ] } );
+			mockEngine.getWords.mockResolvedValue( { data: [ "apple", "berry", "cherry" ] } );
 
 			const data = await call(
 				wordle.getWords,
@@ -146,7 +146,7 @@ describe( "Wordle:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if words cannot be fetched", async () => {
-			vi.mocked( mockEngine.getWords ).mockResolvedValue( { data: null, error: "Fetch error" } );
+			mockEngine.getWords.mockResolvedValue( { data: null, error: "Fetch error" } );
 			expect.assertions( 2 );
 			await call( wordle.getWords, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -161,7 +161,7 @@ describe( "Wordle:Procedure:Router", () => {
 
 		it( "should process the guess and return the result", async () => {
 			const mockResult = { ...mockPlayerData, guesses: [ "apple" ] };
-			vi.mocked( mockEngine.makeGuess ).mockResolvedValue( { data: mockResult } );
+			mockEngine.makeGuess.mockResolvedValue( { data: mockResult } );
 
 			const data = await call(
 				wordle.makeGuess,
@@ -186,7 +186,7 @@ describe( "Wordle:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if guess cannot be processed", async () => {
-			vi.mocked( mockEngine.makeGuess ).mockResolvedValue( { data: null, error: "Processing error" } );
+			mockEngine.makeGuess.mockResolvedValue( { data: null, error: "Processing error" } );
 			expect.assertions( 2 );
 			await call(
 				wordle.makeGuess,

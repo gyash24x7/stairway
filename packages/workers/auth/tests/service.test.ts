@@ -8,7 +8,6 @@ import {
 } from "@simplewebauthn/server";
 import { and, eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { mockClear, mockDeep } from "vitest-mock-extended";
 import * as schema from "../src/schema.ts";
 import {
 	checkIfUserExists,
@@ -44,19 +43,27 @@ describe( "Auth:Service", () => {
 	const dbUpdateSetMock = vi.fn( () => ( { where: dbUpdateWhereMock } ) );
 	const dbUpdateMock = vi.fn( () => ( { set: dbUpdateSetMock } ) );
 
-	const mockCtx = {
-		db: {
-			query: {
-				users: { findFirst: vi.fn() },
-				passkeys: { findFirst: vi.fn() }
-			},
-			insert: dbInsertMock,
-			update: dbUpdateMock
+	const mockDb = {
+		query: {
+			users: { findFirst: vi.fn() },
+			passkeys: { findFirst: vi.fn() }
 		},
+		insert: dbInsertMock,
+		update: dbUpdateMock
+	};
+
+	const mockWebAuthnKV = {
+		get: vi.fn(),
+		put: vi.fn(),
+		delete: vi.fn()
+	};
+
+	const mockCtx = {
+		db: mockDb,
 		rpId: "localhost",
 		rpOrigin: "http://localhost:5173",
 		env: {
-			WEBAUTHN_KV: mockDeep<KVNamespace>()
+			WEBAUTHN_KV: mockWebAuthnKV
 		}
 	} as unknown as Context;
 
@@ -68,20 +75,19 @@ describe( "Auth:Service", () => {
 	};
 
 	afterEach( () => {
-		mockClear( mockCtx.env.WEBAUTHN_KV );
 		vi.clearAllMocks();
 	} );
 
 	describe( "userExists()", () => {
 
 		it( "should return false if user doesn't exist", async () => {
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( undefined );
+			mockDb.query.users.findFirst.mockResolvedValueOnce( undefined );
 			const exists = await checkIfUserExists( "nonexistentUser", mockCtx );
 			expect( exists ).toBe( false );
 		} );
 
 		it( "should return true if user exists", async () => {
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( mockUser );
+			mockDb.query.users.findFirst.mockResolvedValueOnce( mockUser );
 			const exists = await checkIfUserExists( "testUser", mockCtx );
 			expect( exists ).toBe( true );
 		} );
@@ -109,7 +115,7 @@ describe( "Auth:Service", () => {
 				}
 			} );
 
-			expect( mockCtx.env.WEBAUTHN_KV.put ).toHaveBeenCalledWith(
+			expect( mockWebAuthnKV.put ).toHaveBeenCalledWith(
 				input.username,
 				JSON.stringify( { challenge: mockOptions.challenge, webauthnUserId: mockOptions.user.id } )
 			);
@@ -123,7 +129,7 @@ describe( "Auth:Service", () => {
 
 		it( "should generate login options for existing user", async () => {
 			const input = { username: "testUser" };
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( mockUser );
+			mockDb.query.users.findFirst.mockResolvedValueOnce( mockUser );
 
 			const { generateAuthenticationOptions } = await import( "@simplewebauthn/server" );
 			const mockLoginOptions = { challenge: "loginChallenge" };
@@ -131,7 +137,7 @@ describe( "Auth:Service", () => {
 
 			const options = await getLoginOptions( input, mockCtx );
 
-			expect( mockCtx.db.query.users.findFirst ).toHaveBeenCalledWith( {
+			expect( mockDb.query.users.findFirst ).toHaveBeenCalledWith( {
 				where: eq( schema.users.username, input.username )
 			} );
 
@@ -141,7 +147,7 @@ describe( "Auth:Service", () => {
 				allowCredentials: []
 			} );
 
-			expect( mockCtx.env.WEBAUTHN_KV.put ).toHaveBeenCalledWith(
+			expect( mockWebAuthnKV.put ).toHaveBeenCalledWith(
 				input.username,
 				JSON.stringify( { challenge: mockLoginOptions.challenge } )
 			);
@@ -151,12 +157,12 @@ describe( "Auth:Service", () => {
 
 		it( "should throw error for non-existing user", async () => {
 			const input = { username: "nonexistentUser" };
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( undefined );
+			mockDb.query.users.findFirst.mockResolvedValueOnce( undefined );
 			expect.assertions( 3 );
 			await getLoginOptions( input, mockCtx ).catch( ( error: ORPCError<"NOT_FOUND", undefined> ) => {
 				expect( error.code ).toBe( "NOT_FOUND" );
 				expect( error.message ).toBe( "User not found" );
-				expect( mockCtx.db.query.users.findFirst ).toHaveBeenCalledWith( {
+				expect( mockDb.query.users.findFirst ).toHaveBeenCalledWith( {
 					where: eq( schema.users.username, input.username )
 				} );
 			} );
@@ -173,7 +179,7 @@ describe( "Auth:Service", () => {
 				response: {} as any
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "randomChallenge",
 				webauthnUserId: "webauthnUserId"
 			} ) as any );
@@ -193,7 +199,7 @@ describe( "Auth:Service", () => {
 
 			const authInfo = await verifyRegistration( input, mockCtx );
 
-			expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
+			expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
 			expect( verifyRegistrationResponse ).toHaveBeenCalledWith( {
 				response: input.response,
 				expectedChallenge: "randomChallenge",
@@ -218,7 +224,7 @@ describe( "Auth:Service", () => {
 				counter: 0
 			} );
 
-			expect( mockCtx.env.WEBAUTHN_KV.delete ).toHaveBeenCalledWith( input.username );
+			expect( mockWebAuthnKV.delete ).toHaveBeenCalledWith( input.username );
 			expect( authInfo ).toBe( mockUser );
 		} );
 
@@ -229,7 +235,7 @@ describe( "Auth:Service", () => {
 				response: {} as any
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( null as any );
+			mockWebAuthnKV.get.mockResolvedValueOnce( null as any );
 
 			expect.assertions( 2 );
 			await verifyRegistration( input, mockCtx ).catch( ( error: ORPCError<"BAD_REQUEST", undefined> ) => {
@@ -245,7 +251,7 @@ describe( "Auth:Service", () => {
 				response: {} as any
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "randomChallenge",
 				webauthnUserId: "webauthnUserId"
 			} ) as any );
@@ -257,7 +263,7 @@ describe( "Auth:Service", () => {
 			expect.assertions( 3 );
 			await verifyRegistration( input, mockCtx ).catch( ( error: ORPCError<"BAD_REQUEST", undefined> ) => {
 				expect( error.code ).toBe( "BAD_REQUEST" );
-				expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
+				expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
 				expect( verifyRegistrationResponse ).toHaveBeenCalledWith( {
 					response: input.response,
 					expectedChallenge: "randomChallenge",
@@ -270,7 +276,7 @@ describe( "Auth:Service", () => {
 		it( "should throw error if registrationInfo is missing", async () => {
 			const input: VerifyRegistrationInput = { username: "testUser", name: "Test User", response: {} as any };
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "randomChallenge",
 				webauthnUserId: "webauthnUserId"
 			} ) as any );
@@ -282,7 +288,7 @@ describe( "Auth:Service", () => {
 			expect.assertions( 3 );
 			await verifyRegistration( input, mockCtx ).catch( ( error: ORPCError<"BAD_REQUEST", undefined> ) => {
 				expect( error.code ).toBe( "BAD_REQUEST" );
-				expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
+				expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
 				expect( verifyRegistrationResponse ).toHaveBeenCalledWith( {
 					response: input.response,
 					expectedChallenge: "randomChallenge",
@@ -302,7 +308,7 @@ describe( "Auth:Service", () => {
 				response: {} as AuthenticationResponseJSON
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( null as any );
+			mockWebAuthnKV.get.mockResolvedValueOnce( null as any );
 
 			expect.assertions( 2 );
 			await verifyLogin( input, mockCtx ).catch( ( error: ORPCError<"BAD_REQUEST", undefined> ) => {
@@ -317,18 +323,18 @@ describe( "Auth:Service", () => {
 				response: {} as AuthenticationResponseJSON
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "loginChallenge"
 			} ) as any );
 
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( undefined );
+			mockDb.query.users.findFirst.mockResolvedValueOnce( undefined );
 
 			expect.assertions( 4 );
 			await verifyLogin( input, mockCtx ).catch( ( error: ORPCError<"NOT_FOUND", undefined> ) => {
 				expect( error.code ).toBe( "NOT_FOUND" );
 				expect( error.message ).toBe( "User not found" );
-				expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
-				expect( mockCtx.db.query.users.findFirst ).toHaveBeenCalledWith( {
+				expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
+				expect( mockDb.query.users.findFirst ).toHaveBeenCalledWith( {
 					where: eq( schema.users.username, input.username )
 				} );
 			} );
@@ -340,23 +346,23 @@ describe( "Auth:Service", () => {
 				response: {} as AuthenticationResponseJSON
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "loginChallenge"
 			} ) as any );
 
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( mockUser );
-			vi.mocked( mockCtx.db.query.passkeys.findFirst ).mockResolvedValueOnce( undefined );
+			mockDb.query.users.findFirst.mockResolvedValueOnce( mockUser );
+			mockDb.query.passkeys.findFirst.mockResolvedValueOnce( undefined );
 
 			expect.assertions( 5 );
 			await verifyLogin( input, mockCtx ).catch( ( error: ORPCError<"NOT_FOUND", undefined> ) => {
 				expect( error.code ).toBe( "NOT_FOUND" );
 				expect( error.message ).toBe( "Passkey not found for user" );
-				expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
-				expect( mockCtx.db.query.users.findFirst ).toHaveBeenCalledWith( {
+				expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
+				expect( mockDb.query.users.findFirst ).toHaveBeenCalledWith( {
 					where: eq( schema.users.username, input.username )
 				} );
 
-				expect( mockCtx.db.query.passkeys.findFirst ).toHaveBeenCalledWith( {
+				expect( mockDb.query.passkeys.findFirst ).toHaveBeenCalledWith( {
 					where: and(
 						eq( schema.passkeys.id, input.response.id ),
 						eq( schema.passkeys.userId, mockUser.id )
@@ -371,12 +377,12 @@ describe( "Auth:Service", () => {
 				response: {} as AuthenticationResponseJSON
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "loginChallenge"
 			} ) as any );
 
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( mockUser );
-			vi.mocked( mockCtx.db.query.passkeys.findFirst ).mockResolvedValueOnce( {
+			mockDb.query.users.findFirst.mockResolvedValueOnce( mockUser );
+			mockDb.query.passkeys.findFirst.mockResolvedValueOnce( {
 				id: "credentialId",
 				publicKey: new Uint8Array( [ 1, 2, 3 ] ),
 				counter: 0,
@@ -391,12 +397,12 @@ describe( "Auth:Service", () => {
 			await verifyLogin( input, mockCtx ).catch( ( error: ORPCError<"BAD_REQUEST", undefined> ) => {
 				expect( error.code ).toBe( "BAD_REQUEST" );
 				expect( error.message ).toBe( "WebAuthn authentication verification failed" );
-				expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
-				expect( mockCtx.db.query.users.findFirst ).toHaveBeenCalledWith( {
+				expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
+				expect( mockDb.query.users.findFirst ).toHaveBeenCalledWith( {
 					where: eq( schema.users.username, input.username )
 				} );
 
-				expect( mockCtx.db.query.passkeys.findFirst ).toHaveBeenCalledWith( {
+				expect( mockDb.query.passkeys.findFirst ).toHaveBeenCalledWith( {
 					where: and(
 						eq( schema.passkeys.id, input.response.id ),
 						eq( schema.passkeys.userId, mockUser.id )
@@ -423,12 +429,12 @@ describe( "Auth:Service", () => {
 				response: {} as AuthenticationResponseJSON
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "loginChallenge"
 			} ) as any );
 
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( mockUser );
-			vi.mocked( mockCtx.db.query.passkeys.findFirst ).mockResolvedValueOnce( {
+			mockDb.query.users.findFirst.mockResolvedValueOnce( mockUser );
+			mockDb.query.passkeys.findFirst.mockResolvedValueOnce( {
 				id: "credentialId",
 				publicKey: new Uint8Array( [ 1, 2, 3 ] ),
 				counter: 0,
@@ -443,12 +449,12 @@ describe( "Auth:Service", () => {
 			await verifyLogin( input, mockCtx ).catch( ( error: ORPCError<"BAD_REQUEST", undefined> ) => {
 				expect( error.code ).toBe( "BAD_REQUEST" );
 				expect( error.message ).toBe( "WebAuthn authentication verification failed" );
-				expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
-				expect( mockCtx.db.query.users.findFirst ).toHaveBeenCalledWith( {
+				expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
+				expect( mockDb.query.users.findFirst ).toHaveBeenCalledWith( {
 					where: eq( schema.users.username, input.username )
 				} );
 
-				expect( mockCtx.db.query.passkeys.findFirst ).toHaveBeenCalledWith( {
+				expect( mockDb.query.passkeys.findFirst ).toHaveBeenCalledWith( {
 					where: and(
 						eq( schema.passkeys.id, input.response.id ),
 						eq( schema.passkeys.userId, mockUser.id )
@@ -475,12 +481,12 @@ describe( "Auth:Service", () => {
 				response: {} as AuthenticationResponseJSON
 			};
 
-			vi.mocked( mockCtx.env.WEBAUTHN_KV.get ).mockResolvedValueOnce( JSON.stringify( {
+			mockWebAuthnKV.get.mockResolvedValueOnce( JSON.stringify( {
 				challenge: "loginChallenge"
 			} ) as any );
 
-			vi.mocked( mockCtx.db.query.users.findFirst ).mockResolvedValueOnce( mockUser );
-			vi.mocked( mockCtx.db.query.passkeys.findFirst ).mockResolvedValueOnce( {
+			mockDb.query.users.findFirst.mockResolvedValueOnce( mockUser );
+			mockDb.query.passkeys.findFirst.mockResolvedValueOnce( {
 				id: "credentialId",
 				publicKey: new Uint8Array( [ 1, 2, 3 ] ),
 				counter: 0,
@@ -498,12 +504,12 @@ describe( "Auth:Service", () => {
 
 			expect( authInfo ).toBe( mockUser );
 
-			expect( mockCtx.env.WEBAUTHN_KV.get ).toHaveBeenCalledWith( input.username );
-			expect( mockCtx.db.query.users.findFirst ).toHaveBeenCalledWith( {
+			expect( mockWebAuthnKV.get ).toHaveBeenCalledWith( input.username );
+			expect( mockDb.query.users.findFirst ).toHaveBeenCalledWith( {
 				where: eq( schema.users.username, input.username )
 			} );
 
-			expect( mockCtx.db.query.passkeys.findFirst ).toHaveBeenCalledWith( {
+			expect( mockDb.query.passkeys.findFirst ).toHaveBeenCalledWith( {
 				where: and(
 					eq( schema.passkeys.id, input.response.id ),
 					eq( schema.passkeys.userId, mockUser.id )
@@ -525,7 +531,7 @@ describe( "Auth:Service", () => {
 			expect( dbUpdateMock ).toHaveBeenCalledWith( schema.passkeys );
 			expect( dbUpdateSetMock ).toHaveBeenCalledWith( { counter: 1 } );
 			expect( dbUpdateWhereMock ).toHaveBeenCalledWith( eq( schema.passkeys.id, "credentialId" ) );
-			expect( mockCtx.env.WEBAUTHN_KV.delete ).toHaveBeenCalledWith( input.username );
+			expect( mockWebAuthnKV.delete ).toHaveBeenCalledWith( input.username );
 		} );
 	} );
 

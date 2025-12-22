@@ -25,7 +25,7 @@ describe( "Wordle:Engine", () => {
 			get: vi.fn(),
 			put: vi.fn()
 		}
-	} as unknown as Bindings;
+	};
 
 	afterEach( () => {
 		vi.clearAllMocks();
@@ -33,7 +33,7 @@ describe( "Wordle:Engine", () => {
 
 	describe( "GamePlay: Error Scenarios", () => {
 		const playerId = "player-1";
-		const engine = new MockWordleEngine( mockDurableObjectState, mockEnv );
+		const engine = new MockWordleEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
 
 		it.sequential( "should initialize the game with default word count and word length", async () => {
 			await engine.initialize( {}, playerId );
@@ -119,8 +119,8 @@ describe( "Wordle:Engine", () => {
 				completedWords: [],
 				completed: false
 			};
-			vi.mocked( mockEnv.WORDLE_KV.get ).mockResolvedValueOnce( existingData as any );
-			engine = new MockWordleEngine( mockDurableObjectState, mockEnv );
+			mockEnv.WORDLE_KV.get.mockResolvedValueOnce( existingData as any );
+			engine = new MockWordleEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
 
 			expect( mockEnv.WORDLE_KV.get ).toHaveBeenCalledWith( "mock-do-id", "json" );
 		} );

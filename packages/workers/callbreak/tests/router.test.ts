@@ -4,7 +4,7 @@ import { generateId } from "@s2h/utils/generator";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CallbreakEngine } from "../src/engine.ts";
 import { callbreak } from "../src/router.ts";
-import type { Bindings, PlayCardInput } from "../src/types.ts";
+import type { Context, PlayCardInput } from "../src/types.ts";
 
 describe( "Callbreak:Router", () => {
 
@@ -17,7 +17,7 @@ describe( "Callbreak:Router", () => {
 			get: vi.fn(),
 			newUniqueId: vi.fn()
 		}
-	} as unknown as Bindings;
+	};
 
 	const mockAuthInfo = {
 		id: "user1",
@@ -26,7 +26,7 @@ describe( "Callbreak:Router", () => {
 		avatar: "avatar.png"
 	};
 
-	const mockContext = { env: mockEnv, authInfo: mockAuthInfo };
+	const mockContext = { env: mockEnv, authInfo: mockAuthInfo } as unknown as Context;
 
 	const mockDurableObjectId = {
 		toString: vi.fn().mockReturnValue( "durable-object-id-123" )
@@ -42,10 +42,9 @@ describe( "Callbreak:Router", () => {
 	};
 
 	beforeEach( () => {
-		vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( "durable-object-id-123" as any );
-		vi.mocked( mockEnv.CALLBREAK_DO.idFromString ).mockReturnValue( mockDurableObjectId );
-		vi.mocked( mockEnv.CALLBREAK_DO.get )
-			.mockReturnValue( mockEngine as unknown as DurableObjectStub<CallbreakEngine> );
+		mockEnv.CALLBREAK_KV.get.mockResolvedValue( "durable-object-id-123" as any );
+		mockEnv.CALLBREAK_DO.idFromString.mockReturnValue( mockDurableObjectId );
+		mockEnv.CALLBREAK_DO.get.mockReturnValue( mockEngine as unknown as DurableObjectStub<CallbreakEngine> );
 	} );
 
 	afterEach( () => {
@@ -56,8 +55,8 @@ describe( "Callbreak:Router", () => {
 
 		it( "should create a new game and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
-			vi.mocked( mockEngine.initialize ).mockResolvedValue( { data: mockGameId } );
-			vi.mocked( mockEnv.CALLBREAK_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
+			mockEngine.initialize.mockResolvedValue( { data: mockGameId } );
+			mockEnv.CALLBREAK_DO.newUniqueId.mockReturnValue( mockDurableObjectId );
 
 			const data = await call(
 				callbreak.createGame,
@@ -91,7 +90,7 @@ describe( "Callbreak:Router", () => {
 
 		it( "should fetch player data for a valid gameId", async () => {
 			const mockPlayerData = { playerId: "user1", hand: [], score: 0 };
-			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: mockPlayerData } );
+			mockEngine.getPlayerData.mockResolvedValue( { data: mockPlayerData } );
 
 			const data = await call(
 				callbreak.getGameData,
@@ -117,7 +116,7 @@ describe( "Callbreak:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { error: "Unable to fetch player data" } );
+			mockEngine.getPlayerData.mockResolvedValue( { error: "Unable to fetch player data" } );
 			expect.assertions( 4 );
 			await call( callbreak.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -129,7 +128,7 @@ describe( "Callbreak:Router", () => {
 		} );
 
 		it( "should return NOT_FOUND if key not found in KV", async () => {
-			vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( null as any );
+			mockEnv.CALLBREAK_KV.get.mockResolvedValue( null as any );
 			expect.assertions( 4 );
 			await call( callbreak.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -146,7 +145,7 @@ describe( "Callbreak:Router", () => {
 
 		it( "should join a game with a valid code and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
-			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { data: mockGameId } );
+			mockEngine.addPlayer.mockResolvedValue( { data: mockGameId } );
 
 			const data = await call( callbreak.joinGame, { code: "ABC123" }, { context: mockContext } );
 			expect( data ).toEqual( { gameId: mockGameId } );
@@ -157,7 +156,7 @@ describe( "Callbreak:Router", () => {
 		} );
 
 		it( "should return NOT_FOUND if code is invalid", async () => {
-			vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValue( null as any );
+			mockEnv.CALLBREAK_KV.get.mockResolvedValue( null as any );
 			expect.assertions( 5 );
 			await call( callbreak.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
 				expect( error ).toBeDefined();
@@ -180,7 +179,7 @@ describe( "Callbreak:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { error: "Unable to join game" } );
+			mockEngine.addPlayer.mockResolvedValue( { error: "Unable to join game" } );
 			expect.assertions( 5 );
 			await call( callbreak.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
 				expect( error ).toBeDefined();
@@ -196,7 +195,7 @@ describe( "Callbreak:Router", () => {
 	describe( "Callbreak:Procedure:AddBots", () => {
 
 		it( "should add bots successfully", async () => {
-			vi.mocked( mockEngine.addBots ).mockResolvedValue( {} );
+			mockEngine.addBots.mockResolvedValue( {} );
 			await call( callbreak.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } );
 			expect( mockEnv.CALLBREAK_DO.idFromString ).toHaveBeenCalledWith( "durable-object-id-123" );
 			expect( mockEnv.CALLBREAK_DO.get ).toHaveBeenCalledWith( mockDurableObjectId );
@@ -214,7 +213,7 @@ describe( "Callbreak:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.addBots ).mockResolvedValue( { error: "Unable to add bots" } );
+			mockEngine.addBots.mockResolvedValue( { error: "Unable to add bots" } );
 			expect.assertions( 4 );
 			await call( callbreak.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -230,7 +229,7 @@ describe( "Callbreak:Router", () => {
 	describe( "Callbreak:Procedure:DeclareDealWins", () => {
 
 		it( "should declare deal wins successfully", async () => {
-			vi.mocked( mockEngine.declareDealWins ).mockResolvedValue( {} );
+			mockEngine.declareDealWins.mockResolvedValue( {} );
 
 			const input = { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", wins: 5, dealId: generateId() };
 			await call( callbreak.declareDealWins, input, { context: mockContext } );
@@ -263,7 +262,7 @@ describe( "Callbreak:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.declareDealWins ).mockResolvedValue( { error: "Unable to declare wins" } );
+			mockEngine.declareDealWins.mockResolvedValue( { error: "Unable to declare wins" } );
 			const input = { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C", wins: 5, dealId: generateId() };
 			expect.assertions( 4 );
 			await call( callbreak.declareDealWins, input, { context: mockContext } ).catch( error => {
@@ -279,7 +278,7 @@ describe( "Callbreak:Router", () => {
 	describe( "Callbreak:Procedure:PlayCard", () => {
 
 		it( "should play a card successfully", async () => {
-			vi.mocked( mockEngine.playCard ).mockResolvedValue( {} );
+			mockEngine.playCard.mockResolvedValue( {} );
 
 			const input: PlayCardInput = {
 				cardId: "5H",
@@ -330,7 +329,7 @@ describe( "Callbreak:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.playCard ).mockResolvedValue( { error: "Unable to play card" } );
+			mockEngine.playCard.mockResolvedValue( { error: "Unable to play card" } );
 
 			const input: PlayCardInput = {
 				cardId: "5H",

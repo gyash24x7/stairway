@@ -16,7 +16,7 @@ describe( "Fish:Procedure:Router", () => {
 			get: vi.fn(),
 			newUniqueId: vi.fn()
 		}
-	} as unknown as Bindings;
+	};
 
 	const mockAuthInfo = {
 		id: "user1",
@@ -41,12 +41,12 @@ describe( "Fish:Procedure:Router", () => {
 		transferTurn: vi.fn()
 	};
 
-	const mockContext = { env: mockEnv, authInfo: mockAuthInfo };
+	const mockContext = { env: mockEnv as unknown as Bindings, authInfo: mockAuthInfo };
 
 	beforeEach( () => {
-		vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( "durable-object-id-123" as any );
-		vi.mocked( mockEnv.FISH_DO.idFromString ).mockReturnValue( mockDurableObjectId );
-		vi.mocked( mockEnv.FISH_DO.get ).mockReturnValue( mockEngine as unknown as DurableObjectStub<FishEngine> );
+		mockEnv.FISH_KV.get.mockResolvedValue( "durable-object-id-123" as any );
+		mockEnv.FISH_DO.idFromString.mockReturnValue( mockDurableObjectId );
+		mockEnv.FISH_DO.get.mockReturnValue( mockEngine as unknown as DurableObjectStub<FishEngine> );
 	} );
 
 	afterEach( () => {
@@ -57,8 +57,8 @@ describe( "Fish:Procedure:Router", () => {
 
 		it( "should create a new game and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
-			vi.mocked( mockEngine.initialize ).mockResolvedValue( { data: mockGameId } );
-			vi.mocked( mockEnv.FISH_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
+			mockEngine.initialize.mockResolvedValue( { data: mockGameId } );
+			mockEnv.FISH_DO.newUniqueId.mockReturnValue( mockDurableObjectId );
 
 			const data = await call(
 				fish.createGame,
@@ -86,8 +86,8 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.initialize ).mockResolvedValue( { error: "Unable to create game" } );
-			vi.mocked( mockEnv.FISH_DO.newUniqueId ).mockReturnValue( mockDurableObjectId );
+			mockEngine.initialize.mockResolvedValue( { error: "Unable to create game" } );
+			mockEnv.FISH_DO.newUniqueId.mockReturnValue( mockDurableObjectId );
 
 			expect.assertions( 4 );
 			await call( fish.createGame, { playerCount: 4, type: "NORMAL", teamCount: 2 }, { context: mockContext } )
@@ -106,7 +106,7 @@ describe( "Fish:Procedure:Router", () => {
 
 		it( "should fetch player data for a valid gameId", async () => {
 			const mockPlayerData = { playerId: "user1", hand: [], score: 0 };
-			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { data: mockPlayerData } );
+			mockEngine.getPlayerData.mockResolvedValue( { data: mockPlayerData } );
 
 			const data = await call(
 				fish.getGameData,
@@ -131,7 +131,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.getPlayerData ).mockResolvedValue( { error: "Unable to fetch player data" } );
+			mockEngine.getPlayerData.mockResolvedValue( { error: "Unable to fetch player data" } );
 			expect.assertions( 4 );
 			await call( fish.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -143,7 +143,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return NOT__FOUND if key not found in KV", async () => {
-			vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( null as any );
+			mockEnv.FISH_KV.get.mockResolvedValue( null as any );
 			expect.assertions( 4 );
 			await call( fish.getGameData, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -160,7 +160,7 @@ describe( "Fish:Procedure:Router", () => {
 
 		it( "should join a game with a valid code and return the gameId", async () => {
 			const mockGameId = "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C";
-			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { data: mockGameId } );
+			mockEngine.addPlayer.mockResolvedValue( { data: mockGameId } );
 
 			const data = await call( fish.joinGame, { code: "ABC123" }, { context: mockContext } );
 
@@ -172,7 +172,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return NOT__FOUND if code is invalid", async () => {
-			vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValue( null as any );
+			mockEnv.FISH_KV.get.mockResolvedValue( null as any );
 			expect.assertions( 5 );
 			await call( fish.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
 				expect( error ).toBeDefined();
@@ -195,7 +195,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.addPlayer ).mockResolvedValue( { error: "Unable to join game" } );
+			mockEngine.addPlayer.mockResolvedValue( { error: "Unable to join game" } );
 			expect.assertions( 5 );
 			await call( fish.joinGame, { code: "ABC123" }, { context: mockContext } ).catch( error => {
 				expect( error ).toBeDefined();
@@ -211,7 +211,7 @@ describe( "Fish:Procedure:Router", () => {
 	describe( "Fish:Procedure:AddBots", () => {
 
 		it( "should add bots successfully", async () => {
-			vi.mocked( mockEngine.addBots ).mockResolvedValue( {} );
+			mockEngine.addBots.mockResolvedValue( {} );
 
 			await call( fish.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } );
 
@@ -231,7 +231,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.addBots ).mockResolvedValue( { error: "Unable to add bots" } );
+			mockEngine.addBots.mockResolvedValue( { error: "Unable to add bots" } );
 			expect.assertions( 4 );
 			await call( fish.addBots, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -246,7 +246,7 @@ describe( "Fish:Procedure:Router", () => {
 	describe( "Fish:Procedure:CreateTeams", () => {
 
 		it( "should create teams successfully", async () => {
-			vi.mocked( mockEngine.createTeams ).mockResolvedValue( {} );
+			mockEngine.createTeams.mockResolvedValue( {} );
 			const input = {
 				teams: {
 					teamA: [ generateId(), generateId() ],
@@ -285,7 +285,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.createTeams ).mockResolvedValue( { error: "Unable to create teams" } );
+			mockEngine.createTeams.mockResolvedValue( { error: "Unable to create teams" } );
 			const input = { teams: { teamA: [ generateId() ] }, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
 			expect.assertions( 4 );
@@ -301,7 +301,7 @@ describe( "Fish:Procedure:Router", () => {
 	describe( "Fish:Procedure:StartGame", () => {
 
 		it( "should start a game successfully", async () => {
-			vi.mocked( mockEngine.startGame ).mockResolvedValue( {} );
+			mockEngine.startGame.mockResolvedValue( {} );
 
 			await call( fish.startGame, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } );
 
@@ -320,7 +320,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.startGame ).mockResolvedValue( { error: "Unable to start game" } );
+			mockEngine.startGame.mockResolvedValue( { error: "Unable to start game" } );
 			expect.assertions( 4 );
 			await call( fish.startGame, { gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" }, { context: mockContext } )
 				.catch( error => {
@@ -335,7 +335,7 @@ describe( "Fish:Procedure:Router", () => {
 	describe( "Fish:Procedure:AskCard", () => {
 
 		it( "should ask a card successfully", async () => {
-			vi.mocked( mockEngine.askCard ).mockResolvedValue( {} );
+			mockEngine.askCard.mockResolvedValue( {} );
 			const input = { from: generateId(), cardId: "5H" as const, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 			await call( fish.askCard, input, { context: mockContext } );
 
@@ -356,7 +356,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.askCard ).mockResolvedValue( { error: "Unable to ask card" } );
+			mockEngine.askCard.mockResolvedValue( { error: "Unable to ask card" } );
 			const input = { from: generateId(), cardId: "5H" as const, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
 			expect.assertions( 4 );
@@ -372,7 +372,7 @@ describe( "Fish:Procedure:Router", () => {
 	describe( "Fish:Procedure:ClaimBook", () => {
 
 		it( "should claim book successfully", async () => {
-			vi.mocked( mockEngine.claimBook ).mockResolvedValue( {} );
+			mockEngine.claimBook.mockResolvedValue( {} );
 
 			const input = { claim: { "5H": generateId() }, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 			await call( fish.claimBook, input, { context: mockContext } );
@@ -394,7 +394,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.claimBook ).mockResolvedValue( { error: "Unable to claim book" } );
+			mockEngine.claimBook.mockResolvedValue( { error: "Unable to claim book" } );
 			const input = { claim: { "5H": generateId() }, gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
 			expect.assertions( 4 );
@@ -410,7 +410,7 @@ describe( "Fish:Procedure:Router", () => {
 	describe( "Fish:Procedure:TransferTurn", () => {
 
 		it( "should transfer turn successfully", async () => {
-			vi.mocked( mockEngine.transferTurn ).mockResolvedValue( {} );
+			mockEngine.transferTurn.mockResolvedValue( {} );
 			const input = { transferTo: generateId(), gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 			await call( fish.transferTurn, input, { context: mockContext } );
 
@@ -431,7 +431,7 @@ describe( "Fish:Procedure:Router", () => {
 		} );
 
 		it( "should return BAD_REQUEST if engine returns an error", async () => {
-			vi.mocked( mockEngine.transferTurn ).mockResolvedValue( { error: "Unable to transfer turn" } );
+			mockEngine.transferTurn.mockResolvedValue( { error: "Unable to transfer turn" } );
 			const input = { transferTo: generateId(), gameId: "01FZ8Z5Y3X5G6Z7X8Y9Z0A1B2C" };
 
 			expect.assertions( 4 );

@@ -12,6 +12,10 @@ vi.mock( "cloudflare:workers", () => ( {
 } ) );
 
 class MockFishEngine extends FishEngine {
+	public get id() {
+		return this.data.id;
+	}
+
 	public setHands( hands: CardId[][] ) {
 		this.data.hands = this.data.playerIds.reduce(
 			( acc, playerId, idx ) => {
@@ -153,7 +157,7 @@ describe( "Fish:Engine", () => {
 			idFromName: vi.fn(),
 			get: vi.fn().mockImplementation( () => mockWss )
 		}
-	} as unknown as Bindings;
+	};
 
 	const player1 = { id: "p1", name: "Player 1", avatar: "avatar-1", username: "player1" };
 	const player2 = { id: "p2", name: "Player 2", avatar: "avatar-2", username: "player2" };
@@ -167,7 +171,7 @@ describe( "Fish:Engine", () => {
 	} );
 
 	describe( "GamePlay: Exception Scenarios", () => {
-		const engine = new MockFishEngine( mockDurableObjectState, mockEnv );
+		const engine = new MockFishEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
 
 		it.sequential( "should return error if trying to initialize with invalid config", async () => {
 			expect( mockEnv.FISH_KV.get ).toHaveBeenCalledWith( "mock-do-id", "json" );
@@ -215,7 +219,7 @@ describe( "Fish:Engine", () => {
 
 		it.sequential( "should return error when trying to create teams before players ready", async () => {
 			const teamData = engine.getMockTeamStructure();
-			const { error } = await engine.createTeams( teamData, player1 );
+			const { error } = await engine.createTeams( { gameId: "", teams: teamData }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "The Game is not in PLAYERS_READY state!" );
 		} );
@@ -250,32 +254,44 @@ describe( "Fish:Engine", () => {
 		} );
 
 		it.sequential( "should return error if non-creator tries to create teams", async () => {
-			const { error } = await engine.createTeams( {}, player2 );
+			const { error } = await engine.createTeams( { gameId: engine.id, teams: {} }, player2 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Only the game creator can create teams!" );
 		} );
 
 		it.sequential( "should return error if team count does not match config", async () => {
-			const { error } = await engine.createTeams( { t1: [], t2: [], t3: [] }, player1 );
+			const { error } = await engine.createTeams(
+				{ gameId: engine.id, teams: { t1: [], t2: [], t3: [] } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Team count does not match the game configuration!" );
 		} );
 
 		it.sequential( "should return error if not all players assigned teams", async () => {
-			const { error } = await engine.createTeams( { t1: [ "p1" ], t2: [ "p2" ] }, player1 );
+			const { error } = await engine.createTeams(
+				{ gameId: engine.id, teams: { t1: [ "p1" ], t2: [ "p2" ] } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Not all players are divided into teams!" );
 		} );
 
 		it.sequential( "should return error if not all players are distributed unequally", async () => {
-			const { error } = await engine.createTeams( { t1: [ "p1" ], t2: [ "p2", "p3", "p4" ] }, player1 );
+			const { error } = await engine.createTeams(
+				{ gameId: engine.id, teams: { t1: [ "p1" ], t2: [ "p2", "p3", "p4" ] } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Invalid number of players in team t1!" );
 		} );
 
 		it.sequential( "should return error if unknown players mentioned in team config", async () => {
 			const { t1, t2 } = engine.getMockTeamStructure();
-			const { error } = await engine.createTeams( { t1, t2: [ t2[ 0 ], "p5" ] }, player1 );
+			const { error } = await engine.createTeams(
+				{ gameId: engine.id, teams: { t1, t2: [ t2[ 0 ], "p5" ] } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Player p5 is not part of the game!" );
 		} );
@@ -288,7 +304,7 @@ describe( "Fish:Engine", () => {
 
 		it.sequential( "should return error if non-creator tries to start the game", async () => {
 			const teamData = engine.getMockTeamStructure();
-			await engine.createTeams( teamData, player1 );
+			await engine.createTeams( { gameId: engine.id, teams: teamData }, player1 );
 
 			engine.updateTeams();
 
@@ -298,19 +314,28 @@ describe( "Fish:Engine", () => {
 		} );
 
 		it.sequential( "should return error if trying to ask a card before game started", async () => {
-			const { error } = await engine.askCard( { from: "p2", cardId: "AS" }, player1 );
+			const { error } = await engine.askCard(
+				{ gameId: engine.id, from: "p2", cardId: "AS" },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "The Game is not in IN_PROGRESS state!" );
 		} );
 
 		it.sequential( "should return error if trying to claim a book before game started", async () => {
-			const { error } = await engine.claimBook( { "AH": "p1", "AS": "p2" }, player1 );
+			const { error } = await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p1", "AS": "p2" } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "The Game is not in IN_PROGRESS state!" );
 		} );
 
 		it.sequential( "should return error if trying to transfer turn before game started", async () => {
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player1 );
+			const { error } = await engine.transferTurn(
+				{ gameId: engine.id, transferTo: "p2" },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "The Game is not in IN_PROGRESS state!" );
 		} );
@@ -341,96 +366,120 @@ describe( "Fish:Engine", () => {
 		} );
 
 		it.sequential( "should return error if trying to claim a book out of turn", async () => {
-			const { error } = await engine.claimBook( { "AH": "p1", "AS": "p2" }, player2 );
+			const { error } = await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p1", "AS": "p2" } },
+				player2
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Not your turn!" );
 		} );
 
 		it.sequential( "should return error if trying to claim a book with incorrect number of cards", async () => {
-			const { error } = await engine.claimBook( { "AH": "p1", "AS": "p2" }, player1 );
+			const { error } = await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p1", "AS": "p2" } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Incorrect number of cards claimed!" );
 		} );
 
 		it.sequential( "should return error if claim includes invalid player ids", async () => {
-			const { error } = await engine.claimBook( { "AH": "p1", "AS": "p5", "AD": "p1", "AC": "p1" }, player1 );
+			const { error } = await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p1", "AS": "p5", "AD": "p1", "AC": "p1" } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Player p5 is not part of the game!" );
 		} );
 
 		it.sequential( "should return error if trying to claim a book with cards not owned", async () => {
-			const { error } = await engine.claimBook( { "AH": "p2", "AS": "p2", "AC": "p2", "AD": "p2" }, player1 );
+			const { error } = await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p2", "AS": "p2", "AC": "p2", "AD": "p2" } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Claiming Player did not claim own cards!" );
 		} );
 
 		it.sequential( "should return error if claiming cards from multiple books", async () => {
-			const { error } = await engine.claimBook( { "AH": "p1", "AS": "p2", "AC": "p1", "10H": "p1" }, player1 );
+			const { error } = await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p1", "AS": "p2", "AC": "p1", "10H": "p1" } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Cards Claimed from multiple books!" );
 		} );
 
 		it.sequential( "should return error if claiming cards from multiple teams", async () => {
-			const { error } = await engine.claimBook( { "AH": "p1", "AS": "p4", "AC": "p1", "AD": "p1" }, player1 );
+			const { error } = await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p1", "AS": "p4", "AC": "p1", "AD": "p1" } },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Book claimed from multiple teams!" );
 		} );
 
 		it.sequential( "should return error if trying to ask a card out of turn", async () => {
-			const { error } = await engine.askCard( { from: "p2", cardId: "AS" }, player2 );
+			const { error } = await engine.askCard( { gameId: engine.id, from: "p2", cardId: "AS" }, player2 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Not your turn!" );
 		} );
 
 		it.sequential( "should return error if asked player not part of game", async () => {
-			const { error } = await engine.askCard( { from: "invalid-player", cardId: "AS" }, player1 );
+			const { error } = await engine.askCard(
+				{ gameId: engine.id, from: "invalid-player", cardId: "AS" },
+				player1
+			);
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Asked player invalid-player is not part of the game!" );
 		} );
 
 		it.sequential( "should return error if asked player is from same team", async () => {
-			const { error } = await engine.askCard( { from: "p2", cardId: "AS" }, player1 );
+			const { error } = await engine.askCard( { gameId: engine.id, from: "p2", cardId: "AS" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( `The asked player is from the same team!` );
 		} );
 
 		it.sequential( "should return error if asking own card", async () => {
-			const { error } = await engine.askCard( { from: "p3", cardId: "AH" }, player1 );
+			const { error } = await engine.askCard( { gameId: engine.id, from: "p3", cardId: "AH" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "The asked card is with asking player itself!" );
 		} );
 
 		it.sequential( "should return error if asked card not part of the game", async () => {
-			await engine.askCard( { from: "p3", cardId: "AS" }, player1 );
-			await engine.askCard( { from: "p3", cardId: "AD" }, player1 );
-			await engine.claimBook( { "AH": "p1", "AS": "p1", "AD": "p1", "AC": "p1" }, player1 );
+			await engine.askCard( { gameId: engine.id, from: "p3", cardId: "AS" }, player1 );
+			await engine.askCard( { gameId: engine.id, from: "p3", cardId: "AD" }, player1 );
+			await engine.claimBook(
+				{ gameId: engine.id, claim: { "AH": "p1", "AS": "p1", "AD": "p1", "AC": "p1" } },
+				player1
+			);
 
-			const { error } = await engine.askCard( { from: "p3", cardId: "AH" }, player1 );
+			const { error } = await engine.askCard( { gameId: engine.id, from: "p3", cardId: "AH" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Card AH does not exist in the game!" );
 		} );
 
 		it.sequential( "should return error if trying to transfer turn out of turn", async () => {
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player2 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p2" }, player2 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Not your turn!" );
 		} );
 
 		it.sequential( "should return error if transferring turn to invalid player", async () => {
-			const { error } = await engine.transferTurn( { transferTo: "invalid-player" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "invalid-player" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "The Receiving Player is not part of the Game!" );
 		} );
 
 		it.sequential( "should return error if transferring turn to player from opposite team", async () => {
-			const { error } = await engine.transferTurn( { transferTo: "p3" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p3" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Turn can only be transferred to member of your team!" );
 		} );
 
 		it.sequential( "should return error if transferring turn to a player with no cards", async () => {
 			engine.setHand( "p2", [] );
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p2" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Turn can only be transferred to a player with cards!" );
 		} );
@@ -438,7 +487,7 @@ describe( "Fish:Engine", () => {
 		it( "should return error if no last claim available", async () => {
 			engine.setHand( "p2", [ "7D" ] );
 			engine.resetMoveHistory();
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p2" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Turn can only be transferred after a successful claim!" );
 		} );
@@ -454,7 +503,7 @@ describe( "Fish:Engine", () => {
 			};
 
 			engine.setLastMove( ask );
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p2" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Turn can only be transferred after a successful claim!" );
 		} );
@@ -471,7 +520,7 @@ describe( "Fish:Engine", () => {
 			};
 
 			engine.setLastMove( claim );
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p2" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Turn can only be transferred after a successful claim!" );
 		} );
@@ -488,7 +537,7 @@ describe( "Fish:Engine", () => {
 			};
 
 			engine.setLastMove( claim );
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p2" }, player1 );
 			expect( error ).toBeDefined();
 			expect( error ).toBe( "Only the player who made the successful claim can transfer the turn!" );
 		} );
@@ -526,8 +575,8 @@ describe( "Fish:Engine", () => {
 				metrics: {}
 			};
 
-			vi.mocked( mockEnv.FISH_KV.get ).mockResolvedValueOnce( existingGameData as any );
-			engine = new MockFishEngine( mockDurableObjectState, mockEnv );
+			mockEnv.FISH_KV.get.mockResolvedValueOnce( existingGameData as any );
+			engine = new MockFishEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
 
 			expect( mockEnv.FISH_KV.get ).toHaveBeenCalledWith( "mock-do-id", "json" );
 		} );
@@ -569,7 +618,7 @@ describe( "Fish:Engine", () => {
 
 		it.sequential( "should create teams when create teams is called", async () => {
 			const teamData = engine.getMockTeamStructure();
-			const { error } = await engine.createTeams( teamData, player1 );
+			const { error } = await engine.createTeams( { gameId: engine.id, teams: teamData }, player1 );
 			expect( error ).toBeUndefined();
 
 			const data = engine.getGameData();
@@ -617,7 +666,7 @@ describe( "Fish:Engine", () => {
 		} );
 
 		it.sequential( "should ask a card successfully and update data accordingly", async () => {
-			const { error } = await engine.askCard( { from: "p5", cardId: "6S" }, player1 );
+			const { error } = await engine.askCard( { gameId: engine.id, from: "p5", cardId: "6S" }, player1 );
 			expect( error ).toBeUndefined();
 
 			const data = engine.getGameData();
@@ -638,7 +687,7 @@ describe( "Fish:Engine", () => {
 
 		it.sequential( "should claim a book successfully and update data accordingly", async () => {
 			const claimInput = { "AS": "p3", "2S": "p2", "3S": "p1", "4S": "p2", "5S": "p1", "6S": "p1" };
-			const { error } = await engine.claimBook( claimInput, player1 );
+			const { error } = await engine.claimBook( { gameId: engine.id, claim: claimInput }, player1 );
 
 			expect( error ).toBeUndefined();
 
@@ -673,7 +722,7 @@ describe( "Fish:Engine", () => {
 		} );
 
 		it.sequential( "should transfer turn successfully and update data accordingly", async () => {
-			const { error } = await engine.transferTurn( { transferTo: "p2" }, player1 );
+			const { error } = await engine.transferTurn( { gameId: engine.id, transferTo: "p2" }, player1 );
 			expect( error ).toBeUndefined();
 
 			const data = engine.getGameData();
@@ -686,7 +735,7 @@ describe( "Fish:Engine", () => {
 		} );
 
 		it.sequential( "should ask a wrong card and update data accordingly", async () => {
-			const { error } = await engine.askCard( { from: "p4", cardId: "10H" }, player2 );
+			const { error } = await engine.askCard( { gameId: engine.id, from: "p4", cardId: "10H" }, player2 );
 			expect( error ).toBeUndefined();
 
 			const data = engine.getGameData();
@@ -706,7 +755,7 @@ describe( "Fish:Engine", () => {
 
 		it.sequential( "should make a wrong claim and update data accordingly", async () => {
 			const claimInput = { "AH": "p5", "2H": "p4", "3H": "p4", "4H": "p4", "5H": "p6", "6H": "p6" };
-			const { error } = await engine.claimBook( claimInput, player4 );
+			const { error } = await engine.claimBook( { gameId: engine.id, claim: claimInput }, player4 );
 
 			expect( error ).toBeUndefined();
 
@@ -758,7 +807,10 @@ describe( "Fish:Engine", () => {
 				[ "9H", "9S", "10S", "JS", "QS", "KS" ]
 			] );
 
-			const { error } = await engine.askCard( { from: "p5", cardId: "QH" }, players[ currentTurn ] );
+			const { error } = await engine.askCard(
+				{ gameId: engine.id, from: "p5", cardId: "QH" },
+				players[ currentTurn ]
+			);
 			expect( error ).toBeUndefined();
 
 			engine.setScores( {

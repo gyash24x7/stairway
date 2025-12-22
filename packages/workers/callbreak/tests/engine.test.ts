@@ -75,7 +75,7 @@ describe( "Callbreak:Engine", () => {
 			idFromName: vi.fn(),
 			get: vi.fn().mockImplementation( () => mockWss )
 		}
-	} as unknown as Bindings;
+	};
 
 	const player1 = {
 		id: "p1",
@@ -117,7 +117,7 @@ describe( "Callbreak:Engine", () => {
 	} );
 
 	describe( "GamePlay: Exception Scenarios", () => {
-		const engine = new MockCallbreakEngine( mockDurableObjectState, mockEnv );
+		const engine = new MockCallbreakEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
 
 		it.sequential( "should initialize game with default settings", async () => {
 			expect( mockEnv.CALLBREAK_KV.put ).toHaveBeenCalledWith( "mock-do-id", expect.any( String ) );
@@ -433,7 +433,7 @@ describe( "Callbreak:Engine", () => {
 			};
 
 			vi.mocked( mockEnv.CALLBREAK_KV.get ).mockResolvedValueOnce( existingGameData as any );
-			engine = new MockCallbreakEngine( mockDurableObjectState, mockEnv );
+			engine = new MockCallbreakEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
 
 			expect( mockEnv.CALLBREAK_KV.get ).toHaveBeenCalledWith( "mock-do-id", "json" );
 		} );
