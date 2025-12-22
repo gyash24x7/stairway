@@ -27,7 +27,7 @@ export function DisplayGame() {
 			<GameCode code={ code } name={ "callbreak" }>
 				<div className={ "py-2 px-4" }>
 					<p className={ "text-xs md:text-sm" }>TRUMP</p>
-					<DisplayCardSuit suit={ trump } large/>
+					<DisplayCardSuit suit={ trump } large themed/>
 				</div>
 			</GameCode>
 			<div className={ "flex flex-col gap-3 justify-between mb-52" }>

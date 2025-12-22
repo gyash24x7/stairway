@@ -5,13 +5,14 @@ function isRed( suit: CardSuit ) {
 	return suit === "H" || suit === "D";
 }
 
-export function DisplayCardSuit( { suit, large }: { suit: CardSuit; large?: boolean } ) {
+export function DisplayCardSuit( { suit, large, themed }: { suit: CardSuit; large?: boolean; themed?: boolean } ) {
 	return (
 		<div
 			className={ cn(
 				"text-center",
 				!large && "text-lg md:text-2xl xl:text-4xl",
-				isRed( suit ) ? "text-red-600" : "text-black",
+				themed && "text-main-foreground",
+				!themed && ( isRed( suit ) ? "text-red-600" : "text-black" ),
 				large && "text-2xl md:text-4xl"
 			) }
 		>

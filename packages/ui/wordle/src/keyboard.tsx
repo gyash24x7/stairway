@@ -70,7 +70,7 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 			className={ cn(
 				"p-2 rounded bg-bg text-center text-sm font-medium",
 				"transition-all duration-100 ease-in-out cursor-pointer",
-				isLetterAvailable ? "bg-main" : "bg-gray-800"
+				isLetterAvailable ? "bg-main" : "bg-secondary-background"
 			) }
 			onClick={ () => updateCurrentGuess( letter ) }
 		>

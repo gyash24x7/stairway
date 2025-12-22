@@ -49,7 +49,7 @@ export function GuessBlocks() {
 										"flex items-center justify-center"
 									) }
 								>
-									<p className={ "text-lg sm:text-xl md:text-2xl text-black font-semibold" }>
+									<p className={ "text-lg sm:text-xl md:text-2xl font-semibold" }>
 										{ letter?.toUpperCase() }
 									</p>
 								</div>
