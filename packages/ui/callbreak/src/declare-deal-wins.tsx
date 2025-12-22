@@ -2,6 +2,7 @@ import { Button } from "@s2h-ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
+	DrawerDescription,
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle,
@@ -40,6 +41,7 @@ export function DeclareDealWins() {
 				<div className={ "mx-auto w-full max-w-lg" }>
 					<DrawerHeader>
 						<DrawerTitle>DECLARE DEAL WINS</DrawerTitle>
+						<DrawerDescription/>
 					</DrawerHeader>
 					<div className={ "flex flex-col gap-3" }>
 						<div className="flex justify-center items-center space-x-2">

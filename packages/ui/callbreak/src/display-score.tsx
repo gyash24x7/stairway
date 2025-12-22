@@ -19,10 +19,10 @@ export function DisplayScore() {
 				<TableHeader>
 					<TableRow className={ "bg-white text-md" }>
 						<TableHead>PLAYER</TableHead>
-						<TableHead className={ "hidden md:table-cell text-center" }>PREVIOUS DEALS</TableHead>
+						<TableHead className={ "hidden md:table-cell text-center" }>PREVIOUS&nbsp;DEALS</TableHead>
 						<TableHead className={ "text-center" }>SCORE</TableHead>
 						{ status !== "GAME_COMPLETED" && (
-							<TableHead className={ "text-center" }>ACTIVE DEAL</TableHead>
+							<TableHead className={ "text-center" }>ACTIVE&nbsp;DEAL</TableHead>
 						) }
 					</TableRow>
 				</TableHeader>

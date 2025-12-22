@@ -5,12 +5,14 @@ function isRed( suit: CardSuit ) {
 	return suit === "H" || suit === "D";
 }
 
-export function DisplayCardSuit( { suit }: { suit: CardSuit } ) {
+export function DisplayCardSuit( { suit, large }: { suit: CardSuit; large?: boolean } ) {
 	return (
 		<div
 			className={ cn(
-				"text-center text-lg md:text-2xl xl:text-4xl",
-				isRed( suit ) ? "text-red-600" : "text-black"
+				"text-center",
+				!large && "text-lg md:text-2xl xl:text-4xl",
+				isRed( suit ) ? "text-red-600" : "text-black",
+				large && "text-2xl md:text-4xl"
 			) }
 		>
 			{ { C: "♣", S: "♠", H: "♥", D: "♦" }[ suit ] }

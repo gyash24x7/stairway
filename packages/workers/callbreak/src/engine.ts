@@ -1,5 +1,12 @@
 import { remove } from "@s2h/utils/array";
-import { CARD_SUITS, type CardId, generateDeck, generateHands, getCardSuit } from "@s2h/utils/cards";
+import {
+	CARD_SUITS,
+	type CardId,
+	generateDeck,
+	generateHands,
+	getCardDisplayString,
+	getCardSuit
+} from "@s2h/utils/cards";
 import { generateBotInfo, generateGameCode, generateId } from "@s2h/utils/generator";
 import { createLogger } from "@s2h/utils/logger";
 import { DurableObject } from "cloudflare:workers";
@@ -172,6 +179,7 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 
 		if ( Object.keys( this.data.players ).length === 4 ) {
 			this.data.status = "PLAYERS_READY";
+			await this.setAlarm( 5000 );
 		}
 
 		await this.saveGameData();
@@ -437,6 +445,61 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 			},
 			{} as Record<string, PlayerGameInfo>
 		);
+	}
+
+	private getNotificationMessage() {
+		switch ( this.data.status ) {
+			case "GAME_CREATED":
+				return "Waiting for players to join!";
+			case "PLAYERS_READY":
+				return "All players ready! Dealing cards soon.";
+			case "CARDS_DEALT": {
+				const activeDeal = this.data.deals[ 0 ];
+				const declarations = activeDeal.declarations;
+
+				const declaredCount = Object.values( declarations ).filter( v => v > 0 ).length;
+				if ( declaredCount === 0 ) {
+					const firstPlayer = this.data.players[ activeDeal.playerOrder[ 0 ] ];
+					return `Cards Dealt. ${ firstPlayer } to declare wins first.`;
+				}
+
+				const lastPlayerIdx = ( activeDeal.playerOrder.indexOf( this.data.currentTurn ) + 3 ) % 4;
+				const lastPlayer = this.data.players[ activeDeal.playerOrder[ lastPlayerIdx ] ];
+				return `${ lastPlayer.name } declared ${ declarations[ lastPlayer.id ] } wins.`;
+			}
+			case "WINS_DECLARED":
+				return "All wins declared! Starting round soon.";
+			case "ROUND_STARTED": {
+				const activeDeal = this.data.deals[ 0 ];
+				const activeRound = activeDeal.rounds[ 0 ];
+				if ( !activeRound.suit ) {
+					const firstPlayer = this.data.players[ activeRound.playerOrder[ 0 ] ];
+					return `Round Started. ${ firstPlayer.name } to play first.`;
+				}
+
+				const lastPlayerIdx = ( activeRound.playerOrder.indexOf( this.data.currentTurn ) + 3 ) % 4;
+				const lastPlayer = this.data.players[ activeRound.playerOrder[ lastPlayerIdx ] ];
+				return `${ lastPlayer.name } played ${ getCardDisplayString( activeRound.cards[ lastPlayer.id ] ) }`;
+			}
+			case "CARDS_PLAYED":
+				return "All cards played! Completing round.";
+			case "ROUND_COMPLETED": {
+				const activeDeal = this.data.deals[ 0 ];
+				const activeRound = activeDeal.rounds[ 0 ];
+				const winner = this.data.players[ activeRound.winner! ];
+				return `Round Completed. Winner: ${ winner.name }`;
+			}
+			case "DEAL_COMPLETED": {
+				if ( this.data.dealCount > this.data.deals.length ) {
+					return "Deal completed! Starting next deal soon.";
+				}
+
+				return "Deal completed! Finalizing game soon.";
+			}
+			case "GAME_COMPLETED":
+				return "Game completed! Thanks for playing.";
+
+		}
 	}
 
 	/**
@@ -758,7 +821,8 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 
 		const durableObjectId = this.env.WSS.idFromName( `callbreak:${ this.data.id }` );
 		const wss = this.env.WSS.get( durableObjectId );
-		await wss.broadcast( this.getPlayerDataMap() );
+		const message = this.getNotificationMessage();
+		await wss.broadcast( this.getPlayerDataMap(), message );
 
 		this.logger.debug( "<< broadcast()" );
 	}

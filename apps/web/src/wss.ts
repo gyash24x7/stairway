@@ -47,11 +47,11 @@ export class WebsocketServer extends DurableObject {
 		ws.close( code, reason ?? "Closed by DO!" );
 	}
 
-	public async broadcast( data: Record<string, any> ) {
+	public async broadcast( data: Record<string, any>, message: string ) {
 		this.logger.debug( ">> broadcast()" );
 
 		for ( let [ ws, authInfo ] of this.sessions ) {
-			ws.send( JSON.stringify( data[ authInfo.id ] ) );
+			ws.send( JSON.stringify( { message, data: data[ authInfo.id ] } ) );
 		}
 
 		this.logger.debug( "<< broadcast()" );

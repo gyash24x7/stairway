@@ -19,3 +19,5 @@ export const Toaster = ( { ...props }: ComponentProps<typeof Sonner> ) => {
 		/>
 	);
 };
+
+export { toast } from "sonner";

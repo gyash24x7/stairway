@@ -39,7 +39,7 @@ const getGameData = base
 		const engine = await loadEngine( input.gameId, context );
 		const { data, error } = await engine.getPlayerData( context.authInfo.id );
 
-		if ( error ) {
+		if ( error || !data ) {
 			logger.error( "Error fetching player data:", error );
 			throw new ORPCError( "BAD_REQUEST", { message: "Failed to fetch player data." } );
 		}

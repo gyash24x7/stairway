@@ -194,6 +194,9 @@ importers:
       '@tanstack/react-store':
         specifier: 0.8.0
         version: 0.8.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      immer:
+        specifier: 11.1.0
+        version: 11.1.0
       react:
         specifier: 19.2.3
         version: 19.2.3
