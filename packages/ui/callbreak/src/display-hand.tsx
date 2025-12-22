@@ -5,7 +5,7 @@ import { type CardId, getSortedHand } from "@s2h/utils/cards";
 import { useStore } from "@tanstack/react-store";
 import { handleCardSelect, store } from "./store.tsx";
 
-export function NewPlayCard() {
+export function DisplayHand() {
 	const trump = useStore( store, state => state.trump );
 	const currentRound = useStore( store, state => state.currentRound );
 	const hand = useStore( store, state => state.hand );

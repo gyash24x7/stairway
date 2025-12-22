@@ -23,7 +23,7 @@ export function PlayCard() {
 		<Button
 			onClick={ handleClick }
 			disabled={ isPending || !selectedCard }
-			className={ "max-w-lg" }
+			className={ "w-full max-w-lg" }
 		>
 			{ isPending ? <Spinner/> : "PLAY CARD" }
 		</Button>

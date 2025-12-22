@@ -5,9 +5,9 @@ import { GameCode } from "@s2h-ui/shared/game-code";
 import { useStore } from "@tanstack/react-store";
 import { Fragment } from "react";
 import { ActionPanel } from "./action-panel.tsx";
+import { DisplayHand } from "./display-hand.tsx";
 import { DisplayRound } from "./display-round.tsx";
 import { DisplayScore } from "./display-score.tsx";
-import { NewPlayCard } from "./new-play-card.tsx";
 import { store } from "./store.tsx";
 
 export function DisplayGame() {
@@ -74,7 +74,7 @@ export function DisplayGame() {
 							) ) }
 						</div>
 					) }
-				{ currentDeal && <NewPlayCard/> }
+				{ currentDeal && <DisplayHand/> }
 			</div>
 			{ status !== "GAME_COMPLETED" && <ActionPanel/> }
 		</div>
