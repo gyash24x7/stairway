@@ -25,7 +25,7 @@ export function DisplayTeams() {
 												<AvatarImage
 													src={ player.avatar }
 													alt={ "" }
-													className={ "bg-secondary-background" }
+													className={ "bg-background" }
 												/>
 											</Avatar>
 											<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>

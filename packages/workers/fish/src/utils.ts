@@ -242,7 +242,7 @@ export function suggestBooks( { playerId, hand, players, cardLocations, config }
  */
 export function suggestAsks(
 	books: WeightedBook[],
-	{ playerId, hand, players, cardLocations, config }: PlayerGameInfo
+	{ playerId, hand, players, cardLocations, config, cardCounts }: PlayerGameInfo
 ) {
 	logger.debug( ">> suggestAsks()" );
 
@@ -256,7 +256,7 @@ export function suggestAsks(
 		for ( const cardId of missingCards ) {
 			const possibleOwners = cardLocations[ cardId ]!;
 			for ( const pid of possibleOwners ) {
-				if ( pid !== playerId && !teamMates.includes( pid ) ) {
+				if ( pid !== playerId && !teamMates.includes( pid ) && cardCounts[ pid ] > 0 ) {
 					asksForBook.push( { playerId: pid, cardId, weight: MAX_WEIGHT / possibleOwners.length } );
 				}
 			}

@@ -6,7 +6,7 @@ import { CreateGame } from "./create-game.tsx";
 export function WordleHomePage() {
 	const { isLoggedIn } = useAuth();
 	return (
-		<div className={ "flex gap-5 flex-col mt-2" }>
+		<div className={ "flex gap-5 flex-col mt-2 text-foreground" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>WORDLE</h2>
 			<p>
 				Wordle is word game where players have six attempts to guess a

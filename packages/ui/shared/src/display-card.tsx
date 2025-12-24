@@ -11,7 +11,7 @@ export function DisplayCardSuit( { suit, large, themed }: { suit: CardSuit; larg
 			className={ cn(
 				"text-center",
 				!large && "text-lg md:text-2xl xl:text-4xl",
-				themed && "text-main-foreground",
+				themed && "text-neutral-dark",
 				!themed && ( isRed( suit ) ? "text-red-600" : "text-black" ),
 				large && "text-2xl md:text-4xl"
 			) }
@@ -27,10 +27,7 @@ export function DisplayCard( { cardId, focused }: DisplayCardProps ) {
 	return (
 		<img
 			src={ `/cards/${ cardId }.svg` }
-			className={ cn(
-				"w-16 md:w-20 xl:w-24 rounded-lg border-border border",
-				focused && "border-components border-2"
-			) }
+			className={ cn( "w-16 md:w-20 xl:w-24 rounded-lg border-black border", focused && "border-2" ) }
 			alt={ cardId }
 		/>
 	);

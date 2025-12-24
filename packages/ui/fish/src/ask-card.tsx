@@ -1,5 +1,12 @@
 import { Button } from "@s2h-ui/primitives/button";
-import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@s2h-ui/primitives/drawer";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@s2h-ui/primitives/drawer";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCard } from "@s2h-ui/shared/display-card";
@@ -95,6 +102,7 @@ export function AskCard() {
 							{ currentStep === 3 && "Select Player to Ask from".toUpperCase() }
 							{ currentStep === 4 && confirmAskDrawerTitle.toUpperCase() }
 						</DrawerTitle>
+						<DrawerDescription/>
 					</DrawerHeader>
 					<div className={ "px-3 md:px-4" }>
 						{ currentStep === 1 && (
@@ -104,18 +112,13 @@ export function AskCard() {
 										key={ item }
 										onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 										className={ cn(
-											selectedBook === item ? "bg-secondary-background" : "bg-bg",
+											selectedBook === item ? "bg-background" : "bg-surface",
 											"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
 											"flex justify-center"
 										) }
 									>
 										<div className={ "flex gap-2 md:gap-3 items-center" }>
-											<h1
-												className={ cn(
-													"text-gray-800",
-													"text-md md:text-lg xl:text-xl font-semibold"
-												) }
-											>
+											<h1 className={ cn( "text-md md:text-lg xl:text-xl font-semibold" ) }>
 												{ item }
 											</h1>
 										</div>
@@ -143,7 +146,7 @@ export function AskCard() {
 										key={ p.id }
 										onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
 										className={ cn(
-											selectedPlayer === p.id ? "bg-secondary-background" : "bg-bg",
+											selectedPlayer === p.id ? "bg-background" : "bg-surface",
 											"cursor-pointer border-2 rounded-md flex justify-center flex-1"
 										) }
 									>

@@ -17,7 +17,7 @@ export function DisplayScore() {
 			<p>SCORES</p>
 			<Table>
 				<TableHeader>
-					<TableRow className={ "bg-secondary-background text-md" }>
+					<TableRow className={ "text-md" }>
 						<TableHead>PLAYER</TableHead>
 						<TableHead className={ "hidden md:table-cell text-center" }>PREVIOUS&nbsp;DEALS</TableHead>
 						<TableHead className={ "text-center" }>SCORE</TableHead>
@@ -34,7 +34,7 @@ export function DisplayScore() {
 									<AvatarImage
 										src={ player.avatar }
 										alt={ "" }
-										className={ "bg-secondary-background" }
+										className={ "bg-background" }
 									/>
 								</Avatar>
 								<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>

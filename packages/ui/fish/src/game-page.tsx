@@ -2,7 +2,7 @@ import type { PlayerGameInfo } from "@s2h/fish/types";
 import { useEffect } from "react";
 import useWebSocket from "react-use-websocket";
 import { DisplayGame } from "./display-game.tsx";
-import { store } from "./store.tsx";
+import { handleGameUpdate, store } from "./store.tsx";
 
 export function FishGamePage( props: { data: PlayerGameInfo } ) {
 	const protocol = window.location.protocol === "https:" ? "wss" : "ws";
@@ -14,8 +14,9 @@ export function FishGamePage( props: { data: PlayerGameInfo } ) {
 		onOpen: () => console.log( "WebSocket connection established" ),
 		onClose: () => console.log( "WebSocket connection closed" ),
 		onError: ( error ) => console.error( "WebSocket error:", error ),
-		onMessage: ( { data }: MessageEvent ) => {
-			store.setState( JSON.parse( data ) );
+		onMessage: ( event: MessageEvent ) => {
+			const { data, message } = JSON.parse( event.data ) as { data: PlayerGameInfo, message: string };
+			handleGameUpdate( data, message );
 		}
 	} );
 

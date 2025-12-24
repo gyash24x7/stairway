@@ -6,7 +6,7 @@ export const Card = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 		<div
 			ref={ ref }
 			className={ cn(
-				"rounded-base shadow-shadow border-2 border-border bg-main text-main-foreground",
+				"rounded-base shadow-shadow border-2 border-black",
 				className
 			) }
 			{ ...props }
@@ -32,7 +32,7 @@ export const CardTitle = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLHea
 
 export const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLParagraphElement>>(
 	( { className, ...props }, ref ) => (
-		<p ref={ ref } className={ cn( "text-sm text-main-foreground font-base mt-3!", className ) } { ...props } />
+		<p ref={ ref } className={ cn( "text-sm text-foreground font-base mt-3!", className ) } { ...props } />
 	)
 );
 

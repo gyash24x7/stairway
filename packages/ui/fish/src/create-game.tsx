@@ -44,9 +44,9 @@ export function CreateGame() {
 								key={ item }
 								onClick={ () => setPlayerCount( playerCount === item ? undefined : item ) }
 								className={ cn(
-									playerCount === item ? "bg-secondary-background" : "bg-bg",
+									playerCount === item ? "bg-background" : "bg-surface",
 									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-									"hover:bg-secondary-background"
+									"hover:bg-background"
 								) }
 							>
 								{ item }
@@ -60,9 +60,9 @@ export function CreateGame() {
 								key={ item }
 								onClick={ () => setTeamCount( teamCount === item ? undefined : item ) }
 								className={ cn(
-									teamCount === item ? "bg-secondary-background" : "bg-bg",
+									teamCount === item ? "bg-background" : "bg-surface",
 									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-									"hover:bg-secondary-background"
+									"hover:bg-background"
 								) }
 							>
 								{ item }
@@ -76,9 +76,9 @@ export function CreateGame() {
 								key={ item }
 								onClick={ () => setType( type === item ? undefined : item ) }
 								className={ cn(
-									type === item ? "bg-secondary-background" : "bg-bg",
+									type === item ? "bg-background" : "bg-surface",
 									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-									"hover:bg-secondary-background"
+									"hover:bg-background"
 								) }
 							>
 								{ item }

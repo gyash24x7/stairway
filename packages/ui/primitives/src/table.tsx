@@ -6,7 +6,7 @@ export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElemen
 		<div className="relative w-full rounded-md">
 			<table
 				ref={ ref }
-				className={ cn( "w-full caption-bottom border-border border-2 text-sm rounded-md", className ) }
+				className={ cn( "w-full caption-bottom border-black border-2 text-sm rounded-md", className ) }
 				{ ...props }
 			/>
 		</div>
@@ -33,7 +33,7 @@ export const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HT
 	( { className, ...props }, ref ) => (
 		<tfoot
 			ref={ ref }
-			className={ cn( "border-t border-t-border bg-main font-base [&>tr]:last:border-b-0", className ) }
+			className={ cn( "border-t border-t-black bg-accent [&>tr]:last:border-b-0", className ) }
 			{ ...props }
 		/>
 	)
@@ -44,8 +44,8 @@ export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTable
 		<tr
 			ref={ ref }
 			className={ cn(
-				"border-b border-border text-main-foreground transition-colors bg-main font-base",
-				"hover:bg-main data-[state=selected]:bg-secondary-background data-[state=selected]:text-main-foreground",
+				"border-b border-black text-neutral-dark transition-colors bg-accent",
+				"data-[state=selected]:bg-background data-[state=selected]:text-foreground",
 				className
 			) }
 			{ ...props }
@@ -58,7 +58,8 @@ export const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTab
 		<th
 			ref={ ref }
 			className={ cn(
-				"h-12 px-4 text-left align-middle font-heading text-main-foreground [&:has([role=checkbox])]:pr-0",
+				"h-12 px-4 text-left align-middle font-heading",
+				"bg-background text-foreground [&:has([role=checkbox])]:pr-0",
 				className
 			) }
 			{ ...props }
@@ -68,23 +69,12 @@ export const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTab
 
 export const TableCell = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellElement>>(
 	( { className, ...props }, ref ) => (
-		<td
-			ref={ ref }
-			className={ cn(
-				"p-2 align-middle font-base [&:has([role=checkbox])]:pr-0",
-				className
-			) }
-			{ ...props }
-		/>
+		<td ref={ ref } className={ cn( "p-2 align-middle [&:has([role=checkbox])]:pr-0", className ) } { ...props }/>
 	)
 );
 
 export const TableCaption = forwardRef<HTMLTableCaptionElement, HTMLAttributes<HTMLTableCaptionElement>>(
 	( { className, ...props }, ref ) => (
-		<caption
-			ref={ ref }
-			className={ cn( "mt-4 text-sm text-main-foreground font-base", className ) }
-			{ ...props }
-		/>
+		<caption ref={ ref } className={ cn( "mt-4 text-sm", className ) } { ...props }/>
 	)
 );

@@ -44,10 +44,9 @@ export function DisplayGame() {
 				{ currentDeal?.status === "IN_PROGRESS"
 					? (
 						<div
-							className={ cn(
-								"grid grid-cols-1 lg:grid-cols-2 gap-3",
-								!currentRound && "lg:grid-cols-1"
-							) }
+							className={
+								cn( "grid grid-cols-1 lg:grid-cols-2 gap-3", !currentRound && "lg:grid-cols-1" )
+							}
 						>
 							<DisplayScore/>
 							{ currentRound && (
@@ -61,7 +60,7 @@ export function DisplayGame() {
 									key={ playerId }
 									className={ cn(
 										"w-full flex flex-col gap-3 rounded-md items-center border-2",
-										currentTurn === playerId && "border-main border-4"
+										currentTurn === playerId && "border-accent border-4"
 									) }
 								>
 									<DisplayPlayer

@@ -1,7 +1,13 @@
+import { toast } from "@s2h-ui/primitives/sonner";
 import type { PlayerGameInfo } from "@s2h/fish/types";
 import { Store } from "@tanstack/react-store";
+import { produce } from "immer";
 
-export const store = new Store<PlayerGameInfo>( {
+type StoreType = PlayerGameInfo & {
+	lastNotification?: string;
+};
+
+export const store = new Store<StoreType>( {
 	metrics: {},
 	createdBy: "",
 	cardLocations: {},
@@ -28,3 +34,14 @@ export const store = new Store<PlayerGameInfo>( {
 	hand: [],
 	askHistory: []
 } );
+
+export function handleGameUpdate( data: PlayerGameInfo, message: string ) {
+	store.setState( state => produce( state, draft => {
+		if ( draft.lastNotification !== message ) {
+			toast.info( message );
+		}
+
+		Object.assign( draft, data );
+		draft.lastNotification = message;
+	} ) );
+}

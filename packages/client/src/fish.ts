@@ -25,6 +25,10 @@ export const useJoinGameMutation = ( params: Parameters<typeof orpc.joinGame.mut
 	return useMutation( orpc.joinGame.mutationOptions( params ) );
 };
 
+export const useAddBotsMutation = ( params: Parameters<typeof orpc.addBots.mutationOptions>[0] ) => {
+	return useMutation( orpc.addBots.mutationOptions( params ) );
+};
+
 export const useCreateTeamsMutation = ( params: Parameters<typeof orpc.createTeams.mutationOptions>[0] ) => {
 	return useMutation( orpc.createTeams.mutationOptions( params ) );
 };

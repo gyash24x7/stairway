@@ -43,7 +43,7 @@ export function CreateGame() {
 						<Button size="icon" onClick={ decrement } disabled={ wordCount <= 2 }>
 							<MinusIcon className="h-4 w-4"/>
 						</Button>
-						<div className="w-20 h-10 flex items-center justify-center border bg-bg text-sm">
+						<div className="w-20 h-10 flex items-center justify-center border bg-surface text-sm">
 							{ wordCount }
 						</div>
 						<Button size="icon" onClick={ increment } disabled={ wordCount >= 8 }>

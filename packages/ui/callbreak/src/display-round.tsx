@@ -22,7 +22,7 @@ export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps
 						key={ playerId }
 						className={ cn(
 							"w-full flex gap-3 p-3 rounded-md items-center border-2",
-							!round.winner && currentTurn === playerId && "border-main border-4",
+							!round.winner && currentTurn === playerId && "border-accent border-4",
 							round.winner === playerId && "border-green-500 border-4"
 						) }
 					>
@@ -32,9 +32,8 @@ export function DisplayRound( { round, playerOrder, players }: DisplayRoundProps
 							<div className={ "flex-1" }>
 								<div
 									className={ cn(
-										"w-16 md:w-20 p-1 md:p-1.5 md:text-lg",
-										`rounded-lg flex flex-col justify-between border-2 bg-bg border-dotted`,
-										"h-24 md:h-30 bg-secondary-background"
+										"w-16 md:w-20 p-1 md:p-1.5 md:text-lg h-24 md:h-30 rounded-lg",
+										"flex flex-col justify-between border-2 bg-surface border-dotted"
 									) }
 								/>
 							</div>

@@ -9,9 +9,9 @@ export const Toaster = ( { ...props }: ComponentProps<typeof Sonner> ) => {
 				unstyled: true,
 				classNames: {
 					toast: cn(
-						"bg-main border-2 rounded-lg p-4 flex gap-5 items-center",
-						"shadow-shadow uppercase text-sm",
-						"font-base font-[500]"
+						"bg-accent border-2 rounded-lg p-4 flex gap-5 items-center",
+						"shadow-shadow uppercase text-sm text-neutral-dark",
+						"font-semibold"
 					)
 				}
 			} }

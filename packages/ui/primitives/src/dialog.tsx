@@ -1,4 +1,4 @@
-import { Dialog as DialogPrimitive } from "@base-ui-components/react/dialog";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import {
 	type ComponentProps,
@@ -19,7 +19,7 @@ export const DialogContent = ( props: ComponentProps<"div"> ) => (
 	<Portal>
 		<Backdrop
 			className={ cn(
-				"fixed inset-0 z-50 bg-overlay  data-[state=open]:animate-in",
+				"fixed inset-0 z-50 bg-overlay data-[state=open]:animate-in",
 				"data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
 			) }
 		/>
@@ -27,7 +27,7 @@ export const DialogContent = ( props: ComponentProps<"div"> ) => (
 			{ ...props }
 			className={ cn(
 				"fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%]",
-				"translate-y-[-50%] gap-4 rounded-base border-2 border-border bg-background p-6 shadow-shadow",
+				"translate-y-[-50%] gap-4 rounded-base border-2 border-black bg-surface p-6 shadow-shadow",
 				"duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out",
 				"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
 				"data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
@@ -42,7 +42,7 @@ export const DialogContent = ( props: ComponentProps<"div"> ) => (
 				className={ cn(
 					"absolute right-4 top-4 rounded-xs opacity-100 ring-offset-white",
 					"focus:outline-hidden focus:ring-2 focus:ring-black focus:ring-offset-2",
-					"disabled:pointer-events-none data-[state=open]:bg-secondary-background data-[state=open]:text-white"
+					"disabled:pointer-events-none data-[state=open]:bg-background data-[state=open]:text-white"
 				) }
 			>
 				<XIcon className="h-4 w-4"/>
@@ -74,7 +74,7 @@ export const DialogDescription = forwardRef<ComponentRef<typeof Description>, Co
 	( { className, ...props }, ref ) => (
 		<Description
 			ref={ ref }
-			className={ cn( "text-sm text-main-foreground font-base", className ) }
+			className={ cn( "text-sm", className ) }
 			{ ...props }
 		/>
 	)

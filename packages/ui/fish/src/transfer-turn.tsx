@@ -1,5 +1,12 @@
 import { Button } from "@s2h-ui/primitives/button";
-import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@s2h-ui/primitives/drawer";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@s2h-ui/primitives/drawer";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayPlayer } from "@s2h-ui/shared/display-player";
@@ -43,6 +50,7 @@ export function TransferTurn() {
 				<div className={ "mx-auto w-full max-w-lg" }>
 					<DrawerHeader>
 						<DrawerTitle className={ "text-center" }>Transfer Turn</DrawerTitle>
+						<DrawerDescription/>
 					</DrawerHeader>
 					<div className={ "px-3 md:px-4" }>
 						<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
@@ -51,7 +59,7 @@ export function TransferTurn() {
 									key={ pid }
 									onClick={ handlePlayerSelect( selectedPlayer === pid ? undefined : pid ) }
 									className={ cn(
-										selectedPlayer === pid ? "bg-secondary-background" : "bg-bg",
+										selectedPlayer === pid ? "bg-background" : "bg-surface",
 										"cursor-pointer border-2 rounded-md flex justify-center flex-1"
 									) }
 								>

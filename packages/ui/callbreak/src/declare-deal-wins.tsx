@@ -48,7 +48,7 @@ export function DeclareDealWins() {
 							<Button size="icon" onClick={ decrement } disabled={ wins <= 2 }>
 								<MinusIcon className="h-4 w-4"/>
 							</Button>
-							<div className="w-20 h-10 flex items-center justify-center border bg-bg text-sm">
+							<div className="w-20 h-10 flex items-center justify-center border bg-surface text-sm">
 								{ wins }
 							</div>
 							<Button size="icon" onClick={ increment } disabled={ wins >= 13 }>

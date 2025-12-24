@@ -1,5 +1,12 @@
 import { Button } from "@s2h-ui/primitives/button";
-import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@s2h-ui/primitives/drawer";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@s2h-ui/primitives/drawer";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCard } from "@s2h-ui/shared/display-card";
@@ -94,6 +101,7 @@ export function ClaimBook() {
 							{ currentStep === 2 && "Select Card Locations".toUpperCase() }
 							{ currentStep === 3 && `Confirm Claim for ${ selectedBook }`.toUpperCase() }
 						</DrawerTitle>
+						<DrawerDescription/>
 					</DrawerHeader>
 					<div className={ "px-4" }>
 						{ currentStep === 1 && (
@@ -103,7 +111,7 @@ export function ClaimBook() {
 										key={ item }
 										onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 										className={ cn(
-											selectedBook === item ? "bg-secondary-background" : "bg-bg",
+											selectedBook === item ? "bg-background" : "bg-surface",
 											"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
 											"flex justify-center"
 										) }
@@ -111,7 +119,7 @@ export function ClaimBook() {
 										<div className={ "flex gap-2 md:gap-3 items-center" }>
 											<h1
 												className={ cn(
-													"text-gray-800",
+													"text-neuta",
 													"text-md md:text-lg xl:text-xl font-semibold"
 												) }
 											>
@@ -161,7 +169,7 @@ export function ClaimBook() {
 					<DrawerFooter>
 						{ currentStep === 1 && (
 							<Button onClick={ goToNextStep } disabled={ !selectedBook }>
-								SELECT CARD SET
+								SELECT BOOK
 							</Button>
 						) }
 						{ currentStep === 2 && (
@@ -174,7 +182,7 @@ export function ClaimBook() {
 							<div className={ "w-full flex gap-3" }>
 								<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
 								<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
-									{ isPending ? <Spinner/> : "CALL SET" }
+									{ isPending ? <Spinner/> : "CLAIM BOOK" }
 								</Button>
 							</div>
 						) }

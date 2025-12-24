@@ -1025,6 +1025,34 @@ export class FishEngine extends DurableObject<Bindings> {
 		);
 	}
 
+	private getNotificationMessage() {
+		switch ( this.data.status ) {
+			case GAME_STATUS.CREATED:
+				return "Waiting for players to join the game.";
+			case GAME_STATUS.PLAYERS_READY:
+				return "All players have joined! Time to create teams.";
+			case GAME_STATUS.TEAMS_CREATED:
+				return "Teams are set! The game can now be started.";
+			case GAME_STATUS.IN_PROGRESS: {
+				const currentPlayer = this.data.players[ this.data.currentTurn ];
+				switch ( this.data.lastMoveType ) {
+					case "ask":
+						return this.data.askHistory[ 0 ]?.description ?? `${ currentPlayer.name }'s turn!.`;
+					case "claim":
+						return this.data.claimHistory[ 0 ]?.description ?? `${ currentPlayer.name }'s turn!.`;
+					case "transfer":
+						return this.data.transferHistory[ 0 ]?.description ?? `${ currentPlayer.name }'s turn!.`;
+					default:
+						return `${ currentPlayer.name }'s turn!.`;
+				}
+			}
+			case GAME_STATUS.COMPLETED:
+				return "Game over! Check out the final results.";
+			default:
+				return "Game update available.";
+		}
+	}
+
 	/**
 	 * Broadcast the player-facing snapshots to the WSS durable object instance.
 	 * Behaviour / side effects:
@@ -1038,7 +1066,8 @@ export class FishEngine extends DurableObject<Bindings> {
 
 		const durableObjectId = this.env.WSS.idFromName( `fish:${ this.data.id }` );
 		const wss = this.env.WSS.get( durableObjectId );
-		await wss.broadcast( this.getPlayerDataMap() );
+		const message = this.getNotificationMessage();
+		await wss.broadcast( this.getPlayerDataMap(), message );
 
 		this.logger.debug( "<< broadcast()" );
 	}

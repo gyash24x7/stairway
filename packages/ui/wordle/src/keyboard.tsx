@@ -68,13 +68,13 @@ export function KeyboardKey( { letter }: { letter: string } ) {
 	return (
 		<button
 			className={ cn(
-				"p-2 rounded bg-bg text-center text-sm font-medium",
+				"p-2 rounded bg-surface text-center text-sm font-medium",
 				"transition-all duration-100 ease-in-out cursor-pointer",
-				isLetterAvailable ? "bg-main" : "bg-secondary-background"
+				isLetterAvailable ? "bg-accent text-neutral-dark" : "bg-background text-foreground"
 			) }
 			onClick={ () => updateCurrentGuess( letter ) }
 		>
-			<p className={ cn( "text-lg", !isLetterAvailable && "text-white" ) }>{ letter.toUpperCase() }</p>
+			<p className={ cn( "text-lg" ) }>{ letter.toUpperCase() }</p>
 		</button>
 	);
 }

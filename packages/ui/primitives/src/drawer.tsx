@@ -37,13 +37,13 @@ export const DrawerContent = forwardRef<ComponentRef<typeof Content>, ComponentP
 			<Content
 				ref={ ref }
 				className={ cn(
-					"fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-base",
-					"border-2 border-border bg-background font-heading",
+					"fixed inset-x-0 bottom-0 z-100 mt-24 flex h-auto flex-col rounded-t-base",
+					"border-2 border-black bg-surface font-heading",
 					className
 				) }
 				{ ...props }
 			>
-				<div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-blank"/>
+				<div className="mx-auto mt-4 h-2 w-25 rounded-full bg-blank"/>
 				{ children }
 			</Content>
 		</DrawerPortal>
@@ -72,7 +72,7 @@ export const DrawerDescription = forwardRef<ComponentRef<typeof Description>, Co
 	( { className, ...props }, ref ) => (
 		<Description
 			ref={ ref }
-			className={ cn( "text-sm font-base text-main-foreground", className ) }
+			className={ cn( "text-sm text-foreground", className ) }
 			{ ...props }
 		/>
 	)

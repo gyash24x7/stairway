@@ -33,13 +33,13 @@ export function DisplayHand() {
 		<div
 			className={ cn(
 				"border-2 rounded-md p-2 md:p-3 flex gap-2 md:gap-3 flex-wrap justify-center",
-				isActiveRound && currentTurn === playerId && "bg-secondary-background border-main border-4"
+				isActiveRound && currentTurn === playerId && "bg-background border-accent border-4"
 			) }
 		>
 			{ getSortedHand( hand ).map( ( cardId ) => (
 				<div
 					key={ cardId }
-					className={ cn( "cursor-pointer p-1 z-10", cardId === selectedCard && "bg-main rounded-md" ) }
+					className={ cn( "cursor-pointer p-1 z-10", cardId === selectedCard && "bg-accent rounded-md" ) }
 					onClick={ handleCardClick( cardId ) }
 				>
 					<div
