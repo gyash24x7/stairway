@@ -1,4 +1,5 @@
-import type { CardId, CardSuit, PlayingCard } from "@s2h/cards/types";
+import type { CardId, CardSuit } from "@s2h/utils/cards";
+import type { CallbreakEngine } from "./engine.ts";
 
 export type PlayerId = string;
 export type BasePlayerInfo = {
@@ -19,11 +20,13 @@ export type Round = {
 	createdAt: number;
 };
 
+export type StartedRound = Round & { suit: CardSuit };
+
 export type Deal = {
 	id: string;
 	playerOrder: string[];
 	status: "CREATED" | "IN_PROGRESS" | "COMPLETED";
-	hands: Record<PlayerId, PlayingCard[]>;
+	hands: Record<PlayerId, CardId[]>;
 	declarations: Record<PlayerId, number>;
 	wins: Record<PlayerId, number>;
 	createdAt: number;
@@ -60,7 +63,7 @@ export type PlayerGameInfo = Omit<GameData, "deals"> & {
 	playerId: PlayerId;
 	currentDeal?: Omit<Deal, "hands">;
 	currentRound?: Round;
-	hand: PlayingCard[];
+	hand: CardId[];
 };
 
 export type CreateGameInput = {
@@ -68,19 +71,23 @@ export type CreateGameInput = {
 	trumpSuit: CardSuit;
 };
 
-export type JoinGameInput = {
-	code: string;
-};
-
 export type DeclareDealWinsInput = {
+	gameId: GameId;
 	wins: number;
 	dealId: string;
-	gameId: string;
 };
 
 export type PlayCardInput = {
+	gameId: GameId;
 	cardId: CardId;
 	roundId: string;
 	dealId: string;
-	gameId: string;
 };
+
+export type Bindings = {
+	CALLBREAK_DO: DurableObjectNamespace<CallbreakEngine>;
+	CALLBREAK_KV: KVNamespace;
+	WSS: DurableObjectNamespace<import("../../../../apps/web/src/wss.ts").WebsocketServer>;
+}
+
+export type Context = { authInfo: BasePlayerInfo, env: Bindings };

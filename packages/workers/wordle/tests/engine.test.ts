@@ -1,116 +1,168 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { WordleEngine } from "../src/engine.ts";
-import type { GameData } from "../src/types.ts";
+import type { Bindings } from "../src/types.ts";
 
-describe( "WordleEngine", () => {
-	let gameData: GameData;
+vi.mock( "cloudflare:workers", () => ( {
+	DurableObject: class {
+		constructor( public ctx: DurableObjectState, public env: Bindings ) { }
+	}
+} ) );
 
-	beforeEach( () => {
-		gameData = {
-			id: "game-1",
-			playerId: "player-1",
-			wordLength: 5,
-			wordCount: 2,
-			words: [ "apple", "grape" ],
-			guesses: [],
-			guessBlocks: [],
-			completedWords: [],
-			completed: false
-		};
+class MockWordleEngine extends WordleEngine {
+	public setWords( words: string[] ) {
+		this.data.words = words;
+	}
+}
+
+describe( "Wordle:Engine", () => {
+	const mockDurableObjectState = {
+		id: { toString: () => "mock-do-id" },
+		blockConcurrencyWhile: async <T>( cb: () => Promise<T> ) => cb()
+	} as DurableObjectState;
+
+	const mockEnv = {
+		WORDLE_KV: {
+			get: vi.fn(),
+			put: vi.fn()
+		}
+	};
+
+	afterEach( () => {
+		vi.clearAllMocks();
 	} );
 
-	describe( "static create()", () => {
-		it( "should initialize a new game with random words", () => {
-			const engine = WordleEngine.create( {}, "player-1" );
-			const playerData = engine.getPlayerData();
+	describe( "GamePlay: Error Scenarios", () => {
+		const playerId = "player-1";
+		const engine = new MockWordleEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
 
-			expect( engine.id ).toBe( playerData.id );
-			expect( playerData ).toEqual(
-				expect.objectContaining( {
-					playerId: "player-1",
-					wordLength: 5,
-					wordCount: 2,
-					guesses: [],
-					completedWords: [],
-					completed: false
-				} )
-			);
+		it.sequential( "should initialize the game with default word count and word length", async () => {
+			await engine.initialize( {}, playerId );
+			const { data } = await engine.getPlayerData( playerId );
 
-			expect( playerData.guessBlocks.length ).toEqual( 2 );
-			expect( playerData.guessBlocks.flat().flat().every( pos => pos.state === "empty" ) ).toBeTruthy();
-		} );
-	} );
+			expect( data ).toBeDefined();
+			expect( data?.wordCount ).toBe( 2 );
+			expect( data?.wordLength ).toBe( 5 );
 
-	describe( "getGameData()", () => {
-		it( "should return full game data", () => {
-			const engine = new WordleEngine( gameData );
-			const data = engine.getData();
-			expect( data ).toEqual( gameData );
-		} );
-	} );
-
-	describe( "getPlayerData()", () => {
-		it( "should omit words from player data", () => {
-			const engine = new WordleEngine( gameData );
-			const playerData = engine.getPlayerData();
-			expect( playerData ).not.toHaveProperty( "words" );
-			expect( playerData ).toHaveProperty( "id", "game-1" );
-		} );
-	} );
-
-	describe( "getWords()", () => {
-		it( "should throw if game is not completed", () => {
-			const engine = new WordleEngine( gameData );
-			expect( () => engine.getWords() ).toThrow( /Cannot show words before completion/ );
+			expect( mockEnv.WORDLE_KV.put ).toHaveBeenCalledWith( expect.stringContaining( "gameId:" ), "mock-do-id" );
+			expect( mockEnv.WORDLE_KV.put ).toHaveBeenCalledWith( "mock-do-id", expect.any( String ) );
 		} );
 
-		it( "should return words if game is completed", () => {
-			gameData.completed = true;
-			const engine = new WordleEngine( gameData );
-			expect( engine.getWords() ).toEqual( [ "apple", "grape" ] );
-		} );
-	} );
-
-	describe( "makeGuess()", () => {
-		it( "should add guess and mark completedWords if correct", () => {
-			const engine = new WordleEngine( gameData );
-			engine.makeGuess( "apple" );
-
-			const playerData = engine.getPlayerData();
-			expect( playerData.guesses ).toContain( "apple" );
-			expect( playerData.completedWords ).toContain( "apple" );
-			expect( playerData.completed ).toBe( false );
-			// For the first word, all letters should be correct
-			expect( playerData.guessBlocks[ 0 ][ 0 ].every( pos => pos.state === "correct" ) ).toBeTruthy();
-			// For the second word, states should be wrong or wrongPlace
-			expect( playerData.guessBlocks[ 1 ][ 0 ].some( pos => [ "wrong", "wrongPlace" ].includes( pos.state ) ) )
-				.toBeTruthy();
-
+		it.sequential( "should set words for the game", async () => {
+			engine.setWords( [ "apple", "grape" ] );
 		} );
 
-		it( "should mark game as completed if all words guessed", () => {
-			const engine = new WordleEngine( gameData );
-			engine.makeGuess( "apple" );
-			engine.makeGuess( "grape" );
-			expect( engine.getPlayerData().completed ).toBeTruthy();
+		it.sequential( "should throw error when player not part of the game", async () => {
+			const { error } = await engine.getPlayerData( "unknown-player" );
+			expect( error ).toBeDefined();
+			expect( error ).toBe( "Player is not part of this game!" );
 		} );
 
-		it( "should mark game as completed if max guesses reached", () => {
-			const engine = new WordleEngine( gameData );
+		it.sequential( "should omit words from player data", async () => {
+			const { data } = await engine.getPlayerData( playerId );
+			expect( data ).toBeDefined();
+			expect( ( data as any ).words ).toBeUndefined();
+		} );
+
+		it.sequential( "should return error while getting words if game is not completed", async () => {
+			const { error } = await engine.getWords( playerId );
+			expect( error ).toBeDefined();
+			expect( error ).toBe( "Cannot show words before completion!" );
+		} );
+
+		it.sequential( "should return error if unknown player requests words", async () => {
+			const { error } = await engine.getWords( "unknown-player" );
+			expect( error ).toBeDefined();
+			expect( error ).toBe( "Player is not part of this game!" );
+		} );
+
+		it.sequential( "should return error if guess is not in dictionary", async () => {
+			const { error } = await engine.makeGuess( { guess: "zzzzz" }, playerId );
+			expect( error ).toBeDefined();
+			expect( error ).toBe( "The guess is not a valid word" );
+		} );
+
+		it.sequential( "should return error if unknown player makes a guess", async () => {
+			const { error } = await engine.makeGuess( { guess: "apple" }, "unknown-player" );
+			expect( error ).toBeDefined();
+			expect( error ).toBe( "Player is not part of this game!" );
+		} );
+
+		it.sequential( "should mark game as completed if max guesses reached", async () => {
 			for ( let i = 0; i < 7; i++ ) {
-				engine.makeGuess( "apple" );
+				await engine.makeGuess( { guess: "apple" }, playerId );
 			}
-			expect( engine.getPlayerData().completed ).toBeTruthy();
+			const { data } = await engine.getPlayerData( playerId );
+			expect( data ).toBeDefined();
+			expect( data?.completed ).toBe( true );
 		} );
 
-		it( "should throw if guess is not in dictionary", () => {
-			const engine = new WordleEngine( gameData );
-			expect( () => engine.makeGuess( "zzzzz" ) ).toThrow( /not a valid word/ );
+		it.sequential( "should return error if no guesses left", async () => {
+			const { error } = await engine.makeGuess( { guess: "grape" }, playerId );
+			expect( error ).toBeDefined();
+			expect( error ).toBe( "No more guesses left" );
+		} );
+	} );
+
+	describe( "GamePlay: Happy Path", () => {
+		const playerId = "player-1";
+		let engine: MockWordleEngine;
+
+		it.sequential( "should load existing data from kv", async () => {
+			const existingData = {
+				id: "mock-do-id",
+				playerId: playerId,
+				wordCount: 2,
+				wordLength: 5,
+				words: [],
+				guesses: [],
+				guessBlocks: [],
+				completedWords: [],
+				completed: false
+			};
+			mockEnv.WORDLE_KV.get.mockResolvedValueOnce( existingData as any );
+			engine = new MockWordleEngine( mockDurableObjectState, mockEnv as unknown as Bindings );
+
+			expect( mockEnv.WORDLE_KV.get ).toHaveBeenCalledWith( "mock-do-id", "json" );
 		} );
 
-		it( "should throw if no guesses left", () => {
-			const engine = new WordleEngine( { ...gameData, guesses: Array( 7 ).fill( "apple" ) } );
-			expect( () => engine.makeGuess( "apple" ) ).toThrow( /No more guesses left/ );
+		it.sequential( "should initialize the game with provided word count and word length", async () => {
+			await engine.initialize( { wordCount: 3, wordLength: 5 }, playerId );
+			const { data } = await engine.getPlayerData( playerId );
+
+			expect( data ).toBeDefined();
+			expect( data?.wordCount ).toBe( 3 );
+			expect( data?.wordLength ).toBe( 5 );
+
+			expect( mockEnv.WORDLE_KV.put ).toHaveBeenCalledWith( expect.stringContaining( "gameId:" ), "mock-do-id" );
+			expect( mockEnv.WORDLE_KV.put ).toHaveBeenCalledWith( "mock-do-id", expect.any( String ) );
+		} );
+
+		it.sequential( "should add guess and mark completed words if correct", async () => {
+			engine.setWords( [ "apple", "grape", "peach" ] );
+
+			let response = await engine.makeGuess( { guess: "apple" }, playerId );
+			expect( response.error ).toBeUndefined();
+			expect( response.data?.completedWords ).toContain( "apple" );
+
+			response = await engine.makeGuess( { guess: "grape" }, playerId );
+			expect( response.error ).toBeUndefined();
+			expect( response.data?.completedWords ).toContain( "grape" );
+
+			response = await engine.makeGuess( { guess: "peach" }, playerId );
+			expect( response.error ).toBeUndefined();
+			expect( response.data?.completedWords ).toContain( "peach" );
+		} );
+
+		it.sequential( "should mark game as completed if all words guessed", async () => {
+			const { data } = await engine.getPlayerData( playerId );
+			expect( data ).toBeDefined();
+			expect( data?.completed ).toBe( true );
+		} );
+
+		it.sequential( "should return words after game completion", async () => {
+			const { data, error } = await engine.getWords( playerId );
+			expect( error ).toBeUndefined();
+			expect( data ).toEqual( [ "apple", "grape", "peach" ] );
 		} );
 	} );
 } );

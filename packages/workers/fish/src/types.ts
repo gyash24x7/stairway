@@ -1,8 +1,9 @@
-import type { CardId, PlayingCard } from "@s2h/cards/types";
+import type { CardId } from "@s2h/utils/cards";
+import type { FishEngine } from "./engine.ts";
 
 export type BookType = "NORMAL" | "CANADIAN";
 export type PlayerCount = 3 | 4 | 6 | 8;
-export type TeamCount = 0 | 2 | 3 | 4;
+export type TeamCount = 2 | 3 | 4;
 export type CanadianBook = "LC" | "LD" | "LH" | "LS" | "UC" | "UD" | "UH" | "US";
 export type NormalBook =
 	"ACES"
@@ -20,6 +21,7 @@ export type NormalBook =
 	| "KINGS";
 export type Book = NormalBook | CanadianBook;
 export type DeckType = 48 | 52;
+export type BookSize = 4 | 6;
 
 export type GameConfig = {
 	type: BookType;
@@ -27,7 +29,7 @@ export type GameConfig = {
 	teamCount: TeamCount;
 	deckType: DeckType;
 	books: Book[];
-	allowSolo?: boolean;
+	bookSize: BookSize;
 };
 
 export type PlayerId = string;
@@ -55,14 +57,6 @@ export type Team = {
 };
 
 export type GameStatus = "CREATED" | "PLAYERS_READY" | "TEAMS_CREATED" | "IN_PROGRESS" | "COMPLETED";
-
-export type BookState = {
-	cards: CardId[];
-	knownOwners: Partial<Record<CardId, PlayerId>>;
-	possibleOwners: Partial<Record<CardId, PlayerId[]>>;
-	knownCounts: Record<PlayerId, number>;
-	inferredOwners: Partial<Record<CardId, PlayerId>>;
-};
 
 export type AskEvent = {
 	success: boolean;
@@ -105,14 +99,15 @@ export type GameData = {
 	status: GameStatus;
 	config: GameConfig;
 	currentTurn: PlayerId;
+	createdBy: PlayerId;
 	playerIds: PlayerId[];
 	players: Record<PlayerId, Player>;
 	teamIds: TeamId[];
 	teams: Record<TeamId, Team>;
 	hands: Record<PlayerId, CardId[]>;
 	cardCounts: Record<PlayerId, number>;
-	cardMappings: Record<CardId, string>;
-	bookStates: Record<Book, BookState>;
+	cardMappings: Partial<Record<CardId, PlayerId>>;
+	cardLocations: Partial<Record<CardId, PlayerId[]>>;
 	lastMoveType?: "ask" | "claim" | "transfer";
 	askHistory: AskEvent[];
 	claimHistory: ClaimEvent[];
@@ -122,7 +117,7 @@ export type GameData = {
 
 export type PlayerGameInfo = Omit<GameData, "hands" | "cardMappings"> & {
 	playerId: string;
-	hand: PlayingCard[];
+	hand: CardId[];
 };
 
 export type WeightedBook = {
@@ -141,48 +136,46 @@ export type WeightedAsk = {
 
 export type WeightedClaim = {
 	book: Book;
-	claim: Partial<Record<CardId, string>>;
+	claim: Partial<Record<CardId, PlayerId>>;
 	weight: number;
 };
 
 export type WeightedTransfer = {
 	weight: number;
-	transferTo: string;
+	transferTo: PlayerId;
 };
 
 export type CreateGameInput = {
-	playerCount?: PlayerCount;
+	playerCount: PlayerCount;
+	type: BookType;
+	teamCount: TeamCount;
 };
-
-export type JoinGameInput = {
-	code: string;
-};
-
-export type GameIdInput = { gameId: GameId };
 
 export type CreateTeamsInput = {
+	teams: Record<string, PlayerId[ ]>;
 	gameId: GameId;
-	data: Record<string, PlayerId[]>;
 };
 
-export type StartGameInput = {
+export type AskCardInput = {
 	gameId: GameId;
-	type: BookType;
-	deckType: DeckType;
-};
-
-export type AskEventInput = {
-	gameId: GameId;
-	from: string;
+	from: PlayerId;
 	cardId: CardId;
 };
 
-export type ClaimEventInput = {
-	gameId: GameId;
+export type ClaimBookInput = {
 	claim: Partial<Record<CardId, string>>;
+	gameId: GameId;
 };
 
-export type TransferEventInput = {
+export type TransferTurnInput = {
+	transferTo: PlayerId;
 	gameId: GameId;
-	transferTo: string;
 };
+
+export type Bindings = {
+	FISH_DO: DurableObjectNamespace<FishEngine>;
+	FISH_KV: KVNamespace;
+	WSS: DurableObjectNamespace<import("../../../../apps/web/src/wss.ts").WebsocketServer>;
+}
+
+export type Context = { env: Bindings } & { authInfo: BasePlayerInfo };

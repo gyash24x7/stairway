@@ -2,6 +2,7 @@ import { Button } from "@s2h-ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
+	DrawerDescription,
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle,
@@ -40,13 +41,14 @@ export function DeclareDealWins() {
 				<div className={ "mx-auto w-full max-w-lg" }>
 					<DrawerHeader>
 						<DrawerTitle>DECLARE DEAL WINS</DrawerTitle>
+						<DrawerDescription/>
 					</DrawerHeader>
 					<div className={ "flex flex-col gap-3" }>
 						<div className="flex justify-center items-center space-x-2">
 							<Button size="icon" onClick={ decrement } disabled={ wins <= 2 }>
 								<MinusIcon className="h-4 w-4"/>
 							</Button>
-							<div className="w-20 h-10 flex items-center justify-center border bg-bg text-sm">
+							<div className="w-20 h-10 flex items-center justify-center border bg-surface text-sm">
 								{ wins }
 							</div>
 							<Button size="icon" onClick={ increment } disabled={ wins >= 13 }>

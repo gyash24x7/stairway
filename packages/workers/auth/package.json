@@ -7,10 +7,10 @@
 		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
-		"@orpc/contract": "1.12.2",
+		"@orpc/server": "1.13.0",
 		"@s2h/utils": "workspace:*",
 		"@simplewebauthn/server": "13.2.2",
-		"drizzle-orm": "0.44.7",
+		"drizzle-orm": "0.45.1",
 		"valibot": "1.2.0"
 	},
 	"exports": {
@@ -19,7 +19,7 @@
 			"types": "./src/*.ts"
 		}
 	},
-	"keywords": [ ],
+	"keywords": [],
 	"author": "Yash Gupta",
 	"license": "ISC"
 }

@@ -10,34 +10,126 @@
 @source "../../../packages/ui/shared";
 @source "../../../packages/ui/wordle";
 
+@custom-variant apple-light (&:is(.apple.light *));
+@custom-variant apple-dark (&:is(.apple.dark *));
+@custom-variant orange-light (&:is(.orange.light *));
+@custom-variant orange-dark (&:is(.orange.dark *));
+@custom-variant mango-light (&:is(.mango.light *));
+@custom-variant mango-dark (&:is(.mango.dark *));
+@custom-variant banana-light (&:is(.banana.light *));
+@custom-variant banana-dark (&:is(.banana.dark *));
+@custom-variant lime-light (&:is(.lime.light *));
+@custom-variant lime-dark (&:is(.lime.dark *));
+@custom-variant kiwi-light (&:is(.kiwi.light *));
+@custom-variant kiwi-dark (&:is(.kiwi.dark *));
+@custom-variant ice-light (&:is(.ice.light *));
+@custom-variant ice-dark (&:is(.ice.dark *));
+@custom-variant blueberry-light (&:is(.blueberry.light *));
+@custom-variant blueberry-dark (&:is(.blueberry.dark *));
+@custom-variant grape-light (&:is(.grape.light *));
+@custom-variant grape-dark (&:is(.grape.dark *));
+@custom-variant strawberry-light (&:is(.strawberry.light *));
+@custom-variant strawberry-dark (&:is(.strawberry.dark *));
+
 :root {
-	--background: #ffffff;
-	--border: #000000;
-	--foreground: #000000;
-	--main: #ffffff;
-	--overlay: #000000cc;
-	--ring: #ffffff;
-	--shadow: -2px 4px 0px 0px var(--border);
-	--secondary-background: #ffffff;
-	--main-foreground: #000000;
+	--neutral-dark: #1F1F1F;
+	--neutral-light: #F3F4F6;
+	--surface-light: #F3F4F6;
+	--surface-dark: #1F1F1F;
+	--accent: #808080;
+}
+
+.apple {
+	--surface-light: #FFE0E0;
+	--surface-dark: #2B0F12;
+	--accent: #FF6B6B;
+}
+
+.orange {
+	--surface-light: #FFE3CF;
+	--surface-dark: #2B1608;
+	--accent: #FD9745;
+}
+
+.mango {
+	--surface-light: #FFEFCC;
+	--surface-dark: #2A1F00;
+	--accent: #FFBF00;
+}
+
+.banana {
+	--surface-light: #FFF6CC;
+	--surface-dark: #2A2408;
+	--accent: #FFDC58;
+}
+
+.lime {
+	--surface-light: #F7FFE5;
+	--surface-dark: #1A2B0E;
+	--accent: #A4C639;
+}
+
+.kiwi {
+	--surface-light: #D0FBEA;
+	--surface-dark: #0E201D;
+	--accent: #00BD84;
+}
+
+.ice {
+	--surface-light: #D6F6FC;
+	--surface-dark: #08242B;
+	--accent: #00C8F0;
+}
+
+.blueberry {
+	--surface-light: #D6ECFF;
+	--surface-dark: #081E2B;
+	--accent: #0099FF;
+}
+
+.grape {
+	--surface-light: #E8E0FB;
+	--surface-dark: #1C1430;
+	--accent: #A388EE;
+}
+
+.strawberry {
+	--surface-light: #FFD9EB;
+	--surface-dark: #2B0E1F;
+	--accent: #FC64AB;
+}
+
+.light {
+	--ring: #000000;
+	--surface: var(--surface-light);
+	--foreground: var(--neutral-dark);
+	--background: var(--neutral-light);
+}
+
+.dark {
+	--ring: #FFFFFF;
+	--surface: var(--surface-dark);
+	--foreground: var(--neutral-light);
+	--background: var(--neutral-dark);
 }
 
 @theme inline {
-	--color-main: var(--main);
+	--color-accent: var(--accent);
+	--color-surface: var(--surface);
 	--color-background: var(--background);
-	--color-secondary-background: var(--secondary-background);
 	--color-foreground: var(--foreground);
-	--color-main-foreground: var(--main-foreground);
-	--color-border: var(--border);
-	--color-overlay: var(--overlay);
+
 	--color-ring: var(--ring);
+	--color-neutral-dark: var(--neutral-dark);
+	--color-neutral-light: var(--neutral-light);
+	--color-overlay: #000000cc;
 
 	--spacing-boxShadowX: -2px;
 	--spacing-boxShadowY: 4px;
-	--spacing-reverseBoxShadowX: --2px;
+	--spacing-reverseBoxShadowX: -2px;
 	--spacing-reverseBoxShadowY: -4px;
 	--radius-base: 5px;
-	--shadow-shadow: var(--shadow);
+	--shadow-shadow: -2px 4px 0px 0px #000000;
 
 	--font-heading: "Fjalla One", serif;
 	--font-base: "Geist Mono", monospace;
@@ -47,11 +139,11 @@
 
 @layer base {
 	* {
-		@apply border-border;
+		@apply border-black;
 	}
 
 	body {
-		@apply bg-background text-main-foreground font-base;
+		@apply bg-surface text-foreground font-base;
 	}
 }
 

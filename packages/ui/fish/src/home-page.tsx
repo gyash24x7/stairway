@@ -7,7 +7,7 @@ import { JoinGame } from "./join-game.tsx";
 export function FishHomePage() {
 	const { isLoggedIn } = useAuth();
 	return (
-		<div className={ "flex gap-5 flex-col mt-2" }>
+		<div className={ "flex gap-5 flex-col mt-2 text-foreground" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>FISH</h2>
 			<p>
 				Fish is a card game for multiple players in teams or individually using

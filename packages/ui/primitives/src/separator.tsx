@@ -1,4 +1,4 @@
-import { Separator as Root } from "@base-ui-components/react/separator";
+import { Separator as Root } from "@base-ui/react/separator";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
 import { cn } from "./utils.tsx";
 
@@ -8,8 +8,8 @@ export const Separator = forwardRef<ComponentRef<typeof Root>, ComponentPropsWit
 			ref={ ref }
 			orientation={ orientation }
 			className={ cn(
-				"shrink-0 bg-border",
-				orientation === "horizontal" ? "h-[1px] w-full" : "h-full w-[1px]",
+				"shrink-0 bg-foreground",
+				orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
 				className
 			) }
 			{ ...props }

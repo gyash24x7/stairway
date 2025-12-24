@@ -14,15 +14,18 @@
 		}
 	},
 	"dependencies": {
-		"@orpc/client": "1.12.2",
-		"@orpc/tanstack-query": "1.12.2",
-		"@s2h/api": "workspace:*",
-		"@tanstack/react-query": "5.90.11"
+		"@orpc/client": "1.13.0",
+		"@orpc/tanstack-query": "1.13.0",
+		"@s2h/auth": "workspace:*",
+		"@s2h/callbreak": "workspace:*",
+		"@s2h/fish": "workspace:*",
+		"@s2h/wordle": "workspace:*",
+		"@tanstack/react-query": "5.90.12"
 	},
 	"devDependencies": {
 		"@types/react": "19.2.7"
 	},
 	"peerDependencies": {
-		"react": "19.2.0"
+		"react": "19.2.3"
 	}
 }

@@ -17,12 +17,12 @@ export function DisplayScore() {
 			<p>SCORES</p>
 			<Table>
 				<TableHeader>
-					<TableRow className={ "bg-white text-md" }>
+					<TableRow className={ "text-md" }>
 						<TableHead>PLAYER</TableHead>
-						<TableHead className={ "hidden md:table-cell text-center" }>PREVIOUS DEALS</TableHead>
+						<TableHead className={ "hidden md:table-cell text-center" }>PREVIOUS&nbsp;DEALS</TableHead>
 						<TableHead className={ "text-center" }>SCORE</TableHead>
 						{ status !== "GAME_COMPLETED" && (
-							<TableHead className={ "text-center" }>ACTIVE DEAL</TableHead>
+							<TableHead className={ "text-center" }>ACTIVE&nbsp;DEAL</TableHead>
 						) }
 					</TableRow>
 				</TableHeader>
@@ -31,7 +31,11 @@ export function DisplayScore() {
 						<TableRow key={ player.id }>
 							<TableCell className={ "flex gap-2 items-center" }>
 								<Avatar className={ "rounded-full w-7 h-7 hidden sm:block" }>
-									<AvatarImage src={ player.avatar } alt={ "" }/>
+									<AvatarImage
+										src={ player.avatar }
+										alt={ "" }
+										className={ "bg-background" }
+									/>
 								</Avatar>
 								<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>
 							</TableCell>

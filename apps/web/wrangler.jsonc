@@ -13,12 +13,6 @@
 		"enabled": true
 	},
 	"keep_vars": true,
-	"vars": {
-		"APP_NAME": "stairway",
-		"WEBAUTHN_RP_ID": "localhost",
-		"AUTH_SECRET_KEY": "<from-env>",
-		"WEBAUTHN_ORIGIN": "http://localhost:5173"
-	},
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -61,13 +55,17 @@
 			{
 				"name": "FISH_DO",
 				"class_name": "FishEngine"
+			},
+			{
+				"name": "WORDLE_DO",
+				"class_name": "WordleEngine"
 			}
 		]
 	},
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": [ "WebsocketServer", "CallbreakEngine", "FishEngine" ]
+			"new_sqlite_classes": [ "WebsocketServer", "CallbreakEngine", "FishEngine", "WordleEngine" ]
 		}
 	]
 }

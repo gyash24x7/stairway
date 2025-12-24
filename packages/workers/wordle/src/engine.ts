@@ -1,126 +1,191 @@
 import { generateId } from "@s2h/utils/generator";
 import { createLogger } from "@s2h/utils/logger";
-import { dictionary } from "./dictionary.ts";
-import type { CreateGameInput, GameData, MakeGuessInput, PlayerGameInfo, PositionData } from "./types.ts";
+import { DurableObject } from "cloudflare:workers";
+import { dictionaries } from "./dictionary.ts";
+import type { Bindings, CreateGameInput, GameData, MakeGuessInput, PlayerId, PositionData } from "./types.ts";
 
 /**
+ * Durable Object that encapsulates the authoritative Wordle game state and logic.
+ *
+ * Responsibilities:
+ * - Hold the canonical GameData for a single game instance.
+ * - Initialize games, accept/validate guesses, compute per-letter feedback,
+ *   and persist the GameData to the configured KV namespace.
+ *
+ * Side effects:
+ * - Many methods mutate `this.data`. Persist changes by calling saveGameData()
+ *   (most public mutating methods do this internally).
+ *
+ * Notes:
+ * - This class is constructed inside a Durable Object context. State is loaded
+ *   during construction using ctx.blockConcurrencyWhile(...) to avoid races.
+ *
+ * @public
  * @class WordleEngine
- * WordleEngine class encapsulates the core logic of the Wordle game.
- * It manages game state, processes player guesses, and calculates letter positions.
- * It provides methods to create a new game, retrieve game data, and make guesses.
- * The engine ensures that the game rules are enforced and maintains the integrity of the game state.
  */
-export class WordleEngine {
+export class WordleEngine extends DurableObject<Bindings> {
 
+	protected data: GameData;
 	private readonly logger = createLogger( "Wordle:Engine" );
+	private readonly key: string;
 
-	private readonly data: GameData;
+	constructor( ctx: DurableObjectState, env: Bindings ) {
+		super( ctx, env );
+		this.key = ctx.id.toString();
+		this.data = WordleEngine.defaultGameData();
 
-	/**
-	 * Initializes a new instance of the WordleEngine with the provided game data.
-	 * It sets up the initial game state and prepares the guess blocks based on the current guesses.
-	 *
-	 * @constructor
-	 * @param {GameData} data - The initial game data to set up the engine.
-	 */
-	constructor( data: GameData ) {
-		this.data = data;
-		this.updateGuessBlocks();
+		ctx.blockConcurrencyWhile( async () => {
+			const data = await this.loadGameData();
+			if ( data ) {
+				this.data = data;
+			} else {
+				this.logger.info( "No existing game data found, starting new game." );
+				await this.saveGameData();
+			}
+		} );
 	}
 
 	/**
-	 * Gets the unique identifier of the game.
-	 * @return {string} - The game ID.
-	 */
-	public get id(): string {
-		return this.data.id;
-	}
-
-	/**
-	 * Creates a new Wordle game with the specified parameters.
-	 * This function generates a random set of words based on the provided word count and length,
-	 * and initializes the game state with the player's ID and the generated words.
-	 * Defaults to 2 words of length 5 if not specified.
+	 * Create a new GameData object populated with deterministic defaults.
 	 *
-	 * @param {CreateGameInput} input - The input parameters containing word count, word length and gameId
-	 * @param {string} playerId - The ID of the player creating the game.
-	 * @return {WordleEngine} - A new instance of the WordleEngine initialized with the created game data.
+	 * Side effects: none (pure factory). Caller is expected to assign the returned
+	 * object to this.data and persist it if desired.
+	 *
+	 * @returns New GameData populated with default values (id, wordLength, wordCount, etc).
+	 * @private
 	 */
-	public static create( input: CreateGameInput, playerId: string ): WordleEngine {
-		const { wordCount = 2, wordLength = 5 } = input;
-		const words: string[] = [];
-		for ( let i = 0; i < wordCount; i++ ) {
-			words.push( dictionary[ Math.floor( Math.random() * dictionary.length ) ] );
-		}
-
-		const game: GameData = {
+	private static defaultGameData() {
+		return {
 			id: generateId(),
-			playerId,
-			wordLength,
-			wordCount,
-			words,
+			playerId: "",
+			wordLength: 5 as const,
+			wordCount: 2,
+			words: [],
 			guesses: [],
 			guessBlocks: [],
 			completedWords: [],
 			completed: false
 		};
-
-		const engine = new WordleEngine( game );
-		engine.updateGuessBlocks();
-		return engine;
 	}
 
 	/**
-	 * Retrieves the entire game information
-	 * To be used for saving game data back to KV
-	 * Should not be xposed to the client;
-	 */
-	public getData(): GameData {
-		return this.data;
-	}
-
-	/**
-	 * Retrieves the player-specific game information.
-	 * This function returns the game state excluding the words to prevent cheating.
+	 * Initialize or reconfigure a game instance.
 	 *
-	 * @return {PlayerGameInfo} - The player-specific game information.
-	 */
-	public getPlayerData(): PlayerGameInfo {
-		const { words, ...rest } = this.data;
-		return rest;
-	}
-
-	/**
-	 * Retrieves the list of words for the game.
-	 * This function validates if the game is completed before returning the words.
-	 * If the game is not completed, it throws an error to prevent cheating.
+	 * Behaviour / side effects:
+	 * - Mutates this.data.playerId, this.data.wordCount, this.data.wordLength.
+	 * - Selects `wordCount` random words from the embedded dictionary and sets this.data.words.
+	 * - Recomputes guessBlocks and persists the updated GameData to KV.
 	 *
-	 * @throws {Error} throw an error if the game is not completed.
-	 * @return {string[]} - The list of words for the game.
-	 */
-	public getWords(): string[] {
-		this.validateGetWords();
-		return this.data.words;
-	}
-
-	/**
-	 * Processes a player's guess and updates the game state accordingly.
-	 * This function validates the guess, checks if it is correct, and updates the list of guesses and completed words.
-	 * It also checks if the game is completed based on the number of correct guesses or maximum allowed guesses.
-	 * Finally, it updates the guess blocks to reflect the current state of the game.
+	 * Validation: This method assumes the caller provides sensible input (e.g., matching wordLength).
+	 * It does not throw; it logs and overwrites current configuration.
 	 *
-	 * @param {string} guess - The guess made by the player.
+	 * @param input Input object with playerId, optional wordCount and wordLength.
+	 * @param playerId ID of the requesting player.
+	 * @returns Object with the game ID in `data`.
+	 * @public
 	 */
-	public makeGuess( guess: string ) {
-		this.logger.debug( ">> makeGuess()" );
+	public async initialize( input: CreateGameInput, playerId: PlayerId ) {
+		this.logger.debug( ">> initialize()" );
 
-		this.validateMakeGuess( { gameId: this.data.id, guess } );
+		this.data.playerId = playerId;
+		this.data.wordCount = input.wordCount ?? this.data.wordCount;
+		this.data.wordLength = input.wordLength ?? this.data.wordLength;
 
-		if ( !this.data.completedWords.includes( guess ) && this.data.words.includes( guess ) ) {
-			this.data.completedWords.push( guess );
+		const dictionary = dictionaries[ this.data.wordLength ];
+
+		const words: string[] = [];
+		for ( let i = 0; i < this.data.wordCount; i++ ) {
+			words.push( dictionary[ Math.floor( Math.random() * dictionary.length ) ] );
 		}
 
-		this.data.guesses.push( guess );
+		this.data.words = words;
+		this.updateGuessBlocks();
+
+		await this.saveGameData();
+		await this.saveDurableObjectId();
+
+		this.logger.debug( "<< initialize()" );
+		return { data: this.data.id };
+	}
+
+	/**
+	 * Produce a player-safe snapshot of the game state.
+	 * This omits the secret `words` array so the returned object is safe to return to clients.
+	 * No state mutation or persistence occurs.
+	 *
+	 * @param playerId ID of the requesting player.
+	 * @returns Player-facing view of the current game data.
+	 * @public
+	 */
+	public async getPlayerData( playerId: PlayerId ) {
+		this.logger.debug( ">> getPlayerData()" );
+
+		const { error } = this.validatePlayerPartOfGame( playerId );
+		if ( error ) {
+			this.logger.error( "Get player data validation failed: %s", error );
+			return { error };
+		}
+
+		const { words, ...data } = this.data;
+
+		this.logger.debug( "<< getPlayerData()" );
+		return { data };
+	}
+
+	/**
+	 * Return the secret words for the game.
+	 * Behaviour:
+	 * - Only allowed once the game is completed (this.data.completed === true).
+	 * - Does not mutate state.
+	 *
+	 * @param playerId ID of the requesting player.
+	 * @returns Array of target words or an error if not allowed.
+	 * @public
+	 */
+	public async getWords( playerId: PlayerId ) {
+		this.logger.debug( ">> getWords()" );
+
+		const { error } = this.validateGetWords( playerId );
+		if ( error ) {
+			this.logger.error( "Get words validation failed: %s", error );
+			return { error };
+		}
+
+		return { data: this.data.words };
+	}
+
+	/**
+	 * Process a player's guess and update game state accordingly.
+	 *
+	 * Steps:
+	 * 1. Validate the guess (remaining guesses and dictionary membership).
+	 * 2. Record the guess in this.data.guesses.
+	 * 3. If the guess matches any target word(s), mark them in this.data.completedWords.
+	 * 4. Flag this.data.completed when all words guessed or max guesses reached.
+	 * 5. Recompute guessBlocks and persist the updated GameData.
+	 *
+	 * Side effects:
+	 * - Mutates this.data and persists changes via saveGameData().
+	 *
+	 * @param input Object with property `guess` (string).
+	 * @param playerId ID of the requesting player.
+	 * @returns Empty object on success or { error } describing validation failure.
+	 * @public
+	 */
+	public async makeGuess( input: MakeGuessInput, playerId: PlayerId ) {
+		this.logger.debug( ">> makeGuess()" );
+
+		const { error } = this.validateMakeGuess( input, playerId );
+		if ( error ) {
+			this.logger.error( "Guess validation failed: %s", error );
+			return { error };
+		}
+
+		if ( !this.data.completedWords.includes( input.guess ) && this.data.words.includes( input.guess ) ) {
+			this.data.completedWords.push( input.guess );
+		}
+
+		this.data.guesses.push( input.guess );
 		const allWordsGuessed = this.data.words.every( word => this.data.completedWords.includes( word ) );
 		const maxGuessesReached = this.data.guesses.length >= ( this.data.wordCount + this.data.wordLength );
 
@@ -129,57 +194,103 @@ export class WordleEngine {
 		}
 
 		this.updateGuessBlocks();
+		await this.saveGameData();
 
+		const { words, ...data } = this.data;
 		this.logger.debug( "<< makeGuess()" );
+		return { data };
 	}
 
 	/**
-	 * Validates if the game is completed before allowing access to the words.
-	 * Throws an error if the game is not yet completed.
+	 * Ensure that the requesting player is part of this game.
+	 * This method does not mutate state.
 	 *
-	 * @throws {Error} throw an error if the game is not completed.
+	 * @param playerId ID of the requesting player.
+	 * @returns Empty object on success or an error description.
 	 * @private
 	 */
-	private validateGetWords() {
+	private validatePlayerPartOfGame( playerId: PlayerId ) {
+		this.logger.debug( ">> validatePlayerPartOfGame()" );
+
+		if ( this.data.playerId !== playerId ) {
+			this.logger.error( "Player is not part of this game! GameId: %s, PlayerId: %s", this.data.id, playerId );
+			return { error: "Player is not part of this game!" };
+		}
+
+		this.logger.debug( "<< validatePlayerPartOfGame()" );
+		return {};
+	}
+
+	/**
+	 * Ensure that the words can be revealed. The only requirement currently is that
+	 * the game must be marked completed. This method does not mutate state.
+	 *
+	 * @param playerId ID of the requesting player.
+	 * @returns Empty object on success or an error description.
+	 * @private
+	 */
+	private validateGetWords( playerId: PlayerId ) {
 		this.logger.debug( ">> validateGetWords()" );
+
+		const { error } = this.validatePlayerPartOfGame( playerId );
+		if ( error ) {
+			return { error };
+		}
 
 		if ( !this.data.completed ) {
 			this.logger.error( "Cannot show words before completion! GameId: %s", this.data.id );
-			throw "Cannot show words before completion!";
+			return { error: "Cannot show words before completion!" };
 		}
 
 		this.logger.debug( "<< validateGetWords()" );
+		return {};
 	}
 
 	/**
-	 * Validates the player's guess before processing it.
-	 * Ensures that the guess is a valid word and that the player has remaining guesses.
-	 * Throws an error if the guess is invalid or if no guesses are left.
+	 * Validate a guess before applying it.
+	 * This method does not mutate state; callers should abort if an error is returned.
 	 *
-	 * @param input {MakeGuessInput} input - The input containing the player's guess.
-	 * @throws {Error} throw an error if the guess is invalid or if no guesses are left.
+	 * Checks performed:
+	 * - There are remaining allowed guesses: guesses.length < (wordLength + wordCount).
+	 * - The guessed word exists in the in-memory dictionary (prevents nonsense words).
+	 *
+	 * @param input Object with property `guess` (string).
+	 * @param playerId ID of the requesting player.
+	 * @returns Empty object on success or an error description.
 	 * @private
 	 */
-	private validateMakeGuess( input: MakeGuessInput ) {
+	private validateMakeGuess( input: MakeGuessInput, playerId: PlayerId ) {
 		this.logger.debug( ">> validateMakeGuess()" );
+
+		const dictionary = dictionaries[ this.data.wordLength ];
+		const { error } = this.validatePlayerPartOfGame( playerId );
+		if ( error ) {
+			return { error };
+		}
 
 		if ( this.data.guesses.length >= this.data.wordLength + this.data.wordCount ) {
 			this.logger.error( "No More Guesses Left! GameId: %s", this.data.id );
-			throw "No more guesses left";
+			return { error: "No more guesses left" };
 		}
 
 		if ( !dictionary.includes( input.guess ) ) {
 			this.logger.error( "The guess is not a valid word! GameId: %s", this.data.id );
-			throw "The guess is not a valid word";
+			return { error: "The guess is not a valid word" };
 		}
 
 		this.logger.debug( "<< validateMakeGuess()" );
+		return {};
 	}
 
 	/**
-	 * Updates the guess blocks based on the current guesses and words.
-	 * This function recalculates the positions of letters in each guess block,
-	 * marking them as correct, wrong place, or wrong based on the game's words.
+	 * Recompute the guessBlocks matrix used by clients to render feedback.
+	 *
+	 * For each target word this produces an array of rows (one row per allowed turn):
+	 * - If a guess exists at turn i, compute per-letter PositionData via calculatePositions.
+	 * - Otherwise produce an "empty" row filled with PositionData entries where state === "empty".
+	 *
+	 * Side effects:
+	 * - Mutates this.data.guessBlocks but does not persist; callers should call saveGameData().
 	 *
 	 * @private
 	 */
@@ -190,28 +301,34 @@ export class WordleEngine {
 			return new Array( wordLength + wordCount ).fill( 0 ).map( ( _, i ) => i < guesses.length
 				? this.calculatePositions( word, guesses[ i ], completedIndex !== -1 && i > completedIndex )
 				: new Array( wordLength ).fill( 0 )
-					.map( ( _, index ) => ( { letter: "", state: "empty", index } ) ) );
+					.map( ( _, index ) => ( { letter: "", state: "empty" as const, index } ) ) );
 		} );
 	}
 
 	/**
-	 * Calculates the positions of letters in a word based on the input string.
-	 * It determines if each letter is correct, in the wrong place, or wrong,
-	 * and returns an array of position data for each letter in the input.
-	 * If the word has already been guessed correctly, it marks all positions as empty.
+	 * Compute per-letter feedback for a single guess against a single target word.
 	 *
-	 * @param {string} word - The target word to compare against.
-	 * @param {string} input - The player's input string.
-	 * @param {boolean} isCompleted - Indicates if the word has already been guessed correctly.
-	 * @returns {PositionData[]} - An array of position data for each letter in the input.
+	 * Algorithm (two-pass):
+	 * - First pass: mark exact matches as "correct" and remove those letters from the pool.
+	 * - Second pass: for remaining letters mark as "wrongPlace" if the letter exists in the pool,
+	 *   otherwise mark as "wrong".
+	 *
+	 * Special case:
+	 * - If isCompleted is true (the target word was already guessed earlier), returns an empty row
+	 *   (each PositionData.state === "empty") for that guess slot.
+	 *
+	 * @param word The target word to check against (case-insensitive).
+	 * @param input The player's guessed word (case-insensitive).
+	 * @param [isCompleted=false] If true, produce an "empty" row.
+	 * @returns Array of per-letter PositionData objects describing letter and state.
 	 * @private
 	 */
-	private calculatePositions( word: string, input: string, isCompleted: boolean = false ): PositionData[] {
+	private calculatePositions( word: string, input: string, isCompleted: boolean = false ) {
 		const correctLetters = word.toLowerCase().split( "" );
 		const inputLetters = input.toLowerCase().split( "" );
 
 		if ( isCompleted ) {
-			return inputLetters.map( ( _, index ) => ( { letter: "", state: "empty", index } ) );
+			return inputLetters.map( ( _, index ) => ( { letter: "", state: "empty" as const, index } ) );
 		}
 
 		let remainingCharacters = [ ...correctLetters ];
@@ -226,5 +343,36 @@ export class WordleEngine {
 			}
 			return { letter, state, index };
 		} );
+	}
+
+	/**
+	 * Load persisted GameData from KV.
+	 * @returns Parsed GameData or undefined if not present.
+	 * @private
+	 */
+	private async loadGameData() {
+		return this.env.WORDLE_KV.get<GameData>( this.key, "json" );
+	}
+
+	/**
+	 * Persist the current in-memory GameData to KV.
+	 * Side effects:
+	 * - Serializes and writes this.data to the configured WORDLE_KV namespace.
+	 *
+	 * @private
+	 */
+	private async saveGameData() {
+		await this.env.WORDLE_KV.put( this.key, JSON.stringify( this.data ) );
+	}
+
+	/**
+	 * Persist a mapping from game ID to Durable Object ID in KV.
+	 * Side effects:
+	 * - Writes a key `gameId:{this.data.id}` with value this.key to WORDLE_KV.
+	 *
+	 * @private
+	 */
+	private async saveDurableObjectId() {
+		await this.env.WORDLE_KV.put( `gameId:${ this.data.id }`, this.key );
 	}
 }

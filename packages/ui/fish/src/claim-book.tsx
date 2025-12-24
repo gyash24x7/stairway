@@ -1,13 +1,19 @@
 import { Button } from "@s2h-ui/primitives/button";
-import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@s2h-ui/primitives/drawer";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@s2h-ui/primitives/drawer";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCard } from "@s2h-ui/shared/display-card";
-import type { CardId, PlayingCard } from "@s2h/cards/types";
-import { getCardDisplayString, getCardId } from "@s2h/cards/utils";
 import { useClaimBookMutation } from "@s2h/client/fish";
 import type { Book, PlayerId } from "@s2h/fish/types";
 import { getBooksInHand, getCardsOfBook } from "@s2h/fish/utils";
+import { type CardId, getCardDisplayString } from "@s2h/utils/cards";
 import { useStore } from "@tanstack/react-store";
 import { Fragment, useState } from "react";
 import { useStep } from "usehooks-ts";
@@ -21,7 +27,7 @@ export function ClaimBook() {
 	const bookType = useStore( store, state => state.config.type );
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
-	const [ cardOptions, setCardOptions ] = useState<PlayingCard[]>( [] );
+	const [ cardOptions, setCardOptions ] = useState<CardId[]>( [] );
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );
 	const [ showDrawer, setShowDrawer ] = useState( false );
 
@@ -48,7 +54,7 @@ export function ClaimBook() {
 			setSelectedBook( book );
 			setCardOptions( getCardsOfBook( book, bookType ) );
 			setClaim( data => {
-				getCardsOfBook( book, bookType, hand ).map( getCardId ).forEach( cardId => {
+				getCardsOfBook( book, bookType, hand ).forEach( cardId => {
 					data.set( cardId, player.id );
 				} );
 				return data;
@@ -95,6 +101,7 @@ export function ClaimBook() {
 							{ currentStep === 2 && "Select Card Locations".toUpperCase() }
 							{ currentStep === 3 && `Confirm Claim for ${ selectedBook }`.toUpperCase() }
 						</DrawerTitle>
+						<DrawerDescription/>
 					</DrawerHeader>
 					<div className={ "px-4" }>
 						{ currentStep === 1 && (
@@ -104,7 +111,7 @@ export function ClaimBook() {
 										key={ item }
 										onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 										className={ cn(
-											selectedBook === item ? "bg-white" : "bg-bg",
+											selectedBook === item ? "bg-background" : "bg-surface",
 											"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
 											"flex justify-center"
 										) }
@@ -112,7 +119,7 @@ export function ClaimBook() {
 										<div className={ "flex gap-2 md:gap-3 items-center" }>
 											<h1
 												className={ cn(
-													"text-gray-800",
+													"text-neuta",
 													"text-md md:text-lg xl:text-xl font-semibold"
 												) }
 											>
@@ -129,7 +136,7 @@ export function ClaimBook() {
 									<Fragment key={ player.id }>
 										<h1>Cards With { player.name }</h1>
 										<div className={ "grid gap-3 grid-cols-6" }>
-											{ cardOptions.map( getCardId ).map( ( cardId ) => (
+											{ cardOptions.map( ( cardId ) => (
 												<div
 													key={ cardId }
 													onClick={ handleCardSelectForPlayer(
@@ -162,7 +169,7 @@ export function ClaimBook() {
 					<DrawerFooter>
 						{ currentStep === 1 && (
 							<Button onClick={ goToNextStep } disabled={ !selectedBook }>
-								SELECT CARD SET
+								SELECT BOOK
 							</Button>
 						) }
 						{ currentStep === 2 && (
@@ -175,7 +182,7 @@ export function ClaimBook() {
 							<div className={ "w-full flex gap-3" }>
 								<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
 								<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
-									{ isPending ? <Spinner/> : "CALL SET" }
+									{ isPending ? <Spinner/> : "CLAIM BOOK" }
 								</Button>
 							</div>
 						) }

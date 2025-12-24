@@ -1,4 +1,4 @@
-import { Button } from "@s2h-ui/primitives/button";
+import { Button, buttonVariants } from "@s2h-ui/primitives/button";
 import {
 	Dialog,
 	DialogContent,
@@ -9,17 +9,9 @@ import {
 	DialogTrigger
 } from "@s2h-ui/primitives/dialog";
 import { Input } from "@s2h-ui/primitives/input";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectSeparator,
-	SelectTrigger,
-	SelectValue
-} from "@s2h-ui/primitives/select";
 import { Spinner } from "@s2h-ui/primitives/spinner";
+import { cn } from "@s2h-ui/primitives/utils";
 import { useCreateTeamsMutation } from "@s2h/client/fish";
-import type { TeamCount } from "@s2h/fish/types";
 import { chunk, shuffle } from "@s2h/utils/array";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
@@ -28,10 +20,10 @@ import { store } from "./store.tsx";
 
 export function CreateTeams() {
 	const gameId = useStore( store, state => state.id );
-	const players = useStore( store, state => state.players );
+	const playerIds = useStore( store, state => state.playerIds );
 	const playerCount = useStore( store, state => state.config.playerCount );
+	const teamCount = useStore( store, state => state.config.teamCount );
 
-	const [ teamCount, setTeamCount ] = useState<TeamCount>( 0 );
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ open, setOpen ] = useState( false );
@@ -41,7 +33,7 @@ export function CreateTeams() {
 	} );
 
 	const groupPlayers = () => {
-		const teamMembers = chunk( shuffle( Object.keys( players ) ), playerCount / teamCount );
+		const teamMembers = chunk( shuffle( playerIds ), playerCount / teamCount );
 		setTeamMemberData( teamNames.reduce(
 			( acc, name, idx ) => {
 				acc[ name ] = teamMembers[ idx ] || [];
@@ -51,38 +43,17 @@ export function CreateTeams() {
 		) );
 	};
 
-	const handleCreateTeams = () => mutateAsync( { gameId, data: teamMemberData } );
+	const handleCreateTeams = () => mutateAsync( { gameId, teams: teamMemberData } );
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
-			<DialogTrigger>
-				<Button className={ "flex-1 max-w-lg" }>CREATE TEAMS</Button>
-			</DialogTrigger>
+			<DialogTrigger className={ cn( buttonVariants(), "flex-1 max-w-lg" ) }>CREATE TEAMS</DialogTrigger>
 			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
 					<DialogTitle>CREATE TEAMS</DialogTitle>
 					<DialogDescription/>
 				</DialogHeader>
-				<div className={ "flex flex-col gap-3" }>
-					<Select
-						value={ teamCount.toString() }
-						onValueChange={ ( value ) => setTeamCount( parseInt( value ) as TeamCount ) }
-					>
-						<SelectTrigger className={ "w-full" }>
-							<SelectValue/>
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="2">2 TEAMS</SelectItem>
-							<SelectSeparator/>
-							<SelectItem value="3">3 TEAMS</SelectItem>
-							<SelectSeparator/>
-							<SelectItem value="4">4 TEAMS</SelectItem>
-							<SelectSeparator/>
-							<SelectItem value="5">5 TEAMS</SelectItem>
-							<SelectSeparator/>
-							<SelectItem value="6">6 TEAMS</SelectItem>
-						</SelectContent>
-					</Select>
+				<div className={ cn( "grid grid-cols-1 gap-2", teamCount === 4 && "grid-cols-2" ) }>
 					{ Array( teamCount ).fill( null ).map( ( _, idx ) => (
 						<Input
 							key={ idx }
@@ -96,22 +67,17 @@ export function CreateTeams() {
 							} }
 						/>
 					) ) }
-					<Button
-						className={ "w-full" }
-						onClick={ groupPlayers }
-						disabled={ teamCount !== 0 || teamNames.length !== teamCount }
-					>
-						GROUP PLAYERS
-					</Button>
-					<div className={ "flex flex-col gap-3" }>
-						{ Object.keys( teamMemberData ).map( ( team ) => (
-							<div key={ team } className={ "flex flex-col gap-2" }>
-								<h3 className={ "font-semibold" }>Team { team }</h3>
-								<PlayerLobby withBg playerIds={ teamMemberData[ team ] }/>
-							</div>
-						) ) }
-					</div>
 				</div>
+				<Button
+					className={ "w-full" }
+					onClick={ groupPlayers }
+					disabled={ teamNames.length !== teamCount }
+				>
+					GROUP PLAYERS
+				</Button>
+				{ Object.keys( teamMemberData ).length ===
+					teamCount &&
+                    <PlayerLobby asTeams={ teamMemberData } withBg withTeamName/> }
 				<DialogFooter>
 					<Button onClick={ handleCreateTeams } disabled={ isPending } className={ "w-full" }>
 						{ isPending ? <Spinner/> : "CREATE TEAMS" }

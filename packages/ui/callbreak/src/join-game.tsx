@@ -18,7 +18,7 @@ export function JoinGame() {
 	const [ code, setCode ] = useState( "" );
 	const navigate = useNavigate();
 	const { mutateAsync, isPending } = useJoinGameMutation( {
-		onSuccess: ( gameId ) => navigate( { to: `/callbreak/${ gameId }` } ),
+		onSuccess: ( { gameId } ) => navigate( { to: `/callbreak/${ gameId }` } ),
 		onError: ( err ) => alert( err.message ),
 		onSettled: () => setCode( "" )
 	} );

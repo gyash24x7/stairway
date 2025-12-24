@@ -19,11 +19,11 @@ export function HomePage() {
 					<div
 						className={ cn(
 							"absolute w-full h-full top-0 left-0 transition duration-300",
-							"bg-white opacity-30"
+							"bg-accent/30"
 						) }
 					/>
-					<div className={ "bg-primary px-6 py-3 mt-6" }>
-						<h1 className={ `text-5xl relative z-10 text-primary-foreground` }>
+					<div className={ "text-foreground px-6 py-3 mt-6" }>
+						<h1 className={ `text-5xl relative z-10` }>
 							{ game.toUpperCase() }
 						</h1>
 					</div>

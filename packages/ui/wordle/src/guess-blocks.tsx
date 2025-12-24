@@ -1,5 +1,5 @@
 import { cn } from "@s2h-ui/primitives/utils";
-import { dictionary } from "@s2h/wordle/dictionary";
+import { dictionaries } from "@s2h/wordle/dictionary";
 import { useStore } from "@tanstack/react-store";
 import { store } from "./store.tsx";
 
@@ -8,13 +8,13 @@ function getBlockColor( state: string ) {
 		case "correct":
 			return "bg-green-500";
 		case "empty":
-			return "bg-bg";
+			return "bg-surface";
 		case "wrong":
 			return "bg-gray-500";
 		case "wrongPlace":
 			return "bg-amber-500";
 		default:
-			return "bg-bg";
+			return "bg-surface";
 	}
 }
 
@@ -23,7 +23,7 @@ export function GuessBlocks() {
 	const currentGuess = useStore( store, state => state.currentGuess );
 	const guessBlocks = useStore( store, state => state.game.guessBlocks );
 
-	const isValidWord = dictionary.includes( currentGuess.join( "" ) );
+	const isValidWord = dictionaries[ game.wordLength ].includes( currentGuess.join( "" ) );
 	const isValidGuessLength = currentGuess.length === game.wordLength;
 
 	const isInvalidGuess = ( i: number ) => (
@@ -43,13 +43,13 @@ export function GuessBlocks() {
 								<div
 									key={ index }
 									className={ cn(
-										isInvalidGuess( i ) ? "border-red-500" : "",
+										isInvalidGuess( i ) ? "border-red-500" : "border-foreground",
 										getBlockColor( state ),
 										"w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 border-2 rounded",
 										"flex items-center justify-center"
 									) }
 								>
-									<p className={ "text-lg sm:text-xl md:text-2xl text-black font-semibold" }>
+									<p className={ "text-lg sm:text-xl md:text-2xl font-semibold" }>
 										{ letter?.toUpperCase() }
 									</p>
 								</div>

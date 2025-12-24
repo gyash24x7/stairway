@@ -8,5 +8,7 @@ export {
 	ChevronDownIcon,
 	MinusIcon,
 	PlusIcon,
-	DeleteIcon
+	DeleteIcon,
+	SunIcon,
+	MoonIcon
 } from "lucide-react";

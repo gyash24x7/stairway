@@ -11,20 +11,22 @@ import {
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { useCreateGameMutation } from "@s2h/client/fish";
-import type { PlayerCount } from "@s2h/fish/types";
+import type { BookType, PlayerCount, TeamCount } from "@s2h/fish/types";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 
 export function CreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<PlayerCount>();
+	const [ teamCount, setTeamCount ] = useState<TeamCount>();
+	const [ type, setType ] = useState<BookType>();
 	const [ open, setOpen ] = useState( false );
 	const navigate = useNavigate();
 
 	const { mutateAsync, isPending } = useCreateGameMutation( {
-		onSuccess: ( gameId ) => navigate( { to: `/fish/${ gameId }` } )
+		onSuccess: ( { gameId } ) => navigate( { to: `/fish/${ gameId }` } )
 	} );
 
-	const handleClick = () => mutateAsync( { playerCount } );
+	const handleClick = () => mutateAsync( { playerCount: playerCount!, teamCount: teamCount!, type: type! } );
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
@@ -42,9 +44,41 @@ export function CreateGame() {
 								key={ item }
 								onClick={ () => setPlayerCount( playerCount === item ? undefined : item ) }
 								className={ cn(
-									playerCount === item ? "bg-white" : "bg-bg",
+									playerCount === item ? "bg-background" : "bg-surface",
 									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-									"hover:bg-white"
+									"hover:bg-background"
+								) }
+							>
+								{ item }
+							</div>
+						) ) }
+					</div>
+					<h2>SELECT TEAM COUNT</h2>
+					<div className={ "flex gap-3 flex-wrap" }>
+						{ ( [ 2, 3, 4 ] as const ).map( ( item ) => (
+							<div
+								key={ item }
+								onClick={ () => setTeamCount( teamCount === item ? undefined : item ) }
+								className={ cn(
+									teamCount === item ? "bg-background" : "bg-surface",
+									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
+									"hover:bg-background"
+								) }
+							>
+								{ item }
+							</div>
+						) ) }
+					</div>
+					<h2>SELECT GAME TYPE</h2>
+					<div className={ "flex gap-3 flex-wrap" }>
+						{ ( [ "CANADIAN", "NORMAL" ] as const ).map( ( item ) => (
+							<div
+								key={ item }
+								onClick={ () => setType( type === item ? undefined : item ) }
+								className={ cn(
+									type === item ? "bg-background" : "bg-surface",
+									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
+									"hover:bg-background"
 								) }
 							>
 								{ item }

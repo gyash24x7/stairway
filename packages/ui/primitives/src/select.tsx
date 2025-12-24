@@ -1,4 +1,4 @@
-import { Select as SelectPrimitive } from "@base-ui-components/react/select";
+import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
 import { cn } from "./utils.tsx";
@@ -29,13 +29,13 @@ export const SelectTrigger = forwardRef<ComponentRef<typeof Trigger>, ComponentP
 		<Trigger
 			className={ cn(
 				"flex h-10 min-w-36 items-center justify-between gap-3 rounded-md",
-				"border-2 border-border px-3 py-2 text-sm font-base select-none",
-				"bg-main shadow-shadow cursor-pointer"
+				"border-2 border-black px-3 py-2 text-sm select-none",
+				"bg-accent shadow-shadow cursor-pointer text-neutral-dark"
 			) }
 			ref={ ref }
 			{ ...props }
 		>
-			<Value/>
+			<Value className={ "uppercase" }/>
 			<Icon className="flex">
 				<ChevronDownIcon/>
 			</Icon>
@@ -49,15 +49,15 @@ export const SelectContent = forwardRef<ComponentRef<typeof Positioner>, Compone
 			<Positioner className="outline-none select-none z-10" sideOffset={ 8 } ref={ ref } { ...props }>
 				<ScrollUpArrow
 					className={ cn(
-						"top-0 z-[1] flex h-4 w-full cursor-default items-center justify-center",
-						"rounded-mdbg-main text-center text-xs before:absolute before:top-[-100%]",
+						"top-0 z-1 flex h-4 w-full cursor-default items-center justify-center",
+						"rounded-md bg-accent text-center text-xs before:absolute before:-top-full",
 						"before:left-0 before:h-full before:w-full before:content-['']",
-						"data-[direction=down]:bottom-0 data-[direction=down]:before:bottom-[-100%]"
+						"data-[direction=down]:bottom-0 data-[direction=down]:before:-bottom-full"
 					) }/>
 				<Popup
 					className={ cn(
 						"group max-h-[var(--available-height)] origin-[var(--transform-origin)] overflow-y-auto",
-						"rounded-md py-1 text-gray-900 shadow-shadow bg-main border-border border-2",
+						"rounded-md py-1 text-gray-900 shadow-shadow bg-accent border-black border-2",
 						"transition-[transform,scale,opacity] data-[ending-style]:scale-90",
 						"data-[ending-style]:opacity-0 data-[side=none]:data-[ending-style]:transition-none",
 						"data-[starting-style]:scale-90 data-[starting-style]:opacity-0",
@@ -112,7 +112,7 @@ export const SelectSeparator = forwardRef<ComponentRef<typeof Separator>, Compon
 	( { className, ...props }, ref ) => (
 		<Separator
 			ref={ ref }
-			className={ cn( "-mx-1 my-1 h-px bg-border", className ) }
+			className={ cn( "-mx-1 my-1 h-px bg-neutral-dark", className ) }
 			{ ...props }
 		/>
 	)

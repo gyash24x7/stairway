@@ -35,7 +35,7 @@ export function Login() {
 	const verifyLoginMutation = useVerifyLoginMutation();
 
 	const passkeyLogin = async () => {
-		const exists = await userExistsMutation.mutateAsync( username );
+		const { exists } = await userExistsMutation.mutateAsync( { username } );
 		if ( !exists ) {
 			setMode( "register" );
 			return;
