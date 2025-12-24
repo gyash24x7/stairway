@@ -187,7 +187,8 @@ describe( "Fish:Utils", () => {
 			"2H": [ "p1", "p2", "p3", "p4", "p5", "p6" ],
 			"2S": [ "p1", "p2", "p3", "p4", "p5", "p6" ]
 		},
-		hand: [ "AC", "AD", "2C", "2D" ]
+		hand: [ "AC", "AD", "2C", "2D" ],
+		cardCounts: { p1: 8, p2: 8, p3: 8, p4: 8, p5: 8, p6: 8 }
 	} as unknown as PlayerGameInfo;
 
 	describe( "suggestBooks()", () => {
