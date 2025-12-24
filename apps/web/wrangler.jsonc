@@ -65,7 +65,11 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": [ "WebsocketServer", "CallbreakEngine", "FishEngine", "WordleEngine" ]
+			"new_sqlite_classes": [ "WebsocketServer", "CallbreakEngine", "FishEngine" ]
+		},
+		{
+			"tag": "v2",
+			"new_sqlite_classes": [ "WordleEngine" ]
 		}
 	]
 }
