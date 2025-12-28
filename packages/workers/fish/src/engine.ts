@@ -107,9 +107,7 @@ export class FishEngine extends DurableObject<Bindings> {
 		this.data.createdBy = playerInfo.id;
 
 		await this.addPlayer( playerInfo );
-
 		await this.saveDurableObjectId();
-		await this.saveGameData();
 
 		this.logger.debug( "<< initialize()" );
 		return { data: this.data.id };

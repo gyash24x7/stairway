@@ -15,7 +15,7 @@ export function GameCode( { code, name, children }: { code: string; name: string
 	};
 
 	return (
-		<div className={ "flex gap-2 rounded-md border-2" }>
+		<div className={ "flex gap-2 rounded-md border-2 bg-background" }>
 			<div className={ "flex gap-2 items-center bg-accent px-2 py-1 rounded" }>
 				<img src={ "/s2h.png" } alt={ "logo" } className={ "h-10 md:h-12" }/>
 				<h2 className={ "text-4xl font-heading text-neutral-dark hidden md:block" }>
@@ -30,7 +30,6 @@ export function GameCode( { code, name, children }: { code: string; name: string
 			{ children }
 			<div className={ "py-2 px-4 flex-1 flex justify-end" }>
 				<Button
-					variant={ "noShadow" }
 					onClick={ handleCopy }
 					size={ "icon" }
 					className={ "w-8 h-8 md:h-10 md:w-10 self-center" }

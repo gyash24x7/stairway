@@ -1,0 +1,24 @@
+{
+	"name": "@s2h/splendor",
+	"version": "1.0.0",
+	"description": "Splendor Worker for S2H Application",
+	"type": "module",
+	"scripts": {
+		"test": "vitest run --coverage --passWithNoTests"
+	},
+	"dependencies": {
+		"@orpc/server": "1.13.0",
+		"@s2h/utils": "workspace:*",
+		"valibot": "1.2.0"
+	},
+	"exports": {
+		"./*": {
+			"import": "./src/*.ts",
+			"types": "./src/*.ts"
+		}
+	},
+	"keywords": [ ],
+	"author": "Yash Gupta",
+	"license": "ISC"
+}
+

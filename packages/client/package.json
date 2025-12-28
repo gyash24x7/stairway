@@ -19,6 +19,7 @@
 		"@s2h/auth": "workspace:*",
 		"@s2h/callbreak": "workspace:*",
 		"@s2h/fish": "workspace:*",
+		"@s2h/splendor": "workspace:*",
 		"@s2h/wordle": "workspace:*",
 		"@tanstack/react-query": "5.90.12"
 	},

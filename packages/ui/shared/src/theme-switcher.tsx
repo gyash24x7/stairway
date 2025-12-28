@@ -8,7 +8,6 @@ import {
 	SelectSeparator,
 	SelectTrigger
 } from "@s2h-ui/primitives/select";
-import { cn } from "@s2h-ui/primitives/utils";
 import { Fragment, type ReactNode, useEffect } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -18,7 +17,7 @@ const themes = [
 	"orange",
 	"mango",
 	"banana",
-	"lime",
+	"olive",
 	"kiwi",
 	"ice",
 	"blueberry",
@@ -48,7 +47,7 @@ export function ThemeSwitcher() {
 	return (
 		<Fragment>
 			<Select onValueChange={ ( value ) => value && setTheme( value ) } value={ theme }>
-				<SelectTrigger className={ cn( "w-37.5", "h-8 md:h-10" ) }/>
+				<SelectTrigger/>
 				<SelectContent>
 					<SelectGroup>
 						{ themes.map( ( theme ) => (
@@ -60,7 +59,10 @@ export function ThemeSwitcher() {
 					</SelectGroup>
 				</SelectContent>
 			</Select>
-			<Button onClick={ () => setThemeMode( themeMode === "light" ? "dark" : "light" ) }>
+			<Button
+				size={ "icon" }
+				onClick={ () => setThemeMode( themeMode === "light" ? "dark" : "light" ) }
+			>
 				{ themeMode === "light" ? <SunIcon/> : <MoonIcon/> }
 			</Button>
 		</Fragment>

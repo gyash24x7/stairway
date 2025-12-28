@@ -19,7 +19,8 @@ export function Navbar() {
 					"flex bg-background w-full px-2 md:px-4 py-1 md:py-2"
 				) }
 		>
-			<div className={ "flex gap-2 items-center bg-accent p-1 md:px-2 border-black rounded border-4" }>
+			<div
+				className={ "flex gap-2 items-center bg-accent p-1 md:px-2 border-black rounded border-4" }>
 				<img src={ "/s2h.png" } alt={ "logo" } className={ "h-12 md:h-16" }/>
 				<h2 className={ "text-5xl font-heading text-neutral-dark hidden md:block" }>STAIRWAY</h2>
 			</div>
