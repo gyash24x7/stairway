@@ -16,9 +16,9 @@
 		"@s2h/callbreak": "workspace:*",
 		"@s2h/client": "workspace:*",
 		"@s2h/utils": "workspace:*",
-		"@tanstack/react-router": "1.143.4",
+		"@tanstack/react-router": "1.144.0",
 		"@tanstack/react-store": "0.8.0",
-		"immer": "11.1.0",
+		"immer": "11.1.3",
 		"react-use-websocket": "4.13.0",
 		"usehooks-ts": "3.1.1"
 	},

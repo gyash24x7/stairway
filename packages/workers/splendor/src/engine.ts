@@ -1,4 +1,4 @@
-import { shuffle } from "@s2h/utils/array";
+import { objectKeys, shuffle } from "@s2h/utils/array";
 import { generateBotInfo } from "@s2h/utils/generator";
 import { createLogger } from "@s2h/utils/logger";
 import { DurableObject } from "cloudflare:workers";
@@ -8,7 +8,6 @@ import type {
 	Cost,
 	CreateGameInput,
 	GameData,
-	Gem,
 	PickTokensInput,
 	PlayerGameInfo,
 	PlayerId,
@@ -65,13 +64,9 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 
 		this.data.createdBy = playerInfo.id;
 		this.data.decks = generateDecks();
-		this.logger.debug( " Generated decks: %o", this.data.decks );
-
 		this.data.currentTurn = playerInfo.id;
 		this.data.playerCount = playerCount ?? this.data.playerCount;
-
-		this.data.nobles = generateNobles( this.data.playerCount );
-		this.logger.debug( " Generated nobles: %o", this.data.nobles );
+		this.data.nobles = [];
 
 		switch ( playerCount ) {
 			case 2:
@@ -125,7 +120,7 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		await this.broadcastGameData();
 
 		this.logger.debug( "<< addPlayer()" );
-		return {};
+		return { data: this.data.id };
 	}
 
 	public async addBots( playerInfo: BasePlayerInfo ) {
@@ -177,6 +172,7 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 
 		this.data.playerOrder = shuffle( this.data.playerOrder );
 		this.data.status = "IN_PROGRESS";
+		this.data.nobles = generateNobles( this.data.playerCount );
 		this.data.cards = {
 			1: this.data.decks[ 1 ].splice( 0, 4 ),
 			2: this.data.decks[ 2 ].splice( 0, 4 ),
@@ -199,10 +195,18 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			return { error };
 		}
 
-		input.tokens.forEach( gem => {
-			this.data.players[ playerInfo.id ].tokens[ gem ] += 1;
-			this.data.tokens[ gem ] -= 1;
+		objectKeys( input.tokens ).forEach( gem => {
+			this.data.players[ playerInfo.id ].tokens[ gem ] += input.tokens[ gem ] ?? 0;
+			this.data.tokens[ gem ] -= input.tokens[ gem ] ?? 0;
 		} );
+
+		const isLastPlayer = this.data.playerOrder.indexOf( this.data.currentTurn ) ===
+			this.data.playerOrder.length -
+			1;
+		if ( this.data.isLastRound && isLastPlayer ) {
+			this.data.status = "COMPLETED";
+			this.updateWinner();
+		}
 
 		this.updateTurn();
 		await this.saveGameData();
@@ -228,6 +232,14 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		if ( input.withGold ) {
 			this.data.players[ playerInfo.id ].tokens.gold += 1;
 			this.data.tokens.gold -= 1;
+		}
+
+		const isLastPlayer = this.data.playerOrder.indexOf( this.data.currentTurn ) ===
+			this.data.playerOrder.length -
+			1;
+		if ( this.data.isLastRound && isLastPlayer ) {
+			this.data.status = "COMPLETED";
+			this.updateWinner();
 		}
 
 		this.updateTurn();
@@ -257,12 +269,39 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			this.data.cards[ card.level ][ cardIdx ] = this.data.decks[ card.level ].shift();
 		}
 
-		const player = this.data.players[ playerInfo.id ];
-		Object.keys( input.payment ).forEach( key => {
-			const gem = key as keyof typeof input.payment;
-			player.tokens[ gem ] -= input.payment[ gem ]!;
+		this.data.players[ playerInfo.id ].points += card.points;
+
+		objectKeys( input.payment ).forEach( gem => {
+			this.data.players[ playerInfo.id ].tokens[ gem ] -= input.payment[ gem ]!;
 			this.data.tokens[ gem ] += input.payment[ gem ]!;
 		} );
+
+		for ( const noble of Object.values( this.data.nobles ) ) {
+			const meetsRequirements = objectKeys( noble.cost ).every( gem => {
+				const ownedCardsOfGem = this.data.players[ playerInfo.id ].cards.filter( card => card.bonus ===
+					gem ).length;
+				return ownedCardsOfGem >= noble.cost[ gem ];
+			} );
+
+			if ( meetsRequirements ) {
+				this.data.players[ playerInfo.id ].nobles.push( noble );
+				this.data.players[ playerInfo.id ].points += noble.points;
+				this.data.nobles.splice( this.data.nobles.indexOf( noble ), 1 );
+				break;
+			}
+		}
+
+		if ( this.data.players[ playerInfo.id ].points >= 15 ) {
+			this.data.isLastRound = true;
+		}
+
+		const isLastPlayer = this.data.playerOrder.indexOf( this.data.currentTurn ) ===
+			this.data.playerOrder.length -
+			1;
+		if ( this.data.isLastRound && isLastPlayer ) {
+			this.data.status = "COMPLETED";
+			this.updateWinner();
+		}
 
 		this.updateTurn();
 		await this.saveGameData();
@@ -326,48 +365,55 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 	private validatePickTokens( input: PickTokensInput, playerInfo: BasePlayerInfo ) {
 		this.logger.debug( ">> validatePickTokens()" );
 
-		// 1. Check if it's the player's turn
 		if ( this.data.currentTurn !== playerInfo.id ) {
 			this.logger.error( "Not player's turn: %s", playerInfo.id );
 			return { error: "Not your turn!" };
 		}
 
-		// 2. Check if the tokens requested are valid (either 2 of the same gem or 3 different gems)
-		const tokenCounts: Record<Gem, number> = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0 };
-		input.tokens.forEach( gem => {
-			tokenCounts[ gem ] += 1;
-		} );
-
-		const uniqueGems = Object.values( tokenCounts ).filter( count => count > 0 ).length;
-		if ( uniqueGems === 1 ) {
-			// Picking 2 of the same gem
-			const gem = input.tokens[ 0 ];
-			if ( tokenCounts[ gem ] !== 2 ) {
-				this.logger.error( "Invalid token pick: %o", input.tokens );
-				return { error: "Invalid token pick!" };
-			}
-
-			if ( this.data.tokens[ gem ] < 4 ) {
+		for ( const gem of objectKeys( input.tokens ) ) {
+			if ( ( input.tokens[ gem ] ?? 0 ) > this.data.tokens[ gem ] ) {
 				this.logger.error( "Not enough tokens of gem %s available", gem );
-				return { error: `Not enough tokens of ${ gem } available!` };
+				return { error: `Not enough ${ gem } tokens available!` };
 			}
-		} else if ( uniqueGems === 3 ) {
-			// Picking 3 different gems
-			if ( input.tokens.length !== 3 || new Set( input.tokens ).size !== 3 ) {
-				this.logger.error( "Invalid token pick: %o", input.tokens );
-				return { error: "Invalid token pick!" };
-			}
+		}
 
-			for ( const gem of input.tokens ) {
-				if ( this.data.tokens[ gem ] < 1 ) {
-					this.logger.error( "Not enough tokens of gem %s available", gem );
-					return { error: `Not enough tokens of ${ gem } available!` };
-				}
-			}
+		const player = this.data.players[ playerInfo.id ];
+		const totalTokens = Object.values( player.tokens ).reduce( ( acc, val ) => acc + val, 0 );
+		const pickedTokens = Object.values( input.tokens ).reduce( ( acc, val ) => acc + val, 0 );
+		if ( totalTokens + pickedTokens > 10 ) {
+			this.logger.error( "Player cannot take tokens without exceeding token limit: %s", playerInfo.id );
+			return { error: "You cannot take these tokens without exceeding the token limit!" };
+		}
 
+		const typesPicked = objectKeys( input.tokens ).filter( gem => ( input.tokens[ gem ] ?? 0 ) > 0 );
+		if ( typesPicked.length === 1 ) {
+			if ( ( input.tokens[ typesPicked[ 0 ] ] ?? 0 ) > 2 ) {
+				this.logger.error( "Cannot pick more than 2 tokens of the same type" );
+				return { error: "You cannot pick more than 2 tokens of the same type!" };
+			}
+		} else if ( typesPicked.length === 2 ) {
+			const availableTypes = objectKeys( this.data.tokens ).filter( gem => this.data.tokens[ gem ] > 0 );
+			if ( availableTypes.length < 2 ) {
+				this.logger.error( "Cannot pick 2 different types when less than 2 types are available" );
+				return { error: "You cannot pick 2 different types when less than 2 types are available!" };
+			}
+			if ( typesPicked.some( gem => ( input.tokens[ gem ] ?? 0 ) > 1 ) ) {
+				this.logger.error( "Cannot pick more than 1 token of a type when picking 2 different types" );
+				return { error: "You cannot pick more than 1 token of a type when picking 2 different types!" };
+			}
+		} else if ( typesPicked.length === 3 ) {
+			const availableTypes = objectKeys( this.data.tokens ).filter( gem => this.data.tokens[ gem ] > 0 );
+			if ( availableTypes.length < 3 ) {
+				this.logger.error( "Cannot pick 3 different types when less than 3 types are available" );
+				return { error: "You cannot pick 3 different types when less than 3 types are available!" };
+			}
+			if ( typesPicked.some( gem => ( input.tokens[ gem ] ?? 0 ) > 1 ) ) {
+				this.logger.error( "Cannot pick more than 1 token of a type when picking 3 different types" );
+				return { error: "You cannot pick more than 1 token of a type when picking 3 different types!" };
+			}
 		} else {
-			this.logger.error( "Invalid token pick: %o", input.tokens );
-			return { error: "Invalid token pick!" };
+			this.logger.error( "Invalid number of token types picked" );
+			return { error: "Invalid number of token types picked!" };
 		}
 
 		this.logger.debug( "<< validatePickTokens()" );
@@ -441,57 +487,47 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		const player = this.data.players[ playerInfo.id ];
 		const totalCost: Cost = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 };
 
-		Object.keys( card.cost ).forEach( key => {
-			const gem = key as keyof typeof card.cost;
+		objectKeys( card.cost ).forEach( gem => {
 			const discount = player.cards.filter( c => c.bonus === gem ).length;
 			totalCost[ gem ] = Math.max( 0, card.cost[ gem ] - discount );
 		} );
 
-		const paymentCopy = { ...input.payment };
 		let goldNeeded = 0;
 
-		for ( const key of Object.keys( totalCost ) ) {
-			const gem = key as keyof typeof totalCost;
-			if ( ( paymentCopy[ gem ] ?? 0 ) > totalCost[ gem ] ) {
+		for ( const gem of objectKeys( totalCost ) ) {
+			if ( ( input.payment[ gem ] ?? 0 ) > totalCost[ gem ] ) {
 				this.logger.error(
 					"Overpayment for gem %s: paid %d, needed %d",
 					gem,
-					paymentCopy[ gem ],
+					input.payment[ gem ],
 					totalCost[ gem ]
 				);
 				return { error: "Overpayment is not allowed!" };
 			}
-			const diff = totalCost[ gem ] - ( paymentCopy[ gem ] ?? 0 );
+			const diff = totalCost[ gem ] - ( input.payment[ gem ] ?? 0 );
 			if ( diff > 0 ) {
 				goldNeeded += diff;
 			}
-			paymentCopy[ gem ] = 0;
 		}
 
-		if ( ( paymentCopy.gold ?? 0 ) < goldNeeded ) {
+		if ( ( input.payment.gold ?? 0 ) < goldNeeded ) {
 			this.logger.error(
 				"Not enough gold tokens provided: needed %d, provided %d",
 				goldNeeded,
-				paymentCopy.gold
+				input.payment.gold
 			);
 			return { error: "Not enough gold tokens provided!" };
 		}
 
-		if ( ( paymentCopy.gold ?? 0 ) > goldNeeded ) {
-			this.logger.error( "Overpayment with gold tokens: needed %d, provided %d", goldNeeded, paymentCopy.gold );
+		if ( ( input.payment.gold ?? 0 ) > goldNeeded ) {
+			this.logger.error( "Overpayment with gold tokens: needed %d, provided %d", goldNeeded, input.payment.gold );
 			return { error: "Overpayment is not allowed!" };
 		}
 
-		// 4. Check if player has enough tokens to cover the total cost
-		for ( const key of Object.keys( totalCost ) ) {
-			const gem = key as keyof typeof totalCost;
-			if ( totalCost[ gem ] > player.tokens[ gem ] ) {
-				this.logger.error(
-					"Player does not have enough tokens of gem %s: has %d, trying to pay %d",
-					gem,
-					player.tokens[ gem ],
-					totalCost[ gem ]
-				);
+		// 4. Check if player has enough tokens to cover the payment
+		for ( const gem of objectKeys( input.payment ) ) {
+			if ( ( input.payment[ gem ] ?? 0 ) > player.tokens[ gem ] ) {
+				this.logger.error( "Player does not have enough tokens of gem %s", gem );
 				return { error: `You do not have enough ${ gem } tokens!` };
 			}
 		}
@@ -514,6 +550,29 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		return undefined;
 	}
 
+	private updateWinner() {
+		const winningPoints = Math.max( ...Object.values( this.data.players ).map( p => p.points ) );
+		const potentialWinners = Object.values( this.data.players ).filter( p => p.points === winningPoints );
+
+		if ( potentialWinners.length === 1 ) {
+			this.data.winner = potentialWinners[ 0 ].id;
+		} else {
+			const leastCardsCount = Math.min( ...potentialWinners.map( p => p.cards.length ) );
+			const finalWinners = potentialWinners.filter( p => p.cards.length === leastCardsCount );
+
+			if ( finalWinners.length === 1 ) {
+				this.data.winner = finalWinners[ 0 ].id;
+			} else {
+				for ( const playerId of this.data.playerOrder ) {
+					if ( finalWinners.some( p => p.id === playerId ) ) {
+						this.data.winner = playerId;
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	private updateTurn() {
 		const currentIndex = this.data.playerOrder.indexOf( this.data.currentTurn );
 		const nextIndex = ( currentIndex + 1 ) % this.data.playerOrder.length;
@@ -522,7 +581,7 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 
 	private getPlayerDataMap() {
 		const { decks, ...rest } = this.data;
-		return Object.keys( this.data.players ).reduce( ( acc, playerId ) => {
+		return objectKeys( this.data.players ).reduce( ( acc, playerId ) => {
 			acc[ playerId ] = { ...rest, playerId };
 			return acc;
 		}, {} as Record<string, PlayerGameInfo> );

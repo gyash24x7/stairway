@@ -1,8 +1,17 @@
-import type { PlayerGameInfo } from "@s2h/splendor/types";
+import { toast } from "@s2h-ui/primitives/sonner";
+import type { PlayerGameInfo, Tokens } from "@s2h/splendor/types";
 import { Store } from "@tanstack/react-store";
 import { produce } from "immer";
 
-export const store = new Store<PlayerGameInfo>( {
+type StoreType = PlayerGameInfo & {
+	local: {
+		selectedTokens: Partial<Tokens>;
+		lastNotification?: string;
+		selectedCard?: string;
+	};
+}
+
+export const store = new Store<StoreType>( {
 	id: "",
 	playerId: "",
 	code: "",
@@ -14,16 +23,38 @@ export const store = new Store<PlayerGameInfo>( {
 	nobles: [],
 	currentTurn: "",
 	playerOrder: [],
-	createdBy: ""
+	createdBy: "",
+	local: {
+		selectedTokens: {}
+	}
 } );
 
-export function handleGameUpdate( data: PlayerGameInfo, _message: string ) {
+export function handleCardSelect( cardId: string ) {
 	store.setState( state => produce( state, draft => {
-		// if ( draft.lastNotification !== message ) {
-		// 	toast.info( message );
-		// }
+		draft.local.selectedCard = cardId;
+	} ) );
+}
+
+export function handleCardDeSelect() {
+	store.setState( state => produce( state, draft => {
+		draft.local.selectedCard = undefined;
+	} ) );
+}
+
+export function handleSelectedTokenChange( tokens: Partial<Tokens> ) {
+	store.setState( state => produce( state, draft => {
+		draft.local.selectedTokens = tokens;
+	} ) );
+}
+
+export function handleGameUpdate( data: PlayerGameInfo, message?: string ) {
+	store.setState( state => produce( state, draft => {
+		if ( draft.local.lastNotification !== message ) {
+			toast.info( message );
+		}
 
 		Object.assign( draft, data );
-		// draft.lastNotification = message;
+		draft.local.lastNotification = message;
+		draft.local.selectedTokens = {};
 	} ) );
 }

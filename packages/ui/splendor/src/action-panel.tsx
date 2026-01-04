@@ -9,6 +9,7 @@ import { store } from "./store.tsx";
 
 export function ActionPanel() {
 	const status = useStore( store, state => state.status );
+	const isLastRound = useStore( store, state => state.isLastRound );
 	const currentTurn = useStore( store, state => state.currentTurn );
 	const createdBy = useStore( store, state => state.createdBy );
 	const playerId = useStore( store, state => state.playerId );
@@ -20,8 +21,15 @@ export function ActionPanel() {
 				"rounded-t-xl flex flex-col gap-2 px-3 py-5 items-center"
 			) }
 		>
+			{ status === "IN_PROGRESS" && isLastRound && (
+				<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-surface max-w-lg" }>
+					<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
+						THIS IS THE LAST ROUND!
+					</p>
+				</div>
+			) }
 			{ status === "IN_PROGRESS" && (
-				<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-bg max-w-lg" }>
+				<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-surface max-w-lg" }>
 					<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 						IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
 					</p>

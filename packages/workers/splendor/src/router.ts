@@ -1,21 +1,7 @@
 import { ORPCError, os, type RouterClient } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { createLogger } from "@s2h/utils/logger";
-import {
-	array,
-	boolean,
-	custom,
-	length,
-	number,
-	object,
-	picklist,
-	pipe,
-	record,
-	string,
-	trim,
-	ulid,
-	void_
-} from "valibot";
+import { boolean, custom, length, number, object, picklist, pipe, record, string, trim, ulid, void_ } from "valibot";
 import type { Context, PlayerGameInfo } from "./types.ts";
 
 const logger = createLogger( "Splendor:Router" );
@@ -115,7 +101,7 @@ const startGame = base
 const pickTokens = base
 	.input( object( {
 		gameId: pipe( string(), ulid() ),
-		tokens: pipe( array( picklist( [ "diamond", "sapphire", "emerald", "ruby", "onyx" ] ) ) )
+		tokens: record( picklist( [ "diamond", "sapphire", "emerald", "ruby", "onyx", "gold" ] ), number() )
 	} ) )
 	.output( void_() )
 	.handler( async ( { input, context } ) => {
@@ -123,15 +109,15 @@ const pickTokens = base
 		const { error } = await engine.pickTokens( input, context.authInfo );
 
 		if ( error ) {
-			logger.error( "Error asking card:", error );
-			throw new ORPCError( "BAD_REQUEST", { message: "Failed to ask card" } );
+			logger.error( "Error picking tokens:", error );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to pick tokens" } );
 		}
 	} );
 
 const purchaseCard = base
 	.input( object( {
 		gameId: pipe( string(), ulid() ),
-		cardId: pipe( string(), ulid() ),
+		cardId: pipe( string() ),
 		payment: record( picklist( [ "diamond", "sapphire", "emerald", "ruby", "onyx", "gold" ] ), number() )
 	} ) )
 	.output( void_() )
@@ -140,15 +126,15 @@ const purchaseCard = base
 		const { error } = await engine.purchaseCard( input, context.authInfo );
 
 		if ( error ) {
-			logger.error( "Error claiming book:", error );
-			throw new ORPCError( "BAD_REQUEST", { message: "Failed to claim book." } );
+			logger.error( "Error purchasing card:", error );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to purchse card." } );
 		}
 	} );
 
 const reserveCard = base
 	.input( object( {
 		gameId: pipe( string(), ulid() ),
-		cardId: pipe( string(), ulid() ),
+		cardId: string(),
 		withGold: boolean()
 	} ) )
 	.output( void_() )
@@ -157,8 +143,8 @@ const reserveCard = base
 		const { error } = await engine.reserveCard( input, context.authInfo );
 
 		if ( error ) {
-			logger.error( "Error transferring turn:", error );
-			throw new ORPCError( "BAD_REQUEST", { message: "Failed to transfer turn." } );
+			logger.error( "Error Reserving Card:", error );
+			throw new ORPCError( "BAD_REQUEST", { message: "Failed to reserve card." } );
 		}
 	} );
 

@@ -41,9 +41,9 @@ export function CreateGame() {
 								key={ item }
 								onClick={ () => setPlayerCount( playerCount === item ? undefined : item ) }
 								className={ cn(
-									playerCount === item ? "bg-white" : "bg-bg",
+									playerCount === item ? "bg-background" : "bg-surface",
 									"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-									"hover:bg-white"
+									"hover:bg-background"
 								) }
 							>
 								{ item }

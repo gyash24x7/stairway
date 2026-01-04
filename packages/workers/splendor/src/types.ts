@@ -3,6 +3,7 @@ import type { SplendorEngine } from "./engine.ts";
 export type Gem = "diamond" | "sapphire" | "emerald" | "ruby" | "onyx" | "gold";
 export type CardLevel = 1 | 2 | 3;
 export type Tokens = Record<Gem, number>;
+export type TokensWithoutGold = Record<Exclude<Gem, "gold">, number>;
 export type Cost = Record<Exclude<Gem, "gold">, number>;
 
 export type CardId = string;
@@ -53,6 +54,8 @@ export type GameData = {
 	playerOrder: PlayerId[];
 	decks: Record<CardLevel, Card[]>;
 	createdBy: string;
+	isLastRound?: boolean;
+	winner?: PlayerId;
 }
 
 export type PlayerGameInfo = Omit<GameData, "decks"> & { playerId: PlayerId };
@@ -71,7 +74,7 @@ export type StartGameInput = {
 
 export type PickTokensInput = {
 	gameId: GameId;
-	tokens: Gem[];
+	tokens: Partial<Tokens>;
 }
 
 export type ReserveCardInput = {
