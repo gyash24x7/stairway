@@ -39,3 +39,13 @@ export function chunk<T>( arr: T[], size: number ): T[][] {
 export function remove<T>( predicate: ( elem: T ) => boolean, arr: T[] ): T[] {
 	return arr.filter( elem => !predicate( elem ) );
 }
+
+/**
+ * Returns the keys of an object as an array, with proper typing.
+ * @template T - The type of the object.
+ * @param {T} obj - The object whose keys are to be retrieved.
+ * @returns {(keyof T)[]} An array of the object's keys.
+ */
+export function objectKeys<T extends Record<any, any>>( obj: T ): ( keyof T )[] {
+	return Object.keys( obj ) as ( keyof T )[];
+}

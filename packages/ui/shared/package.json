@@ -13,7 +13,7 @@
 		"@s2h-ui/auth": "workspace:*",
 		"@s2h-ui/primitives": "workspace:*",
 		"@s2h/utils": "workspace:*",
-		"@tanstack/react-router": "1.141.8",
+		"@tanstack/react-router": "1.144.0",
 		"usehooks-ts": "3.1.1"
 	},
 	"devDependencies": {

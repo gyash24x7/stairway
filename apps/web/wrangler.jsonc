@@ -40,6 +40,10 @@
 		{
 			"binding": "FISH_KV",
 			"id": "fde96426ac5f4424af6e75491b2a266e"
+		},
+		{
+			"binding": "SPLENDOR_KV",
+			"id": "602fced35f56460ba635b7d8e67134b9"
 		}
 	],
 	"durable_objects": {
@@ -59,6 +63,10 @@
 			{
 				"name": "WORDLE_DO",
 				"class_name": "WordleEngine"
+			},
+			{
+				"name": "SPLENDOR_DO",
+				"class_name": "SplendorEngine"
 			}
 		]
 	},
@@ -70,6 +78,10 @@
 		{
 			"tag": "v2",
 			"new_sqlite_classes": [ "WordleEngine" ]
+		},
+		{
+			"tag": "v3",
+			"new_sqlite_classes": [ "SplendorEngine" ]
 		}
 	]
 }

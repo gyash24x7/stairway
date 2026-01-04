@@ -8,6 +8,7 @@
 @source "../../../packages/ui/fish";
 @source "../../../packages/ui/primitives";
 @source "../../../packages/ui/shared";
+@source "../../../packages/ui/splendor";
 @source "../../../packages/ui/wordle";
 
 @custom-variant apple-light (&:is(.apple.light *));
@@ -18,8 +19,8 @@
 @custom-variant mango-dark (&:is(.mango.dark *));
 @custom-variant banana-light (&:is(.banana.light *));
 @custom-variant banana-dark (&:is(.banana.dark *));
-@custom-variant lime-light (&:is(.lime.light *));
-@custom-variant lime-dark (&:is(.lime.dark *));
+@custom-variant olive (&:is(.olive.light *));
+@custom-variant olive-dark (&:is(.olive.dark *));
 @custom-variant kiwi-light (&:is(.kiwi.light *));
 @custom-variant kiwi-dark (&:is(.kiwi.dark *));
 @custom-variant ice-light (&:is(.ice.light *));
@@ -37,71 +38,83 @@
 	--surface-light: #F3F4F6;
 	--surface-dark: #1F1F1F;
 	--accent: #808080;
+
+	--apple: #FF6B6B;
+	--orange: #FD9745;
+	--mango: #FFBF00;
+	--banana: #FFDC58;
+	--olive: #A4C639;
+	--kiwi: #00BD84;
+	--ice: #00C8F0;
+	--blueberry: #0099FF;
+	--grape: #A388EE;
+	--strawberry: #FC64AB;
 }
 
 .apple {
 	--surface-light: #FFE0E0;
 	--surface-dark: #2B0F12;
-	--accent: #FF6B6B;
+	--accent: var(--apple);
 }
 
 .orange {
 	--surface-light: #FFE3CF;
 	--surface-dark: #2B1608;
-	--accent: #FD9745;
+	--accent: var(--orange);
 }
 
 .mango {
 	--surface-light: #FFEFCC;
 	--surface-dark: #2A1F00;
-	--accent: #FFBF00;
+	--accent: var(--mango);
 }
 
 .banana {
 	--surface-light: #FFF6CC;
 	--surface-dark: #2A2408;
-	--accent: #FFDC58;
+	--accent: var(--banana);
 }
 
-.lime {
+.olive {
 	--surface-light: #F7FFE5;
 	--surface-dark: #1A2B0E;
-	--accent: #A4C639;
+	--accent: var(--olive);
 }
 
 .kiwi {
 	--surface-light: #D0FBEA;
 	--surface-dark: #0E201D;
-	--accent: #00BD84;
+	--accent: var(--kiwi);
 }
 
 .ice {
 	--surface-light: #D6F6FC;
 	--surface-dark: #08242B;
-	--accent: #00C8F0;
+	--accent: var(--ice);
 }
 
 .blueberry {
 	--surface-light: #D6ECFF;
 	--surface-dark: #081E2B;
-	--accent: #0099FF;
+	--accent: var(--blueberry);
 }
 
 .grape {
 	--surface-light: #E8E0FB;
 	--surface-dark: #1C1430;
-	--accent: #A388EE;
+	--accent: var(--grape);
 }
 
 .strawberry {
 	--surface-light: #FFD9EB;
 	--surface-dark: #2B0E1F;
-	--accent: #FC64AB;
+	--accent: var(--strawberry);
 }
 
 .light {
 	--ring: #000000;
 	--surface: var(--surface-light);
+	--inverted-surface: var(--surface-dark);
 	--foreground: var(--neutral-dark);
 	--background: var(--neutral-light);
 }
@@ -109,6 +122,7 @@
 .dark {
 	--ring: #FFFFFF;
 	--surface: var(--surface-dark);
+	--inverted-surface: var(--surface-light);
 	--foreground: var(--neutral-light);
 	--background: var(--neutral-dark);
 }
@@ -118,11 +132,25 @@
 	--color-surface: var(--surface);
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
+	--color-inverted-surface: var(--inverted-surface);
 
 	--color-ring: var(--ring);
 	--color-neutral-dark: var(--neutral-dark);
 	--color-neutral-light: var(--neutral-light);
+	--color-surface-light: var(--surface-light);
+	--color-surface-dark: var(--surface-dark);
 	--color-overlay: #000000cc;
+
+	--color-apple: var(--apple);
+	--color-orange: var(--orange);
+	--color-mango: var(--mango);
+	--color-banana: var(--banana);
+	--color-olive: var(--olive);
+	--color-kiwi: var(--kiwi);
+	--color-ice: var(--ice);
+	--color-blueberry: var(--blueberry);
+	--color-grape: var(--grape);
+	--color-strawberry: var(--strawberry);
 
 	--spacing-boxShadowX: -2px;
 	--spacing-boxShadowY: 4px;

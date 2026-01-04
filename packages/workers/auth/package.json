@@ -7,7 +7,7 @@
 		"test": "vitest run --coverage --passWithNoTests"
 	},
 	"dependencies": {
-		"@orpc/server": "1.13.0",
+		"@orpc/server": "1.13.2",
 		"@s2h/utils": "workspace:*",
 		"@simplewebauthn/server": "13.2.2",
 		"drizzle-orm": "0.45.1",

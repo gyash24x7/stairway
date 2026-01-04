@@ -14,9 +14,9 @@
 		"@s2h-ui/primitives": "workspace:*",
 		"@s2h/client": "workspace:*",
 		"@s2h/wordle": "workspace:*",
-		"@tanstack/react-router": "1.141.8",
+		"@tanstack/react-router": "1.144.0",
 		"@tanstack/react-store": "0.8.0",
-		"immer": "11.1.0"
+		"immer": "11.1.3"
 	},
 	"devDependencies": {
 		"@types/react": "19.2.7"

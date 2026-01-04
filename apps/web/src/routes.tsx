@@ -5,10 +5,13 @@ import { FishGamePage } from "@s2h-ui/fish/game-page";
 import { FishHomePage } from "@s2h-ui/fish/home-page";
 import { HomePage } from "@s2h-ui/shared/home-page";
 import { Shell } from "@s2h-ui/shared/shell";
+import { SplendorGamePage } from "@s2h-ui/splendor/game-page";
+import { SplendorHomePage } from "@s2h-ui/splendor/home-page";
 import { WordleGamePage } from "@s2h-ui/wordle/game-page";
 import { WordleHomePage } from "@s2h-ui/wordle/home-page";
 import * as callbreak from "@s2h/client/callbreak";
 import * as fish from "@s2h/client/fish";
+import * as splendor from "@s2h/client/splendor";
 import * as wordle from "@s2h/client/wordle";
 import {
 	createRootRouteWithContext,
@@ -92,6 +95,27 @@ const fishGameRoute = createRoute( {
 	}
 } );
 
+const splendorHomeRoute = createRoute( {
+	getParentRoute: () => rootRoute,
+	path: "/splendor",
+	component: SplendorHomePage
+} );
+
+const splendorGameRoute = createRoute( {
+	getParentRoute: () => rootRoute,
+	path: "/splendor/$gameId",
+	loader: ( { params } ) => splendor.ensureGetGameQueryData( params.gameId ),
+	beforeLoad: ( { context } ) => {
+		if ( !context.isLoggedIn ) {
+			throw redirect( { to: "/splendor" } );
+		}
+	},
+	component: () => {
+		const data = splendorGameRoute.useLoaderData();
+		return <SplendorGamePage data={ data }/>;
+	}
+} );
+
 const routeTree = rootRoute.addChildren( [
 	indexRoute,
 	wordleHomeRoute,
@@ -99,7 +123,9 @@ const routeTree = rootRoute.addChildren( [
 	callbreakHomeRoute,
 	callbreakGameRoute,
 	fishHomeRoute,
-	fishGameRoute
+	fishGameRoute,
+	splendorHomeRoute,
+	splendorGameRoute
 ] );
 
 export const router = createRouter( { routeTree, context: { authInfo: null, isLoggedIn: false } } );

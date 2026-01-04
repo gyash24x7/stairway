@@ -10,5 +10,6 @@ export {
 	PlusIcon,
 	DeleteIcon,
 	SunIcon,
-	MoonIcon
+	MoonIcon,
+	MenuSquareIcon
 } from "lucide-react";

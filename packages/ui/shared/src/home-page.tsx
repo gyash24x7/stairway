@@ -7,7 +7,7 @@ export function HomePage() {
 	const navigateToGame = ( game: string ) => navigate( { to: "/" + game } );
 	return (
 		<div className={ "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-2 md:gap-4" }>
-			{ [ "fish", "callbreak", "wordle" ].map( game => (
+			{ [ "fish", "callbreak", "wordle", "splendor" ].map( game => (
 				<div
 					key={ game }
 					className={ cn(
