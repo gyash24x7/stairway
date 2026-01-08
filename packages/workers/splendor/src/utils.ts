@@ -1,4 +1,4 @@
-import { objectKeys, shuffle } from "@s2h/utils/array";
+import { shuffle } from "@s2h/utils/array";
 import { generateGameCode, generateId } from "@s2h/utils/generator";
 import type { Card, CardLevel, Cost, GameData, Noble, Tokens } from "./types.ts";
 
@@ -182,12 +182,14 @@ function buildCost( gems: typeof GEMS, costArray: number[] ): Cost {
 }
 
 function generateDeckForMatrixPointMap( gems: typeof GEMS, level: CardLevel, map: Record<number, number[][]> ): Card[] {
-	return objectKeys( map ).flatMap( ( points ) => map[ points ].map( ( costArray, idx ) => {
-		const bonus = gems[ idx % 5 ];
-		const cost = buildCost( gems, costArray );
-		const id = `L${ level }-P${ points }-${ costToString( cost ) }-B${ bonus.charAt( 0 ) }`;
-		return { id, level, points, cost, bonus, image: `/splendor/cards/${ id }.png` };
-	} ) );
+	return Object.keys( map )
+		.map( p => parseInt( p ) )
+		.flatMap( ( points ) => map[ points ].map( ( costArray, idx ) => {
+			const bonus = gems[ idx % 5 ];
+			const cost = buildCost( gems, costArray );
+			const id = `L${ level }-P${ points }-${ costToString( cost ) }-B${ bonus.charAt( 0 ) }`;
+			return { id, level, points, cost, bonus, image: `/splendor/cards/${ id }.png` };
+		} ) );
 }
 
 export function generateDecks(): Record<CardLevel, Card[]> {

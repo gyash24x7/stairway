@@ -1,4 +1,4 @@
-import { objectKeys, shuffle } from "@s2h/utils/array";
+import { shuffle } from "@s2h/utils/array";
 import { generateBotInfo } from "@s2h/utils/generator";
 import { createLogger } from "@s2h/utils/logger";
 import { DurableObject } from "cloudflare:workers";
@@ -8,6 +8,7 @@ import type {
 	Cost,
 	CreateGameInput,
 	GameData,
+	Gem,
 	PickTokensInput,
 	PlayerGameInfo,
 	PlayerId,
@@ -195,7 +196,7 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			return { error };
 		}
 
-		objectKeys( input.tokens ).forEach( gem => {
+		Object.keys( input.tokens ).map( g => g as Gem ).forEach( gem => {
 			this.data.players[ playerInfo.id ].tokens[ gem ] += input.tokens[ gem ] ?? 0;
 			this.data.tokens[ gem ] -= input.tokens[ gem ] ?? 0;
 		} );
@@ -271,16 +272,15 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 
 		this.data.players[ playerInfo.id ].points += card.points;
 
-		objectKeys( input.payment ).forEach( gem => {
+		Object.keys( input.payment ).map( g => g as Gem ).forEach( gem => {
 			this.data.players[ playerInfo.id ].tokens[ gem ] -= input.payment[ gem ]!;
 			this.data.tokens[ gem ] += input.payment[ gem ]!;
 		} );
 
 		for ( const noble of Object.values( this.data.nobles ) ) {
-			const meetsRequirements = objectKeys( noble.cost ).every( gem => {
-				const ownedCardsOfGem = this.data.players[ playerInfo.id ].cards.filter( card => card.bonus ===
-					gem ).length;
-				return ownedCardsOfGem >= noble.cost[ gem ];
+			const meetsRequirements = Object.keys( noble.cost ).map( g => g as keyof Cost ).every( gem => {
+				const ownedCardsOfGem = this.data.players[ playerInfo.id ].cards.filter( card => card.bonus === gem );
+				return ownedCardsOfGem.length >= noble.cost[ gem ];
 			} );
 
 			if ( meetsRequirements ) {
@@ -370,7 +370,7 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			return { error: "Not your turn!" };
 		}
 
-		for ( const gem of objectKeys( input.tokens ) ) {
+		for ( const gem of Object.keys( input.tokens ).map( g => g as Gem ) ) {
 			if ( ( input.tokens[ gem ] ?? 0 ) > this.data.tokens[ gem ] ) {
 				this.logger.error( "Not enough tokens of gem %s available", gem );
 				return { error: `Not enough ${ gem } tokens available!` };
@@ -385,14 +385,18 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			return { error: "You cannot take these tokens without exceeding the token limit!" };
 		}
 
-		const typesPicked = objectKeys( input.tokens ).filter( gem => ( input.tokens[ gem ] ?? 0 ) > 0 );
+		const availableTypes = Object.keys( this.data.tokens ).map( g => g as Gem )
+			.filter( gem => this.data.tokens[ gem ] > 0 );
+
+		const typesPicked = Object.keys( input.tokens ).map( g => g as Gem )
+			.filter( gem => ( input.tokens[ gem ] ?? 0 ) > 0 );
+
 		if ( typesPicked.length === 1 ) {
 			if ( ( input.tokens[ typesPicked[ 0 ] ] ?? 0 ) > 2 ) {
 				this.logger.error( "Cannot pick more than 2 tokens of the same type" );
 				return { error: "You cannot pick more than 2 tokens of the same type!" };
 			}
 		} else if ( typesPicked.length === 2 ) {
-			const availableTypes = objectKeys( this.data.tokens ).filter( gem => this.data.tokens[ gem ] > 0 );
 			if ( availableTypes.length < 2 ) {
 				this.logger.error( "Cannot pick 2 different types when less than 2 types are available" );
 				return { error: "You cannot pick 2 different types when less than 2 types are available!" };
@@ -402,7 +406,6 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 				return { error: "You cannot pick more than 1 token of a type when picking 2 different types!" };
 			}
 		} else if ( typesPicked.length === 3 ) {
-			const availableTypes = objectKeys( this.data.tokens ).filter( gem => this.data.tokens[ gem ] > 0 );
 			if ( availableTypes.length < 3 ) {
 				this.logger.error( "Cannot pick 3 different types when less than 3 types are available" );
 				return { error: "You cannot pick 3 different types when less than 3 types are available!" };
@@ -487,14 +490,14 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		const player = this.data.players[ playerInfo.id ];
 		const totalCost: Cost = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 };
 
-		objectKeys( card.cost ).forEach( gem => {
+		Object.keys( card.cost ).map( g => g as keyof Cost ).forEach( gem => {
 			const discount = player.cards.filter( c => c.bonus === gem ).length;
 			totalCost[ gem ] = Math.max( 0, card.cost[ gem ] - discount );
 		} );
 
 		let goldNeeded = 0;
 
-		for ( const gem of objectKeys( totalCost ) ) {
+		for ( const gem of Object.keys( totalCost ).map( g => g as keyof Cost ) ) {
 			if ( ( input.payment[ gem ] ?? 0 ) > totalCost[ gem ] ) {
 				this.logger.error(
 					"Overpayment for gem %s: paid %d, needed %d",
@@ -525,7 +528,7 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		}
 
 		// 4. Check if player has enough tokens to cover the payment
-		for ( const gem of objectKeys( input.payment ) ) {
+		for ( const gem of Object.keys( input.payment ).map( g => g as Gem ) ) {
 			if ( ( input.payment[ gem ] ?? 0 ) > player.tokens[ gem ] ) {
 				this.logger.error( "Player does not have enough tokens of gem %s", gem );
 				return { error: `You do not have enough ${ gem } tokens!` };
@@ -581,7 +584,7 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 
 	private getPlayerDataMap() {
 		const { decks, ...rest } = this.data;
-		return objectKeys( this.data.players ).reduce( ( acc, playerId ) => {
+		return Object.keys( this.data.players ).reduce( ( acc, playerId ) => {
 			acc[ playerId ] = { ...rest, playerId };
 			return acc;
 		}, {} as Record<string, PlayerGameInfo> );
