@@ -1,6 +1,5 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import type { Card, CardLevel, Cost } from "@s2h/splendor/types";
-import { objectKeys } from "@s2h/utils/array";
 import { useStore } from "@tanstack/react-store";
 import { handleCardDeSelect, handleCardSelect, store } from "./store.tsx";
 import { gemColors } from "./token-picker.tsx";
@@ -60,7 +59,7 @@ export function DisplayCard( { card, disabled }: DisplayCardProps ) {
 					/>
 				</div>
 				<div className={ "flex flex-wrap-reverse gap-0.5 p-0.5" }>
-					{ objectKeys( card.cost ).filter( gem => card.cost[ gem ] > 0 ).map( gem => (
+					{ Object.keys( card.cost ).filter( gem => card.cost[ gem as keyof Cost ] > 0 ).map( gem => (
 						<div
 							key={ gem }
 							className={ cn(

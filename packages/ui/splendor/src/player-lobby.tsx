@@ -9,7 +9,6 @@ import {
 } from "@s2h-ui/primitives/tooltip";
 import { cn } from "@s2h-ui/primitives/utils";
 import type { Card, Gem, Player } from "@s2h/splendor/types";
-import { objectKeys } from "@s2h/utils/array";
 import { useStore } from "@tanstack/react-store";
 import { DisplayCard } from "./display-card.tsx";
 import { handleCardDeSelect, handleCardSelect, store } from "./store.tsx";
@@ -20,7 +19,7 @@ function DisplayPlayerTokens( props: { player: Player } ) {
 		<div className={ "p-2" }>
 			<h2 className={ "pb-1" }>Tokens</h2>
 			<div className={ "grid grid-cols-3 gap-1" }>
-				{ objectKeys( props.player.tokens ).map( g => g as Gem ).map( gem => (
+				{ Object.keys( props.player.tokens ).map( g => g as Gem ).map( gem => (
 					<div key={ gem } className={ cn(
 						"w-6 h-6 flex justify-center items-center rounded-full border",
 						"text-sm text-neutral-dark",
@@ -104,7 +103,7 @@ function DisplayPurchasedCards( props: { player: Player } ) {
 		<div>
 			<h2 className={ "pb-1" }>Cards</h2>
 			<div className={ "flex gap-1" }>
-				{ objectKeys( props.player.tokens ).filter( g => g !== "gold" ).map( gem => (
+				{ Object.keys( props.player.tokens ).map( g => g as Gem ).filter( g => g !== "gold" ).map( gem => (
 					<div className={ cn( "w-10 h-16 p-1 rounded-md border bg-gray-400" ) } key={ gem }>
 						<div className={ cn(
 							"flex h-full rounded-md border items-center justify-center",

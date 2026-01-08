@@ -3,7 +3,6 @@ import { Separator } from "@s2h-ui/primitives/separator";
 import { cn } from "@s2h-ui/primitives/utils";
 import type { Gem, Tokens } from "@s2h/splendor/types";
 import { DEFAULT_TOKENS } from "@s2h/splendor/utils";
-import { objectKeys } from "@s2h/utils/array";
 import { Fragment, useEffect, useState } from "react";
 
 export const gemColors: Record<Gem, string> = {
@@ -74,7 +73,7 @@ export function TokenPicker( { initialTokens = DEFAULT_TOKENS, pickLimit, ...pro
 			<div className={ "flex-1" }>
 				<h2 className={ "mb-2" }>Available Tokens</h2>
 				<div className={ "flex flex-wrap gap-2" }>
-					{ objectKeys( tokens ).map( ( gem ) => (
+					{ Object.keys( tokens ).map( g => g as Gem ).map( ( gem ) => (
 						<Button
 							key={ gem }
 							size={ "smallIcon" }
@@ -91,16 +90,19 @@ export function TokenPicker( { initialTokens = DEFAULT_TOKENS, pickLimit, ...pro
 			<div className={ "w-1/3" }>
 				<h2 className={ "mb-2" }>Selected</h2>
 				<div className={ "flex flex-wrap gap-2" }>
-					{ objectKeys( pickedTokens ).filter( g => !!pickedTokens[ g ] ).map( ( gem ) => (
-						<Button
-							key={ gem }
-							size={ "smallIcon" }
-							className={ cn( "rounded-full", gemColors[ gem ] ) }
-							onClick={ () => handleTokenDeSelection( gem ) }
-						>
-							{ pickedTokens[ gem ] }
-						</Button>
-					) ) }
+					{ Object.keys( pickedTokens )
+						.map( g => g as Gem )
+						.filter( g => !!pickedTokens[ g ] )
+						.map( ( gem ) => (
+							<Button
+								key={ gem }
+								size={ "smallIcon" }
+								className={ cn( "rounded-full", gemColors[ gem ] ) }
+								onClick={ () => handleTokenDeSelection( gem ) }
+							>
+								{ pickedTokens[ gem ] }
+							</Button>
+						) ) }
 				</div>
 			</div>
 		</Fragment>

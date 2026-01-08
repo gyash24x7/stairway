@@ -11,13 +11,12 @@ import {
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { usePurchaseCardMutation } from "@s2h/client/splendor";
-import type { Tokens } from "@s2h/splendor/types";
+import type { Gem, Tokens } from "@s2h/splendor/types";
 import { DEFAULT_TOKENS } from "@s2h/splendor/utils";
-import { objectKeys } from "@s2h/utils/array";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
 import { DisplayCard } from "./display-card.tsx";
-import { store } from "./store.tsx";
+import { handleCardDeSelect, store } from "./store.tsx";
 import { gemColors, TokenPicker } from "./token-picker.tsx";
 
 export function PurchaseCard() {
@@ -38,6 +37,7 @@ export function PurchaseCard() {
 		onSuccess: () => {
 			setShowDialog( false );
 			setPayment( DEFAULT_TOKENS );
+			handleCardDeSelect();
 		}
 	} );
 
@@ -60,22 +60,27 @@ export function PurchaseCard() {
 					</DialogHeader>
 					<div className={ "flex flex-col gap-2 items-center mb-2" }>
 						<div className={ "flex gap-2 justify-between w-full" }>
-							<DisplayCard card={ selectedCard! } disabled/>
+							{ selectedCard && <DisplayCard card={ selectedCard } disabled/> }
 							<div>
 								<h2 className={ "pb-1" }>Available Discounts</h2>
 								<div className={ "flex gap-1" }>
-									{ objectKeys( player.tokens ).filter( g => g !== "gold" ).map( gem => (
-										<div className={ cn( "w-10 h-16 p-1 rounded-md border bg-gray-400" ) }
-											 key={ gem }>
-											<div className={ cn(
-												"flex h-full rounded-md border items-center justify-center",
-												"text-3xl text-neutral-dark",
-												gemColors[ gem ]
-											) }>
-												<h2>{ player.cards.filter( c => c.bonus === gem ).length }</h2>
+									{ Object.keys( player.tokens )
+										.map( g => g as Gem )
+										.filter( g => g !== "gold" )
+										.map( gem => (
+											<div
+												className={ cn( "w-10 h-16 p-1 rounded-md border bg-gray-400" ) }
+												key={ gem }
+											>
+												<div className={ cn(
+													"flex h-full rounded-md border items-center justify-center",
+													"text-3xl text-neutral-dark",
+													gemColors[ gem ]
+												) }>
+													<h2>{ player.cards.filter( c => c.bonus === gem ).length }</h2>
+												</div>
 											</div>
-										</div>
-									) ) }
+										) ) }
 								</div>
 							</div>
 						</div>
