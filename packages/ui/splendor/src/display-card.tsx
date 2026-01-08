@@ -59,15 +59,15 @@ export function DisplayCard( { card, disabled }: DisplayCardProps ) {
 					/>
 				</div>
 				<div className={ "flex flex-wrap-reverse gap-0.5 p-0.5" }>
-					{ Object.keys( card.cost ).filter( gem => card.cost[ gem as keyof Cost ] > 0 ).map( gem => (
+					{ Object.keys( card.cost ).map( g => g as keyof Cost ).filter( gem => card.cost[ gem ] > 0 ).map( gem => (
 						<div
 							key={ gem }
 							className={ cn(
 								"flex rounded-full justify-center items-center border w-5 h-5",
-								gemColors[ gem as keyof Cost ]
+								gemColors[ gem ]
 							) }
 						>
-							<span className={ "text-xs" }>{ card.cost[ gem as keyof Cost ] }</span>
+							<span className={ "text-xs" }>{ card.cost[ gem ] }</span>
 						</div>
 					) ) }
 				</div>

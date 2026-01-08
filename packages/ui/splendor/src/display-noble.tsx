@@ -32,15 +32,15 @@ export function DisplayNoble( { noble }: { noble: Noble } ) {
 					/>
 				</div>
 				<div className={ "flex flex-col gap-0.5 p-0.5" }>
-					{ Object.keys( noble.cost ).filter( gem => noble.cost[ gem as keyof Cost ] > 0 ).map( gem => (
+					{ Object.keys( noble.cost ).map( g => g as keyof Cost ).filter( gem => noble.cost[ gem ] > 0 ).map( gem => (
 						<div
 							key={ gem }
 							className={ cn(
 								"flex rounded-md justify-center items-center border w-5",
-								gemColors[ gem as keyof Cost ]
+								gemColors[ gem ]
 							) }
 						>
-							<span className={ "text-[10px] md:text-xs" }>{ noble.cost[ gem as keyof Cost ] }</span>
+							<span className={ "text-[10px] md:text-xs" }>{ noble.cost[ gem ] }</span>
 						</div>
 					) ) }
 				</div>
