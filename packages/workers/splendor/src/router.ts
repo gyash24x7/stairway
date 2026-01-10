@@ -151,7 +151,8 @@ const reserveCard = base
 	.input( object( {
 		gameId: pipe( string(), ulid() ),
 		cardId: string(),
-		withGold: boolean()
+		withGold: boolean(),
+		returnedToken: optional( picklist( GEMS_WITH_GOLD ) )
 	} ) )
 	.output( void_() )
 	.handler( async ( { input, context } ) => {

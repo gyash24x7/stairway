@@ -18,7 +18,6 @@ import { TokenPicker } from "./token-picker.tsx";
 
 export function PickTokens() {
 	const gameId = useStore( store, state => state.id );
-	const playerTokens = useStore( store, state => state.players[ state.playerId ].tokens );
 	const selectedTokens = useStore( store, state => state.local.selectedTokens );
 	const selectedReturnTokens = useStore( store, state => state.local.selectedReturnTokens );
 	const combinedTokens = useStore( store, state => {
@@ -30,7 +29,7 @@ export function PickTokens() {
 	} );
 
 	const selectedCount = Object.values( selectedTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
-	const tokensWithPlayer = Object.values( playerTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
+	const combinedCount = Object.values( combinedTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 
@@ -41,7 +40,7 @@ export function PickTokens() {
 	} );
 
 	const handlePickClick = async () => {
-		if ( tokensWithPlayer + selectedCount <= 10 ) {
+		if ( combinedCount <= 10 ) {
 			await mutateAsync( { gameId, tokens: selectedTokens } );
 		} else {
 			setTrue();
@@ -66,7 +65,7 @@ export function PickTokens() {
 					</DialogHeader>
 					<TokenPicker
 						initialTokens={ combinedTokens }
-						pickLimit={ tokensWithPlayer + selectedCount - 10 }
+						pickLimit={ combinedCount - 10 }
 						onPickChange={ handleSelectedReturnTokenChange }
 					/>
 					<DialogFooter>

@@ -250,6 +250,11 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			this.data.tokens.gold -= 1;
 		}
 
+		if ( input.returnedToken ) {
+			this.data.players[ playerInfo.id ].tokens[ input.returnedToken ]--;
+			this.data.tokens[ input.returnedToken ]++;
+		}
+
 		const isLastPlayer = this.data.playerOrder.indexOf( this.data.currentTurn ) ===
 			this.data.playerOrder.length -
 			1;
@@ -512,11 +517,18 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			return { error: "Not enough gold tokens available!" };
 		}
 
-		// %. Check if player can take gold token without exceeding token limit
-		const totalTokens = Object.values( player.tokens ).reduce( ( acc, val ) => acc + val, 0 );
-		if ( input.withGold && totalTokens >= 10 ) {
-			this.logger.error( "Player cannot take gold token without exceeding token limit: %s", playerInfo.id );
-			return { error: "You cannot take a gold token without exceeding the token limit!" };
+		// 5. Check if the player will exceed token limit after taking gold, throw error if not returning any token
+		if ( input.withGold ) {
+			const totalTokens = Object.values( player.tokens ).reduce( ( acc, val ) => acc + val, 0 );
+			if ( totalTokens + 1 > 10 && !input.returnedToken ) {
+				this.logger.error( "Reserving with gold will exceed token limit and no return token specified" );
+				return { error: "You must return a token when reserving with gold exceeds your token limit!" };
+			}
+
+			if ( totalTokens + 1 <= 10 && input.returnedToken ) {
+				this.logger.error( "No return token allowed when reserving with gold does not exceed token limit" );
+				return { error: "You cannot return a token when reserving with gold does not exceed your token limit!" };
+			}
 		}
 
 		this.logger.debug( "<< validateReserveCard()" );

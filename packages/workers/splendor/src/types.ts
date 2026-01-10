@@ -71,6 +71,7 @@ export type ReserveCardInput = {
 	gameId: GameId;
 	cardId: CardId;
 	withGold: boolean;
+	returnedToken?: Gem;
 }
 
 export type PurchaseCardInput = {
