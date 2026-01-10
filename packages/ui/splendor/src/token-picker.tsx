@@ -49,18 +49,16 @@ export function TokenPicker( { initialTokens = DEFAULT_TOKENS, pickLimit, ...pro
 			return;
 		}
 
-		setTokens( prevTokens => ( {
-			...prevTokens,
-			[ gem ]: prevTokens[ gem ] + 1
-		} ) );
+		const newTokens = { ...tokens, [ gem ]: tokens[ gem ] + 1 };
+		setTokens( newTokens );
 
-		setPickedTokens( prevPicked => {
-			const newPicked = { ...prevPicked };
-			if ( newPicked[ gem ] ) {
-				newPicked[ gem ] -= 1;
-			}
-			return newPicked;
-		} );
+		const newPicked = { ...pickedTokens, [ gem ]: ( pickedTokens[ gem ] || 0 ) - 1 };
+		if ( newPicked[ gem ] === 0 ) {
+			delete newPicked[ gem ];
+		}
+
+		setPickedTokens( newPicked );
+		props.onPickChange?.( newPicked );
 	};
 
 	useEffect( () => {

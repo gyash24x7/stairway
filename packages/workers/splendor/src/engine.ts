@@ -196,14 +196,29 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			return { error };
 		}
 
-		Object.keys( input.tokens ).map( g => g as Gem ).forEach( gem => {
-			this.data.players[ playerInfo.id ].tokens[ gem ] += input.tokens[ gem ] ?? 0;
-			this.data.tokens[ gem ] -= input.tokens[ gem ] ?? 0;
-		} );
+		const player = this.data.players[ playerInfo.id ];
 
-		const isLastPlayer = this.data.playerOrder.indexOf( this.data.currentTurn ) ===
-			this.data.playerOrder.length -
-			1;
+		// 1) Apply picks first (deduct from bank, add to player)
+		for ( const gem of Object.keys( input.tokens ).map( g => g as Gem ) ) {
+			const take = input.tokens[ gem ] ?? 0;
+			if ( take > 0 ) {
+				player.tokens[ gem ] += take;
+				this.data.tokens[ gem ] -= take;
+			}
+		}
+
+		// 2) Then apply returned tokens (player returns extras to bank)
+		if ( input.returned ) {
+			for ( const gem of Object.keys( input.returned ).map( g => g as Gem ) ) {
+				const ret = input.returned[ gem ] ?? 0;
+				if ( ret > 0 ) {
+					player.tokens[ gem ] -= ret;
+					this.data.tokens[ gem ] += ret;
+				}
+			}
+		}
+
+		const isLastPlayer = this.data.playerOrder.indexOf( playerInfo.id ) === this.data.playerOrder.length - 1;
 		if ( this.data.isLastRound && isLastPlayer ) {
 			this.data.status = "COMPLETED";
 			this.updateWinner();
@@ -370,21 +385,18 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			return { error: "Not your turn!" };
 		}
 
+		const player = this.data.players[ playerInfo.id ];
+
+		// 1) Validate picks against current bank availability (picks happen before returns)
 		for ( const gem of Object.keys( input.tokens ).map( g => g as Gem ) ) {
-			if ( ( input.tokens[ gem ] ?? 0 ) > this.data.tokens[ gem ] ) {
-				this.logger.error( "Not enough tokens of gem %s available", gem );
+			const take = input.tokens[ gem ] ?? 0;
+			if ( take > this.data.tokens[ gem ] ) {
+				this.logger.error( "Not enough tokens of gem %s available to pick", gem );
 				return { error: `Not enough ${ gem } tokens available!` };
 			}
 		}
 
-		const player = this.data.players[ playerInfo.id ];
-		const totalTokens = Object.values( player.tokens ).reduce( ( acc, val ) => acc + val, 0 );
-		const pickedTokens = Object.values( input.tokens ).reduce( ( acc, val ) => acc + val, 0 );
-		if ( totalTokens + pickedTokens > 10 ) {
-			this.logger.error( "Player cannot take tokens without exceeding token limit: %s", playerInfo.id );
-			return { error: "You cannot take these tokens without exceeding the token limit!" };
-		}
-
+		// Validate pick type rules (1,2,3 types)
 		const availableTypes = Object.keys( this.data.tokens ).map( g => g as Gem )
 			.filter( gem => this.data.tokens[ gem ] > 0 );
 
@@ -392,10 +404,17 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			.filter( gem => ( input.tokens[ gem ] ?? 0 ) > 0 );
 
 		if ( typesPicked.length === 1 ) {
-			if ( ( input.tokens[ typesPicked[ 0 ] ] ?? 0 ) > 2 ) {
+			const pickedCount = input.tokens[ typesPicked[ 0 ] ] ?? 0;
+			if ( pickedCount > 2 ) {
 				this.logger.error( "Cannot pick more than 2 tokens of the same type" );
 				return { error: "You cannot pick more than 2 tokens of the same type!" };
 			}
+
+			if ( pickedCount === 2 && ( this.data.tokens[ typesPicked[ 0 ] ] ?? 0 ) < 4 ) {
+				this.logger.error( "Cannot pick 2 tokens of the same type when less than 4 are available" );
+				return { error: "You cannot pick 2 tokens of the same type when less than 4 are available!" };
+			}
+
 		} else if ( typesPicked.length === 2 ) {
 			if ( availableTypes.length < 2 ) {
 				this.logger.error( "Cannot pick 2 different types when less than 2 types are available" );
@@ -417,6 +436,46 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		} else {
 			this.logger.error( "Invalid number of token types picked" );
 			return { error: "Invalid number of token types picked!" };
+		}
+
+		// 2) Compute totals after pick (before return) - because the game rules pick first then return
+		const totalPlayerTokensBefore = Object.values( player.tokens ).reduce( ( acc, val ) => acc + val, 0 );
+		const pickedTokens = Object.values( input.tokens ).reduce( ( acc, val ) => acc + val, 0 );
+		const totalAfterPick = totalPlayerTokensBefore + pickedTokens;
+
+		if ( totalAfterPick <= 10 ) {
+			// If picks don't exceed limit, there must not be any returns
+			if ( input.returned ) {
+				const anyReturned = Object.values( input.returned ).some( v => ( v ?? 0 ) > 0 );
+				if ( anyReturned ) {
+					this.logger.error( "No returns allowed when picks do not exceed token limit" );
+					return { error: "You cannot return tokens when your total after pick does not exceed 10!" };
+				}
+			}
+			this.logger.debug( "<< validatePickTokens()" );
+			return {};
+		}
+
+		// totalAfterPick > 10 -> player must return exactly the extra tokens to bring down to 10
+		const extraToReturn = totalAfterPick - 10;
+		const returnedTokens = Object.values( input.returned ?? {} ).reduce( ( acc, val ) => acc + val, 0 );
+		if ( returnedTokens !== extraToReturn ) {
+			this.logger.error(
+				"Returned tokens must equal the extra tokens to bring total to 10: expected %d, got %d",
+				extraToReturn,
+				returnedTokens
+			);
+			return { error: `You must return exactly ${ extraToReturn } token(s) when you exceed the limit!` };
+		}
+
+		// Validate player has the tokens to return after picks (they can return tokens they just picked)
+		for ( const gem of Object.keys( input.returned ?? {} ).map( g => g as Gem ) ) {
+			const ret = input.returned![ gem ] ?? 0;
+			const availableAfterPick = player.tokens[ gem ] + ( input.tokens[ gem ] ?? 0 );
+			if ( ret > availableAfterPick ) {
+				this.logger.error( "Player trying to return more %s tokens than they will have after pick", gem );
+				return { error: `You do not have enough ${ gem } tokens to return!` };
+			}
 		}
 
 		this.logger.debug( "<< validatePickTokens()" );
@@ -626,3 +685,4 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		await this.env.SPLENDOR_KV.put( `gameId:${ this.data.id }`, this.key );
 	}
 }
+

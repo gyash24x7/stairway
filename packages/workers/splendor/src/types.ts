@@ -3,7 +3,6 @@ import type { SplendorEngine } from "./engine.ts";
 export type Gem = "diamond" | "sapphire" | "emerald" | "ruby" | "onyx" | "gold";
 export type CardLevel = 1 | 2 | 3;
 export type Tokens = Record<Gem, number>;
-export type TokensWithoutGold = Record<Exclude<Gem, "gold">, number>;
 export type Cost = Record<Exclude<Gem, "gold">, number>;
 
 export type CardId = string;
@@ -13,7 +12,6 @@ export type Card = {
 	points: number;
 	cost: Cost;
 	bonus: Exclude<Gem, "gold">;
-	image: string;
 }
 
 export type NobleId = string;
@@ -21,7 +19,6 @@ export type Noble = {
 	id: NobleId;
 	points: number;
 	cost: Cost;
-	image: string;
 }
 
 export type PlayerId = string;
@@ -64,17 +61,10 @@ export type CreateGameInput = {
 	playerCount: 2 | 3 | 4;
 }
 
-export type JoinGameInput = {
-	code: string;
-}
-
-export type StartGameInput = {
-	gameId: GameId;
-}
-
 export type PickTokensInput = {
 	gameId: GameId;
 	tokens: Partial<Tokens>;
+	returned?: Partial<Tokens>;
 }
 
 export type ReserveCardInput = {
