@@ -71,6 +71,7 @@ export function ReserveCard() {
 						initialTokens={ combinedTokens }
 						pickLimit={ 1 }
 						onPickChange={ handleSelectedReturnTokenChange }
+						allowGold={ withGold }
 					/>
 					<DialogFooter>
 						<Button onClick={ handleReturnClick } disabled={ isPending } className={ "w-full" }>
