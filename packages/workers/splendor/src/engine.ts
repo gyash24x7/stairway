@@ -256,9 +256,8 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 
 			// Validate player has the token to return (after receiving gold if applicable)
 			if ( ( playerTokens[ tokenToReturn ] ?? 0 ) <= 0 ) {
-				const error = "INVALID_RETURNED_TOKEN";
-				this.logger.error( "Failed to reserve card: %o", error );
-				return { error };
+				this.logger.error( "Player does not have the returned token %s to return", tokenToReturn );
+				return { error: `You do not have any ${ tokenToReturn } tokens to return!` };
 			}
 
 			playerTokens[ tokenToReturn ] -= 1;
@@ -544,16 +543,6 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			if ( totalTokens + 1 <= 10 && input.returnedToken ) {
 				this.logger.error( "No return token allowed when reserving with gold does not exceed token limit" );
 				return { error: "You cannot return a token when reserving with gold does not exceed your token limit!" };
-			}
-
-			// Validate that exactly 1 token is returned when needed
-			if ( totalTokens + 1 > 10 && input.returnedToken ) {
-				// Check if player has the token to return
-				const playerTokens = player.tokens;
-				if ( ( playerTokens[ input.returnedToken ] ?? 0 ) <= 0 ) {
-					this.logger.error( "Player does not have the returned token %s", input.returnedToken );
-					return { error: `You do not have any ${ input.returnedToken } tokens to return!` };
-				}
 			}
 		}
 
