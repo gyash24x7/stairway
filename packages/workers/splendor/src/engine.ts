@@ -251,8 +251,18 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 		}
 
 		if ( input.returnedToken ) {
-			this.data.players[ playerInfo.id ].tokens[ input.returnedToken ]--;
-			this.data.tokens[ input.returnedToken ]++;
+			const playerTokens = this.data.players[ playerInfo.id ].tokens;
+			const tokenToReturn = input.returnedToken;
+
+			// Validate player has the token to return (after receiving gold if applicable)
+			if ( ( playerTokens[ tokenToReturn ] ?? 0 ) <= 0 ) {
+				const error = "INVALID_RETURNED_TOKEN";
+				this.logger.error( "Failed to reserve card: %o", error );
+				return { error };
+			}
+
+			playerTokens[ tokenToReturn ] -= 1;
+			this.data.tokens[ tokenToReturn ] += 1;
 		}
 
 		const isLastPlayer = this.data.playerOrder.indexOf( this.data.currentTurn ) ===
@@ -392,7 +402,13 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 
 		const player = this.data.players[ playerInfo.id ];
 
-		// 1) Validate picks against current bank availability (picks happen before returns)
+		// 1) Validate that gold tokens are not included in picks (gold can only be obtained via reserve)
+		if ( Object.keys( input.tokens ).includes( "gold" ) ) {
+			this.logger.error( "Gold tokens cannot be picked directly, only obtained via reserve" );
+			return { error: "Gold tokens cannot be picked directly!" };
+		}
+
+		// 2) Validate picks against current bank availability (picks happen before returns)
 		for ( const gem of Object.keys( input.tokens ).map( g => g as Gem ) ) {
 			const take = input.tokens[ gem ] ?? 0;
 			if ( take > this.data.tokens[ gem ] ) {
@@ -528,6 +544,16 @@ export class SplendorEngine extends DurableObject<CloudflareEnv> {
 			if ( totalTokens + 1 <= 10 && input.returnedToken ) {
 				this.logger.error( "No return token allowed when reserving with gold does not exceed token limit" );
 				return { error: "You cannot return a token when reserving with gold does not exceed your token limit!" };
+			}
+
+			// Validate that exactly 1 token is returned when needed
+			if ( totalTokens + 1 > 10 && input.returnedToken ) {
+				// Check if player has the token to return
+				const playerTokens = player.tokens;
+				if ( ( playerTokens[ input.returnedToken ] ?? 0 ) <= 0 ) {
+					this.logger.error( "Player does not have the returned token %s", input.returnedToken );
+					return { error: `You do not have any ${ input.returnedToken } tokens to return!` };
+				}
 			}
 		}
 
