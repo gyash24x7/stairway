@@ -21,10 +21,10 @@
 		"@s2h/fish": "workspace:*",
 		"@s2h/splendor": "workspace:*",
 		"@s2h/wordle": "workspace:*",
-		"@tanstack/react-query": "5.90.15"
+		"@tanstack/react-query": "5.90.16"
 	},
 	"devDependencies": {
-		"@types/react": "19.2.7"
+		"@types/react": "19.2.8"
 	},
 	"peerDependencies": {
 		"react": "19.2.3"

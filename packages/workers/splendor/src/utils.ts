@@ -2,7 +2,8 @@ import { shuffle } from "@s2h/utils/array";
 import { generateGameCode, generateId } from "@s2h/utils/generator";
 import type { Card, CardLevel, Cost, GameData, Noble, Tokens } from "./types.ts";
 
-const GEMS: Array<keyof Cost> = [ "diamond", "sapphire", "emerald", "ruby", "onyx" ];
+export const GEMS: Array<keyof Cost> = [ "diamond", "sapphire", "emerald", "ruby", "onyx" ];
+export const GEMS_WITH_GOLD: Array<keyof Tokens> = [ ...GEMS, "gold" ];
 export const DEFAULT_COST: Cost = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 };
 export const DEFAULT_TOKENS: Tokens = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0 };
 
@@ -51,11 +52,7 @@ export function generateNobles( playerCount: number ): Noble[] {
 		}
 	}
 
-	const allNobles = costs.map( cost => {
-		const id = costToString( cost );
-		return { id, points: 3, cost, image: `/splendor/nobles/${ id }.png` };
-	} );
-
+	const allNobles = costs.map( cost => ( { id: costToString( cost ), points: 3, cost } ) );
 	return shuffle( allNobles ).slice( 0, playerCount + 1 );
 }
 
@@ -188,7 +185,7 @@ function generateDeckForMatrixPointMap( gems: typeof GEMS, level: CardLevel, map
 			const bonus = gems[ idx % 5 ];
 			const cost = buildCost( gems, costArray );
 			const id = `L${ level }-P${ points }-${ costToString( cost ) }-B${ bonus.charAt( 0 ) }`;
-			return { id, level, points, cost, bonus, image: `/splendor/cards/${ id }.png` };
+			return { id, level, points, cost, bonus };
 		} ) );
 }
 

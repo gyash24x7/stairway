@@ -16,7 +16,7 @@
 		"@simplewebauthn/browser": "13.2.2"
 	},
 	"devDependencies": {
-		"@types/react": "19.2.7"
+		"@types/react": "19.2.8"
 	},
 	"peerDependencies": {
 		"react": "19.2.3"

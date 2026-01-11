@@ -1,8 +1,23 @@
 import { ORPCError, os, type RouterClient } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fetch";
 import { createLogger } from "@s2h/utils/logger";
-import { boolean, custom, length, number, object, picklist, pipe, record, string, trim, ulid, void_ } from "valibot";
+import {
+	boolean,
+	custom,
+	length,
+	number,
+	object,
+	optional,
+	picklist,
+	pipe,
+	record,
+	string,
+	trim,
+	ulid,
+	void_
+} from "valibot";
 import type { Context, PlayerGameInfo } from "./types.ts";
+import { GEMS, GEMS_WITH_GOLD } from "./utils.ts";
 
 const logger = createLogger( "Splendor:Router" );
 
@@ -101,7 +116,8 @@ const startGame = base
 const pickTokens = base
 	.input( object( {
 		gameId: pipe( string(), ulid() ),
-		tokens: record( picklist( [ "diamond", "sapphire", "emerald", "ruby", "onyx", "gold" ] ), number() )
+		tokens: record( picklist( GEMS ), number() ),
+		returned: optional( record( picklist( GEMS_WITH_GOLD ), number() ) )
 	} ) )
 	.output( void_() )
 	.handler( async ( { input, context } ) => {
@@ -135,7 +151,8 @@ const reserveCard = base
 	.input( object( {
 		gameId: pipe( string(), ulid() ),
 		cardId: string(),
-		withGold: boolean()
+		withGold: boolean(),
+		returnedToken: optional( picklist( GEMS_WITH_GOLD ) )
 	} ) )
 	.output( void_() )
 	.handler( async ( { input, context } ) => {

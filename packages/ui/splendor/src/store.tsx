@@ -6,6 +6,7 @@ import { produce } from "immer";
 type StoreType = PlayerGameInfo & {
 	local: {
 		selectedTokens: Partial<Tokens>;
+		selectedReturnTokens: Partial<Tokens>;
 		lastNotification?: string;
 		selectedCard?: string;
 	};
@@ -25,7 +26,8 @@ export const store = new Store<StoreType>( {
 	playerOrder: [],
 	createdBy: "",
 	local: {
-		selectedTokens: {}
+		selectedTokens: {},
+		selectedReturnTokens: {}
 	}
 } );
 
@@ -44,6 +46,12 @@ export function handleCardDeSelect() {
 export function handleSelectedTokenChange( tokens: Partial<Tokens> ) {
 	store.setState( state => produce( state, draft => {
 		draft.local.selectedTokens = tokens;
+	} ) );
+}
+
+export function handleSelectedReturnTokenChange( tokens: Partial<Tokens> ) {
+	store.setState( state => produce( state, draft => {
+		draft.local.selectedReturnTokens = tokens;
 	} ) );
 }
 
