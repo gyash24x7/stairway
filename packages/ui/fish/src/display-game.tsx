@@ -1,5 +1,5 @@
 import { DisplayHand } from "@s2h-ui/shared/display-hand";
-import { GameCode } from "@s2h-ui/shared/game-code";
+import { GameInfo } from "@s2h-ui/shared/game-info";
 import { useStore } from "@tanstack/react-store";
 import { ActionPanel } from "./action-panel.tsx";
 import { DisplayTeams } from "./display-teams.tsx";
@@ -18,12 +18,12 @@ export function DisplayGame() {
 
 	return (
 		<div className={ `flex flex-col gap-3` }>
-			<GameCode code={ code } name={ "fish" }>
+			<GameInfo code={ code } name={ "fish" }>
 				<div className={ "py-2 px-4" }>
 					<p className={ "text-xs md:text-sm" }>TYPE</p>
 					<h1 className={ "text-2xl md:text-4xl font-heading" }>{ gameType }</h1>
 				</div>
-			</GameCode>
+			</GameInfo>
 			<div className={ "flex flex-col gap-3 justify-between mb-52" }>
 				{ areTeamsCreated && <DisplayTeams/> }
 				<PlayerLobby

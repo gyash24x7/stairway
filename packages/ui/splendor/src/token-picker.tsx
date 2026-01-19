@@ -1,28 +1,38 @@
-import { Button } from "@s2h-ui/primitives/button";
-import { Separator } from "@s2h-ui/primitives/separator";
-import { cn } from "@s2h-ui/primitives/utils";
 import type { Gem, Tokens } from "@s2h/splendor/types";
 import { DEFAULT_TOKENS } from "@s2h/splendor/utils";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
+import { TokenBar } from "./token-bar.tsx";
 
 export const gemColors: Record<Gem, string> = {
-	diamond: "bg-white text-neutral-dark",
-	onyx: "bg-neutral-dark text-white",
+	diamond: "bg-gray-100 text-gray-600",
+	onyx: "bg-gray-800 text-gray-200",
 	ruby: "bg-apple",
 	sapphire: "bg-blueberry",
 	emerald: "bg-kiwi",
 	gold: "bg-mango"
 };
 
+export const gemLightColors: Record<Gem, string> = {
+	diamond: "bg-gray-100 text-gray-600",
+	onyx: "bg-neutral-dark text-gray-200",
+	ruby: "bg-surface-apple text-apple",
+	sapphire: "bg-surface-blueberry text-blueberry",
+	emerald: "bg-surface-kiwi text-kiwi",
+	gold: "bg-surface-mango text-mango"
+};
+
 type TokenPickerProps = {
-	initialTokens: Tokens;
+	initialTokens: Partial<Tokens>;
 	pickLimit?: number;
 	allowGold?: boolean;
 	onPickChange?: ( pickedTokens: Partial<Tokens> ) => void;
+	sourceText?: string;
+	sinkText?: string;
+	action?: ReactNode
 }
 
-export function TokenPicker( { initialTokens = DEFAULT_TOKENS, pickLimit, ...props }: TokenPickerProps ) {
-	const [ tokens, setTokens ] = useState<Tokens>( initialTokens );
+export function TokenPicker( { initialTokens, pickLimit, ...props }: TokenPickerProps ) {
+	const [ tokens, setTokens ] = useState<Tokens>( DEFAULT_TOKENS );
 	const [ pickedTokens, setPickedTokens ] = useState<Partial<Tokens>>( {} );
 
 	const handleTokenSelection = ( gem: Gem ) => {
@@ -45,7 +55,7 @@ export function TokenPicker( { initialTokens = DEFAULT_TOKENS, pickLimit, ...pro
 	};
 
 	const handleTokenDeSelection = ( gem: Gem ) => {
-		if ( gem === "gold" ) {
+		if ( !props.allowGold && gem === "gold" ) {
 			return;
 		}
 
@@ -62,47 +72,23 @@ export function TokenPicker( { initialTokens = DEFAULT_TOKENS, pickLimit, ...pro
 	};
 
 	useEffect( () => {
-		setTokens( initialTokens );
+		setTokens( { ...tokens, ...initialTokens } );
 		setPickedTokens( {} );
 	}, [ initialTokens ] );
 
 	return (
 		<Fragment>
-			<div className={ "flex-1" }>
-				<h2 className={ "mb-2" }>Available Tokens</h2>
-				<div className={ "flex flex-wrap gap-2" }>
-					{ Object.keys( tokens ).map( g => g as Gem ).map( ( gem ) => (
-						<Button
-							key={ gem }
-							size={ "smallIcon" }
-							className={ cn( "rounded-full", gemColors[ gem ] ) }
-							onClick={ () => handleTokenSelection( gem ) }
-							disabled={ tokens[ gem ] === 0 }
-						>
-							{ tokens[ gem ] }
-						</Button>
-					) ) }
-				</div>
-			</div>
-			<Separator orientation={ "vertical" } className={ "h-inherit" }/>
-			<div className={ "w-1/3" }>
-				<h2 className={ "mb-2" }>Selected</h2>
-				<div className={ "flex flex-wrap gap-2" }>
-					{ Object.keys( pickedTokens )
-						.map( g => g as Gem )
-						.filter( g => !!pickedTokens[ g ] )
-						.map( ( gem ) => (
-							<Button
-								key={ gem }
-								size={ "smallIcon" }
-								className={ cn( "rounded-full", gemColors[ gem ] ) }
-								onClick={ () => handleTokenDeSelection( gem ) }
-							>
-								{ pickedTokens[ gem ] }
-							</Button>
-						) ) }
-				</div>
-			</div>
+			<TokenBar
+				tokens={ tokens }
+				tokenText={ props.sourceText ?? "TOKENS" }
+				onTokenClick={ handleTokenSelection }
+			/>
+			<TokenBar
+				tokens={ pickedTokens }
+				tokenText={ props.sinkText ?? "TOKENS" }
+				onTokenClick={ handleTokenDeSelection }
+				action={ props.action }
+			/>
 		</Fragment>
 	);
 }

@@ -1,7 +1,7 @@
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCardSuit } from "@s2h-ui/shared/display-card";
 import { DisplayPlayer } from "@s2h-ui/shared/display-player";
-import { GameCode } from "@s2h-ui/shared/game-code";
+import { GameInfo } from "@s2h-ui/shared/game-info";
 import { useStore } from "@tanstack/react-store";
 import { Fragment } from "react";
 import { ActionPanel } from "./action-panel.tsx";
@@ -24,12 +24,12 @@ export function DisplayGame() {
 
 	return (
 		<div className={ `flex flex-col gap-3` }>
-			<GameCode code={ code } name={ "callbreak" }>
+			<GameInfo code={ code } name={ "callbreak" }>
 				<div className={ "py-2 px-4" }>
 					<p className={ "text-xs md:text-sm" }>TRUMP</p>
 					<DisplayCardSuit suit={ trump } large themed/>
 				</div>
-			</GameCode>
+			</GameInfo>
 			<div className={ "flex flex-col gap-3 justify-between mb-52" }>
 				{ status === "GAME_COMPLETED" && (
 					<Fragment>

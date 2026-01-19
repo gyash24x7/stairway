@@ -1,9 +1,28 @@
-export function Spinner() {
+import { cva, type VariantProps } from "class-variance-authority";
+
+const spinnerVariants = cva(
+	"text-gray-400 animate-spin fill-neutral-dark",
+	{
+		variants: {
+			size: {
+				sm: "w-4 h-4",
+				md: "w-6 h-6",
+				lg: "w-8 h-8",
+				xl: "w-12 h-12"
+			}
+		},
+		defaultVariants: {
+			size: "md"
+		}
+	}
+);
+
+export function Spinner( props: VariantProps<typeof spinnerVariants> ) {
 	return (
 		<div role="status">
 			<svg
 				aria-hidden="true"
-				className="w-4 h-4 text-black animate-spin fill-accent"
+				className={ spinnerVariants( props ) }
 				viewBox="0 0 100 101"
 				fill="none"
 				xmlns="http://www.w3.org/2000/svg"

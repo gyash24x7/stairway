@@ -9,38 +9,38 @@ import {
 } from "@s2h-ui/primitives/dialog";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { usePickTokensMutation } from "@s2h/client/splendor";
-import type { Gem } from "@s2h/splendor/types";
+import type { Tokens } from "@s2h/splendor/types";
 import { useStore } from "@tanstack/react-store";
-import { Fragment } from "react";
+import { useState } from "react";
 import { useBoolean } from "usehooks-ts";
-import { handleSelectedReturnTokenChange, handleSelectedTokenChange, store } from "./store.tsx";
+import { store } from "./store.tsx";
 import { TokenPicker } from "./token-picker.tsx";
 
 export function PickTokens() {
 	const gameId = useStore( store, state => state.id );
-	const selectedTokens = useStore( store, state => state.local.selectedTokens );
-	const selectedReturnTokens = useStore( store, state => state.local.selectedReturnTokens );
-	const combinedTokens = useStore( store, state => {
-		const combined: Record<Gem, number> = { ...state.players[ state.playerId ].tokens };
-		Object.keys( state.local.selectedTokens ).map( g => g as Gem ).forEach( gem => {
-			combined[ gem ] = ( combined[ gem ] || 0 ) + ( state.local.selectedTokens[ gem ] || 0 );
-		} );
-		return combined;
-	} );
-
-	const selectedCount = Object.values( selectedTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
-	const combinedCount = Object.values( combinedTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
+	const availableTokens = useStore( store, state => state.tokens );
+	const playerTokens = useStore( store, state => state.players[ state.playerId ].tokens );
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
+	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );
+	const [ tokensAfterSelect, setTokensAfterSelect ] = useState<Partial<Tokens>>( playerTokens );
+	const [ returnTokens, setReturnTokens ] = useState<Partial<Tokens>>( {} );
 
 	const { mutateAsync, isPending } = usePickTokensMutation( {
 		onSuccess: () => {
-			handleSelectedTokenChange( {} );
+			setSelectedTokens( {} );
+			setReturnTokens( {} );
+			setTokensAfterSelect( playerTokens );
+			setFalse();
 		}
 	} );
 
+	const handlePickChange = ( tokens: Partial<Tokens> ) => {
+		setSelectedTokens( tokens );
+	};
+
 	const handlePickClick = async () => {
-		if ( combinedCount <= 10 ) {
+		if ( Object.values( tokensAfterSelect ).reduce( ( sum, val ) => sum + val ) <= 10 ) {
 			await mutateAsync( { gameId, tokens: selectedTokens } );
 		} else {
 			setTrue();
@@ -48,15 +48,23 @@ export function PickTokens() {
 	};
 
 	const handleReturnClick = async () => {
-		await mutateAsync( { gameId, tokens: selectedTokens, returned: selectedReturnTokens } );
-		setFalse();
+		await mutateAsync( { gameId, tokens: selectedTokens, returned: returnTokens } );
 	};
 
 	return (
-		<Fragment>
-			<Button onClick={ handlePickClick } disabled={ isPending || selectedCount === 0 } className={ "flex-1" }>
-				{ isPending ? <Spinner/> : "PICK TOKENS" }
-			</Button>
+		<div className={ "flex flex-col gap-3" }>
+			<TokenPicker
+				initialTokens={ availableTokens }
+				pickLimit={ 3 }
+				sourceText={ "Available Tokens" }
+				sinkText={ "Selected Tokens" }
+				onPickChange={ handlePickChange }
+				action={
+					<Button onClick={ handlePickClick } disabled={ isPending }>
+						{ isPending ? <Spinner/> : "PICK" }
+					</Button>
+				}
+			/>
 			<Dialog open={ value } onOpenChange={ toggle }>
 				<DialogContent>
 					<DialogHeader>
@@ -64,9 +72,9 @@ export function PickTokens() {
 						<DialogDescription/>
 					</DialogHeader>
 					<TokenPicker
-						initialTokens={ combinedTokens }
-						pickLimit={ combinedCount - 10 }
-						onPickChange={ handleSelectedReturnTokenChange }
+						initialTokens={ tokensAfterSelect }
+						pickLimit={ Object.values( tokensAfterSelect ).reduce( ( sum, val ) => sum + val ) - 10 }
+						onPickChange={ setReturnTokens }
 					/>
 					<DialogFooter>
 						<Button onClick={ handleReturnClick } disabled={ isPending } className={ "w-full" }>
@@ -75,6 +83,6 @@ export function PickTokens() {
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
-		</Fragment>
+		</div>
 	);
 }
