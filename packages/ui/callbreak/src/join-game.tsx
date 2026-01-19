@@ -30,7 +30,7 @@ export function JoinGame() {
 			<DialogTrigger className={ buttonVariants() }>JOIN GAME</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle className={ "text-xl text-center" }>Join Game</DialogTitle>
+					<DialogTitle className={ "text-xl" }>JOIN GAME</DialogTitle>
 					<DialogDescription/>
 				</DialogHeader>
 				<Input

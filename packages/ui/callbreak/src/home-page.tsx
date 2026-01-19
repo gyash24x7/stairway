@@ -7,7 +7,7 @@ import { JoinGame } from "./join-game.tsx";
 export function CallbreakHomePage() {
 	const { isLoggedIn } = useAuth();
 	return (
-		<div className={ "flex gap-5 flex-col mt-2 text-foreground" }>
+		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl justify-self-center" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>CALLBREAK</h2>
 			<p>
 				CallBreak is a thrilling card game enjoyed by many, particularly in India.

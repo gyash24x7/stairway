@@ -22,7 +22,7 @@ export function Navbar() {
 			<div className={ "flex justify-between items-center w-full max-w-4xl justify-self-center" }>
 				<div className={ "flex gap-2 items-center" }>
 					<img src={ "/s2h.png" } alt={ "logo" } className={ "h-12 md:h-16" }/>
-					<h2 className={ "text-5xl font-heading text-neutral-dark hidden md:block" }>
+					<h2 className={ "text-5xl font-title text-accent hidden md:block" }>
 						STAIRWAY
 					</h2>
 				</div>

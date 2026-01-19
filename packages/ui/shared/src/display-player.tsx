@@ -1,5 +1,4 @@
 import { Avatar, AvatarImage } from "@s2h-ui/primitives/avatar";
-import { cn } from "@s2h-ui/primitives/utils";
 
 export type DisplayPlayerProps = {
 	player: { id: string; name: string; avatar: string; },
@@ -14,10 +13,7 @@ export function DisplayPlayer( props: DisplayPlayerProps ) {
 	const firstName = props.player.name.split( " " )[ 0 ].toUpperCase();
 	return (
 		<div
-			className={ cn(
-				"flex flex-col gap-2 px-4 py-2 items-center flex-1 rounded-md",
-				props.withBg && "bg-background border-black border-2"
-			) }
+			className={ "flex flex-col gap-2 px-4 py-2 items-center flex-1 rounded-md bg-background" }
 			key={ props.player.id }
 		>
 			<Avatar className={ "rounded-full w-8 h-8 md:w-10 md:h-10 xl:h-12 xl:w-12" }>

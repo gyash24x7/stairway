@@ -339,7 +339,6 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 		switch ( this.data.status ) {
 			case "PLAYERS_READY": {
 				this.createDeal();
-				setNextAlarm = true;
 				break;
 			}
 

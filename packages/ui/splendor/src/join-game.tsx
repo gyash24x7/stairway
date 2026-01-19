@@ -26,7 +26,7 @@ export function JoinGame() {
 	return (
 		<Dialog>
 			<DialogTrigger className={ buttonVariants() }>JOIN GAME</DialogTrigger>
-			<DialogContent>
+			<DialogContent className={ "w-full max-w-xl" }>
 				<DialogHeader>
 					<DialogTitle className={ "font-bold" }>JOIN GAME</DialogTitle>
 					<DialogDescription/>

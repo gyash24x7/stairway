@@ -5,7 +5,7 @@ import { type CardId, getSortedHand } from "@s2h/utils/cards";
 import { useStore } from "@tanstack/react-store";
 import { handleCardSelect, store } from "./store.tsx";
 
-export function DisplayHand() {
+export function HandView() {
 	const trump = useStore( store, state => state.trump );
 	const currentRound = useStore( store, state => state.currentRound );
 	const hand = useStore( store, state => state.hand );
@@ -32,8 +32,8 @@ export function DisplayHand() {
 	return (
 		<div
 			className={ cn(
-				"border-2 rounded-md p-2 md:p-3 flex gap-2 md:gap-3 flex-wrap justify-center",
-				isActiveRound && currentTurn === playerId && "bg-background border-accent border-4"
+				"rounded-md p-2 md:p-3 flex gap-2 md:gap-3 flex-wrap justify-center bg-background",
+				isActiveRound && currentTurn === playerId && "border-accent border-4"
 			) }
 		>
 			{ getSortedHand( hand ).map( ( cardId ) => (
@@ -44,7 +44,7 @@ export function DisplayHand() {
 				>
 					<div
 						className={ cn(
-							"absolute w-16 md:w-20 p-1 md:p-1.5 h-24 md:h-30 rounded-md",
+							"absolute w-16 md:w-20 xl:w-24 p-1 md:p-1.5 h-24 md:h-30 xl:h-36 rounded-md",
 							( isActiveRound && !isSelectionAllowed( cardId ) && currentTurn === playerId ) &&
 							"cursor-not-allowed bg-gray-500 opacity-50"
 						) }
