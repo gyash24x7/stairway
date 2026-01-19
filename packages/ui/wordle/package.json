@@ -12,6 +12,7 @@
 	"dependencies": {
 		"@s2h-ui/auth": "workspace:*",
 		"@s2h-ui/primitives": "workspace:*",
+		"@s2h-ui/shared": "workspace:*",
 		"@s2h/client": "workspace:*",
 		"@s2h/wordle": "workspace:*",
 		"@tanstack/react-router": "1.147.0",

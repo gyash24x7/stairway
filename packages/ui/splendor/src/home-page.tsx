@@ -7,7 +7,7 @@ import { JoinGame } from "./join-game.tsx";
 export function SplendorHomePage() {
 	const { isLoggedIn } = useAuth();
 	return (
-		<div className={ "flex gap-5 flex-col mt-2" }>
+		<div className={ "flex gap-5 flex-col mt-2 w-full max-w-6xl justify-self-center" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>SPLENDOR</h2>
 			<p>
 				Splendor is a card game for multiple players in teams or individually using
