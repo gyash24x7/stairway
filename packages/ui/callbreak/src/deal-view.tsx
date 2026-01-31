@@ -10,6 +10,7 @@ import { store } from "./store.tsx";
 export function DealView() {
 	const currentTurn = useStore( store, state => state.currentTurn );
 	const currentRound = useStore( store, state => state.currentRound );
+	const allPlayersPlayed = Object.keys( currentRound?.cards ?? {} ).length === 4;
 	const players = useStore( store, state => state.players );
 	const playerOrder = useStore( store, state => state.currentRound?.playerOrder
 		?? state.currentDeal?.playerOrder
@@ -20,15 +21,16 @@ export function DealView() {
 			<div className={ cn( "grid grid-cols-1 lg:grid-cols-2 gap-3" ) }>
 				<Scores/>
 				<div className={ "grid gap-3 grid-cols-2" }>
-					{ playerOrder.map( ( playerId ) => {
+					{ playerOrder.map( ( playerId, idx ) => {
 						const cardId = currentRound?.cards[ playerId ];
 						return (
 							<div
 								key={ playerId }
 								className={ cn(
 									"w-full flex gap-3 p-3 rounded-md items-center bg-background justify-between",
-									!currentRound?.winner && currentTurn === playerId && "border-accent border-4",
-									currentRound?.winner === playerId && "border-green-500 border-4"
+									!allPlayersPlayed && currentTurn === playerId && "border-accent border-4",
+									currentRound?.winner === playerId && "border-green-500 border-4",
+									idx % 2 === 0 ? "flex-row" : "flex-row-reverse"
 								) }
 							>
 								<DisplayPlayer player={ players[ playerId ] } key={ playerId }/>

@@ -27,7 +27,7 @@ export function GameInfo( { code, name, additionalInfo, actions, completed }: Ga
 			<div className={ "flex gap-2 rounded-md bg-background w-full h-16 md:h-20" }>
 				<div className={ "flex gap-2 items-center bg-accent px-2 py-1 rounded-l-md" }>
 					<img src={ "/s2h.png" } alt={ "logo" } className={ "h-10 md:h-12" }/>
-					<h2 className={ "text-4xl font-heading text-neutral-dark hidden md:block" }>
+					<h2 className={ "text-4xl font-title text-neutral-dark hidden md:block" }>
 						{ name.toUpperCase() }
 					</h2>
 				</div>

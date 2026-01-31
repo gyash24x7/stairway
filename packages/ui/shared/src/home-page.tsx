@@ -23,7 +23,7 @@ export function HomePage() {
 							"bg-background"
 						) }
 					/>
-					<div className={ "text-inverted-surface font-title px-6 py-3 mt-6" }>
+					<div className={ "text-accent font-title px-6 py-3 mt-6" }>
 						<h1 className={ `text-5xl relative z-10` }>
 							{ game.toUpperCase() }
 						</h1>

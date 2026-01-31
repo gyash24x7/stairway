@@ -44,7 +44,7 @@ export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTable
 		<tr
 			ref={ ref }
 			className={ cn(
-				"border-b border-background text-neutral-dark transition-colors bg-accent",
+				"border-b border-accent text-foreground transition-colors bg-background",
 				"data-[state=selected]:bg-background data-[state=selected]:text-foreground",
 				className
 			) }
@@ -59,7 +59,7 @@ export const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTab
 			ref={ ref }
 			className={ cn(
 				"h-12 px-4 text-left align-middle font-heading",
-				"bg-background text-foreground [&:has([role=checkbox])]:pr-0",
+				"bg-accent text-neutral-dark [&:has([role=checkbox])]:pr-0",
 				className
 			) }
 			{ ...props }

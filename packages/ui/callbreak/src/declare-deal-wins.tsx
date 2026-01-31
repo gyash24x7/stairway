@@ -1,15 +1,16 @@
-import { Button } from "@s2h-ui/primitives/button";
+import { Button, buttonVariants } from "@s2h-ui/primitives/button";
 import {
-	Drawer,
-	DrawerContent,
-	DrawerDescription,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle,
-	DrawerTrigger
-} from "@s2h-ui/primitives/drawer";
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger
+} from "@s2h-ui/primitives/dialog";
 import { MinusIcon, PlusIcon } from "@s2h-ui/primitives/icons";
 import { Spinner } from "@s2h-ui/primitives/spinner";
+import { cn } from "@s2h-ui/primitives/utils";
 import { useDeclareDealWinsMutation } from "@s2h/client/callbreak";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
@@ -33,17 +34,17 @@ export function DeclareDealWins() {
 	const handleClick = () => mutateAsync( { gameId, dealId, wins } );
 
 	return (
-		<Drawer open={ open } onOpenChange={ setOpen }>
-			<DrawerTrigger asChild>
-				<Button className={ "w-full max-w-lg" }>DECLARE DEAL WINS</Button>
-			</DrawerTrigger>
-			<DrawerContent>
+		<Dialog open={ open } onOpenChange={ setOpen }>
+			<DialogTrigger className={ cn( buttonVariants(), "w-full max-w-lg" ) }>
+				DECLARE DEAL WINS
+			</DialogTrigger>
+			<DialogContent>
 				<div className={ "mx-auto w-full max-w-lg" }>
-					<DrawerHeader>
-						<DrawerTitle>DECLARE DEAL WINS</DrawerTitle>
-						<DrawerDescription/>
-					</DrawerHeader>
-					<div className={ "flex flex-col gap-3" }>
+					<DialogHeader>
+						<DialogTitle>DECLARE DEAL WINS</DialogTitle>
+						<DialogDescription/>
+					</DialogHeader>
+					<div className={ "flex flex-col gap-3 p-3" }>
 						<div className="flex justify-center items-center space-x-2">
 							<Button size="icon" onClick={ decrement } disabled={ wins <= 2 }>
 								<MinusIcon className="h-4 w-4"/>
@@ -56,13 +57,13 @@ export function DeclareDealWins() {
 							</Button>
 						</div>
 					</div>
-					<DrawerFooter>
+					<DialogFooter>
 						<Button onClick={ handleClick } disabled={ isPending } className={ "max-w-lg" }>
 							{ isPending ? <Spinner/> : "DECLARE WINS" }
 						</Button>
-					</DrawerFooter>
+					</DialogFooter>
 				</div>
-			</DrawerContent>
-		</Drawer>
+			</DialogContent>
+		</Dialog>
 	);
 }
