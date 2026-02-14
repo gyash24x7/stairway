@@ -13,7 +13,7 @@ export function Scores() {
 	) );
 
 	return (
-		<div className={ "flex flex-col rounded-md bg-background" }>
+		<div className={ "flex flex-col rounded-md bg-background overflow-hidden" }>
 			<Table>
 				<TableHeader>
 					<TableRow className={ "text-md" }>

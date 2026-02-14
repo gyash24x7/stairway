@@ -10,7 +10,7 @@ export const Avatar = forwardRef<ComponentRef<typeof Root>, ComponentPropsWithou
 			ref={ ref }
 			className={ cn(
 				"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-				"outline-2 outline-neutral-dark bg-surface",
+				"border border-gray-400 bg-surface",
 				className
 			) }
 			{ ...props }

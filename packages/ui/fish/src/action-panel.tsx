@@ -24,12 +24,12 @@ export function ActionPanel() {
 	return (
 		<div
 			className={ cn(
-				"fixed left-0 right-0 bottom-0 border-t-4 shadow-sm",
-				"rounded-t-xl flex flex-col gap-2 px-3 py-5 items-center bg-background"
+				"fixed left-0 right-0 bottom-0 bg-surface z-10",
+				"rounded-t-xl flex flex-col gap-2 px-3 py-5 items-center"
 			) }
 		>
 			{ status === "IN_PROGRESS" && (
-				<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-surface max-w-lg" }>
+				<div className={ "p-2 md:p-3 bg-background rounded-md w-full max-w-lg" }>
 					<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 						IT'S { players[ currentTurn ].name.toUpperCase() }'S TURN!
 					</p>

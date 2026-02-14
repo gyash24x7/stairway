@@ -1,7 +1,7 @@
 import type { PlayerGameInfo } from "@s2h/fish/types";
 import { useEffect } from "react";
 import useWebSocket from "react-use-websocket";
-import { DisplayGame } from "./display-game.tsx";
+import { GameView } from "./game-view.tsx";
 import { handleGameUpdate, store } from "./store.tsx";
 
 export function FishGamePage( props: { data: PlayerGameInfo } ) {
@@ -24,5 +24,5 @@ export function FishGamePage( props: { data: PlayerGameInfo } ) {
 		store.setState( props.data );
 	}, [ props.data ] );
 
-	return <DisplayGame/>;
+	return <GameView/>;
 }

@@ -1,35 +1,31 @@
 import { Button } from "@s2h-ui/primitives/button";
-import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@s2h-ui/primitives/drawer";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@s2h-ui/primitives/dialog";
 import { useStore } from "@tanstack/react-store";
 import { useState } from "react";
 import { store } from "./store.tsx";
 
 export function AskHistory() {
-	const [ showDrawer, setShowDrawer ] = useState( false );
+	const [ showDialog, setShowDialog ] = useState( false );
 	const asks = useStore( store, state => state.askHistory );
 
-	const openDrawer = () => setShowDrawer( true );
+	const openDialog = () => setShowDialog( true );
 
 	return (
-		<Drawer open={ showDrawer } onOpenChange={ setShowDrawer }>
-			<Button onClick={ openDrawer } className={ "flex-1 max-w-lg" }>
+		<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
+			<Button onClick={ openDialog } className={ "flex-1 max-w-lg" }>
 				ASK HISTORY
 			</Button>
-			<DrawerContent>
-				<div className={ "mx-auto w-full max-w-lg" }>
-					<DrawerHeader>
-						<DrawerTitle className={ "text-center" }>ASK HISTORY</DrawerTitle>
-					</DrawerHeader>
-					<div className={ "flex flex-col gap-3 px-4" }>
-						{ asks.slice( 0, 5 ).map( ask => (
-							<div className={ "p-3 border-2 rounded-md" } key={ ask.timestamp }>
-								<p>{ ask.description }</p>
-							</div>
-						) ) }
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>ASK HISTORY</DialogTitle>
+				</DialogHeader>
+				{ asks.slice( 0, 5 ).map( ask => (
+					<div className={ "p-3 bg-background rounded-md" } key={ ask.timestamp }>
+						<p>{ ask.description.toUpperCase() }</p>
 					</div>
-					<DrawerFooter/>
-				</div>
-			</DrawerContent>
-		</Drawer>
+				) ) }
+				<DialogFooter/>
+			</DialogContent>
+		</Dialog>
 	);
 }
