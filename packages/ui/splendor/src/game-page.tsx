@@ -1,7 +1,7 @@
 import type { PlayerGameInfo } from "@s2h/splendor/types";
 import { useEffect } from "react";
 import useWebSocket from "react-use-websocket";
-import { DisplayGame } from "./display-game.tsx";
+import { GameView } from "./game-view.tsx";
 import { handleGameUpdate } from "./store.tsx";
 
 export function SplendorGamePage( props: { data: PlayerGameInfo } ) {
@@ -24,5 +24,5 @@ export function SplendorGamePage( props: { data: PlayerGameInfo } ) {
 		handleGameUpdate( props.data );
 	}, [ props.data ] );
 
-	return <DisplayGame/>;
+	return <GameView/>;
 }

@@ -1,5 +1,5 @@
 import { toast } from "@s2h-ui/primitives/sonner";
-import type { PlayerGameInfo, Tokens } from "@s2h/splendor/types";
+import type { Gem, PlayerGameInfo, Tokens } from "@s2h/splendor/types";
 import { Store } from "@tanstack/react-store";
 import { produce } from "immer";
 
@@ -52,6 +52,26 @@ export function handleSelectedTokenChange( tokens: Partial<Tokens> ) {
 export function handleSelectedReturnTokenChange( tokens: Partial<Tokens> ) {
 	store.setState( state => produce( state, draft => {
 		draft.local.selectedReturnTokens = tokens;
+	} ) );
+}
+
+export function handleAvailableTokenPick( gem: Gem ) {
+	store.setState( state => produce( state, draft => {
+		draft.local.selectedTokens[ gem ] = ( draft.local.selectedTokens[ gem ] || 0 ) + 1;
+		draft.tokens[ gem ] = draft.tokens[ gem ] - 1;
+	} ) );
+}
+
+export function handleSelectedTokenReturn( gem: Gem ) {
+	store.setState( state => produce( state, draft => {
+		if ( draft.local.selectedTokens[ gem ] && draft.local.selectedTokens[ gem ] > 0 ) {
+			draft.local.selectedTokens[ gem ] = draft.local.selectedTokens[ gem ] - 1;
+			draft.tokens[ gem ] = draft.tokens[ gem ] + 1;
+		}
+
+		if ( draft.local.selectedTokens[ gem ] === 0 ) {
+			delete draft.local.selectedTokens[ gem ];
+		}
 	} ) );
 }
 

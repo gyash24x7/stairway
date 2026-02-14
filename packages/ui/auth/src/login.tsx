@@ -1,12 +1,12 @@
-import { Button } from "@s2h-ui/primitives/button";
+import { Button, buttonVariants } from "@s2h-ui/primitives/button";
 import {
-	Drawer,
-	DrawerContent,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle,
-	DrawerTrigger
-} from "@s2h-ui/primitives/drawer";
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger
+} from "@s2h-ui/primitives/dialog";
 import { LogInIcon } from "@s2h-ui/primitives/icons";
 import { Input } from "@s2h-ui/primitives/input";
 import { Spinner } from "@s2h-ui/primitives/spinner";
@@ -82,53 +82,49 @@ export function Login() {
 	};
 
 	return (
-		<Drawer open={ open } onOpenChange={ setOpen }>
-			<DrawerTrigger asChild>
-				<Button>LOGIN</Button>
-			</DrawerTrigger>
-			<DrawerContent>
-				<div className={ "mx-auto w-full max-w-lg overscroll-y-auto" }>
-					<DrawerHeader>
-						<DrawerTitle className={ cn( "text-2xl" ) }>
-							{ mode === "register" ? "REGISTER" : "LOGIN" }
-						</DrawerTitle>
-					</DrawerHeader>
-					<div className={ "flex flex-col gap-3 px-4" }>
-						<label>Username</label>
-						<Input
-							type={ "text" }
-							value={ username }
-							onInput={ handleUsernameInput }
-							placeholder={ "Enter your username" }
-						/>
-						{ mode === "register" && (
+		<Dialog open={ open } onOpenChange={ setOpen }>
+			<DialogTrigger className={ buttonVariants() }>LOGIN</DialogTrigger>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle className={ cn( "text-2xl" ) }>
+						{ mode === "register" ? "REGISTER" : "LOGIN" }
+					</DialogTitle>
+				</DialogHeader>
+				<div className={ "flex flex-col gap-3" }>
+					<label>Username</label>
+					<Input
+						type={ "text" }
+						value={ username }
+						onInput={ handleUsernameInput }
+						placeholder={ "Enter your username" }
+					/>
+					{ mode === "register" && (
+						<Fragment>
+							<label>Name</label>
+							<Input
+								type={ "text" }
+								value={ name }
+								onInput={ handleNameInput }
+								placeholder={ "Enter your name" }
+							/>
+						</Fragment>
+					) }
+				</div>
+				<DialogFooter>
+					<Button
+						className={ "flex gap-2 items-center" }
+						onClick={ performPasskeyLogin }
+						disabled={ isPending || !isValidInput() }
+					>
+						{ isPending ? <Spinner/> : (
 							<Fragment>
-								<label>Name</label>
-								<Input
-									type={ "text" }
-									value={ name }
-									onInput={ handleNameInput }
-									placeholder={ "Enter your name" }
-								/>
+								<Fragment>{ mode === "register" ? "REGISTER" : "LOGIN" }</Fragment>
+								<LogInIcon fontWeight={ "bold" } className={ "w-4 h-4" }/>
 							</Fragment>
 						) }
-					</div>
-					<DrawerFooter>
-						<Button
-							className={ "flex gap-2 items-center" }
-							onClick={ performPasskeyLogin }
-							disabled={ isPending || !isValidInput() }
-						>
-							{ isPending ? <Spinner/> : (
-								<Fragment>
-									<Fragment>{ mode === "register" ? "REGISTER" : "LOGIN" }</Fragment>
-									<LogInIcon fontWeight={ "bold" } className={ "w-4 h-4" }/>
-								</Fragment>
-							) }
-						</Button>
-					</DrawerFooter>
-				</div>
-			</DrawerContent>
-		</Drawer>
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

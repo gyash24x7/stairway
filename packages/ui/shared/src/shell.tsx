@@ -8,7 +8,7 @@ export function Shell() {
 		<ThemeLoader>
 			<main className="flex min-h-screen flex-col bg-surface">
 				<Navbar/>
-				<div className={ "px-2 py-2 md:px-4 md:py-4 md:mt-25 mt-19" }>
+				<div className={ "px-2 py-2 md:px-4 md:py-4 md:mt-20 mt-15 w-full" }>
 					<Outlet/>
 				</div>
 				<Toaster/>

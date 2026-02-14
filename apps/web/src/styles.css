@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fjalla+One&family=Geist+Mono:wght@600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bungee&family=Merriweather+Sans:wght@500&family=Oswald:wght@700&display=swap');
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -117,6 +117,17 @@
 	--inverted-surface: var(--surface-dark);
 	--foreground: var(--neutral-dark);
 	--background: var(--neutral-light);
+
+	--surface-apple: #FFE0E0;
+	--surface-orange: #FFE3CF;
+	--surface-mango: #FFEFCC;
+	--surface-banana: #FFF6CC;
+	--surface-olive: #F7FFE5;
+	--surface-kiwi: #D0FBEA;
+	--surface-ice: #D6F6FC;
+	--surface-blueberry: #D6ECFF;
+	--surface-grape: #E8E0FB;
+	--surface-strawberry: #FFD9EB;
 }
 
 .dark {
@@ -125,6 +136,17 @@
 	--inverted-surface: var(--surface-light);
 	--foreground: var(--neutral-light);
 	--background: var(--neutral-dark);
+
+	--surface-apple: #2B0F12;
+	--surface-orange: #2B1608;
+	--surface-mango: #2A1F00;
+	--surface-banana: #2A2408;
+	--surface-olive: #1A2B0E;
+	--surface-kiwi: #0E201D;
+	--surface-ice: #08242B;
+	--surface-blueberry: #081E2B;
+	--surface-grape: #1C1430;
+	--surface-strawberry: #2B0E1F;
 }
 
 @theme inline {
@@ -152,15 +174,27 @@
 	--color-grape: var(--grape);
 	--color-strawberry: var(--strawberry);
 
-	--spacing-boxShadowX: -2px;
-	--spacing-boxShadowY: 4px;
-	--spacing-reverseBoxShadowX: -2px;
-	--spacing-reverseBoxShadowY: -4px;
-	--radius-base: 5px;
-	--shadow-shadow: -2px 4px 0px 0px #000000;
+	--color-surface-apple: var(--surface-apple);
+	--color-surface-orange: var(--surface-orange);
+	--color-surface-mango: var(--surface-mango);
+	--color-surface-banana: var(--surface-banana);
+	--color-surface-olive: var(--surface-olive);
+	--color-surface-kiwi: var(--surface-kiwi);
+	--color-surface-ice: var(--surface-ice);
+	--color-surface-blueberry: var(--surface-blueberry);
+	--color-surface-grape: var(--surface-grape);
+	--color-surface-strawberry: var(--surface-strawberry);
 
-	--font-heading: "Fjalla One", serif;
-	--font-base: "Geist Mono", monospace;
+	--spacing-boxShadowX: -4px;
+	--spacing-boxShadowY: 2px;
+	--spacing-reverseBoxShadowX: -4px;
+	--spacing-reverseBoxShadowY: -2px;
+	--radius-base: 5px;
+	--shadow-shadow: -4px 2px 0px 0px var(--neutral-dark);
+
+	--font-title: "Bungee", serif;
+	--font-heading: "Oswald", serif;
+	--font-base: "Merriweather Sans", sans-serif;
 	--font-weight-base: 600;
 	--font-weight-heading: 700;
 }

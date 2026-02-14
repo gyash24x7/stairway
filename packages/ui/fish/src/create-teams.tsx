@@ -71,13 +71,13 @@ export function CreateTeams() {
 				<Button
 					className={ "w-full" }
 					onClick={ groupPlayers }
-					disabled={ teamNames.length !== teamCount }
+					disabled={ teamNames.filter( n => !!n ).length !== teamCount }
 				>
 					GROUP PLAYERS
 				</Button>
 				{ Object.keys( teamMemberData ).length ===
 					teamCount &&
-                    <PlayerLobby asTeams={ teamMemberData } withBg withTeamName/> }
+					<PlayerLobby asTeams={ teamMemberData } withBg withTeamName/> }
 				<DialogFooter>
 					<Button onClick={ handleCreateTeams } disabled={ isPending } className={ "w-full" }>
 						{ isPending ? <Spinner/> : "CREATE TEAMS" }

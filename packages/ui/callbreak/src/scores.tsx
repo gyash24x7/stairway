@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useStore } from "@tanstack/react-store";
 import { store } from "./store.tsx";
 
-export function DisplayScore() {
+export function Scores() {
 	const status = useStore( store, state => state.status );
 	const deal = useStore( store, state => state.currentDeal );
 	const scores = useStore( store, state => state.scores );
@@ -13,8 +13,7 @@ export function DisplayScore() {
 	) );
 
 	return (
-		<div className={ "flex flex-col gap-3 rounded-md p-3 border-2" }>
-			<p>SCORES</p>
+		<div className={ "flex flex-col rounded-md bg-background overflow-hidden" }>
 			<Table>
 				<TableHeader>
 					<TableRow className={ "text-md" }>

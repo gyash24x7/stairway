@@ -439,6 +439,12 @@ export class CallbreakEngine extends DurableObject<Bindings> {
 				const { rounds, hands, ...currentDeal } = deals[ 0 ];
 				const hand = hands[ playerId ];
 				const currentRound = rounds[ 0 ];
+
+				if ( currentDeal.status === "COMPLETED" ) {
+					acc[ playerId ] = { ...rest, playerId, currentDeal, hand, players };
+					return acc;
+				}
+
 				acc[ playerId ] = { ...rest, playerId, currentDeal, currentRound, hand, players };
 
 				return acc;

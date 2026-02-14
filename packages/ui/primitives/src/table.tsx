@@ -6,7 +6,7 @@ export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElemen
 		<div className="relative w-full rounded-md">
 			<table
 				ref={ ref }
-				className={ cn( "w-full caption-bottom border-black border-2 text-sm rounded-md", className ) }
+				className={ cn( "w-full caption-bottom text-sm rounded-md", className ) }
 				{ ...props }
 			/>
 		</div>
@@ -15,7 +15,7 @@ export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElemen
 
 export const TableHeader = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
 	( { className, ...props }, ref ) => (
-		<thead ref={ ref } className={ cn( "[&_tr]:border-b", className ) } { ...props } />
+		<thead ref={ ref } className={ cn( "", className ) } { ...props } />
 	)
 );
 
@@ -33,7 +33,7 @@ export const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HT
 	( { className, ...props }, ref ) => (
 		<tfoot
 			ref={ ref }
-			className={ cn( "border-t border-t-black bg-accent [&>tr]:last:border-b-0", className ) }
+			className={ cn( "bg-accent [&>tr]:last:border-b-0", className ) }
 			{ ...props }
 		/>
 	)
@@ -44,7 +44,7 @@ export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTable
 		<tr
 			ref={ ref }
 			className={ cn(
-				"border-b border-black text-neutral-dark transition-colors bg-accent",
+				"border-b border-accent text-foreground transition-colors bg-background",
 				"data-[state=selected]:bg-background data-[state=selected]:text-foreground",
 				className
 			) }
@@ -59,7 +59,7 @@ export const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTab
 			ref={ ref }
 			className={ cn(
 				"h-12 px-4 text-left align-middle font-heading",
-				"bg-background text-foreground [&:has([role=checkbox])]:pr-0",
+				"bg-accent text-neutral-dark [&:has([role=checkbox])]:pr-0",
 				className
 			) }
 			{ ...props }

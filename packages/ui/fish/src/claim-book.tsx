@@ -1,12 +1,12 @@
 import { Button } from "@s2h-ui/primitives/button";
 import {
-	Drawer,
-	DrawerContent,
-	DrawerDescription,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle
-} from "@s2h-ui/primitives/drawer";
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@s2h-ui/primitives/dialog";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayCard } from "@s2h-ui/shared/display-card";
@@ -29,21 +29,21 @@ export function ClaimBook() {
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ cardOptions, setCardOptions ] = useState<CardId[]>( [] );
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );
-	const [ showDrawer, setShowDrawer ] = useState( false );
+	const [ showDialog, setShowDialog ] = useState( false );
 
 	const { mutateAsync, isPending } = useClaimBookMutation( {
-		onSettled: () => closeDrawer()
+		onSettled: () => closeDialog()
 	} );
 
-	const openDrawer = () => {
-		setShowDrawer( true );
+	const openDialog = () => {
+		setShowDialog( true );
 	};
 
-	const closeDrawer = () => {
+	const closeDialog = () => {
 		setSelectedBook( undefined );
 		setCardOptions( [] );
 		setClaim( new Map() );
-		setShowDrawer( false );
+		setShowDialog( false );
 	};
 
 	const handleBookSelect = ( value?: string ) => () => {
@@ -91,104 +91,100 @@ export function ClaimBook() {
 	const [ currentStep, { goToNextStep, goToPrevStep } ] = useStep( 3 );
 
 	return (
-		<Drawer open={ showDrawer } onOpenChange={ setShowDrawer }>
-			<Button onClick={ openDrawer } className={ "flex-1 max-w-lg" }>CLAIM BOOK</Button>
-			<DrawerContent>
-				<div className={ "mx-auto w-full max-w-lg overscroll-y-auto" }>
-					<DrawerHeader>
-						<DrawerTitle className={ "text-center" }>
-							{ currentStep === 1 && "Select Book to Claim".toUpperCase() }
-							{ currentStep === 2 && "Select Card Locations".toUpperCase() }
-							{ currentStep === 3 && `Confirm Claim for ${ selectedBook }`.toUpperCase() }
-						</DrawerTitle>
-						<DrawerDescription/>
-					</DrawerHeader>
-					<div className={ "px-4" }>
-						{ currentStep === 1 && (
-							<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
-								{ Array.from( getBooksInHand( hand, bookType ) ).map( ( item ) => (
-									<div
-										key={ item }
-										onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
+		<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
+			<Button onClick={ openDialog } className={ "flex-1 max-w-lg" }>CLAIM BOOK</Button>
+			<DialogContent className={ "w-full max-w-xl" }>
+				<DialogHeader>
+					<DialogTitle>
+						{ currentStep === 1 && "Select Book to Claim".toUpperCase() }
+						{ currentStep === 2 && "Select Card Locations".toUpperCase() }
+						{ currentStep === 3 && `Confirm Claim for ${ selectedBook }`.toUpperCase() }
+					</DialogTitle>
+					<DialogDescription/>
+				</DialogHeader>
+				{ currentStep === 1 && (
+					<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
+						{ Array.from( getBooksInHand( hand, bookType ) ).map( ( item ) => (
+							<div
+								key={ item }
+								onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
+								className={ cn(
+									selectedBook === item ? "bg-background" : "bg-surface",
+									"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
+									"flex justify-center"
+								) }
+							>
+								<div className={ "flex gap-2 md:gap-3 items-center" }>
+									<h1
 										className={ cn(
-											selectedBook === item ? "bg-background" : "bg-surface",
-											"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-											"flex justify-center"
+											"text-neuta",
+											"text-md md:text-lg xl:text-xl font-semibold"
 										) }
 									>
-										<div className={ "flex gap-2 md:gap-3 items-center" }>
-											<h1
-												className={ cn(
-													"text-neuta",
-													"text-md md:text-lg xl:text-xl font-semibold"
-												) }
-											>
-												{ item }
-											</h1>
-										</div>
-									</div>
-								) ) }
+										{ item }
+									</h1>
+								</div>
 							</div>
-						) }
-						{ currentStep === 2 && (
-							<div className={ "flex flex-col gap-3" }>
-								{ player.teamMates.map( playerId => players[ playerId ] ).map( player => (
-									<Fragment key={ player.id }>
-										<h1>Cards With { player.name }</h1>
-										<div className={ "grid gap-3 grid-cols-6" }>
-											{ cardOptions.map( ( cardId ) => (
-												<div
-													key={ cardId }
-													onClick={ handleCardSelectForPlayer(
-														cardId,
-														claim.get( cardId ) === player.id ? undefined : player.id
-													) }
-													className={ "cursor-pointer rounded-md flex justify-center" }
-												>
-													<DisplayCard
-														cardId={ cardId }
-														focused={ claim.get( cardId ) === player.id }
-													/>
-												</div>
-											) ) }
-										</div>
-									</Fragment>
-								) ) }
-							</div>
-						) }
-						{ currentStep === 3 && (
-							<div className={ "flex flex-col gap-3" }>
-								{ claim.entries().map( ( [ cardId, playerId ] ) => (
-									<h3 key={ cardId } className={ "text-center" }>
-										{ getCardDisplayString( cardId ) } is with { players[ playerId ].name }
-									</h3>
-								) ) }
-							</div>
-						) }
+						) ) }
 					</div>
-					<DrawerFooter>
-						{ currentStep === 1 && (
-							<Button onClick={ goToNextStep } disabled={ !selectedBook }>
-								SELECT BOOK
+				) }
+				{ currentStep === 2 && (
+					<div className={ "flex flex-col gap-3" }>
+						{ player.teamMates.map( playerId => players[ playerId ] ).map( player => (
+							<Fragment key={ player.id }>
+								<h1>Cards With { player.name }</h1>
+								<div className={ "grid gap-3 grid-cols-6" }>
+									{ cardOptions.map( ( cardId ) => (
+										<div
+											key={ cardId }
+											onClick={ handleCardSelectForPlayer(
+												cardId,
+												claim.get( cardId ) === player.id ? undefined : player.id
+											) }
+											className={ "cursor-pointer rounded-md flex justify-center" }
+										>
+											<DisplayCard
+												cardId={ cardId }
+												focused={ claim.get( cardId ) === player.id }
+											/>
+										</div>
+									) ) }
+								</div>
+							</Fragment>
+						) ) }
+					</div>
+				) }
+				{ currentStep === 3 && (
+					<div className={ "flex flex-col gap-3" }>
+						{ claim.entries().map( ( [ cardId, playerId ] ) => (
+							<h3 key={ cardId } className={ "text-center" }>
+								{ getCardDisplayString( cardId ) } is with { players[ playerId ].name }
+							</h3>
+						) ) }
+					</div>
+				) }
+				<DialogFooter>
+					{ currentStep === 1 && (
+						<Button onClick={ goToNextStep } disabled={ !selectedBook }>
+							SELECT BOOK
+						</Button>
+					) }
+					{ currentStep === 2 && (
+						<div className={ "w-full flex gap-3" }>
+							<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
+							<Button onClick={ goToNextStep } className={ "flex-1" }>NEXT</Button>
+						</div>
+					) }
+					{ currentStep === 3 && (
+						<div className={ "w-full flex gap-3" }>
+							<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
+							<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
+								{ isPending ? <Spinner/> : "CLAIM BOOK" }
 							</Button>
-						) }
-						{ currentStep === 2 && (
-							<div className={ "w-full flex gap-3" }>
-								<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
-								<Button onClick={ goToNextStep } className={ "flex-1" }>NEXT</Button>
-							</div>
-						) }
-						{ currentStep === 3 && (
-							<div className={ "w-full flex gap-3" }>
-								<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
-								<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
-									{ isPending ? <Spinner/> : "CLAIM BOOK" }
-								</Button>
-							</div>
-						) }
-					</DrawerFooter>
-				</div>
-			</DrawerContent>
-		</Drawer>
+						</div>
+					) }
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

@@ -15,27 +15,26 @@ export function Navbar() {
 		<div
 			className={
 				cn(
-					"justify-between items-center border-b-4 fixed z-20 left-0 right-0",
-					"flex bg-background w-full px-2 md:px-4 py-1 md:py-2"
+					"border-b-2 border-gray-400 fixed z-20 left-0 right-0",
+					"bg-background px-2 md:px-4 py-1 md:py-2"
 				) }
 		>
-			<div
-				className={ "flex gap-2 items-center bg-accent p-1 md:px-2 border-black rounded border-4" }>
-				<img src={ "/s2h.png" } alt={ "logo" } className={ "h-12 md:h-16" }/>
-				<h2 className={ "text-5xl font-heading text-neutral-dark hidden md:block" }>STAIRWAY</h2>
-			</div>
-			<div className={ "flex flex-1 justify-end gap-3 items-center" }>
-				<Button
-					className={ cn( "w-8 h-8 md:w-10 md:h-10" ) }
-					size={ "icon" }
-					onClick={ () => navigate( { to: "/" } ) }
-				>
-					<HomeIcon className={ "w-4 h-4" }/>
-				</Button>
-				<Separator orientation={ "vertical" } className={ "h-12" }/>
-				{ isLoggedIn ? <DisplayAuthInfo/> : <Login/> }
-				<Separator orientation={ "vertical" } className={ "h-12" }/>
-				<ThemeSwitcher/>
+			<div className={ "flex justify-between items-center w-full max-w-4xl justify-self-center" }>
+				<div className={ "flex gap-2 items-center" }>
+					<img src={ "/s2h.png" } alt={ "logo" } className={ "h-12 md:h-16" }/>
+					<h2 className={ "text-5xl font-title text-accent hidden md:block" }>
+						STAIRWAY
+					</h2>
+				</div>
+				<div className={ "flex flex-1 justify-end gap-3 items-center" }>
+					<Button size={ "icon" } onClick={ () => navigate( { to: "/" } ) }>
+						<HomeIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
+					</Button>
+					<Separator orientation={ "vertical" } className={ "h-12" }/>
+					{ isLoggedIn ? <DisplayAuthInfo/> : <Login/> }
+					<Separator orientation={ "vertical" } className={ "h-12" }/>
+					<ThemeSwitcher/>
+				</div>
 			</div>
 		</div>
 	);

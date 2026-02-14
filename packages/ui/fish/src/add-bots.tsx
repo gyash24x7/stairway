@@ -7,9 +7,6 @@ import { store } from "./store.tsx";
 export function AddBots() {
 	const gameId = useStore( store, state => state.id );
 	const { mutateAsync, isPending } = useAddBotsMutation( {
-		onSuccess: ( data ) => {
-			console.log( data );
-		},
 		onError: ( err ) => alert( err.message )
 	} );
 

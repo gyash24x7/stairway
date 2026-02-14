@@ -63,7 +63,9 @@ export function ThemeSwitcher() {
 				size={ "icon" }
 				onClick={ () => setThemeMode( themeMode === "light" ? "dark" : "light" ) }
 			>
-				{ themeMode === "light" ? <SunIcon/> : <MoonIcon/> }
+				{ themeMode === "light"
+					? <SunIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
+					: <MoonIcon className={ "w-4 h-4 md:h-6 md:w-6" }/> }
 			</Button>
 		</Fragment>
 	);

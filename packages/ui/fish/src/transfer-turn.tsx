@@ -1,12 +1,12 @@
 import { Button } from "@s2h-ui/primitives/button";
 import {
-	Drawer,
-	DrawerContent,
-	DrawerDescription,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle
-} from "@s2h-ui/primitives/drawer";
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@s2h-ui/primitives/dialog";
 import { Spinner } from "@s2h-ui/primitives/spinner";
 import { cn } from "@s2h-ui/primitives/utils";
 import { DisplayPlayer } from "@s2h-ui/shared/display-player";
@@ -22,14 +22,14 @@ export function TransferTurn() {
 	const playerId = useStore( store, state => state.playerId );
 	const teammatesWithCards = players[ playerId ].teamMates.filter( pid => cardCounts[ pid ] > 0 );
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
-	const [ showDrawer, setShowDrawer ] = useState( false );
+	const [ showDialog, setShowDialog ] = useState( false );
 
 	const { mutateAsync, isPending } = useTransferTurnMutation( {
-		onSuccess: () => closeDrawer()
+		onSuccess: () => closeDialog()
 	} );
 
-	const openDrawer = () => setShowDrawer( true );
-	const closeDrawer = () => setShowDrawer( false );
+	const openDialog = () => setShowDialog( true );
+	const closeDialog = () => setShowDialog( false );
 
 	const handlePlayerSelect = ( playerId?: string ) => () => {
 		if ( !playerId ) {
@@ -42,16 +42,16 @@ export function TransferTurn() {
 	const handleClick = () => mutateAsync( { gameId, transferTo: selectedPlayer! } );
 
 	return (
-		<Drawer open={ showDrawer } onOpenChange={ setShowDrawer }>
-			<Button className={ "flex-1 max-w-lg" } onClick={ openDrawer }>
+		<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
+			<Button className={ "flex-1 max-w-lg" } onClick={ openDialog }>
 				TRANSFER TURN
 			</Button>
-			<DrawerContent>
+			<DialogContent>
 				<div className={ "mx-auto w-full max-w-lg" }>
-					<DrawerHeader>
-						<DrawerTitle className={ "text-center" }>Transfer Turn</DrawerTitle>
-						<DrawerDescription/>
-					</DrawerHeader>
+					<DialogHeader>
+						<DialogTitle>Transfer Turn</DialogTitle>
+						<DialogDescription/>
+					</DialogHeader>
 					<div className={ "px-3 md:px-4" }>
 						<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
 							{ teammatesWithCards.map( ( pid ) => (
@@ -68,13 +68,13 @@ export function TransferTurn() {
 							) ) }
 						</div>
 					</div>
-					<DrawerFooter>
+					<DialogFooter>
 						<Button onClick={ handleClick } disabled={ isPending } className={ "w-full" }>
 							{ isPending ? <Spinner/> : "TRANSFER TURN" }
 						</Button>
-					</DrawerFooter>
+					</DialogFooter>
 				</div>
-			</DrawerContent>
-		</Drawer>
+			</DialogContent>
+		</Dialog>
 	);
 }

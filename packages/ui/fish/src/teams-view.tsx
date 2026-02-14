@@ -3,13 +3,13 @@ import { Table, TableBody, TableCell, TableRow } from "@s2h-ui/primitives/table"
 import { useStore } from "@tanstack/react-store";
 import { store } from "./store.tsx";
 
-export function DisplayTeams() {
+export function TeamsView() {
 	const players = useStore( store, state => state.players );
 	const teams = useStore( store, state => Object.values( state.teams )
 		.toSorted( ( a, b ) => a.id.localeCompare( b.id ) ) );
 
 	return (
-		<div className={ "flex flex-col border-2 rounded-md" }>
+		<div className={ "flex flex-col rounded-md overflow-hidden" }>
 			<Table>
 				<TableBody>
 					{ teams.map( team => (
