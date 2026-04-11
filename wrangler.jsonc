@@ -6,5 +6,12 @@
 	"compatibility_flags": [ "nodejs_compat" ],
 	"observability": {
 		"enabled": true
-	}
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "stairway",
+			"database_id": "f8156d94-8c52-4c8d-aa85-45d2b839626e"
+		}
+	]
 }
