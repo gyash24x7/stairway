@@ -10,7 +10,8 @@ export function getRouter() {
 		context: {
 			initialTheme: "blueberry",
 			initialThemeMode: "dark"
-		}
+		},
+		defaultNotFoundComponent: () => <div>Not Found</div>
 	} );
 }
 
