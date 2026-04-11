@@ -1,3 +1,6 @@
+import { RAuthInfo } from "@/auth/components/auth-info";
+import { useAuth } from "@/auth/components/context";
+import { Login } from "@/auth/components/login";
 import { ThemeSwitcher } from "@/shared/components/theme-switcher";
 import { Button } from "@/shared/primitives/button";
 import { Separator } from "@/shared/primitives/separator";
@@ -7,6 +10,7 @@ import { HomeIcon } from "lucide-react";
 
 export function Navbar() {
 	const navigate = useNavigate();
+	const { authInfo } = useAuth();
 	return (
 		<div
 			className={ cn(
@@ -26,6 +30,7 @@ export function Navbar() {
 						<HomeIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 					</Button>
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
+					{ !!authInfo ? <RAuthInfo authInfo={ authInfo }/> : <Login/> }
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
 					<ThemeSwitcher/>
 				</div>

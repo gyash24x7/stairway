@@ -27,6 +27,17 @@ const getWebAuthnOptions = async ( username: string ) => {
 	return db.query.webauthnOptions.findFirst( { where: eq( webauthnOptions.username, username ) } );
 };
 
+export const getAuthInfo = createServerFn( { method: "GET" } )
+	.handler( async () => {
+		const session = await useAppSession();
+		if ( !session.data || !session.id || !session.data.authInfo ) {
+			logger.warn( "Not Logged In!" );
+			return null;
+		}
+
+		return session.data.authInfo;
+	} );
+
 export const checkIfUserExists = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( { username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ) } ) )
 	.handler( async ( { data: { username } } ) => {
@@ -132,7 +143,7 @@ export const verifyLogin = createServerFn( { method: "POST" } )
 		logger.info( "Deleted WebAuthn options from KV for user:", data.username );
 
 		const session = await useAppSession();
-		await session.update( user );
+		await session.update( { authInfo: user } );
 
 		logger.debug( "<< verifyLogin()" );
 		return user;
@@ -211,7 +222,7 @@ export const verifyRegistration = createServerFn( { method: "POST" } )
 		logger.info( "Deleted WebAuthn options for user:", data.username );
 
 		const session = await useAppSession();
-		await session.update( user );
+		await session.update( { authInfo: user } );
 
 		logger.debug( "<< verifyRegistration()" );
 		return user;

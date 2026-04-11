@@ -2,8 +2,12 @@ import type { AuthInfo } from "@/auth/core/types";
 import { generateSecureRandomString } from "@/shared/utils/generator";
 import { useSession } from "@tanstack/react-start/server";
 
+type Session = {
+	authInfo: AuthInfo;
+}
+
 export function useAppSession() {
-	return useSession<AuthInfo>( {
+	return useSession<Session>( {
 		generateId: () => generateSecureRandomString(),
 		password: process.env.AUTH_SECRET,
 		cookie: {

@@ -1,7 +1,10 @@
+import { AuthProvider } from "@/auth/components/context";
 import { Navbar } from "@/shared/components/navbar";
 import { getTheme } from "@/shared/components/theme-switcher";
 import { Toaster } from "@/shared/primitives/sonner";
 import { cn, type Theme, type ThemeMode } from "@/shared/utils/cn";
+import { queryClient } from "@/shared/utils/query-client";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 
@@ -30,14 +33,18 @@ export const Route = createRootRouteWithContext<RouterContext>()( {
 			<head>
 				<HeadContent/>
 			</head>
-			<body className={ cn( "font-sans antialiased", initialThemeMode, initialTheme ) }>
-			<main className="flex min-h-screen flex-col bg-surface">
-				<Navbar/>
-				<div className={ "px-2 py-2 md:px-4 md:py-4 md:mt-20 mt-15 w-full" }>
-					{ props.children }
-				</div>
-				<Toaster/>
-			</main>
+			<body className={ cn( "antialiased", initialThemeMode, initialTheme ) }>
+			<QueryClientProvider client={ queryClient }>
+				<AuthProvider>
+					<main className="flex min-h-screen flex-col bg-surface">
+						<Navbar/>
+						<div className={ "px-2 py-2 md:px-4 md:py-4 md:mt-20 mt-15 w-full" }>
+							{ props.children }
+						</div>
+						<Toaster/>
+					</main>
+				</AuthProvider>
+			</QueryClientProvider>
 			<Scripts/>
 			</body>
 			</html>
