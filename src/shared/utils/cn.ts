@@ -24,3 +24,6 @@ export const themes = [
 	"grape",
 	"strawberry"
 ] as const;
+
+export type ThemeMode = typeof themeModes[number];
+export type Theme = typeof themes[number];

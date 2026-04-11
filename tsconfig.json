@@ -9,7 +9,6 @@
 		"moduleResolution": "bundler",
 		"isolatedModules": true,
 		"jsx": "react-jsx",
-		"allowImportingTsExtensions": true,
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
 		"paths": {
