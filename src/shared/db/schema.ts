@@ -1,4 +1,5 @@
 import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator";
+import { defineRelations } from "drizzle-orm";
 import { blob, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable( "users", {
@@ -20,7 +21,7 @@ export const webauthnOptions = sqliteTable( "webauthn_options", {
 	challenge: text().notNull()
 } );
 
-export type MatchStatus = "CREATED" | "PLAYERS_READY" | "TEAMS_CREATED" | "IN_PROGRESS" | "COMPLETED";
+type MatchStatus = "CREATED" | "PLAYERS_READY" | "IN_PROGRESS" | "COMPLETED";
 
 export const matches = sqliteTable(
 	"matches",
@@ -31,7 +32,7 @@ export const matches = sqliteTable(
 		config: text().notNull(),
 		status: text().notNull().default( "CREATED" ).$type<MatchStatus>(),
 		state: text().notNull(),
-		result: text().notNull(),
+		result: text(),
 		createdAt: text().notNull().$default( () => new Date().toISOString() )
 	},
 	table => [ index( "idx_matches_code" ).on( table.code ) ]
@@ -51,4 +52,16 @@ export const matchPlayers = sqliteTable(
 		index( "idx_match_players_playerId" ).on( table.playerId ),
 		index( "idx_match_players_matchId" ).on( table.matchId )
 	]
+);
+
+export const relations = defineRelations(
+	{ users, passkeys, webauthnOptions, matches, matchPlayers },
+	r => ( {
+		users: {
+			passkeys: r.many.passkeys()
+		},
+		matches: {
+			players: r.many.matchPlayers()
+		}
+	} )
 );

@@ -44,14 +44,14 @@ export function generateAvatar( seed?: string ): string {
 
 /**
  * Generates a bot information object with a unique ID, name, username, and avatar.
- * @returns {{id: string; name: string; username: string; avatar: string;}} An object containing bot information.
+ * @returns An object containing bot information.
  */
-export function generateBotInfo(): { id: string; name: string; username: string; avatar: string; } {
+export function generateBotInfo() {
 	const id = generateId();
 	const name = generateName();
 	const username = generateId();
 	const avatar = generateAvatar();
-	return { id, name, username, avatar };
+	return { id, name, username, avatar, isBot: true };
 }
 
 /**

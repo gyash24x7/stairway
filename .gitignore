@@ -68,3 +68,7 @@ coverage
 
 # Tanstack
 .tanstack
+
+# Claude
+.claude
+CLAUDE.md
