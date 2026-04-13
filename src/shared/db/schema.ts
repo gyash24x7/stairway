@@ -58,10 +58,16 @@ export const relations = defineRelations(
 	{ users, passkeys, webauthnOptions, matches, matchPlayers },
 	r => ( {
 		users: {
-			passkeys: r.many.passkeys()
+			passkeys: r.many.passkeys( {
+				from: r.users.id,
+				to: r.passkeys.userId
+			} )
 		},
 		matches: {
-			players: r.many.matchPlayers()
+			players: r.many.matchPlayers( {
+				from: r.matches.id,
+				to: r.matchPlayers.matchId
+			} )
 		}
 	} )
 );

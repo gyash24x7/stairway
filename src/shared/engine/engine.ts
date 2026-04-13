@@ -14,6 +14,7 @@ import type {
 } from "@/shared/engine/types";
 import { generateBotInfo } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
+import { env } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 
 export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGameConfig, V = G> {
@@ -285,14 +286,14 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 		};
 	}
 
-	private async syncMatch( _match: Match<G, C> ) {
-		// const id = env.SYNC_SERVER.idFromName( `${ this.config.name }:${ match.id }` );
-		// const syncServer = env.SYNC_SERVER.get( id );
-		//
-		// for ( const playerId of Object.keys( match.players ).filter( id => !match.players[ id ].isBot ) ) {
-		// 	const data = this.getPlayerView( match, playerId );
-		// 	await syncServer.publish( playerId, { ...match, state: { ...match.state, data } } );
-		// }
+	private async syncMatch( match: Match<G, C> ) {
+		const id = env.SYNC_SERVER.idFromName( `${ this.config.name }:${ match.id }` );
+		const syncServer = env.SYNC_SERVER.get( id );
+
+		for ( const playerId of Object.keys( match.players ).filter( id => !match.players[ id ].isBot ) ) {
+			const data = this.getPlayerView( match, playerId );
+			await syncServer.publish( playerId, { ...match, state: { ...match.state, data } } );
+		}
 	}
 
 	private resolveNextPlayer( state: GameState<G> ): PlayerId {

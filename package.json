@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "tsc -b && vite build",
+		"build": "vite build",
 		"preview": "vite preview",
 		"generate": "wrangler types ./env.d.ts --include-runtime=false",
 		"migrate:new": "drizzle-kit generate",

@@ -4,8 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute( "/" )( {
 	component: () => (
-		<div
-			className={ "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-6xl justify-self-center" }>
+		<div className={ "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-6xl" }>
 			{ [ "fish", "callbreak", "wordle", "tictactoe", "splendor", "kingdomino" ].map( game => (
 				<div
 					key={ game }

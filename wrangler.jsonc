@@ -1,7 +1,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "stairway",
-	"main": "@tanstack/react-start/server-entry",
+	"main": "src/server.ts",
 	"compatibility_date": "2025-08-21",
 	"compatibility_flags": [ "nodejs_compat" ],
 	"observability": {
@@ -13,5 +13,13 @@
 			"database_name": "stairway",
 			"database_id": "f8156d94-8c52-4c8d-aa85-45d2b839626e"
 		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{ "name": "SYNC_SERVER", "class_name": "SyncServer" }
+		]
+	},
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": [ "SyncServer" ] }
 	]
 }
