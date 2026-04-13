@@ -21,7 +21,7 @@ CREATE TABLE `matches`
     `config`    text                   NOT NULL,
     `status`    text DEFAULT 'CREATED' NOT NULL,
     `state`     text                   NOT NULL,
-    `result`    text                   NOT NULL,
+    `result`    text,
     `createdAt` text                   NOT NULL
 );
 

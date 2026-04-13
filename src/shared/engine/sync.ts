@@ -50,7 +50,7 @@ export class SyncServer extends DurableObject {
 		this.logger.debug( ">> publish()" );
 
 		const [ ws ] = this.connections.entries()
-			.filter( ( [ _ws, data ] ) => data.userId === userId )
+			.filter( ( [ ws, data ] ) => data.userId === userId && ws.readyState === WebSocket.OPEN )
 			.map( ( [ ws ] ) => ws );
 
 		if ( !ws ) {

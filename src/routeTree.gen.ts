@@ -10,43 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SyncSplatRouteImport } from './routes/_sync/$'
+import { Route as TictactoeIndexRouteImport } from './routes/tictactoe.index'
+import { Route as TictactoeMatchIdRouteImport } from './routes/tictactoe.$matchId'
+import { Route as SyncSplatRouteImport } from './routes/sync.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TictactoeIndexRoute = TictactoeIndexRouteImport.update({
+  id: '/tictactoe/',
+  path: '/tictactoe/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TictactoeMatchIdRoute = TictactoeMatchIdRouteImport.update({
+  id: '/tictactoe/$matchId',
+  path: '/tictactoe/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SyncSplatRoute = SyncSplatRouteImport.update({
-  id: '/_sync/$',
-  path: '/$',
+  id: '/sync/$',
+  path: '/sync/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$': typeof SyncSplatRoute
+  '/sync/$': typeof SyncSplatRoute
+  '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
+  '/tictactoe/': typeof TictactoeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$': typeof SyncSplatRoute
+  '/sync/$': typeof SyncSplatRoute
+  '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
+  '/tictactoe': typeof TictactoeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_sync/$': typeof SyncSplatRoute
+  '/sync/$': typeof SyncSplatRoute
+  '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
+  '/tictactoe/': typeof TictactoeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$'
+  fullPaths: '/' | '/sync/$' | '/tictactoe/$matchId' | '/tictactoe/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$'
-  id: '__root__' | '/' | '/_sync/$'
+  to: '/' | '/sync/$' | '/tictactoe/$matchId' | '/tictactoe'
+  id: '__root__' | '/' | '/sync/$' | '/tictactoe/$matchId' | '/tictactoe/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SyncSplatRoute: typeof SyncSplatRoute
+  TictactoeMatchIdRoute: typeof TictactoeMatchIdRoute
+  TictactoeIndexRoute: typeof TictactoeIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -58,10 +78,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_sync/$': {
-      id: '/_sync/$'
-      path: '/$'
-      fullPath: '/$'
+    '/tictactoe/': {
+      id: '/tictactoe/'
+      path: '/tictactoe'
+      fullPath: '/tictactoe/'
+      preLoaderRoute: typeof TictactoeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tictactoe/$matchId': {
+      id: '/tictactoe/$matchId'
+      path: '/tictactoe/$matchId'
+      fullPath: '/tictactoe/$matchId'
+      preLoaderRoute: typeof TictactoeMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sync/$': {
+      id: '/sync/$'
+      path: '/sync/$'
+      fullPath: '/sync/$'
       preLoaderRoute: typeof SyncSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -71,6 +105,8 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SyncSplatRoute: SyncSplatRoute,
+  TictactoeMatchIdRoute: TictactoeMatchIdRoute,
+  TictactoeIndexRoute: TictactoeIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

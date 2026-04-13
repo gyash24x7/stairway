@@ -1,5 +1,5 @@
 import { db } from "@/shared/db/client";
-import { matches } from "@/shared/db/schema";
+import { matches, matchPlayers } from "@/shared/db/schema";
 import type {
 	BaseGameConfig,
 	BasePlayerInfo,
@@ -84,6 +84,15 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 		if ( this.config.onJoin ) {
 			match.state.data = this.config.onJoin( this.readonlyState( match.state ), match.config, player.id );
 		}
+
+		await db.insert( matchPlayers )
+			.values( {
+				playerId: player.id,
+				matchId: match.id,
+				name: player.name,
+				avatar: player.avatar,
+				isBot: player.isBot ? 1 : 0
+			} );
 
 		await this.updateMatch( match );
 		await this.syncMatch( match );

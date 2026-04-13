@@ -2,7 +2,7 @@ import type { MatchId } from "@/shared/engine/types";
 import { useEffect, useRef, useState } from "react";
 
 export function useSync<T>( game: string, matchId: MatchId, initialState: T ) {
-	const socketUrl = `/_sync/${ game }/${ matchId }`;
+	const socketUrl = `/sync/${ game }/${ matchId }`;
 	const wsRef = useRef<WebSocket>( null );
 	const [ state, setState ] = useState( initialState );
 

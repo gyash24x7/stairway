@@ -2,7 +2,7 @@ import { useAppSession } from "@/auth/core/sessions";
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 
-export const Route = createFileRoute( "/_sync/$" )( {
+export const Route = createFileRoute( "/sync/$" )( {
 	server: {
 		handlers: {
 			GET: async ( { params, request } ) => {
@@ -17,7 +17,8 @@ export const Route = createFileRoute( "/_sync/$" )( {
 				}
 
 				const { _splat = "" } = params;
-				const [ _sync, game, matchId ] = _splat.split( "/" );
+				const [ game, matchId ] = _splat.split( "/" );
+				console.log( `${ game }:${ matchId }` );
 
 				const id = env.SYNC_SERVER.idFromName( `${ game }:${ matchId }` );
 				const syncServer = env.SYNC_SERVER.get( id );
