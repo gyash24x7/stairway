@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as WordleIndexRouteImport } from './routes/wordle.index'
 import { Route as TictactoeIndexRouteImport } from './routes/tictactoe.index'
+import { Route as WordleMatchIdRouteImport } from './routes/wordle.$matchId'
 import { Route as TictactoeMatchIdRouteImport } from './routes/tictactoe.$matchId'
 import { Route as SyncSplatRouteImport } from './routes/sync.$'
 
@@ -19,9 +21,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WordleIndexRoute = WordleIndexRouteImport.update({
+  id: '/wordle/',
+  path: '/wordle/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TictactoeIndexRoute = TictactoeIndexRouteImport.update({
   id: '/tictactoe/',
   path: '/tictactoe/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WordleMatchIdRoute = WordleMatchIdRouteImport.update({
+  id: '/wordle/$matchId',
+  path: '/wordle/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TictactoeMatchIdRoute = TictactoeMatchIdRouteImport.update({
@@ -39,34 +51,61 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
+  '/wordle/$matchId': typeof WordleMatchIdRoute
   '/tictactoe/': typeof TictactoeIndexRoute
+  '/wordle/': typeof WordleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
+  '/wordle/$matchId': typeof WordleMatchIdRoute
   '/tictactoe': typeof TictactoeIndexRoute
+  '/wordle': typeof WordleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
+  '/wordle/$matchId': typeof WordleMatchIdRoute
   '/tictactoe/': typeof TictactoeIndexRoute
+  '/wordle/': typeof WordleIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sync/$' | '/tictactoe/$matchId' | '/tictactoe/'
+  fullPaths:
+    | '/'
+    | '/sync/$'
+    | '/tictactoe/$matchId'
+    | '/wordle/$matchId'
+    | '/tictactoe/'
+    | '/wordle/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sync/$' | '/tictactoe/$matchId' | '/tictactoe'
-  id: '__root__' | '/' | '/sync/$' | '/tictactoe/$matchId' | '/tictactoe/'
+  to:
+    | '/'
+    | '/sync/$'
+    | '/tictactoe/$matchId'
+    | '/wordle/$matchId'
+    | '/tictactoe'
+    | '/wordle'
+  id:
+    | '__root__'
+    | '/'
+    | '/sync/$'
+    | '/tictactoe/$matchId'
+    | '/wordle/$matchId'
+    | '/tictactoe/'
+    | '/wordle/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SyncSplatRoute: typeof SyncSplatRoute
   TictactoeMatchIdRoute: typeof TictactoeMatchIdRoute
+  WordleMatchIdRoute: typeof WordleMatchIdRoute
   TictactoeIndexRoute: typeof TictactoeIndexRoute
+  WordleIndexRoute: typeof WordleIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -78,11 +117,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/wordle/': {
+      id: '/wordle/'
+      path: '/wordle'
+      fullPath: '/wordle/'
+      preLoaderRoute: typeof WordleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tictactoe/': {
       id: '/tictactoe/'
       path: '/tictactoe'
       fullPath: '/tictactoe/'
       preLoaderRoute: typeof TictactoeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wordle/$matchId': {
+      id: '/wordle/$matchId'
+      path: '/wordle/$matchId'
+      fullPath: '/wordle/$matchId'
+      preLoaderRoute: typeof WordleMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tictactoe/$matchId': {
@@ -106,7 +159,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SyncSplatRoute: SyncSplatRoute,
   TictactoeMatchIdRoute: TictactoeMatchIdRoute,
+  WordleMatchIdRoute: WordleMatchIdRoute,
   TictactoeIndexRoute: TictactoeIndexRoute,
+  WordleIndexRoute: WordleIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
