@@ -44,7 +44,7 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 		const [ match ] = await db.insert( matches ).values( data ).returning();
 
 		this.logger.debug( "<< createMatch()" );
-		return match.id;
+		return { id: match.id, code: match.code };
 	}
 
 	public async getMatch( matchId: MatchId ) {

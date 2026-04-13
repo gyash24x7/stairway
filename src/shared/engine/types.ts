@@ -3,7 +3,7 @@ export type BasePlayerInfo = {
 	id: PlayerId;
 	name: string;
 	avatar: string;
-	isBot: boolean;
+	isBot?: boolean;
 }
 
 export type GameContext = {
