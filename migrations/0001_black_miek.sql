@@ -6,13 +6,19 @@ CREATE TABLE `match_players`
     `avatar`   text              NOT NULL,
     `isBot`    integer DEFAULT 0 NOT NULL,
     PRIMARY KEY (`matchId`, `playerId`),
-    FOREIGN KEY (`matchId`) REFERENCES `matches` (`id`) ON UPDATE no action ON DELETE cascade,
-    FOREIGN KEY (`playerId`) REFERENCES `users` (`id`) ON UPDATE no action ON DELETE cascade
+    FOREIGN KEY (`matchId`) REFERENCES `matches` (`id`) ON UPDATE no action ON DELETE cascade
 );
 
 --> statement-breakpoint
-CREATE INDEX `idx_match_players_playerId` ON `match_players` (`playerId`);--> statement-breakpoint
-CREATE INDEX `idx_match_players_matchId` ON `match_players` (`matchId`);--> statement-breakpoint
+
+CREATE INDEX `idx_match_players_playerId` ON `match_players` (`playerId`);
+
+--> statement-breakpoint
+
+CREATE INDEX `idx_match_players_matchId` ON `match_players` (`matchId`);
+
+--> statement-breakpoint
+
 CREATE TABLE `matches`
 (
     `id`        text PRIMARY KEY       NOT NULL,
@@ -26,5 +32,9 @@ CREATE TABLE `matches`
 );
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX `matches_code_unique` ON `matches` (`code`);--> statement-breakpoint
+
+CREATE UNIQUE INDEX `matches_code_unique` ON `matches` (`code`);
+
+--> statement-breakpoint
+
 CREATE INDEX `idx_matches_code` ON `matches` (`code`);

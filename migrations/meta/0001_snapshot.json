@@ -1,7 +1,7 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "74291394-acd9-45fe-8f35-52f0983d1ef3",
+	"id": "7bc4ae54-af61-4226-880e-00470c65a4ec",
 	"prevId": "df2d78af-c3ab-477b-be6c-c653e60c8670",
 	"tables": {
 		"match_players": {
@@ -73,19 +73,6 @@
 					],
 					"onDelete": "cascade",
 					"onUpdate": "no action"
-				},
-				"match_players_playerId_users_id_fk": {
-					"name": "match_players_playerId_users_id_fk",
-					"tableFrom": "match_players",
-					"tableTo": "users",
-					"columnsFrom": [
-						"playerId"
-					],
-					"columnsTo": [
-						"id"
-					],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {
@@ -150,7 +137,7 @@
 					"name": "result",
 					"type": "text",
 					"primaryKey": false,
-					"notNull": true,
+					"notNull": false,
 					"autoincrement": false
 				},
 				"createdAt": {

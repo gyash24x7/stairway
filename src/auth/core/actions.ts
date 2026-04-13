@@ -14,17 +14,17 @@ import {
 import { redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "Auth:Actions" );
 
 const getUserByUsername = async ( username: string ) => {
-	return db.query.users.findFirst( { where: { username } } );
+	return db.query.users.findFirst( { where: eq( users.username, username ) } );
 };
 
 const getWebAuthnOptions = async ( username: string ) => {
-	return db.query.webauthnOptions.findFirst( { where: { username } } );
+	return db.query.webauthnOptions.findFirst( { where: eq( users.username, username ) } );
 };
 
 export const getAuthInfo = createServerFn( { method: "GET" } )
@@ -99,7 +99,10 @@ export const verifyLogin = createServerFn( { method: "POST" } )
 		}
 
 		const passkey = await db.query.passkeys.findFirst( {
-			where: { userId: user.id, id: data.response.id }
+			where: and(
+				eq( passkeys.id, data.response.id ),
+				eq( passkeys.userId, user.id )
+			)
 		} );
 
 		if ( !passkey ) {

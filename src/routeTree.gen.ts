@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WordleIndexRouteImport } from './routes/wordle.index'
 import { Route as TictactoeIndexRouteImport } from './routes/tictactoe.index'
+import { Route as FishIndexRouteImport } from './routes/fish.index'
 import { Route as WordleMatchIdRouteImport } from './routes/wordle.$matchId'
 import { Route as TictactoeMatchIdRouteImport } from './routes/tictactoe.$matchId'
 import { Route as SyncSplatRouteImport } from './routes/sync.$'
+import { Route as FishMatchIdRouteImport } from './routes/fish.$matchId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,6 +31,11 @@ const WordleIndexRoute = WordleIndexRouteImport.update({
 const TictactoeIndexRoute = TictactoeIndexRouteImport.update({
   id: '/tictactoe/',
   path: '/tictactoe/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FishIndexRoute = FishIndexRouteImport.update({
+  id: '/fish/',
+  path: '/fish/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WordleMatchIdRoute = WordleMatchIdRouteImport.update({
@@ -46,29 +53,40 @@ const SyncSplatRoute = SyncSplatRouteImport.update({
   path: '/sync/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FishMatchIdRoute = FishMatchIdRouteImport.update({
+  id: '/fish/$matchId',
+  path: '/fish/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/fish/$matchId': typeof FishMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
+  '/fish/': typeof FishIndexRoute
   '/tictactoe/': typeof TictactoeIndexRoute
   '/wordle/': typeof WordleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/fish/$matchId': typeof FishMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
+  '/fish': typeof FishIndexRoute
   '/tictactoe': typeof TictactoeIndexRoute
   '/wordle': typeof WordleIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/fish/$matchId': typeof FishMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
+  '/fish/': typeof FishIndexRoute
   '/tictactoe/': typeof TictactoeIndexRoute
   '/wordle/': typeof WordleIndexRoute
 }
@@ -76,34 +94,42 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/fish/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
+    | '/fish/'
     | '/tictactoe/'
     | '/wordle/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/fish/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
+    | '/fish'
     | '/tictactoe'
     | '/wordle'
   id:
     | '__root__'
     | '/'
+    | '/fish/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
+    | '/fish/'
     | '/tictactoe/'
     | '/wordle/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FishMatchIdRoute: typeof FishMatchIdRoute
   SyncSplatRoute: typeof SyncSplatRoute
   TictactoeMatchIdRoute: typeof TictactoeMatchIdRoute
   WordleMatchIdRoute: typeof WordleMatchIdRoute
+  FishIndexRoute: typeof FishIndexRoute
   TictactoeIndexRoute: typeof TictactoeIndexRoute
   WordleIndexRoute: typeof WordleIndexRoute
 }
@@ -131,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TictactoeIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fish/': {
+      id: '/fish/'
+      path: '/fish'
+      fullPath: '/fish/'
+      preLoaderRoute: typeof FishIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wordle/$matchId': {
       id: '/wordle/$matchId'
       path: '/wordle/$matchId'
@@ -152,14 +185,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SyncSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fish/$matchId': {
+      id: '/fish/$matchId'
+      path: '/fish/$matchId'
+      fullPath: '/fish/$matchId'
+      preLoaderRoute: typeof FishMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FishMatchIdRoute: FishMatchIdRoute,
   SyncSplatRoute: SyncSplatRoute,
   TictactoeMatchIdRoute: TictactoeMatchIdRoute,
   WordleMatchIdRoute: WordleMatchIdRoute,
+  FishIndexRoute: FishIndexRoute,
   TictactoeIndexRoute: TictactoeIndexRoute,
   WordleIndexRoute: WordleIndexRoute,
 }

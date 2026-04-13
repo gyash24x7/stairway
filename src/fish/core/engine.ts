@@ -138,6 +138,11 @@ export const fishEngine = new GameEngine( {
 			validate: ( state, config, _playerId, input: CreateTeamsInput ) => {
 				logger.debug( ">> validateCreateTeams()" );
 
+				if ( Object.keys( state.data.teams ).length > 0 ) {
+					logger.error( "Teams have already been created!" );
+					throw new Error( "Teams have already been created!" );
+				}
+
 				const teamCount = Object.keys( input.teams ).length;
 				if ( teamCount !== config.teamCount ) {
 					logger.error( "Team count does not match the game configuration!" );

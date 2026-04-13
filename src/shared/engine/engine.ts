@@ -92,6 +92,8 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 				name: player.name,
 				avatar: player.avatar,
 				isBot: player.isBot ? 1 : 0
+			} ).catch( e => {
+				console.error( e );
 			} );
 
 		await this.updateMatch( match );
@@ -338,13 +340,29 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 	}
 
 	private async findMatchById( matchId: MatchId ) {
-		return db.query.matches.findFirst( { where: { id: matchId }, with: { players: true } } )
-			.then( d => !!d ? this.deserializeMatch( d ) : undefined );
+		const match = await db.query.matches.findFirst( { where: eq( matches.id, matchId ) } );
+		if ( !match ) {
+			return;
+		}
+
+		const players = await db.query.matchPlayers.findMany( {
+			where: eq( matchPlayers.matchId, match.id )
+		} );
+
+		return this.deserializeMatch( { ...match, players } );
 	}
 
 	private async findMatchByCode( code: string ) {
-		return db.query.matches.findFirst( { where: { code }, with: { players: true } } )
-			.then( d => !!d ? this.deserializeMatch( d ) : undefined );
+		const match = await db.query.matches.findFirst( { where: eq( matches.code, code ) } );
+		if ( !match ) {
+			return;
+		}
+
+		const players = await db.query.matchPlayers.findMany( {
+			where: eq( matchPlayers.matchId, match.id )
+		} );
+
+		return this.deserializeMatch( { ...match, players } );
 	}
 
 	private async updateMatch( match: Match<G, C> ) {

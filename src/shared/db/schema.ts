@@ -1,5 +1,4 @@
 import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator";
-import { defineRelations } from "drizzle-orm";
 import { blob, index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable( "users", {
@@ -42,7 +41,7 @@ export const matchPlayers = sqliteTable(
 	"match_players",
 	{
 		matchId: text().notNull().references( () => matches.id, { onDelete: "cascade" } ),
-		playerId: text().notNull().references( () => users.id, { onDelete: "cascade" } ),
+		playerId: text().notNull(),
 		name: text().notNull(),
 		avatar: text().notNull().$default( () => generateAvatar() ),
 		isBot: integer().notNull().default( 0 ).$type<0 | 1>()
@@ -52,22 +51,4 @@ export const matchPlayers = sqliteTable(
 		index( "idx_match_players_playerId" ).on( table.playerId ),
 		index( "idx_match_players_matchId" ).on( table.matchId )
 	]
-);
-
-export const relations = defineRelations(
-	{ users, passkeys, webauthnOptions, matches, matchPlayers },
-	r => ( {
-		users: {
-			passkeys: r.many.passkeys( {
-				from: r.users.id,
-				to: r.passkeys.userId
-			} )
-		},
-		matches: {
-			players: r.many.matchPlayers( {
-				from: r.matches.id,
-				to: r.matchPlayers.matchId
-			} )
-		}
-	} )
 );

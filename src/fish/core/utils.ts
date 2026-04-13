@@ -113,19 +113,49 @@ export function getCardsOfBook( book: Book, bookType: BookType, hand?: CardId[] 
 }
 
 export function getTeamForPlayer( teams: TeamData, playerId: PlayerId ): TeamId {
-	return Object.keys( teams ).find( tid => teams[ tid ].members.includes( playerId ) )!;
+	return Object.keys( teams )
+		.find( tid => ( teams[ tid ]?.members ?? [] ).includes( playerId ) )!;
 }
 
 export function getOpponents( teams: TeamData, playerId: PlayerId ): PlayerId[] {
 	const teamId = getTeamForPlayer( teams, playerId );
 	return Object.keys( teams )
 		.filter( tid => tid !== teamId )
-		.flatMap( tid => teams[ tid ].members );
+		.flatMap( tid => teams[ tid ]?.members ?? [] );
 }
 
 export function getTeammates( teams: TeamData, playerId: PlayerId ): PlayerId[] {
 	const teamId = getTeamForPlayer( teams, playerId );
-	return teams[ teamId ].members.filter( pid => pid !== playerId );
+	return ( teams[ teamId ]?.members ?? [] ).filter( pid => pid !== playerId );
+}
+
+const SUIT_SYMBOLS: Record<string, string> = { C: "♣", D: "♦", H: "♥", S: "♠" };
+
+const CANADIAN_BOOK_DISPLAY: Record<CanadianBook, { label: string; suit: string }> = {
+	LC: { label: "LOW", suit: "C" },
+	LD: { label: "LOW", suit: "D" },
+	LH: { label: "LOW", suit: "H" },
+	LS: { label: "LOW", suit: "S" },
+	UC: { label: "HIGH", suit: "C" },
+	UD: { label: "HIGH", suit: "D" },
+	UH: { label: "HIGH", suit: "H" },
+	US: { label: "HIGH", suit: "S" }
+};
+
+export function getBookDisplayString( book: Book, bookType: BookType ): string {
+	if ( bookType === "NORMAL" ) {
+		return book;
+	}
+
+	const info = CANADIAN_BOOK_DISPLAY[ book as CanadianBook ];
+	return `${ info.label } ${ SUIT_SYMBOLS[ info.suit ] }`;
+}
+
+export function getBookSuit( book: Book, bookType: BookType ): string | undefined {
+	if ( bookType !== "CANADIAN" ) {
+		return undefined;
+	}
+	return CANADIAN_BOOK_DISPLAY[ book as CanadianBook ]?.suit;
 }
 
 export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlayerInfo> ) {
@@ -136,9 +166,10 @@ export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlaye
 	return `${ transferringPlayer } asked ${ receivingPlayer } for ${ cardString } and ${ successString }`;
 }
 
-export function getClaimDescription( claim: Claim, players: Record<PlayerId, BasePlayerInfo> ) {
+export function getClaimDescription( claim: Claim, players: Record<PlayerId, BasePlayerInfo>, bookType: BookType ) {
 	const successString = claim.success ? "correctly!" : "incorrectly!";
-	return `${ players[ claim.playerId ].name } declared ${ claim.book } ${ successString }`;
+	const bookDisplay = getBookDisplayString( claim.book, bookType );
+	return `${ players[ claim.playerId ].name } declared ${ bookDisplay } ${ successString }`;
 }
 
 export function getTransferDescription( transfer: Transfer, players: Record<PlayerId, BasePlayerInfo> ) {

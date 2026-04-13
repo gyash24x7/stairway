@@ -118,7 +118,7 @@ export const askCard = createServerFn( { method: "POST" } )
 export const claimBook = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
 		matchId: v.string(),
-		claim: v.record( v.string(), v.string() )
+		claim: v.record( v.picklist( SORTED_DECK ), v.string() )
 	} ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {

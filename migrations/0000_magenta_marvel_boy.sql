@@ -7,6 +7,7 @@ CREATE TABLE `passkeys`
 );
 
 --> statement-breakpoint
+
 CREATE TABLE `users`
 (
     `id`       text PRIMARY KEY NOT NULL,
@@ -16,7 +17,11 @@ CREATE TABLE `users`
 );
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);--> statement-breakpoint
+
+CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);
+
+--> statement-breakpoint
+
 CREATE TABLE `webauthn_options`
 (
     `username`  text PRIMARY KEY NOT NULL,
