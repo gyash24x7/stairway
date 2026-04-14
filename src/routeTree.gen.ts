@@ -13,11 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as WordleIndexRouteImport } from './routes/wordle.index'
 import { Route as TictactoeIndexRouteImport } from './routes/tictactoe.index'
 import { Route as SplendorIndexRouteImport } from './routes/splendor.index'
+import { Route as KingdominoIndexRouteImport } from './routes/kingdomino.index'
 import { Route as FishIndexRouteImport } from './routes/fish.index'
 import { Route as WordleMatchIdRouteImport } from './routes/wordle.$matchId'
 import { Route as TictactoeMatchIdRouteImport } from './routes/tictactoe.$matchId'
 import { Route as SyncSplatRouteImport } from './routes/sync.$'
 import { Route as SplendorMatchIdRouteImport } from './routes/splendor.$matchId'
+import { Route as KingdominoMatchIdRouteImport } from './routes/kingdomino.$matchId'
 import { Route as FishMatchIdRouteImport } from './routes/fish.$matchId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,6 +40,11 @@ const TictactoeIndexRoute = TictactoeIndexRouteImport.update({
 const SplendorIndexRoute = SplendorIndexRouteImport.update({
   id: '/splendor/',
   path: '/splendor/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KingdominoIndexRoute = KingdominoIndexRouteImport.update({
+  id: '/kingdomino/',
+  path: '/kingdomino/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FishIndexRoute = FishIndexRouteImport.update({
@@ -65,6 +72,11 @@ const SplendorMatchIdRoute = SplendorMatchIdRouteImport.update({
   path: '/splendor/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KingdominoMatchIdRoute = KingdominoMatchIdRouteImport.update({
+  id: '/kingdomino/$matchId',
+  path: '/kingdomino/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FishMatchIdRoute = FishMatchIdRouteImport.update({
   id: '/fish/$matchId',
   path: '/fish/$matchId',
@@ -74,11 +86,13 @@ const FishMatchIdRoute = FishMatchIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fish/$matchId': typeof FishMatchIdRoute
+  '/kingdomino/$matchId': typeof KingdominoMatchIdRoute
   '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
   '/fish/': typeof FishIndexRoute
+  '/kingdomino/': typeof KingdominoIndexRoute
   '/splendor/': typeof SplendorIndexRoute
   '/tictactoe/': typeof TictactoeIndexRoute
   '/wordle/': typeof WordleIndexRoute
@@ -86,11 +100,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fish/$matchId': typeof FishMatchIdRoute
+  '/kingdomino/$matchId': typeof KingdominoMatchIdRoute
   '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
   '/fish': typeof FishIndexRoute
+  '/kingdomino': typeof KingdominoIndexRoute
   '/splendor': typeof SplendorIndexRoute
   '/tictactoe': typeof TictactoeIndexRoute
   '/wordle': typeof WordleIndexRoute
@@ -99,11 +115,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/fish/$matchId': typeof FishMatchIdRoute
+  '/kingdomino/$matchId': typeof KingdominoMatchIdRoute
   '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
   '/fish/': typeof FishIndexRoute
+  '/kingdomino/': typeof KingdominoIndexRoute
   '/splendor/': typeof SplendorIndexRoute
   '/tictactoe/': typeof TictactoeIndexRoute
   '/wordle/': typeof WordleIndexRoute
@@ -113,11 +131,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/fish/$matchId'
+    | '/kingdomino/$matchId'
     | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
     | '/fish/'
+    | '/kingdomino/'
     | '/splendor/'
     | '/tictactoe/'
     | '/wordle/'
@@ -125,11 +145,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/fish/$matchId'
+    | '/kingdomino/$matchId'
     | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
     | '/fish'
+    | '/kingdomino'
     | '/splendor'
     | '/tictactoe'
     | '/wordle'
@@ -137,11 +159,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/fish/$matchId'
+    | '/kingdomino/$matchId'
     | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
     | '/fish/'
+    | '/kingdomino/'
     | '/splendor/'
     | '/tictactoe/'
     | '/wordle/'
@@ -150,11 +174,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FishMatchIdRoute: typeof FishMatchIdRoute
+  KingdominoMatchIdRoute: typeof KingdominoMatchIdRoute
   SplendorMatchIdRoute: typeof SplendorMatchIdRoute
   SyncSplatRoute: typeof SyncSplatRoute
   TictactoeMatchIdRoute: typeof TictactoeMatchIdRoute
   WordleMatchIdRoute: typeof WordleMatchIdRoute
   FishIndexRoute: typeof FishIndexRoute
+  KingdominoIndexRoute: typeof KingdominoIndexRoute
   SplendorIndexRoute: typeof SplendorIndexRoute
   TictactoeIndexRoute: typeof TictactoeIndexRoute
   WordleIndexRoute: typeof WordleIndexRoute
@@ -188,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/splendor'
       fullPath: '/splendor/'
       preLoaderRoute: typeof SplendorIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kingdomino/': {
+      id: '/kingdomino/'
+      path: '/kingdomino'
+      fullPath: '/kingdomino/'
+      preLoaderRoute: typeof KingdominoIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fish/': {
@@ -225,6 +258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplendorMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/kingdomino/$matchId': {
+      id: '/kingdomino/$matchId'
+      path: '/kingdomino/$matchId'
+      fullPath: '/kingdomino/$matchId'
+      preLoaderRoute: typeof KingdominoMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fish/$matchId': {
       id: '/fish/$matchId'
       path: '/fish/$matchId'
@@ -238,11 +278,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FishMatchIdRoute: FishMatchIdRoute,
+  KingdominoMatchIdRoute: KingdominoMatchIdRoute,
   SplendorMatchIdRoute: SplendorMatchIdRoute,
   SyncSplatRoute: SyncSplatRoute,
   TictactoeMatchIdRoute: TictactoeMatchIdRoute,
   WordleMatchIdRoute: WordleMatchIdRoute,
   FishIndexRoute: FishIndexRoute,
+  KingdominoIndexRoute: KingdominoIndexRoute,
   SplendorIndexRoute: SplendorIndexRoute,
   TictactoeIndexRoute: TictactoeIndexRoute,
   WordleIndexRoute: WordleIndexRoute,
