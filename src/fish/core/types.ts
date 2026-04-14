@@ -129,6 +129,13 @@ export type WeightedTransfer = {
 	transferTo: PlayerId;
 };
 
+export type TeammateSignal = {
+	cardId: CardId;
+	likelyHolder: PlayerId;
+	book: Book;
+	confidence: number;
+};
+
 export type CreateGameInput = {
 	playerCount: PlayerCount;
 	type: BookType;

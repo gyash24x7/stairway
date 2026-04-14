@@ -116,7 +116,7 @@ export function AskCard() {
 								onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 								className={ cn(
 									"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-									"flex justify-center bg-background",
+									"flex justify-center bg-background border-gray-400",
 									selectedBook === item && "border-accent bg-accent/20"
 								) }
 							>
@@ -137,8 +137,8 @@ export function AskCard() {
 									key={ cardId }
 									onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
 									className={ cn(
-										"cursor-pointer rounded-md flex justify-center border-2 p-1 bg-background",
-										selectedCard === cardId && "border-accent bg-accent/20"
+										"cursor-pointer rounded-md flex justify-center p-1",
+										selectedCard === cardId && "border-2 border-accent bg-accent/20"
 									) }
 								>
 									<RCard cardId={ cardId }/>
@@ -154,7 +154,7 @@ export function AskCard() {
 								onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
 								className={ cn(
 									"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
-									selectedPlayer === p.id && "border-accent bg-accent/20"
+									selectedPlayer === p.id && "border-2 border-accent bg-accent/20"
 								) }
 							>
 								<RPlayerInfo player={ p }/>

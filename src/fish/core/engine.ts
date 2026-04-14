@@ -1,4 +1,4 @@
-import { suggestAsks, suggestBooks, suggestClaims, suggestTransfers } from "@/fish/core/bot";
+import { detectTeammateSignals, suggestAsks, suggestBooks, suggestClaims, suggestTransfers } from "@/fish/core/bot";
 import type {
 	AskCardInput,
 	Book,
@@ -255,6 +255,16 @@ export const fishEngine = new GameEngine( {
 					? [ playerId ]
 					: remove( p => p === input.from || p === playerId, possibleOwners );
 
+				// If the opponent gave away their last card, remove them from all card locations
+				if ( hasCard && state.data.cardCounts[ input.from ] <= 0 ) {
+					for ( const cid of Object.keys( state.data.cardLocations ) as CardId[] ) {
+						const owners = state.data.cardLocations[ cid ];
+						if ( owners && owners.includes( input.from ) ) {
+							state.data.cardLocations[ cid ] = owners.filter( pid => pid !== input.from );
+						}
+					}
+				}
+
 				logger.debug( "<< askCard()" );
 				return state.data;
 			}
@@ -331,6 +341,22 @@ export const fishEngine = new GameEngine( {
 					delete state.data.cardLocations[ card ];
 					state.data.cardCounts[ correctClaim[ card ]! ]--;
 				} );
+
+				// Remove players with no cards from all remaining card locations
+				const emptyPlayers = new Set(
+					Object.keys( state.data.cardCounts ).filter( pid => state.data.cardCounts[ pid ] <= 0 )
+				);
+				if ( emptyPlayers.size > 0 ) {
+					for ( const cardId of Object.keys( state.data.cardLocations ) as CardId[] ) {
+						const owners = state.data.cardLocations[ cardId ];
+						if ( owners ) {
+							const filtered = owners.filter( pid => !emptyPlayers.has( pid ) );
+							if ( filtered.length > 0 ) {
+								state.data.cardLocations[ cardId ] = filtered;
+							}
+						}
+					}
+				}
 
 				// Award book to the correct team
 				const winningTeamId = isCorrect
@@ -409,7 +435,8 @@ export const fishEngine = new GameEngine( {
 	},
 
 	botMove: ( state, config ) => {
-		const weightedBooks = suggestBooks( state, config );
+		const signals = detectTeammateSignals( state, config );
+		const weightedBooks = suggestBooks( state, config, signals );
 		logger.debug( "Books Suggested: %o", weightedBooks.map( book => book.book ) );
 
 		const isLastMoveSuccessfulClaim = state.data.lastMoveType === "claim"
@@ -440,7 +467,7 @@ export const fishEngine = new GameEngine( {
 		}
 
 		// Try certain claims first
-		const weightedClaims = suggestClaims( weightedBooks, state, config );
+		const weightedClaims = suggestClaims( weightedBooks, state, config, signals );
 		logger.debug( "Claims Suggested: %o", weightedClaims.map( claim => claim.book ) );
 
 		if ( weightedClaims.length > 0 ) {
@@ -452,7 +479,7 @@ export const fishEngine = new GameEngine( {
 		logger.info( "Bot %s skipping claim!", state.ctx.currentPlayer );
 
 		// Try asking for cards
-		const weightedAsks = suggestAsks( weightedBooks, state, config );
+		const weightedAsks = suggestAsks( weightedBooks, state, config, signals );
 		logger.debug( "Asks Suggested: %o", new Set( weightedAsks.map( ask => ask.cardId ) ) );
 		if ( weightedAsks.length > 0 ) {
 			const { playerId, cardId } = weightedAsks[ 0 ];
