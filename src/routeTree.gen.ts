@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as WordleIndexRouteImport } from './routes/wordle.index'
 import { Route as TictactoeIndexRouteImport } from './routes/tictactoe.index'
+import { Route as SplendorIndexRouteImport } from './routes/splendor.index'
 import { Route as FishIndexRouteImport } from './routes/fish.index'
 import { Route as WordleMatchIdRouteImport } from './routes/wordle.$matchId'
 import { Route as TictactoeMatchIdRouteImport } from './routes/tictactoe.$matchId'
 import { Route as SyncSplatRouteImport } from './routes/sync.$'
+import { Route as SplendorMatchIdRouteImport } from './routes/splendor.$matchId'
 import { Route as FishMatchIdRouteImport } from './routes/fish.$matchId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -31,6 +33,11 @@ const WordleIndexRoute = WordleIndexRouteImport.update({
 const TictactoeIndexRoute = TictactoeIndexRouteImport.update({
   id: '/tictactoe/',
   path: '/tictactoe/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplendorIndexRoute = SplendorIndexRouteImport.update({
+  id: '/splendor/',
+  path: '/splendor/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FishIndexRoute = FishIndexRouteImport.update({
@@ -53,6 +60,11 @@ const SyncSplatRoute = SyncSplatRouteImport.update({
   path: '/sync/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplendorMatchIdRoute = SplendorMatchIdRouteImport.update({
+  id: '/splendor/$matchId',
+  path: '/splendor/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FishMatchIdRoute = FishMatchIdRouteImport.update({
   id: '/fish/$matchId',
   path: '/fish/$matchId',
@@ -62,20 +74,24 @@ const FishMatchIdRoute = FishMatchIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/fish/$matchId': typeof FishMatchIdRoute
+  '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
   '/fish/': typeof FishIndexRoute
+  '/splendor/': typeof SplendorIndexRoute
   '/tictactoe/': typeof TictactoeIndexRoute
   '/wordle/': typeof WordleIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/fish/$matchId': typeof FishMatchIdRoute
+  '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
   '/fish': typeof FishIndexRoute
+  '/splendor': typeof SplendorIndexRoute
   '/tictactoe': typeof TictactoeIndexRoute
   '/wordle': typeof WordleIndexRoute
 }
@@ -83,10 +99,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/fish/$matchId': typeof FishMatchIdRoute
+  '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
   '/fish/': typeof FishIndexRoute
+  '/splendor/': typeof SplendorIndexRoute
   '/tictactoe/': typeof TictactoeIndexRoute
   '/wordle/': typeof WordleIndexRoute
 }
@@ -95,30 +113,36 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/fish/$matchId'
+    | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
     | '/fish/'
+    | '/splendor/'
     | '/tictactoe/'
     | '/wordle/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/fish/$matchId'
+    | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
     | '/fish'
+    | '/splendor'
     | '/tictactoe'
     | '/wordle'
   id:
     | '__root__'
     | '/'
     | '/fish/$matchId'
+    | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
     | '/fish/'
+    | '/splendor/'
     | '/tictactoe/'
     | '/wordle/'
   fileRoutesById: FileRoutesById
@@ -126,10 +150,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FishMatchIdRoute: typeof FishMatchIdRoute
+  SplendorMatchIdRoute: typeof SplendorMatchIdRoute
   SyncSplatRoute: typeof SyncSplatRoute
   TictactoeMatchIdRoute: typeof TictactoeMatchIdRoute
   WordleMatchIdRoute: typeof WordleMatchIdRoute
   FishIndexRoute: typeof FishIndexRoute
+  SplendorIndexRoute: typeof SplendorIndexRoute
   TictactoeIndexRoute: typeof TictactoeIndexRoute
   WordleIndexRoute: typeof WordleIndexRoute
 }
@@ -155,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/tictactoe'
       fullPath: '/tictactoe/'
       preLoaderRoute: typeof TictactoeIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/splendor/': {
+      id: '/splendor/'
+      path: '/splendor'
+      fullPath: '/splendor/'
+      preLoaderRoute: typeof SplendorIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fish/': {
@@ -185,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SyncSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/splendor/$matchId': {
+      id: '/splendor/$matchId'
+      path: '/splendor/$matchId'
+      fullPath: '/splendor/$matchId'
+      preLoaderRoute: typeof SplendorMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fish/$matchId': {
       id: '/fish/$matchId'
       path: '/fish/$matchId'
@@ -198,10 +238,12 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FishMatchIdRoute: FishMatchIdRoute,
+  SplendorMatchIdRoute: SplendorMatchIdRoute,
   SyncSplatRoute: SyncSplatRoute,
   TictactoeMatchIdRoute: TictactoeMatchIdRoute,
   WordleMatchIdRoute: WordleMatchIdRoute,
   FishIndexRoute: FishIndexRoute,
+  SplendorIndexRoute: SplendorIndexRoute,
   TictactoeIndexRoute: TictactoeIndexRoute,
   WordleIndexRoute: WordleIndexRoute,
 }

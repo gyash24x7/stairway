@@ -21,11 +21,7 @@ export function FishCreateGame() {
 	};
 
 	return (
-		<CreateGame
-			game={ "fish" }
-			disabled={ !playerCount }
-			createMatch={ () => createFishMatch() }
-		>
+		<CreateGame game={ "fish" } disabled={ !playerCount } createMatch={ createFishMatch }>
 			<div className={ "flex flex-col gap-2" }>
 				<label className={ "text-sm text-muted-foreground" }>Player Count</label>
 				<div className={ "flex gap-3 flex-wrap" }>
