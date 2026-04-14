@@ -15,12 +15,14 @@ import { Route as TictactoeIndexRouteImport } from './routes/tictactoe.index'
 import { Route as SplendorIndexRouteImport } from './routes/splendor.index'
 import { Route as KingdominoIndexRouteImport } from './routes/kingdomino.index'
 import { Route as FishIndexRouteImport } from './routes/fish.index'
+import { Route as CallbreakIndexRouteImport } from './routes/callbreak.index'
 import { Route as WordleMatchIdRouteImport } from './routes/wordle.$matchId'
 import { Route as TictactoeMatchIdRouteImport } from './routes/tictactoe.$matchId'
 import { Route as SyncSplatRouteImport } from './routes/sync.$'
 import { Route as SplendorMatchIdRouteImport } from './routes/splendor.$matchId'
 import { Route as KingdominoMatchIdRouteImport } from './routes/kingdomino.$matchId'
 import { Route as FishMatchIdRouteImport } from './routes/fish.$matchId'
+import { Route as CallbreakMatchIdRouteImport } from './routes/callbreak.$matchId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -50,6 +52,11 @@ const KingdominoIndexRoute = KingdominoIndexRouteImport.update({
 const FishIndexRoute = FishIndexRouteImport.update({
   id: '/fish/',
   path: '/fish/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallbreakIndexRoute = CallbreakIndexRouteImport.update({
+  id: '/callbreak/',
+  path: '/callbreak/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WordleMatchIdRoute = WordleMatchIdRouteImport.update({
@@ -82,15 +89,22 @@ const FishMatchIdRoute = FishMatchIdRouteImport.update({
   path: '/fish/$matchId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CallbreakMatchIdRoute = CallbreakMatchIdRouteImport.update({
+  id: '/callbreak/$matchId',
+  path: '/callbreak/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/callbreak/$matchId': typeof CallbreakMatchIdRoute
   '/fish/$matchId': typeof FishMatchIdRoute
   '/kingdomino/$matchId': typeof KingdominoMatchIdRoute
   '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
+  '/callbreak/': typeof CallbreakIndexRoute
   '/fish/': typeof FishIndexRoute
   '/kingdomino/': typeof KingdominoIndexRoute
   '/splendor/': typeof SplendorIndexRoute
@@ -99,12 +113,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/callbreak/$matchId': typeof CallbreakMatchIdRoute
   '/fish/$matchId': typeof FishMatchIdRoute
   '/kingdomino/$matchId': typeof KingdominoMatchIdRoute
   '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
+  '/callbreak': typeof CallbreakIndexRoute
   '/fish': typeof FishIndexRoute
   '/kingdomino': typeof KingdominoIndexRoute
   '/splendor': typeof SplendorIndexRoute
@@ -114,12 +130,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/callbreak/$matchId': typeof CallbreakMatchIdRoute
   '/fish/$matchId': typeof FishMatchIdRoute
   '/kingdomino/$matchId': typeof KingdominoMatchIdRoute
   '/splendor/$matchId': typeof SplendorMatchIdRoute
   '/sync/$': typeof SyncSplatRoute
   '/tictactoe/$matchId': typeof TictactoeMatchIdRoute
   '/wordle/$matchId': typeof WordleMatchIdRoute
+  '/callbreak/': typeof CallbreakIndexRoute
   '/fish/': typeof FishIndexRoute
   '/kingdomino/': typeof KingdominoIndexRoute
   '/splendor/': typeof SplendorIndexRoute
@@ -130,12 +148,14 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/callbreak/$matchId'
     | '/fish/$matchId'
     | '/kingdomino/$matchId'
     | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
+    | '/callbreak/'
     | '/fish/'
     | '/kingdomino/'
     | '/splendor/'
@@ -144,12 +164,14 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/callbreak/$matchId'
     | '/fish/$matchId'
     | '/kingdomino/$matchId'
     | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
+    | '/callbreak'
     | '/fish'
     | '/kingdomino'
     | '/splendor'
@@ -158,12 +180,14 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/callbreak/$matchId'
     | '/fish/$matchId'
     | '/kingdomino/$matchId'
     | '/splendor/$matchId'
     | '/sync/$'
     | '/tictactoe/$matchId'
     | '/wordle/$matchId'
+    | '/callbreak/'
     | '/fish/'
     | '/kingdomino/'
     | '/splendor/'
@@ -173,12 +197,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CallbreakMatchIdRoute: typeof CallbreakMatchIdRoute
   FishMatchIdRoute: typeof FishMatchIdRoute
   KingdominoMatchIdRoute: typeof KingdominoMatchIdRoute
   SplendorMatchIdRoute: typeof SplendorMatchIdRoute
   SyncSplatRoute: typeof SyncSplatRoute
   TictactoeMatchIdRoute: typeof TictactoeMatchIdRoute
   WordleMatchIdRoute: typeof WordleMatchIdRoute
+  CallbreakIndexRoute: typeof CallbreakIndexRoute
   FishIndexRoute: typeof FishIndexRoute
   KingdominoIndexRoute: typeof KingdominoIndexRoute
   SplendorIndexRoute: typeof SplendorIndexRoute
@@ -230,6 +256,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FishIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/callbreak/': {
+      id: '/callbreak/'
+      path: '/callbreak'
+      fullPath: '/callbreak/'
+      preLoaderRoute: typeof CallbreakIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/wordle/$matchId': {
       id: '/wordle/$matchId'
       path: '/wordle/$matchId'
@@ -272,17 +305,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FishMatchIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/callbreak/$matchId': {
+      id: '/callbreak/$matchId'
+      path: '/callbreak/$matchId'
+      fullPath: '/callbreak/$matchId'
+      preLoaderRoute: typeof CallbreakMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CallbreakMatchIdRoute: CallbreakMatchIdRoute,
   FishMatchIdRoute: FishMatchIdRoute,
   KingdominoMatchIdRoute: KingdominoMatchIdRoute,
   SplendorMatchIdRoute: SplendorMatchIdRoute,
   SyncSplatRoute: SyncSplatRoute,
   TictactoeMatchIdRoute: TictactoeMatchIdRoute,
   WordleMatchIdRoute: WordleMatchIdRoute,
+  CallbreakIndexRoute: CallbreakIndexRoute,
   FishIndexRoute: FishIndexRoute,
   KingdominoIndexRoute: KingdominoIndexRoute,
   SplendorIndexRoute: SplendorIndexRoute,
