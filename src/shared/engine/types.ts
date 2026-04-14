@@ -12,7 +12,7 @@ export type GameContext = {
 	currentPlayer: PlayerId;
 }
 
-export type BaseGameConfig = { playerCount: number };
+export type BaseGameConfig = { playerCount: number; autoStart?: boolean };
 
 export type GameState<G> = { data: G; ctx: GameContext; }
 

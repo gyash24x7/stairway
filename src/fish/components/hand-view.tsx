@@ -1,7 +1,7 @@
 "use client";
 
 import { useFish } from "@/fish/components/context";
-import { getBooksInHand, getBookDisplayString, getCardsOfBook } from "@/fish/core/utils";
+import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@/fish/core/utils";
 import { RCard } from "@/shared/components/card";
 import { cn } from "@/shared/utils/cn";
 import { useMemo } from "react";
@@ -12,10 +12,7 @@ export function HandView() {
 
 	const groupedCards = useMemo( () => {
 		const books = getBooksInHand( hand, match.config.type );
-		return books.map( book => ( {
-			book,
-			cards: getCardsOfBook( book, match.config.type, hand )
-		} ) );
+		return books.map( book => ( { book, cards: getCardsOfBook( book, match.config.type, hand ) } ) );
 	}, [ hand, match.config.type ] );
 
 	if ( hand.length === 0 ) {

@@ -94,6 +94,7 @@ export type FishConfig = {
 	deckType: DeckType;
 	books: Book[];
 	bookSize: BookSize;
+	autoStart?: boolean;
 };
 
 export type FishPlayerView = Omit<FishData, "hands"> & {

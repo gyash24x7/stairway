@@ -67,7 +67,7 @@ export function suggestBooks( state: GameState<FishPlayerView>, config: FishConf
 	logger.debug( "<< suggestBooks()" );
 	return weightedBooks
 		.filter( a => a.weight > 0 )
-		.toSorted( ( a, b ) => b.weight - a.weight );
+		.toSorted( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 );
 }
 
 /**
@@ -104,7 +104,7 @@ export function suggestAsks( books: WeightedBook[], state: GameState<FishPlayerV
 			}
 		}
 
-		weightedAsks.push( ...asksForBook.toSorted( ( a, b ) => b.weight - a.weight ) );
+		weightedAsks.push( ...asksForBook.toSorted( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 ) );
 	}
 
 	logger.debug( "<< suggestAsks()" );
@@ -149,7 +149,7 @@ export function suggestClaims( books: WeightedBook[], state: GameState<FishPlaye
 	}
 
 	logger.debug( "<< suggestClaims()" );
-	return claims.sort( ( a, b ) => b.weight - a.weight );
+	return claims.sort( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 );
 }
 
 /**
@@ -188,7 +188,7 @@ export function suggestTransfers( state: GameState<FishPlayerView>, config: Fish
 
 	const transfers: WeightedTransfer[] = Object.entries( weightedTransfers )
 		.map( ( [ transferTo, weight ] ) => ( { transferTo, weight } ) )
-		.toSorted( ( a, b ) => b.weight - a.weight );
+		.toSorted( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 );
 
 	logger.debug( "<< suggestTransfers()" );
 	return transfers;

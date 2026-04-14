@@ -23,6 +23,7 @@ export function GameView() {
 
 	const hasCards = match.state.data.hand.length > 0;
 	const matchInProgress = match.status === "IN_PROGRESS";
+	const playersReady = match.status === "PLAYERS_READY";
 	const hasTeams = Object.keys( match.state.data.teams ).length > 0;
 	const lastClaim = match.state.data.claimHistory[ 0 ];
 	const canTransfer = match.state.data.lastMoveType === "claim"
@@ -67,7 +68,7 @@ export function GameView() {
 			{ match.status === "COMPLETED" && <BooksTracker/> }
 			{ match.status === "COMPLETED" && <GameMetrics/> }
 			<div className={ "grid grid-cols-1 gap-3 w-full justify-items-center" }>
-				{ match.status !== "IN_PROGRESS" && <PlayerLobby/> }
+				{ ( match.status === "CREATED" || playersReady ) && <PlayerLobby/> }
 				{ matchInProgress && <TeamsView/> }
 				{ matchInProgress && (
 					<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full" }>
@@ -85,6 +86,14 @@ export function GameView() {
 							</p>
 						</div>
 					) }
+					{ playersReady && !hasTeams && (
+						<div
+							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
+							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
+								ALL PLAYERS JOINED — CREATE TEAMS TO START
+							</p>
+						</div>
+					) }
 					{ matchInProgress && <TurnIndicator/> }
 				</div>
 			</div>
@@ -95,7 +104,7 @@ export function GameView() {
 				) }
 			>
 				{ match.status === "CREATED" && <AddBots/> }
-				{ matchInProgress && !hasTeams && <CreateTeams/> }
+				{ playersReady && !hasTeams && <CreateTeams/> }
 				{ matchInProgress && isMyTurn && hasCards && <AskCard/> }
 				{ matchInProgress && isMyTurn && <ClaimBook/> }
 				{ matchInProgress && isMyTurn && canTransfer && <TransferTurn/> }

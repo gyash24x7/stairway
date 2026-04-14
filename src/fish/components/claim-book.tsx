@@ -33,6 +33,7 @@ export function ClaimBook() {
 	const [ showDialog, setShowDialog ] = useState( false );
 
 	const teamMates = getTeammates( match.state.data.teams, match.state.data.playerId );
+	const selectedBookDisplayString = selectedBook ? getBookDisplayString( selectedBook, match.config.type ) : "";
 
 	const missingCards = selectedBook
 		? getMissingCards( match.state.data.hand, selectedBook, match.config.type )
@@ -113,11 +114,7 @@ export function ClaimBook() {
 					<DialogTitle>
 						{ currentStep === 1 && "SELECT BOOK TO CLAIM" }
 						{ currentStep === 2 && "ASSIGN MISSING CARDS TO TEAMMATES" }
-						{ currentStep ===
-							3 &&
-							`CONFIRM CLAIM FOR ${ selectedBook
-								? getBookDisplayString( selectedBook, match.config.type )
-								: "" }` }
+						{ currentStep === 3 && `CONFIRM CLAIM FOR ${ selectedBookDisplayString }` }
 					</DialogTitle>
 					<DialogDescription/>
 				</DialogHeader>
@@ -129,10 +126,8 @@ export function ClaimBook() {
 								onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 								className={ cn(
 									"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-									"flex justify-center",
-									selectedBook === item
-										? "border-accent bg-accent/20"
-										: "border-transparent bg-surface"
+									"flex justify-center bg-background",
+									selectedBook === item && "border-accent bg-accent/20"
 								) }
 							>
 								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
@@ -154,10 +149,8 @@ export function ClaimBook() {
 											key={ pid }
 											onClick={ handleAssignCard( cardId, pid ) }
 											className={ cn(
-												"cursor-pointer border-2 rounded-md px-2 py-1",
-												claim.get( cardId ) === pid
-													? "border-accent bg-accent/20"
-													: "border-transparent bg-surface"
+												"cursor-pointer border-2 rounded-md px-2 py-1 bg-background",
+												claim.get( cardId ) === pid && "border-accent bg-accent/20"
 											) }
 										>
 											<RPlayerInfo player={ match.players[ pid ] }/>
@@ -176,10 +169,7 @@ export function ClaimBook() {
 				{ currentStep === 3 && (
 					<div className={ "grid grid-cols-2 gap-2" }>
 						{ [ ...claim.entries() ].map( ( [ cardId, playerId ] ) => (
-							<div
-								key={ cardId }
-								className={ "flex items-center rounded-md px-3 py-2 gap-2" }
-							>
+							<div key={ cardId } className={ "flex items-center rounded-md px-3 py-2 gap-2" }>
 								<RCard cardId={ cardId }/>
 								<ArrowBigRightDashIcon className={ "w-10 h-10 text-accent" }/>
 								<RPlayerInfo player={ match.players[ playerId ] }/>

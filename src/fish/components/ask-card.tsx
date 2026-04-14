@@ -116,10 +116,8 @@ export function AskCard() {
 								onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 								className={ cn(
 									"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-									"flex justify-center",
-									selectedBook === item
-										? "border-accent bg-accent/20"
-										: "border-transparent bg-surface"
+									"flex justify-center bg-background",
+									selectedBook === item && "border-accent bg-accent/20"
 								) }
 							>
 								<div className={ "flex gap-2 md:gap-3 items-center" }>
@@ -139,10 +137,8 @@ export function AskCard() {
 									key={ cardId }
 									onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
 									className={ cn(
-										"cursor-pointer rounded-md flex justify-center border-2 p-1",
-										selectedCard === cardId
-											? "border-accent bg-accent/20"
-											: "border-transparent"
+										"cursor-pointer rounded-md flex justify-center border-2 p-1 bg-background",
+										selectedCard === cardId && "border-accent bg-accent/20"
 									) }
 								>
 									<RCard cardId={ cardId }/>
@@ -157,10 +153,8 @@ export function AskCard() {
 								key={ p.id }
 								onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
 								className={ cn(
-									"cursor-pointer border-2 rounded-md flex justify-center flex-1",
-									selectedPlayer === p.id
-										? "border-accent bg-accent/20"
-										: "border-transparent bg-surface"
+									"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
+									selectedPlayer === p.id && "border-accent bg-accent/20"
 								) }
 							>
 								<RPlayerInfo player={ p }/>

@@ -25,7 +25,8 @@ function buildConfig( input: {
 		teamCount: input.teamCount,
 		deckType: isCanadian ? 48 : 52,
 		books,
-		bookSize: isCanadian ? 6 : 4
+		bookSize: isCanadian ? 6 : 4,
+		autoStart: false
 	};
 }
 
@@ -96,6 +97,7 @@ export const createTeams = createServerFn( { method: "POST" } )
 		logger.debug( ">> createTeams()" );
 
 		await fishEngine.processMove( input.matchId, authInfo.id, "createTeams", input );
+		await fishEngine.startMatch( input.matchId );
 
 		logger.debug( "<< createTeams()" );
 	} );

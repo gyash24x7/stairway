@@ -100,8 +100,14 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 		await this.syncMatch( match );
 
 		if ( Object.keys( match.players ).length === match.config.playerCount ) {
-			await this.delay( 5000 );
-			await this.startMatch( match.id );
+			if ( match.config.autoStart === false ) {
+				match.status = "PLAYERS_READY";
+				await this.updateMatch( match );
+				await this.syncMatch( match );
+			} else {
+				await this.delay( 5000 );
+				await this.startMatch( match.id );
+			}
 		}
 
 		this.logger.debug( "<< joinMatch()" );
@@ -145,7 +151,7 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 			throw new Error( "Match not found." );
 		}
 
-		if ( match.status !== "IN_PROGRESS" ) {
+		if ( match.status !== "IN_PROGRESS" && match.status !== "PLAYERS_READY" ) {
 			this.logger.error( "Match is not in progress:", matchId );
 			throw new Error( "Match is not in progress." );
 		}

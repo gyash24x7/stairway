@@ -67,10 +67,8 @@ export function TransferTurn() {
 							key={ pid }
 							onClick={ handlePlayerSelect( selectedPlayer === pid ? undefined : pid ) }
 							className={ cn(
-								"cursor-pointer border-2 rounded-md flex justify-center flex-1",
-								selectedPlayer === pid
-									? "border-accent bg-accent/20"
-									: "border-transparent bg-surface"
+								"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
+								selectedPlayer === pid && "border-accent bg-accent/20"
 							) }
 						>
 							<RPlayerInfo player={ match.players[ pid ] }/>
