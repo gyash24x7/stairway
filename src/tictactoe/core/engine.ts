@@ -31,9 +31,11 @@ export const ticTacToeEngine = new GameEngine( {
 
 	setup: ( _: {} ): TicTacToeData => ( { board: Array( 9 ).fill( null ) as Board, symbols: {} } ),
 
-	onJoin: ( state, _config, playerId ) => {
-		state.data.symbols[ playerId ] = Object.keys( state.data.symbols ).length === 0 ? "X" : "O";
-		return state.data;
+	hooks: {
+		onJoin: ( state, _config, playerId ) => {
+			state.data.symbols[ playerId ] = Object.keys( state.data.symbols ).length === 0 ? "X" : "O";
+			return state.data;
+		}
 	},
 
 	moves: {

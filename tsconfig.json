@@ -16,6 +16,7 @@
 		"jsx": "react-jsx",
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
+		"noEmit": true,
 		"paths": {
 			"@/*": [ "./src/*" ]
 		}

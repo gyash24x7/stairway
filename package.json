@@ -8,6 +8,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"generate": "wrangler types ./env.d.ts --include-runtime=false",
+		"typecheck": "tsc -b",
 		"migrate:new": "drizzle-kit generate",
 		"migrate:dev": "wrangler d1 migrations apply DB --local",
 		"migrate:prod": "wrangler d1 migrations apply DB --remote"

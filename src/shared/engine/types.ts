@@ -49,13 +49,19 @@ export type BotMoveFn<G, C, M extends Record<string, unknown>> = ( state: GameSt
 	input: M[keyof M]
 };
 
+export type GameHooks<G, C extends BaseGameConfig> = {
+	onJoin?: ( state: GameState<G>, config: C, playerId: PlayerId ) => G;
+	onStart?: ( state: GameState<G>, config: C ) => G;
+	beforeMove?: ( state: GameState<G>, config: C, playerId: PlayerId, moveType: string ) => void;
+	afterMove?: ( state: GameState<G>, config: C, playerId: PlayerId, moveType: string ) => G;
+	onEnd?: ( state: GameState<G>, config: C, result: EndResult ) => G;
+};
+
 export type GameConfig<G, M extends Record<string, unknown> = {}, C extends BaseGameConfig = BaseGameConfig, V = G> = {
 	name: string;
 	setup: ( input: C ) => G;
-	onJoin?: ( state: GameState<G>, config: C, playerId: PlayerId ) => G;
-	onStart?: ( state: GameState<G>, config: C ) => G;
+	hooks?: GameHooks<G, C>;
 	moves: MoveMap<G, C, M>;
-	afterMove?: ( state: GameState<G>, config: C ) => G | undefined;
 	endIf: ( state: GameState<G>, config: C ) => EndResult | undefined;
 	getNextPlayer: GetNextPlayer<G>;
 	botMove?: BotMoveFn<V, C, M>;

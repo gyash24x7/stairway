@@ -34,36 +34,38 @@ export const splendorEngine = new GameEngine( {
 		playerData: {}
 	} ),
 
-	onJoin: ( state, _config, playerId ) => {
-		state.data.playerData[ playerId ] = {
-			tokens: { ...DEFAULT_TOKENS },
-			cards: [],
-			nobles: [],
-			reserved: [],
-			points: 0
-		};
-		return state.data;
-	},
+	hooks: {
+		onJoin: ( state, _config, playerId ) => {
+			state.data.playerData[ playerId ] = {
+				tokens: { ...DEFAULT_TOKENS },
+				cards: [],
+				nobles: [],
+				reserved: [],
+				points: 0
+			};
+			return state.data;
+		},
 
-	onStart: ( state, _config ) => {
-		const playerCount = Object.keys( state.data.playerData ).length;
-		const tokenCount = playerCount === 4 ? 7 : 5;
+		onStart: ( state, _config ) => {
+			const playerCount = Object.keys( state.data.playerData ).length;
+			const tokenCount = playerCount === 4 ? 7 : 5;
 
-		state.data.tokens = {
-			diamond: tokenCount,
-			sapphire: tokenCount,
-			emerald: tokenCount,
-			ruby: tokenCount,
-			onyx: tokenCount,
-			gold: 5
-		};
-		state.data.nobles = generateNobles( playerCount );
-		state.data.cards = {
-			1: state.data.decks[ 1 ].splice( 0, 4 ),
-			2: state.data.decks[ 2 ].splice( 0, 4 ),
-			3: state.data.decks[ 3 ].splice( 0, 4 )
-		};
-		return state.data;
+			state.data.tokens = {
+				diamond: tokenCount,
+				sapphire: tokenCount,
+				emerald: tokenCount,
+				ruby: tokenCount,
+				onyx: tokenCount,
+				gold: 5
+			};
+			state.data.nobles = generateNobles( playerCount );
+			state.data.cards = {
+				1: state.data.decks[ 1 ].splice( 0, 4 ),
+				2: state.data.decks[ 2 ].splice( 0, 4 ),
+				3: state.data.decks[ 3 ].splice( 0, 4 )
+			};
+			return state.data;
+		}
 	},
 
 	moves: {

@@ -101,36 +101,38 @@ export const fishEngine = new GameEngine( {
 		transferHistory: []
 	} ),
 
-	onJoin: ( state, _config, playerId ) => {
-		state.data.playerData[ playerId ] = {
-			teamId: "",
-			metrics: { ...DEFAULT_METRICS }
-		};
-		return state.data;
-	},
+	hooks: {
+		onJoin: ( state, _config, playerId ) => {
+			state.data.playerData[ playerId ] = {
+				teamId: "",
+				metrics: { ...DEFAULT_METRICS }
+			};
+			return state.data;
+		},
 
-	onStart: ( state, config ) => {
-		// Deal cards
-		let deck = generateDeck();
-		if ( config.deckType === 48 ) {
-			deck = remove( ( card ) => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
+		onStart: ( state, config ) => {
+			// Deal cards
+			let deck = generateDeck();
+			if ( config.deckType === 48 ) {
+				deck = remove( ( card ) => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
+			}
+
+			const hands = generateHands( deck, state.ctx.players.length );
+			for ( let i = 0; i < state.ctx.players.length; i++ ) {
+				state.data.hands[ state.ctx.players[ i ] ] = hands[ i ];
+				state.data.cardCounts[ state.ctx.players[ i ] ] = hands[ i ].length;
+			}
+
+			state.data.cardLocations = deck.reduce(
+				( acc, card ) => {
+					acc[ card ] = state.ctx.players;
+					return acc;
+				},
+				{} as Partial<Record<CardId, PlayerId[]>>
+			);
+
+			return state.data;
 		}
-
-		const hands = generateHands( deck, state.ctx.players.length );
-		for ( let i = 0; i < state.ctx.players.length; i++ ) {
-			state.data.hands[ state.ctx.players[ i ] ] = hands[ i ];
-			state.data.cardCounts[ state.ctx.players[ i ] ] = hands[ i ].length;
-		}
-
-		state.data.cardLocations = deck.reduce(
-			( acc, card ) => {
-				acc[ card ] = state.ctx.players;
-				return acc;
-			},
-			{} as Partial<Record<CardId, PlayerId[]>>
-		);
-
-		return state.data;
 	},
 
 	moves: {

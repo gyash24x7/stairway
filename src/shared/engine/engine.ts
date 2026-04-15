@@ -81,8 +81,8 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 		match.players[ player.id ] = player;
 		match.state.ctx.players.push( player.id );
 
-		if ( this.config.onJoin ) {
-			match.state.data = this.config.onJoin( this.readonlyState( match.state ), match.config, player.id );
+		if ( this.config.hooks?.onJoin ) {
+			match.state.data = this.config.hooks.onJoin( this.readonlyState( match.state ), match.config, player.id );
 		}
 
 		await db.insert( matchPlayers )
@@ -128,8 +128,8 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 			throw new Error( "Not enough players to start the match." );
 		}
 
-		if ( this.config.onStart ) {
-			match.state.data = this.config.onStart( this.readonlyState( match.state ), match.config );
+		if ( this.config.hooks?.onStart ) {
+			match.state.data = this.config.hooks.onStart( this.readonlyState( match.state ), match.config );
 		}
 
 		match.state.ctx.currentPlayer = this.resolveNextPlayer( match.state );
@@ -173,13 +173,39 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 			throw new Error( "Invalid move type." );
 		}
 
+		if ( this.config.hooks?.beforeMove ) {
+			this.config.hooks.beforeMove(
+				this.readonlyState( match.state ),
+				match.config,
+				playerId,
+				String( moveType )
+			);
+		}
+
 		const readonlyState = this.readonlyState( match.state );
 		move.validate( readonlyState, match.config, playerId, input );
 		match.state.data = move.execute( readonlyState, match.config, playerId, input );
+
+		if ( this.config.hooks?.afterMove ) {
+			match.state.data = this.config.hooks.afterMove(
+				this.readonlyState( match.state ),
+				match.config,
+				playerId,
+				String( moveType )
+			);
+		}
+
 		match.state.ctx.currentPlayer = this.resolveNextPlayer( match.state );
 
 		const endResult = this.config.endIf( this.readonlyState( match.state ), match.config );
 		if ( endResult ) {
+			if ( this.config.hooks?.onEnd ) {
+				match.state.data = this.config.hooks.onEnd(
+					this.readonlyState( match.state ),
+					match.config,
+					endResult
+				);
+			}
 			match.status = "COMPLETED";
 			match.result = endResult;
 			this.logger.info( "Match completed!" );
@@ -193,7 +219,6 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 
 		await this.updateMatch( match );
 		await this.syncMatch( match );
-		await this.runAfterMove( match );
 		await this.processBotMoves( match );
 
 		this.logger.debug( "<< processMove()" );
@@ -223,42 +248,13 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 		this.logger.debug( "<< addBots()" );
 	}
 
-	private async runAfterMove( match: Match<G, C> ): Promise<boolean> {
-		if ( !this.config.afterMove ) {
-			return false;
-		}
-
-		const result = this.config.afterMove( this.readonlyState( match.state ), match.config );
-		if ( result === undefined ) {
-			return false;
-		}
-
-		await this.delay( 5000 );
-		match.state.data = result;
-
-		const endResult = this.config.endIf( this.readonlyState( match.state ), match.config );
-		if ( endResult ) {
-			match.status = "COMPLETED";
-			match.result = endResult;
-		}
-
-		await this.updateMatch( match );
-		await this.syncMatch( match );
-		return true;
-	}
-
 	private async processBotMoves( match: Match<G, C> ) {
 		if ( !this.config.botMove ) {
 			return;
 		}
 
-		let skipDelay = false;
-
 		while ( match.status === "IN_PROGRESS" && match.players[ match.state.ctx.currentPlayer ].isBot ) {
-			if ( !skipDelay ) {
-				await this.delay( 5000 );
-			}
-			skipDelay = false;
+			await this.delay( 5000 );
 
 			const playerId = match.state.ctx.currentPlayer;
 			const { moveType, input } = this.config.botMove(
@@ -266,25 +262,47 @@ export class GameEngine<G, M extends Record<string, unknown>, C extends BaseGame
 				match.config
 			);
 
+			if ( this.config.hooks?.beforeMove ) {
+				this.config.hooks.beforeMove(
+					this.readonlyState( match.state ),
+					match.config,
+					playerId,
+					String( moveType )
+				);
+			}
+
 			const move = this.config.moves[ moveType ];
 			const readonlyState = this.readonlyState( match.state );
 			move.validate( readonlyState, match.config, playerId, input );
 
 			match.state.data = move.execute( readonlyState, match.config, playerId, input );
+
+			if ( this.config.hooks?.afterMove ) {
+				match.state.data = this.config.hooks.afterMove(
+					this.readonlyState( match.state ),
+					match.config,
+					playerId,
+					String( moveType )
+				);
+			}
+
 			match.state.ctx.currentPlayer = this.resolveNextPlayer( match.state );
 
 			const endResult = this.config.endIf( this.readonlyState( match.state ), match.config );
 			if ( endResult ) {
+				if ( this.config.hooks?.onEnd ) {
+					match.state.data = this.config.hooks.onEnd(
+						this.readonlyState( match.state ),
+						match.config,
+						endResult
+					);
+				}
 				match.status = "COMPLETED";
 				match.result = endResult;
 			}
 
 			await this.updateMatch( match );
 			await this.syncMatch( match );
-
-			if ( this.config.afterMove ) {
-				skipDelay = await this.runAfterMove( match );
-			}
 		}
 	}
 

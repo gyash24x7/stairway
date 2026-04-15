@@ -36,14 +36,52 @@ export const callbreakEngine = new GameEngine( {
 
 	setup: ( _config: CallbreakConfig ): CallbreakData => ( { deals: [], scores: {} } ),
 
-	onJoin: ( state, _config, playerId ) => {
-		state.data.scores[ playerId ] = 0;
-		return state.data;
-	},
+	hooks: {
+		onJoin: ( state, _config, playerId ) => {
+			state.data.scores[ playerId ] = 0;
+			return state.data;
+		},
 
-	onStart: ( state, _config ) => {
-		state.data.deals.unshift( createNewDeal( state.ctx.players ) );
-		return state.data;
+		onStart: ( state, _config ) => {
+			state.data.deals.unshift( createNewDeal( state.ctx.players ) );
+			return state.data;
+		},
+
+		afterMove: ( state, config, _playerId, _moveType ) => {
+			const activeDeal = state.data.deals[ 0 ];
+			if ( !activeDeal ) {
+				return state.data;
+			}
+
+			const activeTrick = activeDeal.tricks[ 0 ];
+			if ( !activeTrick?.winner ) {
+				return state.data;
+			}
+
+			const completedTricks = activeDeal.tricks.filter( t => !!t.winner ).length;
+
+			if ( completedTricks >= TRICKS_PER_DEAL ) {
+				for ( const pid of state.ctx.players ) {
+					const score = calculateRoundScore( activeDeal.declarations[ pid ], activeDeal.wins[ pid ] );
+					activeDeal.scores[ pid ] = score;
+					state.data.scores[ pid ] = ( state.data.scores[ pid ] ?? 0 ) + score;
+				}
+
+				const completedDeals = state.data.deals.filter( d =>
+					Object.values( d.scores ).some( s => s !== 0 )
+				).length;
+
+				if ( completedDeals < config.dealCount ) {
+					const startIdx = state.ctx.players.indexOf( activeDeal.startingPlayer );
+					const nextStarter = state.ctx.players[ ( startIdx + 1 ) % state.ctx.players.length ];
+					state.data.deals.unshift( createNewDeal( state.ctx.players, nextStarter ) );
+				}
+			} else {
+				activeDeal.tricks.unshift( emptyTrick( activeTrick.winner ) );
+			}
+
+			return state.data;
+		}
 	},
 
 	moves: {
@@ -144,42 +182,6 @@ export const callbreakEngine = new GameEngine( {
 				return state.data;
 			}
 		}
-	},
-
-	afterMove: ( state, config ) => {
-		const activeDeal = state.data.deals[ 0 ];
-		if ( !activeDeal ) {
-			return undefined;
-		}
-
-		const activeTrick = activeDeal.tricks[ 0 ];
-		if ( !activeTrick?.winner ) {
-			return undefined;
-		}
-
-		const completedTricks = activeDeal.tricks.filter( t => !!t.winner ).length;
-
-		if ( completedTricks >= TRICKS_PER_DEAL ) {
-			for ( const pid of state.ctx.players ) {
-				const score = calculateRoundScore( activeDeal.declarations[ pid ], activeDeal.wins[ pid ] );
-				activeDeal.scores[ pid ] = score;
-				state.data.scores[ pid ] = ( state.data.scores[ pid ] ?? 0 ) + score;
-			}
-
-			const completedDeals = state.data.deals.filter( d =>
-				Object.values( d.scores ).some( s => s !== 0 )
-			).length;
-
-			if ( completedDeals < config.dealCount ) {
-				const startIdx = state.ctx.players.indexOf( activeDeal.startingPlayer );
-				const nextStarter = state.ctx.players[ ( startIdx + 1 ) % state.ctx.players.length ];
-				state.data.deals.unshift( createNewDeal( state.ctx.players, nextStarter ) );
-			}
-		} else {
-			activeDeal.tricks.unshift( emptyTrick( activeTrick.winner ) );
-		}
-
-		return state.data;
 	},
 
 	botMove: ( state, config ) => {

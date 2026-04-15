@@ -117,21 +117,23 @@ export const kingdominoEngine = new GameEngine( {
 		selectionOrder: []
 	} ),
 
-	onJoin: ( state, config, playerId ) => {
-		const castleIndex = Object.keys( state.data.playerData ).length;
-		state.data.playerData[ playerId ] = {
-			board: createBoard( CASTLES[ castleIndex ], config.boardSize ),
-			queue: [],
-			score: { regions: [], points: 0 }
-		};
-		return state.data;
-	},
+	hooks: {
+		onJoin: ( state, config, playerId ) => {
+			const castleIndex = Object.keys( state.data.playerData ).length;
+			state.data.playerData[ playerId ] = {
+				board: createBoard( CASTLES[ castleIndex ], config.boardSize ),
+				queue: [],
+				score: { regions: [], points: 0 }
+			};
+			return state.data;
+		},
 
-	onStart: ( state, _config ) => {
-		state.data.draft = drawDraft( state.data.deck );
-		state.data.phase = "select";
-		state.data.selectionOrder = shuffle( [ ...state.ctx.players ] );
-		return state.data;
+		onStart: ( state, _config ) => {
+			state.data.draft = drawDraft( state.data.deck );
+			state.data.phase = "select";
+			state.data.selectionOrder = shuffle( [ ...state.ctx.players ] );
+			return state.data;
+		}
 	},
 
 	moves: {
