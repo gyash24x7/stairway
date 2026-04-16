@@ -1,7 +1,7 @@
-import type { MatchId } from "@/shared/engine/types";
+import type { GameId } from "@/shared/engine/types";
 import { useEffect, useRef, useState } from "react";
 
-export function useSync<T>( game: string, matchId: MatchId, initialState: T ) {
+export function useSync<T>( game: string, matchId: GameId, initialState: T ) {
 	const socketUrl = `/sync/${ game }/${ matchId }`;
 	const wsRef = useRef<WebSocket>( null );
 	const [ state, setState ] = useState( initialState );

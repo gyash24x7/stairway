@@ -17,15 +17,13 @@ export type BaseGameConfig = { playerCount: number; autoStart?: boolean };
 export type GameState<G> = { data: G; ctx: GameContext; }
 
 export type ValidateFn<G, C extends BaseGameConfig, I = unknown> = (
-	state: GameState<G>,
-	config: C,
+	data: ReadonlyGameData<G, C>,
 	playerId: PlayerId,
 	input: I
 ) => void;
 
 export type ExecuteFn<G, C extends BaseGameConfig, I = unknown> = (
-	state: GameState<G>,
-	config: C,
+	data: ReadonlyGameData<G, C>,
 	playerId: PlayerId,
 	input: I
 ) => G;
@@ -35,76 +33,58 @@ export type Move<G, C extends BaseGameConfig, I = unknown> = {
 	execute: ExecuteFn<G, C, I>;
 };
 
-export type MoveMap<G, C extends BaseGameConfig, M extends Record<string, unknown>> = {
+type BaseMoveMap = Record<string, unknown>;
+export type MoveMap<G, C extends BaseGameConfig, M extends BaseMoveMap> = {
 	[K in keyof M]: Move<G, C, M[K]>;
 };
 
-export type MoveType<M extends Record<string, unknown>> = keyof M;
+export type MoveType<M extends BaseMoveMap> = keyof M;
 
-export type GetNextPlayerFn<G> = ( state: GameState<G> ) => PlayerId;
+export type GetNextPlayerFn<G> = ( state: G, context: GameContext ) => PlayerId;
 export type GetNextPlayer<G> = "round-robin" | GetNextPlayerFn<G>;
 
-export type BotMoveFn<G, C, M extends Record<string, unknown>> = ( state: GameState<G>, config: C ) => {
+export type BotMoveFn<G, C extends BaseGameConfig, M extends BaseMoveMap> = ( data: ReadonlyGameData<G, C> ) => {
 	moveType: keyof M;
 	input: M[keyof M]
 };
 
-export type GameHooks<G, C extends BaseGameConfig> = {
-	onJoin?: ( state: GameState<G>, config: C, playerId: PlayerId ) => G;
-	onStart?: ( state: GameState<G>, config: C ) => G;
-	beforeMove?: ( state: GameState<G>, config: C, playerId: PlayerId, moveType: string ) => void;
-	afterMove?: ( state: GameState<G>, config: C, playerId: PlayerId, moveType: string ) => G;
-	onEnd?: ( state: GameState<G>, config: C, result: EndResult ) => G;
+export type GameHooks<G, M extends BaseMoveMap, C extends BaseGameConfig> = {
+	onJoin?: ( data: ReadonlyGameData<G, C>, playerId: PlayerId ) => G;
+	onStart?: ( data: ReadonlyGameData<G, C> ) => G;
+	beforeMove?: ( data: ReadonlyGameData<G, C>, playerId: PlayerId, moveType: keyof M ) => G;
+	afterMove?: ( data: ReadonlyGameData<G, C>, playerId: PlayerId, moveType: keyof M ) => G;
+	onEnd?: ( data: ReadonlyGameData<G, C> ) => G;
 };
 
-export type GameConfig<G, M extends Record<string, unknown> = {}, C extends BaseGameConfig = BaseGameConfig, V = G> = {
+export type GameStructure<G, M extends BaseMoveMap = {}, C extends BaseGameConfig = BaseGameConfig, V = G> = {
 	name: string;
 	setup: ( input: C ) => G;
-	hooks?: GameHooks<G, C>;
+	hooks?: GameHooks<G, M, C>;
 	moves: MoveMap<G, C, M>;
-	endIf: ( state: GameState<G>, config: C ) => EndResult | undefined;
+	endIf: ( data: ReadonlyGameData<G, C> ) => boolean;
 	getNextPlayer: GetNextPlayer<G>;
 	botMove?: BotMoveFn<V, C, M>;
-	playerView: ( data: G, config: C, playerId: PlayerId ) => V;
+	playerView: ( data: ReadonlyGameData<G, C>, playerId: PlayerId ) => V;
 }
 
-export type MatchId = string;
+export type GameId = string;
+export type BaseGameData = { id: GameId; code: string };
 
-export type EndResult =
-	| { victory: true; winner: PlayerId }
-	| { victory: false };
+export type GameStatus = "CREATED" | "PLAYERS_READY" | "IN_PROGRESS" | "COMPLETED";
 
-export type MatchStatus = "CREATED" | "PLAYERS_READY" | "IN_PROGRESS" | "COMPLETED";
+export type ReadonlyGameData<G, C extends BaseGameConfig> = {
+	state: G;
+	config: Readonly<C>;
+	context: Readonly<GameContext>;
+}
 
-export type Match<G, C extends BaseGameConfig> = {
-	id: MatchId;
-	code: string;
+export type GameData<G, C extends BaseGameConfig> = {
 	config: C;
+	state: G;
+	context: GameContext;
+	status: GameStatus;
 	players: Record<PlayerId, BasePlayerInfo>;
-	state: GameState<G>;
-	status: MatchStatus;
-	result?: EndResult;
 }
 
-export type MatchData = {
-	id: string;
-	game: string;
-	code: string;
-	config: string;
-	state: string;
-	status: MatchStatus;
-	result: string | null;
-	createdAt: string;
-	players: MatchPlayerData[];
-};
-
-export type MatchPlayerData = {
-	isBot: 0 | 1;
-	name: string;
-	avatar: string;
-	matchId: string;
-	playerId: string;
-}
-
-export type MatchIdInput = { matchId: MatchId };
-export type JoinMatchInput = { code: string };
+export type GameIdInput = { gameId: GameId };
+export type JoinGameInput = { code: string };
