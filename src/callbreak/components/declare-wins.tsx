@@ -21,7 +21,7 @@ import { useCounter } from "usehooks-ts";
 export function DeclareWins() {
 	const [ open, setOpen ] = useState( false );
 	const { count: wins, increment, decrement, reset } = useCounter( 2 );
-	const { match } = useCallbreak();
+	const { game } = useCallbreak();
 
 	const declareWinsFn = useServerFn( declareWins );
 	const { isPending, mutate } = useMutation( {
@@ -34,8 +34,8 @@ export function DeclareWins() {
 
 	const handleClick = () => mutate( {
 		data: {
-			dealId: match.state.data.activeDeal?.id!,
-			matchId: match.id,
+			dealId: game.state.activeDeal?.id!,
+			gameId: game.id,
 			wins
 		}
 	} );

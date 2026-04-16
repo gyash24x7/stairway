@@ -1,6 +1,6 @@
 "use client";
 
-import { createMatch } from "@/callbreak/core/actions";
+import { createGame } from "@/callbreak/core/actions";
 import { CreateGame } from "@/shared/components/create-game";
 import { CARD_SUITS, type CardSuit } from "@/shared/utils/cards";
 import { cn } from "@/shared/utils/cn";
@@ -10,11 +10,11 @@ import { useState } from "react";
 export function CallbreakCreateGame() {
 	const [ trumpSuit, setTrumpSuit ] = useState<CardSuit>();
 	const [ dealCount, setDealCount ] = useState<5 | 9 | 13>();
-	const createMatchFn = useServerFn( createMatch );
+	const createGameFn = useServerFn( createGame );
 
-	const createCallbreakMatch = async () => {
+	const createCallbreakGame = async () => {
 		if ( !!dealCount && !!trumpSuit ) {
-			return createMatchFn( { data: { dealCount, trumpSuit } } );
+			return createGameFn( { data: { dealCount, trumpSuit } } );
 		}
 		return "";
 	};
@@ -23,7 +23,7 @@ export function CallbreakCreateGame() {
 		<CreateGame
 			game={ "callbreak" }
 			disabled={ !trumpSuit || !dealCount }
-			createMatch={ createCallbreakMatch }
+			createGame={ createCallbreakGame }
 		>
 			<div className={ "flex flex-col gap-2" }>
 				<label className={ "text-sm text-muted-foreground" }>Trump Suit</label>

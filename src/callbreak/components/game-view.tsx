@@ -14,38 +14,38 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 export function GameView() {
-	const { match } = useCallbreak();
+	const { game } = useCallbreak();
 	const addBotsFn = useServerFn( addBots );
 	const { isPending, mutate } = useMutation( { mutationFn: addBotsFn } );
 
-	const handleAddBots = () => mutate( { data: { matchId: match.id } } );
+	const handleAddBots = () => mutate( { data: { gameId: game.id } } );
 
 	return (
 		<div className={ `flex flex-col gap-3 w-full max-w-6xl justify-self-center` }>
 			<GameInfo
-				code={ match.code }
+				code={ game.code }
 				name={ "callbreak" }
-				completed={ match.status === "COMPLETED" }
+				completed={ game.status === "COMPLETED" }
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>TRUMP</p>
-						<RCardSuit suit={ match.config.trumpSuit } large themed/>
+						<RCardSuit suit={ game.config.trumpSuit } large themed/>
 					</div>
 				}
 			/>
 			<div className={ "flex flex-col gap-3 mb-52" }>
-				{ match.status === "COMPLETED" && <Scores/> }
-				{ match.state.data.activeDeal && <DealView/> }
-				{ !match.state.data.activeDeal && (
+				{ game.status === "COMPLETED" && <Scores/> }
+				{ game.state.activeDeal && <DealView/> }
+				{ !game.state.activeDeal && (
 					<div className={ "flex gap-3" }>
-						{ Object.values( match.players ).map( player => (
+						{ Object.values( game.players ).map( player => (
 							<div key={ player.id } className={ "min-w-1/4" }>
 								<RPlayerInfo player={ player }/>
 							</div>
 						) ) }
 					</div>
 				) }
-				{ match.status === "CREATED" && (
+				{ game.status === "CREATED" && (
 					<div className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
 						<Spinner size={ "xl" }/>
 						<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
@@ -57,7 +57,7 @@ export function GameView() {
 					</div>
 				) }
 			</div>
-			{ match.status !== "COMPLETED" && <ActionPanel/> }
+			{ game.status !== "COMPLETED" && <ActionPanel/> }
 		</div>
 	);
 }

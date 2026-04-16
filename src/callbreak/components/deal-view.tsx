@@ -10,9 +10,9 @@ import { cn } from "@/shared/utils/cn";
 import { Fragment } from "react";
 
 export function DealView() {
-	const { match } = useCallbreak();
-	const currentTurn = match.state.ctx.currentPlayer;
-	const activeTrick = match.state.data.activeDeal?.tricks[ 0 ];
+	const { game } = useCallbreak();
+	const currentTurn = game.context.currentPlayer;
+	const activeTrick = game.state.activeDeal?.tricks[ 0 ];
 	const allPlayersPlayed = Object.keys( activeTrick?.cards ?? {} ).length === PLAYER_COUNT;
 
 	return (
@@ -21,7 +21,7 @@ export function DealView() {
 				<Scores/>
 				<div className={ "grid gap-3 grid-cols-2" }>
 					{ [ 0, 1, 3, 2 ].map( ( idx ) => {
-						const playerId = match.state.ctx.players[ idx ];
+						const playerId = game.context.players[ idx ];
 						const cardId = activeTrick?.cards[ playerId ];
 						const isRightSide = idx === 1 || idx === 2;
 						return (
@@ -34,7 +34,7 @@ export function DealView() {
 									isRightSide ? "flex-row-reverse" : "flex-row"
 								) }
 							>
-								<RPlayerInfo player={ match.players[ playerId ] } key={ playerId }/>
+								<RPlayerInfo player={ game.players[ playerId ] } key={ playerId }/>
 								{ cardId && <RCard cardId={ cardId } focused/> }
 								{ !cardId && !!activeTrick && (
 									<div

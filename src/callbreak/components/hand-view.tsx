@@ -7,12 +7,12 @@ import { type CardId, getSortedHand } from "@/shared/utils/cards";
 import { cn } from "@/shared/utils/cn";
 
 export function HandView() {
-	const { match, isMyTurn, selectCard, selectedCard } = useCallbreak();
-	const deal = match.state.data.activeDeal;
+	const { game, isMyTurn, selectCard, selectedCard } = useCallbreak();
+	const deal = game.state.activeDeal;
 	const trick = deal?.tricks[ 0 ];
 
 	const isSelectionAllowed = ( cardId: CardId ) => {
-		const playableCards = getPlayableCards( match.state.data.hand, match.config.trumpSuit, trick! );
+		const playableCards = getPlayableCards( game.state.hand, game.config.trumpSuit, trick! );
 		return playableCards.includes( cardId );
 	};
 
@@ -35,7 +35,7 @@ export function HandView() {
 				isTrickActive && isMyTurn && "border-accent border-4"
 			) }
 		>
-			{ getSortedHand( match.state.data.hand ).map( ( cardId ) => (
+			{ getSortedHand( game.state.hand ).map( ( cardId ) => (
 				<div
 					key={ cardId }
 					className={ cn( "cursor-pointer p-1 z-10", cardId === selectedCard && "bg-accent rounded-md" ) }
@@ -51,7 +51,7 @@ export function HandView() {
 					<RCard cardId={ cardId }/>
 				</div>
 			) ) }
-			{ match.state.data.hand.length === 0 && <h2>NO CARDS LEFT</h2> }
+			{ game.state.hand.length === 0 && <h2>NO CARDS LEFT</h2> }
 		</div>
 	);
 }

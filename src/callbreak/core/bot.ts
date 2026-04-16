@@ -1,6 +1,5 @@
 import type { CallbreakConfig, CallbreakPlayerView, Trick } from "@/callbreak/core/types";
 import { getCardValue, getPlayableCards } from "@/callbreak/core/utils";
-import type { GameState } from "@/shared/engine/types";
 import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@/shared/utils/cards";
 
 function sortByValue( cards: CardId[] ): CardId[] {
@@ -30,10 +29,10 @@ function getSuitCards( hand: CardId[], suit: string ) {
 	return hand.filter( c => getCardSuit( c ) === suit );
 }
 
-export function botDeclare( state: GameState<CallbreakPlayerView>, config: CallbreakConfig ) {
+export function botDeclare( state: CallbreakPlayerView, config: CallbreakConfig ) {
 	let score = 0;
 
-	const trumpCards = getSuitCards( state.data.hand, config.trumpSuit );
+	const trumpCards = getSuitCards( state.hand, config.trumpSuit );
 	const suits = [ "C", "S", "H", "D" ].filter( s => s !== config.trumpSuit );
 
 	// High trumps are near-guaranteed wins
@@ -48,7 +47,7 @@ export function botDeclare( state: GameState<CallbreakPlayerView>, config: Callb
 
 	// Non-trump aces
 	for ( const suit of suits ) {
-		const suitCards = getSuitCards( state.data.hand, suit );
+		const suitCards = getSuitCards( state.hand, suit );
 		if ( suitCards.length === 0 ) {
 			// Void suit with trumps means we can trump in
 			if ( trumpCards.length > 0 ) {
@@ -70,16 +69,16 @@ export function botDeclare( state: GameState<CallbreakPlayerView>, config: Callb
 	return Math.max( 1, Math.floor( score ) );
 }
 
-export function botPlayCard( state: GameState<CallbreakPlayerView>, config: CallbreakConfig ) {
-	const activeDeal = state.data.activeDeal!;
+export function botPlayCard( state: CallbreakPlayerView, config: CallbreakConfig ) {
+	const activeDeal = state.activeDeal!;
 	const activeTrick = activeDeal.tricks[ 0 ];
-	const playable = getPlayableCards( state.data.hand, config.trumpSuit, activeTrick );
+	const playable = getPlayableCards( state.hand, config.trumpSuit, activeTrick );
 
 	if ( playable.length === 1 ) {
 		return playable[ 0 ];
 	}
 
-	const needsMore = activeDeal.declarations[ state.data.playerId ] - activeDeal.wins[ state.data.playerId ] > 0;
+	const needsMore = activeDeal.declarations[ state.playerId ] - activeDeal.wins[ state.playerId ] > 0;
 	const trickCards = Object.values( activeTrick.cards );
 	const isLeading = trickCards.length === 0;
 

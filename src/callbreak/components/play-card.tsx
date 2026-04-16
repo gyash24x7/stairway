@@ -8,8 +8,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 export function PlayCard() {
-	const { match, selectedCard, selectCard } = useCallbreak();
-	const hasTrickWinner = !!match.state.data.activeDeal?.tricks[ 0 ]?.winner;
+	const { game, selectedCard, selectCard } = useCallbreak();
+	const hasTrickWinner = !!game.state.activeDeal?.tricks[ 0 ]?.winner;
 
 	const playCardFn = useServerFn( playCard );
 	const { isPending, mutate } = useMutation( {
@@ -19,8 +19,8 @@ export function PlayCard() {
 
 	const handleClick = () => mutate( {
 		data: {
-			dealId: match.state.data.activeDeal?.id!,
-			matchId: match.id,
+			dealId: game.state.activeDeal?.id!,
+			gameId: game.id,
 			cardId: selectedCard!
 		}
 	} );

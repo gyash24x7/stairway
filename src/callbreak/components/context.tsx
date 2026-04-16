@@ -1,12 +1,12 @@
 "use client";
 
-import type { CallbreakMatch } from "@/callbreak/core/types";
+import type { CallbreakGame } from "@/callbreak/core/types";
 import { useSync } from "@/shared/engine/hooks";
 import type { CardId } from "@/shared/utils/cards";
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
 
 type CallbreakContextValue = {
-	match: CallbreakMatch;
+	game: CallbreakGame;
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
@@ -22,13 +22,13 @@ export function useCallbreak() {
 	return ctx;
 }
 
-type CallbreakProviderProps = { data: CallbreakMatch; children: ReactNode; };
+type CallbreakProviderProps = { data: CallbreakGame; children: ReactNode; };
 
 export function CallbreakProvider( { data, children }: CallbreakProviderProps ) {
-	const match = useSync( "callbreak", data.id, data );
+	const game = useSync( "callbreak", data.id, data );
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
 
-	const isMyTurn = match.status === "IN_PROGRESS" && match.state.ctx.currentPlayer === match.state.data.playerId;
+	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
 
 	const selectCard = useCallback(
 		( cardId: CardId ) => {
@@ -42,7 +42,7 @@ export function CallbreakProvider( { data, children }: CallbreakProviderProps ) 
 	);
 
 	return (
-		<CallbreakContext value={ { match, isMyTurn, selectCard, selectedCard } }>
+		<CallbreakContext value={ { game, isMyTurn, selectCard, selectedCard } }>
 			{ children }
 		</CallbreakContext>
 	);

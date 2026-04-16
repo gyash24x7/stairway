@@ -6,8 +6,8 @@ import { PlayCard } from "@/callbreak/components/play-card";
 import { cn } from "@/shared/utils/cn";
 
 export function ActionPanel() {
-	const { isMyTurn, match } = useCallbreak();
-	const phase = match.state.data.activeDeal?.phase;
+	const { isMyTurn, game } = useCallbreak();
+	const phase = game.state.activeDeal?.phase;
 
 	return (
 		<div
