@@ -1,10 +1,10 @@
 import { FishProvider } from "@/fish/components/context";
 import { GameView } from "@/fish/components/game-view";
-import { getMatch } from "@/fish/core/actions";
+import { getGame } from "@/fish/core/actions";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute( "/fish/$matchId" )( {
-	loader: ( { params } ) => getMatch( { data: { matchId: params.matchId } } ),
+export const Route = createFileRoute( "/fish/$gameId" )( {
+	loader: ( { params } ) => getGame( { data: { gameId: params.gameId } } ),
 	component: () => {
 		const data = Route.useLoaderData();
 

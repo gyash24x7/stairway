@@ -2,17 +2,13 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import { createLogger } from "@/shared/utils/logger";
 import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
+import { getTicTacToeStub } from "@/shared/utils/stub";
 import { TicTacToeEngine } from "@/tictactoe/core/engine";
 import { createServerFn } from "@tanstack/react-start";
-import { env } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "TicTacToe:Actions" );
-
-function getStub( gameId: string ) {
-	return env.TICTACTOE_ENGINE.get( env.TICTACTOE_ENGINE.idFromName( gameId ) );
-}
 
 export const getGame = createServerFn( { method: "GET" } )
 	.inputValidator( v.object( { gameId: v.string() } ) )
@@ -20,11 +16,11 @@ export const getGame = createServerFn( { method: "GET" } )
 	.handler( async ( { context: { authInfo, game } } ) => {
 		logger.debug( ">> getGame()" );
 
-		const stub = getStub( game.id );
-		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+		const stub = getTicTacToeStub( game.id );
+		const { config, players, state, status, context } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: game.id, code: game.code, config, players, state, status };
+		return { id: game.id, code: game.code, config, players, state, status, context };
 	} );
 
 export const createGame = createServerFn( { method: "POST" } )
@@ -34,7 +30,7 @@ export const createGame = createServerFn( { method: "POST" } )
 
 		const [ game ] = await db.insert( games ).values( { game: TicTacToeEngine.NAME } ).returning();
 
-		const stub = getStub( game.id );
+		const stub = getTicTacToeStub( game.id );
 		await stub.initialize( { playerCount: 2 } );
 		await stub.join( authInfo );
 
@@ -57,7 +53,7 @@ export const joinGame = createServerFn( { method: "POST" } )
 			throw new Response( null, { status: 404 } );
 		}
 
-		const stub = getStub( game.id );
+		const stub = getTicTacToeStub( game.id );
 		await stub.join( authInfo );
 
 		logger.debug( "<< joinGame()" );
@@ -73,7 +69,7 @@ export const placeMove = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> placeMove()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getTicTacToeStub( input.gameId );
 		await stub.processMove( authInfo.id, "place", input );
 
 		logger.debug( "<< placeMove()" );

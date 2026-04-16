@@ -3,15 +3,15 @@ import { CreateGame } from "@/shared/components/create-game";
 import { JoinGame } from "@/shared/components/join-game";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
-import { createMatch, joinMatch } from "@/tictactoe/core/actions";
+import { createGame, joinGame } from "@/tictactoe/core/actions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 
 export const Route = createFileRoute( "/tictactoe/" )( {
 	component: () => {
 		const { authInfo } = useAuth();
-		const createMatchFn = useServerFn( createMatch );
-		const joinMatchFn = useServerFn( joinMatch );
+		const createGameFn = useServerFn( createGame );
+		const joinGameFn = useServerFn( joinGame );
 
 		return (
 			<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
@@ -19,7 +19,7 @@ export const Route = createFileRoute( "/tictactoe/" )( {
 				<p>
 					Wordle is word game where players have six attempts to guess a
 					five-letter word, with feedback given for each guess in the form of
-					coloured tiles indicating when letters match or occupy the correct
+					coloured tiles indicating when letters game or occupy the correct
 					position.
 				</p>
 				<p>
@@ -30,8 +30,8 @@ export const Route = createFileRoute( "/tictactoe/" )( {
 				{ !!authInfo
 					? (
 						<div className={ "flex gap-5 justify-self-center w-full" }>
-							<CreateGame game={ "tictactoe" } createMatch={ createMatchFn }/>
-							<JoinGame game={ "tictactoe" } joinMatch={ joinMatchFn }/>
+							<CreateGame game={ "tictactoe" } createGame={ createGameFn }/>
+							<JoinGame game={ "tictactoe" } joinGame={ joinGameFn }/>
 						</div>
 					)
 					: (
@@ -42,6 +42,6 @@ export const Route = createFileRoute( "/tictactoe/" )( {
 				}
 				<Separator/>
 			</div>
-		)
+		);
 	}
 } );

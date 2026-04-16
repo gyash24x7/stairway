@@ -1,6 +1,6 @@
 import { useAuth } from "@/auth/components/context";
 import { FishCreateGame as CreateGame } from "@/fish/components/create-game";
-import { joinMatch } from "@/fish/core/actions";
+import { joinGame } from "@/fish/core/actions";
 import { JoinGame } from "@/shared/components/join-game";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
@@ -23,7 +23,7 @@ export const Route = createFileRoute( "/fish/" )( {
 					? (
 						<div className={ "flex gap-5 justify-self-center w-full" }>
 							<CreateGame/>
-							<JoinGame game={ "fish" } joinMatch={ joinMatch }/>
+							<JoinGame game={ "fish" } joinGame={ joinGame }/>
 						</div>
 					)
 					: (

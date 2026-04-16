@@ -2,12 +2,7 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": [ "@tsconfig/node24", "@tsconfig/strictest" ],
 	"compilerOptions": {
-		"types": [
-			"@cloudflare/workers-types",
-			"node",
-			"vite/client",
-			"./env.d.ts"
-		],
+		"types": [ "node", "vite/client", "./env.d.ts" ],
 		"target": "esnext",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
 		"module": "esnext",

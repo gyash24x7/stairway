@@ -14,7 +14,7 @@ export const Route = createFileRoute( "/wordle/" )( {
 				<p>
 					Wordle is word game where players have six attempts to guess a
 					five-letter word, with feedback given for each guess in the form of
-					coloured tiles indicating when letters match or occupy the correct
+					coloured tiles indicating when letters game or occupy the correct
 					position.
 				</p>
 				<p>

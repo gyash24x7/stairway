@@ -4,17 +4,13 @@ import { games } from "@/shared/db/schema";
 import { CARD_SUITS, SORTED_DECK } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
 import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
+import { getCallbreakStub } from "@/shared/utils/stub";
 import { SplendorEngine } from "@/splendor/core/engine";
 import { createServerFn } from "@tanstack/react-start";
-import { env } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "Callbreak:Actions" );
-
-function getStub( gameId: string ) {
-	return env.CALLBREAK_ENGINE.get( env.CALLBREAK_ENGINE.idFromName( gameId ) );
-}
 
 export const getGame = createServerFn( { method: "GET" } )
 	.inputValidator( v.object( { gameId: v.string() } ) )
@@ -22,11 +18,11 @@ export const getGame = createServerFn( { method: "GET" } )
 	.handler( async ( { context: { authInfo, game } } ) => {
 		logger.debug( ">> getGame()" );
 
-		const stub = getStub( game.id );
-		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+		const stub = getCallbreakStub( game.id );
+		const { config, players, state, status, context } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: game.id, code: game.code, config, players, state, status };
+		return { id: game.id, code: game.code, config, players, state, status, context };
 	} );
 
 export const createGame = createServerFn( { method: "POST" } )
@@ -41,7 +37,7 @@ export const createGame = createServerFn( { method: "POST" } )
 		const [ game ] = await db.insert( games ).values( { game: SplendorEngine.NAME } ).returning();
 		const config = { playerCount: 4, dealCount, trumpSuit };
 
-		const stub = getStub( game.id );
+		const stub = getCallbreakStub( game.id );
 		await stub.initialize( { ...config, autoStart: true } );
 		await stub.join( authInfo );
 
@@ -64,7 +60,7 @@ export const joinGame = createServerFn( { method: "POST" } )
 			throw new Response( null, { status: 404 } );
 		}
 
-		const stub = getStub( game.id );
+		const stub = getCallbreakStub( game.id );
 		await stub.join( authInfo );
 
 		logger.debug( "<< joinGame()" );
@@ -77,7 +73,7 @@ export const addBots = createServerFn( { method: "POST" } )
 	.handler( async ( { data: { gameId } } ) => {
 		logger.debug( ">> addBots()" );
 
-		const stub = getStub( gameId );
+		const stub = getCallbreakStub( gameId );
 		await stub.addBots();
 
 		logger.debug( "<< addBots()" );
@@ -93,7 +89,7 @@ export const declareWins = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> declareWins()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getCallbreakStub( input.gameId );
 		await stub.processMove( authInfo.id, "declareWins", input );
 
 		logger.debug( "<< declareWins()" );
@@ -109,7 +105,7 @@ export const playCard = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> playCard()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getCallbreakStub( input.gameId );
 		await stub.processMove( authInfo.id, "playCard", input );
 
 		logger.debug( "<< playCard()" );

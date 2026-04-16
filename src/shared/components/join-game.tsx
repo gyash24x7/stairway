@@ -9,15 +9,15 @@ import { useState } from "react";
 
 type JoinGameProps = {
 	game: string;
-	joinMatch: ( opts: { data: JoinGameInput } ) => Promise<string>;
+	joinGame: ( opts: { data: JoinGameInput } ) => Promise<string>;
 };
 
-export function JoinGame( { game, joinMatch }: JoinGameProps ) {
+export function JoinGame( { game, joinGame }: JoinGameProps ) {
 	const [ joinCode, setJoinCode ] = useState( "" );
 	const [ error, setError ] = useState( "" );
 	const navigate = useNavigate();
 	const { isPending, mutate } = useMutation( {
-		mutationFn: joinMatch,
+		mutationFn: joinGame,
 		onSuccess: matchId => navigate( { to: `/${ game }/${ matchId }` } )
 	} );
 

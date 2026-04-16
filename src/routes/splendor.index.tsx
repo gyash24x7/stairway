@@ -3,7 +3,7 @@ import { JoinGame } from "@/shared/components/join-game";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
 import { SplendorCreateGame as CreateGame } from "@/splendor/components/create-game";
-import { joinMatch } from "@/splendor/core/actions";
+import { joinGame } from "@/splendor/core/actions";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute( "/splendor/" )( {
@@ -19,7 +19,7 @@ export const Route = createFileRoute( "/splendor/" )( {
 					first to reach 15 prestige points to win.
 				</p>
 				<p>
-					Supports 2 to 4 players. Create a match and share the code with
+					Supports 2 to 4 players. Create a game and share the code with
 					friends to play together.
 				</p>
 				<Separator/>
@@ -27,7 +27,7 @@ export const Route = createFileRoute( "/splendor/" )( {
 					? (
 						<div className={ "flex gap-5 justify-self-center w-full" }>
 							<CreateGame/>
-							<JoinGame game={ "splendor" } joinMatch={ joinMatch }/>
+							<JoinGame game={ "splendor" } joinGame={ joinGame }/>
 						</div>
 					)
 					: (

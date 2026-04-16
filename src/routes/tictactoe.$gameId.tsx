@@ -1,10 +1,10 @@
 import { TicTacToeProvider } from "@/tictactoe/components/context";
 import { GameView } from "@/tictactoe/components/game-view";
-import { getMatch } from "@/tictactoe/core/actions";
+import { getGame } from "@/tictactoe/core/actions";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute( "/tictactoe/$matchId" )( {
-	loader: ( { params } ) => getMatch( { data: { matchId: params.matchId } } ),
+export const Route = createFileRoute( "/tictactoe/$gameId" )( {
+	loader: ( { params } ) => getGame( { data: { gameId: params.gameId } } ),
 	component: () => {
 		const data = Route.useLoaderData();
 

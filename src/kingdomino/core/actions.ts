@@ -21,10 +21,10 @@ export const getGame = createServerFn( { method: "GET" } )
 		logger.debug( ">> getGame()" );
 
 		const stub = getStub( game.id );
-		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+		const { config, players, state, status, context } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: game.id, code: game.code, config, players, state, status };
+		return { id: game.id, code: game.code, config, players, state, status, context };
 	} );
 
 export const createGame = createServerFn( { method: "POST" } )

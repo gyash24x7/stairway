@@ -1,10 +1,10 @@
 import { KingdominoProvider } from "@/kingdomino/components/context";
 import { GameView } from "@/kingdomino/components/game-view";
-import { getMatch } from "@/kingdomino/core/actions";
+import { getGame } from "@/kingdomino/core/actions";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute( "/kingdomino/$matchId" )( {
-	loader: ( { params } ) => getMatch( { data: { matchId: params.matchId } } ),
+export const Route = createFileRoute( "/kingdomino/$gameId" )( {
+	loader: ( { params } ) => getGame( { data: { gameId: params.gameId } } ),
 	component: () => {
 		const data = Route.useLoaderData();
 

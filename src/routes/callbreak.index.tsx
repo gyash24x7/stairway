@@ -1,6 +1,6 @@
 import { useAuth } from "@/auth/components/context";
 import { CallbreakCreateGame as CreateGame } from "@/callbreak/components/create-game";
-import { joinMatch } from "@/callbreak/core/actions";
+import { joinGame } from "@/callbreak/core/actions";
 import { JoinGame } from "@/shared/components/join-game";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
@@ -23,7 +23,7 @@ export const Route = createFileRoute( "/callbreak/" )( {
 					? (
 						<div className={ "flex gap-5 justify-self-center w-full" }>
 							<CreateGame/>
-							<JoinGame game={ "callbreak" } joinMatch={ joinMatch }/>
+							<JoinGame game={ "callbreak" } joinGame={ joinGame }/>
 						</div>
 					)
 					: (

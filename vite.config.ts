@@ -8,6 +8,11 @@ export default defineConfig( {
 	resolve: {
 		tsconfigPaths: true
 	},
+	build: {
+		rolldownOptions: {
+			external: [ "cloudflare:workers" ]
+		}
+	},
 	plugins: [
 		tailwindcss(),
 		cloudflare( { viteEnvironment: { name: "ssr" } } ),

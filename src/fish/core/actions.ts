@@ -5,16 +5,12 @@ import { games } from "@/shared/db/schema";
 import { SORTED_DECK } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
 import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
+import { getFishStub } from "@/shared/utils/stub";
 import { createServerFn } from "@tanstack/react-start";
-import { env } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "Fish:Actions" );
-
-function getStub( gameId: string ) {
-	return env.FISH_ENGINE.get( env.FISH_ENGINE.idFromName( gameId ) );
-}
 
 export const getGame = createServerFn( { method: "GET" } )
 	.inputValidator( v.object( { gameId: v.string() } ) )
@@ -22,11 +18,11 @@ export const getGame = createServerFn( { method: "GET" } )
 	.handler( async ( { context: { authInfo, game } } ) => {
 		logger.debug( ">> getGame()" );
 
-		const stub = getStub( game.id );
-		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+		const stub = getFishStub( game.id );
+		const { config, players, state, status, context } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: game.id, code: game.code, config, players, state, status };
+		return { id: game.id, code: game.code, config, players, state, status, context };
 	} );
 
 export const createGame = createServerFn( { method: "POST" } )
@@ -42,7 +38,7 @@ export const createGame = createServerFn( { method: "POST" } )
 		const [ game ] = await db.insert( games ).values( { game: FishEngine.NAME } ).returning();
 		const config = buildConfig( input );
 
-		const stub = getStub( game.id );
+		const stub = getFishStub( game.id );
 		await stub.initialize( config );
 		await stub.join( authInfo );
 
@@ -65,7 +61,7 @@ export const joinGame = createServerFn( { method: "POST" } )
 			throw new Response( null, { status: 404 } );
 		}
 
-		const stub = getStub( game.id );
+		const stub = getFishStub( game.id );
 		await stub.join( authInfo );
 
 		logger.debug( "<< joinGame()" );
@@ -78,7 +74,7 @@ export const addBots = createServerFn( { method: "POST" } )
 	.handler( async ( { data: { gameId } } ) => {
 		logger.debug( ">> addBots()" );
 
-		const stub = getStub( gameId );
+		const stub = getFishStub( gameId );
 		await stub.addBots();
 
 		logger.debug( "<< addBots()" );
@@ -93,7 +89,7 @@ export const createTeams = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> createTeams()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getFishStub( input.gameId );
 		await stub.processMove( authInfo.id, "createTeams", input );
 		await stub.start();
 
@@ -110,7 +106,7 @@ export const askCard = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> askCard()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getFishStub( input.gameId );
 		await stub.processMove( authInfo.id, "askCard", input );
 
 		logger.debug( "<< askCard()" );
@@ -125,7 +121,7 @@ export const claimBook = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> claimBook()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getFishStub( input.gameId );
 		await stub.processMove( authInfo.id, "claimBook", input );
 
 		logger.debug( "<< claimBook()" );
@@ -140,7 +136,7 @@ export const transferTurn = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> transferTurn()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getFishStub( input.gameId );
 		await stub.processMove( authInfo.id, "transferTurn", input );
 
 		logger.debug( "<< transferTurn()" );

@@ -2,16 +2,12 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import { createLogger } from "@/shared/utils/logger";
 import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
+import { getWordleStub } from "@/shared/utils/stub";
 import { WordleEngine } from "@/wordle/core/engine";
 import { createServerFn } from "@tanstack/react-start";
-import { env } from "cloudflare:workers";
 import * as v from "valibot";
 
 const logger = createLogger( "Wordle:Actions" );
-
-function getStub( gameId: string ) {
-	return env.WORDLE_ENGINE.get( env.WORDLE_ENGINE.idFromName( gameId ) );
-}
 
 export const getGame = createServerFn( { method: "GET" } )
 	.inputValidator( v.object( { gameId: v.string() } ) )
@@ -19,11 +15,11 @@ export const getGame = createServerFn( { method: "GET" } )
 	.handler( async ( { context: { authInfo, game } } ) => {
 		logger.debug( ">> getGame()" );
 
-		const stub = getStub( game.id );
-		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+		const stub = getWordleStub( game.id );
+		const { config, players, state, status, context } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: game.id, code: game.code, config, players, state, status };
+		return { id: game.id, code: game.code, config, players, state, status, context };
 	} );
 
 export const createGame = createServerFn( { method: "POST" } )
@@ -37,7 +33,7 @@ export const createGame = createServerFn( { method: "POST" } )
 
 		const [ game ] = await db.insert( games ).values( { game: WordleEngine.NAME } ).returning();
 
-		const stub = getStub( game.id );
+		const stub = getWordleStub( game.id );
 		await stub.initialize( { playerCount: 1, wordCount, wordLength } );
 		await stub.join( authInfo );
 
@@ -51,7 +47,7 @@ export const submitGuess = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> submitGuess()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getWordleStub( input.gameId );
 		await stub.processMove( authInfo.id, "guess", input );
 
 		logger.debug( "<< submitGuess()" );
@@ -63,7 +59,7 @@ export const getWords = createServerFn( { method: "GET" } )
 	.handler( async ( { data: { gameId } } ) => {
 		logger.debug( ">> getWords()" );
 
-		const stub = getStub( gameId );
+		const stub = getWordleStub( gameId );
 		const { state } = await stub.getGameData();
 
 		logger.debug( "<< getWords()" );

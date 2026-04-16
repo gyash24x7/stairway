@@ -1,6 +1,6 @@
 import { useAuth } from "@/auth/components/context";
 import { KingdominoCreateGame as CreateGame } from "@/kingdomino/components/create-game";
-import { joinMatch } from "@/kingdomino/core/actions";
+import { joinGame } from "@/kingdomino/core/actions";
 import { JoinGame } from "@/shared/components/join-game";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
@@ -23,7 +23,7 @@ export const Route = createFileRoute( "/kingdomino/" )( {
 					? (
 						<div className={ "flex gap-5 justify-self-center w-full" }>
 							<CreateGame/>
-							<JoinGame game={ "kingdomino" } joinMatch={ joinMatch }/>
+							<JoinGame game={ "kingdomino" } joinGame={ joinGame }/>
 						</div>
 					)
 					: (

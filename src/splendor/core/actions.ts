@@ -2,18 +2,14 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import { createLogger } from "@/shared/utils/logger";
 import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
+import { getSplendorStub } from "@/shared/utils/stub";
 import { SplendorEngine } from "@/splendor/core/engine";
 import { GEMS } from "@/splendor/core/utils";
 import { createServerFn } from "@tanstack/react-start";
-import { env } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "Splendor:Actions" );
-
-function getStub( gameId: string ) {
-	return env.SPLENDOR_ENGINE.get( env.SPLENDOR_ENGINE.idFromName( gameId ) );
-}
 
 export const getGame = createServerFn( { method: "GET" } )
 	.inputValidator( v.object( { gameId: v.string() } ) )
@@ -21,11 +17,11 @@ export const getGame = createServerFn( { method: "GET" } )
 	.handler( async ( { context: { authInfo, game } } ) => {
 		logger.debug( ">> getGame()" );
 
-		const stub = getStub( game.id );
-		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+		const stub = getSplendorStub( game.id );
+		const { config, players, state, status, context } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: game.id, code: game.code, config, players, state, status };
+		return { id: game.id, code: game.code, config, players, state, status, context };
 	} );
 
 export const createGame = createServerFn( { method: "POST" } )
@@ -39,7 +35,7 @@ export const createGame = createServerFn( { method: "POST" } )
 
 		const [ game ] = await db.insert( games ).values( { game: SplendorEngine.NAME } ).returning();
 
-		const stub = getStub( game.id );
+		const stub = getSplendorStub( game.id );
 		await stub.initialize( { ...config, autoStart: true } );
 		await stub.join( authInfo );
 
@@ -62,7 +58,7 @@ export const joinGame = createServerFn( { method: "POST" } )
 			throw new Response( null, { status: 404 } );
 		}
 
-		const stub = getStub( game.id );
+		const stub = getSplendorStub( game.id );
 		await stub.join( authInfo );
 
 		logger.debug( "<< joinGame()" );
@@ -79,7 +75,7 @@ export const pickTokens = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> pickTokens()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getSplendorStub( input.gameId );
 		await stub.processMove( authInfo.id, "pickTokens", input );
 
 		logger.debug( "<< pickTokens()" );
@@ -96,7 +92,7 @@ export const reserveCard = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> reserveCard()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getSplendorStub( input.gameId );
 		await stub.processMove( authInfo.id, "reserveCard", input );
 
 		logger.debug( "<< reserveCard()" );
@@ -112,7 +108,7 @@ export const purchaseCard = createServerFn( { method: "POST" } )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> purchaseCard()" );
 
-		const stub = getStub( input.gameId );
+		const stub = getSplendorStub( input.gameId );
 		await stub.processMove( authInfo.id, "purchaseCard", input );
 
 		logger.debug( "<< purchaseCard()" );
