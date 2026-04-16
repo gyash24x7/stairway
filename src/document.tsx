@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
+import { requestInfo } from "rwsdk/worker";
 import styles from "./styles.css?url";
 
-export function Document( { children }: { children: ReactNode } ) {
+export function Document( props: { children: ReactNode } ) {
+	const initialTheme = requestInfo.ctx.theme;
+	const initialThemeMode = requestInfo.ctx.themeMode;
+
 	return (
 		<html lang="en">
 		<head>
@@ -12,8 +16,19 @@ export function Document( { children }: { children: ReactNode } ) {
 			<link rel="stylesheet" href={ styles }/>
 		</head>
 		<body>
-		{ children }
+		{ props.children }
 		<script>import("/src/client.tsx")</script>
+		<script
+			dangerouslySetInnerHTML={ {
+				__html: `
+              (function() {
+                const theme = "${ initialTheme }";
+                const themeMode = "${ initialThemeMode }";
+                document.body.classList.add(theme, themeMode);
+              })();
+            `
+			} }
+		/>
 		</body>
 		</html>
 	);
