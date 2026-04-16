@@ -7,8 +7,7 @@
 			"./types/vite.d.ts",
 			"./types/env.d.ts",
 			"./types/css.d.ts",
-			"node",
-			"@cloudflare/workers-types"
+			"node"
 		],
 		"target": "esnext",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
