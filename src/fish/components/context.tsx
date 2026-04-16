@@ -1,11 +1,11 @@
 "use client";
 
-import type { FishMatch } from "@/fish/core/types";
+import type { FishGame } from "@/fish/core/types";
 import { useSync } from "@/shared/engine/hooks";
 import { createContext, type ReactNode, useContext } from "react";
 
 type FishContextValue = {
-	match: FishMatch;
+	game: FishGame;
 	isMyTurn: boolean;
 };
 
@@ -19,15 +19,15 @@ export function useFish() {
 	return ctx;
 }
 
-type FishProviderProps = { data: FishMatch; children: ReactNode; };
+type FishProviderProps = { data: FishGame; children: ReactNode; };
 
 export function FishProvider( { data, children }: FishProviderProps ) {
-	const match = useSync( "fish", data.id, data );
+	const game = useSync( "fish", data.id, data );
 
-	const isMyTurn = match.status === "IN_PROGRESS" && match.state.ctx.currentPlayer === match.state.data.playerId;
+	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
 
 	return (
-		<FishContext value={ { match, isMyTurn } }>
+		<FishContext value={ { game, isMyTurn } }>
 			{ children }
 		</FishContext>
 	);

@@ -6,8 +6,8 @@ import { getBookDisplayString } from "@/fish/core/utils";
 import { cn } from "@/shared/utils/cn";
 
 export function BooksTracker() {
-	const { match } = useFish();
-	const { teams } = match.state.data;
+	const { game } = useFish();
+	const { teams } = game.state;
 
 	const bookOwners = new Map<Book, { teamName: string; teamId: string }>();
 	for ( const team of Object.values( teams ) ) {
@@ -28,7 +28,7 @@ export function BooksTracker() {
 		<div className={ "bg-background rounded-md p-3 md:p-4 w-full" }>
 			<h2 className={ "text-sm md:text-base font-semibold mb-3" }>BOOKS WON</h2>
 			<div className={ "grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2" }>
-				{ match.config.books.map( book => {
+				{ game.config.books.map( book => {
 					const owner = bookOwners.get( book );
 					return (
 						<div
@@ -42,7 +42,7 @@ export function BooksTracker() {
 								"text-sm md:text-base font-bold",
 								owner ? "text-white" : "opacity-40"
 							) }>
-								{ getBookDisplayString( book, match.config.type ) }
+								{ getBookDisplayString( book, game.config.type ) }
 							</p>
 							{ owner && (
 								<p className={ "text-xs text-white/80 truncate" }>

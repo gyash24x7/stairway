@@ -20,13 +20,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 export function TransferTurn() {
-	const { match } = useFish();
+	const { game } = useFish();
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ showDialog, setShowDialog ] = useState( false );
 
-	const teammatesWithCards = getTeammates( match.state.data.teams, match.state.data.playerId )
-		.filter( pid => match.state.data.cardCounts[ pid ] > 0 );
+	const teammatesWithCards = getTeammates( game.state.teams, game.state.playerId )
+		.filter( pid => game.state.cardCounts[ pid ] > 0 );
 
 	const openDialog = () => setShowDialog( true );
 	const closeDialog = () => setShowDialog( false );
@@ -47,7 +47,7 @@ export function TransferTurn() {
 
 	const handleClick = () => {
 		if ( selectedPlayer ) {
-			mutate( { data: { matchId: match.id, transferTo: selectedPlayer } } );
+			mutate( { data: { gameId: game.id, transferTo: selectedPlayer } } );
 		}
 	};
 
@@ -71,7 +71,7 @@ export function TransferTurn() {
 								selectedPlayer === pid && "border-accent bg-accent/20"
 							) }
 						>
-							<RPlayerInfo player={ match.players[ pid ] }/>
+							<RPlayerInfo player={ game.players[ pid ] }/>
 						</div>
 					) ) }
 				</div>

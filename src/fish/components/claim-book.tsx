@@ -26,21 +26,21 @@ import { useState } from "react";
 import { useStep } from "usehooks-ts";
 
 export function ClaimBook() {
-	const { match } = useFish();
+	const { game } = useFish();
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );
 	const [ showDialog, setShowDialog ] = useState( false );
 
-	const teamMates = getTeammates( match.state.data.teams, match.state.data.playerId );
-	const selectedBookDisplayString = selectedBook ? getBookDisplayString( selectedBook, match.config.type ) : "";
+	const teamMates = getTeammates( game.state.teams, game.state.playerId );
+	const selectedBookDisplayString = selectedBook ? getBookDisplayString( selectedBook, game.config.type ) : "";
 
 	const missingCards = selectedBook
-		? getMissingCards( match.state.data.hand, selectedBook, match.config.type )
+		? getMissingCards( game.state.hand, selectedBook, game.config.type )
 		: [];
 
 	const allAssigned = selectedBook
-		&& claim.size === getCardsOfBook( selectedBook, match.config.type ).length;
+		&& claim.size === getCardsOfBook( selectedBook, game.config.type ).length;
 
 	const openDialog = () => {
 		setShowDialog( true );
@@ -61,8 +61,8 @@ export function ClaimBook() {
 			const book = value as Book;
 			setSelectedBook( book );
 			const newClaim = new Map<CardId, PlayerId>();
-			getCardsOfBook( book, match.config.type, match.state.data.hand ).forEach( cardId => {
-				newClaim.set( cardId, match.state.data.playerId );
+			getCardsOfBook( book, game.config.type, game.state.hand ).forEach( cardId => {
+				newClaim.set( cardId, game.state.playerId );
 			} );
 			setClaim( newClaim );
 			goToNextStep();
@@ -91,7 +91,7 @@ export function ClaimBook() {
 		if ( selectedBook && allAssigned ) {
 			mutate( {
 				data: {
-					matchId: match.id,
+					gameId: game.id,
 					claim: claim.entries().reduce(
 						( acc, [ cardId, playerId ] ) => {
 							acc[ cardId ] = playerId;
@@ -120,7 +120,7 @@ export function ClaimBook() {
 				</DialogHeader>
 				{ currentStep === 1 && (
 					<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
-						{ Array.from( getBooksInHand( match.state.data.hand, match.config.type ) ).map( ( item ) => (
+						{ Array.from( getBooksInHand( game.state.hand, game.config.type ) ).map( ( item ) => (
 							<div
 								key={ item }
 								onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
@@ -131,7 +131,7 @@ export function ClaimBook() {
 								) }
 							>
 								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
-									{ getBookDisplayString( item, match.config.type ) }
+									{ getBookDisplayString( item, game.config.type ) }
 								</h1>
 							</div>
 						) ) }
@@ -153,7 +153,7 @@ export function ClaimBook() {
 												claim.get( cardId ) === pid && "border-accent bg-accent/20"
 											) }
 										>
-											<RPlayerInfo player={ match.players[ pid ] }/>
+											<RPlayerInfo player={ game.players[ pid ] }/>
 										</div>
 									) ) }
 								</div>
@@ -172,7 +172,7 @@ export function ClaimBook() {
 							<div key={ cardId } className={ "flex items-center rounded-md px-3 py-2 gap-2" }>
 								<RCard cardId={ cardId }/>
 								<ArrowBigRightDashIcon className={ "w-10 h-10 text-accent" }/>
-								<RPlayerInfo player={ match.players[ playerId ] }/>
+								<RPlayerInfo player={ game.players[ playerId ] }/>
 							</div>
 						) ) }
 					</div>

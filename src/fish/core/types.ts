@@ -1,4 +1,4 @@
-import type { Match, MatchId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameData, GameData, GameId, PlayerId } from "@/shared/engine/types";
 import type { CardId } from "@/shared/utils/cards";
 
 export type BookType = "NORMAL" | "CANADIAN";
@@ -85,6 +85,7 @@ export type FishData = {
 	askHistory: Ask[];
 	claimHistory: Claim[];
 	transferHistory: Transfer[];
+	winningTeam?: TeamId;
 };
 
 export type FishConfig = {
@@ -102,7 +103,7 @@ export type FishPlayerView = Omit<FishData, "hands"> & {
 	hand: CardId[];
 };
 
-export type FishMatch = Match<FishPlayerView, FishConfig>;
+export type FishGame = BaseGameData & GameData<FishPlayerView, FishConfig>;
 
 export type WeightedBook = {
 	book: Book;
@@ -136,29 +137,30 @@ export type TeammateSignal = {
 	confidence: number;
 };
 
-export type CreateGameInput = {
-	playerCount: PlayerCount;
-	type: BookType;
-	teamCount: TeamCount;
-};
-
 export type CreateTeamsInput = {
 	teams: Record<string, PlayerId[]>;
-	matchId: MatchId;
+	gameId: GameId;
 };
 
 export type AskCardInput = {
-	matchId: MatchId;
+	gameId: GameId;
 	from: PlayerId;
 	cardId: CardId;
 };
 
 export type ClaimBookInput = {
 	claim: Partial<Record<CardId, string>>;
-	matchId: MatchId;
+	gameId: GameId;
 };
 
 export type TransferTurnInput = {
 	transferTo: PlayerId;
-	matchId: MatchId;
+	gameId: GameId;
+};
+
+export type FishMoves = {
+	createTeams: CreateTeamsInput;
+	askCard: AskCardInput;
+	claimBook: ClaimBookInput;
+	transferTurn: TransferTurnInput;
 };

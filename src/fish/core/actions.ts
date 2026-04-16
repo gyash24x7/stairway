@@ -1,52 +1,35 @@
-import { requireAuthInfo } from "@/auth/core/utils";
-import { fishEngine } from "@/fish/core/engine";
-import type { Book, FishConfig } from "@/fish/core/types";
-import { CANADIAN_BOOKS, NORMAL_BOOKS } from "@/fish/core/utils";
+import { FishEngine } from "@/fish/core/engine";
+import { buildConfig } from "@/fish/core/utils";
+import { db } from "@/shared/db/client";
+import { games } from "@/shared/db/schema";
 import { SORTED_DECK } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
+import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
 import { createServerFn } from "@tanstack/react-start";
+import { env } from "cloudflare:workers";
+import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "Fish:Actions" );
 
-function buildConfig( input: {
-	playerCount: 4 | 6 | 8;
-	type: "NORMAL" | "CANADIAN";
-	teamCount: 2 | 3 | 4;
-} ): FishConfig {
-	const isCanadian = input.type === "CANADIAN";
-	const books = ( isCanadian
-		? Object.keys( CANADIAN_BOOKS )
-		: Object.keys( NORMAL_BOOKS ) ) as Book[];
-
-	return {
-		type: input.type,
-		playerCount: input.playerCount,
-		teamCount: input.teamCount,
-		deckType: isCanadian ? 48 : 52,
-		books,
-		bookSize: isCanadian ? 6 : 4,
-		autoStart: false
-	};
+function getStub( gameId: string ) {
+	return env.FISH_ENGINE.get( env.FISH_ENGINE.idFromName( gameId ) );
 }
 
-export const getMatch = createServerFn( { method: "GET" } )
-	.inputValidator( v.object( { matchId: v.string() } ) )
-	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { matchId }, context: { authInfo } } ) => {
-		logger.debug( ">> getMatch()" );
+export const getGame = createServerFn( { method: "GET" } )
+	.inputValidator( v.object( { gameId: v.string() } ) )
+	.middleware( [ requireAuthInfo, requireGame( FishEngine.NAME ) ] )
+	.handler( async ( { context: { authInfo, game } } ) => {
+		logger.debug( ">> getGame()" );
 
-		const match = await fishEngine.getMatch( matchId );
-		if ( !match ) {
-			throw new Response( null, { status: 404 } );
-		}
+		const stub = getStub( game.id );
+		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
 
-		const data = fishEngine.getPlayerView( match, authInfo.id );
-		logger.debug( "<< getMatch()" );
-		return { ...match, state: { ...match.state, data } };
+		logger.debug( "<< getGame()" );
+		return { id: game.id, code: game.code, config, players, state, status };
 	} );
 
-export const createMatch = createServerFn( { method: "POST" } )
+export const createGame = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
 		playerCount: v.picklist( [ 4, 6, 8 ] ),
 		type: v.picklist( [ "NORMAL", "CANADIAN" ] ),
@@ -54,93 +37,111 @@ export const createMatch = createServerFn( { method: "POST" } )
 	} ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
-		logger.debug( ">> createMatch()" );
+		logger.debug( ">> createGame()" );
 
+		const [ game ] = await db.insert( games ).values( { game: FishEngine.NAME } ).returning();
 		const config = buildConfig( input );
-		const match = await fishEngine.createMatch( config );
-		await fishEngine.joinMatch( match.code, authInfo );
 
-		logger.debug( "<< createMatch()" );
-		return match.id;
+		const stub = getStub( game.id );
+		await stub.initialize( config );
+		await stub.join( authInfo );
+
+		logger.debug( "<< createGame()" );
+		return game.id;
 	} );
 
-export const joinMatch = createServerFn( { method: "POST" } )
+export const joinGame = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( { code: v.string() } ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: { code }, context: { authInfo } } ) => {
-		logger.debug( ">> joinMatch()" );
+		logger.debug( ">> joinGame()" );
 
-		const match = await fishEngine.joinMatch( code, authInfo );
+		const game = await db.query.games.findFirst( {
+			where: and( eq( games.code, code ), eq( games.game, FishEngine.NAME ) )
+		} );
 
-		logger.debug( "<< joinMatch()" );
-		return match.id;
+		if ( !game ) {
+			logger.error( "Game not found!" );
+			throw new Response( null, { status: 404 } );
+		}
+
+		const stub = getStub( game.id );
+		await stub.join( authInfo );
+
+		logger.debug( "<< joinGame()" );
+		return game.id;
 	} );
 
 export const addBots = createServerFn( { method: "POST" } )
-	.inputValidator( v.object( { matchId: v.string() } ) )
-	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { matchId } } ) => {
+	.inputValidator( v.object( { gameId: v.string() } ) )
+	.middleware( [ requireAuthInfo, requireGame( FishEngine.NAME ) ] )
+	.handler( async ( { data: { gameId } } ) => {
 		logger.debug( ">> addBots()" );
 
-		await fishEngine.addBots( matchId );
+		const stub = getStub( gameId );
+		await stub.addBots();
 
 		logger.debug( "<< addBots()" );
 	} );
 
 export const createTeams = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		teams: v.record( v.string(), v.array( v.string() ) )
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( FishEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> createTeams()" );
 
-		await fishEngine.processMove( input.matchId, authInfo.id, "createTeams", input );
-		await fishEngine.startMatch( input.matchId );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "createTeams", input );
+		await stub.start();
 
 		logger.debug( "<< createTeams()" );
 	} );
 
 export const askCard = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		from: v.string(),
 		cardId: v.picklist( SORTED_DECK )
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( FishEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> askCard()" );
 
-		await fishEngine.processMove( input.matchId, authInfo.id, "askCard", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "askCard", input );
 
 		logger.debug( "<< askCard()" );
 	} );
 
 export const claimBook = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		claim: v.record( v.picklist( SORTED_DECK ), v.string() )
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( FishEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> claimBook()" );
 
-		await fishEngine.processMove( input.matchId, authInfo.id, "claimBook", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "claimBook", input );
 
 		logger.debug( "<< claimBook()" );
 	} );
 
 export const transferTurn = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		transferTo: v.string()
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( FishEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> transferTurn()" );
 
-		await fishEngine.processMove( input.matchId, authInfo.id, "transferTurn", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "transferTurn", input );
 
 		logger.debug( "<< transferTurn()" );
 	} );

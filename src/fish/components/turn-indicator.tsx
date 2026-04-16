@@ -4,17 +4,16 @@ import { useFish } from "@/fish/components/context";
 import { cn } from "@/shared/utils/cn";
 
 export function TurnIndicator() {
-	const { match, isMyTurn } = useFish();
-	const { data } = match.state;
+	const { game, isMyTurn } = useFish();
 
-	const currentPlayerName = match.players[ match.state.ctx.currentPlayer ].name.toUpperCase();
+	const currentPlayerName = game.players[ game.context.currentPlayer ].name.toUpperCase();
 
-	const lastClaim = data.claimHistory[ 0 ];
-	const canTransfer = data.lastMoveType === "claim"
+	const lastClaim = game.state.claimHistory[ 0 ];
+	const canTransfer = game.state.lastMoveType === "claim"
 		&& lastClaim?.success
-		&& lastClaim.playerId === data.playerId;
+		&& lastClaim.playerId === game.state.playerId;
 
-	const hasCards = data.hand.length > 0;
+	const hasCards = game.state.hand.length > 0;
 
 	let hint = "";
 	if ( isMyTurn ) {

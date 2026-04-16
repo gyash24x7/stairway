@@ -9,7 +9,7 @@ import type {
 	WeightedTransfer
 } from "@/fish/core/types";
 import { getBookForCard, getBooksInHand, getCardsOfBook, getMissingCards, getTeammates } from "@/fish/core/utils";
-import type { GameState, PlayerId } from "@/shared/engine/types";
+import type { PlayerId } from "@/shared/engine/types";
 import type { CardId } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
 
@@ -28,15 +28,15 @@ const logger = createLogger( "Fish:Bot" );
  * @returns list of detected teammate signals
  * @public
  */
-export function detectTeammateSignals( state: GameState<FishPlayerView>, config: FishConfig ): TeammateSignal[] {
+export function detectTeammateSignals( state: FishPlayerView, config: FishConfig ): TeammateSignal[] {
 	logger.debug( ">> detectTeammateSignals()" );
 
-	const teammates = getTeammates( state.data.teams, state.data.playerId );
+	const teammates = getTeammates( state.teams, state.playerId );
 	if ( teammates.length === 0 ) {
 		return [];
 	}
 
-	const recentAsks = state.data.askHistory.slice( 0, SIGNAL_WINDOW );
+	const recentAsks = state.askHistory.slice( 0, SIGNAL_WINDOW );
 	const signals = new Map<CardId, TeammateSignal>();
 
 	// askHistory is newest-first; iterate from oldest to newest to find A1 → A2 pairs
@@ -56,7 +56,7 @@ export function detectTeammateSignals( state: GameState<FishPlayerView>, config:
 			const a2 = recentAsks[ j ];
 
 			// Must be a different teammate (not A1's asker, not the bot)
-			if ( a2.playerId === a1.playerId || a2.playerId === state.data.playerId ) {
+			if ( a2.playerId === a1.playerId || a2.playerId === state.playerId ) {
 				continue;
 			}
 			if ( !teammates.includes( a2.playerId ) ) {
@@ -76,14 +76,14 @@ export function detectTeammateSignals( state: GameState<FishPlayerView>, config:
 			}
 
 			// Validate: card X must still be trackable and T2 must be a possible owner
-			const possibleOwners = state.data.cardLocations[ a1.cardId ];
+			const possibleOwners = state.cardLocations[ a1.cardId ];
 			if ( !possibleOwners || possibleOwners.length <= 1 ) {
 				continue;
 			}
 			if ( !possibleOwners.includes( a2.playerId ) ) {
 				continue;
 			}
-			if ( state.data.hand.includes( a1.cardId ) ) {
+			if ( state.hand.includes( a1.cardId ) ) {
 				continue;
 			}
 
@@ -121,16 +121,17 @@ export function detectTeammateSignals( state: GameState<FishPlayerView>, config:
  *
  * @param state GameState for the bot
  * @param config Game Config
+ * @param signals Signals by teammates
  * @returns sorted list of weighted book suggestions.
  * @public
  */
-export function suggestBooks( state: GameState<FishPlayerView>, config: FishConfig, signals: TeammateSignal[] = [] ) {
+export function suggestBooks( state: FishPlayerView, config: FishConfig, signals: TeammateSignal[] = [] ) {
 	logger.debug( ">> suggestBooks()" );
 
-	const booksInGame = new Set( Object.keys( state.data.cardLocations )
+	const booksInGame = new Set( Object.keys( state.cardLocations )
 		.map( k => getBookForCard( k as CardId, config.type ) ) );
 	const validBooks = Array.from( booksInGame );
-	const teamMates = getTeammates( state.data.teams, state.data.playerId );
+	const teamMates = getTeammates( state.teams, state.playerId );
 	const signalMap = new Map( signals.map( s => [ s.cardId, s ] ) );
 	const weightedBooks: WeightedBook[] = [];
 
@@ -140,9 +141,9 @@ export function suggestBooks( state: GameState<FishPlayerView>, config: FishConf
 		const cardsInBook = getCardsOfBook( book, config.type );
 
 		for ( const cardId of cardsInBook ) {
-			const possibleOwners = state.data.cardLocations[ cardId ]!;
+			const possibleOwners = state.cardLocations[ cardId ]!;
 
-			if ( state.data.hand.includes( cardId ) ) {
+			if ( state.hand.includes( cardId ) ) {
 				weightedBook.weight += MAX_WEIGHT;
 				continue;
 			}
@@ -182,14 +183,20 @@ export function suggestBooks( state: GameState<FishPlayerView>, config: FishConf
  * @param books weighted book suggestions to consider.
  * @param state GameState for the bot
  * @param config Game Config
+ * @param signals Signals by teammates
  * @returns ordered list of weighted ask proposals.
  * @public
  */
-export function suggestAsks( books: WeightedBook[], state: GameState<FishPlayerView>, config: FishConfig, signals: TeammateSignal[] = [] ) {
+export function suggestAsks(
+	books: WeightedBook[],
+	state: FishPlayerView,
+	config: FishConfig,
+	signals: TeammateSignal[] = []
+) {
 	logger.debug( ">> suggestAsks()" );
 
-	const teamMates = getTeammates( state.data.teams, state.data.playerId );
-	const booksInHand = getBooksInHand( state.data.hand, config.type );
+	const teamMates = getTeammates( state.teams, state.playerId );
+	const booksInHand = getBooksInHand( state.hand, config.type );
 	// Asking requires holding at least one card from the book
 	const askableBooks = books.filter( ( { book } ) => booksInHand.includes( book ) );
 	const signalMap = new Map( signals.map( s => [ s.cardId, s ] ) );
@@ -207,13 +214,13 @@ export function suggestAsks( books: WeightedBook[], state: GameState<FishPlayerV
 	const weightedAsks: WeightedAsk[] = [];
 
 	for ( const { book } of askableBooks ) {
-		const missingCards = getMissingCards( state.data.hand, book, config.type );
+		const missingCards = getMissingCards( state.hand, book, config.type );
 		const asksForBook: WeightedAsk[] = [];
 
 		for ( const cardId of missingCards ) {
-			const possibleOwners = state.data.cardLocations[ cardId ]!;
+			const possibleOwners = state.cardLocations[ cardId ]!;
 			for ( const pid of possibleOwners ) {
-				if ( pid !== state.data.playerId && !teamMates.includes( pid ) && state.data.cardCounts[ pid ] > 0 ) {
+				if ( pid !== state.playerId && !teamMates.includes( pid ) && state.cardCounts[ pid ] > 0 ) {
 					let weight = MAX_WEIGHT / possibleOwners.length;
 
 					const signal = signalMap.get( cardId );
@@ -257,16 +264,16 @@ export function suggestAsks( books: WeightedBook[], state: GameState<FishPlayerV
  * The bot should signal back by asking from the same book on its turn.
  * Only considers the most recent few asks to keep signals timely.
  */
-function detectBooksToSignal( state: GameState<FishPlayerView>, config: FishConfig ): Set<Book> {
-	const teammates = getTeammates( state.data.teams, state.data.playerId );
+function detectBooksToSignal( state: FishPlayerView, config: FishConfig ): Set<Book> {
+	const teammates = getTeammates( state.teams, state.playerId );
 	const booksToSignal = new Set<Book>();
 
 	// Look at recent asks (scan up to 6 most recent for freshness)
-	const recentAsks = state.data.askHistory.slice( 0, 6 );
+	const recentAsks = state.askHistory.slice( 0, 6 );
 
 	for ( const ask of recentAsks ) {
 		// Teammate failed to get a card that the bot currently holds
-		if ( !ask.success && teammates.includes( ask.playerId ) && state.data.hand.includes( ask.cardId ) ) {
+		if ( !ask.success && teammates.includes( ask.playerId ) && state.hand.includes( ask.cardId ) ) {
 			booksToSignal.add( getBookForCard( ask.cardId, config.type ) );
 		}
 	}
@@ -280,29 +287,29 @@ function detectBooksToSignal( state: GameState<FishPlayerView>, config: FishConf
  * Returns undefined if the bot should move on to a different book.
  */
 function getActiveBook(
-	state: GameState<FishPlayerView>,
+	state: FishPlayerView,
 	config: FishConfig,
 	teamMates: PlayerId[]
 ): Book | undefined {
 	// Find the bot's most recent ask
-	const lastAsk = state.data.askHistory.find( a => a.playerId === state.data.playerId );
+	const lastAsk = state.askHistory.find( a => a.playerId === state.playerId );
 	if ( !lastAsk ) {
 		return undefined;
 	}
 
 	const book = getBookForCard( lastAsk.cardId, config.type );
-	const missingCards = getMissingCards( state.data.hand, book, config.type );
+	const missingCards = getMissingCards( state.hand, book, config.type );
 
 	// Check if any opponent could still hold a missing card from this book
 	const opponentMayHoldCard = missingCards.some( cardId => {
-		const possibleOwners = state.data.cardLocations[ cardId ];
+		const possibleOwners = state.cardLocations[ cardId ];
 		if ( !possibleOwners ) {
 			return false;
 		}
 		return possibleOwners.some(
-			pid => pid !== state.data.playerId
+			pid => pid !== state.playerId
 				&& !teamMates.includes( pid )
-				&& state.data.cardCounts[ pid ] > 0
+				&& state.cardCounts[ pid ] > 0
 		);
 	} );
 
@@ -314,12 +321,12 @@ function getActiveBook(
  * inferred from ask history. A player who asked for a card from book B
  * must hold at least one other card from book B (game rule).
  */
-function getKnownBookHolders( state: GameState<FishPlayerView>, config: FishConfig ): Map<PlayerId, Set<Book>> {
+function getKnownBookHolders( state: FishPlayerView, config: FishConfig ): Map<PlayerId, Set<Book>> {
 	const holders = new Map<PlayerId, Set<Book>>();
 
-	for ( const ask of state.data.askHistory ) {
+	for ( const ask of state.askHistory ) {
 		// The asker must hold at least one card from this book
-		if ( state.data.cardCounts[ ask.playerId ] > 0 ) {
+		if ( state.cardCounts[ ask.playerId ] > 0 ) {
 			const book = getBookForCard( ask.cardId, config.type );
 			if ( !holders.has( ask.playerId ) ) {
 				holders.set( ask.playerId, new Set() );
@@ -340,13 +347,19 @@ function getKnownBookHolders( state: GameState<FishPlayerView>, config: FishConf
  * @param books weighted book suggestions to consider.
  * @param state GameState for the bot
  * @param config Game Config
+ * @param signals Signals by teammates
  * @returns list of viable claims ordered by confidence weight.
  * @public
  */
-export function suggestClaims( books: WeightedBook[], state: GameState<FishPlayerView>, config: FishConfig, signals: TeammateSignal[] = [] ) {
+export function suggestClaims(
+	books: WeightedBook[],
+	state: FishPlayerView,
+	config: FishConfig,
+	signals: TeammateSignal[] = []
+) {
 	logger.debug( ">> suggestClaims()" );
 
-	const teamMates = getTeammates( state.data.teams, state.data.playerId );
+	const teamMates = getTeammates( state.teams, state.playerId );
 	const signalMap = new Map( signals.map( s => [ s.cardId, s ] ) );
 	const knownBookHolders = getKnownBookHolders( state, config );
 	const validBooks = books.filter( book => book.isClaimable || book.isBookWithTeam );
@@ -359,7 +372,7 @@ export function suggestClaims( books: WeightedBook[], state: GameState<FishPlaye
 		const cardsInBook = getCardsOfBook( book, config.type );
 
 		for ( const cardId of cardsInBook ) {
-			const possibleOwners = state.data.cardLocations[ cardId ]!;
+			const possibleOwners = state.cardLocations[ cardId ]!;
 
 			if ( possibleOwners.length === 1 ) {
 				// Known owner
@@ -368,7 +381,9 @@ export function suggestClaims( books: WeightedBook[], state: GameState<FishPlaye
 			} else {
 				// Check if a signal can fill in the gap
 				const signal = signalMap.get( cardId as CardId );
-				if ( signal && possibleOwners.includes( signal.likelyHolder ) && teamMates.includes( signal.likelyHolder ) ) {
+				if ( signal &&
+					possibleOwners.includes( signal.likelyHolder ) &&
+					teamMates.includes( signal.likelyHolder ) ) {
 					weight += MAX_WEIGHT * signal.confidence;
 					claim[ cardId ] = signal.likelyHolder;
 				} else {
@@ -390,7 +405,7 @@ export function suggestClaims( books: WeightedBook[], state: GameState<FishPlaye
 		if ( allAssigned && Object.keys( claim ).length === cardsInBook.length ) {
 			// All holders must be teammates or the bot itself
 			const allWithTeam = Object.values( claim ).every(
-				pid => pid === state.data.playerId || teamMates.includes( pid )
+				pid => pid === state.playerId || teamMates.includes( pid )
 			);
 			if ( allWithTeam ) {
 				claims.push( { book, claim, weight: weight / cardsInBook.length } );
@@ -412,11 +427,11 @@ export function suggestClaims( books: WeightedBook[], state: GameState<FishPlaye
  * @returns sorted list of transfer recommendations.
  * @public
  */
-export function suggestTransfers( state: GameState<FishPlayerView>, config: FishConfig ) {
+export function suggestTransfers( state: FishPlayerView, config: FishConfig ) {
 	logger.debug( ">> suggestTransfers()" );
 
-	const teamMates = getTeammates( state.data.teams, state.data.playerId );
-	const validBooks = new Set( Object.keys( state.data.cardLocations )
+	const teamMates = getTeammates( state.teams, state.playerId );
+	const validBooks = new Set( Object.keys( state.cardLocations )
 		.map( k => getBookForCard( k as CardId, config.type ) ) );
 
 	const weightedTransfers = {} as Record<PlayerId, number>;
@@ -424,7 +439,7 @@ export function suggestTransfers( state: GameState<FishPlayerView>, config: Fish
 	for ( const book of validBooks ) {
 		const cardsInBook = getCardsOfBook( book, config.type );
 		for ( const cardId of cardsInBook ) {
-			const possibleOwners = state.data.cardLocations[ cardId ];
+			const possibleOwners = state.cardLocations[ cardId ];
 			if ( !possibleOwners ) {
 				continue;
 			}

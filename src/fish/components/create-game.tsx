@@ -1,6 +1,6 @@
 "use client";
 
-import { createMatch } from "@/fish/core/actions";
+import { createGame } from "@/fish/core/actions";
 import type { BookType } from "@/fish/core/types";
 import { CreateGame } from "@/shared/components/create-game";
 import { cn } from "@/shared/utils/cn";
@@ -8,20 +8,20 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 export function FishCreateGame() {
-	const createMatchFn = useServerFn( createMatch );
+	const createGameFn = useServerFn( createGame );
 	const [ playerCount, setPlayerCount ] = useState<4 | 6 | 8>();
 	const [ teamCount, setTeamCount ] = useState<2 | 3 | 4>();
 	const [ bookType, setBookType ] = useState<BookType>( "NORMAL" );
 
-	const createFishMatch = async () => {
+	const createFishGame = async () => {
 		if ( !!playerCount && !!teamCount ) {
-			return createMatchFn( { data: { playerCount, type: bookType, teamCount } } );
+			return createGameFn( { data: { playerCount, type: bookType, teamCount } } );
 		}
 		return "";
 	};
 
 	return (
-		<CreateGame game={ "fish" } disabled={ !playerCount } createMatch={ createFishMatch }>
+		<CreateGame game={ "fish" } disabled={ !playerCount } createGame={ createFishGame }>
 			<div className={ "flex flex-col gap-2" }>
 				<label className={ "text-sm text-muted-foreground" }>Player Count</label>
 				<div className={ "flex gap-3 flex-wrap" }>

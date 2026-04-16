@@ -16,47 +16,38 @@ import { TurnIndicator } from "@/fish/components/turn-indicator";
 import { GameInfo } from "@/shared/components/game-info";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
-import { useMemo } from "react";
 
 export function GameView() {
-	const { match, isMyTurn } = useFish();
+	const { game, isMyTurn } = useFish();
 
-	const hasCards = match.state.data.hand.length > 0;
-	const matchInProgress = match.status === "IN_PROGRESS";
-	const playersReady = match.status === "PLAYERS_READY";
-	const hasTeams = Object.keys( match.state.data.teams ).length > 0;
-	const lastClaim = match.state.data.claimHistory[ 0 ];
-	const canTransfer = match.state.data.lastMoveType === "claim"
+	const hasCards = game.state.hand.length > 0;
+	const gameInProgress = game.status === "IN_PROGRESS";
+	const playersReady = game.status === "PLAYERS_READY";
+	const hasTeams = Object.keys( game.state.teams ).length > 0;
+	const lastClaim = game.state.claimHistory[ 0 ];
+	const canTransfer = game.state.lastMoveType === "claim"
 		&& lastClaim?.success
-		&& lastClaim.playerId === match.state.data.playerId;
-
-	const winningTeam = useMemo( () => {
-		if ( match.result && match.result.victory && "winner" in match.result ) {
-			return match.state.data.teams[ match.result.winner ];
-		}
-
-		return;
-	}, [ match ] );
+		&& lastClaim.playerId === game.state.playerId;
 
 	return (
 		<div className={ `flex flex-col gap-3 items-center max-w-6xl justify-self-center w-full mb-80 lg:mb-0` }>
 			<GameInfo
-				code={ match.code }
+				code={ game.code }
 				name={ "fish" }
-				completed={ match.status === "COMPLETED" }
+				completed={ game.status === "COMPLETED" }
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>TYPE</p>
-						<h1 className={ "text-2xl md:text-4xl font-heading" }>{ match.config.type }</h1>
+						<h1 className={ "text-2xl md:text-4xl font-heading" }>{ game.config.type }</h1>
 					</div>
 				}
 			/>
-			{ match.status === "COMPLETED" && match.result && (
+			{ game.status === "COMPLETED" && (
 				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					{ winningTeam ? (
+					{ game.state.winningTeam ? (
 						<p className={ "text-lg font-heading" }>
-							{ winningTeam.members.includes( match.state.data.playerId )
-								? `${ winningTeam.name } won!`
+							{ game.state.teams[ game.state.winningTeam ].members.includes( game.state.playerId )
+								? `${ game.state.teams[ game.state.winningTeam ].name } won!`
 								: "You lost!"
 							}
 						</p>
@@ -65,19 +56,19 @@ export function GameView() {
 					) }
 				</div>
 			) }
-			{ match.status === "COMPLETED" && <BooksTracker/> }
-			{ match.status === "COMPLETED" && <GameMetrics/> }
+			{ game.status === "COMPLETED" && <BooksTracker/> }
+			{ game.status === "COMPLETED" && <GameMetrics/> }
 			<div className={ "grid grid-cols-1 gap-3 w-full justify-items-center" }>
-				{ ( match.status === "CREATED" || playersReady ) && <PlayerLobby/> }
-				{ matchInProgress && <TeamsView/> }
-				{ matchInProgress && (
+				{ ( game.status === "CREATED" || playersReady ) && <PlayerLobby/> }
+				{ gameInProgress && <TeamsView/> }
+				{ gameInProgress && (
 					<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full" }>
 						<HandView/>
 						<ActivityFeed/>
 					</div>
 				) }
 				<div className={ cn( "flex flex-col justify-end gap-3 w-full" ) }>
-					{ match.status === "CREATED" && (
+					{ game.status === "CREATED" && (
 						<div
 							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
 							<Spinner size={ "xl" }/>
@@ -94,7 +85,7 @@ export function GameView() {
 							</p>
 						</div>
 					) }
-					{ matchInProgress && <TurnIndicator/> }
+					{ gameInProgress && <TurnIndicator/> }
 				</div>
 			</div>
 			<div
@@ -103,11 +94,11 @@ export function GameView() {
 					"rounded-t-xl flex gap-3 p-3 items-center"
 				) }
 			>
-				{ match.status === "CREATED" && <AddBots/> }
+				{ game.status === "CREATED" && <AddBots/> }
 				{ playersReady && !hasTeams && <CreateTeams/> }
-				{ matchInProgress && isMyTurn && hasCards && <AskCard/> }
-				{ matchInProgress && isMyTurn && <ClaimBook/> }
-				{ matchInProgress && isMyTurn && canTransfer && <TransferTurn/> }
+				{ gameInProgress && isMyTurn && hasCards && <AskCard/> }
+				{ gameInProgress && isMyTurn && <ClaimBook/> }
+				{ gameInProgress && isMyTurn && canTransfer && <TransferTurn/> }
 			</div>
 		</div>
 	);

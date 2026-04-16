@@ -21,15 +21,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { Fragment, useState } from "react";
 
 export function CreateTeams() {
-	const { match } = useFish();
+	const { game } = useFish();
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ open, setOpen ] = useState( false );
 
 	const groupPlayers = () => {
 		const teamMembers = chunk(
-			shuffle( match.state.ctx.players ),
-			match.config.playerCount / match.config.teamCount
+			shuffle( game.context.players ),
+			game.config.playerCount / game.config.teamCount
 		);
 
 		setTeamMemberData( teamNames.reduce(
@@ -44,7 +44,7 @@ export function CreateTeams() {
 	const createTeamsFn = useServerFn( createTeams );
 	const { isPending, mutate } = useMutation( { mutationFn: createTeamsFn } );
 
-	const handleCreateTeams = () => mutate( { data: { matchId: match.id, teams: teamMemberData } } );
+	const handleCreateTeams = () => mutate( { data: { gameId: game.id, teams: teamMemberData } } );
 
 	return (
 		<Dialog open={ open } onOpenChange={ setOpen }>
@@ -54,8 +54,8 @@ export function CreateTeams() {
 					<DialogTitle>CREATE TEAMS</DialogTitle>
 					<DialogDescription/>
 				</DialogHeader>
-				<div className={ cn( "grid grid-cols-1 gap-2", match.config.teamCount === 4 && "grid-cols-2" ) }>
-					{ Array( match.config.teamCount ).fill( null ).map( ( _, idx ) => (
+				<div className={ cn( "grid grid-cols-1 gap-2", game.config.teamCount === 4 && "grid-cols-2" ) }>
+					{ Array( game.config.teamCount ).fill( null ).map( ( _, idx ) => (
 						<Input
 							key={ idx }
 							type="text"
@@ -72,18 +72,18 @@ export function CreateTeams() {
 				<Button
 					className={ "w-full" }
 					onClick={ groupPlayers }
-					disabled={ teamNames.filter( n => !!n ).length !== match.config.teamCount }
+					disabled={ teamNames.filter( n => !!n ).length !== game.config.teamCount }
 				>
 					GROUP PLAYERS
 				</Button>
-				{ Object.keys( teamMemberData ).length === match.config.teamCount && (
+				{ Object.keys( teamMemberData ).length === game.config.teamCount && (
 					<div className={ "flex flex-col gap-2" }>
 						{ Object.keys( teamMemberData ).map( teamName => (
 							<Fragment key={ teamName }>
 								<h2>Team { teamName }</h2>
 								<div className={ "flex gap-2" }>
 									{ teamMemberData[ teamName ].map( player => (
-										<RPlayerInfo player={ match.players[ player ] } key={ player }/>
+										<RPlayerInfo player={ game.players[ player ] } key={ player }/>
 									) ) }
 								</div>
 							</Fragment>

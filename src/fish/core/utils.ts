@@ -4,6 +4,8 @@ import type {
 	BookType,
 	CanadianBook,
 	Claim,
+	FishConfig,
+	FishData,
 	NormalBook,
 	TeamData,
 	TeamId,
@@ -174,4 +176,29 @@ export function getClaimDescription( claim: Claim, players: Record<PlayerId, Bas
 
 export function getTransferDescription( transfer: Transfer, players: Record<PlayerId, BasePlayerInfo> ) {
 	return `${ players[ transfer.playerId ].name } transferred the turn to ${ players[ transfer.transferTo ].name }`;
+}
+
+export function getClaimedBooks( state: FishData ): Book[] {
+	return Object.values( state.teams ).flatMap( s => s.booksWon );
+}
+
+export function buildConfig( input: {
+	playerCount: 4 | 6 | 8;
+	type: "NORMAL" | "CANADIAN";
+	teamCount: 2 | 3 | 4;
+} ): FishConfig {
+	const isCanadian = input.type === "CANADIAN";
+	const books = ( isCanadian
+		? Object.keys( CANADIAN_BOOKS )
+		: Object.keys( NORMAL_BOOKS ) ) as Book[];
+
+	return {
+		type: input.type,
+		playerCount: input.playerCount,
+		teamCount: input.teamCount,
+		deckType: isCanadian ? 48 : 52,
+		books,
+		bookSize: isCanadian ? 6 : 4,
+		autoStart: false
+	};
 }

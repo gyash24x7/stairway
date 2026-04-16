@@ -8,11 +8,11 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 export function AddBots() {
-	const { match } = useFish();
+	const { game } = useFish();
 	const addBotsFn = useServerFn( addBots );
 	const { isPending, mutate } = useMutation( { mutationFn: addBotsFn } );
 
-	const handleClick = () => mutate( { data: { matchId: match.id } } );
+	const handleClick = () => mutate( { data: { gameId: game.id } } );
 
 	return (
 		<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>

@@ -2,7 +2,7 @@ import { useFish } from "@/fish/components/context";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/primitives/table";
 
 export function GameMetrics() {
-	const { match } = useFish();
+	const { game } = useFish();
 	return (
 		<Table>
 			<TableHeader>
@@ -18,9 +18,9 @@ export function GameMetrics() {
 				</TableRow>
 			</TableHeader>
 			<TableBody>
-				{ Object.entries( match.state.data.playerData ).map( ( [ id, { metrics } ] ) => (
+				{ Object.entries( game.state.playerData ).map( ( [ id, { metrics } ] ) => (
 					<TableRow key={ id } className={ "font-semibold" }>
-						<TableCell>{ match.players[ id ].name }</TableCell>
+						<TableCell>{ game.players[ id ].name }</TableCell>
 						<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>
 						<TableCell className={ "text-center" }>{ metrics.cardsTaken }</TableCell>
 						<TableCell className={ "text-center" }>{ metrics.cardsGiven }</TableCell>
