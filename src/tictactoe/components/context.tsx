@@ -1,11 +1,11 @@
 "use client";
 
 import { useSync } from "@/shared/engine/hooks";
-import type { TicTacToeMatch } from "@/tictactoe/core/types";
+import type { TicTacToeGame } from "@/tictactoe/core/types";
 import { createContext, type ReactNode, useContext } from "react";
 
 type TicTacToeContextValue = {
-	match: TicTacToeMatch;
+	game: TicTacToeGame;
 };
 
 const TicTacToeContext = createContext<TicTacToeContextValue | null>( null );
@@ -18,12 +18,12 @@ export function useTicTacToe() {
 	return ctx;
 }
 
-type TicTacToeProviderProps = { data: TicTacToeMatch; children: ReactNode; };
+type TicTacToeProviderProps = { data: TicTacToeGame; children: ReactNode; };
 
 export function TicTacToeProvider( { data, children }: TicTacToeProviderProps ) {
-	const match = useSync( "tic-tac-toe", data.id, data );
+	const game = useSync( "tic-tac-toe", data.id, data );
 	return (
-		<TicTacToeContext value={ { match } }>
+		<TicTacToeContext value={ { game } }>
 			{ children }
 		</TicTacToeContext>
 	);

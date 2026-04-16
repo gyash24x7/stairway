@@ -7,19 +7,19 @@ import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 export function Board() {
-	const { match } = useTicTacToe();
+	const { game } = useTicTacToe();
 	const placeMoveFn = useServerFn( placeMove );
 	const { isPending, mutate } = useMutation( { mutationFn: placeMoveFn } );
 
-	const isMyTurn = match.state.ctx.currentPlayer === match.state.data.playerId;
-	const matchInProgress = match.status === "IN_PROGRESS";
-	const disabled = !matchInProgress || !isMyTurn || isPending;
+	const isMyTurn = game.context.currentPlayer === game.state.playerId;
+	const gameInProgress = game.status === "IN_PROGRESS";
+	const disabled = !gameInProgress || !isMyTurn || isPending;
 
-	const handlePlace = ( position: number ) => mutate( { data: { matchId: match.id, position } } );
+	const handlePlace = ( position: number ) => mutate( { data: { gameId: game.id, position } } );
 
 	return (
 		<div className={ "grid grid-cols-3 gap-2 w-full max-w-xl" }>
-			{ match.state.data.board.map( ( cell, index ) => (
+			{ game.state.board.map( ( cell, index ) => (
 				<button
 					onClick={ () => handlePlace( index ) }
 					disabled={ disabled || cell !== null }

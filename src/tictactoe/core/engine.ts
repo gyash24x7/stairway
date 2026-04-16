@@ -1,75 +1,74 @@
-import { GameEngine } from "@/shared/engine/engine";
-import { createLogger } from "@/shared/utils/logger";
-import type { Board, CellValue, PlaceInput, TicTacToeData } from "@/tictactoe/core/types";
+import { AbstractGameEngine } from "@/shared/engine/engine";
+import type { BaseGameConfig, GameStructure } from "@/shared/engine/types";
+import type { Board, PlaceInput, TicTacToeData, TicTacToeMoves, TicTacToePlayerView } from "@/tictactoe/core/types";
+import { checkWinner, getSymbol, isBoardFull } from "@/tictactoe/core/utils";
 
-const WINNING_LINES = [
-	[ 0, 1, 2 ], [ 3, 4, 5 ], [ 6, 7, 8 ], // rows
-	[ 0, 3, 6 ], [ 1, 4, 7 ], [ 2, 5, 8 ], // columns
-	[ 0, 4, 8 ], [ 2, 4, 6 ]               // diagonals
-];
+export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToePlayerView> {
 
-function checkWinner( board: Board ): CellValue {
-	for ( const [ a, b, c ] of WINNING_LINES ) {
-		if ( board[ a ] && board[ a ] === board[ b ] && board[ a ] === board[ c ] ) {
-			return board[ a ];
-		}
-	}
-	return null;
-}
+	public static readonly NAME = "tic-tac-toe";
 
-function isBoardFull( board: Board ): boolean {
-	return board.every( cell => cell !== null );
-}
+	protected readonly structure: GameStructure<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToePlayerView> = {
+		name: TicTacToeEngine.NAME,
+		getNextPlayer: "round-robin",
 
-const logger = createLogger( "TicTacToe:Engine" );
+		playerView: ( { state }, playerId ) => ( { ...state, playerId } ),
 
-export const ticTacToeEngine = new GameEngine( {
-	name: "tic-tac-toe",
-	getNextPlayer: "round-robin",
+		setup: ( _: {} ): TicTacToeData => ( {
+			board: Array( 9 ).fill( null ) as Board,
+			symbols: { X: "", O: "" }
+		} ),
 
-	playerView: ( data, _config, playerId ) => ( { ...data, playerId } ),
-
-	setup: ( _: {} ): TicTacToeData => ( { board: Array( 9 ).fill( null ) as Board, symbols: {} } ),
-
-	hooks: {
-		onJoin: ( state, _config, playerId ) => {
-			state.data.symbols[ playerId ] = Object.keys( state.data.symbols ).length === 0 ? "X" : "O";
-			return state.data;
-		}
-	},
-
-	moves: {
-		place: {
-			validate: ( state, _config, _playerId, { position }: PlaceInput ) => {
-				if ( position < 0 || position > 8 ) {
-					logger.debug( "Invalid placement!" );
-					throw new Error( "Invalid position." );
-				}
-
-				if ( state.data.board[ position ] !== null ) {
-					logger.debug( "Cell already occupied!" );
-					throw new Error( "Cell is already occupied." );
-				}
+		hooks: {
+			onJoin: ( { state, context }, playerId ) => {
+				const symbol = context.players.length === 0 ? "X" : "O";
+				state.symbols[ symbol ] = playerId;
+				return state;
 			},
-			execute: ( state, _config, playerId, { position }: PlaceInput ) => {
-				state.data.board[ position ] = state.data.symbols[ playerId ];
-				return state.data;
+
+			onEnd: ( { state } ) => {
+				const winner = checkWinner( state.board );
+
+				if ( winner ) {
+					state.winner = state.symbols[ winner ];
+					return state;
+				}
+
+				if ( isBoardFull( state.board ) ) {
+					state.winner = "draw";
+					return state;
+				}
+
+				return state;
 			}
-		}
-	},
+		},
 
-	endIf: ( state, _config ) => {
-		const winner = checkWinner( state.data.board );
+		moves: {
+			place: {
+				validate: ( { state }, _playerId, { position }: PlaceInput ) => {
+					if ( position < 0 || position > 8 ) {
+						this.logger.debug( "Invalid placement!" );
+						throw new Error( "Invalid position." );
+					}
 
-		if ( winner ) {
-			const winnerId = Object.entries( state.data.symbols ).find( ( [ _, sym ] ) => sym === winner )![ 0 ];
-			return { victory: true, winner: winnerId };
-		}
+					if ( state.board[ position ] !== null ) {
+						this.logger.debug( "Cell already occupied!" );
+						throw new Error( "Cell is already occupied." );
+					}
+				},
+				execute: ( { state }, playerId, { position }: PlaceInput ) => {
+					state.board[ position ] = getSymbol( state, playerId );
+					return state;
+				}
+			}
+		},
 
-		if ( isBoardFull( state.data.board ) ) {
-			return { victory: false };
-		}
+		endIf: ( { state } ) => !!checkWinner( state.board ) || isBoardFull( state.board )
+	};
 
-		return undefined;
+	protected override getInitialState(): { state: TicTacToeData; config: BaseGameConfig; } {
+		return {
+			state: { board: Array( 9 ).fill( null ) as Board, symbols: { X: "", O: "" } },
+			config: { playerCount: 2 }
+		};
 	}
-} );
+}
