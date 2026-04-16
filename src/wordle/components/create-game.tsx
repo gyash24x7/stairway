@@ -17,12 +17,12 @@ export function WordleCreateGame() {
 	const increment = () => setWordCount( wordCount + 1 );
 	const decrement = () => setWordCount( wordCount - 1 );
 
+	const createWordleGame = async () => {
+		return createGameFn( { data: { wordLength, wordCount } } );
+	};
+
 	return (
-		<CreateGame
-			game={ "wordle" }
-			disabled={ !wordLength || !wordCount }
-			createMatch={ () => createGameFn( { data: { wordCount, wordLength } } ) }
-		>
+		<CreateGame game={ "wordle" } disabled={ !wordLength || !wordCount } createGame={ createWordleGame }>
 			<div className={ "flex flex-col gap-3" }>
 				<h2>Select Number of Words</h2>
 				<div className="flex justify-center items-center space-x-2">

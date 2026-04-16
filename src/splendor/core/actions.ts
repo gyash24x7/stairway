@@ -1,98 +1,120 @@
-import { requireAuthInfo } from "@/auth/core/utils";
+import { db } from "@/shared/db/client";
+import { games } from "@/shared/db/schema";
 import { createLogger } from "@/shared/utils/logger";
-import { splendorEngine } from "@/splendor/core/engine";
+import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
+import { SplendorEngine } from "@/splendor/core/engine";
 import { GEMS } from "@/splendor/core/utils";
+import { TicTacToeEngine } from "@/tictactoe/core/engine";
 import { createServerFn } from "@tanstack/react-start";
+import { env } from "cloudflare:workers";
+import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "Splendor:Actions" );
 
-export const getMatch = createServerFn( { method: "GET" } )
-	.inputValidator( v.object( { matchId: v.string() } ) )
-	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { matchId }, context: { authInfo } } ) => {
-		logger.debug( ">> getMatch()" );
+function getStub( gameId: string ) {
+	return env.SPLENDOR_ENGINE.get( env.SPLENDOR_ENGINE.idFromName( gameId ) );
+}
 
-		const match = await splendorEngine.getMatch( matchId );
-		if ( !match ) {
-			throw new Response( null, { status: 404 } );
-		}
+export const getGame = createServerFn( { method: "GET" } )
+	.inputValidator( v.object( { gameId: v.string() } ) )
+	.middleware( [ requireAuthInfo, requireGame( SplendorEngine.NAME ) ] )
+	.handler( async ( { context: { authInfo, game } } ) => {
+		logger.debug( ">> getGame()" );
 
-		const data = splendorEngine.getPlayerView( match, authInfo.id );
-		logger.debug( "<< getMatch()" );
-		return { ...match, state: { ...match.state, data } };
+		const stub = getStub( game.id );
+		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+
+		logger.debug( "<< getGame()" );
+		return { id: game.id, code: game.code, config, players, state, status };
 	} );
 
-export const createMatch = createServerFn( { method: "POST" } )
+export const createGame = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		playerCount: v.pipe( v.number(), v.integer(), v.minValue( 2 ), v.maxValue( 4 ) ),
+		playerCount: v.pipe( v.number(), v.integer(), v.picklist( [ 2, 3, 4 ] ) ),
 		winningPoints: v.pipe( v.number(), v.integer(), v.minValue( 1 ) )
 	} ) )
 	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { playerCount, winningPoints }, context: { authInfo } } ) => {
-		logger.debug( ">> createMatch()" );
+	.handler( async ( { data: config, context: { authInfo } } ) => {
+		logger.debug( ">> createGame()" );
 
-		const match = await splendorEngine.createMatch( { playerCount, winningPoints } );
-		await splendorEngine.joinMatch( match.code, authInfo );
+		const [ game ] = await db.insert( games ).values( { game: TicTacToeEngine.NAME } ).returning();
 
-		logger.debug( "<< createMatch()" );
-		return match.id;
+		const stub = getStub( game.id );
+		await stub.initialize( { ...config, autoStart: true } );
+		await stub.join( authInfo );
+
+		logger.debug( "<< createGame()" );
+		return game.id;
 	} );
 
-export const joinMatch = createServerFn( { method: "POST" } )
+export const joinGame = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( { code: v.string() } ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: { code }, context: { authInfo } } ) => {
-		logger.debug( ">> joinMatch()" );
+		logger.debug( ">> joinGame()" );
 
-		const match = await splendorEngine.joinMatch( code, authInfo );
+		const game = await db.query.games.findFirst( {
+			where: and( eq( games.code, code ), eq( games.game, SplendorEngine.NAME ) )
+		} );
 
-		logger.debug( "<< joinMatch()" );
-		return match.id;
+		if ( !game ) {
+			logger.error( "Game not found!" );
+			throw new Response( null, { status: 404 } );
+		}
+
+		const stub = getStub( game.id );
+		await stub.join( authInfo );
+
+		logger.debug( "<< joinGame()" );
+		return game.id;
 	} );
 
 export const pickTokens = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		tokens: v.record( v.picklist( GEMS ), v.number() ),
 		returned: v.optional( v.record( v.picklist( GEMS ), v.number() ) )
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( SplendorEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> pickTokens()" );
 
-		await splendorEngine.processMove( input.matchId, authInfo.id, "pickTokens", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "pickTokens", input );
 
 		logger.debug( "<< pickTokens()" );
 	} );
 
 export const reserveCard = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		cardId: v.string(),
 		withGold: v.boolean(),
 		returnedToken: v.optional( v.picklist( GEMS ) )
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( SplendorEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> reserveCard()" );
 
-		await splendorEngine.processMove( input.matchId, authInfo.id, "reserveCard", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "reserveCard", input );
 
 		logger.debug( "<< reserveCard()" );
 	} );
 
 export const purchaseCard = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		cardId: v.string(),
 		payment: v.record( v.string(), v.number() )
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( SplendorEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> purchaseCard()" );
 
-		await splendorEngine.processMove( input.matchId, authInfo.id, "purchaseCard", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "purchaseCard", input );
 
 		logger.debug( "<< purchaseCard()" );
 	} );

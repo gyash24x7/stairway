@@ -2,24 +2,24 @@
 
 import { CreateGame } from "@/shared/components/create-game";
 import { cn } from "@/shared/utils/cn";
-import { createMatch } from "@/splendor/core/actions";
+import { createGame } from "@/splendor/core/actions";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 export function SplendorCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();
 	const [ winningPoints, setWinningPoints ] = useState( 15 );
-	const createMatchFn = useServerFn( createMatch );
+	const createGameFn = useServerFn( createGame );
 
-	const createSplendorMatch = async () => {
+	const createSplendorGame = async () => {
 		if ( !!playerCount && !!winningPoints ) {
-			return createMatchFn( { data: { playerCount, winningPoints } } );
+			return createGameFn( { data: { playerCount, winningPoints } } );
 		}
 		return "";
 	};
 
 	return (
-		<CreateGame game={ "splendor" } disabled={ !playerCount } createMatch={ createSplendorMatch }>
+		<CreateGame game={ "splendor" } disabled={ !playerCount } createGame={ createSplendorGame }>
 			<div className={ "flex flex-col gap-2" }>
 				<label className={ "text-sm text-muted-foreground" }>Player Count</label>
 				<div className={ "flex gap-3 flex-wrap" }>

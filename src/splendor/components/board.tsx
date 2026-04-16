@@ -7,17 +7,17 @@ import { GameCardBack } from "@/splendor/components/game-card";
 import { Noble, NobleBack } from "@/splendor/components/noble";
 
 export function Board() {
-	const { match } = useSplendor();
+	const { game } = useSplendor();
 	return (
 		<div className={ "flex flex-col gap-3 w-full" }>
 			<div className={ cn( "flex gap-2 items-center justify-between bg-background p-3 rounded-md" ) }>
 				<div className={ "hidden md:block" }>
 					<NobleBack/>
 				</div>
-				{ match.state.data.nobles.map(
+				{ game.state.nobles.map(
 					noble => <Noble noble={ noble } key={ noble.id }/>
 				) }
-				{ new Array( match.config.playerCount + 1 - match.state.data.nobles.length ).fill( 0 )
+				{ new Array( game.config.playerCount + 1 - game.state.nobles.length ).fill( 0 )
 					.map( ( _, i ) => (
 						<div
 							key={ `empty-noble-${ i }` }
@@ -34,10 +34,10 @@ export function Board() {
 						<div className={ "hidden md:block" }>
 							<GameCardBack level={ level }/>
 						</div>
-						{ match.state.data.cards[ level ].map(
+						{ game.state.cards[ level ].map(
 							card => <CardActions card={ card } key={ card.id }/>
 						) }
-						{ Array.from( { length: 4 - match.state.data.cards[ level ].length } ).map( ( _, i ) => (
+						{ Array.from( { length: 4 - game.state.cards[ level ].length } ).map( ( _, i ) => (
 							<div
 								key={ `empty-${ level }-${ i }` }
 								className={ cn(

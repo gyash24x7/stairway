@@ -14,8 +14,10 @@ import type {
 
 export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, WordleConfig, WordlePlayerView> {
 
+	public static readonly NAME = "wordle";
+
 	protected override readonly structure: GameStructure<WordleData, WordleMoves, WordleConfig, WordlePlayerView> = {
-		name: "wordle",
+		name: WordleEngine.NAME,
 		getNextPlayer: "round-robin",
 
 		playerView: ( { state, config }, playerId ): WordlePlayerView => ( {

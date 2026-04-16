@@ -9,35 +9,31 @@ import { PickTokens } from "@/splendor/components/pick-tokens";
 import { PlayerInfo } from "@/splendor/components/player-info";
 
 export function GameView() {
-	const { match } = useSplendor();
+	const { game } = useSplendor();
 
-	const isLastRound = match.status === "IN_PROGRESS" && Object.values( match.state.data.playerData )
-		.some( player => player.points >= match.config.winningPoints );
+	const isLastRound = game.status === "IN_PROGRESS" && Object.values( game.state.playerData )
+		.some( player => player.points >= game.config.winningPoints );
 
 	return (
 		<div className={ `flex flex-col gap-3 items-center max-w-6xl justify-self-center w-full mb-80 lg:mb-0` }>
 			<GameInfo
-				code={ match.code }
+				code={ game.code }
 				name={ "splendor" }
-				completed={ match.status === "COMPLETED" }
+				completed={ game.status === "COMPLETED" }
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>WINNING POINTS</p>
 						<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
-							{ match.config.winningPoints }
+							{ game.config.winningPoints }
 						</h2>
 					</div>
 				}
 			/>
-			{ match.status === "COMPLETED" && match.result && (
+			{ game.status === "COMPLETED" && game.state.winner && (
 				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					{ match.result.victory && "winner" in match.result ? (
-						<p className={ "text-lg font-heading" }>
-							{ match.result.winner === match.state.data.playerId ? "You won!" : "You lost!" }
-						</p>
-					) : (
-						<p className={ "text-lg font-heading" }>It's a draw!</p>
-					) }
+					<p className={ "text-lg font-heading" }>
+						{ game.state.winner === game.state.playerId ? "You won!" : "You lost!" }
+					</p>
 				</div>
 			) }
 			<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full justify-items-center" }>
@@ -45,7 +41,7 @@ export function GameView() {
 					<Board/>
 				</div>
 				<div className={ cn( "flex flex-col justify-end gap-3 w-full max-w-lg md:max-w-xl" ) }>
-					{ match.status === "CREATED" && (
+					{ game.status === "CREATED" && (
 						<div
 							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
 							<Spinner size={ "xl" }/>
@@ -54,8 +50,8 @@ export function GameView() {
 							</p>
 						</div>
 					) }
-					{ match.state.ctx.players.map( player => <PlayerInfo playerId={ player } key={ player }/> ) }
-					{ match.status === "IN_PROGRESS" && isLastRound && (
+					{ game.context.players.map( player => <PlayerInfo playerId={ player } key={ player }/> ) }
+					{ game.status === "IN_PROGRESS" && isLastRound && (
 						<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-surface" }>
 							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 								THIS IS THE LAST ROUND!
@@ -63,7 +59,7 @@ export function GameView() {
 						</div>
 					) }
 					<div className={ "hidden lg:block" }>
-						{ match.status === "IN_PROGRESS" && <PickTokens/> }
+						{ game.status === "IN_PROGRESS" && <PickTokens/> }
 					</div>
 				</div>
 			</div>
@@ -71,10 +67,10 @@ export function GameView() {
 				className={ cn(
 					"fixed left-0 right-0 bottom-0 bg-surface",
 					"rounded-t-xl flex flex-col gap-2 p-3 items-center",
-					match.status === "IN_PROGRESS" && "lg:hidden"
+					game.status === "IN_PROGRESS" && "lg:hidden"
 				) }
 			>
-				{ match.status === "IN_PROGRESS" && <PickTokens/> }
+				{ game.status === "IN_PROGRESS" && <PickTokens/> }
 			</div>
 		</div>
 	);

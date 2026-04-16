@@ -1,4 +1,4 @@
-import type { BaseGameConfig, Match, MatchId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameConfig, BaseGameData, GameData, GameId, PlayerId } from "@/shared/engine/types";
 
 export type Gem = "diamond" | "sapphire" | "emerald" | "ruby" | "onyx" | "gold";
 export type CardLevel = 1 | 2 | 3;
@@ -35,34 +35,36 @@ export type SplendorData = {
 	nobles: Noble[];
 	decks: Record<CardLevel, Card[]>;
 	playerData: Record<PlayerId, PlayerInfo>;
+	winner?: PlayerId;
 }
 
-export type SplendorConfig = BaseGameConfig & { winningPoints: number };
+export type SplendorConfig = BaseGameConfig & { playerCount: 2 | 3 | 4; winningPoints: number };
 
 export type SplendorPlayerView = Omit<SplendorData, "decks"> & { playerId: PlayerId };
 
-export type SplendorMatch = Match<SplendorPlayerView, SplendorConfig>
-
-export type CreateMatchInput = {
-	playerCount: 2 | 3 | 4;
-	winningPoints: number;
-}
+export type SplendorGame = BaseGameData & GameData<SplendorPlayerView, SplendorConfig>
 
 export type PickTokensInput = {
-	matchId: MatchId;
+	gameId: GameId;
 	tokens: Partial<Tokens>;
 	returned?: Partial<Tokens>;
 }
 
 export type ReserveCardInput = {
-	matchId: MatchId;
+	gameId: GameId;
 	cardId: CardId;
 	withGold: boolean;
 	returnedToken?: Gem;
 }
 
 export type PurchaseCardInput = {
-	matchId: MatchId;
+	gameId: GameId;
 	cardId: CardId;
 	payment: Partial<Tokens>;
 }
+
+export type SplendorMoves = {
+	pickTokens: PickTokensInput;
+	reserveCard: ReserveCardInput;
+	purchaseCard: PurchaseCardInput;
+};

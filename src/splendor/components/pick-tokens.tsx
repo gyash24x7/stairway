@@ -21,9 +21,9 @@ import { useCallback, useMemo, useState } from "react";
 import { useBoolean } from "usehooks-ts";
 
 export function PickTokens() {
-	const { match, isMyTurn } = useSplendor();
-	const availableTokens = match.state.data.tokens;
-	const playerTokens = match.state.data.playerData[ match.state.data.playerId ].tokens;
+	const { game, isMyTurn } = useSplendor();
+	const availableTokens = game.state.tokens;
+	const playerTokens = game.state.playerData[ game.state.playerId ].tokens;
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );
@@ -57,15 +57,15 @@ export function PickTokens() {
 
 	const handlePickClick = useCallback( async () => {
 		if ( projectedTotal <= 10 ) {
-			mutate( { data: { matchId: match.id, tokens: selectedTokens } } );
+			mutate( { data: { gameId: game.id, tokens: selectedTokens } } );
 		} else {
 			setTrue();
 		}
-	}, [ projectedTotal, selectedTokens, match.id ] );
+	}, [ projectedTotal, selectedTokens, game.id ] );
 
 	const handleReturnClick = useCallback( async () => {
-		mutate( { data: { matchId: match.id, tokens: selectedTokens, returned: returnTokens } } );
-	}, [ selectedTokens, returnTokens, match.id ] );
+		mutate( { data: { gameId: game.id, tokens: selectedTokens, returned: returnTokens } } );
+	}, [ selectedTokens, returnTokens, game.id ] );
 
 	return (
 		<div className={ "flex flex-col gap-3" }>

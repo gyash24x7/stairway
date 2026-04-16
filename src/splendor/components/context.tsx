@@ -1,11 +1,11 @@
 "use client";
 
 import { useSync } from "@/shared/engine/hooks";
-import type { SplendorMatch } from "@/splendor/core/types";
+import type { SplendorGame } from "@/splendor/core/types";
 import { createContext, type ReactNode, useContext } from "react";
 
 type SplendorContextValue = {
-	match: SplendorMatch;
+	game: SplendorGame;
 	isMyTurn: boolean;
 };
 
@@ -19,15 +19,15 @@ export function useSplendor() {
 	return ctx;
 }
 
-type SplendorProviderProps = { data: SplendorMatch; children: ReactNode; };
+type SplendorProviderProps = { data: SplendorGame; children: ReactNode; };
 
 export function SplendorProvider( { data, children }: SplendorProviderProps ) {
-	const match = useSync( "splendor", data.id, data );
+	const game = useSync( "splendor", data.id, data );
 
-	const isMyTurn = match.status === "IN_PROGRESS" && match.state.ctx.currentPlayer === match.state.data.playerId;
+	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
 
 	return (
-		<SplendorContext value={ { match, isMyTurn } }>
+		<SplendorContext value={ { game, isMyTurn } }>
 			{ children }
 		</SplendorContext>
 	);

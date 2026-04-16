@@ -32,7 +32,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 	const [ returnedTokens, setReturnedTokens ] = useState<Partial<Tokens>>( {} );
 	const [ paymentTokens, setPaymentTokens ] = useState<Partial<Tokens>>( {} );
 
-	const { match, isMyTurn } = useSplendor();
+	const { game, isMyTurn } = useSplendor();
 
 	const handleOpenChange = ( isOpen: boolean ) => {
 		setOpen( isOpen );
@@ -42,9 +42,9 @@ export function CardActions( props: CardActionsMenuProps ) {
 			setPaymentTokens( {} );
 		}
 	};
-	const discounts = match.state.data.playerData[ match.state.data.playerId ].cards;
-	const reserved = match.state.data.playerData[ match.state.data.playerId ].reserved;
-	const playerTokens = match.state.data.playerData[ match.state.data.playerId ].tokens;
+	const discounts = game.state.playerData[ game.state.playerId ].cards;
+	const reserved = game.state.playerData[ game.state.playerId ].reserved;
+	const playerTokens = game.state.playerData[ game.state.playerId ].tokens;
 
 	const canPurchaseWithoutGold = Object.keys( props.card.cost ).map( g => g as keyof Cost ).every( gem => {
 		const discountsForGem = discounts.filter( card => card.bonus === gem ).length;
@@ -72,7 +72,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 
 		purchaseMutation.mutate( {
 			data: {
-				matchId: match.id,
+				gameId: game.id,
 				cardId: props.card.id,
 				payment: paymentTokens
 			}
@@ -84,7 +84,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 
 	const handleReserveClick = async () => {
 		const tokenCount = Object.values( playerTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
-		const canTakeGold = match.state.data.tokens.gold > 0;
+		const canTakeGold = game.state.tokens.gold > 0;
 
 		if ( type === "default" ) {
 			if ( canTakeGold && tokenCount + 1 > 10 ) {
@@ -98,7 +98,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 
 		reserveMutation.mutate( {
 			data: {
-				matchId: match.id,
+				gameId: game.id,
 				cardId: props.card.id,
 				withGold: canTakeGold,
 				returnedToken

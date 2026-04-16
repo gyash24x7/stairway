@@ -1,6 +1,8 @@
-import { requireAuthInfo } from "@/auth/core/utils";
-import { generateGameCode, generateId } from "@/shared/utils/generator";
+import { db } from "@/shared/db/client";
+import { games } from "@/shared/db/schema";
 import { createLogger } from "@/shared/utils/logger";
+import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
+import { WordleEngine } from "@/wordle/core/engine";
 import { createServerFn } from "@tanstack/react-start";
 import { env } from "cloudflare:workers";
 import * as v from "valibot";
@@ -13,21 +15,15 @@ function getStub( gameId: string ) {
 
 export const getGame = createServerFn( { method: "GET" } )
 	.inputValidator( v.object( { gameId: v.string() } ) )
-	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { gameId }, context: { authInfo } } ) => {
+	.middleware( [ requireAuthInfo, requireGame( WordleEngine.NAME ) ] )
+	.handler( async ( { context: { authInfo, game } } ) => {
 		logger.debug( ">> getGame()" );
 
-		const code = env.KV.get( gameId );
-		if ( !code ) {
-			logger.error( "Game not found!" );
-			throw new Response( null, { status: 404 } );
-		}
-
-		const stub = getStub( gameId );
+		const stub = getStub( game.id );
 		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: gameId, code, config, players, state, status };
+		return { id: game.id, code: game.code, config, players, state, status };
 	} );
 
 export const createGame = createServerFn( { method: "POST" } )
@@ -39,24 +35,19 @@ export const createGame = createServerFn( { method: "POST" } )
 	.handler( async ( { data: { wordCount, wordLength }, context: { authInfo } } ) => {
 		logger.debug( ">> createGame()" );
 
-		const gameId = generateId();
-		const code = generateGameCode();
-		await env.KV.put( gameId, code );
+		const [ game ] = await db.insert( games ).values( { game: WordleEngine.NAME } ).returning();
 
-		const stub = getStub( gameId );
+		const stub = getStub( game.id );
 		await stub.initialize( { playerCount: 1, wordCount, wordLength } );
 		await stub.join( authInfo );
 
 		logger.debug( "<< createGame()" );
-		return gameId;
+		return game.id;
 	} );
 
 export const submitGuess = createServerFn( { method: "POST" } )
-	.inputValidator( v.object( {
-		gameId: v.string(),
-		guess: v.string()
-	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.inputValidator( v.object( { gameId: v.string(), guess: v.string() } ) )
+	.middleware( [ requireAuthInfo, requireGame( WordleEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> submitGuess()" );
 
@@ -68,7 +59,7 @@ export const submitGuess = createServerFn( { method: "POST" } )
 
 export const getWords = createServerFn( { method: "GET" } )
 	.inputValidator( v.object( { gameId: v.string() } ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( WordleEngine.NAME ) ] )
 	.handler( async ( { data: { gameId } } ) => {
 		logger.debug( ">> getWords()" );
 
