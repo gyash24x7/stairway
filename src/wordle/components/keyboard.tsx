@@ -21,9 +21,9 @@ function getAvailableLetters( guesses: string[] ): string[] {
 }
 
 function KeyboardKey( { letter }: { letter: string } ) {
-	const { match, currentGuess, isPending, handleKeyPress, handleBackspace, handleSubmit } = useWordle();
-	const availableLetters = getAvailableLetters( match.state.data.guesses );
-	const isValidWord = dictionaries[ match.config.wordLength ].includes( currentGuess );
+	const { game, currentGuess, isPending, handleKeyPress, handleBackspace, handleSubmit } = useWordle();
+	const availableLetters = getAvailableLetters( game.state.guesses );
+	const isValidWord = dictionaries[ game.config.wordLength ].includes( currentGuess );
 	const isLetterAvailable = letter.length !== 1 || availableLetters.includes( letter );
 
 	if ( letter === "enter" ) {

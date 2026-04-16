@@ -1,4 +1,4 @@
-import type { BaseGameConfig, Match, MatchId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameConfig, BaseGameData, GameData, GameId, PlayerId } from "@/shared/engine/types";
 
 export type WordLength = 4 | 5 | 6;
 export type LetterStatus = "correct" | "present" | "absent";
@@ -12,6 +12,7 @@ export type WordleData = {
 	guesses: string[];
 	guessResults: GuessResults;
 	maxGuesses: number;
+	victory?: boolean;
 };
 
 export type WordlePlayerView = Omit<WordleData, "words" | "guessResults"> & {
@@ -19,6 +20,8 @@ export type WordlePlayerView = Omit<WordleData, "words" | "guessResults"> & {
 	guessResults: GuessResultsForWord[];
 };
 
-export type WordleMatch = Match<WordlePlayerView, WordleConfig>;
+export type WordleGame = BaseGameData & GameData<WordlePlayerView, WordleConfig>;
 
-export type GuessInput = { guess: string; matchId: MatchId; };
+export type GuessInput = { guess: string; gameId: GameId; };
+
+export type WordleMoves = { guess: GuessInput };

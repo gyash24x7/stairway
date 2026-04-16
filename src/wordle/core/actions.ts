@@ -1,68 +1,80 @@
 import { requireAuthInfo } from "@/auth/core/utils";
+import { generateGameCode, generateId } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { wordleEngine } from "@/wordle/core/engine";
 import { createServerFn } from "@tanstack/react-start";
+import { env } from "cloudflare:workers";
 import * as v from "valibot";
 
 const logger = createLogger( "Wordle:Actions" );
 
-export const getMatch = createServerFn( { method: "GET" } )
-	.inputValidator( v.object( { matchId: v.string() } ) )
-	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { matchId }, context: { authInfo } } ) => {
-		logger.debug( ">> getMatch()" );
+function getStub( gameId: string ) {
+	return env.WORDLE_ENGINE.get( env.WORDLE_ENGINE.idFromName( gameId ) );
+}
 
-		const match = await wordleEngine.getMatch( matchId );
-		if ( !match ) {
+export const getGame = createServerFn( { method: "GET" } )
+	.inputValidator( v.object( { gameId: v.string() } ) )
+	.middleware( [ requireAuthInfo ] )
+	.handler( async ( { data: { gameId }, context: { authInfo } } ) => {
+		logger.debug( ">> getGame()" );
+
+		const code = env.KV.get( gameId );
+		if ( !code ) {
+			logger.error( "Game not found!" );
 			throw new Response( null, { status: 404 } );
 		}
 
-		const data = wordleEngine.getPlayerView( match, authInfo.id );
-		logger.debug( "<< getMatch()" );
-		return { ...match, state: { ...match.state, data } };
+		const stub = getStub( gameId );
+		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+
+		logger.debug( "<< getGame()" );
+		return { id: gameId, code, config, players, state, status };
 	} );
 
-export const createMatch = createServerFn( { method: "POST" } )
+export const createGame = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
 		wordCount: v.pipe( v.number(), v.integer(), v.minValue( 1 ) ),
 		wordLength: v.picklist( [ 4, 5, 6 ] )
 	} ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: { wordCount, wordLength }, context: { authInfo } } ) => {
-		logger.debug( ">> createMatch()" );
+		logger.debug( ">> createGame()" );
 
-		const match = await wordleEngine.createMatch( { playerCount: 1, wordCount, wordLength } );
-		await wordleEngine.joinMatch( match.code, authInfo );
+		const gameId = generateId();
+		const code = generateGameCode();
+		await env.KV.put( gameId, code );
 
-		logger.debug( "<< createMatch()" );
-		return match.id;
+		const stub = getStub( gameId );
+		await stub.initialize( { playerCount: 1, wordCount, wordLength } );
+		await stub.join( authInfo );
+
+		logger.debug( "<< createGame()" );
+		return gameId;
 	} );
 
 export const submitGuess = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		guess: v.string()
 	} ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> submitGuess()" );
 
-		await wordleEngine.processMove( input.matchId, authInfo.id, "guess", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "guess", input );
 
 		logger.debug( "<< submitGuess()" );
 	} );
 
 export const getWords = createServerFn( { method: "GET" } )
-	.inputValidator( v.object( { matchId: v.string() } ) )
+	.inputValidator( v.object( { gameId: v.string() } ) )
 	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { matchId } } ) => {
+	.handler( async ( { data: { gameId } } ) => {
 		logger.debug( ">> getWords()" );
 
-		const match = await wordleEngine.getMatch( matchId );
-		if ( !match ) {
-			throw new Response( null, { status: 404 } );
-		}
+		const stub = getStub( gameId );
+		const { state } = await stub.getGameData();
 
 		logger.debug( "<< getWords()" );
-		return match.state.data.words;
+		return state.words;
 	} );

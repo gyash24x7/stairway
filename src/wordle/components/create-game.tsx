@@ -3,14 +3,14 @@
 import { CreateGame } from "@/shared/components/create-game";
 import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
-import { createMatch } from "@/wordle/core/actions";
+import { createGame } from "@/wordle/core/actions";
 import type { WordLength } from "@/wordle/core/types";
 import { useServerFn } from "@tanstack/react-start";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 
 export function WordleCreateGame() {
-	const createMatchFn = useServerFn( createMatch );
+	const createGameFn = useServerFn( createGame );
 	const [ wordLength, setWordLength ] = useState<WordLength>( 5 );
 	const [ wordCount, setWordCount ] = useState( 1 );
 
@@ -21,7 +21,7 @@ export function WordleCreateGame() {
 		<CreateGame
 			game={ "wordle" }
 			disabled={ !wordLength || !wordCount }
-			createMatch={ () => createMatchFn( { data: { wordCount, wordLength } } ) }
+			createMatch={ () => createGameFn( { data: { wordCount, wordLength } } ) }
 		>
 			<div className={ "flex flex-col gap-3" }>
 				<h2>Select Number of Words</h2>

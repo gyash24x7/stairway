@@ -1205,7 +1205,7 @@ export const dictionaries = {
 		"marsh",
 		"mason",
 		"masse",
-		"match",
+		"game",
 		"matey",
 		"mauve",
 		"maxim",

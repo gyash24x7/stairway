@@ -2,13 +2,13 @@
 
 import { useSync } from "@/shared/engine/hooks";
 import { submitGuess } from "@/wordle/core/actions";
-import type { WordleMatch } from "@/wordle/core/types";
+import type { WordleGame } from "@/wordle/core/types";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 type WordleContextValue = {
-	match: WordleMatch;
+	game: WordleGame;
 	currentGuess: string;
 	isPending: boolean;
 	handleKeyPress: ( letter: string ) => void;
@@ -26,10 +26,10 @@ export function useWordle() {
 	return ctx;
 }
 
-type WordleProviderProps = { data: WordleMatch; children: ReactNode; }
+type WordleProviderProps = { data: WordleGame; children: ReactNode; }
 
 export function WordleProvider( { data, children }: WordleProviderProps ) {
-	const match = useSync( "wordle", data.id, data );
+	const game = useSync( "wordle", data.id, data );
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
 	const submitGuessFn = useServerFn( submitGuess );
 	const { isPending, mutate } = useMutation( {
@@ -37,8 +37,8 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 		onSettled: () => setCurrentGuess( "" )
 	} );
 
-	const wordLength = match.config.wordLength;
-	const matchInProgress = match.status === "IN_PROGRESS";
+	const wordLength = game.config.wordLength;
+	const gameInProgress = game.status === "IN_PROGRESS";
 
 	const handleSubmit = useCallback( () => {
 		const guess = currentGuess.trim().toLowerCase();
@@ -46,8 +46,8 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 			return;
 		}
 
-		mutate( { data: { matchId: match.id, guess } } );
-	}, [ currentGuess, wordLength, match ] );
+		mutate( { data: { gameId: game.id, guess } } );
+	}, [ currentGuess, wordLength, game ] );
 
 	const handleKeyPress = useCallback( ( letter: string ) => {
 		setCurrentGuess( prev => prev.length < wordLength ? prev + letter : prev );
@@ -72,17 +72,18 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 	};
 
 	useEffect( () => {
-		if ( !matchInProgress ) {
+		if ( !gameInProgress ) {
 			return;
 		}
 
 		window.addEventListener( "keydown", handleKeyDown );
 		return () => window.removeEventListener( "keydown", handleKeyDown );
 
-	}, [ matchInProgress, handleSubmit, handleKeyPress, handleBackspace ] );
+	}, [ gameInProgress, handleSubmit, handleKeyPress, handleBackspace ] );
 
 	return (
-		<WordleContext value={ { match, currentGuess, isPending, handleKeyPress, handleBackspace, handleSubmit } }>
+		<WordleContext
+			value={ { game: game, currentGuess, isPending, handleKeyPress, handleBackspace, handleSubmit } }>
 			{ children }
 		</WordleContext>
 	);
