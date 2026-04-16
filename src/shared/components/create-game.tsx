@@ -8,14 +8,14 @@ import type { ReactNode } from "react";
 type CreateGameProps = {
 	game: string;
 	disabled?: boolean;
-	createMatch: () => Promise<string>;
+	createGame: () => Promise<string>;
 	children?: ReactNode;
 };
 
-export function CreateGame( { game, disabled, createMatch, children }: CreateGameProps ) {
+export function CreateGame( { game, disabled, createGame, children }: CreateGameProps ) {
 	const navigate = useNavigate();
 	const { isPending, mutate } = useMutation( {
-		mutationFn: createMatch,
+		mutationFn: createGame,
 		onSuccess: matchId => navigate( { to: `/${ game }/${ matchId }` } )
 	} );
 

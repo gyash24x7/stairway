@@ -333,7 +333,7 @@ export abstract class AbstractGameEngine<
 			return this.context.players[ index ];
 		}
 
-		return getNextPlayer( this.state, this.context );
+		return getNextPlayer( this.readonlyGameData() );
 	}
 
 	// ── Storage & sync ────────────────────────────────────────────────────

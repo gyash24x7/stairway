@@ -1,6 +1,6 @@
 "use client";
 
-import type { JoinMatchInput } from "@/shared/engine/types";
+import type { JoinGameInput } from "@/shared/engine/types";
 import { Button } from "@/shared/primitives/button";
 import { Input } from "@/shared/primitives/input";
 import { useMutation } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { useState } from "react";
 
 type JoinGameProps = {
 	game: string;
-	joinMatch: ( opts: { data: JoinMatchInput } ) => Promise<string>;
+	joinMatch: ( opts: { data: JoinGameInput } ) => Promise<string>;
 };
 
 export function JoinGame( { game, joinMatch }: JoinGameProps ) {

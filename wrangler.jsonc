@@ -16,10 +16,25 @@
 	],
 	"durable_objects": {
 		"bindings": [
-			{ "name": "SYNC_SERVER", "class_name": "SyncServer" }
+			{ "name": "TICTACTOE_ENGINE", "class_name": "TicTacToeEngine" },
+			{ "name": "CALLBREAK_ENGINE", "class_name": "CallbreakEngine" },
+			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" },
+			{ "name": "FISH_ENGINE", "class_name": "FishEngine" },
+			{ "name": "KINGDOMINO_ENGINE", "class_name": "KingdominoEngine" },
+			{ "name": "WORDLE_ENGINE", "class_name": "WordleEngine" }
 		]
 	},
 	"migrations": [
-		{ "tag": "v1", "new_sqlite_classes": [ "SyncServer" ] }
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"TicTacToeEngine",
+				"CallbreakEngine",
+				"SplendorEngine",
+				"FishEngine",
+				"KingdominoEngine",
+				"WordleEngine"
+			]
+		}
 	]
 }
