@@ -1,15 +1,20 @@
+import { sessionStore } from "@/auth/core/sessions";
+import type { AuthInfo } from "@/auth/core/types";
 import { Document } from "@/document";
 import { setCommonHeaders } from "@/headers";
 import { AppLayout } from "@/shared/components/layout";
-import type { Theme, ThemeMode } from "@/shared/utils/cn";
+import type { Theme, ThemeMode } from "@/shared/utils/theme";
 import * as cookie from "cookie";
 import { layout, render, route } from "rwsdk/router";
-import { defineApp } from "rwsdk/worker";
+import { defineApp, requestInfo } from "rwsdk/worker";
 
 export type AppContext = {
 	theme: Theme;
 	themeMode: ThemeMode;
+	authInfo: AuthInfo | null;
 };
+
+export { UserSession } from "@/auth/core/sessions";
 
 export default defineApp( [
 	setCommonHeaders(),
@@ -19,6 +24,11 @@ export default defineApp( [
 		const { theme = "apple-light" } = cookie.parseCookie( cookieHeader );
 		ctx.theme = theme.split( "-" )[ 0 ] as Theme;
 		ctx.themeMode = theme.split( "-" )[ 1 ] as ThemeMode;
+	},
+
+	async function loadAuthInfo() {
+		const session = await sessionStore.load( requestInfo.request );
+		requestInfo.ctx.authInfo = session?.authInfo ?? null;
 	},
 
 	render( Document, [
