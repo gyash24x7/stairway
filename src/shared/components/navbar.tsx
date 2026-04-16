@@ -1,18 +1,23 @@
 "use client";
 
+import { RAuthInfo } from "@/auth/components/auth-info";
+import { Login } from "@/auth/components/login";
+import type { AuthInfo } from "@/auth/core/types";
 import { ThemeSwitcher } from "@/shared/components/theme-switcher";
 import { Button } from "@/shared/primitives/button";
 import { Separator } from "@/shared/primitives/separator";
-import { cn, type Theme, type ThemeMode } from "@/shared/utils/cn";
+import type { Theme, ThemeMode } from "@/shared/utils/cn";
+import { cn } from "@/shared/utils/cn";
 import { HomeIcon } from "lucide-react";
 import { navigate } from "rwsdk/client";
 
 type NavbarProps = {
 	initialTheme: Theme;
 	initialThemeMode: ThemeMode;
+	authInfo: AuthInfo | null;
 }
 
-export function Navbar( props: NavbarProps ) {
+export function Navbar( { authInfo, ...props }: NavbarProps ) {
 	return (
 		<div
 			className={ cn(
@@ -32,7 +37,7 @@ export function Navbar( props: NavbarProps ) {
 						<HomeIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 					</Button>
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
-					{/*{ !!authInfo ? <RAuthInfo authInfo={ authInfo }/> : <Login/> }*/ }
+					{ !!authInfo ? <RAuthInfo authInfo={ authInfo }/> : <Login/> }
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
 					<ThemeSwitcher { ...props }/>
 				</div>

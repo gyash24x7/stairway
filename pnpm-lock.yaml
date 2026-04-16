@@ -17,6 +17,9 @@ importers:
       '@simplewebauthn/server':
         specifier: 13.3.0
         version: 13.3.0
+      '@standard-schema/spec':
+        specifier: 1.1.0
+        version: 1.1.0
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -1359,6 +1362,9 @@ packages:
 
   '@speed-highlight/core@1.2.15':
     resolution: {integrity: sha512-BMq1K3DsElxDWawkX6eLg9+CKJrTVGCBAWVuHXVUV2u0s2711qiChLSId6ikYPfxhdYocLNt3wWwSvDiTvFabw==}
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   '@tailwindcss/node@4.2.2':
     resolution: {integrity: sha512-pXS+wJ2gZpVXqFaUEjojq7jzMpTGf8rU6ipJz5ovJV6PUGmlJ+jvIwGrzdHdQ80Sg+wmQxUFuoW1UAAwHNEdFA==}
@@ -4377,6 +4383,8 @@ snapshots:
   '@sindresorhus/merge-streams@4.0.0': {}
 
   '@speed-highlight/core@1.2.15': {}
+
+  '@standard-schema/spec@1.1.0': {}
 
   '@tailwindcss/node@4.2.2':
     dependencies:

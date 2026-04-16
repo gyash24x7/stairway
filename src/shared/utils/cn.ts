@@ -11,4 +11,19 @@ export function cn( ...inputs: ClassValue[] ) {
 	return twMerge( clsx( inputs ) );
 }
 
+export const themeModes = [ "light", "dark" ] as const;
+export const themes = [
+	"apple",
+	"orange",
+	"mango",
+	"banana",
+	"olive",
+	"kiwi",
+	"ice",
+	"blueberry",
+	"grape",
+	"strawberry"
+] as const;
 
+export type ThemeMode = typeof themeModes[number];
+export type Theme = typeof themes[number];

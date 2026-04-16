@@ -1,3 +1,5 @@
+"use server";
+
 import { sessionStore } from "@/auth/core/sessions";
 import type { NameInput, UsernameInput, VerifyLoginInput, VerifyRegistrationInput } from "@/auth/core/types";
 import { db } from "@/shared/db/client";
@@ -37,12 +39,11 @@ export const checkIfUserExists = serverAction( [
 
 export const logout = serverAction( async () => {
 	await sessionStore.remove( requestInfo.request, requestInfo.response.headers );
-	return Response.redirect( "/" );
 } );
 
 export const getLoginOptions = serverQuery( [
 	validate( v.object( { username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ) } ) ),
-	async ( { data: { username } } ) => {
+	async ( { username }: UsernameInput ) => {
 		logger.debug( ">> getLoginOptions()" );
 
 		const user = await getUserByUsername( username );
@@ -132,7 +133,6 @@ export const verifyLogin = serverAction( [
 		await sessionStore.save( requestInfo.response.headers, { authInfo: user } );
 
 		logger.debug( "<< verifyLogin()" );
-		return user;
 	}
 ] );
 
@@ -211,6 +211,5 @@ export const verifyRegistration = serverAction( [
 		await sessionStore.save( requestInfo.response.headers, { authInfo: user } );
 
 		logger.debug( "<< verifyRegistration()" );
-		return user;
 	}
 ] );

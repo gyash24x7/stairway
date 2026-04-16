@@ -2,8 +2,9 @@ import { sessionStore } from "@/auth/core/sessions";
 import type { AuthInfo } from "@/auth/core/types";
 import { Document } from "@/document";
 import { setCommonHeaders } from "@/headers";
+import { HomePage } from "@/shared/components/home-page";
 import { AppLayout } from "@/shared/components/layout";
-import type { Theme, ThemeMode } from "@/shared/utils/theme";
+import type { Theme, ThemeMode } from "@/shared/utils/cn";
 import * as cookie from "cookie";
 import { layout, render, route } from "rwsdk/router";
 import { defineApp, requestInfo } from "rwsdk/worker";
@@ -33,7 +34,7 @@ export default defineApp( [
 
 	render( Document, [
 		layout( AppLayout, [
-			route( "/", () => <div>Hello, World!</div> )
+			route( "/", HomePage )
 		] )
 	] )
 ] );
