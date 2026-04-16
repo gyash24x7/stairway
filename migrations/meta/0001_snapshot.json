@@ -1,94 +1,11 @@
 {
 	"version": "6",
 	"dialect": "sqlite",
-	"id": "7bc4ae54-af61-4226-880e-00470c65a4ec",
+	"id": "0a1092f6-793f-49ae-ae93-e1bcdc1006c4",
 	"prevId": "df2d78af-c3ab-477b-be6c-c653e60c8670",
 	"tables": {
-		"match_players": {
-			"name": "match_players",
-			"columns": {
-				"matchId": {
-					"name": "matchId",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"playerId": {
-					"name": "playerId",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"name": {
-					"name": "name",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"avatar": {
-					"name": "avatar",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"isBot": {
-					"name": "isBot",
-					"type": "integer",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false,
-					"default": 0
-				}
-			},
-			"indexes": {
-				"idx_match_players_playerId": {
-					"name": "idx_match_players_playerId",
-					"columns": [
-						"playerId"
-					],
-					"isUnique": false
-				},
-				"idx_match_players_matchId": {
-					"name": "idx_match_players_matchId",
-					"columns": [
-						"matchId"
-					],
-					"isUnique": false
-				}
-			},
-			"foreignKeys": {
-				"match_players_matchId_matches_id_fk": {
-					"name": "match_players_matchId_matches_id_fk",
-					"tableFrom": "match_players",
-					"tableTo": "matches",
-					"columnsFrom": [
-						"matchId"
-					],
-					"columnsTo": [
-						"id"
-					],
-					"onDelete": "cascade",
-					"onUpdate": "no action"
-				}
-			},
-			"compositePrimaryKeys": {
-				"match_players_matchId_playerId_pk": {
-					"columns": [
-						"matchId",
-						"playerId"
-					],
-					"name": "match_players_matchId_playerId_pk"
-				}
-			},
-			"uniqueConstraints": { },
-			"checkConstraints": { }
-		},
-		"matches": {
-			"name": "matches",
+		"games": {
+			"name": "games",
 			"columns": {
 				"id": {
 					"name": "id",
@@ -111,34 +28,13 @@
 					"notNull": true,
 					"autoincrement": false
 				},
-				"config": {
-					"name": "config",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"status": {
-					"name": "status",
-					"type": "text",
+				"completed": {
+					"name": "completed",
+					"type": "integer",
 					"primaryKey": false,
 					"notNull": true,
 					"autoincrement": false,
-					"default": "'CREATED'"
-				},
-				"state": {
-					"name": "state",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": true,
-					"autoincrement": false
-				},
-				"result": {
-					"name": "result",
-					"type": "text",
-					"primaryKey": false,
-					"notNull": false,
-					"autoincrement": false
+					"default": 0
 				},
 				"createdAt": {
 					"name": "createdAt",
@@ -149,15 +45,15 @@
 				}
 			},
 			"indexes": {
-				"matches_code_unique": {
-					"name": "matches_code_unique",
+				"games_code_unique": {
+					"name": "games_code_unique",
 					"columns": [
 						"code"
 					],
 					"isUnique": true
 				},
-				"idx_matches_code": {
-					"name": "idx_matches_code",
+				"idx_games_code": {
+					"name": "idx_games_code",
 					"columns": [
 						"code"
 					],
