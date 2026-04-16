@@ -2,7 +2,7 @@
 // Tiles & Dominoes
 // ============================================================================
 
-import type { BaseGameConfig, Match, MatchId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameConfig, BaseGameData, GameData, GameId, PlayerId } from "@/shared/engine/types";
 
 export type Castle = "red" | "blue" | "yellow" | "green";
 
@@ -95,29 +95,36 @@ export type KingdominoData = {
 	draft: DraftEntry[];
 	phase: "select" | "place";
 	selectionOrder: PlayerId[];
+	winner?: PlayerId;
 };
 
 export type KingdominoConfig = BaseGameConfig & { boardSize: BoardSize; }
 
 export type KingdominoPlayerView = Omit<KingdominoData, "deck"> & { playerId: PlayerId; }
 
-export type KingdominoMatch = Match<KingdominoPlayerView, KingdominoConfig>;
+export type KingdominoGame = BaseGameData & GameData<KingdominoPlayerView, KingdominoConfig>;
 
 // ============================================================================
 // Input Types
 // ============================================================================
 
 export type SelectDominoInput = {
-	matchId: MatchId;
+	gameId: GameId;
 	dominoId: DominoId;
 };
 
 export type PlaceDominoInput = {
-	matchId: MatchId;
+	gameId: GameId;
 	placement: Placement;
 };
 
 export type DiscardDominoInput = {
-	matchId: MatchId;
+	gameId: GameId;
 	dominoId: DominoId;
+};
+
+export type KingdominoMoves = {
+	selectDomino: SelectDominoInput;
+	placeDomino: PlaceDominoInput;
+	discardDomino: DiscardDominoInput;
 };

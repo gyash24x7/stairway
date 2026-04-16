@@ -1,11 +1,11 @@
 "use client";
 
-import type { KingdominoMatch } from "@/kingdomino/core/types";
+import type { KingdominoGame } from "@/kingdomino/core/types";
 import { useSync } from "@/shared/engine/hooks";
 import { createContext, type ReactNode, useContext } from "react";
 
 type KingdominoContextValue = {
-	match: KingdominoMatch;
+	game: KingdominoGame;
 	isMyTurn: boolean;
 };
 
@@ -19,14 +19,14 @@ export function useKingdomino() {
 	return ctx;
 }
 
-type KingdominoProviderProps = { data: KingdominoMatch; children: ReactNode; };
+type KingdominoProviderProps = { data: KingdominoGame; children: ReactNode; };
 
 export function KingdominoProvider( { data, children }: KingdominoProviderProps ) {
-	const match = useSync( "kingdomino", data.id, data );
-	const isMyTurn = match.status === "IN_PROGRESS" && match.state.ctx.currentPlayer === match.state.data.playerId;
+	const game = useSync( "kingdomino", data.id, data );
+	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
 
 	return (
-		<KingdominoContext value={ { match, isMyTurn } }>
+		<KingdominoContext value={ { game, isMyTurn } }>
 			{ children }
 		</KingdominoContext>
 	);

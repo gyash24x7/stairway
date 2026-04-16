@@ -18,10 +18,10 @@ import { RotateCcwIcon, RotateCwIcon } from "lucide-react";
 import { Fragment, useCallback, useState } from "react";
 
 export function GameView() {
-	const { match, isMyTurn } = useKingdomino();
+	const { game, isMyTurn } = useKingdomino();
 	const myPlayerInfo = {
-		...match.players[ match.state.data.playerId ],
-		...match.state.data.playerData[ match.state.data.playerId ]
+		...game.players[ game.state.playerId ],
+		...game.state.playerData[ game.state.playerId ]
 	};
 
 	const selectDominoFn = useServerFn( selectDomino );
@@ -48,8 +48,8 @@ export function GameView() {
 		}
 	} );
 
-	const canSelect = isMyTurn && match.state.data.phase === "select" && !selectDominoMutation.isPending;
-	const canPlace = isMyTurn && match.state.data.phase === "place" && !placeDominoMutation.isPending;
+	const canSelect = isMyTurn && game.state.phase === "select" && !selectDominoMutation.isPending;
+	const canPlace = isMyTurn && game.state.phase === "place" && !placeDominoMutation.isPending;
 	const activeDomino = selectedDominoId ??
 		( canPlace ? myPlayerInfo.queue.toSorted( ( a, b ) => a - b )[ 0 ] : null );
 
@@ -57,7 +57,7 @@ export function GameView() {
 		if ( !canSelect ) {
 			return;
 		}
-		selectDominoMutation.mutate( { data: { matchId: match.id, dominoId } } );
+		selectDominoMutation.mutate( { data: { gameId: game.id, dominoId } } );
 	};
 
 	const handleQueueDominoClick = ( dominoId: DominoId ) => {
@@ -83,7 +83,7 @@ export function GameView() {
 			return;
 		}
 
-		placeDominoMutation.mutate( { data: { matchId: match.id, placement } } );
+		placeDominoMutation.mutate( { data: { gameId: game.id, placement } } );
 	};
 
 	const canDiscard = canPlace && activeDomino
@@ -95,7 +95,7 @@ export function GameView() {
 			return;
 		}
 
-		discardDominoMutation.mutate( { data: { matchId: match.id, dominoId: activeDomino } } );
+		discardDominoMutation.mutate( { data: { gameId: game.id, dominoId: activeDomino } } );
 	};
 
 	// Compute preview cells for the active domino at hover
@@ -111,17 +111,17 @@ export function GameView() {
 	};
 
 	const getStatusMsg = () => {
-		switch ( match.status ) {
+		switch ( game.status ) {
 			case "CREATED":
 				return "WAITING FOR PLAYERS...";
 			case "PLAYERS_READY":
-				return "WAITING FOR MATCH TO START...";
+				return "WAITING FOR GAME TO START...";
 			case "COMPLETED":
-				return match.result?.victory && "winner" in match.result
-					? `WINNER: ${ match.players[ match.result.winner ].name }`
+				return game.state.winner
+					? `WINNER: ${ game.players[ game.state.winner ].name }`
 					: `CHECKING WINNER`;
 			case "IN_PROGRESS":
-				return match.state.data.phase === "select"
+				return game.state.phase === "select"
 					? "SELECTION IN PROGRESS"
 					: "PLACEMENT IN PROGRESS";
 		}
@@ -130,30 +130,30 @@ export function GameView() {
 	return (
 		<div className={ `flex flex-col gap-3 w-full max-w-6xl justify-self-center` }>
 			<GameInfo
-				code={ match.code }
+				code={ game.code }
 				name={ "kingdomino" }
 				additionalInfo={
 					<Fragment>
 						<div className={ "py-2 px-4" }>
 							<p className={ "text-xs md:text-sm" }>BOARD</p>
 							<h1 className={ "text-2xl md:text-4xl font-heading" }>
-								{ match.config.boardSize }x{ match.config.boardSize }
+								{ game.config.boardSize }x{ game.config.boardSize }
 							</h1>
 						</div>
 						<div className={ "py-2 px-4" }>
 							<p className={ "text-xs md:text-sm" }>PLAYERS</p>
 							<h1 className={ "text-2xl md:text-4xl font-heading" }>
-								{ match.config.playerCount }
+								{ game.config.playerCount }
 							</h1>
 						</div>
 					</Fragment>
 				}
-				completed={ match.status === "COMPLETED" }
+				completed={ game.status === "COMPLETED" }
 			/>
 			<div className={ "grid grid-cols-8 gap-2 justify-between mb-52" }>
 				<div className={ "col-span-3 flex flex-1 flex-col gap-2" }>
 					<div className={ "flex gap-2" }>
-						<RPlayerInfo player={ match.players[ match.state.data.playerId ] }/>
+						<RPlayerInfo player={ game.players[ game.state.playerId ] }/>
 						<div className={ "p-4 bg-background rounded-md" }>
 							<p className={ "text-xs md:text-sm" }>POINTS</p>
 							<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
@@ -161,23 +161,23 @@ export function GameView() {
 							</h2>
 						</div>
 					</div>
-					{ match.state.data.draft.length > 0 && (
+					{ game.state.draft.length > 0 && (
 						<RDraft
-							draft={ match.state.data.draft }
+							draft={ game.state.draft }
 							active={ canSelect }
-							players={ match.players }
+							players={ game.players }
 							onSelect={ handleDominoSelect }
 						/>
 					) }
-					{ match.state.ctx.players.filter( pid => pid !== myPlayerInfo.id )
+					{ game.context.players.filter( pid => pid !== myPlayerInfo.id )
 						.map( pid => <ROpponent playerId={ pid } key={ pid }/> ) }
 				</div>
 				<div className={ "col-span-5 flex-1 flex flex-col gap-2" }>
-					{ match.status === "IN_PROGRESS" && (
+					{ game.status === "IN_PROGRESS" && (
 						<div className={ "p-2 bg-background rounded-md flex flex-col gap-2 items-center" }>
 							<RBoard
 								board={ myPlayerInfo.board }
-								boardSize={ match.config.boardSize }
+								boardSize={ game.config.boardSize }
 								isActive={ canPlace }
 								onCellClick={ canPlace ? handleCellClick : undefined }
 								activeDominoId={ activeDomino }

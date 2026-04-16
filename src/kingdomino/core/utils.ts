@@ -2,9 +2,12 @@ import type {
 	Board,
 	BoardSize,
 	Bounds,
+	Castle,
 	Coord,
 	Domino,
 	DominoId,
+	DraftEntry,
+	KingdominoData,
 	Placement,
 	Region,
 	Rotation,
@@ -13,6 +16,9 @@ import type {
 	Tile,
 	Tiles
 } from "@/kingdomino/core/types";
+import type { GameContext, PlayerId } from "@/shared/engine/types";
+
+const DRAFT_SIZE = 4;
 
 export const CASTLES = [ "red", "blue", "green", "yellow" ] as const;
 
@@ -260,7 +266,7 @@ function isPlacementWithinBounds( board: Board, [ p1, p2 ]: Coord[] ) {
 function isAdjacencyValid( board: Board, [ p1, p2 ]: Coord[], dominoId: DominoId ) {
 	const domino = DOMINO_DECK[ dominoId - 1 ];
 
-	// Check adjacency: at least one tile must connect to matching terrain or castle
+	// Check adjacency: at least one tile must connect to gameing terrain or castle
 	const canLeftConnect = hasConnection( board.tiles, p1, domino.left.terrain );
 	const canRightConnect = hasConnection( board.tiles, p2, domino.right.terrain );
 
@@ -285,7 +291,7 @@ export function canDominoBePlaced( board: Board, placement: Placement ) {
 		return false;
 	}
 
-	// Check adjacency: at least one tile must connect to matching terrain or castle
+	// Check adjacency: at least one tile must connect to gameing terrain or castle
 	return isAdjacencyValid( board, [ p1, p2 ], placement.dominoId );
 }
 
@@ -539,7 +545,7 @@ export function applyPlacement( board: Board, placement: Placement ): Board {
  *
  * @param board - The current state of the board, including existing placements and tiles.
  * @param start - The starting coordinate for the region exploration.
- * @param terrain - The terrain type to match for the region.
+ * @param terrain - The terrain type to game for the region.
  * @param visited - A set of visited coordinates to avoid reprocessing tiles.
  * @returns A Region object representing the explored region, or null if no valid region is found.
  */
@@ -641,4 +647,51 @@ export function calculateScore( board: Board ): ScoreBreakdown {
 	const points = regions.reduce( ( sum, r ) => sum + r.points, 0 );
 
 	return { regions, points };
+}
+
+export function createBoard( castle: Castle, boardSize: BoardSize ) {
+	return {
+		size: boardSize,
+		castle,
+		placements: [],
+		tiles: { [ coordKey( { x: 0, y: 0 } ) ]: { terrain: "castle" as const, crowns: 0 } }
+	};
+}
+
+export function drawDraft( deck: KingdominoData["deck"] ): DraftEntry[] {
+	const count = Math.min( DRAFT_SIZE, deck.length );
+	return deck
+		.splice( 0, count )
+		.sort( ( a, b ) => a.id - b.id )
+		.map( domino => ( { domino } ) );
+}
+
+export function getSelectionsPerPlayer( playerCount: number ): number {
+	return playerCount <= 2 ? 2 : 1;
+}
+
+export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string ): number {
+	return draft.filter( e => e.selectedBy === playerId ).length;
+}
+
+export function getSelectionOrderFromDraft( draft: DraftEntry[] ): PlayerId[] {
+	// Order determined by domino ID — whoever picked the lowest domino goes first
+	return [ ...draft ]
+		.filter( e => !!e.selectedBy )
+		.sort( ( a, b ) => a.domino.id - b.domino.id )
+		.map( e => e.selectedBy! )
+		.filter( ( pid, idx, arr ) => arr.indexOf( pid ) === idx ); // deduplicate for 2-player
+}
+
+export function checkRoundEnd( state: KingdominoData, context: GameContext ) {
+	const allPlaced = context.players.every( pid =>
+		state.playerData[ pid ].queue.length === 0
+	);
+
+	if ( allPlaced && state.deck.length > 0 ) {
+		// Derive next selection order from current draft before replacing
+		state.selectionOrder = getSelectionOrderFromDraft( state.draft );
+		state.draft = drawDraft( state.deck );
+		state.phase = "select";
+	}
 }

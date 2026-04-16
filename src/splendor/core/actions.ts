@@ -4,7 +4,6 @@ import { createLogger } from "@/shared/utils/logger";
 import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
 import { SplendorEngine } from "@/splendor/core/engine";
 import { GEMS } from "@/splendor/core/utils";
-import { TicTacToeEngine } from "@/tictactoe/core/engine";
 import { createServerFn } from "@tanstack/react-start";
 import { env } from "cloudflare:workers";
 import { and, eq } from "drizzle-orm";
@@ -38,7 +37,7 @@ export const createGame = createServerFn( { method: "POST" } )
 	.handler( async ( { data: config, context: { authInfo } } ) => {
 		logger.debug( ">> createGame()" );
 
-		const [ game ] = await db.insert( games ).values( { game: TicTacToeEngine.NAME } ).returning();
+		const [ game ] = await db.insert( games ).values( { game: SplendorEngine.NAME } ).returning();
 
 		const stub = getStub( game.id );
 		await stub.initialize( { ...config, autoStart: true } );

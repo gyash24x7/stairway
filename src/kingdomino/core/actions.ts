@@ -1,98 +1,120 @@
-import { requireAuthInfo } from "@/auth/core/utils";
-import { kingdominoEngine } from "@/kingdomino/core/engine";
+import { KingdominoEngine } from "@/kingdomino/core/engine";
+import { db } from "@/shared/db/client";
+import { games } from "@/shared/db/schema";
 import { createLogger } from "@/shared/utils/logger";
+import { requireAuthInfo, requireGame } from "@/shared/utils/middlewares";
 import { createServerFn } from "@tanstack/react-start";
+import { env } from "cloudflare:workers";
+import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 
 const logger = createLogger( "Kingdomino:Actions" );
 
-export const getMatch = createServerFn( { method: "GET" } )
-	.inputValidator( v.object( { matchId: v.string() } ) )
-	.middleware( [ requireAuthInfo ] )
-	.handler( async ( { data: { matchId }, context: { authInfo } } ) => {
-		logger.debug( ">> getMatch()" );
+function getStub( gameId: string ) {
+	return env.KINGDOMINO_ENGINE.get( env.KINGDOMINO_ENGINE.idFromName( gameId ) );
+}
 
-		const match = await kingdominoEngine.getMatch( matchId );
-		if ( !match ) {
-			throw new Response( null, { status: 404 } );
-		}
+export const getGame = createServerFn( { method: "GET" } )
+	.inputValidator( v.object( { gameId: v.string() } ) )
+	.middleware( [ requireAuthInfo, requireGame( KingdominoEngine.NAME ) ] )
+	.handler( async ( { context: { authInfo, game } } ) => {
+		logger.debug( ">> getGame()" );
 
-		const data = kingdominoEngine.getPlayerView( match, authInfo.id );
-		logger.debug( "<< getMatch()" );
-		return { ...match, state: { ...match.state, data } };
+		const stub = getStub( game.id );
+		const { config, players, state, status } = await stub.getPlayerGameInfo( authInfo.id );
+
+		logger.debug( "<< getGame()" );
+		return { id: game.id, code: game.code, config, players, state, status };
 	} );
 
-export const createMatch = createServerFn( { method: "POST" } )
+export const createGame = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
 		playerCount: v.pipe( v.number(), v.integer(), v.minValue( 2 ), v.maxValue( 4 ) ),
 		boardSize: v.picklist( [ 5, 7 ] )
 	} ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: { playerCount, boardSize }, context: { authInfo } } ) => {
-		logger.debug( ">> createMatch()" );
+		logger.debug( ">> createGame()" );
 
+		const [ game ] = await db.insert( games ).values( { game: KingdominoEngine.NAME } ).returning();
 		const effectiveBoardSize = playerCount <= 2 ? 7 : boardSize;
-		const match = await kingdominoEngine.createMatch( { playerCount, boardSize: effectiveBoardSize } );
-		await kingdominoEngine.joinMatch( match.code, authInfo );
+		const config = { playerCount, boardSize: effectiveBoardSize };
 
-		logger.debug( "<< createMatch()" );
-		return match.id;
+		const stub = getStub( game.id );
+		await stub.initialize( { ...config, autoStart: true } );
+		await stub.join( authInfo );
+
+		logger.debug( "<< createGame()" );
+		return game.id;
 	} );
 
-export const joinMatch = createServerFn( { method: "POST" } )
+export const joinGame = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( { code: v.string() } ) )
 	.middleware( [ requireAuthInfo ] )
 	.handler( async ( { data: { code }, context: { authInfo } } ) => {
-		logger.debug( ">> joinMatch()" );
+		logger.debug( ">> joinGame()" );
 
-		const match = await kingdominoEngine.joinMatch( code, authInfo );
+		const game = await db.query.games.findFirst( {
+			where: and( eq( games.code, code ), eq( games.game, KingdominoEngine.NAME ) )
+		} );
 
-		logger.debug( "<< joinMatch()" );
-		return match.id;
+		if ( !game ) {
+			logger.error( "Game not found!" );
+			throw new Response( null, { status: 404 } );
+		}
+
+		const stub = getStub( game.id );
+		await stub.join( authInfo );
+
+		logger.debug( "<< joinGame()" );
+		return game.id;
 	} );
 
 export const selectDomino = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		dominoId: v.number()
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( KingdominoEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> selectDomino()" );
 
-		await kingdominoEngine.processMove( input.matchId, authInfo.id, "selectDomino", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "selectDomino", input );
 
 		logger.debug( "<< selectDomino()" );
 	} );
 
 export const placeDomino = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		placement: v.object( {
 			dominoId: v.number(),
 			coord: v.object( { x: v.number(), y: v.number() } ),
 			rotation: v.picklist( [ 0, 90, 180, 270 ] )
 		} )
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( KingdominoEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> placeDomino()" );
 
-		await kingdominoEngine.processMove( input.matchId, authInfo.id, "placeDomino", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "placeDomino", input );
 
 		logger.debug( "<< placeDomino()" );
 	} );
 
 export const discardDomino = createServerFn( { method: "POST" } )
 	.inputValidator( v.object( {
-		matchId: v.string(),
+		gameId: v.string(),
 		dominoId: v.number()
 	} ) )
-	.middleware( [ requireAuthInfo ] )
+	.middleware( [ requireAuthInfo, requireGame( KingdominoEngine.NAME ) ] )
 	.handler( async ( { data: input, context: { authInfo } } ) => {
 		logger.debug( ">> discardDomino()" );
 
-		await kingdominoEngine.processMove( input.matchId, authInfo.id, "discardDomino", input );
+		const stub = getStub( input.gameId );
+		await stub.processMove( authInfo.id, "discardDomino", input );
 
 		logger.debug( "<< discardDomino()" );
 	} );
