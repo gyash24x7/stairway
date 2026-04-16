@@ -1,57 +1,30 @@
 {
 	"name": "stairway",
-	"private": true,
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"type": "module",
+	"private": true,
 	"scripts": {
-		"dev": "vite",
+		"dev": "vite dev",
 		"build": "vite build",
-		"preview": "vite preview",
-		"generate": "wrangler types ./env.d.ts",
-		"typecheck": "tsc -b",
-		"migrate:new": "drizzle-kit generate",
-		"migrate:dev": "wrangler d1 migrations apply DB --local",
-		"migrate:prod": "wrangler d1 migrations apply DB --remote"
+		"preview": "wrangler dev",
+		"clean": "rm -rf ./node_modules/.vite",
+		"generate": "wrangler types ./types/env.d.ts --include-runtime false"
 	},
 	"dependencies": {
-		"@base-ui/react": "1.3.0",
-		"@simplewebauthn/browser": "13.3.0",
-		"@simplewebauthn/server": "13.3.0",
-		"@tanstack/react-query": "5.97.0",
-		"@tanstack/react-router": "1.168.13",
-		"@tanstack/react-start": "1.167.23",
-		"class-variance-authority": "0.7.1",
-		"clsx": "2.1.1",
-		"drizzle-orm": "0.45.2",
-		"lucide-react": "1.8.0",
 		"react": "19.2.5",
 		"react-dom": "19.2.5",
-		"sonner": "2.0.7",
-		"tailwind-merge": "3.5.0",
-		"tslog": "4.10.2",
-		"ulid": "3.0.2",
-		"unique-names-generator": "4.7.1",
-		"usehooks-ts": "3.1.1",
-		"valibot": "1.3.1"
+		"rwsdk": "1.2.0"
 	},
 	"devDependencies": {
-		"@cloudflare/vite-plugin": "1.31.2",
-		"@cloudflare/workers-types": "4.20260411.1",
-		"@tailwindcss/typography": "0.5.19",
-		"@tailwindcss/vite": "4.2.2",
-		"@tanstack/router-plugin": "1.167.12",
+		"@cloudflare/vite-plugin": "1.32.3",
 		"@tsconfig/node24": "24.0.4",
 		"@tsconfig/strictest": "2.0.8",
 		"@types/node": "24.12.2",
 		"@types/react": "19.2.14",
 		"@types/react-dom": "19.2.3",
-		"@vitejs/plugin-react": "6.0.1",
-		"drizzle-kit": "0.31.10",
-		"tailwindcss": "4.2.2",
-		"tw-animate-css": "1.4.0",
 		"typescript": "6.0.2",
-		"vite": "8.0.8",
-		"wrangler": "4.81.1"
+		"vite": "7.3.2",
+		"wrangler": "4.83.0"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [

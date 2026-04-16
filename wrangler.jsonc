@@ -1,40 +1,13 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "stairway",
-	"main": "src/server.ts",
+	"main": "src/worker.tsx",
 	"compatibility_date": "2025-08-21",
 	"compatibility_flags": [ "nodejs_compat" ],
 	"observability": {
 		"enabled": true
 	},
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "stairway",
-			"database_id": "f8156d94-8c52-4c8d-aa85-45d2b839626e"
-		}
-	],
-	"durable_objects": {
-		"bindings": [
-			{ "name": "TICTACTOE_ENGINE", "class_name": "TicTacToeEngine" },
-			{ "name": "CALLBREAK_ENGINE", "class_name": "CallbreakEngine" },
-			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" },
-			{ "name": "FISH_ENGINE", "class_name": "FishEngine" },
-			{ "name": "KINGDOMINO_ENGINE", "class_name": "KingdominoEngine" },
-			{ "name": "WORDLE_ENGINE", "class_name": "WordleEngine" }
-		]
-	},
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": [
-				"TicTacToeEngine",
-				"CallbreakEngine",
-				"SplendorEngine",
-				"FishEngine",
-				"KingdominoEngine",
-				"WordleEngine"
-			]
-		}
-	]
+	"assets": {
+		"binding": "ASSETS"
+	}
 }
