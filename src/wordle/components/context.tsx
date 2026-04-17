@@ -3,6 +3,7 @@
 import { submitGuess } from "@/wordle/core/actions";
 import type { WordleGame } from "@/wordle/core/types";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState, useTransition } from "react";
+import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type WordleContextValue = {
 	game: WordleGame;
@@ -26,7 +27,7 @@ export function useWordle() {
 type WordleProviderProps = { data: WordleGame; children: ReactNode; }
 
 export function WordleProvider( { data, children }: WordleProviderProps ) {
-	const [ game ] = useState( data );
+	const [ game ] = useSyncedState<WordleGame>( data, "wordle", data.id );
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
 	const [ isPending, startTransition ] = useTransition();
 
@@ -39,8 +40,8 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 			return;
 		}
 
-		await submitGuess( { gameId: game.id, guess } );
 		setCurrentGuess( "" );
+		await submitGuess( { gameId: game.id, guess } );
 	} );
 
 	const handleKeyPress = useCallback( ( letter: string ) => {

@@ -45,7 +45,7 @@ export const createGame = serverAction( [
 		const [ game ] = await db.insert( games ).values( { game: WordleEngine.NAME } ).returning();
 
 		const stub = getStub( game.id );
-		await stub.initialize( { playerCount: 1, ...input } );
+		await stub.initialize( game.id, game.code, { playerCount: 1, ...input } );
 		await stub.join( authInfo );
 
 		logger.debug( "<< createGame()" );

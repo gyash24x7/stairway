@@ -2,6 +2,7 @@
 
 import type {
 	BaseGameConfig,
+	BaseGameData,
 	BasePlayerInfo,
 	BasePlayerView,
 	GameContext,
@@ -27,6 +28,8 @@ export abstract class AbstractGameEngine<
 
 	protected readonly logger = createLogger( "Game:Engine" );
 
+	private id: string = "";
+	private code: string = "";
 	private config: C;
 	private state: G;
 	private context: GameContext = { turn: 0, players: [], currentPlayer: "" };
@@ -48,9 +51,11 @@ export abstract class AbstractGameEngine<
 		} );
 	}
 
-	public async initialize( config: C ) {
+	public async initialize( gameId: string, code: string, config: C ) {
 		this.logger.debug( ">> initialize()" );
 
+		this.id = gameId;
+		this.code = code;
 		this.config = config;
 		this.state = this.structure.setup( config );
 
@@ -162,10 +167,10 @@ export abstract class AbstractGameEngine<
 		};
 	}
 
-	public getPlayerGameInfo( playerId: string ): GameData<V, C> {
+	public getPlayerGameInfo( playerId: string ): BaseGameData & GameData<V, C> {
 		const state = this.structure.playerView( this.readonlyGameData(), playerId );
 		const data = this.getGameData();
-		return { ...data, state };
+		return { ...data, state, id: this.id, code: this.code };
 	}
 
 	override async alarm() {
@@ -302,11 +307,13 @@ export abstract class AbstractGameEngine<
 	// ── Storage & sync ────────────────────────────────────────────────────
 
 	private async loadGameData() {
-		const data = await this.ctx.storage.get<GameData<G, C>>( "data" );
+		const data = await this.ctx.storage.get<BaseGameData & GameData<G, C>>( "data" );
 		if ( !data ) {
 			return false;
 		}
 
+		this.id = data.id;
+		this.code = data.code;
 		this.players = data.players;
 		this.state = data.state;
 		this.status = data.status;
@@ -317,13 +324,20 @@ export abstract class AbstractGameEngine<
 	}
 
 	private async saveGameData() {
-		await this.ctx.storage.put( "data", this.getGameData() );
+		await this.ctx.storage.put( "data", {
+			...this.getGameData(),
+			id: this.id,
+			code: this.code
+		} );
 	}
 
 	private async syncClients() {
+		const syncId = this.env.SYNCED_STATE_SERVER.idFromName( this.id );
+		const syncStub = this.env.SYNCED_STATE_SERVER.get( syncId );
+
 		for ( const playerId of Object.keys( this.players ).filter( id => !this.players[ id ].isBot ) ) {
 			const data = this.getPlayerGameInfo( playerId );
-			console.log( "Synced for Player: %s", data.state.playerId );
+			await syncStub.setState( data, this.structure.name );
 		}
 	}
 

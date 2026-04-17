@@ -8,8 +8,10 @@ import type { Theme, ThemeMode } from "@/shared/utils/cn";
 import { requireauthInfo } from "@/shared/utils/middlewares";
 import { WordleGamePage } from "@/wordle/components/game-page";
 import { WordleHomePage } from "@/wordle/components/home-page";
+import { env } from "cloudflare:workers";
 import * as cookie from "cookie";
 import { layout, render, route } from "rwsdk/router";
+import { syncedStateRoutes } from "rwsdk/use-synced-state/worker";
 import { defineApp, requestInfo } from "rwsdk/worker";
 
 export type AppContext = {
@@ -20,6 +22,7 @@ export type AppContext = {
 
 export { UserSession } from "@/auth/core/sessions";
 export { WordleEngine } from "@/wordle/core/engine";
+export { SyncedStateServer } from "rwsdk/use-synced-state/worker";
 
 export const app = defineApp( [
 	setCommonHeaders(),
@@ -35,6 +38,8 @@ export const app = defineApp( [
 		const session = await sessionStore.load( requestInfo.request );
 		requestInfo.ctx.authInfo = session?.authInfo ?? null;
 	},
+
+	...syncedStateRoutes( () => env.SYNCED_STATE_SERVER ),
 
 	render( Document, [
 		layout( AppLayout, [
