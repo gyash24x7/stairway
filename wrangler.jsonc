@@ -19,10 +19,12 @@
 	],
 	"durable_objects": {
 		"bindings": [
-			{ "name": "SESSION", "class_name": "UserSession" }
+			{ "name": "SESSION", "class_name": "UserSession" },
+			{ "name": "WORDLE_ENGINE", "class_name": "WordleEngine" }
 		]
 	},
 	"migrations": [
-		{ "tag": "v1", "new_sqlite_classes": [ "UserSession" ] }
+		{ "tag": "v1", "new_sqlite_classes": [ "UserSession" ] },
+		{ "tag": "v2", "new_sqlite_classes": [ "WordleEngine" ] }
 	]
 }

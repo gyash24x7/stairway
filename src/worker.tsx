@@ -16,6 +16,7 @@ export type AppContext = {
 };
 
 export { UserSession } from "@/auth/core/sessions";
+export { WordleEngine } from "@/wordle/core/engine";
 
 export default defineApp( [
 	setCommonHeaders(),

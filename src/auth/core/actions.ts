@@ -6,7 +6,7 @@ import { db } from "@/shared/db/client";
 import { passkeys, users, webauthnOptions } from "@/shared/db/schema";
 import { generateAvatar, generateId } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { validate } from "@/shared/utils/validate";
+import { validate } from "@/shared/utils/middlewares";
 import {
 	type AuthenticationResponseJSON,
 	generateAuthenticationOptions,
