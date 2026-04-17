@@ -5,6 +5,9 @@ import { setCommonHeaders } from "@/headers";
 import { HomePage } from "@/shared/components/home-page";
 import { AppLayout } from "@/shared/components/layout";
 import type { Theme, ThemeMode } from "@/shared/utils/cn";
+import { requireauthInfo } from "@/shared/utils/middlewares";
+import { WordleGamePage } from "@/wordle/components/game-page";
+import { WordleHomePage } from "@/wordle/components/home-page";
 import * as cookie from "cookie";
 import { layout, render, route } from "rwsdk/router";
 import { defineApp, requestInfo } from "rwsdk/worker";
@@ -18,7 +21,7 @@ export type AppContext = {
 export { UserSession } from "@/auth/core/sessions";
 export { WordleEngine } from "@/wordle/core/engine";
 
-export default defineApp( [
+export const app = defineApp( [
 	setCommonHeaders(),
 
 	function loadTheme( { ctx, request } ) {
@@ -35,7 +38,11 @@ export default defineApp( [
 
 	render( Document, [
 		layout( AppLayout, [
-			route( "/", HomePage )
+			route( "/", HomePage ),
+			route( "/wordle", WordleHomePage ),
+			route( "/wordle/:gameId", [ requireauthInfo, WordleGamePage ] )
 		] )
 	] )
 ] );
+
+export default { fetch: app.fetch } satisfies ExportedHandler<Env>;

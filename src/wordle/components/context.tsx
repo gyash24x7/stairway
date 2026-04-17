@@ -1,0 +1,83 @@
+"use client";
+
+import { submitGuess } from "@/wordle/core/actions";
+import type { WordleGame } from "@/wordle/core/types";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState, useTransition } from "react";
+
+type WordleContextValue = {
+	game: WordleGame;
+	currentGuess: string;
+	isPending: boolean;
+	handleKeyPress: ( letter: string ) => void;
+	handleBackspace: () => void;
+	handleSubmit: () => void;
+};
+
+const WordleContext = createContext<WordleContextValue | null>( null );
+
+export function useWordle() {
+	const ctx = useContext( WordleContext );
+	if ( !ctx ) {
+		throw new Error( "useWordle must be used within a WordleProvider" );
+	}
+	return ctx;
+}
+
+type WordleProviderProps = { data: WordleGame; children: ReactNode; }
+
+export function WordleProvider( { data, children }: WordleProviderProps ) {
+	const [ game ] = useState( data );
+	const [ currentGuess, setCurrentGuess ] = useState( "" );
+	const [ isPending, startTransition ] = useTransition();
+
+	const wordLength = game.config.wordLength;
+	const gameInProgress = game.status === "IN_PROGRESS";
+
+	const handleSubmit = () => startTransition( async () => {
+		const guess = currentGuess.trim().toLowerCase();
+		if ( !guess || guess.length !== wordLength ) {
+			return;
+		}
+
+		await submitGuess( { gameId: game.id, guess } );
+		setCurrentGuess( "" );
+	} );
+
+	const handleKeyPress = useCallback( ( letter: string ) => {
+		setCurrentGuess( prev => prev.length < wordLength ? prev + letter : prev );
+	}, [ wordLength ] );
+
+	const handleBackspace = useCallback( () => {
+		setCurrentGuess( prev => prev.slice( 0, -1 ) );
+	}, [] );
+
+	const handleKeyDown = ( e: KeyboardEvent ) => {
+		if ( e.metaKey || e.ctrlKey || e.altKey ) {
+			return;
+		}
+
+		if ( e.key === "Enter" ) {
+			handleSubmit();
+		} else if ( e.key === "Backspace" ) {
+			handleBackspace();
+		} else if ( /^[a-zA-Z]$/.test( e.key ) ) {
+			handleKeyPress( e.key.toLowerCase() );
+		}
+	};
+
+	useEffect( () => {
+		if ( !gameInProgress ) {
+			return;
+		}
+
+		window.addEventListener( "keydown", handleKeyDown );
+		return () => window.removeEventListener( "keydown", handleKeyDown );
+
+	}, [ gameInProgress, handleSubmit, handleKeyPress, handleBackspace ] );
+
+	return (
+		<WordleContext value={ { game, currentGuess, isPending, handleKeyPress, handleBackspace, handleSubmit } }>
+			{ children }
+		</WordleContext>
+	);
+}

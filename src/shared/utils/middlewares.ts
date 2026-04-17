@@ -17,6 +17,14 @@ export const validate = ( schema: StandardSchemaV1 ) => {
 	};
 };
 
+export const requireauthInfo = () => {
+	const authInfo = requestInfo.ctx.authInfo;
+	if ( !authInfo ) {
+		logger.error( "User not logged in!" );
+		throw new Response( null, { status: 403 } );
+	}
+};
+
 export function getAuthInfo() {
 	const authInfo = requestInfo.ctx.authInfo;
 	if ( !authInfo ) {

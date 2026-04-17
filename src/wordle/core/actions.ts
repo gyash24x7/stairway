@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput } from "@/shared/engine/types";
