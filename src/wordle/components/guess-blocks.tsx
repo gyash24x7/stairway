@@ -16,7 +16,7 @@ function getBlockColor( status: LetterStatus ) {
 }
 
 export function GuessBlocks() {
-	const { game, currentGuess } = useWordle();
+	const { game, currentGuess, invalidGuess } = useWordle();
 	const currentGuessLetters = currentGuess.split( "" );
 	const currentRow = game.state.guesses.length;
 
@@ -56,7 +56,8 @@ export function GuessBlocks() {
 													hasResult ? getBlockColor( status ) : "bg-background",
 													"w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12 border rounded",
 													"flex items-center justify-center",
-													isCurrentRow && currentLetter && "border-foreground"
+													isCurrentRow && currentLetter && "border-foreground",
+													isCurrentRow && invalidGuess && "border-red-500"
 												) }
 											>
 												<p className={ "text-lg sm:text-xl md:text-2xl font-semibold" }>

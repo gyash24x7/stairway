@@ -32,7 +32,7 @@ export function JoinGame( { game, joinGame }: JoinGameProps ) {
 		<div className={ "rounded-md bg-background p-6 flex flex-col gap-4 flex-1" }>
 			<h2 className={ "text-xl font-heading" }>Join Game</h2>
 			<p className={ "text-sm text-muted-foreground" }>
-				Enter a game code to join an existing match
+				Enter a game code to join an existing game
 			</p>
 			<div className={ "flex gap-2" }>
 				<Input

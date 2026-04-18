@@ -110,7 +110,6 @@ export abstract class AbstractGameEngine<
 			this.state = this.structure.hooks.onStart( this.readonlyGameData() );
 		}
 
-		this.context.currentPlayer = this.resolveNextPlayer();
 		this.status = "IN_PROGRESS";
 
 		await this.saveGameData();
@@ -210,15 +209,20 @@ export abstract class AbstractGameEngine<
 			throw new Error( "Player not in game." );
 		}
 
-		if ( this.context.currentPlayer !== playerId ) {
-			this.logger.error( "Not your turn!" );
-			throw new Error( "Not your turn." );
-		}
-
 		const move = this.structure.moves[ moveType ];
 		if ( !move ) {
 			this.logger.error( "Invalid Move Type!" );
 			throw new Error( "Invalid move type." );
+		}
+
+		if ( move.canMove ) {
+			if ( !move.canMove( this.readonlyGameData(), playerId ) ) {
+				this.logger.error( "Player cannot make this move!" );
+				throw new Error( "You cannot make this move." );
+			}
+		} else if ( this.context.currentPlayer !== playerId ) {
+			this.logger.error( "Not your turn!" );
+			throw new Error( "Not your turn." );
 		}
 
 		if ( this.structure.hooks?.beforeMove ) {
@@ -232,7 +236,7 @@ export abstract class AbstractGameEngine<
 			this.state = this.structure.hooks.afterMove( this.readonlyGameData(), playerId, moveType );
 		}
 
-		this.context.currentPlayer = this.resolveNextPlayer();
+		this.context.turn++;
 
 		const ended = this.structure.endIf( this.readonlyGameData() );
 		if ( ended ) {
@@ -242,6 +246,10 @@ export abstract class AbstractGameEngine<
 
 			this.status = "COMPLETED";
 			this.logger.info( "Game completed!" );
+		} else {
+			this.context.currentPlayer = this.structure.resolveNextPlayer(
+				this.readonlyGameData(), playerId, moveType
+			);
 		}
 
 		this.logger.debug( "<< executeMove()" );
@@ -280,19 +288,6 @@ export abstract class AbstractGameEngine<
 			config: Object.freeze( { ...this.config } ),
 			context: Object.freeze( { ...this.context } )
 		};
-	}
-
-	private resolveNextPlayer(): PlayerId {
-		this.context.turn++;
-
-		const { getNextPlayer } = this.structure;
-
-		if ( getNextPlayer === "round-robin" ) {
-			const index = this.context.turn % this.context.players.length;
-			return this.context.players[ index ];
-		}
-
-		return getNextPlayer( this.readonlyGameData() );
 	}
 
 	private async loadGameData() {

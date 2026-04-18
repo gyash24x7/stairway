@@ -23,10 +23,10 @@ export function CreateGame( { game, disabled, createGame, children }: CreateGame
 		<div className={ "rounded-md bg-background p-6 flex flex-col gap-4 flex-1" }>
 			<h2 className={ "text-xl font-heading" }>New Game</h2>
 			<p className={ "text-sm text-muted-foreground" }>
-				Create a match and share the code with a friend
+				Create a game and share the code with a friend
 			</p>
 			{ children }
-			<Button onClick={ handleCreate } disabled={ disabled || isPending }>Create Match</Button>
+			<Button onClick={ handleCreate } disabled={ disabled || isPending }>Create Game</Button>
 		</div>
 	);
 }

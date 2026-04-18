@@ -1,5 +1,6 @@
 import { AbstractGameEngine } from "@/shared/engine/engine";
 import type { GameStructure } from "@/shared/engine/types";
+import { roundRobin } from "@/shared/engine/utils";
 import { dictionaries } from "@/wordle/core/dictionary";
 import type {
 	GuessInput,
@@ -17,7 +18,7 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 
 	protected override readonly structure: GameStructure<WordleData, WordleMoves, WordleConfig, WordlePlayerView> = {
 		name: WordleEngine.NAME,
-		getNextPlayer: "round-robin",
+		resolveNextPlayer: roundRobin,
 
 		playerView: ( { state, config }, playerId ): WordlePlayerView => {
 			const emptyRow = Array( config.wordLength ).fill( { letter: "", status: "absent" as const } );
@@ -25,6 +26,7 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 				playerId,
 				guesses: state.guesses,
 				maxGuesses: state.maxGuesses,
+				victory: state.victory,
 				guessResults: state.words.map( ( word ) => {
 					const results = state.guessResults[ word ] ?? [];
 					const solvedAt = results.findIndex( ( row ) => row.every( ( r ) => r.status === "correct" ) );

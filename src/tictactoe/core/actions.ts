@@ -43,7 +43,7 @@ export const createGame = serverAction( [
 		logger.debug( "Game Created! %s:%s", TicTacToeEngine.NAME, game.id );
 
 		const stub = getStub( game.id );
-		await stub.initialize( game.id, game.code, { playerCount: 2 } );
+		await stub.initialize( game.id, game.code, { playerCount: 2, autoStart: true } );
 		await stub.join( authInfo );
 
 		logger.debug( "<< createGame()" );

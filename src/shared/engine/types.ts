@@ -26,7 +26,13 @@ export type ExecuteFn<G, C extends BaseGameConfig, I = unknown> = (
 	input: I
 ) => G;
 
+export type CanMoveFn<G, C extends BaseGameConfig> = (
+	data: ReadonlyGameData<G, C>,
+	playerId: PlayerId
+) => boolean;
+
 export type Move<G, C extends BaseGameConfig, I = unknown> = {
+	canMove?: CanMoveFn<G, C>;
 	validate: ValidateFn<G, C, I>;
 	execute: ExecuteFn<G, C, I>;
 };
@@ -38,8 +44,11 @@ export type MoveMap<G, C extends BaseGameConfig, M extends BaseMoveMap> = {
 
 export type MoveType<M extends BaseMoveMap> = keyof M;
 
-export type GetNextPlayerFn<G, C extends BaseGameConfig> = ( data: ReadonlyGameData<G, C> ) => PlayerId;
-export type GetNextPlayer<G, C extends BaseGameConfig> = "round-robin" | GetNextPlayerFn<G, C>;
+export type ResolveNextPlayerFn<G, M extends BaseMoveMap, C extends BaseGameConfig> = (
+	data: ReadonlyGameData<G, C>,
+	playerId: PlayerId,
+	moveType: MoveType<M>
+) => PlayerId;
 
 export type BotMoveFn<G, C extends BaseGameConfig, M extends BaseMoveMap> = ( data: ReadonlyGameData<G, C> ) => {
 	moveType: keyof M;
@@ -85,7 +94,7 @@ export type GameStructure<
 	hooks?: GameHooks<G, M, C>;
 	moves: MoveMap<G, C, M>;
 	endIf: ( data: ReadonlyGameData<G, C> ) => boolean;
-	getNextPlayer: GetNextPlayer<G, C>;
+	resolveNextPlayer: ResolveNextPlayerFn<G, M, C>;
 	botMove?: BotMoveFn<V, C, M>;
 	playerView: ( data: ReadonlyGameData<G, C>, playerId: PlayerId ) => V;
 }

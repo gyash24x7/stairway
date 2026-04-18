@@ -1,5 +1,6 @@
 import { AbstractGameEngine } from "@/shared/engine/engine";
 import type { BaseGameConfig, GameStructure } from "@/shared/engine/types";
+import { roundRobin } from "@/shared/engine/utils";
 import type { Board, PlaceInput, TicTacToeData, TicTacToeMoves, TicTacToePlayerView } from "@/tictactoe/core/types";
 import { checkWinner, findBestMove, getSymbol, isBoardFull } from "@/tictactoe/core/utils";
 
@@ -9,7 +10,7 @@ export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToe
 
 	protected readonly structure: GameStructure<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToePlayerView> = {
 		name: TicTacToeEngine.NAME,
-		getNextPlayer: "round-robin",
+		resolveNextPlayer: roundRobin,
 
 		playerView: ( { state }, playerId ) => ( { ...state, playerId } ),
 

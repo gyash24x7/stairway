@@ -1,6 +1,7 @@
 "use client";
 
 import { submitGuess } from "@/wordle/core/actions";
+import { dictionaries } from "@/wordle/core/dictionary";
 import type { WordleGame } from "@/wordle/core/types";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState, useTransition } from "react";
 import { useSyncedState } from "rwsdk/use-synced-state/client";
@@ -9,6 +10,7 @@ type WordleContextValue = {
 	game: WordleGame;
 	currentGuess: string;
 	isPending: boolean;
+	invalidGuess: boolean;
 	handleKeyPress: ( letter: string ) => void;
 	handleBackspace: () => void;
 	handleSubmit: () => void;
@@ -30,6 +32,7 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 	const [ game ] = useSyncedState<WordleGame>( data, data.id, "wordle" );
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
 	const [ isPending, startTransition ] = useTransition();
+	const [ invalidGuess, setInvalidGuess ] = useState( false );
 
 	const wordLength = game.config.wordLength;
 	const gameInProgress = game.status === "IN_PROGRESS";
@@ -37,6 +40,13 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 	const handleSubmit = () => startTransition( async () => {
 		const guess = currentGuess.trim().toLowerCase();
 		if ( !guess || guess.length !== wordLength ) {
+			return;
+		}
+
+		const dictionary = dictionaries[ wordLength ];
+		if ( !dictionary.includes( guess ) ) {
+			setInvalidGuess( true );
+			setTimeout( () => setInvalidGuess( false ), 1500 );
 			return;
 		}
 
@@ -77,7 +87,7 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 	}, [ gameInProgress, handleSubmit, handleKeyPress, handleBackspace ] );
 
 	return (
-		<WordleContext value={ { game, currentGuess, isPending, handleKeyPress, handleBackspace, handleSubmit } }>
+		<WordleContext value={ { game, currentGuess, isPending, invalidGuess, handleKeyPress, handleBackspace, handleSubmit } }>
 			{ children }
 		</WordleContext>
 	);
