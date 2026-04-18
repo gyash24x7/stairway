@@ -6,6 +6,8 @@ import { Document } from "@/document";
 import { FishGamePage } from "@/fish/components/game-page";
 import { FishHomePage } from "@/fish/components/home-page";
 import { setCommonHeaders } from "@/headers";
+import { KingdominoGamePage } from "@/kingdomino/components/game-page";
+import { KingdominoHomePage } from "@/kingdomino/components/home-page";
 import { HomePage } from "@/shared/components/home-page";
 import { AppLayout } from "@/shared/components/layout";
 import type { Theme, ThemeMode } from "@/shared/utils/cn";
@@ -78,7 +80,10 @@ export const app = defineApp( [
 			route( "/fish/:gameId", [ requireauthInfo, FishGamePage ] ),
 
 			route( "/callbreak", CallbreakHomePage ),
-			route( "/callbreak/:gameId", [ requireauthInfo, CallbreakGamePage ] )
+			route( "/callbreak/:gameId", [ requireauthInfo, CallbreakGamePage ] ),
+
+			route( "/kingdomino", KingdominoHomePage ),
+			route( "/kingdomino/:gameId", [ requireauthInfo, KingdominoGamePage ] )
 		] )
 	] )
 ] );
