@@ -24,7 +24,8 @@
 			{ "name": "SYNCED_STATE_SERVER", "class_name": "SyncedStateServer" },
 			{ "name": "TIC_TAC_TOE_ENGINE", "class_name": "TicTacToeEngine" },
 			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" },
-			{ "name": "FISH_ENGINE", "class_name": "FishEngine" }
+			{ "name": "FISH_ENGINE", "class_name": "FishEngine" },
+			{ "name": "CALLBREAK_ENGINE", "class_name": "CallbreakEngine" }
 		]
 	},
 	"migrations": [
@@ -33,6 +34,7 @@
 		{ "tag": "v3", "new_sqlite_classes": [ "SyncedStateServer" ] },
 		{ "tag": "v4", "new_sqlite_classes": [ "TicTacToeEngine" ] },
 		{ "tag": "v5", "new_sqlite_classes": [ "SplendorEngine" ] },
-		{ "tag": "v6", "new_sqlite_classes": [ "FishEngine" ] }
+		{ "tag": "v6", "new_sqlite_classes": [ "FishEngine" ] },
+		{ "tag": "v7", "new_sqlite_classes": [ "CallbreakEngine" ] }
 	]
 }
