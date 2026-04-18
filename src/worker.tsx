@@ -1,5 +1,7 @@
 import { sessionStore } from "@/auth/core/sessions";
 import type { AuthInfo } from "@/auth/core/types";
+import { CallbreakGamePage } from "@/callbreak/components/game-page";
+import { CallbreakHomePage } from "@/callbreak/components/home-page";
 import { Document } from "@/document";
 import { FishGamePage } from "@/fish/components/game-page";
 import { FishHomePage } from "@/fish/components/home-page";
@@ -72,7 +74,10 @@ export const app = defineApp( [
 			route( "/splendor/:gameId", [ requireauthInfo, SplendorGamePage ] ),
 
 			route( "/fish", FishHomePage ),
-			route( "/fish/:gameId", [ requireauthInfo, FishGamePage ] )
+			route( "/fish/:gameId", [ requireauthInfo, FishGamePage ] ),
+
+			route( "/callbreak", CallbreakHomePage ),
+			route( "/callbreak/:gameId", [ requireauthInfo, CallbreakGamePage ] )
 		] )
 	] )
 ] );

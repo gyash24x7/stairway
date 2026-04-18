@@ -29,9 +29,12 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 
 		playerView: ( { state }, playerId ): CallbreakPlayerView => {
 			const activeDeal = state.deals[ 0 ];
+			const previousDeal = state.deals[ 1 ];
+			const lastCompletedTrick = previousDeal?.tricks[ 0 ];
+
 			if ( activeDeal ) {
 				const { hands, ...deal } = activeDeal;
-				return { activeDeal: deal, scores: state.scores, hand: hands[ playerId ], playerId };
+				return { activeDeal: deal, scores: state.scores, hand: hands[ playerId ], playerId, lastCompletedTrick };
 			}
 
 			return { scores: state.scores, hand: [], playerId };
@@ -191,16 +194,11 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 				},
 
 				hooks: {
-					afterMove: ( { state } ) => {
+					beforeMove: ( { state } ) => {
 						const activeDeal = state.deals[ 0 ];
 						const activeTrick = activeDeal.tricks[ 0 ];
 
-						if ( !activeTrick?.winner ) {
-							return state;
-						}
-
-						const completedTricks = activeDeal.tricks.filter( t => !!t.winner ).length;
-						if ( completedTricks < TRICKS_PER_DEAL ) {
+						if ( activeTrick?.winner ) {
 							activeDeal.tricks.unshift( emptyTrick( activeTrick.winner ) );
 						}
 

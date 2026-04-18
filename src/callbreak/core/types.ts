@@ -1,4 +1,4 @@
-import type { BaseGameConfig, BaseGameData, GameData, GameId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameConfig, BaseGameData, BasePlayerView, GameData, GameId, PlayerId } from "@/shared/engine/types";
 import type { CardId, CardSuit } from "@/shared/utils/cards";
 
 export type Trick = {
@@ -27,13 +27,18 @@ export type CallbreakData = {
 
 export type CallbreakConfig = BaseGameConfig & { dealCount: number; trumpSuit: CardSuit; }
 
-export type CallbreakPlayerView = Omit<CallbreakData, "deals"> & {
+export type CallbreakPlayerView = Omit<CallbreakData, "deals"> & BasePlayerView & {
 	activeDeal?: Omit<Deal, "hands">;
+	lastCompletedTrick?: Trick;
 	hand: CardId[];
-	playerId: PlayerId;
 }
 
 export type CallbreakGame = BaseGameData & GameData<CallbreakPlayerView, CallbreakConfig>;
+
+export type CreateGameInput = {
+	dealCount: 5 | 9 | 13;
+	trumpSuit: CardSuit;
+}
 
 export type DeclareWinsInput = {
 	gameId: GameId;

@@ -1,11 +1,11 @@
 "use server";
 
 import { CallbreakEngine } from "@/callbreak/core/engine";
-import type { DeclareWinsInput, PlayCardInput } from "@/callbreak/core/types";
+import type { CreateGameInput, DeclareWinsInput, PlayCardInput } from "@/callbreak/core/types";
 import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
-import { SORTED_DECK } from "@/shared/utils/cards";
+import { CARD_SUITS, SORTED_DECK } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
 import { getAuthInfo, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
 import { env } from "cloudflare:workers";
@@ -36,9 +36,10 @@ export const getGame = serverQuery( [
 
 export const createGame = serverAction( [
 	validate( v.object( {
-		dealCount: v.pipe( v.number(), v.integer(), v.minValue( 1 ), v.maxValue( 10 ) )
+		dealCount: v.pipe( v.number(), v.integer(), v.minValue( 1 ), v.maxValue( 10 ) ),
+		trumpSuit: v.picklist( Object.values( CARD_SUITS ) )
 	} ) ),
-	async ( input: { dealCount: number } ) => {
+	async ( input: CreateGameInput ) => {
 		logger.debug( ">> createGame()" );
 
 		const authInfo = getAuthInfo();
