@@ -27,7 +27,7 @@ export function useWordle() {
 type WordleProviderProps = { data: WordleGame; children: ReactNode; }
 
 export function WordleProvider( { data, children }: WordleProviderProps ) {
-	const [ game ] = useSyncedState<WordleGame>( data, "wordle", data.id );
+	const [ game ] = useSyncedState<WordleGame>( data, data.id, "wordle" );
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
 	const [ isPending, startTransition ] = useTransition();
 

@@ -33,12 +33,14 @@ export function Login() {
 		const optionsJSON = await getLoginOptions( { username } );
 		const response = await startAuthentication( { optionsJSON } );
 		await verifyLogin( { username, response } );
+		window.location.href = "/";
 	};
 
 	const passkeyRegister = async () => {
 		const optionsJSON = await getRegisterOptions( { username, name } );
 		const response = await startRegistration( { optionsJSON } );
 		await verifyRegistration( { username, name, response } );
+		window.location.href = "/";
 	};
 
 	const isValidInput = () => mode === "register"
@@ -56,8 +58,6 @@ export function Login() {
 		} else {
 			await passkeyLogin();
 		}
-
-		window.location.href = "/";
 	} );
 
 	return (

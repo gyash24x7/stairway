@@ -4,7 +4,7 @@ import { cn } from "@/shared/utils/cn";
 export function HomePage() {
 	return (
 		<div className={ "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-6xl" }>
-			{ [ "fish", "callbreak", "wordle", "tictactoe", "splendor", "kingdomino" ].map( game => (
+			{ [ "fish", "callbreak", "wordle", "tic-tac-toe", "splendor", "kingdomino" ].map( game => (
 				<div
 					key={ game }
 					className={ cn(

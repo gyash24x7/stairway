@@ -6,7 +6,7 @@ import { useWordle } from "@/wordle/components/context";
 import { GuessBlocks, GuessDiagramBlocks } from "@/wordle/components/guess-blocks";
 import { Keyboard } from "@/wordle/components/keyboard";
 
-export function GameBoard() {
+export function Board() {
 	const { game } = useWordle();
 	const gameInProgress = game.status === "IN_PROGRESS";
 	const gameCompleted = game.status === "COMPLETED";

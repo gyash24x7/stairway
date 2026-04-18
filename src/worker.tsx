@@ -6,12 +6,14 @@ import { HomePage } from "@/shared/components/home-page";
 import { AppLayout } from "@/shared/components/layout";
 import type { Theme, ThemeMode } from "@/shared/utils/cn";
 import { requireauthInfo } from "@/shared/utils/middlewares";
+import { TicTacToeGamePage } from "@/tictactoe/components/game-page";
+import { TicTacToeHomePage } from "@/tictactoe/components/home-page";
 import { WordleGamePage } from "@/wordle/components/game-page";
 import { WordleHomePage } from "@/wordle/components/home-page";
 import { env } from "cloudflare:workers";
 import * as cookie from "cookie";
 import { layout, render, route } from "rwsdk/router";
-import { syncedStateRoutes } from "rwsdk/use-synced-state/worker";
+import { syncedStateRoutes, SyncedStateServer } from "rwsdk/use-synced-state/worker";
 import { defineApp, requestInfo } from "rwsdk/worker";
 
 export type AppContext = {
@@ -21,7 +23,13 @@ export type AppContext = {
 };
 
 export { UserSession } from "@/auth/core/sessions";
-export { SyncedStateServer } from "rwsdk/use-synced-state/worker";
+
+SyncedStateServer.registerRoomHandler( async ( roomId = "sync", reqInfo ) => {
+	const userId = reqInfo?.ctx.authInfo?.id;
+	return !userId ? roomId : `${ roomId }:${ userId }`;
+} );
+
+export { SyncedStateServer };
 
 export { WordleEngine } from "@/wordle/core/engine";
 export { TicTacToeEngine } from "@/tictactoe/core/engine";
@@ -46,8 +54,12 @@ export const app = defineApp( [
 	render( Document, [
 		layout( AppLayout, [
 			route( "/", HomePage ),
+
 			route( "/wordle", WordleHomePage ),
-			route( "/wordle/:gameId", [ requireauthInfo, WordleGamePage ] )
+			route( "/wordle/:gameId", [ requireauthInfo, WordleGamePage ] ),
+
+			route( "/tic-tac-toe", TicTacToeHomePage ),
+			route( "/tic-tac-toe/:gameId", [ requireauthInfo, TicTacToeGamePage ] )
 		] )
 	] )
 ] );

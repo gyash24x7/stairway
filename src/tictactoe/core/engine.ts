@@ -20,7 +20,7 @@ export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToe
 
 		hooks: {
 			onJoin: ( { state, context }, playerId ) => {
-				const symbol = context.players.length === 0 ? "X" : "O";
+				const symbol = context.players.length === 1 ? "X" : "O";
 				state.symbols[ symbol ] = playerId;
 				return state;
 			},
@@ -46,12 +46,10 @@ export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToe
 			place: {
 				validate: ( { state }, _playerId, { position }: PlaceInput ) => {
 					if ( position < 0 || position > 8 ) {
-						this.logger.debug( "Invalid placement!" );
 						throw new Error( "Invalid position." );
 					}
 
 					if ( state.board[ position ] !== null ) {
-						this.logger.debug( "Cell already occupied!" );
 						throw new Error( "Cell is already occupied." );
 					}
 				},
@@ -71,11 +69,4 @@ export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToe
 			return { moveType: "place", input: { gameId: "", position } };
 		}
 	};
-
-	protected override getInitialState(): { state: TicTacToeData; config: BaseGameConfig; } {
-		return {
-			state: { board: Array( 9 ).fill( null ) as Board, symbols: { X: "", O: "" } },
-			config: { playerCount: 2 }
-		};
-	}
 }

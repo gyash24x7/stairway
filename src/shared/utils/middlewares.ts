@@ -12,6 +12,7 @@ export const validate = ( schema: StandardSchemaV1 ) => {
 	return async ( { args }: any ) => {
 		const result = await schema[ "~standard" ].validate( args[ 0 ] );
 		if ( result.issues ) {
+			logger.error( "Validation failed! %s", result.issues[ 0 ].message );
 			throw new Response( null, { status: 400 } );
 		}
 	};
@@ -40,7 +41,20 @@ export const requireGame = async ( name: string, gameId: GameId ) => {
 	} );
 
 	if ( !game ) {
-		logger.error( "Game not found!" );
+		logger.error( "Game not found! %s:%s", name, gameId );
+		throw new Response( null, { status: 404 } );
+	}
+
+	return game;
+};
+
+export const requireGameByCode = async ( name: string, code: string ) => {
+	const game = await db.query.games.findFirst( {
+		where: and( eq( games.code, code ), eq( games.game, name ) )
+	} );
+
+	if ( !game ) {
+		logger.error( "Game not found! %s:%s", name, code );
 		throw new Response( null, { status: 404 } );
 	}
 

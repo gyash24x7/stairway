@@ -4,7 +4,7 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
-import { getAuthInfo, requireGame, validate } from "@/shared/utils/middlewares";
+import { getAuthInfo, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
 import { TicTacToeEngine } from "@/tictactoe/core/engine";
 import type { PlaceInput } from "@/tictactoe/core/types";
 import { env } from "cloudflare:workers";
@@ -34,12 +34,13 @@ export const getGame = serverQuery( [
 ] );
 
 export const createGame = serverAction( [
-	validate( v.object( {} ) ),
 	async () => {
 		logger.debug( ">> createGame()" );
 
 		const authInfo = getAuthInfo();
 		const [ game ] = await db.insert( games ).values( { game: TicTacToeEngine.NAME } ).returning();
+
+		logger.debug( "Game Created! %s:%s", TicTacToeEngine.NAME, game.id );
 
 		const stub = getStub( game.id );
 		await stub.initialize( game.id, game.code, { playerCount: 2 } );
@@ -56,7 +57,7 @@ export const joinGame = serverAction( [
 		logger.debug( ">> joinGame()" );
 
 		const authInfo = getAuthInfo();
-		const game = await requireGame( TicTacToeEngine.NAME, input.code );
+		const game = await requireGameByCode( TicTacToeEngine.NAME, input.code );
 		const stub = getStub( game.id );
 		await stub.join( authInfo );
 

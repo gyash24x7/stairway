@@ -133,11 +133,4 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 		}
 	};
 
-	protected getInitialState(): { state: WordleData; config: WordleConfig } {
-		return {
-			config: { wordCount: 1, wordLength: 5, autoStart: true, playerCount: 1 },
-			state: { words: [], guesses: [], guessResults: {}, maxGuesses: 0 }
-		};
-	}
-
 }

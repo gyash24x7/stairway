@@ -14,8 +14,6 @@ export type GameContext = {
 
 export type BaseGameConfig = { playerCount: number; autoStart?: boolean };
 
-export type GameState<G> = { data: G; ctx: GameContext; }
-
 export type ValidateFn<G, C extends BaseGameConfig, I = unknown> = (
 	data: ReadonlyGameData<G, C>,
 	playerId: PlayerId,

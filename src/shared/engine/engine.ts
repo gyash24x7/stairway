@@ -28,26 +28,19 @@ export abstract class AbstractGameEngine<
 
 	protected readonly logger = createLogger( "Game:Engine" );
 
-	private id: string = "";
-	private code: string = "";
-	private config: C;
-	private state: G;
 	private context: GameContext = { turn: 0, players: [], currentPlayer: "" };
 	private status: GameStatus = "CREATED";
 	private players: Record<PlayerId, BasePlayerInfo> = {};
 
+	private id = "";
+	private code = "";
+	private config = null as unknown as C;
+	private state = null as unknown as G;
+
 	constructor( ctx: DurableObjectState, env: Env ) {
 		super( ctx, env );
-
-		const initialState = this.getInitialState();
-		this.state = initialState.state;
-		this.config = initialState.config;
-
-		this.ctx.blockConcurrencyWhile( async () => {
-			const loaded = await this.loadGameData();
-			if ( !loaded ) {
-				await this.saveGameData();
-			}
+		void this.ctx.blockConcurrencyWhile( async () => {
+			await this.loadGameData();
 		} );
 	}
 
@@ -92,7 +85,7 @@ export abstract class AbstractGameEngine<
 		await this.syncClients();
 
 		if ( this.isFull() ) {
-			if ( this.config.autoStart === false ) {
+			if ( !this.config.autoStart ) {
 				this.status = "PLAYERS_READY";
 				await this.saveGameData();
 				await this.syncClients();
@@ -204,8 +197,6 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< alarm()" );
 	}
 
-	protected abstract getInitialState(): { state: G, config: C };
-
 	private executeMove<T extends MoveType<M>>( playerId: string, moveType: T, input: M[T] ) {
 		this.logger.debug( ">> executeMove()" );
 
@@ -304,8 +295,6 @@ export abstract class AbstractGameEngine<
 		return getNextPlayer( this.readonlyGameData() );
 	}
 
-	// ── Storage & sync ────────────────────────────────────────────────────
-
 	private async loadGameData() {
 		const data = await this.ctx.storage.get<BaseGameData & GameData<G, C>>( "data" );
 		if ( !data ) {
@@ -332,12 +321,13 @@ export abstract class AbstractGameEngine<
 	}
 
 	private async syncClients() {
-		const syncId = this.env.SYNCED_STATE_SERVER.idFromName( this.id );
-		const syncStub = this.env.SYNCED_STATE_SERVER.get( syncId );
-
 		for ( const playerId of Object.keys( this.players ).filter( id => !this.players[ id ].isBot ) ) {
 			const data = this.getPlayerGameInfo( playerId );
-			await syncStub.setState( data, this.structure.name );
+
+			const syncId = this.env.SYNCED_STATE_SERVER.idFromName( `${ this.structure.name }:${ playerId }` );
+			const syncStub = this.env.SYNCED_STATE_SERVER.get( syncId );
+
+			await syncStub.setState( data, data.id );
 		}
 	}
 
