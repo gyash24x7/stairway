@@ -1,6 +1,8 @@
 import { sessionStore } from "@/auth/core/sessions";
 import type { AuthInfo } from "@/auth/core/types";
 import { Document } from "@/document";
+import { FishGamePage } from "@/fish/components/game-page";
+import { FishHomePage } from "@/fish/components/home-page";
 import { setCommonHeaders } from "@/headers";
 import { HomePage } from "@/shared/components/home-page";
 import { AppLayout } from "@/shared/components/layout";
@@ -66,7 +68,10 @@ export const app = defineApp( [
 			route( "/tic-tac-toe/:gameId", [ requireauthInfo, TicTacToeGamePage ] ),
 
 			route( "/splendor", SplendorHomePage ),
-			route( "/splendor/:gameId", [ requireauthInfo, SplendorGamePage ] )
+			route( "/splendor/:gameId", [ requireauthInfo, SplendorGamePage ] ),
+
+			route( "/fish", FishHomePage ),
+			route( "/fish/:gameId", [ requireauthInfo, FishGamePage ] )
 		] )
 	] )
 ] );

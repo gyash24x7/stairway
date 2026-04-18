@@ -518,7 +518,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 		endIf: ( { state, config } ) => {
 			const totalBooks = config.books.length;
 			const claimedCount = getClaimedBooks( state ).length;
-			return claimedCount < totalBooks;
+			return claimedCount === totalBooks;
 		}
 	};
 
