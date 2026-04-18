@@ -21,8 +21,10 @@ export type AppContext = {
 };
 
 export { UserSession } from "@/auth/core/sessions";
-export { WordleEngine } from "@/wordle/core/engine";
 export { SyncedStateServer } from "rwsdk/use-synced-state/worker";
+
+export { WordleEngine } from "@/wordle/core/engine";
+export { TicTacToeEngine } from "@/tictactoe/core/engine";
 
 export const app = defineApp( [
 	setCommonHeaders(),
