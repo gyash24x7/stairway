@@ -6,6 +6,8 @@ import { HomePage } from "@/shared/components/home-page";
 import { AppLayout } from "@/shared/components/layout";
 import type { Theme, ThemeMode } from "@/shared/utils/cn";
 import { requireauthInfo } from "@/shared/utils/middlewares";
+import { SplendorGamePage } from "@/splendor/components/game-page";
+import { SplendorHomePage } from "@/splendor/components/home-page";
 import { TicTacToeGamePage } from "@/tictactoe/components/game-page";
 import { TicTacToeHomePage } from "@/tictactoe/components/home-page";
 import { WordleGamePage } from "@/wordle/components/game-page";
@@ -60,7 +62,10 @@ export const app = defineApp( [
 			route( "/wordle/:gameId", [ requireauthInfo, WordleGamePage ] ),
 
 			route( "/tic-tac-toe", TicTacToeHomePage ),
-			route( "/tic-tac-toe/:gameId", [ requireauthInfo, TicTacToeGamePage ] )
+			route( "/tic-tac-toe/:gameId", [ requireauthInfo, TicTacToeGamePage ] ),
+
+			route( "/splendor", SplendorHomePage ),
+			route( "/splendor/:gameId", [ requireauthInfo, SplendorGamePage ] )
 		] )
 	] )
 ] );
