@@ -21,9 +21,8 @@ export function GameView() {
 	const { game, isMyTurn } = useFish();
 
 	const hasCards = game.state.hand.length > 0;
-	const gameInProgress = game.status === "IN_PROGRESS";
-	const playersReady = game.status === "PLAYERS_READY";
-	const hasTeams = Object.keys( game.state.teams ).length > 0;
+	const isTeamConfig = game.status === "IN_PROGRESS" && game.context.phase === "TEAM_CONFIG";
+	const isPlaying = game.status === "IN_PROGRESS" && game.context.phase === "PLAY";
 	const lastClaim = game.state.claimHistory[ 0 ];
 	const canTransfer = game.state.lastMoveType === "claim"
 		&& lastClaim?.success
@@ -59,9 +58,9 @@ export function GameView() {
 			{ game.status === "COMPLETED" && <BooksTracker/> }
 			{ game.status === "COMPLETED" && <GameMetrics/> }
 			<div className={ "grid grid-cols-1 gap-3 w-full justify-items-center" }>
-				{ ( game.status === "CREATED" || playersReady ) && <PlayerLobby/> }
-				{ gameInProgress && <TeamsView/> }
-				{ gameInProgress && (
+				{ ( game.status === "CREATED" || isTeamConfig ) && <PlayerLobby/> }
+				{ isPlaying && <TeamsView/> }
+				{ isPlaying && (
 					<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full" }>
 						<HandView/>
 						<ActivityFeed/>
@@ -77,7 +76,7 @@ export function GameView() {
 							</p>
 						</div>
 					) }
-					{ playersReady && !hasTeams && (
+					{ isTeamConfig && (
 						<div
 							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
 							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
@@ -85,7 +84,7 @@ export function GameView() {
 							</p>
 						</div>
 					) }
-					{ gameInProgress && <TurnIndicator/> }
+					{ isPlaying && <TurnIndicator/> }
 				</div>
 			</div>
 			<div
@@ -95,10 +94,10 @@ export function GameView() {
 				) }
 			>
 				{ game.status === "CREATED" && <AddBots/> }
-				{ playersReady && !hasTeams && <CreateTeams/> }
-				{ gameInProgress && isMyTurn && hasCards && <AskCard/> }
-				{ gameInProgress && isMyTurn && <ClaimBook/> }
-				{ gameInProgress && isMyTurn && canTransfer && <TransferTurn/> }
+				{ isTeamConfig && <CreateTeams/> }
+				{ isPlaying && isMyTurn && hasCards && <AskCard/> }
+				{ isPlaying && isMyTurn && <ClaimBook/> }
+				{ isPlaying && isMyTurn && canTransfer && <TransferTurn/> }
 			</div>
 		</div>
 	);

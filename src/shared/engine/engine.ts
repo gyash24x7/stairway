@@ -7,6 +7,7 @@ import type {
 	BasePlayerView,
 	GameContext,
 	GameData,
+	GamePhase,
 	GameStatus,
 	GameStructure,
 	MoveType,
@@ -110,6 +111,10 @@ export abstract class AbstractGameEngine<
 			this.state = this.structure.hooks.onStart( this.readonlyGameData() );
 		}
 
+		if ( this.structure.phases ) {
+			this.enterPhase( this.structure.initialPhase );
+		}
+
 		this.status = "IN_PROGRESS";
 
 		await this.saveGameData();
@@ -134,7 +139,10 @@ export abstract class AbstractGameEngine<
 	public async addBots() {
 		this.logger.debug( ">> addBots()" );
 
-		if ( !this.structure.botMove ) {
+		const hasBotSupport = this.structure.botMove
+			|| ( this.structure.phases && Object.values( this.structure.phases ).some( p => p.botMove ) );
+
+		if ( !hasBotSupport ) {
 			this.logger.error( "This game does not support bots!" );
 			throw new Error( "This game does not support bots." );
 		}
@@ -209,7 +217,11 @@ export abstract class AbstractGameEngine<
 			throw new Error( "Player not in game." );
 		}
 
-		const move = this.structure.moves[ moveType ];
+		const phase = this.getCurrentPhase();
+		const move = phase
+			? phase.moves[ moveType as string ]
+			: this.structure.moves?.[ moveType ];
+
 		if ( !move ) {
 			this.logger.error( "Invalid Move Type!" );
 			throw new Error( "Invalid move type." );
@@ -225,6 +237,10 @@ export abstract class AbstractGameEngine<
 			throw new Error( "Not your turn." );
 		}
 
+		if ( phase?.hooks?.beforeMove ) {
+			this.state = phase.hooks.beforeMove( this.readonlyGameData(), playerId, moveType );
+		}
+
 		if ( this.structure.hooks?.beforeMove ) {
 			this.state = this.structure.hooks.beforeMove( this.readonlyGameData(), playerId, moveType );
 		}
@@ -232,22 +248,36 @@ export abstract class AbstractGameEngine<
 		move.validate( this.readonlyGameData(), playerId, input );
 		this.state = move.execute( this.readonlyGameData(), playerId, input );
 
+		if ( phase?.hooks?.afterMove ) {
+			this.state = phase.hooks.afterMove( this.readonlyGameData(), playerId, moveType );
+		}
 		if ( this.structure.hooks?.afterMove ) {
 			this.state = this.structure.hooks.afterMove( this.readonlyGameData(), playerId, moveType );
 		}
 
 		this.context.turn++;
 
+		if ( phase ) {
+			const phaseEnded = phase.endIf( this.readonlyGameData() );
+			if ( phaseEnded ) {
+				const nextPhaseName = phase.resolveNextPhase( this.readonlyGameData() );
+				this.transitionToPhase( nextPhaseName );
+			} else {
+				this.context.currentPlayer = phase.resolveNextPlayer(
+					this.readonlyGameData(), playerId, moveType
+				);
+			}
+		}
+
 		const ended = this.structure.endIf( this.readonlyGameData() );
 		if ( ended ) {
 			if ( this.structure.hooks?.onEnd ) {
 				this.state = this.structure.hooks.onEnd( this.readonlyGameData() );
 			}
-
 			this.status = "COMPLETED";
 			this.logger.info( "Game completed!" );
-		} else {
-			this.context.currentPlayer = this.structure.resolveNextPlayer(
+		} else if ( !phase ) {
+			this.context.currentPlayer = this.structure.resolveNextPlayer!(
 				this.readonlyGameData(), playerId, moveType
 			);
 		}
@@ -256,7 +286,10 @@ export abstract class AbstractGameEngine<
 	}
 
 	private getBotMove(): { moveType: keyof M; input: M[keyof M] } | null {
-		if ( !this.structure.botMove || this.status !== "IN_PROGRESS" ) {
+		const phase = this.getCurrentPhase();
+		const botMoveFn = phase?.botMove ?? this.structure.botMove;
+
+		if ( !botMoveFn || this.status !== "IN_PROGRESS" ) {
 			this.logger.warn( "No valid bot move!" );
 			return null;
 		}
@@ -267,7 +300,36 @@ export abstract class AbstractGameEngine<
 			return null;
 		}
 
-		return this.structure.botMove( this.readonlyPlayerGameInfo( playerId ) );
+		return botMoveFn( this.readonlyPlayerGameInfo( playerId ) ) as { moveType: keyof M; input: M[keyof M] };
+	}
+
+	private getCurrentPhase(): GamePhase<G, any, C> | null {
+		if ( !this.structure.phases || !this.context.phase ) {
+			return null;
+		}
+		return this.structure.phases[ this.context.phase ] ?? null;
+	}
+
+	private enterPhase( phaseName: string ) {
+		const phase = this.structure.phases![ phaseName ];
+		this.context.phase = phaseName;
+
+		if ( phase.onEnter ) {
+			this.state = phase.onEnter( this.readonlyGameData() );
+		}
+
+		if ( phase.resolveStartingPlayer ) {
+			this.context.currentPlayer = phase.resolveStartingPlayer( this.readonlyGameData() );
+		}
+	}
+
+	private transitionToPhase( phaseName: string ) {
+		const currentPhase = this.getCurrentPhase();
+		if ( currentPhase?.onExit ) {
+			this.state = currentPhase.onExit( this.readonlyGameData() );
+		}
+
+		this.enterPhase( phaseName );
 	}
 
 	private isFull(): boolean {

@@ -199,6 +199,6 @@ export function buildConfig( input: {
 		deckType: isCanadian ? 48 : 52,
 		books,
 		bookSize: isCanadian ? 6 : 4,
-		autoStart: false
+		autoStart: true
 	};
 }

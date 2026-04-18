@@ -98,7 +98,6 @@ export const createTeams = serverAction( [
 		const game = await requireGame( FishEngine.NAME, input.gameId );
 		const stub = getStub( game.id );
 		await stub.processMove( authInfo.id, "createTeams", input );
-		await stub.start();
 
 		logger.debug( "<< createTeams()" );
 	}

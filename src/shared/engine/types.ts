@@ -10,6 +10,7 @@ export type GameContext = {
 	turn: number;
 	players: PlayerId[];
 	currentPlayer: PlayerId;
+	phase?: string;
 }
 
 export type BaseGameConfig = { playerCount: number; autoStart?: boolean };
@@ -83,21 +84,59 @@ export type GameData<G, C extends BaseGameConfig> = {
 	players: Record<PlayerId, BasePlayerInfo>;
 }
 
-export type GameStructure<
+export type GamePhase<G, M extends BaseMoveMap, C extends BaseGameConfig> = {
+	moves: MoveMap<G, C, M>;
+	resolveNextPlayer: ResolveNextPlayerFn<G, M, C>;
+	endIf: ( data: ReadonlyGameData<G, C> ) => boolean;
+	resolveNextPhase: ( data: ReadonlyGameData<G, C> ) => string;
+	onEnter?: ( data: ReadonlyGameData<G, C> ) => G;
+	onExit?: ( data: ReadonlyGameData<G, C> ) => G;
+	resolveStartingPlayer?: ( data: ReadonlyGameData<G, C> ) => PlayerId;
+	botMove?: BotMoveFn<any, C, M>;
+	hooks?: Pick<GameHooks<G, M, C>, "beforeMove" | "afterMove">;
+};
+
+export type GamePhases<G, C extends BaseGameConfig> = Record<string, GamePhase<G, any, C>>;
+
+type BaseGameStructure<
+	G,
+	M extends BaseMoveMap,
+	C extends BaseGameConfig,
+	V extends BasePlayerView
+> = {
+	name: string;
+	setup: ( input: C ) => G;
+	hooks?: GameHooks<G, M, C>;
+	endIf: ( data: ReadonlyGameData<G, C> ) => boolean;
+	playerView: ( data: ReadonlyGameData<G, C>, playerId: PlayerId ) => V;
+};
+
+export type PhasedGameStructure<G, C extends BaseGameConfig = BaseGameConfig> = {
+	phases: GamePhases<G, C>;
+	initialPhase: string;
+	moves?: undefined;
+	resolveNextPlayer?: undefined;
+	botMove?: undefined;
+}
+
+export type FlatGameStructure<
 	G,
 	M extends BaseMoveMap = {},
 	C extends BaseGameConfig = BaseGameConfig,
 	V extends BasePlayerView = BasePlayerView & G
 > = {
-	name: string;
-	setup: ( input: C ) => G;
-	hooks?: GameHooks<G, M, C>;
+	phases?: undefined;
 	moves: MoveMap<G, C, M>;
-	endIf: ( data: ReadonlyGameData<G, C> ) => boolean;
 	resolveNextPlayer: ResolveNextPlayerFn<G, M, C>;
 	botMove?: BotMoveFn<V, C, M>;
-	playerView: ( data: ReadonlyGameData<G, C>, playerId: PlayerId ) => V;
-}
+};
+
+export type GameStructure<
+	G,
+	M extends BaseMoveMap = {},
+	C extends BaseGameConfig = BaseGameConfig,
+	V extends BasePlayerView = BasePlayerView & G
+> = BaseGameStructure<G, M, C, V> & ( FlatGameStructure<G, M, C, V> | PhasedGameStructure<G, C> );
 
 export type GameIdInput = { gameId: GameId };
 export type JoinGameInput = { code: string };
