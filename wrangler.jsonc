@@ -25,7 +25,8 @@
 			{ "name": "TIC_TAC_TOE_ENGINE", "class_name": "TicTacToeEngine" },
 			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" },
 			{ "name": "FISH_ENGINE", "class_name": "FishEngine" },
-			{ "name": "CALLBREAK_ENGINE", "class_name": "CallbreakEngine" }
+			{ "name": "CALLBREAK_ENGINE", "class_name": "CallbreakEngine" },
+			{ "name": "KINGDOMINO_ENGINE", "class_name": "KingdominoEngine" }
 		]
 	},
 	"migrations": [
@@ -35,6 +36,7 @@
 		{ "tag": "v4", "new_sqlite_classes": [ "TicTacToeEngine" ] },
 		{ "tag": "v5", "new_sqlite_classes": [ "SplendorEngine" ] },
 		{ "tag": "v6", "new_sqlite_classes": [ "FishEngine" ] },
-		{ "tag": "v7", "new_sqlite_classes": [ "CallbreakEngine" ] }
+		{ "tag": "v7", "new_sqlite_classes": [ "CallbreakEngine" ] },
+		{ "tag": "v8", "new_sqlite_classes": [ "KingdominoEngine" ] }
 	]
 }
