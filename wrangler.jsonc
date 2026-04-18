@@ -23,7 +23,8 @@
 			{ "name": "WORDLE_ENGINE", "class_name": "WordleEngine" },
 			{ "name": "SYNCED_STATE_SERVER", "class_name": "SyncedStateServer" },
 			{ "name": "TIC_TAC_TOE_ENGINE", "class_name": "TicTacToeEngine" },
-			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" }
+			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" },
+			{ "name": "FISH_ENGINE", "class_name": "FishEngine" }
 		]
 	},
 	"migrations": [
@@ -31,6 +32,7 @@
 		{ "tag": "v2", "new_sqlite_classes": [ "WordleEngine" ] },
 		{ "tag": "v3", "new_sqlite_classes": [ "SyncedStateServer" ] },
 		{ "tag": "v4", "new_sqlite_classes": [ "TicTacToeEngine" ] },
-		{ "tag": "v5", "new_sqlite_classes": [ "SplendorEngine" ] }
+		{ "tag": "v5", "new_sqlite_classes": [ "SplendorEngine" ] },
+		{ "tag": "v6", "new_sqlite_classes": [ "FishEngine" ] }
 	]
 }

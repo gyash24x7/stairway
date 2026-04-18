@@ -36,6 +36,7 @@ export { SyncedStateServer };
 export { WordleEngine } from "@/wordle/core/engine";
 export { TicTacToeEngine } from "@/tictactoe/core/engine";
 export { SplendorEngine } from "@/splendor/core/engine";
+export { FishEngine } from "@/fish/core/engine";
 
 export const app = defineApp( [
 	setCommonHeaders(),

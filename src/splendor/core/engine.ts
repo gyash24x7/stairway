@@ -366,17 +366,4 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 			);
 		}
 	};
-
-	protected getInitialState(): { state: SplendorData; config: SplendorConfig } {
-		return {
-			state: {
-				tokens: DEFAULT_TOKENS,
-				cards: { 1: [], 2: [], 3: [] },
-				nobles: [],
-				decks: generateDecks(),
-				playerData: {}
-			},
-			config: { playerCount: 2, winningPoints: 15 }
-		};
-	}
 }
