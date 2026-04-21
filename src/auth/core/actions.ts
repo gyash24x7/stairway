@@ -26,7 +26,7 @@ const getUserByUsername = async ( username: string ) => {
 };
 
 const getWebAuthnOptions = async ( username: string ) => {
-	return db.query.webauthnOptions.findFirst( { where: eq( users.username, username ) } );
+	return db.query.webauthnOptions.findFirst( { where: eq( webauthnOptions.username, username ) } );
 };
 
 export const checkIfUserExists = serverAction( [

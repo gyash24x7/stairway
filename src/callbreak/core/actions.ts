@@ -50,7 +50,7 @@ export const createGame = serverAction( [
 			playerCount: 4,
 			autoStart: true,
 			dealCount: input.dealCount,
-			trumpSuit: "S"
+			trumpSuit: input.trumpSuit
 		} );
 		await stub.join( authInfo );
 
