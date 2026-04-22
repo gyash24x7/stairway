@@ -1,4 +1,4 @@
-import type { BaseGameConfig, BaseGameData, BasePlayerView, GameData, GameId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
 import type { CardId, CardSuit } from "@/shared/utils/cards";
 
 /** A single trick in a deal, tracking lead player, suit, cards played, and winner. */
@@ -33,15 +33,24 @@ export type CallbreakData = {
 /** Callbreak game configuration with deal count and trump suit. */
 export type CallbreakConfig = BaseGameConfig & { dealCount: number; trumpSuit: CardSuit; }
 
-/** Player-facing view of the game state, exposing only the active deal and the player's own hand. */
-export type CallbreakPlayerView = Omit<CallbreakData, "deals"> & BasePlayerView & {
+/** Shared view of the game state visible to all players. */
+export type CallbreakSharedView = {
+	scores: Record<PlayerId, number>;
 	activeDeal?: Omit<Deal, "hands">;
 	lastCompletedTrick?: Trick;
-	hand: CardId[];
-}
+	winner?: PlayerId;
+};
 
-/** Complete Callbreak game data type combining base game data with player view. */
-export type CallbreakGame = BaseGameData & GameData<CallbreakPlayerView, CallbreakConfig>;
+/** Player-specific view containing only the player's hand. */
+export type CallbreakPlayerView = BasePlayerView & {
+	hand: CardId[];
+};
+
+/** Complete Callbreak game data type with split shared/player state. */
+export type CallbreakGame = {
+	shared: SharedGameData<CallbreakSharedView, CallbreakConfig>;
+	player: PlayerGameData<CallbreakPlayerView>;
+};
 
 /** Input for creating a new Callbreak game with deal count and trump suit. */
 export type CreateGameInput = {

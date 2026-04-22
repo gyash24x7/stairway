@@ -1,4 +1,4 @@
-import type { BaseGameConfig, BaseGameData, BasePlayerView, GameData, GameId, PlayerId } from "@/shared/engine/types";
+import type { BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
 
 export type Gem = "diamond" | "sapphire" | "emerald" | "ruby" | "onyx" | "gold";
 export type CardLevel = 1 | 2 | 3;
@@ -40,9 +40,17 @@ export type SplendorData = {
 
 export type SplendorConfig = BaseGameConfig & { playerCount: 2 | 3 | 4; winningPoints: number };
 
-export type SplendorPlayerView = Omit<SplendorData, "decks"> & BasePlayerView;
+/** Shared view of the game state (decks hidden). */
+export type SplendorSharedView = Omit<SplendorData, "decks">;
 
-export type SplendorGame = BaseGameData & GameData<SplendorPlayerView, SplendorConfig>;
+/** Player view (no player-specific hidden info). */
+export type SplendorPlayerView = BasePlayerView;
+
+/** Complete Splendor game data type with split shared/player state. */
+export type SplendorGame = {
+	shared: SharedGameData<SplendorSharedView, SplendorConfig>;
+	player: PlayerGameData<SplendorPlayerView>;
+};
 
 export type PickTokensInput = {
 	gameId: GameId;

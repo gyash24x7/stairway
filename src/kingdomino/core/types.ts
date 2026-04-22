@@ -2,7 +2,7 @@
 // Tiles & Dominoes
 // ============================================================================
 
-import type { BaseGameConfig, BaseGameData, BasePlayerView, GameData, GameId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
 
 /** The castle color assigned to each player. */
 export type Castle = "red" | "blue" | "yellow" | "green";
@@ -120,11 +120,17 @@ export type KingdominoData = {
 /** Kingdomino game configuration with board size. */
 export type KingdominoConfig = BaseGameConfig & { boardSize: BoardSize; }
 
-/** Player view hiding the remaining deck. */
-export type KingdominoPlayerView = Omit<KingdominoData, "deck"> & BasePlayerView;
+/** Shared view hiding the remaining deck. */
+export type KingdominoSharedView = Omit<KingdominoData, "deck">;
 
-/** Complete Kingdomino game data type. */
-export type KingdominoGame = BaseGameData & GameData<KingdominoPlayerView, KingdominoConfig>;
+/** Player view (no player-specific hidden info). */
+export type KingdominoPlayerView = BasePlayerView;
+
+/** Complete Kingdomino game data type with split shared/player state. */
+export type KingdominoGame = {
+	shared: SharedGameData<KingdominoSharedView, KingdominoConfig>;
+	player: PlayerGameData<KingdominoPlayerView>;
+};
 
 // ============================================================================
 // Input Types

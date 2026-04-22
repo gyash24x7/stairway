@@ -11,7 +11,8 @@ import type {
 	SplendorConfig,
 	SplendorData,
 	SplendorMoves,
-	SplendorPlayerView
+	SplendorPlayerView,
+	SplendorSharedView
 } from "@/splendor/core/types";
 import { DEFAULT_TOKENS, findCardInOpenCards, generateDecks, generateNobles } from "@/splendor/core/utils";
 
@@ -20,18 +21,20 @@ const MAX_RESERVED = 3;
 
 const logger = createLogger( "Splendor:Engine" );
 
-export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMoves, SplendorConfig, SplendorPlayerView> {
+export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMoves, SplendorConfig, SplendorSharedView, SplendorPlayerView> {
 
 	public static readonly NAME = "splendor";
 
-	protected readonly structure: GameStructure<SplendorData, SplendorMoves, SplendorConfig, SplendorPlayerView> = {
+	protected readonly structure: GameStructure<SplendorData, SplendorMoves, SplendorConfig, SplendorSharedView, SplendorPlayerView> = {
 		name: SplendorEngine.NAME,
 		resolveNextPlayer: roundRobin,
 
-		playerView: ( { state }, playerId ): SplendorPlayerView => {
+		sharedView: ( { state } ): SplendorSharedView => {
 			const { decks, ...rest } = state;
-			return { ...rest, playerId };
+			return rest;
 		},
+
+		playerView: ( _data, playerId ): SplendorPlayerView => ( { playerId } ),
 
 		setup: ( _: SplendorConfig ): SplendorData => ( {
 			tokens: DEFAULT_TOKENS,

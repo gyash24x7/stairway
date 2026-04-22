@@ -6,7 +6,8 @@ import { createContext, type ReactNode, useCallback, useContext, useState } from
 import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type CallbreakContextValue = {
-	game: CallbreakGame;
+	shared: CallbreakGame["shared"];
+	player: CallbreakGame["player"];
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
@@ -25,10 +26,12 @@ export function useCallbreak() {
 type CallbreakProviderProps = { data: CallbreakGame; children: ReactNode; };
 
 export function CallbreakProvider( { data, children }: CallbreakProviderProps ) {
-	const [ game ] = useSyncedState( data, data.id, "callbreak" );
+	const room = `callbreak:${ data.shared.id }`;
+	const [ shared ] = useSyncedState( data.shared, "shared", room );
+	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
 
-	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
+	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
 
 	const selectCard = useCallback(
 		( cardId: CardId ) => {
@@ -42,7 +45,7 @@ export function CallbreakProvider( { data, children }: CallbreakProviderProps ) 
 	);
 
 	return (
-		<CallbreakContext value={ { game, isMyTurn, selectCard, selectedCard } }>
+		<CallbreakContext value={ { shared, player, isMyTurn, selectCard, selectedCard } }>
 			{ children }
 		</CallbreakContext>
 	);

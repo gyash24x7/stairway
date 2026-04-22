@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { useState } from "react";
 
 export function AskHistory() {
-	const { game } = useFish();
+	const { shared } = useFish();
 	const [ showDialog, setShowDialog ] = useState( false );
 	const openDialog = () => setShowDialog( true );
 
@@ -20,9 +20,9 @@ export function AskHistory() {
 				<DialogHeader>
 					<DialogTitle>ASK HISTORY</DialogTitle>
 				</DialogHeader>
-				{ game.state.askHistory.slice( 0, 5 ).map( ask => (
+				{ shared.state.askHistory.slice( 0, 5 ).map( ask => (
 					<div className={ "p-3 bg-background rounded-md" } key={ ask.timestamp }>
-						<p>{ getAskDescription( ask, game.players ).toUpperCase() }</p>
+						<p>{ getAskDescription( ask, shared.players ).toUpperCase() }</p>
 					</div>
 				) ) }
 				<DialogFooter/>

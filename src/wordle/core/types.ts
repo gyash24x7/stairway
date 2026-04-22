@@ -1,4 +1,4 @@
-import type { BaseGameConfig, BaseGameData, BasePlayerView, GameData, GameId } from "@/shared/engine/types";
+import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, SharedGameData } from "@/shared/engine/types";
 
 /** Supported word lengths for Wordle games. */
 export type WordLength = 4 | 5 | 6;
@@ -27,13 +27,19 @@ export type WordleData = {
 	victory?: boolean;
 };
 
-/** Player view hiding target words and showing only guess results per word. */
-export type WordlePlayerView = Omit<WordleData, "words" | "guessResults"> & BasePlayerView & {
+/** Shared view hiding target words and raw guessResults, showing processed results. */
+export type WordleSharedView = Omit<WordleData, "words" | "guessResults"> & {
 	guessResults: GuessResultsForWord[];
 };
 
-/** Complete Wordle game data type. */
-export type WordleGame = BaseGameData & GameData<WordlePlayerView, WordleConfig>;
+/** Player view (no player-specific hidden info in Wordle). */
+export type WordlePlayerView = BasePlayerView;
+
+/** Complete Wordle game data type with split shared/player state. */
+export type WordleGame = {
+	shared: SharedGameData<WordleSharedView, WordleConfig>;
+	player: PlayerGameData<WordlePlayerView>;
+};
 
 /** Input for creating a new Wordle game with word count and length. */
 export type CreateGameInput = { wordCount: number; wordLength: WordLength; };

@@ -5,8 +5,8 @@ import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/primitives/table";
 
 export function Scores() {
-	const { game } = useCallbreak();
-	const deal = game.state.activeDeal;
+	const { shared } = useCallbreak();
+	const deal = shared.state.activeDeal;
 	return (
 		<div className={ "flex flex-col rounded-md bg-background overflow-hidden" }>
 			<Table>
@@ -14,13 +14,13 @@ export function Scores() {
 					<TableRow className={ "text-md" }>
 						<TableHead>PLAYER</TableHead>
 						<TableHead className={ "text-center" }>SCORE</TableHead>
-						{ game.status !== "COMPLETED" && (
+						{ shared.status !== "COMPLETED" && (
 							<TableHead className={ "text-center" }>ACTIVE&nbsp;DEAL</TableHead>
 						) }
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{ game.context.players.map( pid => game.players[ pid ] ).map( ( player ) => (
+					{ shared.context.players.map( pid => shared.players[ pid ] ).map( ( player ) => (
 						<TableRow key={ player.id }>
 							<TableCell className={ "flex gap-2 items-center" }>
 								<Avatar className={ "rounded-full w-7 h-7 hidden sm:block" }>
@@ -33,9 +33,9 @@ export function Scores() {
 								<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>
 							</TableCell>
 							<TableCell className={ "text-center" }>
-								{ game.state.scores[ player.id ] }
+								{ shared.state.scores[ player.id ] }
 							</TableCell>
-							{ game.status !== "COMPLETED" && (
+							{ shared.status !== "COMPLETED" && (
 								<TableCell className={ "text-center" }>
 									{ deal?.wins[ player.id ] ?? 0 }/{ deal?.declarations[ player.id ] ?? 0 }
 								</TableCell>

@@ -17,8 +17,8 @@ import type { Gem } from "@/splendor/core/types";
 import { GEMS_WITH_GOLD } from "@/splendor/core/utils";
 
 function PlayerTokenCount( props: { gem: Gem; playerId: string } ) {
-	const { game } = useSplendor();
-	const count = game.state.playerData[ props.playerId ].tokens[ props.gem ];
+	const { shared } = useSplendor();
+	const count = shared.state.playerData[ props.playerId ].tokens[ props.gem ];
 
 	return (
 		<div className={ cn(
@@ -33,8 +33,8 @@ function PlayerTokenCount( props: { gem: Gem; playerId: string } ) {
 }
 
 function ReservedCards( props: { playerId: string } ) {
-	const { game } = useSplendor();
-	const player = game.state.playerData[ props.playerId ];
+	const { shared } = useSplendor();
+	const player = shared.state.playerData[ props.playerId ];
 
 	return (
 		<TooltipProvider delay={ 100 } closeDelay={ 2000 }>
@@ -69,8 +69,8 @@ function ReservedCards( props: { playerId: string } ) {
 }
 
 function PurchasedCards( props: { gem: Exclude<Gem, "gold">; playerId: string; } ) {
-	const { game } = useSplendor();
-	const cards = game.state.playerData[ props.playerId ].cards;
+	const { shared } = useSplendor();
+	const cards = shared.state.playerData[ props.playerId ].cards;
 	return (
 		<div className={ cn(
 			"w-8 h-12 p-1",
@@ -99,10 +99,10 @@ function PlayerGemInfo( props: { playerId: string } ) {
 }
 
 export function PlayerInfo( { playerId }: { playerId: string } ) {
-	const { game } = useSplendor();
-	const baseInfo = game.players[ playerId ];
-	const gameInfo = game.state.playerData[ playerId ];
-	const isCurrentTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === playerId;
+	const { shared } = useSplendor();
+	const baseInfo = shared.players[ playerId ];
+	const gameInfo = shared.state.playerData[ playerId ];
+	const isCurrentTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === playerId;
 	return (
 		<div className={ cn( "bg-background rounded-md overflow-hidden", isCurrentTurn && "ring-2 ring-accent" ) }>
 			<div className={ "flex gap-2 justify-between" }>

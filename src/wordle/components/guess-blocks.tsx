@@ -16,13 +16,13 @@ function getBlockColor( status: LetterStatus ) {
 }
 
 export function GuessBlocks() {
-	const { game, currentGuess, invalidGuess } = useWordle();
+	const { shared, currentGuess, invalidGuess } = useWordle();
 	const currentGuessLetters = currentGuess.split( "" );
-	const currentRow = game.state.guesses.length;
+	const currentRow = shared.state.guesses.length;
 
 	return (
 		<div className={ "flex justify-between flex-wrap gap-3 w-full" }>
-			{ game.state.guessResults.map( ( guessResultsForWord, idx ) => {
+			{ shared.state.guessResults.map( ( guessResultsForWord, idx ) => {
 				const isWordSolved = guessResultsForWord.some(
 					( row ) => row.every( ( r ) => r.status === "correct" && r.letter !== "" )
 				);
@@ -37,9 +37,9 @@ export function GuessBlocks() {
 								<div
 									className={ cn(
 										"grid gap-1",
-										game.config.wordLength === 4 && "grid-cols-4",
-										game.config.wordLength === 5 && "grid-cols-5",
-										game.config.wordLength === 6 && "grid-cols-6"
+										shared.config.wordLength === 4 && "grid-cols-4",
+										shared.config.wordLength === 5 && "grid-cols-5",
+										shared.config.wordLength === 6 && "grid-cols-6"
 									) }
 									key={ i }
 								>
@@ -77,25 +77,25 @@ export function GuessBlocks() {
 }
 
 export function GuessDiagramBlocks() {
-	const { game } = useWordle();
+	const { shared } = useWordle();
 	const [ words, setWords ] = useState<string[]>( [] );
 
 	useEffect( () => {
-		getWords( { gameId: game.id } ).then( setWords );
-	}, [ game.id ] );
+		getWords( { gameId: shared.id } ).then( setWords );
+	}, [ shared.id ] );
 
 	return (
 		<div className={ "flex justify-center flex-wrap gap-5" }>
-			{ game.state.guessResults.map( ( guessResultsForWord, idx ) => (
+			{ shared.state.guessResults.map( ( guessResultsForWord, idx ) => (
 				<div className="flex flex-col items-center gap-1" key={ `guessBlock${ idx }` }>
 					<div className="grid gap-0.5 text-center" role="grid">
 						{ guessResultsForWord.map( ( guessResult, i ) => (
 							<div
 								className={ cn(
 									"grid gap-1",
-									game.config.wordLength === 4 && "grid-cols-4",
-									game.config.wordLength === 5 && "grid-cols-5",
-									game.config.wordLength === 6 && "grid-cols-6"
+									shared.config.wordLength === 4 && "grid-cols-4",
+									shared.config.wordLength === 5 && "grid-cols-5",
+									shared.config.wordLength === 6 && "grid-cols-6"
 								) }
 								key={ i }
 							>

@@ -12,7 +12,9 @@ import type {
 	GameStructure,
 	MoveType,
 	PlayerId,
-	ReadonlyGameData
+	PlayerGameData,
+	ReadonlyGameData,
+	SharedGameData
 } from "@/shared/engine/types";
 import { generateBotInfo } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
@@ -28,10 +30,11 @@ export abstract class AbstractGameEngine<
 	G,
 	M extends Record<string, unknown>,
 	C extends BaseGameConfig,
-	V extends BasePlayerView = BasePlayerView & G
+	SV = G,
+	PV extends BasePlayerView = BasePlayerView
 > extends DurableObject {
 
-	protected abstract readonly structure: GameStructure<G, M, C, V>;
+	protected abstract readonly structure: GameStructure<G, M, C, SV, PV>;
 
 	protected readonly logger = createLogger( "Game:Engine" );
 
@@ -206,14 +209,34 @@ export abstract class AbstractGameEngine<
 	}
 
 	/**
-	 * Returns game data filtered through the player's view, hiding information the player should not see.
+	 * Returns game data split into shared state (visible to all players) and player-specific state.
 	 * @param playerId - The ID of the player requesting the view.
-	 * @returns The player-specific game data including the player view state.
+	 * @returns An object with `shared` (common game data) and `player` (player-specific data).
 	 */
-	public getPlayerGameInfo( playerId: string ): BaseGameData & GameData<V, C> {
-		const state = this.structure.playerView( this.readonlyGameData(), playerId );
-		const data = this.getGameData();
-		return { ...data, state, id: this.id, code: this.code };
+	public getPlayerGameInfo( playerId: string ): { shared: SharedGameData<SV, C>; player: PlayerGameData<PV> } {
+		return { shared: this.getSharedGameInfo(), player: this.getPlayerSpecificInfo( playerId ) };
+	}
+
+	/**
+	 * Returns the shared game data visible to all players.
+	 */
+	private getSharedGameInfo(): SharedGameData<SV, C> {
+		return {
+			id: this.id,
+			code: this.code,
+			config: this.config,
+			state: this.structure.sharedView( this.readonlyGameData() ),
+			players: this.players,
+			status: this.status,
+			context: this.context
+		};
+	}
+
+	/**
+	 * Returns the player-specific game data.
+	 */
+	private getPlayerSpecificInfo( playerId: PlayerId ): PlayerGameData<PV> {
+		return this.structure.playerView( this.readonlyGameData(), playerId );
 	}
 
 	/**
@@ -360,7 +383,7 @@ export abstract class AbstractGameEngine<
 			return null;
 		}
 
-		return botMoveFn( this.readonlyPlayerGameInfo( playerId ) ) as { moveType: keyof M; input: M[keyof M] };
+		return botMoveFn( this.readonlyBotGameInfo( playerId ) ) as { moveType: keyof M; input: M[keyof M] };
 	}
 
 	/**
@@ -425,13 +448,15 @@ export abstract class AbstractGameEngine<
 	}
 
 	/**
-	 * Returns a frozen player-specific view of the game data for safe reading.
-	 * @param playerId - The ID of the player whose view to generate.
-	 * @returns A read-only snapshot of the player's view of the game.
+	 * Returns a frozen merged view (shared + player) of the game data for bot consumption.
+	 * @param playerId - The ID of the bot player.
+	 * @returns A read-only snapshot combining shared and player-specific views.
 	 */
-	private readonlyPlayerGameInfo( playerId: PlayerId ): ReadonlyGameData<V, C> {
+	private readonlyBotGameInfo( playerId: PlayerId ): ReadonlyGameData<SV & PV, C> {
+		const sharedState = this.structure.sharedView( this.readonlyGameData() );
+		const playerState = this.structure.playerView( this.readonlyGameData(), playerId );
 		return {
-			state: this.structure.playerView( this.readonlyGameData(), playerId ),
+			state: { ...sharedState, ...playerState },
 			config: Object.freeze( { ...this.config } ),
 			context: Object.freeze( { ...this.context } )
 		};
@@ -471,15 +496,17 @@ export abstract class AbstractGameEngine<
 
 	/**
 	 * Syncs the current game state to all connected non-bot players via SyncedStateServer.
+	 * Uses a single DO per game (gameName:gameId) with key "shared" for common state
+	 * and each playerId as key for player-specific state.
 	 */
 	private async syncClients() {
+		const syncId = this.env.SYNCED_STATE_SERVER.idFromName( `${ this.structure.name }:${ this.id }` );
+		const syncStub = this.env.SYNCED_STATE_SERVER.get( syncId );
+
+		await syncStub.setState( this.getSharedGameInfo(), "shared" );
+
 		for ( const playerId of Object.keys( this.players ).filter( id => !this.players[ id ].isBot ) ) {
-			const data = this.getPlayerGameInfo( playerId );
-
-			const syncId = this.env.SYNCED_STATE_SERVER.idFromName( `${ this.structure.name }:${ playerId }` );
-			const syncStub = this.env.SYNCED_STATE_SERVER.get( syncId );
-
-			await syncStub.setState( data, data.id );
+			await syncStub.setState( this.getPlayerSpecificInfo( playerId ), playerId );
 		}
 	}
 

@@ -33,10 +33,10 @@ export const getGame = serverQuery( [
 		const authInfo = getAuthInfo();
 		const game = await requireGame( TicTacToeEngine.NAME, input.gameId );
 		const stub = getStub( game.id );
-		const { config, players, state, status, context } = await stub.getPlayerGameInfo( authInfo.id );
+		const { shared, player } = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getGame()" );
-		return { id: game.id, code: game.code, config, players, state, status, context };
+		return { shared, player };
 	}
 ] );
 

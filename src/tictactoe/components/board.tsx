@@ -6,20 +6,20 @@ import { placeMove } from "@/tictactoe/core/actions";
 import { useTransition } from "react";
 
 export function Board() {
-	const { game } = useTicTacToe();
+	const { shared, player } = useTicTacToe();
 	const [ isPending, startTransition ] = useTransition();
 
-	const isMyTurn = game.context.currentPlayer === game.state.playerId;
-	const gameInProgress = game.status === "IN_PROGRESS";
+	const isMyTurn = shared.context.currentPlayer === player.playerId;
+	const gameInProgress = shared.status === "IN_PROGRESS";
 	const disabled = !gameInProgress || !isMyTurn || isPending;
 
 	const handlePlace = ( position: number ) => startTransition( async () => {
-		await placeMove( { gameId: game.id, position } );
+		await placeMove( { gameId: shared.id, position } );
 	} );
 
 	return (
 		<div className={ "grid grid-cols-3 gap-2 w-full max-w-xl" }>
-			{ game.state.board.map( ( cell, index ) => (
+			{ shared.state.board.map( ( cell, index ) => (
 				<button
 					key={ `Cell ${ index }` }
 					onClick={ () => handlePlace( index ) }

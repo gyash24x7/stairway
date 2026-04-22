@@ -5,8 +5,8 @@ import { createContext, type ReactNode, useContext } from "react";
 import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type FishContextValue = {
-	game: FishGame;
-	isMyTurn: boolean;
+	shared: FishGame["shared"];
+	player: FishGame["player"];
 };
 
 const FishContext = createContext<FishContextValue | null>( null );
@@ -22,11 +22,11 @@ export function useFish() {
 type FishProviderProps = { data: FishGame; children: ReactNode; };
 
 export function FishProvider( { data, children }: FishProviderProps ) {
-	const [ game ] = useSyncedState( data, data.id, "fish" );
-	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
-
+	const room = `fish:${ data.shared.id }`;
+	const [ shared ] = useSyncedState( data.shared, "shared", room );
+	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
 	return (
-		<FishContext value={ { game, isMyTurn } }>
+		<FishContext value={ { shared, player } }>
 			{ children }
 		</FishContext>
 	);

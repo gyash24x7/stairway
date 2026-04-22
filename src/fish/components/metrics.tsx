@@ -2,7 +2,7 @@ import { useFish } from "@/fish/components/context";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/primitives/table";
 
 export function GameMetrics() {
-	const { game } = useFish();
+	const { shared } = useFish();
 	return (
 		<Table>
 			<TableHeader>
@@ -18,9 +18,9 @@ export function GameMetrics() {
 				</TableRow>
 			</TableHeader>
 			<TableBody>
-				{ Object.entries( game.state.playerData ).map( ( [ id, { metrics } ] ) => (
+				{ Object.entries( shared.state.playerData ).map( ( [ id, { metrics } ] ) => (
 					<TableRow key={ id } className={ "font-semibold" }>
-						<TableCell>{ game.players[ id ].name }</TableCell>
+						<TableCell>{ shared.players[ id ].name }</TableCell>
 						<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>
 						<TableCell className={ "text-center" }>{ metrics.cardsTaken }</TableCell>
 						<TableCell className={ "text-center" }>{ metrics.cardsGiven }</TableCell>

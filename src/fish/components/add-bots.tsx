@@ -7,11 +7,11 @@ import { Spinner } from "@/shared/primitives/spinner";
 import { useTransition } from "react";
 
 export function AddBots() {
-	const { game } = useFish();
+	const { shared } = useFish();
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleClick = () => startTransition( async () => {
-		await addBots( { gameId: game.id } );
+		await addBots( { gameId: shared.id } );
 	} );
 
 	return (

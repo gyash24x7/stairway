@@ -4,16 +4,17 @@ import { useFish } from "@/fish/components/context";
 import { cn } from "@/shared/utils/cn";
 
 export function TurnIndicator() {
-	const { game, isMyTurn } = useFish();
+	const { shared, player } = useFish();
 
-	const currentPlayerName = game.players[ game.context.currentPlayer ].name.toUpperCase();
+	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
+	const currentPlayerName = shared.players[ shared.context.currentPlayer ].name.toUpperCase();
 
-	const lastClaim = game.state.claimHistory[ 0 ];
-	const canTransfer = game.state.lastMoveType === "claim"
+	const lastClaim = shared.state.claimHistory[ 0 ];
+	const canTransfer = shared.state.lastMoveType === "claim"
 		&& lastClaim?.success
-		&& lastClaim.playerId === game.state.playerId;
+		&& lastClaim.playerId === player.playerId;
 
-	const hasCards = game.state.hand.length > 0;
+	const hasCards = player.hand.length > 0;
 
 	let hint = "";
 	if ( isMyTurn ) {

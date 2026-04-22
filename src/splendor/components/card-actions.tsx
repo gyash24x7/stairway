@@ -31,7 +31,9 @@ export function CardActions( props: CardActionsMenuProps ) {
 	const [ paymentTokens, setPaymentTokens ] = useState<Partial<Tokens>>( {} );
 	const [ isPending, startTransition ] = useTransition();
 
-	const { game, isMyTurn } = useSplendor();
+	const { shared, player } = useSplendor();
+
+	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
 
 	const handleOpenChange = ( isOpen: boolean ) => {
 		setOpen( isOpen );
@@ -41,9 +43,9 @@ export function CardActions( props: CardActionsMenuProps ) {
 			setPaymentTokens( {} );
 		}
 	};
-	const discounts = game.state.playerData[ game.state.playerId ].cards;
-	const reserved = game.state.playerData[ game.state.playerId ].reserved;
-	const playerTokens = game.state.playerData[ game.state.playerId ].tokens;
+	const discounts = shared.state.playerData[ player.playerId ].cards;
+	const reserved = shared.state.playerData[ player.playerId ].reserved;
+	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
 
 	const canPurchaseWithoutGold = Object.keys( props.card.cost ).map( g => g as keyof Cost ).every( gem => {
 		const discountsForGem = discounts.filter( card => card.bonus === gem ).length;
@@ -67,7 +69,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 		}
 
 		await purchaseCard( {
-			gameId: game.id,
+			gameId: shared.id,
 			cardId: props.card.id,
 			payment: paymentTokens
 		} );
@@ -75,7 +77,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 
 	const handleReserveClick = () => startTransition( async () => {
 		const tokenCount = Object.values( playerTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
-		const canTakeGold = game.state.tokens.gold > 0;
+		const canTakeGold = shared.state.tokens.gold > 0;
 
 		if ( type === "default" ) {
 			if ( canTakeGold && tokenCount + 1 > 10 ) {
@@ -88,7 +90,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 			.find( g => ( returnedTokens[ g ] ?? 0 ) > 0 );
 
 		await reserveCard( {
-			gameId: game.id,
+			gameId: shared.id,
 			cardId: props.card.id,
 			withGold: canTakeGold,
 			returnedToken

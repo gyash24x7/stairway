@@ -19,9 +19,11 @@ import { useMemo, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
 
 export function PickTokens() {
-	const { game, isMyTurn } = useSplendor();
-	const availableTokens = game.state.tokens;
-	const playerTokens = game.state.playerData[ game.state.playerId ].tokens;
+	const { shared, player } = useSplendor();
+
+	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
+	const availableTokens = shared.state.tokens;
+	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );
@@ -50,7 +52,7 @@ export function PickTokens() {
 
 	const handlePickClick = () => startTransition( async () => {
 		if ( projectedTotal <= 10 ) {
-			await pickTokens( { gameId: game.id, tokens: selectedTokens } );
+			await pickTokens( { gameId: shared.id, tokens: selectedTokens } );
 			reset();
 		} else {
 			setTrue();
@@ -58,7 +60,7 @@ export function PickTokens() {
 	} );
 
 	const handleReturnClick = () => startTransition( async () => {
-		await pickTokens( { gameId: game.id, tokens: selectedTokens, returned: returnTokens } );
+		await pickTokens( { gameId: shared.id, tokens: selectedTokens, returned: returnTokens } );
 		reset();
 	} );
 

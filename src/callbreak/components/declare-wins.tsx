@@ -19,13 +19,13 @@ import { useCounter } from "usehooks-ts";
 export function DeclareWins() {
 	const [ open, setOpen ] = useState( false );
 	const { count: wins, increment, decrement, reset } = useCounter( 2 );
-	const { game } = useCallbreak();
+	const { shared } = useCallbreak();
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleClick = () => startTransition( async () => {
 		await declareWins( {
-			dealId: game.state.activeDeal?.id!,
-			gameId: game.id,
+			dealId: shared.state.activeDeal?.id!,
+			gameId: shared.id,
 			wins
 		} );
 

@@ -16,10 +16,11 @@ import { RotateCcwIcon, RotateCwIcon } from "lucide-react";
 import { Fragment, useCallback, useState, useTransition } from "react";
 
 export function GameView() {
-	const { game, isMyTurn } = useKingdomino();
+	const { shared, player } = useKingdomino();
+	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
 	const myPlayerInfo = {
-		...game.players[ game.state.playerId ],
-		...game.state.playerData[ game.state.playerId ]
+		...shared.players[ player.playerId ],
+		...shared.state.playerData[ player.playerId ]
 	};
 
 	const [ isPending, startTransition ] = useTransition();
@@ -27,8 +28,8 @@ export function GameView() {
 	const [ selectedDominoId, setSelectedDominoId ] = useState<DominoId | null>( null );
 	const [ rotation, setRotation ] = useState<Rotation>( 0 );
 
-	const canSelect = isMyTurn && game.context.phase === "SELECT" && !isPending;
-	const canPlace = isMyTurn && game.context.phase === "PLACE" && !isPending;
+	const canSelect = isMyTurn && shared.context.phase === "SELECT" && !isPending;
+	const canPlace = isMyTurn && shared.context.phase === "PLACE" && !isPending;
 	const activeDomino = selectedDominoId ??
 		( canPlace ? myPlayerInfo.queue.toSorted( ( a, b ) => a - b )[ 0 ] : null );
 
@@ -38,7 +39,7 @@ export function GameView() {
 		}
 
 		return startTransition( async () => {
-			await selectDomino( { gameId: game.id, dominoId } );
+			await selectDomino( { gameId: shared.id, dominoId } );
 		} );
 	};
 
@@ -66,7 +67,7 @@ export function GameView() {
 		}
 
 		return startTransition( async () => {
-			await placeDomino( { gameId: game.id, placement } );
+			await placeDomino( { gameId: shared.id, placement } );
 			setSelectedDominoId( null );
 			setRotation( 0 );
 		} );
@@ -82,7 +83,7 @@ export function GameView() {
 		}
 
 		return startTransition( async () => {
-			await discardDomino( { gameId: game.id, dominoId: activeDomino } );
+			await discardDomino( { gameId: shared.id, dominoId: activeDomino } );
 			setSelectedDominoId( null );
 			setRotation( 0 );
 		} );
@@ -101,17 +102,17 @@ export function GameView() {
 	};
 
 	const getStatusMsg = () => {
-		switch ( game.status ) {
+		switch ( shared.status ) {
 			case "CREATED":
 				return "WAITING FOR PLAYERS...";
 			case "PLAYERS_READY":
 				return "WAITING FOR GAME TO START...";
 			case "COMPLETED":
-				return game.state.winner
-					? `WINNER: ${ game.players[ game.state.winner ].name }`
+				return shared.state.winner
+					? `WINNER: ${ shared.players[ shared.state.winner ].name }`
 					: `CHECKING WINNER`;
 			case "IN_PROGRESS":
-				return game.context.phase === "SELECT"
+				return shared.context.phase === "SELECT"
 					? "SELECTION IN PROGRESS"
 					: "PLACEMENT IN PROGRESS";
 		}
@@ -120,30 +121,30 @@ export function GameView() {
 	return (
 		<div className={ `flex flex-col gap-3 w-full max-w-6xl justify-self-center` }>
 			<GameInfo
-				code={ game.code }
+				code={ shared.code }
 				name={ "kingdomino" }
 				additionalInfo={
 					<Fragment>
 						<div className={ "py-2 px-4" }>
 							<p className={ "text-xs md:text-sm" }>BOARD</p>
 							<h1 className={ "text-2xl md:text-4xl font-heading" }>
-								{ game.config.boardSize }x{ game.config.boardSize }
+								{ shared.config.boardSize }x{ shared.config.boardSize }
 							</h1>
 						</div>
 						<div className={ "py-2 px-4" }>
 							<p className={ "text-xs md:text-sm" }>PLAYERS</p>
 							<h1 className={ "text-2xl md:text-4xl font-heading" }>
-								{ game.config.playerCount }
+								{ shared.config.playerCount }
 							</h1>
 						</div>
 					</Fragment>
 				}
-				completed={ game.status === "COMPLETED" }
+				completed={ shared.status === "COMPLETED" }
 			/>
 			<div className={ "grid grid-cols-8 gap-2 justify-between mb-52" }>
 				<div className={ "col-span-3 flex flex-1 flex-col gap-2" }>
 					<div className={ "flex gap-2" }>
-						<RPlayerInfo player={ game.players[ game.state.playerId ] }/>
+						<RPlayerInfo player={ shared.players[ player.playerId ] }/>
 						<div className={ "p-4 bg-background rounded-md" }>
 							<p className={ "text-xs md:text-sm" }>POINTS</p>
 							<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
@@ -151,23 +152,23 @@ export function GameView() {
 							</h2>
 						</div>
 					</div>
-					{ game.state.draft.length > 0 && (
+					{ shared.state.draft.length > 0 && (
 						<RDraft
-							draft={ game.state.draft }
+							draft={ shared.state.draft }
 							active={ canSelect }
-							players={ game.players }
+							players={ shared.players }
 							onSelect={ handleDominoSelect }
 						/>
 					) }
-					{ game.context.players.filter( pid => pid !== myPlayerInfo.id )
+					{ shared.context.players.filter( pid => pid !== myPlayerInfo.id )
 						.map( pid => <ROpponent playerId={ pid } key={ pid }/> ) }
 				</div>
 				<div className={ "col-span-5 flex-1 flex flex-col gap-2" }>
-					{ game.status === "IN_PROGRESS" && (
+					{ shared.status === "IN_PROGRESS" && (
 						<div className={ "p-2 bg-background rounded-md flex flex-col gap-2 items-center" }>
 							<RBoard
 								board={ myPlayerInfo.board }
-								boardSize={ game.config.boardSize }
+								boardSize={ shared.config.boardSize }
 								isActive={ canPlace }
 								onCellClick={ canPlace ? handleCellClick : undefined }
 								activeDominoId={ activeDomino }

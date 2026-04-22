@@ -14,25 +14,25 @@ type FeedEntry = {
 };
 
 export function ActivityFeed() {
-	const { game } = useFish();
+	const { shared } = useFish();
 	const [ showDialog, setShowDialog ] = useState( false );
 
 	const entries: FeedEntry[] = [
-		...game.state.askHistory.map( ask => ( {
+		...shared.state.askHistory.map( ask => ( {
 			type: "ask" as const,
-			description: getAskDescription( ask, game.players ),
+			description: getAskDescription( ask, shared.players ),
 			success: ask.success,
 			timestamp: ask.timestamp
 		} ) ),
-		...game.state.claimHistory.map( claim => ( {
+		...shared.state.claimHistory.map( claim => ( {
 			type: "claim" as const,
-			description: getClaimDescription( claim, game.players, game.config.type ),
+			description: getClaimDescription( claim, shared.players, shared.config.type ),
 			success: claim.success,
 			timestamp: claim.timestamp
 		} ) ),
-		...game.state.transferHistory.map( transfer => ( {
+		...shared.state.transferHistory.map( transfer => ( {
 			type: "transfer" as const,
-			description: getTransferDescription( transfer, game.players ),
+			description: getTransferDescription( transfer, shared.players ),
 			timestamp: transfer.timestamp
 		} ) )
 	].sort( ( a, b ) => b.timestamp - a.timestamp );

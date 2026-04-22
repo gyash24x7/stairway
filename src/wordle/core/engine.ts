@@ -9,7 +9,8 @@ import type {
 	WordleConfig,
 	WordleData,
 	WordleMoves,
-	WordlePlayerView
+	WordlePlayerView,
+	WordleSharedView
 } from "@/wordle/core/types";
 
 /**
@@ -17,18 +18,17 @@ import type {
  * Supports configurable word count, word length, and uses a two-pass algorithm
  * for marking correct, present, and absent letters.
  */
-export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, WordleConfig, WordlePlayerView> {
+export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, WordleConfig, WordleSharedView, WordlePlayerView> {
 
 	public static readonly NAME = "wordle";
 
-	protected override readonly structure: GameStructure<WordleData, WordleMoves, WordleConfig, WordlePlayerView> = {
+	protected override readonly structure: GameStructure<WordleData, WordleMoves, WordleConfig, WordleSharedView, WordlePlayerView> = {
 		name: WordleEngine.NAME,
 		resolveNextPlayer: roundRobin,
 
-		playerView: ( { state, config }, playerId ): WordlePlayerView => {
+		sharedView: ( { state, config } ): WordleSharedView => {
 			const emptyRow = Array( config.wordLength ).fill( { letter: "", status: "absent" as const } );
 			return {
-				playerId,
 				guesses: state.guesses,
 				maxGuesses: state.maxGuesses,
 				victory: state.victory,
@@ -43,6 +43,8 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 				} )
 			};
 		},
+
+		playerView: ( _data, playerId ): WordlePlayerView => ( { playerId } ),
 
 		setup: ( { wordCount, wordLength }: WordleConfig ) => {
 			const dictionary = dictionaries[ wordLength ];

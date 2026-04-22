@@ -1,4 +1,4 @@
-import type { BaseGameData, BasePlayerView, GameData, GameId, PlayerId } from "@/shared/engine/types";
+import type { BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
 import type { CardId } from "@/shared/utils/cards";
 
 /** The variant of book grouping used in the game. */
@@ -123,11 +123,17 @@ export type FishConfig = {
 	autoStart?: boolean;
 };
 
-/** Player view hiding other players' hands, showing only the requesting player's hand. */
-export type FishPlayerView = Omit<FishData, "hands"> & BasePlayerView & { hand: CardId[]; };
+/** Shared view of the game state (hands hidden). */
+export type FishSharedView = Omit<FishData, "hands">;
 
-/** Complete Fish game data type. */
-export type FishGame = BaseGameData & GameData<FishPlayerView, FishConfig>;
+/** Player-specific view containing only the player's hand. */
+export type FishPlayerView = BasePlayerView & { hand: CardId[]; };
+
+/** Complete Fish game data type with split shared/player state. */
+export type FishGame = {
+	shared: SharedGameData<FishSharedView, FishConfig>;
+	player: PlayerGameData<FishPlayerView>;
+};
 
 /** A book with a calculated priority weight for bot decision-making. */
 export type WeightedBook = {

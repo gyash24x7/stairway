@@ -7,13 +7,13 @@ import { cn } from "@/shared/utils/cn";
 import { useMemo } from "react";
 
 export function HandView() {
-	const { game } = useFish();
-	const hand = game.state.hand;
+	const { shared, player } = useFish();
+	const hand = player.hand;
 
 	const groupedCards = useMemo( () => {
-		const books = getBooksInHand( hand, game.config.type );
-		return books.map( book => ( { book, cards: getCardsOfBook( book, game.config.type, hand ) } ) );
-	}, [ hand, game.config.type ] );
+		const books = getBooksInHand( hand, shared.config.type );
+		return books.map( book => ( { book, cards: getCardsOfBook( book, shared.config.type, hand ) } ) );
+	}, [ hand, shared.config.type ] );
 
 	if ( hand.length === 0 ) {
 		return (
@@ -35,7 +35,7 @@ export function HandView() {
 			{ groupedCards.map( ( { book, cards } ) => (
 				<div key={ book } className={ "flex flex-col items-center gap-1" }>
 					<span className={ "text-xs md:text-sm font-semibold opacity-60" }>
-						{ getBookDisplayString( book, game.config.type ) }
+						{ getBookDisplayString( book, shared.config.type ) }
 					</span>
 					<div className={ "flex gap-1.5 md:gap-2 flex-wrap justify-center" }>
 						{ cards.map( cardId => (

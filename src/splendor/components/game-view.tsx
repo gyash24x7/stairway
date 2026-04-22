@@ -9,30 +9,30 @@ import { PickTokens } from "@/splendor/components/pick-tokens";
 import { PlayerInfo } from "@/splendor/components/player-info";
 
 export function GameView() {
-	const { game } = useSplendor();
+	const { shared, player } = useSplendor();
 
-	const isLastRound = game.status === "IN_PROGRESS" && Object.values( game.state.playerData )
-		.some( player => player.points >= game.config.winningPoints );
+	const isLastRound = shared.status === "IN_PROGRESS" && Object.values( shared.state.playerData )
+		.some( player => player.points >= shared.config.winningPoints );
 
 	return (
 		<div className={ `flex flex-col gap-3 items-center max-w-6xl justify-self-center w-full mb-80 lg:mb-0` }>
 			<GameInfo
-				code={ game.code }
+				code={ shared.code }
 				name={ "splendor" }
-				completed={ game.status === "COMPLETED" }
+				completed={ shared.status === "COMPLETED" }
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>WINNING POINTS</p>
 						<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
-							{ game.config.winningPoints }
+							{ shared.config.winningPoints }
 						</h2>
 					</div>
 				}
 			/>
-			{ game.status === "COMPLETED" && game.state.winner && (
+			{ shared.status === "COMPLETED" && shared.state.winner && (
 				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
 					<p className={ "text-lg font-heading" }>
-						{ game.state.winner === game.state.playerId ? "You won!" : "You lost!" }
+						{ shared.state.winner === player.playerId ? "You won!" : "You lost!" }
 					</p>
 				</div>
 			) }
@@ -41,7 +41,7 @@ export function GameView() {
 					<Board/>
 				</div>
 				<div className={ cn( "flex flex-col justify-end gap-3 w-full max-w-lg md:max-w-xl" ) }>
-					{ game.status === "CREATED" && (
+					{ shared.status === "CREATED" && (
 						<div
 							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
 							<Spinner size={ "xl" }/>
@@ -50,8 +50,8 @@ export function GameView() {
 							</p>
 						</div>
 					) }
-					{ game.context.players.map( player => <PlayerInfo playerId={ player } key={ player }/> ) }
-					{ game.status === "IN_PROGRESS" && isLastRound && (
+					{ shared.context.players.map( p => <PlayerInfo playerId={ p } key={ p }/> ) }
+					{ shared.status === "IN_PROGRESS" && isLastRound && (
 						<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-surface" }>
 							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 								THIS IS THE LAST ROUND!
@@ -59,7 +59,7 @@ export function GameView() {
 						</div>
 					) }
 					<div className={ "hidden lg:block" }>
-						{ game.status === "IN_PROGRESS" && <PickTokens/> }
+						{ shared.status === "IN_PROGRESS" && <PickTokens/> }
 					</div>
 				</div>
 			</div>
@@ -67,10 +67,10 @@ export function GameView() {
 				className={ cn(
 					"fixed left-0 right-0 bottom-0 bg-surface",
 					"rounded-t-xl flex flex-col gap-2 p-3 items-center",
-					game.status === "IN_PROGRESS" && "lg:hidden"
+					shared.status === "IN_PROGRESS" && "lg:hidden"
 				) }
 			>
-				{ game.status === "IN_PROGRESS" && <PickTokens/> }
+				{ shared.status === "IN_PROGRESS" && <PickTokens/> }
 			</div>
 		</div>
 	);

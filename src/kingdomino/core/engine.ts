@@ -4,6 +4,7 @@ import type {
 	KingdominoData,
 	KingdominoMoves,
 	KingdominoPlayerView,
+	KingdominoSharedView,
 	PlaceDominoInput,
 	SelectDominoInput
 } from "@/kingdomino/core/types";
@@ -31,17 +32,19 @@ import { shuffle } from "@/shared/utils/array";
  * Durable Object game engine for Kingdomino, a tile-drafting and placement game.
  * Uses a phased game structure with SELECT (draft dominoes) and PLACE (place or discard) phases.
  */
-export class KingdominoEngine extends AbstractGameEngine<KingdominoData, KingdominoMoves, KingdominoConfig, KingdominoPlayerView> {
+export class KingdominoEngine extends AbstractGameEngine<KingdominoData, KingdominoMoves, KingdominoConfig, KingdominoSharedView, KingdominoPlayerView> {
 
 	public static readonly NAME = "kingdomino";
 
-	protected readonly structure: GameStructure<KingdominoData, KingdominoMoves, KingdominoConfig, KingdominoPlayerView> = {
+	protected readonly structure: GameStructure<KingdominoData, KingdominoMoves, KingdominoConfig, KingdominoSharedView, KingdominoPlayerView> = {
 		name: KingdominoEngine.NAME,
 
-		playerView: ( { state }, playerId ): KingdominoPlayerView => {
+		sharedView: ( { state } ): KingdominoSharedView => {
 			const { deck, ...rest } = state;
-			return { ...rest, playerId };
+			return rest;
 		},
+
+		playerView: ( _data, playerId ): KingdominoPlayerView => ( { playerId } ),
 
 		setup: ( _config: KingdominoConfig ): KingdominoData => ( {
 			playerData: {},

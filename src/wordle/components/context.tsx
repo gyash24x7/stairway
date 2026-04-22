@@ -7,7 +7,8 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useS
 import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type WordleContextValue = {
-	game: WordleGame;
+	shared: WordleGame["shared"];
+	player: WordleGame["player"];
 	currentGuess: string;
 	isPending: boolean;
 	invalidGuess: boolean;
@@ -29,13 +30,15 @@ export function useWordle() {
 type WordleProviderProps = { data: WordleGame; children: ReactNode; }
 
 export function WordleProvider( { data, children }: WordleProviderProps ) {
-	const [ game ] = useSyncedState<WordleGame>( data, data.id, "wordle" );
+	const room = `wordle:${ data.shared.id }`;
+	const [ shared ] = useSyncedState( data.shared, "shared", room );
+	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
 	const [ isPending, startTransition ] = useTransition();
 	const [ invalidGuess, setInvalidGuess ] = useState( false );
 
-	const wordLength = game.config.wordLength;
-	const gameInProgress = game.status === "IN_PROGRESS";
+	const wordLength = shared.config.wordLength;
+	const gameInProgress = shared.status === "IN_PROGRESS";
 
 	const handleSubmit = () => startTransition( async () => {
 		const guess = currentGuess.trim().toLowerCase();
@@ -51,7 +54,7 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 		}
 
 		setCurrentGuess( "" );
-		await submitGuess( { gameId: game.id, guess } );
+		await submitGuess( { gameId: shared.id, guess } );
 	} );
 
 	const handleKeyPress = useCallback( ( letter: string ) => {
@@ -87,7 +90,7 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 	}, [ gameInProgress, handleSubmit, handleKeyPress, handleBackspace ] );
 
 	return (
-		<WordleContext value={ { game, currentGuess, isPending, invalidGuess, handleKeyPress, handleBackspace, handleSubmit } }>
+		<WordleContext value={ { shared, player, currentGuess, isPending, invalidGuess, handleKeyPress, handleBackspace, handleSubmit } }>
 			{ children }
 		</WordleContext>
 	);

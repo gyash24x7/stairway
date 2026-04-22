@@ -4,6 +4,7 @@ import type {
 	CallbreakData,
 	CallbreakMoves,
 	CallbreakPlayerView,
+	CallbreakSharedView,
 	DeclareWinsInput,
 	PlayCardInput
 } from "@/callbreak/core/types";
@@ -25,24 +26,29 @@ import { getCardSuit } from "@/shared/utils/cards";
  * Uses a phased game structure with DECLARING and PLAYING phases,
  * supporting 4 players with configurable deal count and trump suit.
  */
-export class CallbreakEngine extends AbstractGameEngine<CallbreakData, CallbreakMoves, CallbreakConfig, CallbreakPlayerView> {
+export class CallbreakEngine extends AbstractGameEngine<CallbreakData, CallbreakMoves, CallbreakConfig, CallbreakSharedView, CallbreakPlayerView> {
 
 	public static readonly NAME = "callbreak";
 
-	protected readonly structure: GameStructure<CallbreakData, CallbreakMoves, CallbreakConfig, CallbreakPlayerView> = {
+	protected readonly structure: GameStructure<CallbreakData, CallbreakMoves, CallbreakConfig, CallbreakSharedView, CallbreakPlayerView> = {
 		name: CallbreakEngine.NAME,
 
-		playerView: ( { state }, playerId ): CallbreakPlayerView => {
+		sharedView: ( { state } ): CallbreakSharedView => {
 			const activeDeal = state.deals[ 0 ];
 			const previousDeal = state.deals[ 1 ];
 			const lastCompletedTrick = previousDeal?.tricks[ 0 ];
 
 			if ( activeDeal ) {
 				const { hands, ...deal } = activeDeal;
-				return { activeDeal: deal, scores: state.scores, hand: hands[ playerId ], playerId, lastCompletedTrick };
+				return { activeDeal: deal, scores: state.scores, lastCompletedTrick, winner: state.winner };
 			}
 
-			return { scores: state.scores, hand: [], playerId };
+			return { scores: state.scores, winner: state.winner };
+		},
+
+		playerView: ( { state }, playerId ): CallbreakPlayerView => {
+			const activeDeal = state.deals[ 0 ];
+			return { playerId, hand: activeDeal?.hands[ playerId ] ?? [] };
 		},
 
 		setup: ( _config: CallbreakConfig ): CallbreakData => ( { deals: [], scores: {} } ),

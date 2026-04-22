@@ -4,10 +4,10 @@ import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
 import { cn } from "@/shared/utils/cn";
 
 function PlayerWithCardCount( props: { playerId: PlayerId } ) {
-	const { game } = useFish();
-	const player = game.players[ props.playerId ];
-	const cardCount = game.state.cardCounts[ player.id ];
-	const isActive = player.id === game.context.currentPlayer;
+	const { shared } = useFish();
+	const player = shared.players[ props.playerId ];
+	const cardCount = shared.state.cardCounts[ player.id ];
+	const isActive = player.id === shared.context.currentPlayer;
 	return (
 		<div
 			className={ cn(
@@ -36,10 +36,10 @@ function PlayerWithCardCount( props: { playerId: PlayerId } ) {
 }
 
 export function TeamsView() {
-	const { game } = useFish();
+	const { shared } = useFish();
 	return (
 		<div className={ "grid grid-cols-1 gap-2 w-full" }>
-			{ Object.values( game.state.teams ).map( team => (
+			{ Object.values( shared.state.teams ).map( team => (
 				<div
 					key={ team.id }
 					className={ cn(

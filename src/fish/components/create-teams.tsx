@@ -19,15 +19,15 @@ import { cn } from "@/shared/utils/cn";
 import { Fragment, useState, useTransition } from "react";
 
 export function CreateTeams() {
-	const { game } = useFish();
+	const { shared } = useFish();
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ open, setOpen ] = useState( false );
 
 	const groupPlayers = () => {
 		const teamMembers = chunk(
-			shuffle( game.context.players ),
-			game.config.playerCount / game.config.teamCount
+			shuffle( shared.context.players ),
+			shared.config.playerCount / shared.config.teamCount
 		);
 
 		setTeamMemberData( teamNames.reduce(
@@ -44,7 +44,7 @@ export function CreateTeams() {
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleCreateTeams = () => startTransition( async () => {
-		await createTeams( { gameId: game.id, teams: teamMemberData } );
+		await createTeams( { gameId: shared.id, teams: teamMemberData } );
 		closeDialog();
 	} );
 
@@ -56,8 +56,8 @@ export function CreateTeams() {
 					<DialogTitle>CREATE TEAMS</DialogTitle>
 					<DialogDescription/>
 				</DialogHeader>
-				<div className={ cn( "grid grid-cols-1 gap-2", game.config.teamCount === 4 && "grid-cols-2" ) }>
-					{ Array( game.config.teamCount ).fill( null ).map( ( _, idx ) => (
+				<div className={ cn( "grid grid-cols-1 gap-2", shared.config.teamCount === 4 && "grid-cols-2" ) }>
+					{ Array( shared.config.teamCount ).fill( null ).map( ( _, idx ) => (
 						<Input
 							key={ idx }
 							type="text"
@@ -74,18 +74,18 @@ export function CreateTeams() {
 				<Button
 					className={ "w-full" }
 					onClick={ groupPlayers }
-					disabled={ teamNames.filter( n => !!n ).length !== game.config.teamCount }
+					disabled={ teamNames.filter( n => !!n ).length !== shared.config.teamCount }
 				>
 					GROUP PLAYERS
 				</Button>
-				{ Object.keys( teamMemberData ).length === game.config.teamCount && (
+				{ Object.keys( teamMemberData ).length === shared.config.teamCount && (
 					<div className={ "flex flex-col gap-2" }>
 						{ Object.keys( teamMemberData ).map( teamName => (
 							<Fragment key={ teamName }>
 								<h2>Team { teamName }</h2>
 								<div className={ "flex gap-2" }>
 									{ teamMemberData[ teamName ].map( player => (
-										<RPlayerInfo player={ game.players[ player ] } key={ player }/>
+										<RPlayerInfo player={ shared.players[ player ] } key={ player }/>
 									) ) }
 								</div>
 							</Fragment>

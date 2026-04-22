@@ -22,8 +22,8 @@ import { useState, useTransition } from "react";
 import { useStep } from "usehooks-ts";
 
 export function AskCard() {
-	const { game } = useFish();
-	const player = game.players[ game.state.playerId ];
+	const { shared, player } = useFish();
+	const playerInfo = shared.players[ player.playerId ];
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
@@ -31,17 +31,17 @@ export function AskCard() {
 	const [ open, setOpen ] = useState( false );
 	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
 
-	const askableBooks = Array.from( getBooksInHand( game.state.hand, game.config.type ) ).filter( book => {
-		const cards = getCardsOfBook( book, game.config.type, game.state.hand );
+	const askableBooks = Array.from( getBooksInHand( player.hand, shared.config.type ) ).filter( book => {
+		const cards = getCardsOfBook( book, shared.config.type, player.hand );
 		return cards.length !== 6;
 	} );
 
-	const opponentsWithCards = getOpponents( game.state.teams, player.id )
-		.map( memberId => ( { ...game.players[ memberId ], ...game.state.playerData[ memberId ] } ) )
-		.filter( member => !!game.state.cardCounts[ member.id ] );
+	const opponentsWithCards = getOpponents( shared.state.teams, playerInfo.id )
+		.map( memberId => ( { ...shared.players[ memberId ], ...shared.state.playerData[ memberId ] } ) )
+		.filter( member => !!shared.state.cardCounts[ member.id ] );
 
 	const confirmAskDialogTitle = selectedPlayer && selectedCard
-		? `Ask ${ game.players[ selectedPlayer ].name } for ${ getCardDisplayString( selectedCard ) }`
+		? `Ask ${ shared.players[ selectedPlayer ].name } for ${ getCardDisplayString( selectedCard ) }`
 		: "";
 
 	const openDialog = () => setOpen( true );
@@ -85,7 +85,7 @@ export function AskCard() {
 
 	const handleClick = () => startTransition( async () => {
 		if ( selectedCard && selectedPlayer ) {
-			await askCard( { gameId: game.id, cardId: selectedCard, from: selectedPlayer } );
+			await askCard( { gameId: shared.id, cardId: selectedCard, from: selectedPlayer } );
 			closeDialog();
 		}
 	} );
@@ -117,7 +117,7 @@ export function AskCard() {
 							>
 								<div className={ "flex gap-2 md:gap-3 items-center" }>
 									<h1 className={ cn( "text-md md:text-lg xl:text-xl font-semibold" ) }>
-										{ getBookDisplayString( item, game.config.type ) }
+										{ getBookDisplayString( item, shared.config.type ) }
 									</h1>
 								</div>
 							</div>
@@ -126,7 +126,7 @@ export function AskCard() {
 				) }
 				{ currentStep === 2 && (
 					<div className={ "flex gap-3 flex-wrap justify-center" }>
-						{ getMissingCards( game.state.hand, selectedBook!, game.config.type )
+						{ getMissingCards( player.hand, selectedBook!, shared.config.type )
 							.map( ( cardId ) => (
 								<div
 									key={ cardId }

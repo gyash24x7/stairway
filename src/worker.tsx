@@ -33,9 +33,8 @@ export type AppContext = {
 
 export { UserSession } from "@/auth/core/sessions";
 
-SyncedStateServer.registerRoomHandler( async ( roomId = "sync", reqInfo ) => {
-	const userId = reqInfo?.ctx.authInfo?.id;
-	return !userId ? roomId : `${ roomId }:${ userId }`;
+SyncedStateServer.registerRoomHandler( async ( roomId = "sync" ) => {
+	return roomId;
 } );
 
 export { SyncedStateServer };

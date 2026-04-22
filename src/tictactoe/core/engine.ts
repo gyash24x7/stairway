@@ -1,22 +1,23 @@
 import { AbstractGameEngine } from "@/shared/engine/engine";
 import type { BaseGameConfig, GameStructure } from "@/shared/engine/types";
 import { roundRobin } from "@/shared/engine/utils";
-import type { Board, PlaceInput, TicTacToeData, TicTacToeMoves, TicTacToePlayerView } from "@/tictactoe/core/types";
+import type { Board, PlaceInput, TicTacToeData, TicTacToeMoves, TicTacToePlayerView, TicTacToeSharedView } from "@/tictactoe/core/types";
 import { checkWinner, findBestMove, getSymbol, isBoardFull } from "@/tictactoe/core/utils";
 
 /**
  * Durable Object game engine for Tic-Tac-Toe, a two-player game.
  * Uses a flat (non-phased) game structure with round-robin turns and minimax bot support.
  */
-export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToePlayerView> {
+export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToeSharedView, TicTacToePlayerView> {
 
 	public static readonly NAME = "tic-tac-toe";
 
-	protected readonly structure: GameStructure<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToePlayerView> = {
+	protected readonly structure: GameStructure<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToeSharedView, TicTacToePlayerView> = {
 		name: TicTacToeEngine.NAME,
 		resolveNextPlayer: roundRobin,
 
-		playerView: ( { state }, playerId ) => ( { ...state, playerId } ),
+		sharedView: ( { state } ) => state,
+		playerView: ( _data, playerId ) => ( { playerId } ),
 
 		setup: ( _: {} ): TicTacToeData => ( {
 			board: Array( 9 ).fill( null ) as Board,

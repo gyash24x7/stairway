@@ -5,8 +5,8 @@ import { createContext, type ReactNode, useContext } from "react";
 import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type KingdominoContextValue = {
-	game: KingdominoGame;
-	isMyTurn: boolean;
+	shared: KingdominoGame["shared"];
+	player: KingdominoGame["player"];
 };
 
 const KingdominoContext = createContext<KingdominoContextValue | null>( null );
@@ -22,11 +22,11 @@ export function useKingdomino() {
 type KingdominoProviderProps = { data: KingdominoGame; children: ReactNode; };
 
 export function KingdominoProvider( { data, children }: KingdominoProviderProps ) {
-	const [ game ] = useSyncedState( data, data.id, "kingdomino" );
-	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
-
+	const room = `kingdomino:${ data.shared.id }`;
+	const [ shared ] = useSyncedState( data.shared, "shared", room );
+	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
 	return (
-		<KingdominoContext value={ { game, isMyTurn } }>
+		<KingdominoContext value={ { shared, player } }>
 			{ children }
 		</KingdominoContext>
 	);

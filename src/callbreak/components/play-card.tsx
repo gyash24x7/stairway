@@ -7,14 +7,14 @@ import { Spinner } from "@/shared/primitives/spinner";
 import { useTransition } from "react";
 
 export function PlayCard() {
-	const { game, selectedCard, selectCard } = useCallbreak();
+	const { shared, selectedCard, selectCard } = useCallbreak();
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleClick = () => startTransition( async () => {
 		if ( selectedCard ) {
 			await playCard( {
-				dealId: game.state.activeDeal?.id!,
-				gameId: game.id,
+				dealId: shared.state.activeDeal?.id!,
+				gameId: shared.id,
 				cardId: selectedCard
 			} );
 

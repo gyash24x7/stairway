@@ -1,4 +1,4 @@
-import type { BaseGameConfig, BaseGameData, BasePlayerView, GameData, GameId, PlayerId } from "@/shared/engine/types";
+import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
 
 /** A cell on the board: "X", "O", or null (empty). */
 export type CellValue = "X" | "O" | null;
@@ -13,11 +13,17 @@ export type TicTacToeData = {
 	winner?: "draw" | PlayerId;
 };
 
-/** Player view of the game state (identical to full state since Tic-Tac-Toe has no hidden info). */
-export type TicTacToePlayerView = TicTacToeData & BasePlayerView;
+/** Shared view of the game state (all state is public in Tic-Tac-Toe). */
+export type TicTacToeSharedView = TicTacToeData;
 
-/** Complete Tic-Tac-Toe game data type. */
-export type TicTacToeGame = BaseGameData & GameData<TicTacToePlayerView, BaseGameConfig>
+/** Player view (no private info beyond playerId). */
+export type TicTacToePlayerView = BasePlayerView;
+
+/** Complete Tic-Tac-Toe game data type with split shared/player state. */
+export type TicTacToeGame = {
+	shared: SharedGameData<TicTacToeSharedView, BaseGameConfig>;
+	player: PlayerGameData<TicTacToePlayerView>;
+};
 
 /** Input for placing a symbol on the board at a position (0-8). */
 export type PlaceInput = { gameId: GameId; position: number; };

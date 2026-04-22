@@ -123,6 +123,22 @@ export type BaseGameData = { id: GameId; code: string };
 /** Base player view containing the requesting player's ID. */
 export type BasePlayerView = { playerId: PlayerId };
 
+/**
+ * Shared game data visible to all players, combining base game info with the shared view state.
+ */
+export type SharedGameData<SV, C extends BaseGameConfig> = BaseGameData & {
+	config: C;
+	state: SV;
+	players: Record<PlayerId, BasePlayerInfo>;
+	status: GameStatus;
+	context: GameContext;
+};
+
+/**
+ * Player-specific game data unique to a single player.
+ */
+export type PlayerGameData<PV extends BasePlayerView> = PV;
+
 /** The possible statuses a game can be in throughout its lifecycle. */
 export type GameStatus = "CREATED" | "PLAYERS_READY" | "IN_PROGRESS" | "COMPLETED";
 
@@ -168,19 +184,21 @@ export type GamePhases<G, C extends BaseGameConfig> = Record<string, GamePhase<G
 
 /**
  * Internal base structure shared by all game definitions.
- * Contains the game name, setup function, hooks, end condition, and player view generator.
+ * Contains the game name, setup function, hooks, end condition, shared view, and player view generators.
  */
 type BaseGameStructure<
 	G,
 	M extends BaseMoveMap,
 	C extends BaseGameConfig,
-	V extends BasePlayerView
+	SV,
+	PV extends BasePlayerView
 > = {
 	name: string;
 	setup: ( input: C ) => G;
 	hooks?: GameHooks<G, M, C>;
 	endIf: ( data: ReadonlyGameData<G, C> ) => boolean;
-	playerView: ( data: ReadonlyGameData<G, C>, playerId: PlayerId ) => V;
+	sharedView: ( data: ReadonlyGameData<G, C> ) => SV;
+	playerView: ( data: ReadonlyGameData<G, C>, playerId: PlayerId ) => PV;
 };
 
 /**
@@ -198,17 +216,19 @@ export type PhasedGameStructure<G, C extends BaseGameConfig = BaseGameConfig> = 
 /**
  * A flat (non-phased) game structure with a single set of moves,
  * a player resolution function, and optional bot move support.
+ * Bot receives the merged shared + player view.
  */
 export type FlatGameStructure<
 	G,
 	M extends BaseMoveMap = {},
 	C extends BaseGameConfig = BaseGameConfig,
-	V extends BasePlayerView = BasePlayerView & G
+	SV = G,
+	PV extends BasePlayerView = BasePlayerView
 > = {
 	phases?: undefined;
 	moves: MoveMap<G, C, M>;
 	resolveNextPlayer: ResolveNextPlayerFn<G, M, C>;
-	botMove?: BotMoveFn<V, C, M>;
+	botMove?: BotMoveFn<SV & PV, C, M>;
 };
 
 /**
@@ -219,8 +239,9 @@ export type GameStructure<
 	G,
 	M extends BaseMoveMap = {},
 	C extends BaseGameConfig = BaseGameConfig,
-	V extends BasePlayerView = BasePlayerView & G
-> = BaseGameStructure<G, M, C, V> & ( FlatGameStructure<G, M, C, V> | PhasedGameStructure<G, C> );
+	SV = G,
+	PV extends BasePlayerView = BasePlayerView
+> = BaseGameStructure<G, M, C, SV, PV> & ( FlatGameStructure<G, M, C, SV, PV> | PhasedGameStructure<G, C> );
 
 /** Input type for operations that require a game ID. */
 export type GameIdInput = { gameId: GameId };

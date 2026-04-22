@@ -10,25 +10,25 @@ import { addBots } from "@/tictactoe/core/actions";
 import { useTransition } from "react";
 
 export function GameView() {
-	const { game } = useTicTacToe();
+	const { shared, player } = useTicTacToe();
 	const [ isPending, startTransition ] = useTransition();
-	const players = Object.values( game.players );
-	const isActive = game.status === "IN_PROGRESS";
-	const isCompleted = game.status === "COMPLETED";
+	const players = Object.values( shared.players );
+	const isActive = shared.status === "IN_PROGRESS";
+	const isCompleted = shared.status === "COMPLETED";
 
 	const handleAddBots = () => startTransition( async () => {
-		await addBots( { gameId: game.id } );
+		await addBots( { gameId: shared.id } );
 	} );
 
 	return (
 		<div className={ "flex flex-col gap-3 items-center mb-40 max-w-6xl w-full justify-self-center" }>
 			<GameInfo
-				code={ game.code }
+				code={ shared.code }
 				name={ "Tic Tac Toe" }
 				completed={ isCompleted }
 			/>
 
-			{ game.status === "CREATED" && (
+			{ shared.status === "CREATED" && (
 				<div className={ "rounded-md bg-background p-8 text-center w-full flex flex-col gap-2 items-center" }>
 					<p className={ "text-lg font-heading" }>Waiting for opponent...</p>
 					<p className={ "text-sm text-muted-foreground mb-2" }>
@@ -40,11 +40,11 @@ export function GameView() {
 				</div>
 			) }
 
-			{ isCompleted && game.state.winner && (
+			{ isCompleted && shared.state.winner && (
 				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					{ game.state.winner !== "draw" ? (
+					{ shared.state.winner !== "draw" ? (
 						<p className={ "text-lg font-heading" }>
-							{ game.state.winner === game.state.playerId ? "You won!" : "You lost!" }
+							{ shared.state.winner === player.playerId ? "You won!" : "You lost!" }
 						</p>
 					) : (
 						<p className={ "text-lg font-heading" }>It's a draw!</p>
@@ -62,7 +62,7 @@ export function GameView() {
 								{ index === 0 ? "X" : "O" }
 							</span>
 							<RPlayerInfoSmall player={ p }/>
-							{ game.context.currentPlayer === p.id && isActive && (
+							{ shared.context.currentPlayer === p.id && isActive && (
 								<span className={ "text-xs text-accent" }>●</span>
 							) }
 						</div>

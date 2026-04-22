@@ -18,13 +18,13 @@ import { cn } from "@/shared/utils/cn";
 import { useState, useTransition } from "react";
 
 export function TransferTurn() {
-	const { game } = useFish();
+	const { shared, player } = useFish();
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
 	const [ showDialog, setShowDialog ] = useState( false );
 
-	const teammatesWithCards = getTeammates( game.state.teams, game.state.playerId )
-		.filter( pid => game.state.cardCounts[ pid ] > 0 );
+	const teammatesWithCards = getTeammates( shared.state.teams, player.playerId )
+		.filter( pid => shared.state.cardCounts[ pid ] > 0 );
 
 	const openDialog = () => setShowDialog( true );
 	const closeDialog = () => setShowDialog( false );
@@ -41,7 +41,7 @@ export function TransferTurn() {
 
 	const handleClick = () => startTransition( async () => {
 		if ( selectedPlayer ) {
-			await transferTurn( { gameId: game.id, transferTo: selectedPlayer } );
+			await transferTurn( { gameId: shared.id, transferTo: selectedPlayer } );
 			closeDialog();
 		}
 	} );
@@ -66,7 +66,7 @@ export function TransferTurn() {
 								selectedPlayer === pid && "border-accent bg-accent/20"
 							) }
 						>
-							<RPlayerInfo player={ game.players[ pid ] }/>
+							<RPlayerInfo player={ shared.players[ pid ] }/>
 						</div>
 					) ) }
 				</div>

@@ -7,6 +7,7 @@ import type {
 	FishData,
 	FishMoves,
 	FishPlayerView,
+	FishSharedView,
 	Metrics,
 	TransferTurnInput
 } from "@/fish/core/types";
@@ -30,16 +31,20 @@ const DEFAULT_METRICS: Metrics = {
  * Uses a phased structure with TEAM_CONFIG (team assignment) and PLAY (asking, claiming, transferring) phases.
  * Supports bot players with signal detection and strategic asking/claiming AI.
  */
-export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConfig, FishPlayerView> {
+export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConfig, FishSharedView, FishPlayerView> {
 
 	public static readonly NAME = "fish";
 
-	protected readonly structure: GameStructure<FishData, FishMoves, FishConfig, FishPlayerView> = {
+	protected readonly structure: GameStructure<FishData, FishMoves, FishConfig, FishSharedView, FishPlayerView> = {
 		name: FishEngine.NAME,
 
-		playerView: ( { state }, playerId ): FishPlayerView => {
+		sharedView: ( { state } ): FishSharedView => {
 			const { hands, ...rest } = state;
-			return { ...rest, playerId, hand: hands[ playerId ] ?? [] };
+			return rest;
+		},
+
+		playerView: ( { state }, playerId ): FishPlayerView => {
+			return { playerId, hand: state.hands[ playerId ] ?? [] };
 		},
 
 		setup: ( _config: FishConfig ): FishData => ( {

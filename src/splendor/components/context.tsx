@@ -5,8 +5,8 @@ import { createContext, type ReactNode, useContext } from "react";
 import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type SplendorContextValue = {
-	game: SplendorGame;
-	isMyTurn: boolean;
+	shared: SplendorGame["shared"];
+	player: SplendorGame["player"];
 };
 
 const SplendorContext = createContext<SplendorContextValue | null>( null );
@@ -22,12 +22,11 @@ export function useSplendor() {
 type SplendorProviderProps = { data: SplendorGame; children: ReactNode; };
 
 export function SplendorProvider( { data, children }: SplendorProviderProps ) {
-	const [ game ] = useSyncedState( data, data.id, "splendor" );
-
-	const isMyTurn = game.status === "IN_PROGRESS" && game.context.currentPlayer === game.state.playerId;
-
+	const room = `splendor:${ data.shared.id }`;
+	const [ shared ] = useSyncedState( data.shared, "shared", room );
+	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
 	return (
-		<SplendorContext value={ { game, isMyTurn } }>
+		<SplendorContext value={ { shared, player } }>
 			{ children }
 		</SplendorContext>
 	);
