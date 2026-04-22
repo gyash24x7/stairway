@@ -20,6 +20,11 @@ import { AbstractGameEngine } from "@/shared/engine/engine";
 import type { GameStructure } from "@/shared/engine/types";
 import { getCardSuit } from "@/shared/utils/cards";
 
+/**
+ * Durable Object game engine for Callbreak, a trick-taking card game.
+ * Uses a phased game structure with DECLARING and PLAYING phases,
+ * supporting 4 players with configurable deal count and trump suit.
+ */
 export class CallbreakEngine extends AbstractGameEngine<CallbreakData, CallbreakMoves, CallbreakConfig, CallbreakPlayerView> {
 
 	public static readonly NAME = "callbreak";

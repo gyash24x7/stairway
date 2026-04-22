@@ -14,11 +14,18 @@ import * as v from "valibot";
 
 const logger = createLogger( "Callbreak:Actions" );
 
+/**
+ * Get a Durable Object stub for a Callbreak game engine instance.
+ *
+ * @param gameId - The game ID to look up.
+ * @returns The Durable Object stub for the game engine.
+ */
 function getStub( gameId: GameId ) {
 	const durableObjectId = env.CALLBREAK_ENGINE.idFromName( `${ CallbreakEngine.NAME }:${ gameId }` );
 	return env.CALLBREAK_ENGINE.get( durableObjectId );
 }
 
+/** Server query to fetch the current game state for the authenticated player. */
 export const getGame = serverQuery( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -34,6 +41,7 @@ export const getGame = serverQuery( [
 	}
 ] );
 
+/** Server action to create a new Callbreak game with the specified deal count and trump suit. */
 export const createGame = serverAction( [
 	validate( v.object( {
 		dealCount: v.pipe( v.number(), v.integer(), v.minValue( 1 ), v.maxValue( 10 ) ),
@@ -59,6 +67,7 @@ export const createGame = serverAction( [
 	}
 ] );
 
+/** Server action to join an existing Callbreak game by its join code. */
 export const joinGame = serverAction( [
 	validate( v.object( { code: v.string() } ) ),
 	async ( input: JoinGameInput ) => {
@@ -74,6 +83,7 @@ export const joinGame = serverAction( [
 	}
 ] );
 
+/** Server action to fill remaining player slots with bot players. */
 export const addBots = serverAction( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -88,6 +98,7 @@ export const addBots = serverAction( [
 	}
 ] );
 
+/** Server action to declare the number of tricks a player expects to win in the current deal. */
 export const declareWins = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),
@@ -106,6 +117,7 @@ export const declareWins = serverAction( [
 	}
 ] );
 
+/** Server action to play a card in the current trick. */
 export const playCard = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),

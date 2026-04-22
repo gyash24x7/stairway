@@ -13,11 +13,18 @@ import * as v from "valibot";
 
 const logger = createLogger( "Wordle:Actions" );
 
+/**
+ * Get a Durable Object stub for a Wordle game engine instance.
+ *
+ * @param gameId - The game ID to look up.
+ * @returns The Durable Object stub for the game engine.
+ */
 function getStub( gameId: GameId ) {
 	const durableObjectId = env.WORDLE_ENGINE.idFromName( `${ WordleEngine.NAME }:${ gameId }` );
 	return env.WORDLE_ENGINE.get( durableObjectId );
 }
 
+/** Server query to fetch the current Wordle game state for the authenticated player. */
 export const getGame = serverQuery( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -33,6 +40,7 @@ export const getGame = serverQuery( [
 	}
 ] );
 
+/** Server action to create a new Wordle game with the specified word count and length. */
 export const createGame = serverAction( [
 	validate( v.object( {
 		wordCount: v.pipe( v.number(), v.integer(), v.minValue( 1 ), v.maxValue( 16 ) ),
@@ -53,6 +61,7 @@ export const createGame = serverAction( [
 	}
 ] );
 
+/** Server action to submit a guess word for the current Wordle game. */
 export const submitGuess = serverAction( [
 	validate( v.object( { gameId: v.string(), guess: v.string() } ) ),
 	async ( input: GuessInput ) => {
@@ -67,6 +76,7 @@ export const submitGuess = serverAction( [
 	}
 ] );
 
+/** Server query to retrieve the target words after game completion. */
 export const getWords = serverQuery( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {

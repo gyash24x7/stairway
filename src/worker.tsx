@@ -24,6 +24,7 @@ import { layout, render, route } from "rwsdk/router";
 import { syncedStateRoutes, SyncedStateServer } from "rwsdk/use-synced-state/worker";
 import { defineApp, requestInfo } from "rwsdk/worker";
 
+/** Application context type available in request handlers, carrying theme and auth info. */
 export type AppContext = {
 	theme: Theme;
 	themeMode: ThemeMode;
@@ -46,6 +47,7 @@ export { FishEngine } from "@/fish/core/engine";
 export { CallbreakEngine } from "@/callbreak/core/engine";
 export { KingdominoEngine } from "@/kingdomino/core/engine";
 
+/** Main application definition with middleware chain (headers, theme, auth) and game routes. */
 export const app = defineApp( [
 	setCommonHeaders(),
 

@@ -27,6 +27,10 @@ import { AbstractGameEngine } from "@/shared/engine/engine";
 import type { GameStructure } from "@/shared/engine/types";
 import { shuffle } from "@/shared/utils/array";
 
+/**
+ * Durable Object game engine for Kingdomino, a tile-drafting and placement game.
+ * Uses a phased game structure with SELECT (draft dominoes) and PLACE (place or discard) phases.
+ */
 export class KingdominoEngine extends AbstractGameEngine<KingdominoData, KingdominoMoves, KingdominoConfig, KingdominoPlayerView> {
 
 	public static readonly NAME = "kingdomino";

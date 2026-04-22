@@ -649,6 +649,13 @@ export function calculateScore( board: Board ): ScoreBreakdown {
 	return { regions, points };
 }
 
+/**
+ * Create a new board with a castle tile at the origin.
+ *
+ * @param castle - The castle color for this player.
+ * @param boardSize - The size of the board (5x5 or 7x7).
+ * @returns A new Board object with the castle placed at (0,0).
+ */
 export function createBoard( castle: Castle, boardSize: BoardSize ) {
 	return {
 		size: boardSize,
@@ -658,6 +665,13 @@ export function createBoard( castle: Castle, boardSize: BoardSize ) {
 	};
 }
 
+/**
+ * Draw dominoes from the deck to create a new draft, sorted by domino ID.
+ * Mutates the deck by splicing dominoes from the front.
+ *
+ * @param deck - The remaining deck of dominoes (mutated in-place).
+ * @returns An array of DraftEntry objects for the current round.
+ */
 export function drawDraft( deck: KingdominoData["deck"] ): DraftEntry[] {
 	const count = Math.min( DRAFT_SIZE, deck.length );
 	return deck
@@ -666,14 +680,35 @@ export function drawDraft( deck: KingdominoData["deck"] ): DraftEntry[] {
 		.map( domino => ( { domino } ) );
 }
 
+/**
+ * Get the number of domino selections each player makes per round.
+ * In 2-player games, each player selects 2 dominoes; otherwise 1.
+ *
+ * @param playerCount - The number of players in the game.
+ * @returns The number of selections per player per round.
+ */
 export function getSelectionsPerPlayer( playerCount: number ): number {
 	return playerCount <= 2 ? 2 : 1;
 }
 
+/**
+ * Count how many dominoes a player has selected in the current draft.
+ *
+ * @param draft - The current draft entries.
+ * @param playerId - The player to count selections for.
+ * @returns The number of dominoes selected by this player.
+ */
 export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string ): number {
 	return draft.filter( e => e.selectedBy === playerId ).length;
 }
 
+/**
+ * Determine the player selection order for the next round based on the current draft.
+ * Players who selected lower-numbered dominoes go first. Deduplicates for 2-player mode.
+ *
+ * @param draft - The current draft entries with selections.
+ * @returns An ordered array of player IDs for the next round's selection order.
+ */
 export function getSelectionOrderFromDraft( draft: DraftEntry[] ): PlayerId[] {
 	// Order determined by domino ID — whoever picked the lowest domino goes first
 	return [ ...draft ]

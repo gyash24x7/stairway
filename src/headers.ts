@@ -1,5 +1,11 @@
 import { RouteMiddleware } from "rwsdk/router";
 
+/**
+ * Create a middleware that sets security-related HTTP headers.
+ * Configures HSTS, X-Content-Type-Options, Referrer-Policy, and Permissions-Policy.
+ *
+ * @returns A RouteMiddleware function that sets the headers on each response.
+ */
 export const setCommonHeaders = (): RouteMiddleware => ( { response } ) => {
 	if ( !import.meta.env.VITE_IS_DEV_SERVER ) {
 		// Forces browsers to always use HTTPS for a specified time period (2 years)

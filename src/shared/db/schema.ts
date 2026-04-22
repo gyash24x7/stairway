@@ -1,6 +1,7 @@
 import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator";
 import { blob, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+/** The users table storing user profiles with auto-generated IDs and avatars. */
 export const users = sqliteTable( "users", {
 	id: text().primaryKey().$default( () => generateId() ),
 	name: text().notNull(),
@@ -8,6 +9,7 @@ export const users = sqliteTable( "users", {
 	avatar: text().notNull().$default( () => generateAvatar() )
 } );
 
+/** The passkeys table storing WebAuthn credential public keys and counters for each user. */
 export const passkeys = sqliteTable( "passkeys", {
 	id: text().primaryKey().$default( () => generateId() ),
 	publicKey: blob().notNull().$type<Uint8Array<ArrayBuffer>>(),
@@ -15,11 +17,13 @@ export const passkeys = sqliteTable( "passkeys", {
 	userId: text().notNull()
 } );
 
+/** Temporary table for WebAuthn challenge storage during registration and login flows. */
 export const webauthnOptions = sqliteTable( "webauthn_options", {
 	username: text().primaryKey(),
 	challenge: text().notNull()
 } );
 
+/** The games table tracking all game instances with auto-generated IDs and join codes. */
 export const games = sqliteTable(
 	"games",
 	{

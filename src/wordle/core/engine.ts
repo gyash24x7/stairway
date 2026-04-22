@@ -12,6 +12,11 @@ import type {
 	WordlePlayerView
 } from "@/wordle/core/types";
 
+/**
+ * Durable Object game engine for Wordle, a single-player word guessing game.
+ * Supports configurable word count, word length, and uses a two-pass algorithm
+ * for marking correct, present, and absent letters.
+ */
 export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, WordleConfig, WordlePlayerView> {
 
 	public static readonly NAME = "wordle";

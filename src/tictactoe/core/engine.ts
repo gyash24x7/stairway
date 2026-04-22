@@ -4,6 +4,10 @@ import { roundRobin } from "@/shared/engine/utils";
 import type { Board, PlaceInput, TicTacToeData, TicTacToeMoves, TicTacToePlayerView } from "@/tictactoe/core/types";
 import { checkWinner, findBestMove, getSymbol, isBoardFull } from "@/tictactoe/core/utils";
 
+/**
+ * Durable Object game engine for Tic-Tac-Toe, a two-player game.
+ * Uses a flat (non-phased) game structure with round-robin turns and minimax bot support.
+ */
 export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToePlayerView> {
 
 	public static readonly NAME = "tic-tac-toe";

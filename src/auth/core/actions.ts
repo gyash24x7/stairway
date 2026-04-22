@@ -21,14 +21,27 @@ import * as v from "valibot";
 
 const logger = createLogger( "Auth:Actions" );
 
+/**
+ * Look up a user by their username.
+ *
+ * @param username - The username to search for.
+ * @returns The user record, or undefined if not found.
+ */
 const getUserByUsername = async ( username: string ) => {
 	return db.query.users.findFirst( { where: eq( users.username, username ) } );
 };
 
+/**
+ * Retrieve stored WebAuthn challenge options for a username.
+ *
+ * @param username - The username to look up.
+ * @returns The stored WebAuthn options, or undefined if not found.
+ */
 const getWebAuthnOptions = async ( username: string ) => {
 	return db.query.webauthnOptions.findFirst( { where: eq( webauthnOptions.username, username ) } );
 };
 
+/** Server action to check if a user with the given username already exists. */
 export const checkIfUserExists = serverAction( [
 	validate( v.object( { username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ) } ) ),
 	async ( { username }: UsernameInput ) => {
@@ -37,10 +50,12 @@ export const checkIfUserExists = serverAction( [
 	}
 ] );
 
+/** Server action to log out the current user by removing their session. */
 export const logout = serverAction( async () => {
 	await sessionStore.remove( requestInfo.request, requestInfo.response.headers );
 } );
 
+/** Server query to generate WebAuthn authentication options for an existing user. */
 export const getLoginOptions = serverQuery( [
 	validate( v.object( { username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ) } ) ),
 	async ( { username }: UsernameInput ) => {
@@ -67,6 +82,7 @@ export const getLoginOptions = serverQuery( [
 	}
 ] );
 
+/** Server action to verify a WebAuthn authentication response and establish a session. */
 export const verifyLogin = serverAction( [
 	validate( v.object( {
 		username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ),
@@ -136,6 +152,7 @@ export const verifyLogin = serverAction( [
 	}
 ] );
 
+/** Server query to generate WebAuthn registration options for a new user. */
 export const getRegisterOptions = serverQuery( [
 	validate( v.object( {
 		username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ),
@@ -165,6 +182,7 @@ export const getRegisterOptions = serverQuery( [
 	}
 ] );
 
+/** Server action to verify a WebAuthn registration response, create the user, and establish a session. */
 export const verifyRegistration = serverAction( [
 	validate( v.object( {
 		username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ),

@@ -14,6 +14,7 @@ import type {
 import type { BasePlayerInfo, PlayerId } from "@/shared/engine/types";
 import { type CardId, getCardDisplayString } from "@/shared/utils/cards";
 
+/** Mapping of normal book names to their constituent card IDs (4 cards per book, grouped by rank). */
 export const NORMAL_BOOKS = {
 	"ACES": [ "AC", "AD", "AH", "AS" ] as CardId[],
 	"TWOS": [ "2C", "2D", "2H", "2S" ] as CardId[],
@@ -30,6 +31,7 @@ export const NORMAL_BOOKS = {
 	"KINGS": [ "KC", "KD", "KH", "KS" ] as CardId[]
 } as const;
 
+/** Mapping of Canadian book names to their constituent card IDs (6 cards per book, grouped by suit half). */
 export const CANADIAN_BOOKS = {
 	"LC": [ "AC", "2C", "3C", "4C", "5C", "6C" ] as CardId[],
 	"LD": [ "AD", "2D", "3D", "4D", "5D", "6D" ] as CardId[],
@@ -114,11 +116,25 @@ export function getCardsOfBook( book: Book, bookType: BookType, hand?: CardId[] 
 	return cards.filter( card => !hand || hand.includes( card ) );
 }
 
+/**
+ * Return the team ID that a player belongs to.
+ *
+ * @param teams - The team data mapping team IDs to team info.
+ * @param playerId - The player to look up.
+ * @returns The team ID the player belongs to.
+ */
 export function getTeamForPlayer( teams: TeamData, playerId: PlayerId ): TeamId {
 	return Object.keys( teams )
 		.find( tid => ( teams[ tid ]?.members ?? [] ).includes( playerId ) )!;
 }
 
+/**
+ * Return all players on opposing teams.
+ *
+ * @param teams - The team data mapping team IDs to team info.
+ * @param playerId - The player whose opponents to find.
+ * @returns An array of opponent player IDs.
+ */
 export function getOpponents( teams: TeamData, playerId: PlayerId ): PlayerId[] {
 	const teamId = getTeamForPlayer( teams, playerId );
 	return Object.keys( teams )
@@ -126,6 +142,13 @@ export function getOpponents( teams: TeamData, playerId: PlayerId ): PlayerId[] 
 		.flatMap( tid => teams[ tid ]?.members ?? [] );
 }
 
+/**
+ * Return all teammates of a player, excluding the player themselves.
+ *
+ * @param teams - The team data mapping team IDs to team info.
+ * @param playerId - The player whose teammates to find.
+ * @returns An array of teammate player IDs.
+ */
 export function getTeammates( teams: TeamData, playerId: PlayerId ): PlayerId[] {
 	const teamId = getTeamForPlayer( teams, playerId );
 	return ( teams[ teamId ]?.members ?? [] ).filter( pid => pid !== playerId );
@@ -144,6 +167,13 @@ const CANADIAN_BOOK_DISPLAY: Record<CanadianBook, { label: string; suit: string 
 	US: { label: "HIGH", suit: "S" }
 };
 
+/**
+ * Return a human-readable display string for a book.
+ *
+ * @param book - The book to display.
+ * @param bookType - The book type variant.
+ * @returns A display string (e.g., "ACES" or "LOW ♣").
+ */
 export function getBookDisplayString( book: Book, bookType: BookType ): string {
 	if ( bookType === "NORMAL" ) {
 		return book;
@@ -153,6 +183,13 @@ export function getBookDisplayString( book: Book, bookType: BookType ): string {
 	return `${ info.label } ${ SUIT_SYMBOLS[ info.suit ] }`;
 }
 
+/**
+ * Return the suit character for a Canadian book, or undefined for normal books.
+ *
+ * @param book - The book to check.
+ * @param bookType - The book type variant.
+ * @returns The suit character (e.g., "C"), or undefined.
+ */
 export function getBookSuit( book: Book, bookType: BookType ): string | undefined {
 	if ( bookType !== "CANADIAN" ) {
 		return undefined;
@@ -160,6 +197,13 @@ export function getBookSuit( book: Book, bookType: BookType ): string | undefine
 	return CANADIAN_BOOK_DISPLAY[ book as CanadianBook ]?.suit;
 }
 
+/**
+ * Generate a human-readable description of an ask action.
+ *
+ * @param ask - The ask event to describe.
+ * @param players - The player info records for name lookup.
+ * @returns A description string like "Alice asked Bob for ACE OF HEARTS and got the card!".
+ */
 export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlayerInfo> ) {
 	const transferringPlayer = players[ ask.playerId ].name;
 	const receivingPlayer = players[ ask.from ].name;
@@ -168,20 +212,48 @@ export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlaye
 	return `${ transferringPlayer } asked ${ receivingPlayer } for ${ cardString } and ${ successString }`;
 }
 
+/**
+ * Generate a human-readable description of a claim action.
+ *
+ * @param claim - The claim event to describe.
+ * @param players - The player info records for name lookup.
+ * @param bookType - The book type variant for display formatting.
+ * @returns A description string like "Alice declared ACES correctly!".
+ */
 export function getClaimDescription( claim: Claim, players: Record<PlayerId, BasePlayerInfo>, bookType: BookType ) {
 	const successString = claim.success ? "correctly!" : "incorrectly!";
 	const bookDisplay = getBookDisplayString( claim.book, bookType );
 	return `${ players[ claim.playerId ].name } declared ${ bookDisplay } ${ successString }`;
 }
 
+/**
+ * Generate a human-readable description of a turn transfer action.
+ *
+ * @param transfer - The transfer event to describe.
+ * @param players - The player info records for name lookup.
+ * @returns A description string like "Alice transferred the turn to Bob".
+ */
 export function getTransferDescription( transfer: Transfer, players: Record<PlayerId, BasePlayerInfo> ) {
 	return `${ players[ transfer.playerId ].name } transferred the turn to ${ players[ transfer.transferTo ].name }`;
 }
 
+/**
+ * Return all books that have been claimed across all teams.
+ *
+ * @param state - The game state.
+ * @returns An array of claimed book names.
+ */
 export function getClaimedBooks( state: FishData ): Book[] {
 	return Object.values( state.teams ).flatMap( s => s.booksWon );
 }
 
+/**
+ * Build a FishConfig object from create game input parameters.
+ * Determines book type, deck size, and book definitions based on the game variant.
+ *
+ * @param input - The create game input with player count, type, and team count.
+ * @returns A complete FishConfig object.
+ */
 export function buildConfig( input: {
 	playerCount: 4 | 6 | 8;
 	type: "NORMAL" | "CANADIAN";

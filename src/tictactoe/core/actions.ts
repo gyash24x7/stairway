@@ -13,11 +13,18 @@ import * as v from "valibot";
 
 const logger = createLogger( "TicTacToe:Actions" );
 
+/**
+ * Get a Durable Object stub for a Tic-Tac-Toe game engine instance.
+ *
+ * @param gameId - The game ID to look up.
+ * @returns The Durable Object stub for the game engine.
+ */
 function getStub( gameId: GameId ) {
 	const durableObjectId = env.TIC_TAC_TOE_ENGINE.idFromName( `${ TicTacToeEngine.NAME }:${ gameId }` );
 	return env.TIC_TAC_TOE_ENGINE.get( durableObjectId );
 }
 
+/** Server query to fetch the current game state for the authenticated player. */
 export const getGame = serverQuery( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -33,6 +40,7 @@ export const getGame = serverQuery( [
 	}
 ] );
 
+/** Server action to create a new Tic-Tac-Toe game. */
 export const createGame = serverAction( [
 	async () => {
 		logger.debug( ">> createGame()" );
@@ -51,6 +59,7 @@ export const createGame = serverAction( [
 	}
 ] );
 
+/** Server action to join an existing Tic-Tac-Toe game by its join code. */
 export const joinGame = serverAction( [
 	validate( v.object( { code: v.string() } ) ),
 	async ( input: JoinGameInput ) => {
@@ -66,6 +75,7 @@ export const joinGame = serverAction( [
 	}
 ] );
 
+/** Server action to place a symbol on the board at a specified position. */
 export const placeMove = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),
@@ -83,6 +93,7 @@ export const placeMove = serverAction( [
 	}
 ] );
 
+/** Server action to add a bot opponent to the game. */
 export const addBots = serverAction( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {

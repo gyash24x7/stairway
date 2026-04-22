@@ -68,6 +68,11 @@ export function generateGameCode( length: number = 6 ): string {
 	return result;
 }
 
+/**
+ * Generates a cryptographically secure random string using the Web Crypto API.
+ * Produces a 24-character string from a restricted alphabet (lowercase letters and digits, excluding ambiguous characters).
+ * @returns {string} A cryptographically secure random string.
+ */
 export function generateSecureRandomString(): string {
 	const alphabet = "abcdefghijkmnpqrstuvwxyz23456789";
 	const bytes = new Uint8Array( 24 );

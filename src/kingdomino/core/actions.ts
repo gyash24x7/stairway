@@ -18,11 +18,18 @@ import * as v from "valibot";
 
 const logger = createLogger( "Kingdomino:Actions" );
 
+/**
+ * Get a Durable Object stub for a Kingdomino game engine instance.
+ *
+ * @param gameId - The game ID to look up.
+ * @returns The Durable Object stub for the game engine.
+ */
 function getStub( gameId: GameId ) {
 	const durableObjectId = env.KINGDOMINO_ENGINE.idFromName( `${ KingdominoEngine.NAME }:${ gameId }` );
 	return env.KINGDOMINO_ENGINE.get( durableObjectId );
 }
 
+/** Server query to fetch the current Kingdomino game state for the authenticated player. */
 export const getGame = serverQuery( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -38,6 +45,7 @@ export const getGame = serverQuery( [
 	}
 ] );
 
+/** Server action to create a new Kingdomino game with specified player count and board size. */
 export const createGame = serverAction( [
 	validate( v.object( {
 		playerCount: v.picklist( [ 2, 3, 4 ] ),
@@ -62,6 +70,7 @@ export const createGame = serverAction( [
 	}
 ] );
 
+/** Server action to join an existing Kingdomino game by its join code. */
 export const joinGame = serverAction( [
 	validate( v.object( { code: v.string() } ) ),
 	async ( input: JoinGameInput ) => {
@@ -77,6 +86,7 @@ export const joinGame = serverAction( [
 	}
 ] );
 
+/** Server action to fill remaining player slots with bot players. */
 export const addBots = serverAction( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -91,6 +101,7 @@ export const addBots = serverAction( [
 	}
 ] );
 
+/** Server action to select a domino from the current draft. */
 export const selectDomino = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),
@@ -108,6 +119,7 @@ export const selectDomino = serverAction( [
 	}
 ] );
 
+/** Server action to place a domino on the player's board. */
 export const placeDomino = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),
@@ -132,6 +144,7 @@ export const placeDomino = serverAction( [
 	}
 ] );
 
+/** Server action to discard a domino that cannot be legally placed. */
 export const discardDomino = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),

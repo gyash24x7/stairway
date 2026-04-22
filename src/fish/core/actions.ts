@@ -15,11 +15,18 @@ import * as v from "valibot";
 
 const logger = createLogger( "Fish:Actions" );
 
+/**
+ * Get a Durable Object stub for a Fish game engine instance.
+ *
+ * @param gameId - The game ID to look up.
+ * @returns The Durable Object stub for the game engine.
+ */
 function getStub( gameId: GameId ) {
 	const durableObjectId = env.FISH_ENGINE.idFromName( `${ FishEngine.NAME }:${ gameId }` );
 	return env.FISH_ENGINE.get( durableObjectId );
 }
 
+/** Server query to fetch the current Fish game state for the authenticated player. */
 export const getGame = serverQuery( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -35,6 +42,7 @@ export const getGame = serverQuery( [
 	}
 ] );
 
+/** Server action to create a new Fish game with player count, variant, and team count. */
 export const createGame = serverAction( [
 	validate( v.object( {
 		playerCount: v.picklist( [ 4, 6, 8 ] ),
@@ -57,6 +65,7 @@ export const createGame = serverAction( [
 	}
 ] );
 
+/** Server action to join an existing Fish game by its join code. */
 export const joinGame = serverAction( [
 	validate( v.object( { code: v.string() } ) ),
 	async ( input: JoinGameInput ) => {
@@ -72,6 +81,7 @@ export const joinGame = serverAction( [
 	}
 ] );
 
+/** Server action to fill remaining player slots with bot players. */
 export const addBots = serverAction( [
 	validate( v.object( { gameId: v.string() } ) ),
 	async ( input: GameIdInput ) => {
@@ -86,6 +96,7 @@ export const addBots = serverAction( [
 	}
 ] );
 
+/** Server action to create team assignments for the game. */
 export const createTeams = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),
@@ -103,6 +114,7 @@ export const createTeams = serverAction( [
 	}
 ] );
 
+/** Server action to ask an opponent for a specific card. */
 export const askCard = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),
@@ -121,6 +133,7 @@ export const askCard = serverAction( [
 	}
 ] );
 
+/** Server action to claim a book by declaring who holds each card. */
 export const claimBook = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),
@@ -138,6 +151,7 @@ export const claimBook = serverAction( [
 	}
 ] );
 
+/** Server action to transfer the turn to a teammate after a successful claim. */
 export const transferTurn = serverAction( [
 	validate( v.object( {
 		gameId: v.string(),

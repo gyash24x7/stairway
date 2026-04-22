@@ -2,33 +2,80 @@ import type { CallbreakConfig, CallbreakPlayerView, Trick } from "@/callbreak/co
 import { getCardValue, getPlayableCards } from "@/callbreak/core/utils";
 import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@/shared/utils/cards";
 
+/**
+ * Sort cards by their rank value in ascending order.
+ *
+ * @param cards - The cards to sort.
+ * @returns A new sorted array of cards.
+ */
 function sortByValue( cards: CardId[] ): CardId[] {
 	return [ ...cards ].sort( ( a, b ) => getCardValue( a ) - getCardValue( b ) );
 }
 
+/**
+ * Return the lowest-valued card from a set.
+ *
+ * @param cards - The cards to choose from.
+ * @returns The card with the lowest rank value.
+ */
 function lowest( cards: CardId[] ): CardId {
 	return sortByValue( cards )[ 0 ];
 }
 
+/**
+ * Return the highest-valued card from a set.
+ *
+ * @param cards - The cards to choose from.
+ * @returns The card with the highest rank value.
+ */
 function highest( cards: CardId[] ): CardId {
 	return sortByValue( cards )[ cards.length - 1 ];
 }
 
+/**
+ * Return the lowest card that beats a given threshold value.
+ *
+ * @param cards - The cards to choose from.
+ * @param threshold - The value that must be exceeded.
+ * @returns The lowest winning card, or undefined if none can beat the threshold.
+ */
 function lowestWinning( cards: CardId[], threshold: number ) {
 	const winners = sortByValue( cards ).filter( c => getCardValue( c ) > threshold );
 	return winners.length > 0 ? winners[ 0 ] : undefined;
 }
 
+/**
+ * Get the highest card value of a specific suit among played trick cards.
+ *
+ * @param trickCards - The cards played in the current trick.
+ * @param suit - The suit to filter by.
+ * @returns The highest rank value, or -1 if no cards of that suit exist.
+ */
 function getHighestPlayedValue( trickCards: CardId[], suit: string ) {
 	return trickCards
 		.filter( c => getCardSuit( c ) === suit )
 		.reduce( ( max, c ) => Math.max( max, getCardValue( c ) ), -1 );
 }
 
+/**
+ * Filter cards by suit.
+ *
+ * @param hand - The cards to filter.
+ * @param suit - The suit to match.
+ * @returns Cards matching the specified suit.
+ */
 function getSuitCards( hand: CardId[], suit: string ) {
 	return hand.filter( c => getCardSuit( c ) === suit );
 }
 
+/**
+ * Bot AI for declaring the number of tricks expected to win.
+ * Evaluates hand strength based on high trump cards, non-trump aces/kings, and void suits.
+ *
+ * @param state - The bot's player view of the game state.
+ * @param config - The game configuration including trump suit.
+ * @returns The number of tricks the bot declares it will win (minimum 1).
+ */
 export function botDeclare( state: CallbreakPlayerView, config: CallbreakConfig ) {
 	let score = 0;
 
@@ -69,6 +116,14 @@ export function botDeclare( state: CallbreakPlayerView, config: CallbreakConfig 
 	return Math.max( 1, Math.floor( score ) );
 }
 
+/**
+ * Bot AI for selecting which card to play in the current trick.
+ * Considers whether leading or following, trump management, and remaining win targets.
+ *
+ * @param state - The bot's player view of the game state.
+ * @param config - The game configuration including trump suit.
+ * @returns The card ID the bot chooses to play.
+ */
 export function botPlayCard( state: CallbreakPlayerView, config: CallbreakConfig ) {
 	const activeDeal = state.activeDeal!;
 	const activeTrick = activeDeal.tricks[ 0 ];
@@ -89,6 +144,14 @@ export function botPlayCard( state: CallbreakPlayerView, config: CallbreakConfig
 	return followCard( playable, config.trumpSuit, activeTrick, needsMore );
 }
 
+/**
+ * Select which card the bot should lead with when starting a trick.
+ *
+ * @param playable - The playable cards in hand.
+ * @param trumpSuit - The trump suit for this game.
+ * @param needsMore - Whether the bot still needs more wins to meet its declaration.
+ * @returns The card ID to lead with.
+ */
 function leadCard( playable: CardId[], trumpSuit: CardSuit, needsMore: boolean ) {
 	if ( !needsMore ) {
 		return lowest( playable );
@@ -115,6 +178,16 @@ function leadCard( playable: CardId[], trumpSuit: CardSuit, needsMore: boolean )
 	return highest( playable );
 }
 
+/**
+ * Select which card the bot should play when following in a trick.
+ * Handles following suit, trumping, and discarding when void.
+ *
+ * @param playable - The playable cards in hand.
+ * @param trumpSuit - The trump suit for this game.
+ * @param trick - The current trick in progress.
+ * @param needsMore - Whether the bot still needs more wins to meet its declaration.
+ * @returns The card ID to play.
+ */
 function followCard( playable: CardId[], trumpSuit: CardSuit, trick: Trick, needsMore: boolean ) {
 	const trickCards = Object.values( trick.cards );
 	const leadSuit = trick.suit!;

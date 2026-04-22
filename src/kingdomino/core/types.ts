@@ -4,8 +4,10 @@
 
 import type { BaseGameConfig, BaseGameData, BasePlayerView, GameData, GameId, PlayerId } from "@/shared/engine/types";
 
+/** The castle color assigned to each player. */
 export type Castle = "red" | "blue" | "yellow" | "green";
 
+/** The terrain types available for tiles on the board. */
 export type Terrain =
 	| "castle"
 	| "desert"
@@ -15,12 +17,16 @@ export type Terrain =
 	| "wasteland"
 	| "mine";
 
+/** A single tile with a terrain type and crown count. */
 export type Tile = {
 	terrain: Terrain;
 	crowns: number;
 };
 
+/** Numeric identifier for a domino (1-48). */
 export type DominoId = number;
+
+/** A domino piece with two tiles (left and right). */
 export type Domino = {
 	id: DominoId;
 	left: Tile;
@@ -31,20 +37,29 @@ export type Domino = {
 // Board Coordinates & Placements
 // ============================================================================
 
+/** A coordinate on the board grid. */
 export type Coord = { x: number; y: number; };
-export type BoardSize = 5 | 7; // 5x5 or 7x7
+
+/** Board size: 5x5 for standard play or 7x7 for extended. */
+export type BoardSize = 5 | 7;
+
+/** Rotation of a domino: 0=right, 90=down, 180=left, 270=up. */
 export type Rotation = 0 | 90 | 180 | 270;
 
-export type Tiles = Record<string, Tile>; // coordinate key -> tile mapping
+/** Map of coordinate keys to tiles placed on the board. */
+export type Tiles = Record<string, Tile>;
 
+/** A domino placement specifying which domino, where, and at what rotation. */
 export type Placement = {
 	dominoId: DominoId;
 	coord: Coord; // top-left coordinate
 	rotation: Rotation; // 0 = horizontal (right), 90 = vertical (down), 180 = horizontal inverted (left), 270 = vertical inverted (up)
 };
 
+/** Rectangular bounding box defined by min/max coordinates. */
 export type Bounds = { minX: number; maxX: number; minY: number; maxY: number };
 
+/** A player's board containing placed tiles, castle, and board size. */
 export type Board = {
 	size: BoardSize;
 	castle: Castle;
@@ -56,6 +71,7 @@ export type Board = {
 // Scoring
 // ============================================================================
 
+/** A connected region of same-terrain tiles with its score calculation. */
 export type Region = {
 	id: string;
 	terrain: Terrain;
@@ -65,6 +81,7 @@ export type Region = {
 	points: number; // tiles * crowns
 };
 
+/** Score breakdown showing all regions and total points. */
 export type ScoreBreakdown = {
 	regions: Region[];
 	points: number;
@@ -74,6 +91,7 @@ export type ScoreBreakdown = {
 // Draft
 // ============================================================================
 
+/** A draft entry: a domino available for selection, optionally claimed by a player. */
 export type DraftEntry = {
 	domino: Domino;
 	selectedBy?: PlayerId;
@@ -83,12 +101,14 @@ export type DraftEntry = {
 // Server-Side Game State (Includes Hidden Information)
 // ============================================================================
 
+/** Per-player game data with their board, queued dominoes, and current score. */
 export type PlayerInfo = {
 	board: Board;
 	queue: DominoId[];
 	score: ScoreBreakdown;
 };
 
+/** Server-side Kingdomino game state including deck, draft, and all player data. */
 export type KingdominoData = {
 	playerData: Record<PlayerId, PlayerInfo>;
 	deck: Domino[];
@@ -97,36 +117,44 @@ export type KingdominoData = {
 	winner?: PlayerId;
 };
 
+/** Kingdomino game configuration with board size. */
 export type KingdominoConfig = BaseGameConfig & { boardSize: BoardSize; }
 
+/** Player view hiding the remaining deck. */
 export type KingdominoPlayerView = Omit<KingdominoData, "deck"> & BasePlayerView;
 
+/** Complete Kingdomino game data type. */
 export type KingdominoGame = BaseGameData & GameData<KingdominoPlayerView, KingdominoConfig>;
 
 // ============================================================================
 // Input Types
 // ============================================================================
 
+/** Input for creating a new Kingdomino game with player count and board size. */
 export type CreateGameInput = {
 	playerCount: 2 | 3 | 4;
 	boardSize: 5 | 7;
 }
 
+/** Input for selecting a domino from the draft. */
 export type SelectDominoInput = {
 	gameId: GameId;
 	dominoId: DominoId;
 };
 
+/** Input for placing a domino on the board with position and rotation. */
 export type PlaceDominoInput = {
 	gameId: GameId;
 	placement: Placement;
 };
 
+/** Input for discarding a domino that cannot be legally placed. */
 export type DiscardDominoInput = {
 	gameId: GameId;
 	dominoId: DominoId;
 };
 
+/** Map of all Kingdomino move types to their input types. */
 export type KingdominoMoves = {
 	selectDomino: SelectDominoInput;
 	placeDomino: PlaceDominoInput;

@@ -25,6 +25,11 @@ const DEFAULT_METRICS: Metrics = {
 	successfulClaims: 0
 };
 
+/**
+ * Durable Object game engine for Fish (Literature), a team-based card game.
+ * Uses a phased structure with TEAM_CONFIG (team assignment) and PLAY (asking, claiming, transferring) phases.
+ * Supports bot players with signal detection and strategic asking/claiming AI.
+ */
 export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConfig, FishPlayerView> {
 
 	public static readonly NAME = "fish";

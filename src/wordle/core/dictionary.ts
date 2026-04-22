@@ -1,3 +1,4 @@
+/** Word dictionaries keyed by word length (4, 5, 6), used for validation and random target selection. */
 export const dictionaries = {
 	5: [
 		"aback",

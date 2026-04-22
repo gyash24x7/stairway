@@ -8,6 +8,12 @@ import { requestInfo } from "rwsdk/worker";
 
 const logger = createLogger( "Middlewares" );
 
+/**
+ * Creates a middleware that validates server action input against a Valibot schema.
+ * Throws a 400 response if validation fails.
+ * @param schema - The StandardSchema-compatible validation schema.
+ * @returns A middleware function that validates the first argument of the server action.
+ */
 export const validate = ( schema: StandardSchemaV1 ) => {
 	return async ( { args }: any ) => {
 		const result = await schema[ "~standard" ].validate( args[ 0 ] );
@@ -18,6 +24,9 @@ export const validate = ( schema: StandardSchemaV1 ) => {
 	};
 };
 
+/**
+ * Middleware that throws a 403 response if no authenticated user is found.
+ */
 export const requireauthInfo = () => {
 	const authInfo = requestInfo.ctx.authInfo;
 	if ( !authInfo ) {
@@ -26,6 +35,11 @@ export const requireauthInfo = () => {
 	}
 };
 
+/**
+ * Returns the authenticated user info from the current request context.
+ * Throws a 403 response if no authenticated user is found.
+ * @returns The authenticated user's auth info.
+ */
 export function getAuthInfo() {
 	const authInfo = requestInfo.ctx.authInfo;
 	if ( !authInfo ) {
@@ -35,6 +49,13 @@ export function getAuthInfo() {
 	return authInfo;
 }
 
+/**
+ * Fetches a game by its name and ID from the database.
+ * Throws a 404 response if the game is not found.
+ * @param name - The game type name (e.g. "kingdomino", "callbreak").
+ * @param gameId - The unique game instance ID.
+ * @returns The game record from the database.
+ */
 export const requireGame = async ( name: string, gameId: GameId ) => {
 	const game = await db.query.games.findFirst( {
 		where: and( eq( games.id, gameId ), eq( games.game, name ) )
@@ -48,6 +69,13 @@ export const requireGame = async ( name: string, gameId: GameId ) => {
 	return game;
 };
 
+/**
+ * Fetches a game by its name and join code from the database.
+ * Throws a 404 response if the game is not found.
+ * @param name - The game type name (e.g. "kingdomino", "callbreak").
+ * @param code - The short join code for the game.
+ * @returns The game record from the database.
+ */
 export const requireGameByCode = async ( name: string, code: string ) => {
 	const game = await db.query.games.findFirst( {
 		where: and( eq( games.code, code ), eq( games.game, name ) )

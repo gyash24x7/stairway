@@ -18,6 +18,12 @@ import { generateBotInfo } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
 import { DurableObject } from "cloudflare:workers";
 
+/**
+ * Abstract base class for all game engines in the platform.
+ * Implemented as a Cloudflare Durable Object that persists game state via `ctx.storage`,
+ * manages player lifecycle, executes validated moves, supports phased game structures,
+ * and schedules bot moves via alarms.
+ */
 export abstract class AbstractGameEngine<
 	G,
 	M extends Record<string, unknown>,
@@ -45,6 +51,13 @@ export abstract class AbstractGameEngine<
 		} );
 	}
 
+	/**
+	 * Initializes a new game with the given ID, join code, and configuration.
+	 * Sets up the initial game state using the structure's setup function.
+	 * @param gameId - The unique identifier for this game instance.
+	 * @param code - The short join code players use to connect to the game.
+	 * @param config - The game-specific configuration options.
+	 */
 	public async initialize( gameId: string, code: string, config: C ) {
 		this.logger.debug( ">> initialize()" );
 
@@ -58,6 +71,12 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< initialize()" );
 	}
 
+	/**
+	 * Handles a player joining the game.
+	 * Validates the player is not already in the game and that the game is not full.
+	 * Triggers the onJoin hook if defined, and auto-starts the game if configured.
+	 * @param player - The player information for the joining player.
+	 */
 	public async join( player: BasePlayerInfo ) {
 		this.logger.debug( ">> join()" );
 
@@ -99,6 +118,11 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< join()" );
 	}
 
+	/**
+	 * Starts the game once all players have joined.
+	 * Triggers the onStart hook, enters the initial phase if using phased structure,
+	 * sets the game status to IN_PROGRESS, and schedules a bot move if needed.
+	 */
 	public async start() {
 		this.logger.debug( ">> start()" );
 
@@ -124,6 +148,12 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< start()" );
 	}
 
+	/**
+	 * Processes a player's move by executing it, persisting state, and syncing clients.
+	 * @param playerId - The ID of the player making the move.
+	 * @param moveType - The type of move being made.
+	 * @param input - The move-specific input data.
+	 */
 	public async processMove<K extends keyof M>( playerId: string, moveType: K, input: M[K] ) {
 		this.logger.debug( ">> processMove()" );
 
@@ -136,6 +166,10 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< processMove()" );
 	}
 
+	/**
+	 * Fills remaining player slots with bot players.
+	 * Throws if the game structure does not support bots.
+	 */
 	public async addBots() {
 		this.logger.debug( ">> addBots()" );
 
@@ -157,6 +191,10 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< addBots()" );
 	}
 
+	/**
+	 * Returns the full game state data including config, state, players, status, and context.
+	 * @returns The complete game data object.
+	 */
 	public getGameData(): GameData<G, C> {
 		return {
 			config: this.config,
@@ -167,12 +205,22 @@ export abstract class AbstractGameEngine<
 		};
 	}
 
+	/**
+	 * Returns game data filtered through the player's view, hiding information the player should not see.
+	 * @param playerId - The ID of the player requesting the view.
+	 * @returns The player-specific game data including the player view state.
+	 */
 	public getPlayerGameInfo( playerId: string ): BaseGameData & GameData<V, C> {
 		const state = this.structure.playerView( this.readonlyGameData(), playerId );
 		const data = this.getGameData();
 		return { ...data, state, id: this.id, code: this.code };
 	}
 
+	/**
+	 * Durable Object alarm handler for bot moves and auto-start.
+	 * Reads the alarm type from storage to determine whether to auto-start the game
+	 * or execute a bot's move.
+	 */
 	override async alarm() {
 		this.logger.debug( ">> alarm()" );
 
@@ -204,6 +252,14 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< alarm()" );
 	}
 
+	/**
+	 * Core move execution logic with validation and hooks.
+	 * Validates the move, runs before/after hooks, executes the move, advances the turn,
+	 * handles phase transitions, and checks for game completion.
+	 * @param playerId - The ID of the player making the move.
+	 * @param moveType - The type of move being executed.
+	 * @param input - The move-specific input data.
+	 */
 	private executeMove<T extends MoveType<M>>( playerId: string, moveType: T, input: M[T] ) {
 		this.logger.debug( ">> executeMove()" );
 
@@ -285,6 +341,10 @@ export abstract class AbstractGameEngine<
 		this.logger.debug( "<< executeMove()" );
 	}
 
+	/**
+	 * Gets the bot's move for the current player using the phase or structure bot move function.
+	 * @returns The bot's move type and input, or null if no valid bot move is available.
+	 */
 	private getBotMove(): { moveType: keyof M; input: M[keyof M] } | null {
 		const phase = this.getCurrentPhase();
 		const botMoveFn = phase?.botMove ?? this.structure.botMove;
@@ -303,6 +363,10 @@ export abstract class AbstractGameEngine<
 		return botMoveFn( this.readonlyPlayerGameInfo( playerId ) ) as { moveType: keyof M; input: M[keyof M] };
 	}
 
+	/**
+	 * Returns the current game phase if using a phased game structure.
+	 * @returns The current GamePhase, or null if phases are not configured or no phase is active.
+	 */
 	private getCurrentPhase(): GamePhase<G, any, C> | null {
 		if ( !this.structure.phases || !this.context.phase ) {
 			return null;
@@ -310,6 +374,10 @@ export abstract class AbstractGameEngine<
 		return this.structure.phases[ this.context.phase ] ?? null;
 	}
 
+	/**
+	 * Enters a new game phase, running its onEnter hook and resolving the starting player.
+	 * @param phaseName - The name of the phase to enter.
+	 */
 	private enterPhase( phaseName: string ) {
 		const phase = this.structure.phases![ phaseName ];
 		this.context.phase = phaseName;
@@ -323,6 +391,10 @@ export abstract class AbstractGameEngine<
 		}
 	}
 
+	/**
+	 * Transitions from the current phase to a new phase, running onExit on the current phase first.
+	 * @param phaseName - The name of the phase to transition to.
+	 */
 	private transitionToPhase( phaseName: string ) {
 		const currentPhase = this.getCurrentPhase();
 		if ( currentPhase?.onExit ) {
@@ -332,10 +404,18 @@ export abstract class AbstractGameEngine<
 		this.enterPhase( phaseName );
 	}
 
+	/**
+	 * Checks if the game has reached the maximum player count.
+	 * @returns True if the game is full, false otherwise.
+	 */
 	private isFull(): boolean {
 		return Object.keys( this.players ).length >= this.config.playerCount;
 	}
 
+	/**
+	 * Returns a frozen copy of the game data for safe reading without mutation.
+	 * @returns A read-only snapshot of the game state, config, and context.
+	 */
 	private readonlyGameData(): ReadonlyGameData<G, C> {
 		return {
 			state: this.state,
@@ -344,6 +424,11 @@ export abstract class AbstractGameEngine<
 		};
 	}
 
+	/**
+	 * Returns a frozen player-specific view of the game data for safe reading.
+	 * @param playerId - The ID of the player whose view to generate.
+	 * @returns A read-only snapshot of the player's view of the game.
+	 */
 	private readonlyPlayerGameInfo( playerId: PlayerId ): ReadonlyGameData<V, C> {
 		return {
 			state: this.structure.playerView( this.readonlyGameData(), playerId ),
@@ -352,6 +437,10 @@ export abstract class AbstractGameEngine<
 		};
 	}
 
+	/**
+	 * Loads game data from Durable Object storage into instance properties.
+	 * @returns True if game data was found and loaded, false otherwise.
+	 */
 	private async loadGameData() {
 		const data = await this.ctx.storage.get<BaseGameData & GameData<G, C>>( "data" );
 		if ( !data ) {
@@ -369,6 +458,9 @@ export abstract class AbstractGameEngine<
 		return true;
 	}
 
+	/**
+	 * Persists the current game data to Durable Object storage.
+	 */
 	private async saveGameData() {
 		await this.ctx.storage.put( "data", {
 			...this.getGameData(),
@@ -377,6 +469,9 @@ export abstract class AbstractGameEngine<
 		} );
 	}
 
+	/**
+	 * Syncs the current game state to all connected non-bot players via SyncedStateServer.
+	 */
 	private async syncClients() {
 		for ( const playerId of Object.keys( this.players ).filter( id => !this.players[ id ].isBot ) ) {
 			const data = this.getPlayerGameInfo( playerId );
@@ -388,6 +483,9 @@ export abstract class AbstractGameEngine<
 		}
 	}
 
+	/**
+	 * Schedules a Durable Object alarm if the next player is a bot, triggering a bot move after a delay.
+	 */
 	private async scheduleBotIfNeeded() {
 		const isNextPlayerBot = !!this.players[ this.context.currentPlayer ]?.isBot;
 		if ( this.status === "IN_PROGRESS" && isNextPlayerBot ) {
