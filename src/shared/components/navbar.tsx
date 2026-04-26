@@ -25,7 +25,12 @@ export function Navbar( { authInfo, ...props }: NavbarProps ) {
 				"bg-background px-2 md:px-4 py-1 md:py-2"
 			) }
 		>
-			<div className={ "flex justify-between items-center w-full max-w-4xl justify-self-center" }>
+			<div
+				className={ cn(
+					"flex justify-between items-center w-full",
+					"max-w-4xl justify-self-center"
+				) }
+			>
 				<div className={ "flex gap-2 items-center" }>
 					<img src={ "/s2h.png" } alt={ "logo" } className={ "h-12 md:h-16" }/>
 					<h2 className={ "text-5xl font-title text-accent hidden md:block" }>

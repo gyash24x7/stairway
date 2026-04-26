@@ -17,6 +17,10 @@ export function KingdominoCreateGame() {
 		return "";
 	};
 
+	const handlePlayerCountClick = ( item: 2 | 3 | 4 ) => () => setPlayerCount(
+		playerCount === item ? undefined : item
+	);
+
 	return (
 		<CreateGame
 			game={ "kingdomino" }
@@ -24,16 +28,18 @@ export function KingdominoCreateGame() {
 			createGame={ createKingdominoGame }
 		>
 			<div className={ "flex flex-col gap-2" }>
-				<label className={ "text-sm text-muted-foreground" }>Player Count</label>
+				<label className={ "text-sm text-muted-foreground" }>
+					Player Count
+				</label>
 				<div className={ "flex gap-3 flex-wrap" }>
 					{ ( [ 2, 3, 4 ] as const ).map( ( item ) => (
 						<div
 							key={ item }
-							onClick={ () => setPlayerCount( playerCount === item ? undefined : item ) }
+							onClick={ handlePlayerCountClick( item ) }
 							className={ cn(
 								playerCount === item ? "bg-background" : "bg-surface",
-								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
+								"flex justify-center hover:bg-background border-gray-400"
 							) }
 						>
 							{ item }
@@ -41,7 +47,9 @@ export function KingdominoCreateGame() {
 					) ) }
 				</div>
 
-				<label className={ "text-sm text-muted-foreground" }>Board&nbsp;Size</label>
+				<label className={ "text-sm text-muted-foreground" }>
+					Board&nbsp;Size
+				</label>
 				<div className={ "flex gap-3 flex-wrap" }>
 					{ [ 5 as const, 7 as const ].map( ( size ) => (
 						<div

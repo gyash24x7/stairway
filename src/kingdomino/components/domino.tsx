@@ -41,39 +41,41 @@ function RTerrain( props: { terrain: Terrain; crowns: number } ) {
 				TERRAIN_CLASS[ props.terrain ]
 			) }
 		>
-			<span className={ "leading-tight" }>{ props.terrain.toUpperCase() }</span>
+			<span className={ "leading-tight" }>
+				{ props.terrain.toUpperCase() }
+			</span>
 			<span className={ "self-end text-xs" }>
-					{ props.crowns > 0 ? `C${ props.crowns }` : "" }
-				</span>
+				{ props.crowns > 0 ? `C${ props.crowns }` : "" }
+			</span>
 		</div>
 	);
 }
 
-export function RSmallDomino( props: RDominoProps ) {
+export function RSmallDomino( { enabled, domino }: RDominoProps ) {
 	return (
 		<div
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
 				"border-2 border-gray-400 transition",
-				props.enabled && "cursor-pointer",
-				!props.enabled ? "shadow-none" : "shadow-shadow",
-				props.enabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+				!enabled ? "shadow-none" : "shadow-shadow",
+				enabled && "cursor-pointer hover:shadow-none",
+				enabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY"
 			) }
 		>
-			<RSmallTerrain terrain={ props.domino.left.terrain } crowns={ props.domino.left.crowns }/>
-			<RSmallTerrain terrain={ props.domino.right.terrain } crowns={ props.domino.right.crowns }/>
+			<RSmallTerrain terrain={ domino.left.terrain } crowns={ domino.left.crowns }/>
+			<RSmallTerrain terrain={ domino.right.terrain } crowns={ domino.right.crowns }/>
 		</div>
 	);
 }
 
-export function RDomino( props: RDominoProps ) {
+export function RDomino( { domino, enabled, isSelected, onClick }: RDominoProps ) {
 
 	const handleDominoClick = () => {
-		if ( !props.enabled || !props.onClick ) {
+		if ( !enabled || !onClick ) {
 			return;
 		}
 
-		props.onClick( props.domino.id );
+		onClick( domino.id );
 	};
 
 	return (
@@ -81,16 +83,16 @@ export function RDomino( props: RDominoProps ) {
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
 				"border-2 border-gray-400 transition",
-				props.enabled && "cursor-pointer",
-				!props.enabled ? "shadow-none" : props.isSelected ? "shadow-none" : "shadow-shadow",
-				!props.isSelected &&
-				props.enabled &&
-				"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+				enabled && "cursor-pointer",
+				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-shadow",
+				!isSelected && enabled && (
+					"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+				)
 			) }
 			onClick={ handleDominoClick }
 		>
-			<RTerrain terrain={ props.domino.left.terrain } crowns={ props.domino.left.crowns }/>
-			<RTerrain terrain={ props.domino.right.terrain } crowns={ props.domino.right.crowns }/>
+			<RTerrain terrain={ domino.left.terrain } crowns={ domino.left.crowns }/>
+			<RTerrain terrain={ domino.right.terrain } crowns={ domino.right.crowns }/>
 		</div>
 	);
 }

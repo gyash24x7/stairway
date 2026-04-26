@@ -1,14 +1,24 @@
-import type { BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
+import type {
+	BasePlayerView,
+	GameId,
+	PlayerGameData,
+	PlayerId,
+	SharedGameData
+} from "@/shared/engine/types";
 import type { CardId } from "@/shared/utils/cards";
 
 /** The variant of book grouping used in the game. */
 export type BookType = "NORMAL" | "CANADIAN";
+
 /** Supported player counts for Fish games. */
 export type PlayerCount = 4 | 6 | 8;
+
 /** Supported team counts for Fish games. */
 export type TeamCount = 2 | 3 | 4;
+
 /** Canadian book names representing suit halves (L=low A-6, U=high 8-K). */
 export type CanadianBook = "LC" | "LD" | "LH" | "LS" | "UC" | "UD" | "UH" | "US";
+
 /** Normal book names representing card ranks (all four suits per rank). */
 export type NormalBook =
 	"ACES"
@@ -89,12 +99,16 @@ export type PlayerInfo = {
 
 /** Map of player IDs to their game info. */
 export type PlayerData = Record<PlayerId, PlayerInfo>;
+
 /** Map of team IDs to team objects. */
 export type TeamData = Record<TeamId, Team>;
+
 /** Map of player IDs to their hands. */
 export type HandData = Record<PlayerId, CardId[]>;
+
 /** Map of player IDs to their current card count. */
 export type CardCounts = Record<PlayerId, number>;
+
 /** Map of card IDs to the list of players who could possibly hold them. */
 export type CardLocations = Partial<Record<CardId, PlayerId[]>>;
 
@@ -128,6 +142,9 @@ export type FishSharedView = Omit<FishData, "hands">;
 
 /** Player-specific view containing only the player's hand. */
 export type FishPlayerView = BasePlayerView & { hand: CardId[]; };
+
+/** Merged view used by bot AI (shared + player-specific state). */
+export type FishBotView = FishSharedView & FishPlayerView;
 
 /** Complete Fish game data type with split shared/player state. */
 export type FishGame = {
@@ -170,6 +187,13 @@ export type TeammateSignal = {
 	likelyHolder: PlayerId;
 	book: Book;
 	confidence: number;
+};
+
+/** Input for creating a game */
+export type CreateGameInput = {
+	playerCount: PlayerCount;
+	teamCount: TeamCount;
+	type: BookType;
 };
 
 /** Input for creating team assignments. */

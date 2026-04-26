@@ -6,7 +6,8 @@ import { cn } from "@/shared/utils/cn";
 export function TurnIndicator() {
 	const { shared, player } = useFish();
 
-	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
+	const isMyTurn = shared.status === "IN_PROGRESS"
+		&& shared.context.currentPlayer === player.playerId;
 	const currentPlayerName = shared.players[ shared.context.currentPlayer ].name.toUpperCase();
 
 	const lastClaim = shared.state.claimHistory[ 0 ];

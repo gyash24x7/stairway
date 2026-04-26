@@ -3,7 +3,13 @@
 import { useFish } from "@/fish/components/context";
 import { askCard } from "@/fish/core/actions";
 import type { Book } from "@/fish/core/types";
-import { getBookDisplayString, getBooksInHand, getCardsOfBook, getMissingCards, getOpponents } from "@/fish/core/utils";
+import {
+	getBookDisplayString,
+	getBooksInHand,
+	getCardsOfBook,
+	getMissingCards,
+	getOpponents
+} from "@/fish/core/utils";
 import { RCard } from "@/shared/components/card";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
@@ -31,10 +37,11 @@ export function AskCard() {
 	const [ open, setOpen ] = useState( false );
 	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
 
-	const askableBooks = Array.from( getBooksInHand( player.hand, shared.config.type ) ).filter( book => {
-		const cards = getCardsOfBook( book, shared.config.type, player.hand );
-		return cards.length !== 6;
-	} );
+	const askableBooks = Array.from( getBooksInHand( player.hand, shared.config.type ) )
+		.filter( book => {
+			const cards = getCardsOfBook( book, shared.config.type, player.hand );
+			return cards.length !== 6;
+		} );
 
 	const opponentsWithCards = getOpponents( shared.state.teams, playerInfo.id )
 		.map( memberId => ( { ...shared.players[ memberId ], ...shared.state.playerData[ memberId ] } ) )
@@ -126,19 +133,18 @@ export function AskCard() {
 				) }
 				{ currentStep === 2 && (
 					<div className={ "flex gap-3 flex-wrap justify-center" }>
-						{ getMissingCards( player.hand, selectedBook!, shared.config.type )
-							.map( ( cardId ) => (
-								<div
-									key={ cardId }
-									onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
-									className={ cn(
-										"cursor-pointer rounded-md flex justify-center p-1",
-										selectedCard === cardId && "border-2 border-accent bg-accent/20"
-									) }
-								>
-									<RCard cardId={ cardId }/>
-								</div>
-							) ) }
+						{ getMissingCards( player.hand, selectedBook!, shared.config.type ).map( cardId => (
+							<div
+								key={ cardId }
+								onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
+								className={ cn(
+									"cursor-pointer rounded-md flex justify-center p-1",
+									selectedCard === cardId && "border-2 border-accent bg-accent/20"
+								) }
+							>
+								<RCard cardId={ cardId }/>
+							</div>
+						) ) }
 					</div>
 				) }
 				{ currentStep === 3 && (

@@ -46,10 +46,18 @@ export const SelectTrigger = forwardRef<ComponentRef<typeof Trigger>, ComponentP
 	)
 );
 
-export const SelectContent = forwardRef<ComponentRef<typeof Positioner>, ComponentPropsWithoutRef<typeof Positioner>>(
+export const SelectContent = forwardRef<
+	ComponentRef<typeof Positioner>,
+	ComponentPropsWithoutRef<typeof Positioner>
+>(
 	( { className, children, ...props }, ref ) => (
 		<Portal>
-			<Positioner className="outline-none select-none z-10" sideOffset={ 8 } ref={ ref } { ...props }>
+			<Positioner
+				className="outline-none select-none z-10"
+				sideOffset={ 8 }
+				ref={ ref }
+				{ ...props }
+			>
 				<ScrollUpArrow
 					className={ cn(
 						"top-0 z-1 flex h-4 w-full cursor-default items-center justify-center",
@@ -60,10 +68,11 @@ export const SelectContent = forwardRef<ComponentRef<typeof Positioner>, Compone
 				/>
 				<Popup
 					className={ cn(
-						"group max-h-(--available-height) origin-(--transform-origin) overflow-y-auto",
-						"rounded-md py-1 text-gray-900 shadow-shadow bg-accent border-black border-2",
-						"transition-[transform,scale,opacity] data-ending-style:scale-90",
-						"data-ending-style:opacity-0 data-[side=none]:data-ending-style:transition-none",
+						"group max-h-(--available-height) origin-(--transform-origin)",
+						"overflow-y-auto rounded-md py-1 text-gray-900 shadow-shadow bg-accent",
+						"border-black border-2 transition-[transform,scale,opacity]",
+						"data-ending-style:scale-90 data-ending-style:opacity-0",
+						"data-[side=none]:data-ending-style:transition-none",
 						"data-starting-style:scale-90 data-starting-style:opacity-0",
 						"data-[side=none]:data-starting-style:scale-100",
 						"data-[side=none]:data-starting-style:opacity-100",
@@ -76,9 +85,10 @@ export const SelectContent = forwardRef<ComponentRef<typeof Positioner>, Compone
 				<ScrollDownArrow
 					className={ cn(
 						"bottom-0 z-1 flex h-4 w-full cursor-default items-center justify-center",
-						"rounded-md bg-[canvas] text-center text-xs before:absolute before:-top-full",
-						"before:left-0 before:h-full before:w-full before:content-['']",
-						"data-[direction=down]:bottom-0 data-[direction=down]:before:-bottom-full"
+						"rounded-md bg-[canvas] text-center text-xs before:absolute",
+						"before:-top-full before:left-0 before:h-full before:w-full",
+						"before:content-[''] data-[direction=down]:bottom-0",
+						"data-[direction=down]:before:-bottom-full"
 					) }
 				/>
 			</Positioner>
@@ -86,7 +96,10 @@ export const SelectContent = forwardRef<ComponentRef<typeof Positioner>, Compone
 	)
 );
 
-export const SelectItem = forwardRef<ComponentRef<typeof Item>, ComponentPropsWithoutRef<typeof Item>>(
+export const SelectItem = forwardRef<
+	ComponentRef<typeof Item>,
+	ComponentPropsWithoutRef<typeof Item>
+>(
 	( { className, children, ...props }, ref ) => (
 		<Item
 			ref={ ref }
@@ -112,7 +125,10 @@ export const SelectItem = forwardRef<ComponentRef<typeof Item>, ComponentPropsWi
 	)
 );
 
-export const SelectSeparator = forwardRef<ComponentRef<typeof Separator>, ComponentPropsWithoutRef<typeof Separator>>(
+export const SelectSeparator = forwardRef<
+	ComponentRef<typeof Separator>,
+	ComponentPropsWithoutRef<typeof Separator>
+>(
 	( { className, ...props }, ref ) => (
 		<Separator
 			ref={ ref }

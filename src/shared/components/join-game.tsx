@@ -44,7 +44,9 @@ export function JoinGame( { game, joinGame }: JoinGameProps ) {
 					onKeyDown={ e => e.key === "Enter" && handleJoin() }
 					disabled={ isPending }
 				/>
-				<Button onClick={ handleJoin } disabled={ !joinCode.trim() || isPending }>Join</Button>
+				<Button onClick={ handleJoin } disabled={ !joinCode.trim() || isPending }>
+					Join
+				</Button>
 			</div>
 			{ error && <p className={ "text-sm text-red-500" }>{ error }</p> }
 		</div>

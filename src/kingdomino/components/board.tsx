@@ -61,14 +61,10 @@ export function RSmallBoard( { board }: { board: Board; } ) {
 			className={ "inline-grid gap-0.5 w-fit" }
 			style={ { gridTemplateColumns: `repeat(${ cols.length }, minmax(0, 1fr))` } }
 		>
-			{ cells.map( ( { cell, key, coord } ) => {
-
-				if ( cell ) {
-					return <SmallFilledCell cell={ cell } x={ coord.x } y={ coord.y } key={ key }/>;
-				}
-
-				return <SmallEmptyCell coord={ coord } key={ key }/>;
-			} ) }
+			{ cells.map( ( { cell, key, coord } ) => !!cell
+				? <SmallFilledCell cell={ cell } x={ coord.x } y={ coord.y } key={ key }/>
+				: <SmallEmptyCell coord={ coord } key={ key }/>
+			) }
 		</div>
 	);
 }
@@ -167,18 +163,24 @@ type RBoardProps = {
 	getPreviewCoords?: ( coord: Coord ) => Coord[] | null;
 };
 
-export function RBoard( { board, isActive, activeDominoId, rotation = 0, onCellClick, getPreviewCoords }: RBoardProps ) {
-	const bounds = getExpandedBoardBounds( board );
-	const possibleCells = getPotentialCells( board );
+export function RBoard( props: RBoardProps ) {
+	const bounds = getExpandedBoardBounds( props.board );
+	const possibleCells = getPotentialCells( props.board );
 	const [ hoveredCoord, setHoveredCoord ] = useState<Coord | null>( null );
 
-	const previewCoords = hoveredCoord && getPreviewCoords ? getPreviewCoords( hoveredCoord ) : null;
+	const previewCoords = hoveredCoord && props.getPreviewCoords
+		? props.getPreviewCoords( hoveredCoord )
+		: null;
+
 	const previewKeys = new Set( previewCoords?.map( c => coordKey( c ) ) ?? [] );
 
 	// Cells valid for current domino + rotation (clickable)
-	const validCellKeys = isActive && activeDominoId
+	const validCellKeys = props.isActive && props.activeDominoId
 		? new Set( possibleCells
-			.filter( coord => canDominoBePlaced( board, { dominoId: activeDominoId, coord, rotation } ) )
+			.filter( coord => canDominoBePlaced(
+				props.board,
+				{ dominoId: props.activeDominoId!, coord, rotation: props.rotation! }
+			) )
 			.map( c => coordKey( c ) ) )
 		: null;
 
@@ -187,7 +189,7 @@ export function RBoard( { board, isActive, activeDominoId, rotation = 0, onCellC
 	const cells = rows.flatMap( y => cols.map( x => {
 		const key = coordKey( { x, y } );
 		return {
-			cell: getCellData( board, x, y ),
+			cell: getCellData( props.board, x, y ),
 			key,
 			isPossible: possibleCells.some( c => c.x === x && c.y === y ),
 			isValidPlacement: validCellKeys ? validCellKeys.has( key ) : false,
@@ -195,34 +197,26 @@ export function RBoard( { board, isActive, activeDominoId, rotation = 0, onCellC
 		};
 	} ) );
 
-	const isPlacement = !!isActive;
+	const isPlacement = !!props.isActive;
 
 	return (
 		<div
 			className={ "inline-grid gap-1 w-fit" }
 			style={ { gridTemplateColumns: `repeat(${ cols.length }, minmax(0, 1fr))` } }
 		>
-			{ cells.map( ( { cell, key, isPossible, isValidPlacement, coord } ) => {
-
-				if ( cell ) {
-					return <FilledCell cell={ cell } x={ coord.x } y={ coord.y } key={ key }/>;
-				}
-
-				if ( isPossible ) {
-					return (
-						<PossibleCell
-							key={ key }
-							coord={ coord }
-							isClickable={ isPlacement && isValidPlacement }
-							isPreview={ previewKeys.has( key ) }
-							onClick={ onCellClick }
-							onHover={ setHoveredCoord }
-						/>
-					);
-				}
-
-				return <EmptyCell coord={ coord } isPlacement={ isPlacement } key={ key }/>;
-			} ) }
+			{ cells.map( ( { cell, key, isPossible, isValidPlacement, coord } ) => !!cell
+				? <FilledCell cell={ cell } x={ coord.x } y={ coord.y } key={ key }/>
+				: isPossible
+					? <PossibleCell
+						key={ key }
+						coord={ coord }
+						isClickable={ isPlacement && isValidPlacement }
+						isPreview={ previewKeys.has( key ) }
+						onClick={ props.onCellClick }
+						onHover={ setHoveredCoord }
+					/>
+					: <EmptyCell coord={ coord } isPlacement={ isPlacement } key={ key }/>
+			) }
 		</div>
 	);
 }

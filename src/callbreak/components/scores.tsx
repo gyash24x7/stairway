@@ -2,7 +2,14 @@
 
 import { useCallbreak } from "@/callbreak/components/context";
 import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/primitives/table";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow
+} from "@/shared/primitives/table";
 
 export function Scores() {
 	const { shared } = useCallbreak();

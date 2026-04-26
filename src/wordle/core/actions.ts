@@ -20,7 +20,8 @@ const logger = createLogger( "Wordle:Actions" );
  * @returns The Durable Object stub for the game engine.
  */
 function getStub( gameId: GameId ) {
-	const durableObjectId = env.WORDLE_ENGINE.idFromName( `${ WordleEngine.NAME }:${ gameId }` );
+	const name = `${ WordleEngine.NAME }:${ gameId }`;
+	const durableObjectId = env.WORDLE_ENGINE.idFromName( name );
 	return env.WORDLE_ENGINE.get( durableObjectId );
 }
 
@@ -82,16 +83,12 @@ export const getWords = serverQuery( [
 	async ( input: GameIdInput ) => {
 		logger.debug( ">> getWords()" );
 
-		getAuthInfo();
+		const authInfo = getAuthInfo();
 		const game = await requireGame( WordleEngine.NAME, input.gameId );
 		const stub = getStub( game.id );
-		const { state, status } = await stub.getGameData();
-
-		if ( status !== "COMPLETED" ) {
-			throw new Response( null, { status: 403 } );
-		}
+		const {} = await stub.getPlayerGameInfo( authInfo.id );
 
 		logger.debug( "<< getWords()" );
-		return state.words;
+		return [];
 	}
 ] );

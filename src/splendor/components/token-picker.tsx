@@ -25,7 +25,9 @@ export function TokenPicker( { initialTokens, pickLimit, ...props }: TokenPicker
 			return;
 		}
 
-		const pickedCount = Object.values( pickedTokens ).reduce( ( acc, num ) => acc + ( num || 0 ), 0 );
+		const pickedCount = Object.values( pickedTokens )
+			.reduce( ( acc, num ) => acc + ( num || 0 ), 0 );
+
 		if ( pickLimit && pickedCount >= pickLimit ) {
 			return;
 		}

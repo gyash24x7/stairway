@@ -13,7 +13,21 @@ import { generateId } from "@/shared/utils/generator";
 
 export const PLAYER_COUNT = 4;
 export const TRICKS_PER_DEAL = 13;
-export const RANK_ORDER: CardRank[] = [ "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A" ];
+export const RANK_ORDER: CardRank[] = [
+	"2",
+	"3",
+	"4",
+	"5",
+	"6",
+	"7",
+	"8",
+	"9",
+	"10",
+	"J",
+	"Q",
+	"K",
+	"A"
+];
 
 function getRankValue( rank: CardRank ) {
 	return RANK_ORDER.indexOf( rank );

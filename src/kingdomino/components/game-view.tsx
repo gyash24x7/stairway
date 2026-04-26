@@ -7,7 +7,12 @@ import { RDraft } from "@/kingdomino/components/draft";
 import { ROpponent } from "@/kingdomino/components/opponent";
 import { discardDomino, placeDomino, selectDomino } from "@/kingdomino/core/actions";
 import type { Coord, DominoId, Rotation } from "@/kingdomino/core/types";
-import { canDominoBePlaced, DOMINO_DECK, getPlacementCoordinates, getValidPlacements } from "@/kingdomino/core/utils";
+import {
+	canDominoBePlaced,
+	DOMINO_DECK,
+	getPlacementCoordinates,
+	getValidPlacements
+} from "@/kingdomino/core/utils";
 import { GameInfo } from "@/shared/components/game-info";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
@@ -17,7 +22,10 @@ import { Fragment, useCallback, useState, useTransition } from "react";
 
 export function GameView() {
 	const { shared, player } = useKingdomino();
-	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
+
+	const isMyTurn = shared.status === "IN_PROGRESS" &&
+		shared.context.currentPlayer === player.playerId;
+
 	const myPlayerInfo = {
 		...shared.players[ player.playerId ],
 		...shared.state.playerData[ player.playerId ]

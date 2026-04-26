@@ -11,8 +11,8 @@ import type {
 	GameStatus,
 	GameStructure,
 	MoveType,
-	PlayerId,
 	PlayerGameData,
+	PlayerId,
 	ReadonlyGameData,
 	SharedGameData
 } from "@/shared/engine/types";
@@ -34,9 +34,9 @@ export abstract class AbstractGameEngine<
 	PV extends BasePlayerView = BasePlayerView
 > extends DurableObject {
 
-	protected abstract readonly structure: GameStructure<G, M, C, SV, PV>;
-
 	protected readonly logger = createLogger( "Game:Engine" );
+
+	protected abstract readonly structure: GameStructure<G, M, C, SV, PV>;
 
 	private context: GameContext = { turn: 0, players: [], currentPlayer: "" };
 	private status: GameStatus = "CREATED";
@@ -176,8 +176,8 @@ export abstract class AbstractGameEngine<
 	public async addBots() {
 		this.logger.debug( ">> addBots()" );
 
-		const hasBotSupport = this.structure.botMove
-			|| ( this.structure.phases && Object.values( this.structure.phases ).some( p => p.botMove ) );
+		const hasBotSupport = this.structure.botMove ||
+			( this.structure.phases && Object.values( this.structure.phases ).some( p => p.botMove ) );
 
 		if ( !hasBotSupport ) {
 			this.logger.error( "This game does not support bots!" );
@@ -195,48 +195,18 @@ export abstract class AbstractGameEngine<
 	}
 
 	/**
-	 * Returns the full game state data including config, state, players, status, and context.
-	 * @returns The complete game data object.
-	 */
-	public getGameData(): GameData<G, C> {
-		return {
-			config: this.config,
-			state: this.state,
-			players: this.players,
-			status: this.status,
-			context: this.context
-		};
-	}
-
-	/**
-	 * Returns game data split into shared state (visible to all players) and player-specific state.
+	 * Returns game data split into shared state and player-specific state.
 	 * @param playerId - The ID of the player requesting the view.
 	 * @returns An object with `shared` (common game data) and `player` (player-specific data).
 	 */
-	public getPlayerGameInfo( playerId: string ): { shared: SharedGameData<SV, C>; player: PlayerGameData<PV> } {
-		return { shared: this.getSharedGameInfo(), player: this.getPlayerSpecificInfo( playerId ) };
-	}
-
-	/**
-	 * Returns the shared game data visible to all players.
-	 */
-	private getSharedGameInfo(): SharedGameData<SV, C> {
+	public getPlayerGameInfo( playerId: string ): {
+		shared: SharedGameData<SV, C>;
+		player: PlayerGameData<PV>
+	} {
 		return {
-			id: this.id,
-			code: this.code,
-			config: this.config,
-			state: this.structure.sharedView( this.readonlyGameData() ),
-			players: this.players,
-			status: this.status,
-			context: this.context
+			shared: this.getSharedGameInfo(),
+			player: this.getPlayerSpecificInfo( playerId )
 		};
-	}
-
-	/**
-	 * Returns the player-specific game data.
-	 */
-	private getPlayerSpecificInfo( playerId: PlayerId ): PlayerGameData<PV> {
-		return this.structure.playerView( this.readonlyGameData(), playerId );
 	}
 
 	/**
@@ -273,6 +243,46 @@ export abstract class AbstractGameEngine<
 		await this.scheduleBotIfNeeded();
 
 		this.logger.debug( "<< alarm()" );
+	}
+
+	/**
+	 * Type safe utilitu to create game structure in sub classes
+	 * @param structure game structure
+	 * @protected
+	 */
+	protected defineStructure( structure: GameStructure<G, M, C, SV, PV> ) {
+		return structure;
+	}
+
+	/**
+	 * Type-safe helper to define a game phase with inferred move input types.
+	 * @param phase game phase definition
+	 * @protected
+	 */
+	protected definePhase<PM extends Partial<M>>( phase: GamePhase<G, PM, C, SV, PV> ) {
+		return phase;
+	}
+
+	/**
+	 * Returns the shared game data visible to all players.
+	 */
+	private getSharedGameInfo(): SharedGameData<SV, C> {
+		return {
+			id: this.id,
+			code: this.code,
+			config: this.config,
+			state: this.structure.sharedView( this.readonlyGameData() ),
+			players: this.players,
+			status: this.status,
+			context: this.context
+		};
+	}
+
+	/**
+	 * Returns the player-specific game data.
+	 */
+	private getPlayerSpecificInfo( playerId: PlayerId ): PlayerGameData<PV> {
+		return this.structure.playerView( this.readonlyGameData(), playerId );
 	}
 
 	/**
@@ -383,14 +393,17 @@ export abstract class AbstractGameEngine<
 			return null;
 		}
 
-		return botMoveFn( this.readonlyBotGameInfo( playerId ) ) as { moveType: keyof M; input: M[keyof M] };
+		return botMoveFn( this.readonlyBotGameInfo( playerId ) ) as {
+			moveType: keyof M;
+			input: M[keyof M]
+		};
 	}
 
 	/**
 	 * Returns the current game phase if using a phased game structure.
 	 * @returns The current GamePhase, or null if phases are not configured or no phase is active.
 	 */
-	private getCurrentPhase(): GamePhase<G, any, C> | null {
+	private getCurrentPhase(): GamePhase<G, any, C, SV, PV> | null {
 		if ( !this.structure.phases || !this.context.phase ) {
 			return null;
 		}
@@ -488,9 +501,13 @@ export abstract class AbstractGameEngine<
 	 */
 	private async saveGameData() {
 		await this.ctx.storage.put( "data", {
-			...this.getGameData(),
 			id: this.id,
-			code: this.code
+			code: this.code,
+			config: this.config,
+			state: this.state,
+			players: this.players,
+			status: this.status,
+			context: this.context
 		} );
 	}
 
@@ -500,18 +517,21 @@ export abstract class AbstractGameEngine<
 	 * and each playerId as key for player-specific state.
 	 */
 	private async syncClients() {
-		const syncId = this.env.SYNCED_STATE_SERVER.idFromName( `${ this.structure.name }:${ this.id }` );
+		const syncName = `${ this.structure.name }:${ this.id }`;
+		const syncId = this.env.SYNCED_STATE_SERVER.idFromName( syncName );
 		const syncStub = this.env.SYNCED_STATE_SERVER.get( syncId );
 
 		await syncStub.setState( this.getSharedGameInfo(), "shared" );
 
-		for ( const playerId of Object.keys( this.players ).filter( id => !this.players[ id ].isBot ) ) {
+		const nonBotPlayers = Object.keys( this.players ).filter( id => !this.players[ id ].isBot );
+		for ( const playerId of nonBotPlayers ) {
 			await syncStub.setState( this.getPlayerSpecificInfo( playerId ), playerId );
 		}
 	}
 
 	/**
-	 * Schedules a Durable Object alarm if the next player is a bot, triggering a bot move after a delay.
+	 * Schedules a Durable Object alarm if the next player is a bot,
+	 * triggering a bot move after a delay.
 	 */
 	private async scheduleBotIfNeeded() {
 		const isNextPlayerBot = !!this.players[ this.context.currentPlayer ]?.isBot;

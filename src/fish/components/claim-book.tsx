@@ -3,7 +3,13 @@
 import { useFish } from "@/fish/components/context";
 import { claimBook } from "@/fish/core/actions";
 import type { Book } from "@/fish/core/types";
-import { getBookDisplayString, getBooksInHand, getCardsOfBook, getMissingCards, getTeammates } from "@/fish/core/utils";
+import {
+	getBookDisplayString,
+	getBooksInHand,
+	getCardsOfBook,
+	getMissingCards,
+	getTeammates
+} from "@/fish/core/utils";
 import { RCard } from "@/shared/components/card";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import type { PlayerId } from "@/shared/engine/types";
@@ -31,7 +37,9 @@ export function ClaimBook() {
 	const [ showDialog, setShowDialog ] = useState( false );
 
 	const teamMates = getTeammates( shared.state.teams, player.playerId );
-	const selectedBookDisplayString = selectedBook ? getBookDisplayString( selectedBook, shared.config.type ) : "";
+	const selectedBookDisplayString = selectedBook
+		? getBookDisplayString( selectedBook, shared.config.type )
+		: "";
 
 	const missingCards = selectedBook
 		? getMissingCards( player.hand, selectedBook, shared.config.type )

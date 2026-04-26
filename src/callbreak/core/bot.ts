@@ -1,4 +1,4 @@
-import type { CallbreakConfig, CallbreakPlayerView, Trick } from "@/callbreak/core/types";
+import type { CallbreakBotView, CallbreakConfig, Trick } from "@/callbreak/core/types";
 import { getCardValue, getPlayableCards } from "@/callbreak/core/utils";
 import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@/shared/utils/cards";
 
@@ -76,7 +76,7 @@ function getSuitCards( hand: CardId[], suit: string ) {
  * @param config - The game configuration including trump suit.
  * @returns The number of tricks the bot declares it will win (minimum 1).
  */
-export function botDeclare( state: CallbreakPlayerView, config: CallbreakConfig ) {
+export function botDeclare( state: CallbreakBotView, config: CallbreakConfig ) {
 	let score = 0;
 
 	const trumpCards = getSuitCards( state.hand, config.trumpSuit );
@@ -124,7 +124,7 @@ export function botDeclare( state: CallbreakPlayerView, config: CallbreakConfig 
  * @param config - The game configuration including trump suit.
  * @returns The card ID the bot chooses to play.
  */
-export function botPlayCard( state: CallbreakPlayerView, config: CallbreakConfig ) {
+export function botPlayCard( state: CallbreakBotView, config: CallbreakConfig ) {
 	const activeDeal = state.activeDeal!;
 	const activeTrick = activeDeal.tricks[ 0 ];
 	const playable = getPlayableCards( state.hand, config.trumpSuit, activeTrick );
@@ -133,7 +133,8 @@ export function botPlayCard( state: CallbreakPlayerView, config: CallbreakConfig
 		return playable[ 0 ];
 	}
 
-	const needsMore = activeDeal.declarations[ state.playerId ] - activeDeal.wins[ state.playerId ] > 0;
+	const { declarations, wins } = activeDeal;
+	const needsMore = declarations[ state.playerId ] - wins[ state.playerId ] > 0;
 	const trickCards = Object.values( activeTrick.cards );
 	const isLeading = trickCards.length === 0;
 

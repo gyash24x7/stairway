@@ -3,7 +3,15 @@
 import { submitGuess } from "@/wordle/core/actions";
 import { dictionaries } from "@/wordle/core/dictionary";
 import type { WordleGame } from "@/wordle/core/types";
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState, useTransition } from "react";
+import {
+	createContext,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useEffect,
+	useState,
+	useTransition
+} from "react";
 import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type WordleContextValue = {
@@ -90,7 +98,16 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 	}, [ gameInProgress, handleSubmit, handleKeyPress, handleBackspace ] );
 
 	return (
-		<WordleContext value={ { shared, player, currentGuess, isPending, invalidGuess, handleKeyPress, handleBackspace, handleSubmit } }>
+		<WordleContext value={ {
+			shared,
+			player,
+			currentGuess,
+			isPending,
+			invalidGuess,
+			handleKeyPress,
+			handleBackspace,
+			handleSubmit
+		} }>
 			{ children }
 		</WordleContext>
 	);

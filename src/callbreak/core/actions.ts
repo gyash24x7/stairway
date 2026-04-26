@@ -21,7 +21,8 @@ const logger = createLogger( "Callbreak:Actions" );
  * @returns The Durable Object stub for the game engine.
  */
 function getStub( gameId: GameId ) {
-	const durableObjectId = env.CALLBREAK_ENGINE.idFromName( `${ CallbreakEngine.NAME }:${ gameId }` );
+	const name = `${ CallbreakEngine.NAME }:${ gameId }`;
+	const durableObjectId = env.CALLBREAK_ENGINE.idFromName( name );
 	return env.CALLBREAK_ENGINE.get( durableObjectId );
 }
 
@@ -51,7 +52,9 @@ export const createGame = serverAction( [
 		logger.debug( ">> createGame()" );
 
 		const authInfo = getAuthInfo();
-		const [ game ] = await db.insert( games ).values( { game: CallbreakEngine.NAME } ).returning();
+		const [ game ] = await db.insert( games )
+			.values( { game: CallbreakEngine.NAME } )
+			.returning();
 
 		const stub = getStub( game.id );
 		await stub.initialize( game.id, game.code, {

@@ -20,7 +20,8 @@ const logger = createLogger( "TicTacToe:Actions" );
  * @returns The Durable Object stub for the game engine.
  */
 function getStub( gameId: GameId ) {
-	const durableObjectId = env.TIC_TAC_TOE_ENGINE.idFromName( `${ TicTacToeEngine.NAME }:${ gameId }` );
+	const name = `${ TicTacToeEngine.NAME }:${ gameId }`;
+	const durableObjectId = env.TIC_TAC_TOE_ENGINE.idFromName( name );
 	return env.TIC_TAC_TOE_ENGINE.get( durableObjectId );
 }
 
@@ -46,7 +47,9 @@ export const createGame = serverAction( [
 		logger.debug( ">> createGame()" );
 
 		const authInfo = getAuthInfo();
-		const [ game ] = await db.insert( games ).values( { game: TicTacToeEngine.NAME } ).returning();
+		const [ game ] = await db.insert( games )
+			.values( { game: TicTacToeEngine.NAME } )
+			.returning();
 
 		logger.debug( "Game Created! %s:%s", TicTacToeEngine.NAME, game.id );
 

@@ -1,7 +1,12 @@
 "use server";
 
 import { sessionStore } from "@/auth/core/sessions";
-import type { NameInput, UsernameInput, VerifyLoginInput, VerifyRegistrationInput } from "@/auth/core/types";
+import type {
+	NameInput,
+	UsernameInput,
+	VerifyLoginInput,
+	VerifyRegistrationInput
+} from "@/auth/core/types";
 import { db } from "@/shared/db/client";
 import { passkeys, users, webauthnOptions } from "@/shared/db/schema";
 import { generateAvatar, generateId } from "@/shared/utils/generator";
@@ -38,7 +43,9 @@ const getUserByUsername = async ( username: string ) => {
  * @returns The stored WebAuthn options, or undefined if not found.
  */
 const getWebAuthnOptions = async ( username: string ) => {
-	return db.query.webauthnOptions.findFirst( { where: eq( webauthnOptions.username, username ) } );
+	return db.query.webauthnOptions.findFirst( {
+		where: eq( webauthnOptions.username, username )
+	} );
 };
 
 /** Server action to check if a user with the given username already exists. */
@@ -182,7 +189,7 @@ export const getRegisterOptions = serverQuery( [
 	}
 ] );
 
-/** Server action to verify a WebAuthn registration response, create the user, and establish a session. */
+/** Server action to verify a WebAuthn registration, create the user, and establish a session. */
 export const verifyRegistration = serverAction( [
 	validate( v.object( {
 		username: v.pipe( v.string(), v.trim(), v.minLength( 3 ) ),
@@ -212,7 +219,12 @@ export const verifyRegistration = serverAction( [
 			throw new Response( null, { status: 400 } );
 		}
 
-		const user = { id: generateId(), name: data.name, username: data.username, avatar: generateAvatar() };
+		const user = {
+			id: generateId(),
+			name: data.name,
+			username: data.username,
+			avatar: generateAvatar()
+		};
 		await db.insert( users ).values( user );
 		logger.info( "User created for WebAuthn registration:", user.id );
 
@@ -223,7 +235,10 @@ export const verifyRegistration = serverAction( [
 			counter: verification.registrationInfo.credential.counter
 		} );
 
-		await db.delete( webauthnOptions ).where( eq( webauthnOptions.username, data.username ) ).execute();
+		await db.delete( webauthnOptions )
+			.where( eq( webauthnOptions.username, data.username ) )
+			.execute();
+	
 		logger.info( "Deleted WebAuthn options for user:", data.username );
 
 		await sessionStore.save( requestInfo.response.headers, { authInfo: user } );

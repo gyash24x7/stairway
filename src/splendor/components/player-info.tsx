@@ -102,11 +102,22 @@ export function PlayerInfo( { playerId }: { playerId: string } ) {
 	const { shared } = useSplendor();
 	const baseInfo = shared.players[ playerId ];
 	const gameInfo = shared.state.playerData[ playerId ];
-	const isCurrentTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === playerId;
+	const isCurrentTurn = shared.status ===
+		"IN_PROGRESS" &&
+		shared.context.currentPlayer ===
+		playerId;
 	return (
-		<div className={ cn( "bg-background rounded-md overflow-hidden", isCurrentTurn && "ring-2 ring-accent" ) }>
+		<div className={ cn(
+			"bg-background rounded-md overflow-hidden",
+			isCurrentTurn && "ring-2 ring-accent"
+		) }>
 			<div className={ "flex gap-2 justify-between" }>
-				<div className={ "flex sm:flex-col gap-2 items-center justify-center p-2 w-1/3 min-w-30 max-w-40" }>
+				<div
+					className={ cn(
+						"flex sm:flex-col gap-2 items-center justify-center",
+						"p-2 w-1/3 min-w-30 max-w-40"
+					) }
+				>
 					<Avatar className={ "rounded-full w-8 h-8 md:w-10 md:h-10 xl:h-12 xl:w-12" }>
 						<AvatarImage src={ baseInfo.avatar } alt={ "" } className={ "bg-accent" }/>
 					</Avatar>
@@ -117,7 +128,12 @@ export function PlayerInfo( { playerId }: { playerId: string } ) {
 				<div className={ "hidden sm:flex flex-1" }>
 					<PlayerGemInfo playerId={ playerId }/>
 				</div>
-				<div className={ "flex items-center justify-center bg-accent rounded-r-md w-16 md:w-20 shrink-0" }>
+				<div
+					className={ cn(
+						"flex items-center justify-center bg-accent",
+						"rounded-r-md w-16 md:w-20 shrink-0"
+					) }
+				>
 					<div className={ "text-4xl font-heading text-neutral-dark text-center" }>
 						{ gameInfo.points }
 					</div>

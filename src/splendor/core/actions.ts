@@ -6,7 +6,12 @@ import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
 import { getAuthInfo, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
 import { SplendorEngine } from "@/splendor/core/engine";
-import type { PickTokensInput, PurchaseCardInput, ReserveCardInput, SplendorConfig } from "@/splendor/core/types";
+import type {
+	PickTokensInput,
+	PurchaseCardInput,
+	ReserveCardInput,
+	SplendorConfig
+} from "@/splendor/core/types";
 import { GEMS } from "@/splendor/core/utils";
 import { env } from "cloudflare:workers";
 import { serverAction, serverQuery } from "rwsdk/worker";
@@ -15,7 +20,8 @@ import * as v from "valibot";
 const logger = createLogger( "Splendor:Actions" );
 
 function getStub( gameId: GameId ) {
-	const durableObjectId = env.SPLENDOR_ENGINE.idFromName( `${ SplendorEngine.NAME }:${ gameId }` );
+	const name = `${ SplendorEngine.NAME }:${ gameId }`;
+	const durableObjectId = env.SPLENDOR_ENGINE.idFromName( name );
 	return env.SPLENDOR_ENGINE.get( durableObjectId );
 }
 
@@ -43,7 +49,9 @@ export const createGame = serverAction( [
 		logger.debug( ">> createGame()" );
 
 		const authInfo = getAuthInfo();
-		const [ game ] = await db.insert( games ).values( { game: SplendorEngine.NAME } ).returning();
+		const [ game ] = await db.insert( games )
+			.values( { game: SplendorEngine.NAME } )
+			.returning();
 
 		const stub = getStub( game.id );
 		await stub.initialize( game.id, game.code, { ...input, autoStart: true } );

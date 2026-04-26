@@ -18,7 +18,8 @@ export class UserSession extends DurableObject {
 	/** Retrieve the current session data, loading from storage on first access. */
 	async getSession() {
 		if ( !this.session ) {
-			this.session = ( await this.storage.get<SessionData>( "session" ) ) ?? { authInfo: null };
+			const session = await this.storage.get<SessionData>( "session" );
+			this.session = session ?? { authInfo: null };
 		}
 		return { value: this.session };
 	}

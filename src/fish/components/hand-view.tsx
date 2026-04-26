@@ -10,10 +10,12 @@ export function HandView() {
 	const { shared, player } = useFish();
 	const hand = player.hand;
 
-	const groupedCards = useMemo( () => {
-		const books = getBooksInHand( hand, shared.config.type );
-		return books.map( book => ( { book, cards: getCardsOfBook( book, shared.config.type, hand ) } ) );
-	}, [ hand, shared.config.type ] );
+	const groupedCards = useMemo(
+		() => getBooksInHand( hand, shared.config.type ).map(
+			book => ( { book, cards: getCardsOfBook( book, shared.config.type, hand ) } )
+		),
+		[ hand, shared.config.type ]
+	);
 
 	if ( hand.length === 0 ) {
 		return (

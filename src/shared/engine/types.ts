@@ -73,7 +73,7 @@ type BaseMoveMap = Record<string, unknown>;
 
 /** A typed map of move names to their Move definitions. */
 export type MoveMap<G, C extends BaseGameConfig, M extends BaseMoveMap> = {
-	[K in keyof M]: Move<G, C, M[K]>;
+	[K in keyof M]: Move<G, C, NonNullable<M[K]>>;
 };
 
 /** The type-level key of a move within a move map. */
@@ -97,10 +97,11 @@ export type ResolveNextPlayerFn<G, M extends BaseMoveMap, C extends BaseGameConf
  * @param data - The read-only game data from the bot's player view.
  * @returns An object containing the move type and input for the bot's move.
  */
-export type BotMoveFn<G, C extends BaseGameConfig, M extends BaseMoveMap> = ( data: ReadonlyGameData<G, C> ) => {
-	moveType: keyof M;
-	input: M[keyof M]
-};
+export type BotMoveFn<G, C extends BaseGameConfig, M extends BaseMoveMap> =
+	( data: ReadonlyGameData<G, C> ) => {
+		moveType: keyof M;
+		input: M[keyof M]
+	};
 
 /**
  * Lifecycle hooks that fire at various points during the game.
@@ -167,7 +168,13 @@ export type GameData<G, C extends BaseGameConfig> = {
  * A game phase definition with its own moves, player resolution, end condition,
  * phase transitions, and optional lifecycle hooks.
  */
-export type GamePhase<G, M extends BaseMoveMap, C extends BaseGameConfig> = {
+export type GamePhase<
+	G,
+	M extends BaseMoveMap,
+	C extends BaseGameConfig,
+	SV,
+	PV extends BasePlayerView
+> = {
 	moves: MoveMap<G, C, M>;
 	resolveNextPlayer: ResolveNextPlayerFn<G, M, C>;
 	endIf: ( data: ReadonlyGameData<G, C> ) => boolean;
@@ -175,16 +182,14 @@ export type GamePhase<G, M extends BaseMoveMap, C extends BaseGameConfig> = {
 	onEnter?: ( data: ReadonlyGameData<G, C> ) => G;
 	onExit?: ( data: ReadonlyGameData<G, C> ) => G;
 	resolveStartingPlayer?: ( data: ReadonlyGameData<G, C> ) => PlayerId;
-	botMove?: BotMoveFn<any, C, M>;
+	botMove?: BotMoveFn<SV & PV, C, M>;
 	hooks?: Pick<GameHooks<G, M, C>, "beforeMove" | "afterMove">;
 };
 
-/** A record mapping phase names to their GamePhase definitions. */
-export type GamePhases<G, C extends BaseGameConfig> = Record<string, GamePhase<G, any, C>>;
-
 /**
  * Internal base structure shared by all game definitions.
- * Contains the game name, setup function, hooks, end condition, shared view, and player view generators.
+ * Contains the game name, setup function, hooks, end condition, shared view,
+ * and player view generators.
  */
 type BaseGameStructure<
 	G,
@@ -205,8 +210,14 @@ type BaseGameStructure<
  * A phased game structure where gameplay is divided into named phases,
  * each with its own moves, player resolution, and transition logic.
  */
-export type PhasedGameStructure<G, C extends BaseGameConfig = BaseGameConfig> = {
-	phases: GamePhases<G, C>;
+export type PhasedGameStructure<
+	G,
+	M extends BaseMoveMap,
+	C extends BaseGameConfig,
+	SV,
+	PV extends BasePlayerView
+> = {
+	phases: Record<string, GamePhase<G, Partial<M>, C, SV, PV>>;
 	initialPhase: string;
 	moves?: undefined;
 	resolveNextPlayer?: undefined;
@@ -241,7 +252,8 @@ export type GameStructure<
 	C extends BaseGameConfig = BaseGameConfig,
 	SV = G,
 	PV extends BasePlayerView = BasePlayerView
-> = BaseGameStructure<G, M, C, SV, PV> & ( FlatGameStructure<G, M, C, SV, PV> | PhasedGameStructure<G, C> );
+> = BaseGameStructure<G, M, C, SV, PV>
+	& ( FlatGameStructure<G, M, C, SV, PV> | PhasedGameStructure<G, M, C, SV, PV> );
 
 /** Input type for operations that require a game ID. */
 export type GameIdInput = { gameId: GameId };

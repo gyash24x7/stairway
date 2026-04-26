@@ -21,9 +21,10 @@ import { useBoolean } from "usehooks-ts";
 export function PickTokens() {
 	const { shared, player } = useSplendor();
 
-	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
 	const availableTokens = shared.state.tokens;
 	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
+	const isMyTurn = shared.status === "IN_PROGRESS"
+		&& shared.context.currentPlayer === player.playerId;
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );
@@ -32,7 +33,9 @@ export function PickTokens() {
 
 	const projectedTotal = useMemo( () => {
 		const currentTotal = GEMS_WITH_GOLD.reduce( ( sum, gem ) => sum + playerTokens[ gem ], 0 );
-		const pickedTotal = Object.values( selectedTokens ).reduce( ( sum, val ) => sum + ( val ?? 0 ), 0 );
+		const pickedTotal = Object.values( selectedTokens )
+			.reduce( ( sum, val ) => sum + ( val ?? 0 ), 0 );
+
 		return currentTotal + pickedTotal;
 	}, [ playerTokens, selectedTokens ] );
 
@@ -91,7 +94,7 @@ export function PickTokens() {
 						onPickChange={ setReturnTokens }
 					/>
 					<DialogFooter>
-						<Button onClick={ handleReturnClick } disabled={ isPending } className={ "w-full" }>
+						<Button onClick={ handleReturnClick } disabled={ isPending }>
 							{ isPending ? <Spinner/> : "RETURN TOKENS" }
 						</Button>
 					</DialogFooter>

@@ -20,7 +20,9 @@ import { cn } from "@/shared/utils/cn";
 export function GameView() {
 	const { shared, player } = useFish();
 
-	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
+	const isMyTurn = shared.status === "IN_PROGRESS"
+		&& shared.context.currentPlayer === player.playerId;
+
 	const hasCards = player.hand.length > 0;
 	const isTeamConfig = shared.status === "IN_PROGRESS" && shared.context.phase === "TEAM_CONFIG";
 	const isPlaying = shared.status === "IN_PROGRESS" && shared.context.phase === "PLAY";
@@ -30,7 +32,7 @@ export function GameView() {
 		&& lastClaim.playerId === player.playerId;
 
 	return (
-		<div className={ `flex flex-col gap-3 items-center max-w-6xl justify-self-center w-full mb-80 lg:mb-0` }>
+		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-80 lg:mb-0` }>
 			<GameInfo
 				code={ shared.code }
 				name={ "fish" }
@@ -38,7 +40,9 @@ export function GameView() {
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>TYPE</p>
-						<h1 className={ "text-2xl md:text-4xl font-heading" }>{ shared.config.type }</h1>
+						<h1 className={ "text-2xl md:text-4xl font-heading" }>
+							{ shared.config.type }
+						</h1>
 					</div>
 				}
 			/>
@@ -70,7 +74,11 @@ export function GameView() {
 				<div className={ cn( "flex flex-col justify-end gap-3 w-full" ) }>
 					{ shared.status === "CREATED" && (
 						<div
-							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
+							className={ cn(
+								"p-2 md:p-3 rounded-md w-full bg-background",
+								"flex flex-col gap-2 items-center"
+							) }
+						>
 							<Spinner size={ "xl" }/>
 							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 								WAITING FOR PLAYERS
@@ -79,7 +87,11 @@ export function GameView() {
 					) }
 					{ isTeamConfig && (
 						<div
-							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
+							className={ cn(
+								"p-2 md:p-3 rounded-md w-full bg-background",
+								"flex flex-col gap-2 items-center"
+							) }
+						>
 							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 								ALL PLAYERS JOINED — CREATE TEAMS TO START
 							</p>

@@ -15,7 +15,7 @@ export function GameView() {
 		.some( player => player.points >= shared.config.winningPoints );
 
 	return (
-		<div className={ `flex flex-col gap-3 items-center max-w-6xl justify-self-center w-full mb-80 lg:mb-0` }>
+		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-80 lg:mb-0` }>
 			<GameInfo
 				code={ shared.code }
 				name={ "splendor" }
@@ -40,10 +40,14 @@ export function GameView() {
 				<div className={ "w-full max-w-lg md:max-w-xl" }>
 					<Board/>
 				</div>
-				<div className={ cn( "flex flex-col justify-end gap-3 w-full max-w-lg md:max-w-xl" ) }>
+				<div className={ "flex flex-col justify-end gap-3 w-full max-w-lg md:max-w-xl" }>
 					{ shared.status === "CREATED" && (
 						<div
-							className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
+							className={ cn(
+								"p-2 md:p-3 rounded-md w-full bg-background",
+								"flex flex-col gap-2 items-center"
+							) }
+						>
 							<Spinner size={ "xl" }/>
 							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 								WAITING FOR PLAYERS

@@ -25,7 +25,8 @@ export function Board() {
 					onClick={ () => handlePlace( index ) }
 					disabled={ disabled || cell !== null }
 					className={ cn(
-						"aspect-square border-2 border-black rounded-base flex items-center justify-center",
+						"aspect-square border-2 border-black rounded-base",
+						"flex items-center justify-center",
 						"text-4xl md:text-6xl font-title transition-all",
 						cell === "X" && "text-accent bg-background",
 						cell === "O" && "text-foreground bg-background",

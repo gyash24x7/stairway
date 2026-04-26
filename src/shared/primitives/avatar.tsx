@@ -18,13 +18,22 @@ export const Avatar = forwardRef<ComponentRef<typeof Root>, ComponentPropsWithou
 	)
 );
 
-export const AvatarImage = forwardRef<ComponentRef<typeof Image>, ComponentPropsWithoutRef<typeof Image>>(
+export const AvatarImage = forwardRef<
+	ComponentRef<typeof Image>,
+	ComponentPropsWithoutRef<typeof Image>
+>(
 	( { className, ...props }, ref ) => (
-		<Image ref={ ref } className={ cn( "aspect-square h-full w-full", className ) } { ...props }/>
+		<Image
+			ref={ ref }
+			className={ cn( "aspect-square h-full w-full", className ) } { ...props }
+		/>
 	)
 );
 
-export const AvatarFallback = forwardRef<ComponentRef<typeof Fallback>, ComponentPropsWithoutRef<typeof Fallback>>(
+export const AvatarFallback = forwardRef<
+	ComponentRef<typeof Fallback>,
+	ComponentPropsWithoutRef<typeof Fallback>
+>(
 	( { className, ...props }, ref ) => (
 		<Fallback
 			ref={ ref }

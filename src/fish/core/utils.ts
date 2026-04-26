@@ -4,9 +4,10 @@ import type {
 	BookType,
 	CanadianBook,
 	Claim,
-	FishConfig,
 	FishData,
 	NormalBook,
+	PlayerCount,
+	TeamCount,
 	TeamData,
 	TeamId,
 	Transfer
@@ -14,7 +15,7 @@ import type {
 import type { BasePlayerInfo, PlayerId } from "@/shared/engine/types";
 import { type CardId, getCardDisplayString } from "@/shared/utils/cards";
 
-/** Mapping of normal book names to their constituent card IDs (4 cards per book, grouped by rank). */
+/** Mapping of normal book names to their card IDs (4 cards per book, grouped by rank). */
 export const NORMAL_BOOKS = {
 	"ACES": [ "AC", "AD", "AH", "AS" ] as CardId[],
 	"TWOS": [ "2C", "2D", "2H", "2S" ] as CardId[],
@@ -31,7 +32,7 @@ export const NORMAL_BOOKS = {
 	"KINGS": [ "KC", "KD", "KH", "KS" ] as CardId[]
 } as const;
 
-/** Mapping of Canadian book names to their constituent card IDs (6 cards per book, grouped by suit half). */
+/** Mapping of Canadian book names to their card IDs (6 cards per book, grouped by suit half). */
 export const CANADIAN_BOOKS = {
 	"LC": [ "AC", "2C", "3C", "4C", "5C", "6C" ] as CardId[],
 	"LD": [ "AD", "2D", "3D", "4D", "5D", "6D" ] as CardId[],
@@ -105,7 +106,7 @@ export function getMissingCards( hand: CardId[], book: Book, bookType: BookType 
  * @param book - The book to get cards from
  * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
  * @param hand - Optional player's hand of cards to filter the results
- * @returns An array of PlayingCard objects from the specified book, filtered by the hand if provided
+ * @returns An array of PlayingCards from the specified book, filtered by the hand if provided
  * @public
  */
 export function getCardsOfBook( book: Book, bookType: BookType, hand?: CardId[] ) {
@@ -205,11 +206,11 @@ export function getBookSuit( book: Book, bookType: BookType ): string | undefine
  * @returns A description string like "Alice asked Bob for ACE OF HEARTS and got the card!".
  */
 export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlayerInfo> ) {
-	const transferringPlayer = players[ ask.playerId ].name;
-	const receivingPlayer = players[ ask.from ].name;
+	const askingPlayer = players[ ask.playerId ].name;
+	const askedPlayer = players[ ask.from ].name;
 	const cardString = getCardDisplayString( ask.cardId );
 	const successString = ask.success ? "got the card!" : "was declined!";
-	return `${ transferringPlayer } asked ${ receivingPlayer } for ${ cardString } and ${ successString }`;
+	return `${ askingPlayer } asked ${ askedPlayer } for ${ cardString } and ${ successString }`;
 }
 
 /**
@@ -220,7 +221,11 @@ export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlaye
  * @param bookType - The book type variant for display formatting.
  * @returns A description string like "Alice declared ACES correctly!".
  */
-export function getClaimDescription( claim: Claim, players: Record<PlayerId, BasePlayerInfo>, bookType: BookType ) {
+export function getClaimDescription(
+	claim: Claim,
+	players: Record<PlayerId, BasePlayerInfo>,
+	bookType: BookType
+) {
 	const successString = claim.success ? "correctly!" : "incorrectly!";
 	const bookDisplay = getBookDisplayString( claim.book, bookType );
 	return `${ players[ claim.playerId ].name } declared ${ bookDisplay } ${ successString }`;
@@ -233,8 +238,13 @@ export function getClaimDescription( claim: Claim, players: Record<PlayerId, Bas
  * @param players - The player info records for name lookup.
  * @returns A description string like "Alice transferred the turn to Bob".
  */
-export function getTransferDescription( transfer: Transfer, players: Record<PlayerId, BasePlayerInfo> ) {
-	return `${ players[ transfer.playerId ].name } transferred the turn to ${ players[ transfer.transferTo ].name }`;
+export function getTransferDescription(
+	transfer: Transfer,
+	players: Record<PlayerId, BasePlayerInfo>
+) {
+	const transferringPlayer = players[ transfer.playerId ].name;
+	const receivingPlayer = players[ transfer.transferTo ].name;
+	return `${ transferringPlayer } transferred the turn to ${ receivingPlayer }`;
 }
 
 /**
@@ -251,26 +261,24 @@ export function getClaimedBooks( state: FishData ): Book[] {
  * Build a FishConfig object from create game input parameters.
  * Determines book type, deck size, and book definitions based on the game variant.
  *
- * @param input - The create game input with player count, type, and team count.
+ * @param playerCount No of players
+ * @param type Book Type for the game
+ * @param teamCount No of teams
  * @returns A complete FishConfig object.
  */
-export function buildConfig( input: {
-	playerCount: 4 | 6 | 8;
-	type: "NORMAL" | "CANADIAN";
-	teamCount: 2 | 3 | 4;
-} ): FishConfig {
-	const isCanadian = input.type === "CANADIAN";
+export function buildConfig( playerCount: PlayerCount, type: BookType, teamCount: TeamCount ) {
+	const isCanadian = type === "CANADIAN";
 	const books = ( isCanadian
 		? Object.keys( CANADIAN_BOOKS )
 		: Object.keys( NORMAL_BOOKS ) ) as Book[];
 
 	return {
-		type: input.type,
-		playerCount: input.playerCount,
-		teamCount: input.teamCount,
-		deckType: isCanadian ? 48 : 52,
+		type,
+		playerCount,
+		teamCount,
+		deckType: isCanadian ? 48 as const : 52 as const,
 		books,
-		bookSize: isCanadian ? 6 : 4,
+		bookSize: isCanadian ? 6 as const : 4 as const,
 		autoStart: true
 	};
 }

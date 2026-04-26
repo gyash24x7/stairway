@@ -7,7 +7,8 @@ import { requestInfo } from "rwsdk/worker";
 
 export function SplendorHomePage() {
 	return (
-		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl justify-self-center" }>
+		<div
+			className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl justify-self-center" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>SPLENDOR</h2>
 			<p>
 				Splendor is a strategy game where players collect gems to purchase

@@ -1,6 +1,7 @@
 import { RDomino } from "@/kingdomino/components/domino";
 import type { DominoId, DraftEntry } from "@/kingdomino/core/types";
 import type { BasePlayerInfo, PlayerId } from "@/shared/engine/types";
+import { cn } from "@/shared/utils/cn";
 
 export type RDraftProps = {
 	draft: DraftEntry[];
@@ -11,7 +12,12 @@ export type RDraftProps = {
 
 export function RDraft( props: RDraftProps ) {
 	return (
-		<div className={ "p-3 rounded-md bg-background flex flex-col items-center gap-2 flex-1 justify-center" }>
+		<div
+			className={ cn(
+				"p-3 rounded-md bg-background flex-1",
+				"flex flex-col items-center gap-2 justify-center"
+			) }
+		>
 			{ props.draft.toSorted( ( a, b ) => a.domino.id - b.domino.id ).map( e => {
 				const pickedBy = e.selectedBy;
 				const avatar = pickedBy ? props.players[ pickedBy ]?.avatar : null;

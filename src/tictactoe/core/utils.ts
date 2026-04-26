@@ -1,7 +1,7 @@
 import type { PlayerId } from "@/shared/engine/types";
 import type { Board, CellValue, TicTacToeData } from "@/tictactoe/core/types";
 
-/** All possible winning line combinations for a 3x3 tic-tac-toe board (rows, columns, diagonals). */
+/** All possible winning line combinations for a 3x3 tic-tac-toe board. */
 export const WINNING_LINES = [
 	[ 0, 1, 2 ], [ 3, 4, 5 ], [ 6, 7, 8 ], // rows
 	[ 0, 3, 6 ], [ 1, 4, 7 ], [ 2, 5, 8 ], // columns
@@ -59,14 +59,24 @@ export function findBestMove( board: Board, botSymbol: CellValue ): number {
 
 	function minimax( b: Board, isMaximizing: boolean, depth: number ): number {
 		const winner = checkWinner( b );
-		if ( winner === botSymbol ) return 10 - depth;
-		if ( winner === opponent ) return depth - 10;
-		if ( isBoardFull( b ) ) return 0;
+		if ( winner === botSymbol ) {
+			return 10 - depth;
+		}
+
+		if ( winner === opponent ) {
+			return depth - 10;
+		}
+
+		if ( isBoardFull( b ) ) {
+			return 0;
+		}
 
 		let best = isMaximizing ? -Infinity : Infinity;
 
 		for ( let i = 0; i < 9; i++ ) {
-			if ( b[ i ] !== null ) continue;
+			if ( b[ i ] !== null ) {
+				continue;
+			}
 
 			b[ i ] = isMaximizing ? botSymbol : opponent;
 			const score = minimax( b, !isMaximizing, depth + 1 );
@@ -82,7 +92,9 @@ export function findBestMove( board: Board, botSymbol: CellValue ): number {
 	let bestPosition = -1;
 
 	for ( let i = 0; i < 9; i++ ) {
-		if ( board[ i ] !== null ) continue;
+		if ( board[ i ] !== null ) {
+			continue;
+		}
 
 		board[ i ] = botSymbol;
 		const score = minimax( board, false, 0 );

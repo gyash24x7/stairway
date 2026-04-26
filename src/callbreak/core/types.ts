@@ -1,4 +1,11 @@
-import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
+import type {
+	BaseGameConfig,
+	BasePlayerView,
+	GameId,
+	PlayerGameData,
+	PlayerId,
+	SharedGameData
+} from "@/shared/engine/types";
 import type { CardId, CardSuit } from "@/shared/utils/cards";
 
 /** A single trick in a deal, tracking lead player, suit, cards played, and winner. */
@@ -45,6 +52,9 @@ export type CallbreakSharedView = {
 export type CallbreakPlayerView = BasePlayerView & {
 	hand: CardId[];
 };
+
+/** Merged view used by bot AI (shared + player-specific state). */
+export type CallbreakBotView = CallbreakSharedView & CallbreakPlayerView;
 
 /** Complete Callbreak game data type with split shared/player state. */
 export type CallbreakGame = {

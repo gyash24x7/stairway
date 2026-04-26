@@ -5,7 +5,13 @@ function isRed( suit: CardSuit ) {
 	return suit === "H" || suit === "D";
 }
 
-export function RCardSuit( { suit, large, themed }: { suit: CardSuit; large?: boolean; themed?: boolean } ) {
+type CardSuitProps = {
+	suit: CardSuit;
+	large?: boolean;
+	themed?: boolean
+};
+
+export function RCardSuit( { suit, large, themed }: CardSuitProps ) {
 	return (
 		<div
 			className={ cn(

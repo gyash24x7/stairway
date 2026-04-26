@@ -9,6 +9,7 @@ import { GameInfo } from "@/shared/components/game-info";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
+import { cn } from "@/shared/utils/cn";
 import { Fragment, useTransition } from "react";
 
 export function GameView() {
@@ -18,7 +19,7 @@ export function GameView() {
 	const handleAddBots = () => startTransition( () => addBots( { gameId: shared.id } ) );
 
 	return (
-		<div className={ `flex flex-col gap-3 w-full max-w-6xl justify-self-center` }>
+		<div className={ `flex flex-col gap-3 w-full max-w-6xl` }>
 			<GameInfo
 				code={ shared.code }
 				name={ "callbreak" }
@@ -31,7 +32,9 @@ export function GameView() {
 						</div>
 						<div className={ "py-2 px-4" }>
 							<p className={ "text-xs md:text-sm" }>DEAL COUNT</p>
-							<h1 className={ "text-2xl md:text-4xl font-heading" }>{ shared.config.dealCount }</h1>
+							<h1 className={ "text-2xl md:text-4xl font-heading" }>
+								{ shared.config.dealCount }
+							</h1>
 						</div>
 					</Fragment>
 				}
@@ -48,7 +51,12 @@ export function GameView() {
 					</div>
 				) }
 				{ shared.status === "CREATED" && (
-					<div className={ "p-2 md:p-3 rounded-md w-full bg-background flex flex-col gap-2 items-center" }>
+					<div
+						className={ cn(
+							"p-2 md:p-3 rounded-md w-full bg-background",
+							"flex flex-col gap-2 items-center"
+						) }
+					>
 						<Spinner size={ "xl" }/>
 						<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 							WAITING FOR PLAYERS

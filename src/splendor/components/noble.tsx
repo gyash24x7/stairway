@@ -37,7 +37,9 @@ export function Noble( { noble }: { noble: Noble } ) {
 								gemColors[ gem ]
 							) }
 						>
-							<span className={ "text-[10px] md:text-xs" }>{ noble.cost[ gem ] }</span>
+							<span className={ "text-[10px] md:text-xs" }>
+								{ noble.cost[ gem ] }
+							</span>
 						</div>
 					) ) }
 			</div>

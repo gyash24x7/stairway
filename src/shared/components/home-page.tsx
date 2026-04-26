@@ -2,15 +2,30 @@ import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
 
 export function HomePage() {
+	const games = [
+		"fish",
+		"callbreak",
+		"wordle",
+		"tic-tac-toe",
+		"splendor",
+		"kingdomino"
+	];
+
 	return (
-		<div className={ "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 w-full max-w-6xl" }>
-			{ [ "fish", "callbreak", "wordle", "tic-tac-toe", "splendor", "kingdomino" ].map( game => (
+		<div
+			className={ cn(
+				"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
+				"gap-2 md:gap-4 w-full max-w-6xl"
+			) }
+		>
+			{ games.map( game => (
 				<div
 					key={ game }
 					className={ cn(
-						"cursor-pointer overflow-hidden relative card h-64 md:h-96 rounded-md flex flex-col",
-						`justify-between backgroundImage ${ game }-bg bg-cover border-2 flex-1`,
-						"font-heading border-gray-400"
+						"cursor-pointer overflow-hidden relative card h-64 md:h-96",
+						"rounded-md flex flex-col justify-between backgroundImage",
+						"bg-cover border-2 flex-1 font-heading border-gray-400",
+						`${ game }-bg`
 					) }
 				>
 					<div

@@ -26,7 +26,9 @@ export function CreateGame( { game, disabled, createGame, children }: CreateGame
 				Create a game and share the code with a friend
 			</p>
 			{ children }
-			<Button onClick={ handleCreate } disabled={ disabled || isPending }>Create Game</Button>
+			<Button onClick={ handleCreate } disabled={ disabled || isPending }>
+				Create Game
+			</Button>
 		</div>
 	);
 }

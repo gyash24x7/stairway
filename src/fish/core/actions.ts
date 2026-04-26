@@ -1,6 +1,13 @@
 "use server";
 
 import { FishEngine } from "@/fish/core/engine";
+import type {
+	AskCardInput,
+	ClaimBookInput,
+	CreateGameInput,
+	CreateTeamsInput,
+	TransferTurnInput
+} from "@/fish/core/types";
 import { buildConfig } from "@/fish/core/utils";
 import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
@@ -8,7 +15,6 @@ import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { SORTED_DECK } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
 import { getAuthInfo, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
-import type { AskCardInput, ClaimBookInput, CreateTeamsInput, TransferTurnInput } from "@/fish/core/types";
 import { env } from "cloudflare:workers";
 import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
@@ -22,7 +28,8 @@ const logger = createLogger( "Fish:Actions" );
  * @returns The Durable Object stub for the game engine.
  */
 function getStub( gameId: GameId ) {
-	const durableObjectId = env.FISH_ENGINE.idFromName( `${ FishEngine.NAME }:${ gameId }` );
+	const name = `${ FishEngine.NAME }:${ gameId }`;
+	const durableObjectId = env.FISH_ENGINE.idFromName( name );
 	return env.FISH_ENGINE.get( durableObjectId );
 }
 
@@ -49,12 +56,12 @@ export const createGame = serverAction( [
 		type: v.picklist( [ "NORMAL", "CANADIAN" ] ),
 		teamCount: v.picklist( [ 2, 3, 4 ] )
 	} ) ),
-	async ( input: { playerCount: 4 | 6 | 8; type: "NORMAL" | "CANADIAN"; teamCount: 2 | 3 | 4 } ) => {
+	async ( input: CreateGameInput ) => {
 		logger.debug( ">> createGame()" );
 
 		const authInfo = getAuthInfo();
 		const [ game ] = await db.insert( games ).values( { game: FishEngine.NAME } ).returning();
-		const config = buildConfig( input );
+		const config = buildConfig( input.playerCount, input.type, input.teamCount );
 
 		const stub = getStub( game.id );
 		await stub.initialize( game.id, game.code, config );

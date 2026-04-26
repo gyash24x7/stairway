@@ -1,42 +1,49 @@
 import { AbstractGameEngine } from "@/shared/engine/engine";
-import type { GameStructure } from "@/shared/engine/types";
 import { roundRobin } from "@/shared/engine/utils";
 import { createLogger } from "@/shared/utils/logger";
 import type {
 	Cost,
 	Gem,
-	PickTokensInput,
-	PurchaseCardInput,
-	ReserveCardInput,
 	SplendorConfig,
 	SplendorData,
 	SplendorMoves,
 	SplendorPlayerView,
 	SplendorSharedView
 } from "@/splendor/core/types";
-import { DEFAULT_TOKENS, findCardInOpenCards, generateDecks, generateNobles } from "@/splendor/core/utils";
+import {
+	DEFAULT_TOKENS,
+	findCardInOpenCards,
+	generateDecks,
+	generateNobles
+} from "@/splendor/core/utils";
 
 const MAX_TOKENS_IN_HAND = 10;
 const MAX_RESERVED = 3;
 
 const logger = createLogger( "Splendor:Engine" );
 
-export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMoves, SplendorConfig, SplendorSharedView, SplendorPlayerView> {
+export class SplendorEngine extends AbstractGameEngine<
+	SplendorData,
+	SplendorMoves,
+	SplendorConfig,
+	SplendorSharedView,
+	SplendorPlayerView
+> {
 
 	public static readonly NAME = "splendor";
 
-	protected readonly structure: GameStructure<SplendorData, SplendorMoves, SplendorConfig, SplendorSharedView, SplendorPlayerView> = {
+	protected readonly structure = this.defineStructure( {
 		name: SplendorEngine.NAME,
 		resolveNextPlayer: roundRobin,
 
-		sharedView: ( { state } ): SplendorSharedView => {
+		sharedView: ( { state } ) => {
 			const { decks, ...rest } = state;
 			return rest;
 		},
 
-		playerView: ( _data, playerId ): SplendorPlayerView => ( { playerId } ),
+		playerView: ( _data, playerId ) => ( { playerId } ),
 
-		setup: ( _: SplendorConfig ): SplendorData => ( {
+		setup: () => ( {
 			tokens: DEFAULT_TOKENS,
 			cards: { 1: [], 2: [], 3: [] },
 			nobles: [],
@@ -90,7 +97,7 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 
 		moves: {
 			pickTokens: {
-				validate: ( { state }, playerId, input: PickTokensInput ) => {
+				validate: ( { state }, playerId, input ) => {
 					logger.debug( ">> validatePickTokens()" );
 
 					const data = state;
@@ -116,56 +123,88 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 					if ( typesPicked.length === 1 ) {
 						const pickedCount = input.tokens[ typesPicked[ 0 ] ] ?? 0;
 						if ( pickedCount > 2 ) {
-							throw new Error( "You cannot pick more than 2 tokens of the same type!" );
+							throw new Error(
+								"You cannot pick more than 2 tokens of the same type!"
+							);
 						}
+
 						if ( pickedCount === 2 && ( data.tokens[ typesPicked[ 0 ] ] ?? 0 ) < 4 ) {
-							throw new Error( "You cannot pick 2 tokens of the same type when less than 4 are available!" );
+							throw new Error(
+								"You cannot pick 2 tokens of the same type " +
+								"when less than 4 are available!"
+							);
 						}
+
 					} else if ( typesPicked.length === 2 ) {
 						if ( availableTypes.length < 2 ) {
-							throw new Error( "You cannot pick 2 different types when less than 2 types are available!" );
+							throw new Error(
+								"You cannot pick 2 different types " +
+								"when less than 2 types are available!"
+							);
 						}
+
 						if ( typesPicked.some( gem => ( input.tokens[ gem ] ?? 0 ) > 1 ) ) {
 							throw new Error(
-								"You cannot pick more than 1 token of a type when picking 2 different types!" );
+								"You cannot pick more than 1 token of a type " +
+								"when picking 2 different types!"
+							);
 						}
+
 					} else if ( typesPicked.length === 3 ) {
 						if ( availableTypes.length < 3 ) {
-							throw new Error( "You cannot pick 3 different types when less than 3 types are available!" );
+							throw new Error(
+								"You cannot pick 3 different types " +
+								"when less than 3 types are available!"
+							);
 						}
+
 						if ( typesPicked.some( gem => ( input.tokens[ gem ] ?? 0 ) > 1 ) ) {
 							throw new Error(
-								"You cannot pick more than 1 token of a type when picking 3 different types!" );
+								"You cannot pick more than 1 token of a type " +
+								"when picking 3 different types!"
+							);
 						}
+
 					} else {
 						throw new Error( "Invalid number of token types picked!" );
 					}
 
 					const totalPlayerTokensBefore = Object.values( player.tokens )
 						.reduce( ( acc, val ) => acc + val, 0 );
-					const pickedTokens = Object.values( input.tokens ).reduce( ( acc, val ) => acc + val, 0 );
+
+					const pickedTokens = Object.values( input.tokens )
+						.reduce( ( acc, val ) => acc + val, 0 );
+
 					const totalAfterPick = totalPlayerTokensBefore + pickedTokens;
 
 					if ( totalAfterPick <= MAX_TOKENS_IN_HAND ) {
 						if ( input.returned ) {
-							const anyReturned = Object.values( input.returned ).some( v => ( v ?? 0 ) > 0 );
+							const anyReturned = Object.values( input.returned )
+								.some( v => ( v ?? 0 ) > 0 );
 							if ( anyReturned ) {
 								throw new Error(
-									"You cannot return tokens when your total after pick does not exceed 10!" );
+									"You cannot return tokens when your total " +
+									"after pick does not exceed 10!"
+								);
 							}
 						}
 						return;
 					}
 
 					const extraToReturn = totalAfterPick - MAX_TOKENS_IN_HAND;
-					const returnedTokens = Object.values( input.returned ?? {} ).reduce( ( acc, val ) => acc + val, 0 );
+					const returnedTokens = Object.values( input.returned ?? {} )
+						.reduce( ( acc, val ) => acc + val, 0 );
 					if ( returnedTokens !== extraToReturn ) {
-						throw new Error( `You must return exactly ${ extraToReturn } token(s) when you exceed the limit!` );
+						throw new Error(
+							`You must return exactly ${ extraToReturn } token(s)` +
+							`when you exceed the limit!`
+						);
 					}
 
 					for ( const gem of Object.keys( input.returned ?? {} ).map( g => g as Gem ) ) {
 						const ret = input.returned![ gem ] ?? 0;
-						const availableAfterPick = player.tokens[ gem ] + ( input.tokens[ gem ] ?? 0 );
+						const availableAfterPick = player.tokens[ gem ] +
+							( input.tokens[ gem ] ?? 0 );
 						if ( ret > availableAfterPick ) {
 							throw new Error( `You do not have enough ${ gem } tokens to return!` );
 						}
@@ -173,7 +212,7 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 
 					logger.debug( "<< validatePickTokens()" );
 				},
-				execute: ( { state }, playerId, input: PickTokensInput ) => {
+				execute: ( { state }, playerId, input ) => {
 					logger.debug( ">> handlePickTokens()" );
 
 					const player = state.playerData[ playerId ];
@@ -202,7 +241,7 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 			},
 
 			reserveCard: {
-				validate: ( { state }, playerId, input: ReserveCardInput ) => {
+				validate: ( { state }, playerId, input ) => {
 					logger.debug( ">> validateReserveCard()" );
 
 					const data = state;
@@ -221,26 +260,33 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 					}
 
 					if ( input.withGold ) {
-						const totalTokens = Object.values( player.tokens ).reduce( ( acc, val ) => acc + val, 0 );
+						const totalTokens = Object.values( player.tokens )
+							.reduce( ( acc, val ) => acc + val, 0 );
 						if ( totalTokens + 1 > 10 && !input.returnedToken ) {
 							throw new Error(
-								"You must return a token when reserving with gold exceeds your token limit!" );
+								"You must return a token when reserving " +
+								"with gold exceeds your token limit!"
+							);
 						}
 						if ( totalTokens + 1 <= 10 && input.returnedToken ) {
 							throw new Error(
-								"You cannot return a token when reserving with gold does not exceed your token limit!" );
+								"You cannot return a token when reserving with" +
+								" gold does not exceed your token limit!"
+							);
 						}
 					}
 
 					if ( input.returnedToken ) {
 						if ( ( player.tokens[ input.returnedToken ] ?? 0 ) < 1 ) {
-							throw new Error( `You do not have any ${ input.returnedToken } tokens to return!` );
+							throw new Error(
+								`You do not have any ${ input.returnedToken } tokens to return!`
+							);
 						}
 					}
 
 					logger.debug( "<< validateReserveCard()" );
 				},
-				execute: ( { state }, playerId, input: ReserveCardInput ) => {
+				execute: ( { state }, playerId, input ) => {
 					logger.debug( ">> reserveCard()" );
 
 					const player = state.playerData[ playerId ];
@@ -266,7 +312,7 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 			},
 
 			purchaseCard: {
-				validate: ( { state }, playerId, input: PurchaseCardInput ) => {
+				validate: ( { state }, playerId, input ) => {
 					logger.debug( ">> validatePurchaseCard()" );
 
 					const data = state;
@@ -279,7 +325,13 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 						}
 					}
 
-					const totalCost: Cost = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 };
+					const totalCost: Cost = {
+						diamond: 0,
+						sapphire: 0,
+						emerald: 0,
+						ruby: 0,
+						onyx: 0
+					};
 					Object.keys( card.cost ).map( g => g as keyof Cost ).forEach( gem => {
 						const discount = player.cards.filter( c => c.bonus === gem ).length;
 						totalCost[ gem ] = Math.max( 0, card.cost[ gem ] - discount );
@@ -312,7 +364,7 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 
 					logger.debug( "<< validatePurchaseCard()" );
 				},
-				execute: ( { state }, playerId, input: PurchaseCardInput ) => {
+				execute: ( { state }, playerId, input ) => {
 					logger.debug( ">> purchaseCard()" );
 
 					const player = state.playerData[ playerId ];
@@ -329,7 +381,10 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 						player.cards.push( card );
 						player.reserved.splice( cardIdx, 1 );
 					} else {
-						const cardIdx = state.cards[ card.level ].findIndex( c => c && c.id === card.id );
+						const cardIdx = state.cards[ card.level ].findIndex(
+							c => c && c.id === card.id
+						);
+
 						player.cards.push( card );
 						state.cards[ card.level ][ cardIdx ] = state.decks[ card.level ].shift()!;
 					}
@@ -342,10 +397,15 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 					} );
 
 					for ( const noble of state.nobles ) {
-						const meetsRequirements = Object.keys( noble.cost ).map( g => g as keyof Cost ).every( gem => {
-							const ownedCardsOfGem = player.cards.filter( card => card.bonus === gem );
-							return ownedCardsOfGem.length >= noble.cost[ gem ];
-						} );
+						const meetsRequirements = Object.keys( noble.cost )
+							.map( g => g as keyof Cost )
+							.every( gem => {
+								const ownedCardsOfGem = player.cards.filter(
+									card => card.bonus === gem
+								);
+
+								return ownedCardsOfGem.length >= noble.cost[ gem ];
+							} );
 
 						if ( meetsRequirements ) {
 							player.nobles.push( noble );
@@ -368,5 +428,5 @@ export class SplendorEngine extends AbstractGameEngine<SplendorData, SplendorMov
 				state.playerData[ id ]?.points >= config.winningPoints
 			);
 		}
-	};
+	} );
 }

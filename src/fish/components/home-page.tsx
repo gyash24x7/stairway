@@ -7,7 +7,7 @@ import { requestInfo } from "rwsdk/worker";
 
 export function FishHomePage() {
 	return (
-		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl justify-self-center" }>
+		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>FISH</h2>
 			<p>
 				Fish is a card game for multiple players in teams or individually using

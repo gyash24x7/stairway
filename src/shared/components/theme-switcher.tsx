@@ -38,7 +38,10 @@ export function ThemeSwitcher( { initialTheme, initialThemeMode }: ThemeSwitcher
 
 	return (
 		<Fragment>
-			<Select onValueChange={ ( t ) => handleThemeChange( t ?? "apple", themeMode ) } value={ theme }>
+			<Select
+				onValueChange={ ( t ) => handleThemeChange( t ?? "apple", themeMode ) }
+				value={ theme }
+			>
 				<SelectTrigger disabled={ isPending }/>
 				<SelectContent>
 					<SelectGroup>
@@ -54,7 +57,10 @@ export function ThemeSwitcher( { initialTheme, initialThemeMode }: ThemeSwitcher
 			<Button
 				size={ "icon" }
 				disabled={ isPending }
-				onClick={ () => handleThemeChange( theme, themeMode === "light" ? "dark" : "light" ) }
+				onClick={ () => handleThemeChange(
+					theme,
+					themeMode === "light" ? "dark" : "light"
+				) }
 			>
 				{ themeMode === "light"
 					? <SunIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>

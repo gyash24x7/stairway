@@ -32,7 +32,7 @@ export function chunk<T>( arr: T[], size: number ): T[][] {
 /**
  * Removes elements from an array based on a predicate function.
  * @template T - The type of elements in the array.
- * @param {function} predicate - A function that takes an element and returns true if it should be removed.
+ * @param {function} predicate - A Predicate to check if element is to be removed.
  * @param {T[]} arr - The array to filter.
  * @returns {T[]} A new array with elements that do not match the predicate.
  */

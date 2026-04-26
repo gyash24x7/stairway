@@ -16,9 +16,16 @@ export function TokenBar( props: TokenBarProps ) {
 	return (
 		<div
 			className={ cn(
-				"flex gap-2 md:gap-3 bg-background rounded-md overflow-hidden w-full h-12 md:h-16 items-center justify-between" ) }>
+				"flex gap-2 md:gap-3 bg-background rounded-md overflow-hidden",
+				"w-full h-12 md:h-16 items-center justify-between"
+			) }
+		>
 			<div
-				className={ "bg-accent p-1 h-full w-1/3 min-w-20 max-w-40 text-center flex items-center justify-center" }>
+				className={ cn(
+					"bg-accent p-1 h-full w-1/3 min-w-20 max-w-40 text-center",
+					"flex items-center justify-center"
+				) }
+			>
 				<span className={ "font-heading text-sm md:text-lg text-neutral-dark" }>
 					{ props.tokenText }
 				</span>

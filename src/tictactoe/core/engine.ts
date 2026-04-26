@@ -1,25 +1,37 @@
 import { AbstractGameEngine } from "@/shared/engine/engine";
-import type { BaseGameConfig, GameStructure } from "@/shared/engine/types";
+import type { BaseGameConfig } from "@/shared/engine/types";
 import { roundRobin } from "@/shared/engine/utils";
-import type { Board, PlaceInput, TicTacToeData, TicTacToeMoves, TicTacToePlayerView, TicTacToeSharedView } from "@/tictactoe/core/types";
+import type {
+	Board,
+	TicTacToeData,
+	TicTacToeMoves,
+	TicTacToePlayerView,
+	TicTacToeSharedView
+} from "@/tictactoe/core/types";
 import { checkWinner, findBestMove, getSymbol, isBoardFull } from "@/tictactoe/core/utils";
 
 /**
  * Durable Object game engine for Tic-Tac-Toe, a two-player game.
  * Uses a flat (non-phased) game structure with round-robin turns and minimax bot support.
  */
-export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToeSharedView, TicTacToePlayerView> {
+export class TicTacToeEngine extends AbstractGameEngine<
+	TicTacToeData,
+	TicTacToeMoves,
+	BaseGameConfig,
+	TicTacToeSharedView,
+	TicTacToePlayerView
+> {
 
 	public static readonly NAME = "tic-tac-toe";
 
-	protected readonly structure: GameStructure<TicTacToeData, TicTacToeMoves, BaseGameConfig, TicTacToeSharedView, TicTacToePlayerView> = {
+	protected readonly structure = this.defineStructure( {
 		name: TicTacToeEngine.NAME,
 		resolveNextPlayer: roundRobin,
 
 		sharedView: ( { state } ) => state,
 		playerView: ( _data, playerId ) => ( { playerId } ),
 
-		setup: ( _: {} ): TicTacToeData => ( {
+		setup: () => ( {
 			board: Array( 9 ).fill( null ) as Board,
 			symbols: { X: "", O: "" }
 		} ),
@@ -50,7 +62,7 @@ export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToe
 
 		moves: {
 			place: {
-				validate: ( { state }, _playerId, { position }: PlaceInput ) => {
+				validate: ( { state }, _playerId, { position } ) => {
 					if ( position < 0 || position > 8 ) {
 						throw new Error( "Invalid position." );
 					}
@@ -59,7 +71,7 @@ export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToe
 						throw new Error( "Cell is already occupied." );
 					}
 				},
-				execute: ( { state }, playerId, { position }: PlaceInput ) => {
+				execute: ( { state }, playerId, { position } ) => {
 					state.board[ position ] = getSymbol( state, playerId );
 					return state;
 				}
@@ -74,5 +86,5 @@ export class TicTacToeEngine extends AbstractGameEngine<TicTacToeData, TicTacToe
 			const position = findBestMove( board, botSymbol );
 			return { moveType: "place", input: { gameId: "", position } };
 		}
-	};
+	} );
 }

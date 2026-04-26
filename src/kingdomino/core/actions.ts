@@ -25,7 +25,8 @@ const logger = createLogger( "Kingdomino:Actions" );
  * @returns The Durable Object stub for the game engine.
  */
 function getStub( gameId: GameId ) {
-	const durableObjectId = env.KINGDOMINO_ENGINE.idFromName( `${ KingdominoEngine.NAME }:${ gameId }` );
+	const name = `${ KingdominoEngine.NAME }:${ gameId }`;
+	const durableObjectId = env.KINGDOMINO_ENGINE.idFromName( name );
 	return env.KINGDOMINO_ENGINE.get( durableObjectId );
 }
 
@@ -55,7 +56,9 @@ export const createGame = serverAction( [
 		logger.debug( ">> createGame()" );
 
 		const authInfo = getAuthInfo();
-		const [ game ] = await db.insert( games ).values( { game: KingdominoEngine.NAME } ).returning();
+		const [ game ] = await db.insert( games )
+			.values( { game: KingdominoEngine.NAME } )
+			.returning();
 
 		const stub = getStub( game.id );
 		await stub.initialize( game.id, game.code, {

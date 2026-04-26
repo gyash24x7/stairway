@@ -34,14 +34,20 @@ export function GameInfo( { code, name, additionalInfo, actions, completed }: Ga
 					{ code && (
 						<div className={ "py-2 px-4" }>
 							<p className={ "text-xs md:text-sm" }>GAME CODE</p>
-							<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>{ code }</h2>
+							<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
+								{ code }
+							</h2>
 						</div>
 					) }
 					{ additionalInfo }
 				</div>
 				<div className={ "py-2 px-4 flex justify-end gap-2 items-center" }>
 					{ code && (
-						<Button onClick={ handleCopy } size={ "icon" } className={ "w-8 h-8 md:h-10 md:w-10" }>
+						<Button
+							onClick={ handleCopy }
+							size={ "icon" }
+							className={ "w-8 h-8 md:h-10 md:w-10" }
+						>
 							<CopyIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 						</Button>
 					) }

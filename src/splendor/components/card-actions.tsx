@@ -33,7 +33,8 @@ export function CardActions( props: CardActionsMenuProps ) {
 
 	const { shared, player } = useSplendor();
 
-	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
+	const isMyTurn = shared.status === "IN_PROGRESS"
+		&& shared.context.currentPlayer === player.playerId;
 
 	const handleOpenChange = ( isOpen: boolean ) => {
 		setOpen( isOpen );
@@ -47,19 +48,23 @@ export function CardActions( props: CardActionsMenuProps ) {
 	const reserved = shared.state.playerData[ player.playerId ].reserved;
 	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
 
-	const canPurchaseWithoutGold = Object.keys( props.card.cost ).map( g => g as keyof Cost ).every( gem => {
-		const discountsForGem = discounts.filter( card => card.bonus === gem ).length;
-		return playerTokens[ gem ] + discountsForGem >= props.card.cost[ gem ];
-	} );
+	const canPurchaseWithoutGold = Object.keys( props.card.cost )
+		.map( g => g as keyof Cost )
+		.every( gem => {
+			const discountsForGem = discounts.filter( card => card.bonus === gem ).length;
+			return playerTokens[ gem ] + discountsForGem >= props.card.cost[ gem ];
+		} );
 
 	const goldNeededIfShort = Object.keys( props.card.cost )
 		.map( g => g as keyof Cost )
 		.reduce( ( goldNeeded, gem ) => {
 			const discountsForGem = discounts.filter( card => card.bonus === gem ).length;
-			return goldNeeded + Math.max( 0, props.card.cost[ gem ] - playerTokens[ gem ] - discountsForGem );
+			return goldNeeded +
+				Math.max( 0, props.card.cost[ gem ] - playerTokens[ gem ] - discountsForGem );
 		}, 0 );
 
-	const canPurchase = canPurchaseWithoutGold || ( ( playerTokens.gold || 0 ) >= goldNeededIfShort );
+	const canPurchase = canPurchaseWithoutGold ||
+		( ( playerTokens.gold || 0 ) >= goldNeededIfShort );
 	const canReserve = reserved.length < 3;
 
 	const handlePurchaseClick = () => startTransition( async () => {
@@ -76,7 +81,8 @@ export function CardActions( props: CardActionsMenuProps ) {
 	} );
 
 	const handleReserveClick = () => startTransition( async () => {
-		const tokenCount = Object.values( playerTokens ).reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
+		const tokenCount = Object.values( playerTokens )
+			.reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
 		const canTakeGold = shared.state.tokens.gold > 0;
 
 		if ( type === "default" ) {
@@ -139,7 +145,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 											) }
 											key={ gem }
 										>
-											<h2>{ discounts.filter( c => c.bonus === gem ).length }</h2>
+											{ discounts.filter( c => c.bonus === gem ).length }
 										</div>
 									) ) }
 								</div>

@@ -4,7 +4,14 @@ import type { Card, CardLevel, Cost, Noble, PlayerInfo, Tokens } from "@/splendo
 export const GEMS: Array<keyof Cost> = [ "diamond", "sapphire", "emerald", "ruby", "onyx" ];
 export const GEMS_WITH_GOLD: Array<keyof Tokens> = [ ...GEMS, "gold" ];
 export const DEFAULT_COST: Cost = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 };
-export const DEFAULT_TOKENS: Tokens = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0 };
+export const DEFAULT_TOKENS: Tokens = {
+	diamond: 0,
+	sapphire: 0,
+	emerald: 0,
+	ruby: 0,
+	onyx: 0,
+	gold: 0
+};
 
 export function costToString( cost: Cost ) {
 	return GEMS.map( gem => `${ gem[ 0 ] }${ cost[ gem ] }` ).join( "-" );
@@ -160,7 +167,11 @@ function buildCost( gems: typeof GEMS, costArray: number[] ): Cost {
 	}, { ...DEFAULT_COST } );
 }
 
-function generateDeckForMatrixPointMap( gems: typeof GEMS, level: CardLevel, map: Record<number, number[][]> ): Card[] {
+function generateDeckForMatrixPointMap(
+	gems: typeof GEMS,
+	level: CardLevel,
+	map: Record<number, number[][]>
+): Card[] {
 	return Object.keys( map )
 		.map( p => parseInt( p ) )
 		.flatMap( ( points ) => map[ points ].map( ( costArray, idx ) => {

@@ -2,7 +2,14 @@
 // Tiles & Dominoes
 // ============================================================================
 
-import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
+import type {
+	BaseGameConfig,
+	BasePlayerView,
+	GameId,
+	PlayerGameData,
+	PlayerId,
+	SharedGameData
+} from "@/shared/engine/types";
 
 /** The castle color assigned to each player. */
 export type Castle = "red" | "blue" | "yellow" | "green";

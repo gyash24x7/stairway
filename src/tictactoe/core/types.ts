@@ -1,4 +1,11 @@
-import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
+import type {
+	BaseGameConfig,
+	BasePlayerView,
+	GameId,
+	PlayerGameData,
+	PlayerId,
+	SharedGameData
+} from "@/shared/engine/types";
 
 /** A cell on the board: "X", "O", or null (empty). */
 export type CellValue = "X" | "O" | null;

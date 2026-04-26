@@ -1,5 +1,12 @@
 import { useFish } from "@/fish/components/context";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/primitives/table";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow
+} from "@/shared/primitives/table";
 
 export function GameMetrics() {
 	const { shared } = useFish();

@@ -1,7 +1,6 @@
 "use client";
 
-import type { BaseGameConfig } from "@/shared/engine/types";
-import type { SharedGameData, PlayerGameData } from "@/shared/engine/types";
+import type { BaseGameConfig, PlayerGameData, SharedGameData } from "@/shared/engine/types";
 import type { TicTacToePlayerView, TicTacToeSharedView } from "@/tictactoe/core/types";
 import { createContext, type ReactNode, useContext } from "react";
 import { useSyncedState } from "rwsdk/use-synced-state/client";
@@ -22,7 +21,10 @@ export function useTicTacToe() {
 }
 
 type TicTacToeProviderProps = {
-	data: { shared: SharedGameData<TicTacToeSharedView, BaseGameConfig>; player: PlayerGameData<TicTacToePlayerView> };
+	data: {
+		shared: SharedGameData<TicTacToeSharedView, BaseGameConfig>;
+		player: PlayerGameData<TicTacToePlayerView>
+	};
 	children: ReactNode;
 };
 

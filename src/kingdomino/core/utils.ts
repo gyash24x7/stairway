@@ -125,7 +125,12 @@ export function parseCoordKey( key: string ): Coord {
  * @returns An array of two Coord objects representing the positions of the placed domino.
  */
 export function getPlacementCoordinates( { coord, rotation }: Omit<Placement, "dominoId"> ) {
-	const dirs = { 0: neighbors[ 0 ], 90: neighbors[ 1 ], 180: neighbors[ 2 ], 270: neighbors[ 3 ] };
+	const dirs = {
+		0: neighbors[ 0 ],
+		90: neighbors[ 1 ],
+		180: neighbors[ 2 ],
+		270: neighbors[ 3 ]
+	};
 	const d = dirs[ rotation ];
 
 	return [
@@ -171,7 +176,10 @@ function hasConnection( tiles: Tiles, coord: Coord, terrain: Terrain ) {
  * @returns A new Tiles mapping with all tiles shifted accordingly,
  * or null if the shift would still result in out-of-bounds placements.
  */
-export function getShiftedTiles( board: Board, shift: ReturnType<typeof calculateShift> ): Tiles | null {
+export function getShiftedTiles(
+	board: Board,
+	shift: ReturnType<typeof calculateShift>
+): Tiles | null {
 
 	const newTiles: Tiles = {};
 
@@ -193,8 +201,9 @@ export function getShiftedTiles( board: Board, shift: ReturnType<typeof calculat
 }
 
 /**
- * Calculate the necessary shift to apply to the current tile placements to fit within the board bounds.
- * If any tile is out of bounds, calculate how much we need to shift all tiles to bring them back within bounds.
+ * Calculate the necessary shift to apply to the current tile placements
+ * to fit within the board bounds. If any tile is out of bounds,
+ * calculate how much we need to shift all tiles to bring them back within bounds.
  *
  * @param tiles - The current tile placements on the board.
  * @param boardSize - The size of the board (5 or 7).
@@ -232,7 +241,7 @@ export function calculateShift( [ p1, p2 ]: Coord[], boardSize: BoardSize ) {
  * and that the placement is within bounds (with potential shifting).
  *
  * @param board - The current state of the board, including existing placements and tiles.
- * @param coords - An array of two Coord objects representing the positions of the proposed domino placement.
+ * @param coords - An array of two Coord objects representing the positions of the placement.
  * @returns True if the placement is correct, false otherwise.
  */
 function isPlacementWithinBounds( board: Board, [ p1, p2 ]: Coord[] ) {
@@ -259,8 +268,8 @@ function isPlacementWithinBounds( board: Board, [ p1, p2 ]: Coord[] ) {
  * of the same terrain type or to the castle.
  *
  * @param board - The current state of the board, including existing placements and tiles.
- * @param coords - An array of two Coord objects representing the positions of the proposed domino placement.
- * @param dominoId - The ID of the domino being placed, used to determine the terrain types of the new tiles.
+ * @param coords - An array of two Coord objects representing the positions of the placement.
+ * @param dominoId - The ID of the domino, used to determine the terrain types of the new tiles.
  * @returns True if there is a valid adjacency, false otherwise.
  */
 function isAdjacencyValid( board: Board, [ p1, p2 ]: Coord[], dominoId: DominoId ) {
@@ -301,7 +310,7 @@ export function canDominoBePlaced( board: Board, placement: Placement ) {
  * This helps to limit the search space when looking for valid placements.
  *
  * @param board - The current state of the board, including existing placements and tiles.
- * @returns A array of string keys representing the coordinates of candidate cells for new placements.
+ * @returns A array of string keys representing the coordinates of candidates for new placements.
  */
 export function getCandidateCells( board: Board ) {
 	const set = new Set<Coord>();
@@ -326,7 +335,7 @@ export function getCandidateCells( board: Board ) {
  * to determine which cells could potentially be occupied by a valid domino placement.
  *
  * @param board - The current state of the board, including existing placements and tiles.
- * @returns An array of Coord objects representing potential cells that could be occupied by a new domino.
+ * @returns An coordintes representing potential cells that can be occupied.
  */
 export function getPotentialCells( board: Board ): Coord[] {
 	const occupied = new Set<string>();
@@ -357,7 +366,7 @@ export function getPotentialCells( board: Board ): Coord[] {
  *
  * @param board - The current state of the board, including existing placements and tiles.
  * @param dominoId - The ID of the domino to consider for potential placements.
- * @returns An array of Coord objects representing potential cells that could be occupied by the specified domino.
+ * @returns An coordintes representing potential cells that can be occupied by the domino.
  */
 export function getPotentialCellsForDomino( board: Board, dominoId: DominoId ): Coord[] {
 	const occupied = new Set<string>();
@@ -395,10 +404,11 @@ export function getExactBoardBounds( board: Board ) {
 /**
  * Get the bounding box of the current tile placements on the board.
  * This function iterates over all placed tiles to find the minimum and maximum x and y coordinates,
- * which can be used to determine the area of the board that needs to be rendered or considered for new placements.
+ * which can be used to determine the area of the board that needs to be
+ * rendered or considered for new placements.
  *
  * @param board - The current state of the board, including existing placements and tiles.
- * @return An object containing the minimum and maximum x and y coordinates of the placed tiles on the board.
+ * @return The minimum and maximum x and y coordinates of the placed tiles on the board.
  */
 export function getBoardBounds( board: Board ) {
 	let minX = 0;
@@ -435,20 +445,27 @@ export function getBoardBounds( board: Board ) {
  * potential placements that are just outside the current tile area.
  *
  * @param board - The current state of the board, including existing placements and tiles.
- * @return An object containing the expanded minimum and maximum x and y coordinates of the placed tiles on the board.
+ * @return The expanded minimum and maximum x and y coordinates of the placed tiles on the board.
  */
 export function getExpandedBoardBounds( board: Board ) {
 	const bounds = getBoardBounds( board );
-	return { minX: bounds.minX - 2, maxX: bounds.maxX + 2, minY: bounds.minY - 2, maxY: bounds.maxY + 2 };
+	return {
+		minX: bounds.minX - 2,
+		maxX: bounds.maxX + 2,
+		minY: bounds.minY - 2,
+		maxY: bounds.maxY + 2
+	};
 }
 
 /**
- * Get the rows and columns that should be rendered based on the current board state and potential placements.
- * This function calculates the bounding box of existing tiles and expands it to include any potential cells
- * that could be occupied by new placements, ensuring that the rendered grid includes all relevant cells.
+ * Get the rows and columns that should be rendered based on
+ * the current board state and potential placements.
+ * This function calculates the bounding box of existing tiles
+ * and expands it to include any potential cells that could be
+ * occupied by new placements, ensuring that the rendered grid includes all relevant cells.
  *
  * @param bounds - The current bounding box of existing tiles on the board.
- * @param possibleCells - A array of coordinates representing potential cells for new placements.
+ * @param possibleCells - The coordinates representing potential cells for new placements.
  * @returns An object containing arrays of row and column indices to render.
  */
 export function getRowsAndCols( { minX, maxX, maxY, minY }: Bounds, possibleCells: Coord[] ) {
@@ -488,7 +505,7 @@ export function getRowsAndCols( { minX, maxX, maxY, minY }: Bounds, possibleCell
  *
  * @param board - The current state of the board, including existing placements and tiles.
  * @param dominoId - The ID of the domino to place.
- * @returns An array of Placement objects representing valid placements for the specified domino.
+ * @returns Valid placements for the specified domino.
  */
 export function getValidPlacements( board: Board, dominoId: DominoId ) {
 	const placements: Placement[] = [];
@@ -520,7 +537,7 @@ export function getValidPlacements( board: Board, dominoId: DominoId ) {
  *
  * @param board - The current state of the board, including existing placements and tiles.
  * @param placement - The placement to apply to the board.
- * @returns A new Board object representing the updated state after applying the placement.
+ * @returns Updated board after applying the placement.
  */
 export function applyPlacement( board: Board, placement: Placement ): Board {
 	const domino = DOMINO_DECK[ placement.dominoId - 1 ];

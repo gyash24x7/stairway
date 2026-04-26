@@ -56,7 +56,12 @@ export function CreateTeams() {
 					<DialogTitle>CREATE TEAMS</DialogTitle>
 					<DialogDescription/>
 				</DialogHeader>
-				<div className={ cn( "grid grid-cols-1 gap-2", shared.config.teamCount === 4 && "grid-cols-2" ) }>
+				<div
+					className={ cn(
+						"grid grid-cols-1 gap-2",
+						shared.config.teamCount === 4 && "grid-cols-2"
+					) }
+				>
 					{ Array( shared.config.teamCount ).fill( null ).map( ( _, idx ) => (
 						<Input
 							key={ idx }

@@ -13,13 +13,19 @@ export const Table = forwardRef<HTMLTableElement, HTMLAttributes<HTMLTableElemen
 	)
 );
 
-export const TableHeader = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
+export const TableHeader = forwardRef<
+	HTMLTableSectionElement,
+	HTMLAttributes<HTMLTableSectionElement>
+>(
 	( { className, ...props }, ref ) => (
 		<thead ref={ ref } className={ cn( "", className ) } { ...props } />
 	)
 );
 
-export const TableBody = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
+export const TableBody = forwardRef<
+	HTMLTableSectionElement,
+	HTMLAttributes<HTMLTableSectionElement>
+>(
 	( { className, ...props }, ref ) => (
 		<tbody
 			ref={ ref }
@@ -29,7 +35,10 @@ export const TableBody = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTML
 	)
 );
 
-export const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HTMLTableSectionElement>>(
+export const TableFooter = forwardRef<
+	HTMLTableSectionElement,
+	HTMLAttributes<HTMLTableSectionElement>
+>(
 	( { className, ...props }, ref ) => (
 		<tfoot
 			ref={ ref }
@@ -39,7 +48,10 @@ export const TableFooter = forwardRef<HTMLTableSectionElement, HTMLAttributes<HT
 	)
 );
 
-export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
+export const TableRow = forwardRef<
+	HTMLTableRowElement,
+	HTMLAttributes<HTMLTableRowElement>
+>(
 	( { className, ...props }, ref ) => (
 		<tr
 			ref={ ref }
@@ -53,7 +65,10 @@ export const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTable
 	)
 );
 
-export const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellElement>>(
+export const TableHead = forwardRef<
+	HTMLTableCellElement,
+	HTMLAttributes<HTMLTableCellElement>
+>(
 	( { className, ...props }, ref ) => (
 		<th
 			ref={ ref }
@@ -69,11 +84,17 @@ export const TableHead = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTab
 
 export const TableCell = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellElement>>(
 	( { className, ...props }, ref ) => (
-		<td ref={ ref } className={ cn( "p-2 align-middle [&:has([role=checkbox])]:pr-0", className ) } { ...props }/>
+		<td ref={ ref } className={ cn(
+			"p-2 align-middle [&:has([role=checkbox])]:pr-0",
+			className
+		) } { ...props }/>
 	)
 );
 
-export const TableCaption = forwardRef<HTMLTableCaptionElement, HTMLAttributes<HTMLTableCaptionElement>>(
+export const TableCaption = forwardRef<
+	HTMLTableCaptionElement,
+	HTMLAttributes<HTMLTableCaptionElement>
+>(
 	( { className, ...props }, ref ) => (
 		<caption ref={ ref } className={ cn( "mt-4 text-sm", className ) } { ...props }/>
 	)

@@ -2,7 +2,13 @@
 
 import { useFish } from "@/fish/components/context";
 import { getAskDescription, getClaimDescription, getTransferDescription } from "@/fish/core/utils";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/primitives/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/shared/primitives/dialog";
 import { cn } from "@/shared/utils/cn";
 import { useState } from "react";
 
@@ -24,17 +30,20 @@ export function ActivityFeed() {
 			success: ask.success,
 			timestamp: ask.timestamp
 		} ) ),
+
 		...shared.state.claimHistory.map( claim => ( {
 			type: "claim" as const,
 			description: getClaimDescription( claim, shared.players, shared.config.type ),
 			success: claim.success,
 			timestamp: claim.timestamp
 		} ) ),
+
 		...shared.state.transferHistory.map( transfer => ( {
 			type: "transfer" as const,
 			description: getTransferDescription( transfer, shared.players ),
 			timestamp: transfer.timestamp
 		} ) )
+
 	].sort( ( a, b ) => b.timestamp - a.timestamp );
 
 	const inlineEntries = entries.slice( 0, 5 );
@@ -47,15 +56,16 @@ export function ActivityFeed() {
 	return (
 		<div className={ "flex flex-col gap-2 w-full" }>
 			<div className={ "flex flex-col gap-1.5" }>
-				{ inlineEntries.map( entry => (
-					<FeedItem key={ entry.timestamp } entry={ entry }/>
-				) ) }
+				{ inlineEntries.map( entry => <FeedItem key={ entry.timestamp } entry={ entry }/> ) }
 			</div>
 			{ entries.length > 5 && (
 				<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
 					<button
 						onClick={ () => setShowDialog( true ) }
-						className={ "text-xs md:text-sm opacity-60 hover:opacity-100 transition-opacity text-center" }
+						className={ cn(
+							"text-xs md:text-sm text-center",
+							"opacity-60 hover:opacity-100 transition-opacity"
+						) }
 					>
 						VIEW MORE ACTIVITY
 					</button>
@@ -64,9 +74,7 @@ export function ActivityFeed() {
 							<DialogTitle>GAME ACTIVITY</DialogTitle>
 						</DialogHeader>
 						<div className={ "flex flex-col gap-1.5 max-h-96 overflow-y-auto" }>
-							{ dialogEntries.map( entry => (
-								<FeedItem key={ entry.timestamp } entry={ entry }/>
-							) ) }
+							{ dialogEntries.map( entry => <FeedItem key={ entry.timestamp } entry={ entry }/> ) }
 						</div>
 						<DialogFooter/>
 					</DialogContent>

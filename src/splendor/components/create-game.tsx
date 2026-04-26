@@ -16,19 +16,29 @@ export function SplendorCreateGame() {
 		return "";
 	};
 
+	const handlePlayerCountClick = ( item: 2 | 3 | 4 ) => () => setPlayerCount(
+		playerCount === item ? undefined : item
+	);
+
 	return (
-		<CreateGame game={ "splendor" } disabled={ !playerCount } createGame={ createSplendorGame }>
+		<CreateGame
+			game={ "splendor" }
+			disabled={ !playerCount }
+			createGame={ createSplendorGame }
+		>
 			<div className={ "flex flex-col gap-2" }>
-				<label className={ "text-sm text-muted-foreground" }>Player Count</label>
+				<label className={ "text-sm text-muted-foreground" }>
+					Player Count
+				</label>
 				<div className={ "flex gap-3 flex-wrap" }>
 					{ ( [ 2, 3, 4 ] as const ).map( ( item ) => (
 						<div
 							key={ item }
-							onClick={ () => setPlayerCount( playerCount === item ? undefined : item ) }
+							onClick={ handlePlayerCountClick( item ) }
 							className={ cn(
 								playerCount === item ? "bg-background" : "bg-surface",
-								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
+								"hover:bg-background border-gray-400 flex justify-center"
 							) }
 						>
 							{ item }
@@ -36,7 +46,9 @@ export function SplendorCreateGame() {
 					) ) }
 				</div>
 
-				<label className={ "text-sm text-muted-foreground" }>Winning Points</label>
+				<label className={ "text-sm text-muted-foreground" }>
+					Winning Points
+				</label>
 				<div className={ "flex gap-3 flex-wrap" }>
 					{ [ 10, 15, 20 ].map( ( points ) => (
 						<div
@@ -44,8 +56,8 @@ export function SplendorCreateGame() {
 							onClick={ () => setWinningPoints( points ) }
 							className={ cn(
 								winningPoints === points ? "bg-background" : "bg-surface",
-								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
+								"hover:bg-background border-gray-400 flex justify-center"
 							) }
 						>
 							{ points }

@@ -27,19 +27,17 @@ export function GameCard( { card, disabled, onCardClick }: GameCardProps ) {
 				"flex flex-col rounded-md overflow-hidden justify-between",
 				"w-16 md:w-20 h-24 md:h-30 text-neutral-dark transition",
 				"bg-background border-4 border-gray-400 shadow-shadow",
-				!disabled && "cursor-pointer",
-				!disabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
+				!disabled && "cursor-pointer hover:shadow-none",
+				!disabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY"
 			) }
 			onClick={ () => !disabled && onCardClick && onCardClick() }
 		>
 			<div className={ "flex justify-between" }>
 				<div
-					className={
-						cn(
-							"rounded-br-full rounded-tl-md bg-accent w-5 md:w-6 -px-1 h-5 md:h-6",
-							"flex items-center justify-center text-neutral-dark"
-						)
-					}
+					className={ cn(
+						"rounded-br-full rounded-tl-md bg-accent w-5 md:w-6 -px-1 h-5 md:h-6",
+						"flex items-center justify-center text-neutral-dark"
+					) }
 				>
 					<div className={ "text-sm leading-none -ml-1.5 mb-1" }>
 						{ card.points ?? 0 }

@@ -4,6 +4,7 @@ import { GameInfo } from "@/shared/components/game-info";
 import { RPlayerInfoSmall } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
+import { cn } from "@/shared/utils/cn";
 import { Board } from "@/tictactoe/components/board";
 import { useTicTacToe } from "@/tictactoe/components/context";
 import { addBots } from "@/tictactoe/core/actions";
@@ -21,7 +22,7 @@ export function GameView() {
 	} );
 
 	return (
-		<div className={ "flex flex-col gap-3 items-center mb-40 max-w-6xl w-full justify-self-center" }>
+		<div className={ "flex flex-col gap-3 items-center mb-40 max-w-6xl w-full" }>
 			<GameInfo
 				code={ shared.code }
 				name={ "Tic Tac Toe" }
@@ -29,7 +30,12 @@ export function GameView() {
 			/>
 
 			{ shared.status === "CREATED" && (
-				<div className={ "rounded-md bg-background p-8 text-center w-full flex flex-col gap-2 items-center" }>
+				<div
+					className={ cn(
+						"rounded-md bg-background p-8 text-center",
+						"w-full flex flex-col gap-2 items-center"
+					) }
+				>
 					<p className={ "text-lg font-heading" }>Waiting for opponent...</p>
 					<p className={ "text-sm text-muted-foreground mb-2" }>
 						Share the game code to invite a player
@@ -55,7 +61,11 @@ export function GameView() {
 			<Board/>
 
 			{ players.length > 0 && (
-				<div className={ "flex justify-around border-2 rounded-md bg-background w-full max-w-xl" }>
+				<div
+					className={ cn(
+						"flex justify-around border-2 rounded-md bg-background w-full max-w-xl"
+					) }
+				>
 					{ players.map( ( p, index ) => (
 						<div key={ p.id } className={ "flex items-center gap-2" }>
 							<span className={ "text-2xl font-title" }>

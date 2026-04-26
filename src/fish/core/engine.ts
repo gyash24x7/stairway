@@ -1,21 +1,35 @@
-import { detectTeammateSignals, suggestAsks, suggestBooks, suggestClaims, suggestTransfers } from "@/fish/core/bot";
+import {
+	detectTeammateSignals,
+	suggestAsks,
+	suggestBooks,
+	suggestClaims,
+	suggestTransfers
+} from "@/fish/core/bot";
 import type {
-	AskCardInput,
-	ClaimBookInput,
-	CreateTeamsInput,
 	FishConfig,
 	FishData,
 	FishMoves,
 	FishPlayerView,
 	FishSharedView,
-	Metrics,
-	TransferTurnInput
+	Metrics
 } from "@/fish/core/types";
-import { getBookForCard, getCardsOfBook, getClaimedBooks, getOpponents, getTeammates } from "@/fish/core/utils";
+import {
+	getBookForCard,
+	getCardsOfBook,
+	getClaimedBooks,
+	getOpponents,
+	getTeammates
+} from "@/fish/core/utils";
 import { AbstractGameEngine } from "@/shared/engine/engine";
-import type { GameStructure, PlayerId } from "@/shared/engine/types";
+import type { PlayerId } from "@/shared/engine/types";
 import { remove } from "@/shared/utils/array";
-import { CARD_RANKS, type CardId, generateDeck, generateHands, getCardRank } from "@/shared/utils/cards";
+import {
+	CARD_RANKS,
+	type CardId,
+	generateDeck,
+	generateHands,
+	getCardRank
+} from "@/shared/utils/cards";
 import { generateId } from "@/shared/utils/generator";
 
 const DEFAULT_METRICS: Metrics = {
@@ -28,26 +42,33 @@ const DEFAULT_METRICS: Metrics = {
 
 /**
  * Durable Object game engine for Fish (Literature), a team-based card game.
- * Uses a phased structure with TEAM_CONFIG (team assignment) and PLAY (asking, claiming, transferring) phases.
+ * Uses a phased structure with TEAM_CONFIG (team assignment)
+ * and PLAY (asking, claiming, transferring) phases.
  * Supports bot players with signal detection and strategic asking/claiming AI.
  */
-export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConfig, FishSharedView, FishPlayerView> {
+export class FishEngine extends AbstractGameEngine<
+	FishData,
+	FishMoves,
+	FishConfig,
+	FishSharedView,
+	FishPlayerView
+> {
 
 	public static readonly NAME = "fish";
 
-	protected readonly structure: GameStructure<FishData, FishMoves, FishConfig, FishSharedView, FishPlayerView> = {
+	protected readonly structure = this.defineStructure( {
 		name: FishEngine.NAME,
 
-		sharedView: ( { state } ): FishSharedView => {
+		sharedView: ( { state } ) => {
 			const { hands, ...rest } = state;
 			return rest;
 		},
 
-		playerView: ( { state }, playerId ): FishPlayerView => {
+		playerView: ( { state }, playerId ) => {
 			return { playerId, hand: state.hands[ playerId ] ?? [] };
 		},
 
-		setup: ( _config: FishConfig ): FishData => ( {
+		setup: () => ( {
 			playerData: {},
 			teams: {},
 			hands: {},
@@ -60,10 +81,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 
 		hooks: {
 			onJoin: ( { state }, playerId ) => {
-				state.playerData[ playerId ] = {
-					teamId: "",
-					metrics: { ...DEFAULT_METRICS }
-				};
+				state.playerData[ playerId ] = { teamId: "", metrics: { ...DEFAULT_METRICS } };
 				return state;
 			},
 
@@ -86,18 +104,18 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 		initialPhase: "TEAM_CONFIG",
 
 		phases: {
-			TEAM_CONFIG: {
+			TEAM_CONFIG: this.definePhase<Pick<FishMoves, "createTeams">>( {
 				moves: {
 					createTeams: {
 						canMove: ( { context }, playerId ) => context.currentPlayer === playerId,
-						validate: ( { state, config }, _playerId, input: CreateTeamsInput ) => {
+						validate: ( { state, config }, _playerId, input ) => {
 							if ( Object.keys( state.teams ).length > 0 ) {
 								throw new Error( "Teams have already been created!" );
 							}
 
 							const teamCount = Object.keys( input.teams ).length;
 							if ( teamCount !== config.teamCount ) {
-								throw new Error( "Team count does not match the game configuration!" );
+								throw new Error( "Team count does not match the game config!" );
 							}
 
 							const playersSpecified = new Set( Object.values( input.teams ).flat() );
@@ -111,14 +129,14 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 									throw new Error( `Invalid number of players in team ${ teamName }!` );
 								}
 
-								for ( const playerId of playerIds ) {
-									if ( !state.playerData[ playerId ] ) {
-										throw new Error( `Player ${ playerId } is not part of the game!` );
+								for ( const pid of playerIds ) {
+									if ( !state.playerData[ pid ] ) {
+										throw new Error( `Player ${ pid } is not part of the game!` );
 									}
 								}
 							}
 						},
-						execute: ( { state }, _playerId, input: CreateTeamsInput ) => {
+						execute: ( { state }, _playerId, input ) => {
 							Object.entries( input.teams ).forEach( ( [ name, members ] ) => {
 								const id = generateId();
 								state.teams[ id ] = { id, name, members, score: 0, booksWon: [] };
@@ -137,13 +155,13 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 				endIf: ( { state } ) => Object.keys( state.teams ).length > 0,
 
 				resolveNextPhase: () => "PLAY"
-			},
+			} ),
 
-			PLAY: {
+			PLAY: this.definePhase<Pick<FishMoves, "askCard" | "claimBook" | "transferTurn">>( {
 				onEnter: ( { state, config, context } ) => {
 					let deck = generateDeck();
 					if ( config.deckType === 48 ) {
-						deck = remove( ( card ) => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
+						deck = remove( card => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
 					}
 
 					const hands = generateHands( deck, context.players.length );
@@ -165,7 +183,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 
 				moves: {
 					askCard: {
-						validate: ( { state, config }, playerId, input: AskCardInput ) => {
+						validate: ( { state, config }, playerId, input ) => {
 							const hand = state.hands[ playerId ];
 							if ( !hand || hand.length === 0 ) {
 								throw new Error( "You have no cards! Transfer your turn instead." );
@@ -179,7 +197,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 							const book = getBookForCard( input.cardId, config.type );
 							const hasCardFromBook = hand.some( c => getBookForCard( c, config.type ) === book );
 							if ( !hasCardFromBook ) {
-								throw new Error( "You must hold at least one card from the same book!" );
+								throw new Error( "You must hold atleast 1 card from the book!" );
 							}
 
 							if ( hand.includes( input.cardId ) ) {
@@ -190,12 +208,13 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 								throw new Error( "This book has already been claimed!" );
 							}
 						},
-						execute: ( { state }, playerId, input: AskCardInput ) => {
+						execute: ( { state }, playerId, input ) => {
 							const opponentHand = state.hands[ input.from ];
 							const hasCard = opponentHand.includes( input.cardId );
 
 							if ( hasCard ) {
-								state.hands[ input.from ] = opponentHand.filter( c => c !== input.cardId );
+								state.hands[ input.from ] =
+									opponentHand.filter( c => c !== input.cardId );
 								state.cardCounts[ input.from ]--;
 								state.playerData[ input.from ].metrics.cardsGiven++;
 
@@ -234,7 +253,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 					},
 
 					claimBook: {
-						validate: ( { state, config, context }, _playerId, input: ClaimBookInput ) => {
+						validate: ( { state, config, context }, _playerId, input ) => {
 							const claimedCards = Object.keys( input.claim ) as CardId[];
 							if ( claimedCards.length === 0 ) {
 								throw new Error( "Claim cannot be empty!" );
@@ -268,7 +287,8 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 								}
 							}
 						},
-						execute: ( { state, config, context }, playerId, input: ClaimBookInput ) => {
+
+						execute: ( { state, config, context }, playerId, input ) => {
 							const claimedCards = Object.keys( input.claim ) as CardId[];
 							const book = getBookForCard( claimedCards[ 0 ], config.type );
 							const allBookCards = getCardsOfBook( book, config.type );
@@ -296,6 +316,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 							const emptyPlayers = new Set(
 								Object.keys( state.cardCounts ).filter( pid => state.cardCounts[ pid ] <= 0 )
 							);
+
 							if ( emptyPlayers.size > 0 ) {
 								for ( const cardId of Object.keys( state.cardLocations ) as CardId[] ) {
 									const owners = state.cardLocations[ cardId ];
@@ -342,7 +363,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 					},
 
 					transferTurn: {
-						validate: ( { state }, playerId, input: TransferTurnInput ) => {
+						validate: ( { state }, playerId, input ) => {
 							const lastClaimWasSuccessful = state.lastMoveType === "claim"
 								&& state.claimHistory.length > 0
 								&& state.claimHistory[ 0 ].success
@@ -361,7 +382,8 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 								throw new Error( "Cannot transfer to a teammate with no cards!" );
 							}
 						},
-						execute: ( { state }, playerId, input: TransferTurnInput ) => {
+
+						execute: ( { state }, playerId, input ) => {
 							state.lastMoveType = "transfer";
 							state.transferHistory.unshift( {
 								playerId,
@@ -390,9 +412,11 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 								nextPlayer = lastClaim.playerId;
 								break;
 							}
+
 							const opponents = getOpponents( state.teams, lastClaim.playerId );
-							nextPlayer =
-								opponents.find( pid => state.hands[ pid ]?.length > 0 ) ?? context.players[ 0 ];
+							nextPlayer = opponents.find( pid => state.hands[ pid ]?.length > 0 )
+								?? context.players[ 0 ];
+
 							break;
 						}
 
@@ -402,8 +426,9 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 							break;
 						}
 
-						default:
+						default: {
 							nextPlayer = context.currentPlayer;
+						}
 					}
 
 					if ( state.hands[ nextPlayer ]?.length === 0 ) {
@@ -412,6 +437,7 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 						if ( teammateWithCards ) {
 							return teammateWithCards;
 						}
+
 						return context.players.find( pid => state.hands[ pid ]?.length > 0 ) ?? nextPlayer;
 					}
 
@@ -471,8 +497,8 @@ export class FishEngine extends AbstractGameEngine<FishData, FishMoves, FishConf
 
 					throw new Error( `Bot ${ context.currentPlayer } has no available moves` );
 				}
-			}
+			} )
 		}
-	};
+	} );
 
 }

@@ -31,7 +31,8 @@ export function CallbreakProvider( { data, children }: CallbreakProviderProps ) 
 	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
 
-	const isMyTurn = shared.status === "IN_PROGRESS" && shared.context.currentPlayer === player.playerId;
+	const isMyTurn = shared.status === "IN_PROGRESS"
+		&& shared.context.currentPlayer === player.playerId;
 
 	const selectCard = useCallback(
 		( cardId: CardId ) => {

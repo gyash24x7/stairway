@@ -1,9 +1,7 @@
 import { AbstractGameEngine } from "@/shared/engine/engine";
-import type { GameStructure } from "@/shared/engine/types";
 import { roundRobin } from "@/shared/engine/utils";
 import { dictionaries } from "@/wordle/core/dictionary";
 import type {
-	GuessInput,
 	GuessResult,
 	GuessResults,
 	WordleConfig,
@@ -18,23 +16,33 @@ import type {
  * Supports configurable word count, word length, and uses a two-pass algorithm
  * for marking correct, present, and absent letters.
  */
-export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, WordleConfig, WordleSharedView, WordlePlayerView> {
+export class WordleEngine extends AbstractGameEngine<
+	WordleData,
+	WordleMoves,
+	WordleConfig,
+	WordleSharedView,
+	WordlePlayerView
+> {
 
 	public static readonly NAME = "wordle";
 
-	protected override readonly structure: GameStructure<WordleData, WordleMoves, WordleConfig, WordleSharedView, WordlePlayerView> = {
+	protected override readonly structure = this.defineStructure( {
 		name: WordleEngine.NAME,
 		resolveNextPlayer: roundRobin,
 
-		sharedView: ( { state, config } ): WordleSharedView => {
-			const emptyRow = Array( config.wordLength ).fill( { letter: "", status: "absent" as const } );
+		sharedView: ( { state, config } ) => {
+			const emptyRow = Array( config.wordLength )
+				.fill( { letter: "", status: "absent" as const } );
+
 			return {
 				guesses: state.guesses,
 				maxGuesses: state.maxGuesses,
 				victory: state.victory,
 				guessResults: state.words.map( ( word ) => {
 					const results = state.guessResults[ word ] ?? [];
-					const solvedAt = results.findIndex( ( row ) => row.every( ( r ) => r.status === "correct" ) );
+					const solvedAt = results.findIndex(
+						row => row.every( r => r.status === "correct" )
+					);
 					const truncated = solvedAt !== -1 ? results.slice( 0, solvedAt + 1 ) : results;
 					return [
 						...truncated,
@@ -44,9 +52,9 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 			};
 		},
 
-		playerView: ( _data, playerId ): WordlePlayerView => ( { playerId } ),
+		playerView: ( _data, playerId ) => ( { playerId } ),
 
-		setup: ( { wordCount, wordLength }: WordleConfig ) => {
+		setup: ( { wordCount, wordLength } ) => {
 			const dictionary = dictionaries[ wordLength ];
 			const maxGuesses = wordCount + wordLength;
 			const selected = new Set<string>();
@@ -66,7 +74,7 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 
 		moves: {
 			guess: {
-				validate: ( { state, config }, _playerId, { guess }: GuessInput ) => {
+				validate: ( { state, config }, _playerId, { guess } ) => {
 					if ( state.guesses.length >= state.maxGuesses ) {
 						throw new Error( "No more guesses left" );
 					}
@@ -76,13 +84,16 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 						throw new Error( "The guess is not a valid word" );
 					}
 				},
-				execute: ( { state }, _playerId, { guess }: GuessInput ) => {
+				execute: ( { state }, _playerId, { guess } ) => {
 					state.guesses.push( guess );
 
 					for ( const word of state.words ) {
 						const results: GuessResult[] = Array( word.length )
 							.fill( null )
-							.map( ( _, i ) => ( { letter: guess[ i ], status: "absent" as const } ) );
+							.map( ( _, i ) => ( {
+								letter: guess[ i ],
+								status: "absent" as const
+							} ) );
 
 						const remaining: Record<string, number> = {};
 						for ( const ch of word ) {
@@ -99,7 +110,10 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 
 						// Pass 2: mark present letters from remaining pool
 						for ( let i = 0; i < word.length; i++ ) {
-							if ( results[ i ].status !== "correct" && ( remaining[ guess[ i ] ] ?? 0 ) > 0 ) {
+							if ( results[ i ].status !==
+								"correct" &&
+								( remaining[ guess[ i ] ] ?? 0 ) >
+								0 ) {
 								results[ i ].status = "present";
 								remaining[ guess[ i ] ]--;
 							}
@@ -140,6 +154,5 @@ export class WordleEngine extends AbstractGameEngine<WordleData, WordleMoves, Wo
 				return state;
 			}
 		}
-	};
-
+	} );
 }

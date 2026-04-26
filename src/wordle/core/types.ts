@@ -1,4 +1,10 @@
-import type { BaseGameConfig, BasePlayerView, GameId, PlayerGameData, SharedGameData } from "@/shared/engine/types";
+import type {
+	BaseGameConfig,
+	BasePlayerView,
+	GameId,
+	PlayerGameData,
+	SharedGameData
+} from "@/shared/engine/types";
 
 /** Supported word lengths for Wordle games. */
 export type WordLength = 4 | 5 | 6;

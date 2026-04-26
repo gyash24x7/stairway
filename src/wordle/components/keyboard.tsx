@@ -21,7 +21,14 @@ function getAvailableLetters( guesses: string[] ): string[] {
 }
 
 function KeyboardKey( { letter }: { letter: string } ) {
-	const { shared, currentGuess, isPending, handleKeyPress, handleBackspace, handleSubmit } = useWordle();
+	const {
+		shared,
+		currentGuess,
+		isPending,
+		handleKeyPress,
+		handleBackspace,
+		handleSubmit
+	} = useWordle();
 	const availableLetters = getAvailableLetters( shared.state.guesses );
 	const isValidWord = dictionaries[ shared.config.wordLength ].includes( currentGuess );
 	const isLetterAvailable = letter.length !== 1 || availableLetters.includes( letter );
@@ -60,7 +67,9 @@ function KeyboardKey( { letter }: { letter: string } ) {
 			className={ cn(
 				"p-2 rounded bg-surface text-center text-sm font-medium",
 				"transition-all duration-100 ease-in-out cursor-pointer",
-				isLetterAvailable ? "bg-accent text-neutral-dark" : "bg-background text-foreground"
+				isLetterAvailable
+					? "bg-accent text-neutral-dark"
+					: "bg-background text-foreground"
 			) }
 			onClick={ () => handleKeyPress( letter ) }
 		>

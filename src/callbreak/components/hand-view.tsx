@@ -43,7 +43,10 @@ export function HandView() {
 			{ getSortedHand( player.hand ).map( ( cardId ) => (
 				<div
 					key={ cardId }
-					className={ cn( "cursor-pointer p-1 z-10", cardId === selectedCard && "bg-accent rounded-md" ) }
+					className={ cn(
+						"cursor-pointer p-1 z-10",
+						cardId === selectedCard && "bg-accent rounded-md"
+					) }
 					onClick={ handleCardClick( cardId ) }
 				>
 					<div

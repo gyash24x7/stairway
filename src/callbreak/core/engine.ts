@@ -4,9 +4,7 @@ import type {
 	CallbreakData,
 	CallbreakMoves,
 	CallbreakPlayerView,
-	CallbreakSharedView,
-	DeclareWinsInput,
-	PlayCardInput
+	CallbreakSharedView
 } from "@/callbreak/core/types";
 import {
 	calculateRoundScore,
@@ -18,7 +16,6 @@ import {
 	TRICKS_PER_DEAL
 } from "@/callbreak/core/utils";
 import { AbstractGameEngine } from "@/shared/engine/engine";
-import type { GameStructure } from "@/shared/engine/types";
 import { getCardSuit } from "@/shared/utils/cards";
 
 /**
@@ -26,32 +23,43 @@ import { getCardSuit } from "@/shared/utils/cards";
  * Uses a phased game structure with DECLARING and PLAYING phases,
  * supporting 4 players with configurable deal count and trump suit.
  */
-export class CallbreakEngine extends AbstractGameEngine<CallbreakData, CallbreakMoves, CallbreakConfig, CallbreakSharedView, CallbreakPlayerView> {
+export class CallbreakEngine extends AbstractGameEngine<
+	CallbreakData,
+	CallbreakMoves,
+	CallbreakConfig,
+	CallbreakSharedView,
+	CallbreakPlayerView
+> {
 
 	public static readonly NAME = "callbreak";
 
-	protected readonly structure: GameStructure<CallbreakData, CallbreakMoves, CallbreakConfig, CallbreakSharedView, CallbreakPlayerView> = {
+	protected readonly structure = this.defineStructure( {
 		name: CallbreakEngine.NAME,
 
-		sharedView: ( { state } ): CallbreakSharedView => {
+		sharedView: ( { state } ) => {
 			const activeDeal = state.deals[ 0 ];
 			const previousDeal = state.deals[ 1 ];
 			const lastCompletedTrick = previousDeal?.tricks[ 0 ];
 
 			if ( activeDeal ) {
 				const { hands, ...deal } = activeDeal;
-				return { activeDeal: deal, scores: state.scores, lastCompletedTrick, winner: state.winner };
+				return {
+					activeDeal: deal,
+					scores: state.scores,
+					lastCompletedTrick,
+					winner: state.winner
+				};
 			}
 
 			return { scores: state.scores, winner: state.winner };
 		},
 
-		playerView: ( { state }, playerId ): CallbreakPlayerView => {
+		playerView: ( { state }, playerId ) => {
 			const activeDeal = state.deals[ 0 ];
 			return { playerId, hand: activeDeal?.hands[ playerId ] ?? [] };
 		},
 
-		setup: ( _config: CallbreakConfig ): CallbreakData => ( { deals: [], scores: {} } ),
+		setup: () => ( { deals: [], scores: {} } ),
 
 		hooks: {
 			onJoin: ( { state }, playerId ) => {
@@ -80,7 +88,7 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 		initialPhase: "DECLARING",
 
 		phases: {
-			DECLARING: {
+			DECLARING: this.definePhase<Pick<CallbreakMoves, "declareWins">>( {
 				onEnter: ( { state, context } ) => {
 					const previousDeal = state.deals[ 0 ];
 					let startingPlayer: string;
@@ -100,7 +108,7 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 
 				moves: {
 					declareWins: {
-						validate: ( { state }, playerId, input: DeclareWinsInput ) => {
+						validate: ( { state }, playerId, input ) => {
 							const activeDeal = state.deals[ 0 ];
 							if ( !activeDeal || activeDeal.id !== input.dealId ) {
 								throw new Error( "Active Deal Not Found!" );
@@ -110,7 +118,7 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 								throw new Error( "Already declared wins!" );
 							}
 						},
-						execute: ( { state }, playerId, input: DeclareWinsInput ) => {
+						execute: ( { state }, playerId, input ) => {
 							const activeDeal = state.deals[ 0 ];
 							activeDeal.declarations[ playerId ] = input.wins;
 							return state;
@@ -139,11 +147,14 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 
 				botMove: ( { state, config } ) => {
 					const wins = botDeclare( state, config );
-					return { moveType: "declareWins", input: { gameId: "", wins, dealId: state.activeDeal!.id } };
+					return {
+						moveType: "declareWins",
+						input: { gameId: "", wins, dealId: state.activeDeal!.id }
+					};
 				}
-			},
+			} ),
 
-			PLAYING: {
+			PLAYING: this.definePhase<Pick<CallbreakMoves, "playCard">>( {
 				onEnter: ( { state } ) => {
 					const activeDeal = state.deals[ 0 ];
 					activeDeal.tricks.unshift( emptyTrick( activeDeal.startingPlayer ) );
@@ -154,7 +165,7 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 
 				moves: {
 					playCard: {
-						validate: ( { state, config }, playerId, input: PlayCardInput ) => {
+						validate: ( { state, config }, playerId, input ) => {
 							const activeDeal = state.deals[ 0 ];
 							if ( !activeDeal || activeDeal.id !== input.dealId ) {
 								throw new Error( "Active Deal Not Found!" );
@@ -179,7 +190,7 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 								throw new Error( "Card cannot be played!" );
 							}
 						},
-						execute: ( { state, config, context }, playerId, input: PlayCardInput ) => {
+						execute: ( { state, config, context }, playerId, input ) => {
 							const activeDeal = state.deals[ 0 ];
 							const activeTrick = activeDeal.tricks[ 0 ];
 
@@ -194,7 +205,11 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 							const trickCardCount = Object.keys( activeTrick.cards ).length;
 
 							if ( trickCardCount >= PLAYER_COUNT ) {
-								const winner = determineTrickWinner( activeTrick, config.trumpSuit, context.players );
+								const winner = determineTrickWinner(
+									activeTrick,
+									config.trumpSuit,
+									context.players
+								);
 								activeTrick.winner = winner;
 								activeDeal.wins[ winner ]++;
 							}
@@ -248,7 +263,10 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 				onExit: ( { state, context } ) => {
 					const activeDeal = state.deals[ 0 ];
 					for ( const pid of context.players ) {
-						const score = calculateRoundScore( activeDeal.declarations[ pid ], activeDeal.wins[ pid ] );
+						const score = calculateRoundScore(
+							activeDeal.declarations[ pid ],
+							activeDeal.wins[ pid ]
+						);
 						activeDeal.scores[ pid ] = score;
 						state.scores[ pid ] = ( state.scores[ pid ] ?? 0 ) + score;
 					}
@@ -259,9 +277,12 @@ export class CallbreakEngine extends AbstractGameEngine<CallbreakData, Callbreak
 
 				botMove: ( { state, config } ) => {
 					const cardId = botPlayCard( state, config );
-					return { moveType: "playCard", input: { gameId: "", cardId, dealId: state.activeDeal!.id } };
+					return {
+						moveType: "playCard",
+						input: { gameId: "", cardId, dealId: state.activeDeal!.id }
+					};
 				}
-			}
+			} )
 		}
-	};
+	} );
 }

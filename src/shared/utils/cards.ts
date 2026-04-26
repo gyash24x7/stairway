@@ -70,7 +70,8 @@ export function getCardDisplayString( card: CardId ) {
 
 /**
  * Returns a sorted version of a hand based on the predefined sorted deck.
- * This function ensures that the cards in the hand are returned in the same order as they appear in the sorted deck.
+ * This function ensures that the cards in the hand are returned
+ * in the same order as they appear in the sorted deck.
  *
  * @param hand Array of PlayingCard objects representing the hand
  * @returns Sorted array of PlayingCard objects

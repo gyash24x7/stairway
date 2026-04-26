@@ -1,4 +1,11 @@
-import type { BasePlayerView, GameId, PlayerGameData, PlayerId, SharedGameData } from "@/shared/engine/types";
+import type {
+	BaseGameConfig,
+	BasePlayerView,
+	GameId,
+	PlayerGameData,
+	PlayerId,
+	SharedGameData
+} from "@/shared/engine/types";
 
 export type Gem = "diamond" | "sapphire" | "emerald" | "ruby" | "onyx" | "gold";
 export type CardLevel = 1 | 2 | 3;

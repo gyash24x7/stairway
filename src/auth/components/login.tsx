@@ -8,7 +8,13 @@ import {
 	verifyRegistration
 } from "@/auth/core/actions";
 import { Button } from "@/shared/primitives/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/shared/primitives/dialog";
+import {
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from "@/shared/primitives/dialog";
 import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
@@ -97,7 +103,7 @@ export function Login() {
 					>
 						{ isPending ? <Spinner/> : (
 							<Fragment>
-								<Fragment>{ mode === "register" ? "REGISTER" : "LOGIN" }</Fragment>
+								{ mode === "register" ? "REGISTER" : "LOGIN" }
 								<LogInIcon fontWeight={ "bold" } className={ "w-4 h-4" }/>
 							</Fragment>
 						) }

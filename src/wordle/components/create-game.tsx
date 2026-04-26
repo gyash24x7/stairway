@@ -20,7 +20,11 @@ export function WordleCreateGame() {
 	};
 
 	return (
-		<CreateGame game={ "wordle" } disabled={ !wordLength || !wordCount } createGame={ createWordleGame }>
+		<CreateGame
+			game={ "wordle" }
+			disabled={ !wordLength || !wordCount }
+			createGame={ createWordleGame }
+		>
 			<div className={ "flex flex-col gap-3" }>
 				<h2>Select Number of Words</h2>
 				<div className="flex justify-center items-center space-x-2">
@@ -28,7 +32,11 @@ export function WordleCreateGame() {
 						<MinusIcon className="h-4 w-4"/>
 					</Button>
 					<div
-						className="w-20 h-10 flex items-center justify-center border bg-surface text-sm border-gray-400">
+						className={ cn(
+							"w-20 h-10 flex items-center justify-center",
+							"border bg-surface text-sm border-gray-400"
+						) }
+					>
 						{ wordCount }
 					</div>
 					<Button size="icon" onClick={ increment } disabled={ wordCount >= 8 }>
@@ -43,8 +51,8 @@ export function WordleCreateGame() {
 							onClick={ () => setWordLength( len ) }
 							className={ cn(
 								len === wordLength ? "bg-background" : "bg-surface",
-								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
+								"flex justify-center hover:bg-background border-gray-400"
 							) }
 						>
 							{ len }

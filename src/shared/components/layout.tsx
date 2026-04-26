@@ -1,4 +1,5 @@
 import { Navbar } from "@/shared/components/navbar";
+import { cn } from "@/shared/utils/cn";
 import type { LayoutProps } from "rwsdk/worker";
 
 export function AppLayout( { children, requestInfo }: LayoutProps ) {
@@ -11,7 +12,12 @@ export function AppLayout( { children, requestInfo }: LayoutProps ) {
 				initialThemeMode={ initialThemeMode }
 				authInfo={ requestInfo?.ctx.authInfo ?? null }
 			/>
-			<div className={ "px-2 py-2 md:px-4 md:py-4 md:mt-20 mt-15 w-full flex justify-center" }>
+			<div
+				className={ cn(
+					"px-2 py-2 md:px-4 md:py-4 md:mt-20",
+					"mt-15 w-full flex justify-center"
+				) }
+			>
 				{ children }
 			</div>
 		</main>

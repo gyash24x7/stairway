@@ -10,7 +10,11 @@ export function Board() {
 	const { shared } = useSplendor();
 	return (
 		<div className={ "flex flex-col gap-3 w-full" }>
-			<div className={ cn( "flex gap-2 items-center justify-between bg-background p-3 rounded-md" ) }>
+			<div
+				className={ cn(
+					"flex gap-2 items-center justify-between bg-background p-3 rounded-md"
+				) }
+			>
 				<div className={ "hidden md:block" }>
 					<NobleBack/>
 				</div>
@@ -30,22 +34,26 @@ export function Board() {
 			</div>
 			<div className={ "flex flex-col gap-2 bg-background p-3 rounded-md" }>
 				{ [ 3 as const, 2 as const, 1 as const ].map( level => (
-					<div className={ "flex gap-2 items-center justify-between w-full" } key={ level }>
+					<div
+						className={ "flex gap-2 items-center justify-between w-full" }
+						key={ level }
+					>
 						<div className={ "hidden md:block" }>
 							<GameCardBack level={ level }/>
 						</div>
 						{ shared.state.cards[ level ].map(
 							card => <CardActions card={ card } key={ card.id }/>
 						) }
-						{ Array.from( { length: 4 - shared.state.cards[ level ].length } ).map( ( _, i ) => (
-							<div
-								key={ `empty-${ level }-${ i }` }
-								className={ cn(
-									"w-16 md:w-20 h-24 md:h-30 rounded-md",
-									"border-2 border-dashed border-gray-300"
-								) }
-							/>
-						) ) }
+						{ Array.from( { length: 4 - shared.state.cards[ level ].length } )
+							.map( ( _, i ) => (
+								<div
+									key={ `empty-${ level }-${ i }` }
+									className={ cn(
+										"w-16 md:w-20 h-24 md:h-30 rounded-md",
+										"border-2 border-dashed border-gray-300"
+									) }
+								/>
+							) ) }
 					</div>
 				) ) }
 			</div>

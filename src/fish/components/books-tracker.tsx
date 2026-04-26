@@ -38,10 +38,12 @@ export function BooksTracker() {
 								owner ? getTeamColor( owner.teamId ) : "bg-surface"
 							) }
 						>
-							<p className={ cn(
-								"text-sm md:text-base font-bold",
-								owner ? "text-white" : "opacity-40"
-							) }>
+							<p
+								className={ cn(
+									"text-sm md:text-base font-bold",
+									owner ? "text-white" : "opacity-40"
+								) }
+							>
 								{ getBookDisplayString( book, shared.config.type ) }
 							</p>
 							{ owner && (

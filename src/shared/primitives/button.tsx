@@ -4,10 +4,10 @@ import { type ButtonHTMLAttributes, forwardRef } from "react";
 
 const buttonVariants = cva(
 	cn(
-		"inline-flex items-center justify-center whitespace-nowrap rounded-base text-sm cursor-pointer",
-		"ring-offset-white transition-all gap-2 focus-visible:outline-hidden focus-visible:ring-2",
-		"focus-visible:ring-black focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-		"font-base font-[500]"
+		"inline-flex items-center justify-center whitespace-nowrap rounded-base",
+		"text-sm cursor-pointer ring-offset-white transition-all gap-2 font-base",
+		"focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black",
+		"focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
 	),
 	{
 		variants: {
@@ -40,10 +40,15 @@ const buttonVariants = cva(
 	}
 );
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {}
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>,
+	VariantProps<typeof buttonVariants> {}
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-	( { className, variant, size, ...props }, ref ) => {
-		return <button className={ cn( buttonVariants( { variant, size, className } ) ) } ref={ ref } { ...props }/>;
-	}
+	( { className, variant, size, ...props }, ref ) => (
+		<button
+			className={ cn( buttonVariants( { variant, size, className } ) ) }
+			ref={ ref }
+			{ ...props }
+		/>
+	)
 );

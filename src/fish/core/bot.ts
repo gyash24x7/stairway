@@ -1,14 +1,20 @@
 import type {
 	Book,
+	FishBotView,
 	FishConfig,
-	FishPlayerView,
 	TeammateSignal,
 	WeightedAsk,
 	WeightedBook,
 	WeightedClaim,
 	WeightedTransfer
 } from "@/fish/core/types";
-import { getBookForCard, getBooksInHand, getCardsOfBook, getMissingCards, getTeammates } from "@/fish/core/utils";
+import {
+	getBookForCard,
+	getBooksInHand,
+	getCardsOfBook,
+	getMissingCards,
+	getTeammates
+} from "@/fish/core/utils";
 import type { PlayerId } from "@/shared/engine/types";
 import type { CardId } from "@/shared/utils/cards";
 import { createLogger } from "@/shared/utils/logger";
@@ -28,7 +34,7 @@ const logger = createLogger( "Fish:Bot" );
  * @returns list of detected teammate signals
  * @public
  */
-export function detectTeammateSignals( state: FishPlayerView, config: FishConfig ): TeammateSignal[] {
+export function detectTeammateSignals( state: FishBotView, config: FishConfig ) {
 	logger.debug( ">> detectTeammateSignals()" );
 
 	const teammates = getTeammates( state.teams, state.playerId );
@@ -125,7 +131,11 @@ export function detectTeammateSignals( state: FishPlayerView, config: FishConfig
  * @returns sorted list of weighted book suggestions.
  * @public
  */
-export function suggestBooks( state: FishPlayerView, config: FishConfig, signals: TeammateSignal[] = [] ) {
+export function suggestBooks(
+	state: FishBotView,
+	config: FishConfig,
+	signals: TeammateSignal[] = []
+) {
 	logger.debug( ">> suggestBooks()" );
 
 	const booksInGame = new Set( Object.keys( state.cardLocations )
@@ -137,7 +147,13 @@ export function suggestBooks( state: FishPlayerView, config: FishConfig, signals
 
 	for ( const book of validBooks ) {
 
-		const weightedBook = { book, weight: 0, isBookWithTeam: true, isClaimable: true, isKnown: true };
+		const weightedBook = {
+			book,
+			weight: 0,
+			isBookWithTeam: true,
+			isClaimable: true,
+			isKnown: true
+		};
 		const cardsInBook = getCardsOfBook( book, config.type );
 
 		for ( const cardId of cardsInBook ) {
@@ -155,14 +171,16 @@ export function suggestBooks( state: FishPlayerView, config: FishConfig, signals
 			if ( signal && possibleOwners.includes( signal.likelyHolder ) ) {
 				// Signal suggests a teammate holds this card — boost weight
 				weightedBook.weight += MAX_WEIGHT * signal.confidence;
-				weightedBook.isBookWithTeam = weightedBook.isBookWithTeam && teamMates.includes( signal.likelyHolder );
+				weightedBook.isBookWithTeam =
+					weightedBook.isBookWithTeam && teamMates.includes( signal.likelyHolder );
 			} else {
 				weightedBook.weight += MAX_WEIGHT / possibleOwners.length;
 				weightedBook.isBookWithTeam = weightedBook.isBookWithTeam && isCardWithTeam;
 			}
 
 			weightedBook.isKnown = weightedBook.isKnown && isCardLocationKnown;
-			weightedBook.isClaimable = weightedBook.isClaimable && weightedBook.isKnown && isCardLocationKnown;
+			weightedBook.isClaimable =
+				weightedBook.isClaimable && weightedBook.isKnown && isCardLocationKnown;
 		}
 
 		weightedBooks.push( { ...weightedBook, weight: weightedBook.weight / cardsInBook.length } );
@@ -189,7 +207,7 @@ export function suggestBooks( state: FishPlayerView, config: FishConfig, signals
  */
 export function suggestAsks(
 	books: WeightedBook[],
-	state: FishPlayerView,
+	state: FishBotView,
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
@@ -220,7 +238,11 @@ export function suggestAsks(
 		for ( const cardId of missingCards ) {
 			const possibleOwners = state.cardLocations[ cardId ]!;
 			for ( const pid of possibleOwners ) {
-				if ( pid !== state.playerId && !teamMates.includes( pid ) && state.cardCounts[ pid ] > 0 ) {
+				if ( pid !==
+					state.playerId &&
+					!teamMates.includes( pid ) &&
+					state.cardCounts[ pid ] >
+					0 ) {
 					let weight = MAX_WEIGHT / possibleOwners.length;
 
 					const signal = signalMap.get( cardId );
@@ -252,7 +274,11 @@ export function suggestAsks(
 			}
 		}
 
-		weightedAsks.push( ...asksForBook.toSorted( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 ) );
+		const shuffledAsks = asksForBook.toSorted(
+			( a, b ) => b.weight - a.weight || Math.random() - 0.5
+		);
+
+		weightedAsks.push( ...shuffledAsks );
 	}
 
 	logger.debug( "<< suggestAsks()" );
@@ -264,7 +290,7 @@ export function suggestAsks(
  * The bot should signal back by asking from the same book on its turn.
  * Only considers the most recent few asks to keep signals timely.
  */
-function detectBooksToSignal( state: FishPlayerView, config: FishConfig ): Set<Book> {
+function detectBooksToSignal( state: FishBotView, config: FishConfig ): Set<Book> {
 	const teammates = getTeammates( state.teams, state.playerId );
 	const booksToSignal = new Set<Book>();
 
@@ -287,7 +313,7 @@ function detectBooksToSignal( state: FishPlayerView, config: FishConfig ): Set<B
  * Returns undefined if the bot should move on to a different book.
  */
 function getActiveBook(
-	state: FishPlayerView,
+	state: FishBotView,
 	config: FishConfig,
 	teamMates: PlayerId[]
 ): Book | undefined {
@@ -321,7 +347,7 @@ function getActiveBook(
  * inferred from ask history. A player who asked for a card from book B
  * must hold at least one other card from book B (game rule).
  */
-function getKnownBookHolders( state: FishPlayerView, config: FishConfig ): Map<PlayerId, Set<Book>> {
+function getKnownBookHolders( state: FishBotView, config: FishConfig ) {
 	const holders = new Map<PlayerId, Set<Book>>();
 
 	for ( const ask of state.askHistory ) {
@@ -353,7 +379,7 @@ function getKnownBookHolders( state: FishPlayerView, config: FishConfig ): Map<P
  */
 export function suggestClaims(
 	books: WeightedBook[],
-	state: FishPlayerView,
+	state: FishBotView,
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
@@ -427,7 +453,7 @@ export function suggestClaims(
  * @returns sorted list of transfer recommendations.
  * @public
  */
-export function suggestTransfers( state: FishPlayerView, config: FishConfig ) {
+export function suggestTransfers( state: FishBotView, config: FishConfig ) {
 	logger.debug( ">> suggestTransfers()" );
 
 	const teamMates = getTeammates( state.teams, state.playerId );
