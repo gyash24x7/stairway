@@ -334,8 +334,8 @@ export abstract class AbstractGameEngine<
 			this.state = this.structure.hooks.beforeMove( this.readonlyGameData(), playerId, moveType );
 		}
 
-		move.validate( this.readonlyGameData(), playerId, input );
-		this.state = move.execute( this.readonlyGameData(), playerId, input );
+		move.validate( this.readonlyGameData(), playerId, input as NonNullable<M[T]> );
+		this.state = move.execute( this.readonlyGameData(), playerId, input as NonNullable<M[T]> );
 
 		if ( phase?.hooks?.afterMove ) {
 			this.state = phase.hooks.afterMove( this.readonlyGameData(), playerId, moveType );
