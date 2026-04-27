@@ -40,5 +40,6 @@ export class UserSession extends DurableObject {
 
 /** The session store configured to use the UserSession Durable Object via rwsdk. */
 export const sessionStore = defineDurableSession( {
-	sessionDurableObject: env.SESSION
+	sessionDurableObject: env.SESSION,
+	secretKey: env.AUTH_SECRET_KEY
 } );
