@@ -10,6 +10,8 @@ import { KingdominoGamePage } from "@/kingdomino/components/game-page";
 import { KingdominoHomePage } from "@/kingdomino/components/home-page";
 import { HomePage } from "@/shared/components/home-page";
 import { AppLayout } from "@/shared/components/layout";
+import { db } from "@/shared/db/client";
+import { games } from "@/shared/db/schema";
 import type { Theme, ThemeMode } from "@/shared/utils/cn";
 import { requireauthInfo } from "@/shared/utils/middlewares";
 import { SplendorGamePage } from "@/splendor/components/game-page";
@@ -20,8 +22,9 @@ import { WordleGamePage } from "@/wordle/components/game-page";
 import { WordleHomePage } from "@/wordle/components/home-page";
 import { env } from "cloudflare:workers";
 import * as cookie from "cookie";
+import { and, eq, inArray, lt } from "drizzle-orm";
 import { layout, render, route } from "rwsdk/router";
-import { syncedStateRoutes, SyncedStateServer } from "rwsdk/use-synced-state/worker";
+import { syncedStateRoutes } from "rwsdk/use-synced-state/worker";
 import { defineApp, requestInfo } from "rwsdk/worker";
 
 /** Application context type available in request handlers, carrying theme and auth info. */
@@ -32,13 +35,7 @@ export type AppContext = {
 };
 
 export { UserSession } from "@/auth/core/sessions";
-
-SyncedStateServer.registerRoomHandler( async ( roomId = "sync" ) => {
-	return roomId;
-} );
-
-export { SyncedStateServer };
-
+export { SyncedStateServer } from "rwsdk/use-synced-state/worker";
 export { WordleEngine } from "@/wordle/core/engine";
 export { TicTacToeEngine } from "@/tictactoe/core/engine";
 export { SplendorEngine } from "@/splendor/core/engine";
@@ -89,4 +86,64 @@ export const app = defineApp( [
 	] )
 ] );
 
-export default { fetch: app.fetch } satisfies ExportedHandler<Env>;
+/** Maps game names (stored in DB) to their corresponding DO namespace binding keys on Env. */
+const gameBindings: Record<string, keyof Pick<Env,
+	"WORDLE_ENGINE" | "TIC_TAC_TOE_ENGINE" | "SPLENDOR_ENGINE" |
+	"FISH_ENGINE" | "CALLBREAK_ENGINE" | "KINGDOMINO_ENGINE"
+>> = {
+	"wordle": "WORDLE_ENGINE",
+	"tic-tac-toe": "TIC_TAC_TOE_ENGINE",
+	"splendor": "SPLENDOR_ENGINE",
+	"fish": "FISH_ENGINE",
+	"callbreak": "CALLBREAK_ENGINE",
+	"kingdomino": "KINGDOMINO_ENGINE"
+};
+
+function getGameStub( game: string, gameId: string ) {
+	switch ( game ) {
+		case "wordle":
+			return env.WORDLE_ENGINE.get( env.WORDLE_ENGINE.idFromName( `${ game }:${ gameId }` ) );
+		case "tic-tac-toe":
+			return env.TIC_TAC_TOE_ENGINE.get( env.TIC_TAC_TOE_ENGINE.idFromName( `${ game }:${ gameId }` ) );
+		case "splendor":
+			return env.SPLENDOR_ENGINE.get( env.SPLENDOR_ENGINE.idFromName( `${ game }:${ gameId }` ) );
+		case "kingdomino":
+			return env.KINGDOMINO_ENGINE.get( env.KINGDOMINO_ENGINE.idFromName( `${ game }:${ gameId }` ) );
+		case "fish":
+			return env.FISH_ENGINE.get( env.FISH_ENGINE.idFromName( `${ game }:${ gameId }` ) );
+		case "callbreak":
+			return env.CALLBREAK_ENGINE.get( env.WORDLE_ENGINE.idFromName( `${ game }:${ gameId }` ) );
+	}
+
+	return null;
+}
+
+export default {
+	fetch: app.fetch,
+
+	async scheduled() {
+		const twoDaysAgo = Date.now() / 1000 - 2 * 24 * 60 * 60;
+
+		const staleGames = await db
+			.select()
+			.from( games )
+			.where( and( eq( games.completed, 0 ), lt( games.createdAt, twoDaysAgo ) ) );
+
+		for ( const game of staleGames ) {
+			const bindingKey = gameBindings[ game.game ];
+			if ( !bindingKey ) {
+				continue;
+			}
+
+			const stub = getGameStub( game.game, game.id );
+			if ( stub ) {
+				await stub.cleanup();
+			}
+		}
+
+		if ( staleGames.length > 0 ) {
+			const staleIds = staleGames.map( g => g.id );
+			await db.delete( games ).where( inArray( games.id, staleIds ) );
+		}
+	}
+} satisfies ExportedHandler<Env>;

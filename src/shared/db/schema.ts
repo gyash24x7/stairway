@@ -31,7 +31,7 @@ export const games = sqliteTable(
 		code: text().notNull().unique().$default( () => generateGameCode() ),
 		game: text().notNull(),
 		completed: integer().notNull().default( 0 ).$type<0 | 1>(),
-		createdAt: text().notNull().$default( () => new Date().toISOString() )
+		createdAt: integer().notNull().$default( () => Date.now() / 1000 )
 	},
 	table => [ index( "idx_games_code" ).on( table.code ) ]
 );

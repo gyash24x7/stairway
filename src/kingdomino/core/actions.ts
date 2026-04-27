@@ -11,7 +11,13 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
-import { getAuthInfo, getCompletedGame, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
+import {
+	getAuthInfo,
+	getCompletedGame,
+	requireGame,
+	requireGameByCode,
+	validate
+} from "@/shared/utils/middlewares";
 import { env } from "cloudflare:workers";
 import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";

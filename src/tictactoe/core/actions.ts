@@ -4,7 +4,13 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
-import { getAuthInfo, getCompletedGame, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
+import {
+	getAuthInfo,
+	getCompletedGame,
+	requireGame,
+	requireGameByCode,
+	validate
+} from "@/shared/utils/middlewares";
 import { TicTacToeEngine } from "@/tictactoe/core/engine";
 import type { PlaceInput } from "@/tictactoe/core/types";
 import { env } from "cloudflare:workers";

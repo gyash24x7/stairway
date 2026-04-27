@@ -3,8 +3,8 @@ import { games } from "@/shared/db/schema";
 import type { CompletedGameData, GameId } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
-import { and, eq } from "drizzle-orm";
 import { env } from "cloudflare:workers";
+import { and, eq } from "drizzle-orm";
 import { requestInfo } from "rwsdk/worker";
 
 const logger = createLogger( "Middlewares" );
@@ -97,7 +97,7 @@ export const requireGameByCode = async ( name: string, code: string ) => {
  * @param gameId - The unique game instance ID.
  * @returns The completed game data with pre-computed views.
  */
-export const getCompletedGame = async ( name: string, gameId: GameId ): Promise<CompletedGameData> => {
+export const getCompletedGame = async ( name: string, gameId: GameId ) => {
 	const key = `${ name }:${ gameId }`;
 	const data = await env.GAMES_KV.get<CompletedGameData>( key, { type: "json" } );
 

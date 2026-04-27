@@ -58,6 +58,17 @@ export abstract class AbstractGameEngine<
 	}
 
 	/**
+	 * Clears all data from the Durable Object storage.
+	 * Used by the scheduled cleanup to purge incomplete game state.
+	 */
+	public async cleanup() {
+		this.logger.debug( ">> cleanup()" );
+		await this.ctx.storage.deleteAlarm();
+		await this.ctx.storage.deleteAll();
+		this.logger.debug( "<< cleanup()" );
+	}
+
+	/**
 	 * Initializes a new game with the given ID, join code, and configuration.
 	 * Sets up the initial game state using the structure's setup function.
 	 * @param gameId - The unique identifier for this game instance.
