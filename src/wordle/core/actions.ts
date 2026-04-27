@@ -93,9 +93,9 @@ export const getWords = serverQuery( [
 		const authInfo = getAuthInfo();
 		const game = await requireGame( WordleEngine.NAME, input.gameId );
 		const stub = getStub( game.id );
-		const {} = await stub.getPlayerGameInfo( authInfo.id );
+		const { words } = await stub.getWords( authInfo.id );
 
 		logger.debug( "<< getWords()" );
-		return [];
+		return words;
 	}
 ] );

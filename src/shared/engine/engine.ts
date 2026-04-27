@@ -1,5 +1,7 @@
 "use server";
 
+import { db } from "@/shared/db/client";
+import { games } from "@/shared/db/schema";
 import type {
 	BaseGameConfig,
 	BaseGameData,
@@ -16,12 +18,10 @@ import type {
 	ReadonlyGameData,
 	SharedGameData
 } from "@/shared/engine/types";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
 import { generateBotInfo } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
-import { eq } from "drizzle-orm";
 import { DurableObject } from "cloudflare:workers";
+import { eq } from "drizzle-orm";
 
 /**
  * Abstract base class for all game engines in the platform.
@@ -169,7 +169,7 @@ export abstract class AbstractGameEngine<
 		await this.syncClients();
 
 		if ( this.status === "COMPLETED" ) {
-			await this.cleanup();
+			await this.archive();
 		} else {
 			await this.scheduleBotIfNeeded();
 		}
@@ -250,7 +250,7 @@ export abstract class AbstractGameEngine<
 		await this.syncClients();
 
 		if ( this.status === "COMPLETED" ) {
-			await this.cleanup();
+			await this.archive();
 		} else {
 			await this.scheduleBotIfNeeded();
 		}
@@ -274,6 +274,22 @@ export abstract class AbstractGameEngine<
 	 */
 	protected definePhase<PM extends Partial<M>>( phase: GamePhase<G, PM, C, SV, PV> ) {
 		return phase;
+	}
+
+	/**
+	 * Utitlity for other engines to use and implement game specific features.
+	 * @protected
+	 */
+	protected getGameData() {
+		return {
+			id: this.id,
+			code: this.code,
+			config: this.config,
+			state: this.state,
+			players: this.players,
+			status: this.status,
+			context: this.context
+		};
 	}
 
 	/**
@@ -513,22 +529,14 @@ export abstract class AbstractGameEngine<
 	 * Persists the current game data to Durable Object storage.
 	 */
 	private async saveGameData() {
-		await this.ctx.storage.put( "gameData", {
-			id: this.id,
-			code: this.code,
-			config: this.config,
-			state: this.state,
-			players: this.players,
-			status: this.status,
-			context: this.context
-		} );
+		await this.ctx.storage.put( "gameData", this.getGameData() );
 	}
 
 	/**
 	 * Archives completed game data to KV with pre-computed player views,
-	 * marks the game as completed in D1, and cleans up DO storage.
+	 * marks the game as completed in D1.
 	 */
-	private async cleanup() {
+	private async archive() {
 		const key = `${ this.structure.name }:${ this.id }`;
 		const shared = this.getSharedGameInfo();
 		const playerViews: Record<string, PlayerGameData<PV>> = {};
@@ -538,9 +546,6 @@ export abstract class AbstractGameEngine<
 
 		await this.env.GAMES_KV.put( key, JSON.stringify( { shared, playerViews } ) );
 		await db.update( games ).set( { completed: 1 } ).where( eq( games.id, this.id ) );
-
-		await this.ctx.storage.deleteAlarm();
-		await this.ctx.storage.deleteAll();
 	}
 
 	/**
