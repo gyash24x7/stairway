@@ -362,6 +362,7 @@ export abstract class AbstractGameEngine<
 		if ( ended ) {
 			if ( this.structure.hooks?.onEnd ) {
 				this.state = this.structure.hooks.onEnd( this.readonlyGameData() );
+				this.cleanup().then();
 			}
 			this.status = "COMPLETED";
 			this.logger.info( "Game completed!" );
@@ -480,7 +481,9 @@ export abstract class AbstractGameEngine<
 	 * @returns True if game data was found and loaded, false otherwise.
 	 */
 	private async loadGameData() {
-		const data = await this.ctx.storage.get<BaseGameData & GameData<G, C>>( "data" );
+		const type = "json";
+		const key = `${ this.structure.name }:${ this.id }`;
+		const data = await this.env.GAMES_KV.get<BaseGameData & GameData<G, C>>( key, { type } );
 		if ( !data ) {
 			return false;
 		}
@@ -500,7 +503,8 @@ export abstract class AbstractGameEngine<
 	 * Persists the current game data to Durable Object storage.
 	 */
 	private async saveGameData() {
-		await this.ctx.storage.put( "data", {
+		const key = `${ this.structure.name }:${ this.id }`;
+		const data = JSON.stringify( {
 			id: this.id,
 			code: this.code,
 			config: this.config,
@@ -509,6 +513,13 @@ export abstract class AbstractGameEngine<
 			status: this.status,
 			context: this.context
 		} );
+
+		await this.env.GAMES_KV.put( key, data );
+	}
+
+	private async cleanup() {
+		await this.ctx.storage.deleteAlarm();
+		await this.ctx.storage.deleteAll();
 	}
 
 	/**
