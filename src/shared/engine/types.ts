@@ -165,6 +165,18 @@ export type GameData<G, C extends BaseGameConfig> = {
 }
 
 /**
+ * The shape of completed game data archived in KV, with pre-computed views.
+ */
+export type CompletedGameData<
+	SV = unknown,
+	C extends BaseGameConfig = BaseGameConfig,
+	PV extends BasePlayerView = BasePlayerView
+> = {
+	shared: SharedGameData<SV, C>;
+	playerViews: Record<PlayerId, PlayerGameData<PV>>;
+}
+
+/**
  * A game phase definition with its own moves, player resolution, end condition,
  * phase transitions, and optional lifecycle hooks.
  */

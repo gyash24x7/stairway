@@ -11,7 +11,7 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
-import { getAuthInfo, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
+import { getAuthInfo, getCompletedGame, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
 import { env } from "cloudflare:workers";
 import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
@@ -38,6 +38,13 @@ export const getGame = serverQuery( [
 
 		const authInfo = getAuthInfo();
 		const game = await requireGame( KingdominoEngine.NAME, input.gameId );
+
+		if ( game.completed ) {
+			const { shared, playerViews } = await getCompletedGame( KingdominoEngine.NAME, game.id );
+			logger.debug( "<< getGame() [completed]" );
+			return { shared, player: playerViews[ authInfo.id ] };
+		}
+
 		const stub = getStub( game.id );
 		const { shared, player } = await stub.getPlayerGameInfo( authInfo.id );
 

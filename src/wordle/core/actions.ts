@@ -4,7 +4,7 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
-import { getAuthInfo, requireGame, validate } from "@/shared/utils/middlewares";
+import { getAuthInfo, getCompletedGame, requireGame, validate } from "@/shared/utils/middlewares";
 import { WordleEngine } from "@/wordle/core/engine";
 import type { CreateGameInput, GuessInput } from "@/wordle/core/types";
 import { env } from "cloudflare:workers";
@@ -33,6 +33,13 @@ export const getGame = serverQuery( [
 
 		const authInfo = getAuthInfo();
 		const game = await requireGame( WordleEngine.NAME, input.gameId );
+
+		if ( game.completed ) {
+			const { shared, playerViews } = await getCompletedGame( WordleEngine.NAME, game.id );
+			logger.debug( "<< getGame() [completed]" );
+			return { shared, player: playerViews[ authInfo.id ] };
+		}
+
 		const stub = getStub( game.id );
 		const { shared, player } = await stub.getPlayerGameInfo( authInfo.id );
 

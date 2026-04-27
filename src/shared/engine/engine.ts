@@ -16,8 +16,11 @@ import type {
 	ReadonlyGameData,
 	SharedGameData
 } from "@/shared/engine/types";
+import { db } from "@/shared/db/client";
+import { games } from "@/shared/db/schema";
 import { generateBotInfo } from "@/shared/utils/generator";
 import { createLogger } from "@/shared/utils/logger";
+import { eq } from "drizzle-orm";
 import { DurableObject } from "cloudflare:workers";
 
 /**
@@ -164,7 +167,12 @@ export abstract class AbstractGameEngine<
 
 		await this.saveGameData();
 		await this.syncClients();
-		await this.scheduleBotIfNeeded();
+
+		if ( this.status === "COMPLETED" ) {
+			await this.cleanup();
+		} else {
+			await this.scheduleBotIfNeeded();
+		}
 
 		this.logger.debug( "<< processMove()" );
 	}
@@ -240,7 +248,12 @@ export abstract class AbstractGameEngine<
 
 		await this.saveGameData();
 		await this.syncClients();
-		await this.scheduleBotIfNeeded();
+
+		if ( this.status === "COMPLETED" ) {
+			await this.cleanup();
+		} else {
+			await this.scheduleBotIfNeeded();
+		}
 
 		this.logger.debug( "<< alarm()" );
 	}
@@ -362,7 +375,6 @@ export abstract class AbstractGameEngine<
 		if ( ended ) {
 			if ( this.structure.hooks?.onEnd ) {
 				this.state = this.structure.hooks.onEnd( this.readonlyGameData() );
-				this.cleanup().then();
 			}
 			this.status = "COMPLETED";
 			this.logger.info( "Game completed!" );
@@ -481,9 +493,7 @@ export abstract class AbstractGameEngine<
 	 * @returns True if game data was found and loaded, false otherwise.
 	 */
 	private async loadGameData() {
-		const type = "json";
-		const key = `${ this.structure.name }:${ this.id }`;
-		const data = await this.env.GAMES_KV.get<BaseGameData & GameData<G, C>>( key, { type } );
+		const data = await this.ctx.storage.get<BaseGameData & GameData<G, C>>( "gameData" );
 		if ( !data ) {
 			return false;
 		}
@@ -503,8 +513,7 @@ export abstract class AbstractGameEngine<
 	 * Persists the current game data to Durable Object storage.
 	 */
 	private async saveGameData() {
-		const key = `${ this.structure.name }:${ this.id }`;
-		const data = JSON.stringify( {
+		await this.ctx.storage.put( "gameData", {
 			id: this.id,
 			code: this.code,
 			config: this.config,
@@ -513,11 +522,23 @@ export abstract class AbstractGameEngine<
 			status: this.status,
 			context: this.context
 		} );
-
-		await this.env.GAMES_KV.put( key, data );
 	}
 
+	/**
+	 * Archives completed game data to KV with pre-computed player views,
+	 * marks the game as completed in D1, and cleans up DO storage.
+	 */
 	private async cleanup() {
+		const key = `${ this.structure.name }:${ this.id }`;
+		const shared = this.getSharedGameInfo();
+		const playerViews: Record<string, PlayerGameData<PV>> = {};
+		for ( const playerId of Object.keys( this.players ) ) {
+			playerViews[ playerId ] = this.getPlayerSpecificInfo( playerId );
+		}
+
+		await this.env.GAMES_KV.put( key, JSON.stringify( { shared, playerViews } ) );
+		await db.update( games ).set( { completed: 1 } ).where( eq( games.id, this.id ) );
+
 		await this.ctx.storage.deleteAlarm();
 		await this.ctx.storage.deleteAll();
 	}

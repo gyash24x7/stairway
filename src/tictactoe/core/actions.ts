@@ -4,7 +4,7 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
-import { getAuthInfo, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
+import { getAuthInfo, getCompletedGame, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
 import { TicTacToeEngine } from "@/tictactoe/core/engine";
 import type { PlaceInput } from "@/tictactoe/core/types";
 import { env } from "cloudflare:workers";
@@ -33,6 +33,13 @@ export const getGame = serverQuery( [
 
 		const authInfo = getAuthInfo();
 		const game = await requireGame( TicTacToeEngine.NAME, input.gameId );
+
+		if ( game.completed ) {
+			const { shared, playerViews } = await getCompletedGame( TicTacToeEngine.NAME, game.id );
+			logger.debug( "<< getGame() [completed]" );
+			return { shared, player: playerViews[ authInfo.id ] };
+		}
+
 		const stub = getStub( game.id );
 		const { shared, player } = await stub.getPlayerGameInfo( authInfo.id );
 

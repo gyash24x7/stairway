@@ -1,9 +1,10 @@
 import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
-import type { GameId } from "@/shared/engine/types";
+import type { CompletedGameData, GameId } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import { and, eq } from "drizzle-orm";
+import { env } from "cloudflare:workers";
 import { requestInfo } from "rwsdk/worker";
 
 const logger = createLogger( "Middlewares" );
@@ -87,4 +88,23 @@ export const requireGameByCode = async ( name: string, code: string ) => {
 	}
 
 	return game;
+};
+
+/**
+ * Fetches archived completed game data from KV.
+ * Throws a 404 response if the data is not found.
+ * @param name - The game type name.
+ * @param gameId - The unique game instance ID.
+ * @returns The completed game data with pre-computed views.
+ */
+export const getCompletedGame = async ( name: string, gameId: GameId ): Promise<CompletedGameData> => {
+	const key = `${ name }:${ gameId }`;
+	const data = await env.GAMES_KV.get<CompletedGameData>( key, { type: "json" } );
+
+	if ( !data ) {
+		logger.error( "Completed game data not found in KV! %s", key );
+		throw new Response( null, { status: 404 } );
+	}
+
+	return data;
 };
