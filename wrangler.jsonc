@@ -14,8 +14,11 @@
 		{
 			"binding": "DB",
 			"database_name": "stairway",
-			"database_id": "f8156d94-8c52-4c8d-aa85-45d2b839626e"
+			"database_id": "6905f0b3-6fc2-482c-bba0-28f946febd8d"
 		}
+	],
+	"kv_namespaces": [
+		{ "binding": "GAMES_KV", "id": "17c4fd81c2804fa786dc1814256b1f04" }
 	],
 	"durable_objects": {
 		"bindings": [
