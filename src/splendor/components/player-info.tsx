@@ -23,7 +23,7 @@ function PlayerTokenCount( props: { gem: Gem; playerId: string } ) {
 	return (
 		<div className={ cn(
 			"w-6 h-6 flex justify-center items-center rounded-full",
-			"border border-dotted border-gray-400",
+			"border border-dotted border-inverted-surface",
 			"text-sm text-center text-neutral-dark",
 			gemColors[ props.gem ]
 		) }>
@@ -43,7 +43,7 @@ function ReservedCards( props: { playerId: string } ) {
 					<div className={ cn(
 						"w-8 h-12 p-1",
 						"flex rounded-md items-center justify-center",
-						"border-3 border-gray-400",
+						"border-3 border-inverted-surface",
 						"text-2xl text-neutral-dark",
 						gemLightColors[ "gold" ]
 					) }>
@@ -75,7 +75,7 @@ function PurchasedCards( props: { gem: Exclude<Gem, "gold">; playerId: string; }
 		<div className={ cn(
 			"w-8 h-12 p-1",
 			"flex rounded-md items-center justify-center",
-			"border-3 border-gray-400",
+			"border-3 border-inverted-surface",
 			"text-2xl text-neutral-dark",
 			gemLightColors[ props.gem ]
 		) }>

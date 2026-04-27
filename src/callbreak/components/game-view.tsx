@@ -42,11 +42,9 @@ export function GameView() {
 			<div className={ "flex flex-col gap-3 mb-52" }>
 				{ shared.state.activeDeal && <DealView/> }
 				{ !shared.state.activeDeal && (
-					<div className={ "flex gap-3" }>
+					<div className={ "grid grid-cols-4 gap-3" }>
 						{ Object.values( shared.players ).map( player => (
-							<div key={ player.id } className={ "min-w-1/4" }>
-								<RPlayerInfo player={ player }/>
-							</div>
+							<RPlayerInfo player={ player } key={ player.id }/>
 						) ) }
 					</div>
 				) }

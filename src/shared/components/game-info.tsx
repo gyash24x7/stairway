@@ -1,3 +1,4 @@
+import { Logo } from "@/shared/components/logo";
 import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
 import { CopyIcon } from "lucide-react";
@@ -24,9 +25,12 @@ export function GameInfo( { code, name, additionalInfo, actions, completed }: Ga
 	return (
 		<Fragment>
 			<div className={ "flex gap-2 rounded-md bg-background w-full h-16 md:h-20" }>
-				<div className={ "flex gap-2 items-center bg-accent px-2 py-1 rounded-l-md" }>
-					<img src={ "/s2h.png" } alt={ "logo" } className={ "h-10 md:h-12" }/>
-					<h2 className={ "text-4xl font-title text-neutral-dark hidden md:block" }>
+				<div className={ "flex gap-2 items-center bg-accent px-4 py-2 rounded-l-md" }>
+					<Logo
+						url={ `/logos/${ name.toLowerCase() }.svg` }
+						classname={ "bg-neutral-dark w-9 h-9" }
+					/>
+					<h2 className={ "text-3xl font-title text-neutral-dark hidden md:block" }>
 						{ name.toUpperCase() }
 					</h2>
 				</div>

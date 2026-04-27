@@ -73,7 +73,7 @@ function SmallFilledCell( { cell, x, y }: { cell: CellData; x: number; y: number
 	return (
 		<div
 			className={ cn(
-				"w-6 h-6 rounded border border-gray-400 p-1 overflow-hidden",
+				"w-6 h-6 rounded border border-inverted-surface p-1 overflow-hidden",
 				"font-semibold flex flex-col justify-between transition",
 				cell.className
 			) }
@@ -90,7 +90,7 @@ function FilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } )
 	return (
 		<div
 			className={ cn(
-				"w-14 h-14 rounded border border-gray-400 p-1 text-[10px] overflow-hidden",
+				"w-14 h-14 rounded border border-inverted-surface p-1 text-[10px] overflow-hidden",
 				"font-semibold flex flex-col justify-between transition",
 				cell.className
 			) }
@@ -135,7 +135,7 @@ function PossibleCell( props: {
 function SmallEmptyCell( props: { coord: Coord; } ) {
 	return (
 		<div
-			className={ cn( "w-6 h-6 rounded border border-dashed border-gray-400 transition" ) }
+			className={ cn( "w-6 h-6 rounded border border-dashed border-inverted-surface transition" ) }
 			title={ `(${ props.coord.x }, ${ props.coord.y })` }
 		/>
 	);
@@ -145,7 +145,7 @@ function EmptyCell( props: { coord: Coord; isPlacement: boolean } ) {
 	return (
 		<div
 			className={ cn(
-				"w-14 h-14 rounded border border-dashed border-gray-400 transition",
+				"w-14 h-14 rounded border border-dashed border-inverted-surface transition",
 				props.isPlacement && "border-blue-200"
 			) }
 			title={ `(${ props.coord.x }, ${ props.coord.y })` }

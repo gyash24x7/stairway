@@ -3,6 +3,7 @@
 import { RAuthInfo } from "@/auth/components/auth-info";
 import { Login } from "@/auth/components/login";
 import type { AuthInfo } from "@/auth/core/types";
+import { Logo } from "@/shared/components/logo";
 import { ThemeSwitcher } from "@/shared/components/theme-switcher";
 import { Button } from "@/shared/primitives/button";
 import { Separator } from "@/shared/primitives/separator";
@@ -21,7 +22,7 @@ export function Navbar( { authInfo, ...props }: NavbarProps ) {
 	return (
 		<div
 			className={ cn(
-				"border-b-2 border-gray-400 fixed z-1 left-0 right-0",
+				"border-b-2 border-inverted-surface fixed z-1 left-0 right-0",
 				"bg-background px-2 md:px-4 py-1 md:py-2"
 			) }
 		>
@@ -32,8 +33,8 @@ export function Navbar( { authInfo, ...props }: NavbarProps ) {
 				) }
 			>
 				<div className={ "flex gap-2 items-center" }>
-					<img src={ "/s2h.png" } alt={ "logo" } className={ "h-12 md:h-16" }/>
-					<h2 className={ "text-5xl font-title text-accent hidden md:block" }>
+					<Logo url={ "/stairway.svg" } classname={ "w-12 h-12 bg-accent" }/>
+					<h2 className={ "text-4xl font-title text-accent hidden md:block" }>
 						STAIRWAY
 					</h2>
 				</div>

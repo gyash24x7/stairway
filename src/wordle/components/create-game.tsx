@@ -34,7 +34,7 @@ export function WordleCreateGame() {
 					<div
 						className={ cn(
 							"w-20 h-10 flex items-center justify-center",
-							"border bg-surface text-sm border-gray-400"
+							"border bg-surface text-sm border-inverted-surface"
 						) }
 					>
 						{ wordCount }
@@ -52,7 +52,7 @@ export function WordleCreateGame() {
 							className={ cn(
 								len === wordLength ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
-								"flex justify-center hover:bg-background border-gray-400"
+								"flex justify-center hover:bg-background border-inverted-surface"
 							) }
 						>
 							{ len }

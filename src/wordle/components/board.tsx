@@ -38,7 +38,7 @@ function GuessTiles( { result, isCurrentRow }: { result: GuessResult[]; isCurren
 				<div
 					key={ `guess-tiles-${ idx }` }
 					className={ cn(
-						"border-gray-400",
+						"border-inverted-surface",
 						hasResult ? getBlockColor( status ) : "bg-background",
 						"border rounded flex items-center justify-center",
 						isCurrentRow && !!getCurrentLetter( idx ) && "border-foreground",

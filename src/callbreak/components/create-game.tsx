@@ -1,6 +1,7 @@
 "use client";
 
 import { createGame } from "@/callbreak/core/actions";
+import { RCardSuit } from "@/shared/components/card";
 import { CreateGame } from "@/shared/components/create-game";
 import { CARD_SUITS, type CardSuit } from "@/shared/utils/cards";
 import { cn } from "@/shared/utils/cn";
@@ -33,10 +34,10 @@ export function CallbreakCreateGame() {
 							className={ cn(
 								trumpSuit === item ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"hover:bg-background border-inverted-surface"
 							) }
 						>
-							{ item }
+							<RCardSuit suit={ item } themed/>
 						</div>
 					) ) }
 				</div>
@@ -50,7 +51,7 @@ export function CallbreakCreateGame() {
 							className={ cn(
 								dealCount === item ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"hover:bg-background border-inverted-surface"
 							) }
 						>
 							{ item }

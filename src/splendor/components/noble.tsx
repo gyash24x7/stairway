@@ -6,7 +6,7 @@ export function Noble( { noble }: { noble: Noble } ) {
 	return (
 		<div
 			className={ cn(
-				"border-4 border-gray-400 rounded-lg",
+				"border-4 border-inverted-surface rounded-lg",
 				"w-16 md:w-20 h-16 md:h-20 text-neutral-dark",
 				"flex overflow-hidden justify-between gap-1 bg-background"
 			) }
@@ -33,7 +33,7 @@ export function Noble( { noble }: { noble: Noble } ) {
 							key={ gem }
 							className={ cn(
 								"flex rounded-md justify-center items-center h-6 w-5",
-								"border border-dotted border-gray-400",
+								"border border-dotted border-inverted-surface",
 								gemColors[ gem ]
 							) }
 						>
@@ -54,7 +54,7 @@ export function NobleBack() {
 				"w-16 md:w-20 h-16 md:h-20 p-1",
 				"rounded-lg flex justify-center items-center",
 				"text-xl font-bold",
-				"bg-background border-4 border-gray-400"
+				"bg-background border-4 border-inverted-surface"
 			) }
 		>
 			<img

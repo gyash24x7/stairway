@@ -40,7 +40,7 @@ export function DealView() {
 									<div
 										className={ cn(
 											"w-16 md:w-20 xl:w-24 p-1 md:p-1.5 md:text-lg h-24 md:h-30 xl:h-36",
-											"rounded-lg border-2 bg-surface border-dotted border-gray-400",
+											"rounded-lg border-2 bg-surface border-dotted border-inverted-surface",
 											"flex flex-col justify-between"
 										) }
 									/>

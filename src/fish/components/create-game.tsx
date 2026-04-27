@@ -30,7 +30,7 @@ export function FishCreateGame() {
 							className={ cn(
 								playerCount === item ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"hover:bg-background border-inverted-surface"
 							) }
 						>
 							{ item }
@@ -47,7 +47,7 @@ export function FishCreateGame() {
 							className={ cn(
 								teamCount === item ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"hover:bg-background border-inverted-surface"
 							) }
 						>
 							{ item }
@@ -64,7 +64,7 @@ export function FishCreateGame() {
 							className={ cn(
 								bookType === item ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2 flex justify-center",
-								"hover:bg-background border-gray-400"
+								"hover:bg-background border-inverted-surface"
 							) }
 						>
 							{ item }

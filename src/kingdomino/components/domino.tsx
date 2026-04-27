@@ -56,7 +56,7 @@ export function RSmallDomino( { enabled, domino }: RDominoProps ) {
 		<div
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
-				"border-2 border-gray-400 transition",
+				"border-2 border-inverted-surface transition",
 				!enabled ? "shadow-none" : "shadow-shadow",
 				enabled && "cursor-pointer hover:shadow-none",
 				enabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY"
@@ -82,7 +82,7 @@ export function RDomino( { domino, enabled, isSelected, onClick }: RDominoProps 
 		<div
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
-				"border-2 border-gray-400 transition",
+				"border-2 border-inverted-surface transition",
 				enabled && "cursor-pointer",
 				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-shadow",
 				!isSelected && enabled && (

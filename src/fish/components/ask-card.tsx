@@ -118,7 +118,7 @@ export function AskCard() {
 								onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
 								className={ cn(
 									"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-									"flex justify-center bg-background border-gray-400",
+									"flex justify-center bg-background border-inverted-surface",
 									selectedBook === item && "border-accent bg-accent/20"
 								) }
 							>

@@ -38,7 +38,7 @@ export function SplendorCreateGame() {
 							className={ cn(
 								playerCount === item ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
-								"hover:bg-background border-gray-400 flex justify-center"
+								"hover:bg-background border-inverted-surface flex justify-center"
 							) }
 						>
 							{ item }
@@ -57,7 +57,7 @@ export function SplendorCreateGame() {
 							className={ cn(
 								winningPoints === points ? "bg-background" : "bg-surface",
 								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
-								"hover:bg-background border-gray-400 flex justify-center"
+								"hover:bg-background border-inverted-surface flex justify-center"
 							) }
 						>
 							{ points }

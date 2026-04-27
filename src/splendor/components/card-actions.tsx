@@ -139,7 +139,7 @@ export function CardActions( props: CardActionsMenuProps ) {
 											className={ cn(
 												"w-8 h-12 md:w-10 md:h-15 p-1",
 												"flex rounded-md items-center justify-center",
-												"border-3 border-gray-400",
+												"border-3 border-inverted-surface",
 												"text-2xl md:text-3xl text-neutral-dark",
 												gemLightColors[ gem ]
 											) }
