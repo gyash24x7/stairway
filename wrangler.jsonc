@@ -1,0 +1,42 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "stairway",
+	"main": "src/worker.tsx",
+	"compatibility_date": "2025-08-21",
+	"compatibility_flags": [ "nodejs_compat" ],
+	"observability": {
+		"enabled": true
+	},
+	"assets": {
+		"binding": "ASSETS"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "stairway",
+			"database_id": "f8156d94-8c52-4c8d-aa85-45d2b839626e"
+		}
+	],
+	"durable_objects": {
+		"bindings": [
+			{ "name": "SESSION", "class_name": "UserSession" },
+			{ "name": "WORDLE_ENGINE", "class_name": "WordleEngine" },
+			{ "name": "SYNCED_STATE_SERVER", "class_name": "SyncedStateServer" },
+			{ "name": "TIC_TAC_TOE_ENGINE", "class_name": "TicTacToeEngine" },
+			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" },
+			{ "name": "FISH_ENGINE", "class_name": "FishEngine" },
+			{ "name": "CALLBREAK_ENGINE", "class_name": "CallbreakEngine" },
+			{ "name": "KINGDOMINO_ENGINE", "class_name": "KingdominoEngine" }
+		]
+	},
+	"migrations": [
+		{ "tag": "v1", "new_sqlite_classes": [ "UserSession" ] },
+		{ "tag": "v2", "new_sqlite_classes": [ "WordleEngine" ] },
+		{ "tag": "v3", "new_sqlite_classes": [ "SyncedStateServer" ] },
+		{ "tag": "v4", "new_sqlite_classes": [ "TicTacToeEngine" ] },
+		{ "tag": "v5", "new_sqlite_classes": [ "SplendorEngine" ] },
+		{ "tag": "v6", "new_sqlite_classes": [ "FishEngine" ] },
+		{ "tag": "v7", "new_sqlite_classes": [ "CallbreakEngine" ] },
+		{ "tag": "v8", "new_sqlite_classes": [ "KingdominoEngine" ] }
+	]
+}

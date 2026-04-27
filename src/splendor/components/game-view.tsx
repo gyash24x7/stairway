@@ -1,0 +1,81 @@
+"use client";
+
+import { GameInfo } from "@/shared/components/game-info";
+import { Spinner } from "@/shared/primitives/spinner";
+import { cn } from "@/shared/utils/cn";
+import { Board } from "@/splendor/components/board";
+import { useSplendor } from "@/splendor/components/context";
+import { PickTokens } from "@/splendor/components/pick-tokens";
+import { PlayerInfo } from "@/splendor/components/player-info";
+
+export function GameView() {
+	const { shared, player } = useSplendor();
+
+	const isLastRound = shared.status === "IN_PROGRESS" && Object.values( shared.state.playerData )
+		.some( player => player.points >= shared.config.winningPoints );
+
+	return (
+		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-80 lg:mb-0` }>
+			<GameInfo
+				code={ shared.code }
+				name={ "splendor" }
+				completed={ shared.status === "COMPLETED" }
+				additionalInfo={
+					<div className={ "py-2 px-4" }>
+						<p className={ "text-xs md:text-sm" }>WINNING POINTS</p>
+						<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
+							{ shared.config.winningPoints }
+						</h2>
+					</div>
+				}
+			/>
+			{ shared.status === "COMPLETED" && shared.state.winner && (
+				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
+					<p className={ "text-lg font-heading" }>
+						{ shared.state.winner === player.playerId ? "You won!" : "You lost!" }
+					</p>
+				</div>
+			) }
+			<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full justify-items-center" }>
+				<div className={ "w-full max-w-lg md:max-w-xl" }>
+					<Board/>
+				</div>
+				<div className={ "flex flex-col justify-end gap-3 w-full max-w-lg md:max-w-xl" }>
+					{ shared.status === "CREATED" && (
+						<div
+							className={ cn(
+								"p-2 md:p-3 rounded-md w-full bg-background",
+								"flex flex-col gap-2 items-center"
+							) }
+						>
+							<Spinner size={ "xl" }/>
+							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
+								WAITING FOR PLAYERS
+							</p>
+						</div>
+					) }
+					{ shared.context.players.map( p => <PlayerInfo playerId={ p } key={ p }/> ) }
+					{ shared.status === "IN_PROGRESS" && isLastRound && (
+						<div className={ "p-2 md:p-3 border-2 rounded-md w-full bg-surface" }>
+							<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
+								THIS IS THE LAST ROUND!
+							</p>
+						</div>
+					) }
+					<div className={ "hidden lg:block" }>
+						{ shared.status === "IN_PROGRESS" && <PickTokens/> }
+					</div>
+				</div>
+			</div>
+			<div
+				className={ cn(
+					"fixed left-0 right-0 bottom-0 bg-surface",
+					"rounded-t-xl flex flex-col gap-2 p-3 items-center",
+					shared.status === "IN_PROGRESS" && "lg:hidden"
+				) }
+			>
+				{ shared.status === "IN_PROGRESS" && <PickTokens/> }
+			</div>
+		</div>
+	);
+}
