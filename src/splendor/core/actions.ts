@@ -4,7 +4,13 @@ import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
-import { getAuthInfo, requireGame, requireGameByCode, validate } from "@/shared/utils/middlewares";
+import {
+	getAuthInfo,
+	getCompletedGame,
+	requireGame,
+	requireGameByCode,
+	validate
+} from "@/shared/utils/middlewares";
 import { SplendorEngine } from "@/splendor/core/engine";
 import type {
 	PickTokensInput,
@@ -32,6 +38,13 @@ export const getGame = serverQuery( [
 
 		const authInfo = getAuthInfo();
 		const game = await requireGame( SplendorEngine.NAME, input.gameId );
+
+		if ( game.completed ) {
+			const { shared, playerViews } = await getCompletedGame( SplendorEngine.NAME, game.id );
+			logger.debug( "<< getGame() [completed]" );
+			return { shared, player: playerViews[ authInfo.id ] };
+		}
+
 		const stub = getStub( game.id );
 		const { shared, player } = await stub.getPlayerGameInfo( authInfo.id );
 

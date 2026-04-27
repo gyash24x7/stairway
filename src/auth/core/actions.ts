@@ -238,7 +238,7 @@ export const verifyRegistration = serverAction( [
 		await db.delete( webauthnOptions )
 			.where( eq( webauthnOptions.username, data.username ) )
 			.execute();
-	
+
 		logger.info( "Deleted WebAuthn options for user:", data.username );
 
 		await sessionStore.save( requestInfo.response.headers, { authInfo: user } );

@@ -14,6 +14,9 @@
 			"enabled": false
 		}
 	},
+	"triggers": {
+		"crons": [ "0 0 */2 * *" ]
+	},
 	"assets": {
 		"binding": "ASSETS"
 	},

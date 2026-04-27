@@ -1,4 +1,5 @@
 import { AbstractGameEngine } from "@/shared/engine/engine";
+import type { PlayerId } from "@/shared/engine/types";
 import { roundRobin } from "@/shared/engine/utils";
 import { dictionaries } from "@/wordle/core/dictionary";
 import type {
@@ -155,4 +156,29 @@ export class WordleEngine extends AbstractGameEngine<
 			}
 		}
 	} );
+
+	/**
+	 * Get the words of a wordle game after the game is completed.
+	 * @param playerId - Player requesting the words
+	 */
+	public async getWords( playerId: PlayerId ) {
+		this.logger.debug( ">> getWords()" );
+
+		const { state, status, context } = this.getGameData();
+
+		if ( !context.players.includes( playerId ) ) {
+			this.logger.error( "Player not part of game!" );
+			this.logger.debug( "<< getWords()" );
+			return { words: [] };
+		}
+
+		if ( status !== "COMPLETED" ) {
+			this.logger.error( "Game not completed!" );
+			this.logger.debug( "<< getWords()" );
+			return { words: [] };
+		}
+
+		this.logger.debug( "<< getWords()" );
+		return { words: state.words };
+	}
 }
