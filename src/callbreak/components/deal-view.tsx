@@ -28,7 +28,8 @@ export function DealView() {
 							<div
 								key={ playerId }
 								className={ cn(
-									"w-full flex gap-3 p-3 rounded-md items-center bg-background justify-between",
+									"w-full p-2 md:p-4 rounded-md bg-background",
+									"flex gap-3 items-center justify-between",
 									!allPlayersPlayed && currentTurn === playerId && "border-accent border-4",
 									activeTrick?.winner === playerId && "border-green-500 border-4",
 									isRightSide ? "flex-row-reverse" : "flex-row"
@@ -50,7 +51,7 @@ export function DealView() {
 					} ) }
 				</div>
 			</div>
-			<HandView/>
+			{ shared.status !== "COMPLETED" && <HandView/> }
 		</Fragment>
 	);
 }

@@ -31,7 +31,7 @@ export function RPlayerInfo( props: PlayerInfoProps ) {
 	return (
 		<div
 			className={ cn(
-				"flex flex-col gap-2 px-4 py-2 items-center",
+				"flex flex-col gap-2 px-2 md:px-4 py-1 md:py-2 items-center",
 				"flex-1 rounded-md bg-background",
 				props.selected && "bg-accent/20"
 			) }

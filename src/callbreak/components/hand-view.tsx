@@ -45,7 +45,7 @@ export function HandView() {
 					key={ cardId }
 					className={ cn(
 						"cursor-pointer p-1 z-10",
-						cardId === selectedCard && "bg-accent rounded-md"
+						cardId === selectedCard && "bg-accent/20 rounded-md border border-accent"
 					) }
 					onClick={ handleCardClick( cardId ) }
 				>

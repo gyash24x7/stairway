@@ -19,7 +19,7 @@ export function GameView() {
 	const handleAddBots = () => startTransition( () => addBots( { gameId: shared.id } ) );
 
 	return (
-		<div className={ `flex flex-col gap-3 w-full max-w-6xl` }>
+		<div className={ `flex flex-col gap-3 w-full max-w-6xl mb-20` }>
 			<GameInfo
 				code={ shared.code }
 				name={ "callbreak" }
@@ -39,7 +39,7 @@ export function GameView() {
 					</Fragment>
 				}
 			/>
-			<div className={ "flex flex-col gap-3 mb-52" }>
+			<div className={ "flex flex-col gap-3" }>
 				{ shared.state.activeDeal && <DealView/> }
 				{ !shared.state.activeDeal && (
 					<div className={ "grid grid-cols-4 gap-3" }>
