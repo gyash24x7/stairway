@@ -33,8 +33,8 @@ export function WordleCreateGame() {
 					</Button>
 					<div
 						className={ cn(
-							"w-20 h-10 flex items-center justify-center",
-							"border bg-surface text-sm border-inverted-surface"
+							"flex-1 h-8 md:h-10 flex items-center justify-center",
+							"border bg-surface text-sm border-inverted-surface rounded-md"
 						) }
 					>
 						{ wordCount }

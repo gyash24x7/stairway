@@ -37,7 +37,16 @@ export function GameView() {
 				</div>
 			) }
 			<Board/>
-			{ gameInProgress && <Keyboard/> }
+			{ gameInProgress && (
+				<div
+					className={ cn(
+						"fixed bottom-0 bg-surface left-0 right-0",
+						"rounded-t-xl flex gap-3 p-3 items-center"
+					) }
+				>
+					<Keyboard/>
+				</div>
+			) }
 		</div>
 	);
 }

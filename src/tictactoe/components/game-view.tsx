@@ -25,7 +25,7 @@ export function GameView() {
 		<div className={ "flex flex-col gap-3 items-center mb-40 max-w-6xl w-full" }>
 			<GameInfo
 				code={ shared.code }
-				name={ "Tic Tac Toe" }
+				name={ "tic-tac-toe" }
 				completed={ isCompleted }
 			/>
 
