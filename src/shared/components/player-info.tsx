@@ -4,6 +4,7 @@ import { cn } from "@/shared/utils/cn";
 
 export type PlayerInfoProps = {
 	player: BasePlayerInfo;
+	selected?: boolean;
 }
 
 export function RPlayerInfoSmall( props: { player: BasePlayerInfo } ) {
@@ -31,7 +32,8 @@ export function RPlayerInfo( props: PlayerInfoProps ) {
 		<div
 			className={ cn(
 				"flex flex-col gap-2 px-4 py-2 items-center",
-				"flex-1 rounded-md bg-background"
+				"flex-1 rounded-md bg-background",
+				props.selected && "bg-accent/20"
 			) }
 			key={ props.player.id }
 		>

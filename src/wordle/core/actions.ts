@@ -6,12 +6,21 @@ import type { GameId, GameIdInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
 import { getAuthInfo, getCompletedGame, requireGame, validate } from "@/shared/utils/middlewares";
 import { WordleEngine } from "@/wordle/core/engine";
-import type { CreateGameInput, GuessInput } from "@/wordle/core/types";
+import type {
+	CreateGameInput,
+	GuessInput,
+	WordleConfig,
+	WordlePlayerView,
+	WordleSharedView
+} from "@/wordle/core/types";
 import { env } from "cloudflare:workers";
 import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
 
 const logger = createLogger( "Wordle:Actions" );
+
+const getWordleCompletedGame = ( gameId: string ) =>
+	getCompletedGame<WordleSharedView, WordleConfig, WordlePlayerView>( WordleEngine.NAME, gameId );
 
 /**
  * Get a Durable Object stub for a Wordle game engine instance.
@@ -35,7 +44,7 @@ export const getGame = serverQuery( [
 		const game = await requireGame( WordleEngine.NAME, input.gameId );
 
 		if ( game.completed ) {
-			const { shared, playerViews } = await getCompletedGame( WordleEngine.NAME, game.id );
+			const { shared, playerViews } = await getWordleCompletedGame( game.id );
 			logger.debug( "<< getGame() [completed]" );
 			return { shared, player: playerViews[ authInfo.id ] };
 		}

@@ -14,13 +14,13 @@ import { RCard } from "@/shared/components/card";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle
-} from "@/shared/primitives/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
 import { type CardId, getCardDisplayString } from "@/shared/utils/cards";
 import { cn } from "@/shared/utils/cn";
@@ -98,72 +98,74 @@ export function AskCard() {
 	} );
 
 	return (
-		<Dialog open={ open } onOpenChange={ setOpen }>
+		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDialog() : setOpen( true ) }>
 			<Button onClick={ openDialog } className={ "flex-1 max-w-lg" }>ASK CARD</Button>
-			<DialogContent className={ "min-w-xl" }>
-				<DialogHeader>
-					<DialogTitle>
+			<DrawerContent>
+				<DrawerHeader>
+					<DrawerTitle>
 						{ currentStep === 1 && "Select Book to Ask from".toUpperCase() }
 						{ currentStep === 2 && "Select Card to Ask".toUpperCase() }
 						{ currentStep === 3 && "Select Player to Ask from".toUpperCase() }
 						{ currentStep === 4 && confirmAskDialogTitle.toUpperCase() }
-					</DialogTitle>
-					<DialogDescription/>
-				</DialogHeader>
-				{ currentStep === 1 && (
-					<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
-						{ askableBooks.map( ( item ) => (
-							<div
-								key={ item }
-								onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
-								className={ cn(
-									"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-									"flex justify-center bg-background border-inverted-surface",
-									selectedBook === item && "border-accent bg-accent/20"
-								) }
-							>
-								<div className={ "flex gap-2 md:gap-3 items-center" }>
-									<h1 className={ cn( "text-md md:text-lg xl:text-xl font-semibold" ) }>
-										{ getBookDisplayString( item, shared.config.type ) }
-									</h1>
+					</DrawerTitle>
+					<DrawerDescription/>
+				</DrawerHeader>
+				<div className={ "px-4 overflow-y-auto" }>
+					{ currentStep === 1 && (
+						<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
+							{ askableBooks.map( ( item ) => (
+								<div
+									key={ item }
+									onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
+									className={ cn(
+										"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
+										"flex justify-center bg-background border-inverted-surface",
+										selectedBook === item && "border-accent bg-accent/20"
+									) }
+								>
+									<div className={ "flex gap-2 md:gap-3 items-center" }>
+										<h1 className={ cn( "text-md md:text-lg xl:text-xl font-semibold" ) }>
+											{ getBookDisplayString( item, shared.config.type ) }
+										</h1>
+									</div>
 								</div>
-							</div>
-						) ) }
-					</div>
-				) }
-				{ currentStep === 2 && (
-					<div className={ "flex gap-3 flex-wrap justify-center" }>
-						{ getMissingCards( player.hand, selectedBook!, shared.config.type ).map( cardId => (
-							<div
-								key={ cardId }
-								onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
-								className={ cn(
-									"cursor-pointer rounded-md flex justify-center p-1",
-									selectedCard === cardId && "border-2 border-accent bg-accent/20"
-								) }
-							>
-								<RCard cardId={ cardId }/>
-							</div>
-						) ) }
-					</div>
-				) }
-				{ currentStep === 3 && (
-					<div className={ "grid gap-3 grid-cols-3" }>
-						{ opponentsWithCards.map( ( p ) => (
-							<div
-								key={ p.id }
-								onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
-								className={ cn(
-									"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
-									selectedPlayer === p.id && "border-2 border-accent bg-accent/20"
-								) }
-							>
-								<RPlayerInfo player={ p }/>
-							</div>
-						) ) }
-					</div>
-				) }
-				<DialogFooter>
+							) ) }
+						</div>
+					) }
+					{ currentStep === 2 && (
+						<div className={ "flex gap-3 flex-wrap justify-center" }>
+							{ getMissingCards( player.hand, selectedBook!, shared.config.type ).map( cardId => (
+								<div
+									key={ cardId }
+									onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
+									className={ cn(
+										"cursor-pointer rounded-md flex justify-center p-1",
+										selectedCard === cardId && "border-2 border-accent bg-accent/20"
+									) }
+								>
+									<RCard cardId={ cardId }/>
+								</div>
+							) ) }
+						</div>
+					) }
+					{ currentStep === 3 && (
+						<div className={ "grid gap-3 grid-cols-3" }>
+							{ opponentsWithCards.map( ( p ) => (
+								<div
+									key={ p.id }
+									onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
+									className={ cn(
+										"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
+										selectedPlayer === p.id && "border-accent"
+									) }
+								>
+									<RPlayerInfo player={ p } selected={ selectedPlayer === p.id }/>
+								</div>
+							) ) }
+						</div>
+					) }
+				</div>
+				<DrawerFooter>
 					{ currentStep === 1 && (
 						<Button className={ "w-full" } onClick={ goToNextStep } disabled={ !selectedBook }>
 							SELECT BOOK
@@ -193,8 +195,8 @@ export function AskCard() {
 							</Button>
 						</div>
 					) }
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</DrawerFooter>
+			</DrawerContent>
+		</Drawer>
 	);
 }

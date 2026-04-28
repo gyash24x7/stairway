@@ -6,6 +6,9 @@ import type {
 	ClaimBookInput,
 	CreateGameInput,
 	CreateTeamsInput,
+	FishConfig,
+	FishPlayerView,
+	FishSharedView,
 	TransferTurnInput
 } from "@/fish/core/types";
 import { buildConfig } from "@/fish/core/utils";
@@ -26,6 +29,9 @@ import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
 
 const logger = createLogger( "Fish:Actions" );
+
+const getFishCompletedGame = ( gameId: string ) =>
+	getCompletedGame<FishSharedView, FishConfig, FishPlayerView>( FishEngine.NAME, gameId );
 
 /**
  * Get a Durable Object stub for a Fish game engine instance.
@@ -49,7 +55,7 @@ export const getGame = serverQuery( [
 		const game = await requireGame( FishEngine.NAME, input.gameId );
 
 		if ( game.completed ) {
-			const { shared, playerViews } = await getCompletedGame( FishEngine.NAME, game.id );
+			const { shared, playerViews } = await getFishCompletedGame( game.id );
 			logger.debug( "<< getGame() [completed]" );
 			return { shared, player: playerViews[ authInfo.id ] };
 		}

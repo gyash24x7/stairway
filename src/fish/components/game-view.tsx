@@ -32,7 +32,7 @@ export function GameView() {
 		&& lastClaim.playerId === player.playerId;
 
 	return (
-		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-80 lg:mb-0` }>
+		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-20 lg:mb-0` }>
 			<GameInfo
 				code={ shared.code }
 				name={ "fish" }
@@ -102,7 +102,7 @@ export function GameView() {
 			</div>
 			<div
 				className={ cn(
-					"fixed bottom-0 bg-surface",
+					"fixed bottom-0 bg-surface left-0 right-0",
 					"rounded-t-xl flex gap-3 p-3 items-center"
 				) }
 			>

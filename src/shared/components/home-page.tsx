@@ -36,7 +36,7 @@ export function HomePage() {
 					</div>
 					<Logo
 						url={ `/logos/${ game }.svg` }
-						classname={ "w-56 h-56 bg-accent absolute -bottom-6 -left-6 -rotate-6" }
+						classname={ "md:w-56 md:h-56 w-40 h-40 bg-accent absolute -bottom-6 -left-6 -rotate-6" }
 					/>
 					<div className={ "flex justify-end items-end z-10 p-6 mt-auto" }>
 						<a href={ `/${ game }` } rel={ "noopener noreferrer" }>

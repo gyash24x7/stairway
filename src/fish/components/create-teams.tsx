@@ -5,13 +5,13 @@ import { createTeams } from "@/fish/core/actions";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle
-} from "@/shared/primitives/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/primitives/drawer";
 import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
 import { chunk, shuffle } from "@/shared/utils/array";
@@ -23,6 +23,8 @@ export function CreateTeams() {
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
 	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
 	const [ open, setOpen ] = useState( false );
+
+	const teamsNotCreated = Object.keys( teamMemberData ).length === 0;
 
 	const groupPlayers = () => {
 		const teamMembers = chunk(
@@ -39,70 +41,82 @@ export function CreateTeams() {
 		) );
 	};
 
-	const closeDialog = () => setOpen( false );
+	const closeDrawer = () => setOpen( false );
 
 	const [ isPending, startTransition ] = useTransition();
 
-	const handleCreateTeams = () => startTransition( async () => {
-		await createTeams( { gameId: shared.id, teams: teamMemberData } );
-		closeDialog();
-	} );
+	const handleCreateTeams = () => {
+		if ( teamsNotCreated ) {
+			return;
+		}
+
+		return startTransition( async () => {
+			await createTeams( { gameId: shared.id, teams: teamMemberData } );
+			closeDrawer();
+		} );
+	};
 
 	return (
-		<Dialog open={ open } onOpenChange={ setOpen }>
+		<Drawer open={ open } onOpenChange={ setOpen }>
 			<Button onClick={ () => setOpen( true ) }>CREATE TEAMS</Button>
-			<DialogContent className={ "w-full max-w-xl" }>
-				<DialogHeader>
-					<DialogTitle>CREATE TEAMS</DialogTitle>
-					<DialogDescription/>
-				</DialogHeader>
-				<div
-					className={ cn(
-						"grid grid-cols-1 gap-2",
-						shared.config.teamCount === 4 && "grid-cols-2"
-					) }
-				>
-					{ Array( shared.config.teamCount ).fill( null ).map( ( _, idx ) => (
-						<Input
-							key={ idx }
-							type="text"
-							placeholder={ `Enter Team ${ idx + 1 } Name` }
-							value={ teamNames[ idx ] || "" }
-							onChange={ ( e ) => {
-								const newNames = [ ...teamNames ];
-								newNames[ idx ] = e.target.value;
-								setTeamNames( newNames );
-							} }
-						/>
-					) ) }
-				</div>
-				<Button
-					className={ "w-full" }
-					onClick={ groupPlayers }
-					disabled={ teamNames.filter( n => !!n ).length !== shared.config.teamCount }
-				>
-					GROUP PLAYERS
-				</Button>
-				{ Object.keys( teamMemberData ).length === shared.config.teamCount && (
-					<div className={ "flex flex-col gap-2" }>
-						{ Object.keys( teamMemberData ).map( teamName => (
-							<Fragment key={ teamName }>
-								<h2>Team { teamName }</h2>
-								<div className={ "flex gap-2" }>
-									{ teamMemberData[ teamName ].map( player => (
-										<RPlayerInfo player={ shared.players[ player ] } key={ player }/>
-									) ) }
-								</div>
-							</Fragment>
+			<DrawerContent>
+				<DrawerHeader>
+					<DrawerTitle>CREATE TEAMS</DrawerTitle>
+					<DrawerDescription/>
+				</DrawerHeader>
+				<div className={ "px-4 flex flex-col gap-3 overflow-y-auto" }>
+					<div
+						className={ cn(
+							"grid grid-cols-1 gap-2",
+							shared.config.teamCount === 4 && "grid-cols-2"
+						) }
+					>
+						{ Array( shared.config.teamCount ).fill( null ).map( ( _, idx ) => (
+							<Input
+								key={ idx }
+								type="text"
+								placeholder={ `Enter Team ${ idx + 1 } Name` }
+								value={ teamNames[ idx ] || "" }
+								onChange={ ( e ) => {
+									const newNames = [ ...teamNames ];
+									newNames[ idx ] = e.target.value;
+									setTeamNames( newNames );
+								} }
+							/>
 						) ) }
 					</div>
-				) }
-				<DialogFooter>
-					<Button onClick={ handleCreateTeams } disabled={ isPending } className={ "w-full" }>
+					<Button
+						className={ "w-full" }
+						onClick={ groupPlayers }
+						disabled={ teamNames.filter( n => !!n ).length !== shared.config.teamCount }
+					>
+						GROUP PLAYERS
+					</Button>
+					{ Object.keys( teamMemberData ).length === shared.config.teamCount && (
+						<div className={ "flex flex-col gap-2" }>
+							{ Object.keys( teamMemberData ).map( teamName => (
+								<Fragment key={ teamName }>
+									<h2>Team { teamName }</h2>
+									<div className={ "flex gap-2" }>
+										{ teamMemberData[ teamName ].map( player => (
+											<RPlayerInfo player={ shared.players[ player ] } key={ player }/>
+										) ) }
+									</div>
+								</Fragment>
+							) ) }
+						</div>
+					) }
+				</div>
+				<DrawerFooter>
+					<Button
+						onClick={ handleCreateTeams }
+						disabled={ isPending || teamsNotCreated }
+						className={ "w-full" }
+					>
 						{ isPending ? <Spinner/> : "CREATE TEAMS" }
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</DrawerFooter>
+			</DrawerContent>
+		</Drawer>
 	);
 }

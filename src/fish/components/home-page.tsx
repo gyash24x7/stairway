@@ -17,7 +17,7 @@ export function FishHomePage() {
 			<Separator/>
 			{ !!requestInfo.ctx.authInfo
 				? (
-					<div className={ "flex gap-5 justify-self-center w-full" }>
+					<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-5 w-full" }>
 						<CreateGame/>
 						<JoinGame game={ "fish" } joinGame={ joinGame }/>
 					</div>

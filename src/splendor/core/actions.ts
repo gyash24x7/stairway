@@ -16,7 +16,9 @@ import type {
 	PickTokensInput,
 	PurchaseCardInput,
 	ReserveCardInput,
-	SplendorConfig
+	SplendorConfig,
+	SplendorPlayerView,
+	SplendorSharedView
 } from "@/splendor/core/types";
 import { GEMS } from "@/splendor/core/utils";
 import { env } from "cloudflare:workers";
@@ -24,6 +26,12 @@ import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
 
 const logger = createLogger( "Splendor:Actions" );
+
+const getSplendorCompletedGame = ( gameId: string ) =>
+	getCompletedGame<SplendorSharedView, SplendorConfig, SplendorPlayerView>(
+		SplendorEngine.NAME,
+		gameId
+	);
 
 function getStub( gameId: GameId ) {
 	const name = `${ SplendorEngine.NAME }:${ gameId }`;
@@ -40,7 +48,7 @@ export const getGame = serverQuery( [
 		const game = await requireGame( SplendorEngine.NAME, input.gameId );
 
 		if ( game.completed ) {
-			const { shared, playerViews } = await getCompletedGame( SplendorEngine.NAME, game.id );
+			const { shared, playerViews } = await getSplendorCompletedGame( game.id );
 			logger.debug( "<< getGame() [completed]" );
 			return { shared, player: playerViews[ authInfo.id ] };
 		}
