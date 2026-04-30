@@ -1,7 +1,7 @@
 "use client";
 
 import { GameInfo } from "@/shared/components/game-info";
-import { RPlayerInfo } from "@/shared/components/player-info";
+import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Button } from "@/shared/primitives/button";
 import {
 	Drawer,
@@ -52,16 +52,9 @@ export function GameView() {
 				</div>
 			) }
 			{ shared.status !== "IN_PROGRESS" && (
-				<div
-					className={ cn(
-						"grid gap-3 w-full",
-						shared.config.playerCount === 4 ? "grid-cols-4" : "grid-cols-2"
-					) }
-				>
-					{ Object.values( shared.players ).map( p => (
-						<RPlayerInfo player={ p } key={ p.id }/>
-					) ) }
-				</div>
+				<PlayerLobbyGrid
+					players={ shared.context.players.map( id => shared.players[ id ] ) }
+				/>
 			) }
 			{ shared.status === "CREATED" && (
 				<div

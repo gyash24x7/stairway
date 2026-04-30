@@ -23,7 +23,7 @@ export function FishHomePage() {
 					</div>
 				)
 				: (
-					<div className={ "flex gap-5 justify-self-center w-full" }>
+					<div className={ "flex gap-5 w-full" }>
 						<div className={ "text-lg text-center" }>Please log in to play.</div>
 					</div>
 				)

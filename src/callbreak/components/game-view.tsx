@@ -6,7 +6,7 @@ import { DealView } from "@/callbreak/components/deal-view";
 import { addBots } from "@/callbreak/core/actions";
 import { RCardSuit } from "@/shared/components/card";
 import { GameInfo } from "@/shared/components/game-info";
-import { RPlayerInfo } from "@/shared/components/player-info";
+import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
@@ -42,11 +42,9 @@ export function GameView() {
 			<div className={ "flex flex-col gap-3" }>
 				{ shared.state.activeDeal && <DealView/> }
 				{ !shared.state.activeDeal && (
-					<div className={ "grid grid-cols-4 gap-3" }>
-						{ Object.values( shared.players ).map( player => (
-							<RPlayerInfo player={ player } key={ player.id }/>
-						) ) }
-					</div>
+					<PlayerLobbyGrid
+						players={ shared.context.players.map( id => shared.players[ id ] ) }
+					/>
 				) }
 				{ shared.status === "CREATED" && (
 					<div
