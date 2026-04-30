@@ -48,7 +48,7 @@ export function DrawerContent( {
 			<Content
 				data-slot="drawer-content"
 				className={ cn(
-					"group/drawer-content fixed z-50 flex h-auto flex-col bg-background",
+					"group/drawer-content fixed z-50 flex h-auto flex-col items-center bg-background",
 					"text-sm text-foreground data-[vaul-drawer-direction=bottom]:inset-x-0",
 					"data-[vaul-drawer-direction=bottom]:bottom-0",
 					"data-[vaul-drawer-direction=bottom]:mt-24",
@@ -79,11 +79,13 @@ export function DrawerContent( {
 			>
 				<div
 					className={ cn(
-						"mx-auto mt-4 hidden h-1 w-25 shrink-0 rounded-full bg-muted",
+						"mx-auto mt-4 hidden h-1 w-25 shrink-0 rounded-full bg-accent",
 						"group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
 					) }
 				/>
-				{ children }
+				<div className={ "max-w-xl w-full" }>
+					{ children }
+				</div>
 			</Content>
 		</DrawerPortal>
 	);
@@ -119,7 +121,7 @@ export function DrawerTitle( { className, ...props }: ComponentProps<typeof Titl
 		<Title
 			data-slot="drawer-title"
 			className={ cn(
-				"font-heading text-lg text-left px-4 font-medium text-foreground",
+				"font-heading text-lg text-left font-medium text-foreground",
 				className
 			) }
 			{ ...props }
@@ -131,7 +133,7 @@ export function DrawerDescription( { className, ...props }: ComponentProps<typeo
 	return (
 		<Description
 			data-slot="drawer-description"
-			className={ cn( "text-sm text-muted-foreground", className ) }
+			className={ cn( "text-sm text-left text-muted-foreground", className ) }
 			{ ...props }
 		/>
 	);

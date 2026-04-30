@@ -10,7 +10,7 @@ export const Toaster = ( { ...props }: ComponentProps<typeof Sonner> ) => {
 				classNames: {
 					toast: cn(
 						"bg-accent border-2 rounded-lg p-4 flex gap-5 items-center",
-						"shadow-shadow uppercase text-sm text-neutral-dark",
+						"shadow-sm md:shadow-md uppercase text-sm text-neutral-dark",
 						"font-semibold"
 					)
 				}

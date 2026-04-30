@@ -2,19 +2,21 @@
 
 import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
 import {
-	Tooltip,
-	TooltipContent,
-	TooltipPortal,
-	TooltipPositioner,
-	TooltipProvider,
-	TooltipTrigger
-} from "@/shared/primitives/tooltip";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/primitives/drawer";
 import { cn } from "@/shared/utils/cn";
-import { CardActions } from "@/splendor/components/card-actions";
 import { useSplendor } from "@/splendor/components/context";
+import { GameCard } from "@/splendor/components/game-card";
+import { PurchaseCard } from "@/splendor/components/purchase-card";
 import { gemColors, gemLightColors } from "@/splendor/components/utils";
 import type { Gem } from "@/splendor/core/types";
 import { GEMS_WITH_GOLD } from "@/splendor/core/utils";
+import { useState } from "react";
 
 function PlayerTokenCount( props: { gem: Gem; playerId: string } ) {
 	const { shared } = useSplendor();
@@ -33,38 +35,86 @@ function PlayerTokenCount( props: { gem: Gem; playerId: string } ) {
 }
 
 function ReservedCards( props: { playerId: string } ) {
-	const { shared } = useSplendor();
-	const player = shared.state.playerData[ props.playerId ];
+	const { shared, player } = useSplendor();
+	const playerData = shared.state.playerData[ props.playerId ];
+	const playerName = shared.players[ props.playerId ].name.toUpperCase();
+	const reserved = playerData?.reserved ?? [];
+
+	const [ open, setOpen ] = useState( false );
+	const [ selectedCardId, setSelectedCardId ] = useState<string | null>( null );
+
+	const selectedCard = reserved.find( c => c.id === selectedCardId );
+
+	const isOwnCards = props.playerId === player.playerId;
+	const isMyTurn = shared.status === "IN_PROGRESS"
+		&& shared.context.currentPlayer === player.playerId;
+
+	const canSelect = isOwnCards && isMyTurn;
+
+	const discounts = shared.state.playerData[ player.playerId ].cards;
+	const tokens = shared.state.playerData[ player.playerId ].tokens;
+
+	const handleOpenChange = ( isOpen: boolean ) => {
+		setOpen( isOpen );
+		if ( !isOpen ) {
+			setSelectedCardId( null );
+		}
+	};
 
 	return (
-		<TooltipProvider delay={ 100 } closeDelay={ 2000 }>
-			<Tooltip>
-				<TooltipTrigger>
-					<div className={ cn(
-						"w-8 h-12 p-1",
-						"flex rounded-md items-center justify-center",
-						"border-3 border-inverted-surface",
-						"text-2xl text-neutral-dark",
-						gemLightColors[ "gold" ]
-					) }>
-						<h2>{ player?.reserved?.length ?? 0 }</h2>
-					</div>
-				</TooltipTrigger>
-				<TooltipPortal>
-					<TooltipPositioner sideOffset={ 10 }>
-						{ player?.reserved && player.reserved.length > 0 && (
-							<TooltipContent>
-								<div className={ "flex gap-3" }>
-									{ player.reserved.map( card => (
-										<CardActions card={ card } key={ card.id }/>
-									) ) }
-								</div>
-							</TooltipContent>
-						) }
-					</TooltipPositioner>
-				</TooltipPortal>
-			</Tooltip>
-		</TooltipProvider>
+		<Drawer open={ open } onOpenChange={ handleOpenChange }>
+			<div
+				className={ cn(
+					"w-8 h-12 p-1 cursor-pointer",
+					"flex rounded-md items-center justify-center",
+					"border-2 border-inverted-surface",
+					"text-2xl text-neutral-dark",
+					gemLightColors[ "gold" ]
+				) }
+				onClick={ () => reserved.length > 0 && setOpen( true ) }
+			>
+				<h2>{ reserved.length }</h2>
+			</div>
+			<DrawerContent>
+				<DrawerHeader>
+					<DrawerTitle>
+						{ isOwnCards && <span>MY&nbsp;</span> }
+						<span>RESERVED CARDS</span>
+						{ !isOwnCards && <span>&nbsp;FOR { playerName }</span> }
+					</DrawerTitle>
+					<DrawerDescription>
+						{ canSelect && <span>Select Card to Purchase</span> }
+					</DrawerDescription>
+				</DrawerHeader>
+				<div className={ "flex gap-3 flex-wrap justify-center px-4" }>
+					{ reserved.map( card => (
+						<div
+							key={ card.id }
+							className={ cn(
+								"rounded-md p-1 transition",
+								selectedCardId === card.id && "ring-2 ring-accent"
+							) }
+						>
+							<GameCard
+								card={ card }
+								disabled={ !canSelect }
+								onCardClick={ () => setSelectedCardId( card.id ) }
+							/>
+						</div>
+					) ) }
+				</div>
+				<DrawerFooter>
+					{ canSelect && selectedCard && (
+						<PurchaseCard
+							gameId={ shared.id }
+							card={ selectedCard }
+							tokens={ tokens }
+							discounts={ discounts }
+						/>
+					) }
+				</DrawerFooter>
+			</DrawerContent>
+		</Drawer>
 	);
 }
 
@@ -75,7 +125,7 @@ function PurchasedCards( props: { gem: Exclude<Gem, "gold">; playerId: string; }
 		<div className={ cn(
 			"w-8 h-12 p-1",
 			"flex rounded-md items-center justify-center",
-			"border-3 border-inverted-surface",
+			"border-2 border-inverted-surface",
 			"text-2xl text-neutral-dark",
 			gemLightColors[ props.gem ]
 		) }>
@@ -98,26 +148,21 @@ function PlayerGemInfo( props: { playerId: string } ) {
 	);
 }
 
-export function PlayerInfo( { playerId }: { playerId: string } ) {
+export function PlayerInfo( { playerId, bg }: { playerId: string; bg?: boolean; } ) {
 	const { shared } = useSplendor();
 	const baseInfo = shared.players[ playerId ];
 	const gameInfo = shared.state.playerData[ playerId ];
-	const isCurrentTurn = shared.status ===
-		"IN_PROGRESS" &&
-		shared.context.currentPlayer ===
-		playerId;
+	const isCurrentTurn = shared.status === "IN_PROGRESS"
+		&& shared.context.currentPlayer === playerId;
+
 	return (
 		<div className={ cn(
 			"bg-background rounded-md overflow-hidden",
-			isCurrentTurn && "ring-2 ring-accent"
+			isCurrentTurn && "ring-2 ring-accent",
+			bg && "bg-accent/20"
 		) }>
 			<div className={ "flex gap-2 justify-between" }>
-				<div
-					className={ cn(
-						"flex sm:flex-col gap-2 items-center justify-center",
-						"p-2 w-1/3 min-w-30 max-w-40"
-					) }
-				>
+				<div className={ "flex sm:flex-col gap-2 items-center p-2 min-w-30" }>
 					<Avatar className={ "rounded-full w-8 h-8 md:w-10 md:h-10 xl:h-12 xl:w-12" }>
 						<AvatarImage src={ baseInfo.avatar } alt={ "" } className={ "bg-accent" }/>
 					</Avatar>

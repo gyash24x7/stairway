@@ -23,15 +23,10 @@ export function Navbar( { authInfo, ...props }: NavbarProps ) {
 		<div
 			className={ cn(
 				"border-b-2 border-inverted-surface fixed z-1 left-0 right-0",
-				"bg-background px-2 md:px-4 py-1 md:py-2"
+				"bg-background px-2 md:px-4 py-1 md:py-2 flex justify-center"
 			) }
 		>
-			<div
-				className={ cn(
-					"flex justify-between items-center w-full",
-					"max-w-4xl justify-self-center"
-				) }
-			>
+			<div className={ "flex justify-between items-center w-full max-w-4xl" }>
 				<div className={ "flex gap-2 items-center" }>
 					<Logo url={ "/stairway.svg" } classname={ "w-12 h-12 bg-accent" }/>
 					<h2 className={ "text-4xl font-title text-accent hidden md:block" }>

@@ -59,24 +59,22 @@ export function TransferTurn() {
 					<DrawerTitle>Transfer Turn</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "px-4 overflow-y-auto" }>
-					<div className={ "grid gap-3 grid-cols-3" }>
-						{ teammatesWithCards.map( ( pid ) => (
-							<div
-								key={ pid }
-								onClick={ handlePlayerSelect( selectedPlayer === pid ? undefined : pid ) }
-								className={ cn(
-									"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
-									selectedPlayer === pid && "border-accent"
-								) }
-							>
-								<RPlayerInfo
-									player={ shared.players[ pid ] }
-									selected={ selectedPlayer === pid }
-								/>
-							</div>
-						) ) }
-					</div>
+				<div className={ "px-4 grid gap-3 grid-cols-3" }>
+					{ teammatesWithCards.map( ( pid ) => (
+						<div
+							key={ pid }
+							onClick={ handlePlayerSelect( selectedPlayer === pid ? undefined : pid ) }
+							className={ cn(
+								"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
+								selectedPlayer === pid && "border-accent"
+							) }
+						>
+							<RPlayerInfo
+								player={ shared.players[ pid ] }
+								selected={ selectedPlayer === pid }
+							/>
+						</div>
+					) ) }
 				</div>
 				<DrawerFooter>
 					<Button onClick={ handleClick } disabled={ isPending } className={ "w-full" }>
