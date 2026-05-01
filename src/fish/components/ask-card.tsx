@@ -21,9 +21,9 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@/shared/primitives/drawer";
+import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
 import { type CardId, getCardDisplayString } from "@/shared/utils/cards";
-import { cn } from "@/shared/utils/cn";
 import { useState, useTransition } from "react";
 import { useStep } from "usehooks-ts";
 
@@ -53,29 +53,23 @@ export function AskCard() {
 
 	const openDialog = () => setOpen( true );
 
-	const handleBookSelect = ( value?: Book ) => () => {
-		if ( !value ) {
-			setSelectedBook( undefined );
-		} else {
-			setSelectedBook( value );
+	const handleBookSelect = ( value: Book | undefined ) => {
+		setSelectedBook( value );
+		if ( value !== undefined ) {
 			goToNextStep();
 		}
 	};
 
-	const handleCardSelect = ( cardId?: CardId ) => () => {
-		if ( !cardId ) {
-			setSelectedCard( undefined );
-		} else {
-			setSelectedCard( cardId );
+	const handleCardSelect = ( cardId: CardId | undefined ) => {
+		setSelectedCard( cardId );
+		if ( cardId !== undefined ) {
 			goToNextStep();
 		}
 	};
 
-	const handlePlayerSelect = ( player?: string ) => () => {
-		if ( !player ) {
-			setSelectedPlayer( undefined );
-		} else {
-			setSelectedPlayer( player );
+	const handlePlayerSelect = ( pid: string | undefined ) => {
+		setSelectedPlayer( pid );
+		if ( pid !== undefined ) {
 			goToNextStep();
 		}
 	};
@@ -112,57 +106,35 @@ export function AskCard() {
 				</DrawerHeader>
 				<div className={ "px-4 overflow-y-auto" }>
 					{ currentStep === 1 && (
-						<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
-							{ askableBooks.map( ( item ) => (
-								<div
-									key={ item }
-									onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
-									className={ cn(
-										"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-										"flex justify-center bg-background border-inverted-surface",
-										selectedBook === item && "border-accent bg-accent/20"
-									) }
-								>
-									<div className={ "flex gap-2 md:gap-3 items-center" }>
-										<h1 className={ cn( "text-md md:text-lg xl:text-xl font-semibold" ) }>
-											{ getBookDisplayString( item, shared.config.type ) }
-										</h1>
-									</div>
-								</div>
-							) ) }
-						</div>
+						<RadioSelect
+							options={ askableBooks }
+							value={ selectedBook }
+							onChange={ handleBookSelect }
+							className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }
+							renderOption={ ( book ) => (
+								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
+									{ getBookDisplayString( book, shared.config.type ) }
+								</h1>
+							) }
+						/>
 					) }
 					{ currentStep === 2 && (
-						<div className={ "flex gap-3 flex-wrap justify-center" }>
-							{ getMissingCards( player.hand, selectedBook!, shared.config.type ).map( cardId => (
-								<div
-									key={ cardId }
-									onClick={ handleCardSelect( selectedCard === cardId ? undefined : cardId ) }
-									className={ cn(
-										"cursor-pointer rounded-md flex justify-center p-1",
-										selectedCard === cardId && "border-2 border-accent bg-accent/20"
-									) }
-								>
-									<RCard cardId={ cardId }/>
-								</div>
-							) ) }
-						</div>
+						<RadioSelect
+							options={ getMissingCards( player.hand, selectedBook!, shared.config.type ) }
+							value={ selectedCard }
+							onChange={ handleCardSelect }
+							className={ "justify-center" }
+							renderOption={ ( cardId ) => <RCard cardId={ cardId }/> }
+						/>
 					) }
 					{ currentStep === 3 && (
-						<div className={ "grid gap-3 grid-cols-3" }>
-							{ opponentsWithCards.map( ( p ) => (
-								<div
-									key={ p.id }
-									onClick={ handlePlayerSelect( selectedPlayer === p.id ? undefined : p.id ) }
-									className={ cn(
-										"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
-										selectedPlayer === p.id && "border-accent"
-									) }
-								>
-									<RPlayerInfo player={ p } selected={ selectedPlayer === p.id }/>
-								</div>
-							) ) }
-						</div>
+						<RadioSelect
+							options={ opponentsWithCards.map( p => p.id ) }
+							value={ selectedPlayer }
+							onChange={ handlePlayerSelect }
+							className={ "grid gap-3 grid-cols-3" }
+							renderOption={ pid => <RPlayerInfo player={ shared.players[ pid ] }/> }
+						/>
 					) }
 				</div>
 				<DrawerFooter>

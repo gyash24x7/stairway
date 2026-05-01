@@ -11,7 +11,7 @@ import {
 	getTeammates
 } from "@/fish/core/utils";
 import { RCard } from "@/shared/components/card";
-import { RPlayerInfo } from "@/shared/components/player-info";
+import { RPlayerInfoStrip } from "@/shared/components/player-info";
 import type { PlayerId } from "@/shared/engine/types";
 import { Button } from "@/shared/primitives/button";
 import {
@@ -22,9 +22,9 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@/shared/primitives/drawer";
+import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
 import { type CardId } from "@/shared/utils/cards";
-import { cn } from "@/shared/utils/cn";
 import { ArrowBigRightDashIcon } from "lucide-react";
 import { useState, useTransition } from "react";
 import { useStep } from "usehooks-ts";
@@ -59,12 +59,11 @@ export function ClaimBook() {
 		reset();
 	};
 
-	const handleBookSelect = ( value?: string ) => () => {
-		if ( !value ) {
+	const handleBookSelect = ( book: Book | undefined ) => {
+		if ( !book ) {
 			setSelectedBook( undefined );
 			setClaim( new Map() );
 		} else {
-			const book = value as Book;
 			setSelectedBook( book );
 			const newClaim = new Map<CardId, PlayerId>();
 			getCardsOfBook( book, shared.config.type, player.hand ).forEach( cardId => {
@@ -75,13 +74,13 @@ export function ClaimBook() {
 		}
 	};
 
-	const handleAssignCard = ( cardId: CardId, playerId: PlayerId ) => () => {
+	const handleAssignCard = ( cardId: CardId ) => ( pid: PlayerId | undefined ) => {
 		setClaim( prev => {
 			const next = new Map( prev );
-			if ( next.get( cardId ) === playerId ) {
+			if ( pid === undefined ) {
 				next.delete( cardId );
 			} else {
-				next.set( cardId, playerId );
+				next.set( cardId, pid );
 			}
 			return next;
 		} );
@@ -122,63 +121,51 @@ export function ClaimBook() {
 				</DrawerHeader>
 				<div className={ "px-4 overflow-y-auto" }>
 					{ currentStep === 1 && (
-						<div className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }>
-							{ Array.from( getBooksInHand( player.hand, shared.config.type ) ).map( ( item ) => (
-								<div
-									key={ item }
-									onClick={ handleBookSelect( selectedBook === item ? undefined : item ) }
-									className={ cn(
-										"cursor-pointer rounded-md border-2 px-2 md:px-4 py-1 md:py-2",
-										"flex justify-center bg-background",
-										selectedBook === item && "border-accent bg-accent/20"
-									) }
-								>
-									<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
-										{ getBookDisplayString( item, shared.config.type ) }
-									</h1>
-								</div>
-							) ) }
-						</div>
+						<RadioSelect
+							options={ Array.from( getBooksInHand( player.hand, shared.config.type ) ) }
+							value={ selectedBook }
+							onChange={ handleBookSelect }
+							className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }
+							renderOption={ ( book ) => (
+								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
+									{ getBookDisplayString( book, shared.config.type ) }
+								</h1>
+							) }
+						/>
 					) }
 					{ currentStep === 2 && (
-						<div className={ "flex flex-col gap-3" }>
+						<div className={ "grid grid-cols-2 gap-2 flex-wrap" }>
 							{ missingCards.map( cardId => (
-								<div key={ cardId } className={ "flex items-center gap-2" }>
-									<RCard cardId={ cardId }/>
-									<ArrowBigRightDashIcon className={ "w-10 h-10 text-accent" }/>
-									<div className={ "flex gap-2 flex-wrap" }>
-										{ teamMates.map( pid => (
-											<div
-												key={ pid }
-												onClick={ handleAssignCard( cardId, pid ) }
-												className={ cn(
-													"cursor-pointer border-2 rounded-md bg-background",
-													claim.get( cardId ) === pid && "border-accent"
-												) }
-											>
-												<RPlayerInfo
-													player={ shared.players[ pid ] }
-													selected={ claim.get( cardId ) === pid }
-												/>
-											</div>
-										) ) }
-									</div>
+								<div key={ cardId } className={ "flex items-center gap-1" }>
+									<RCard cardId={ cardId } small/>
+									<ArrowBigRightDashIcon className={ "w-6 h-6 md:w-8 md:h-8 text-accent" }/>
+									<RadioSelect
+										options={ teamMates }
+										value={ claim.get( cardId ) }
+										onChange={ handleAssignCard( cardId ) }
+										className={ "flex flex-col gap-2 flex-wrap child-b-0" }
+										renderOption={ pid => <RPlayerInfoStrip player={ shared.players[ pid ] }/> }
+									/>
 								</div>
 							) ) }
 							{ missingCards.length === 0 && (
-								<p className={ "text-sm text-center opacity-60" }>
-									YOU HOLD ALL CARDS IN THIS BOOK
-								</p>
+								<div className={ "col-span-2" }>
+									<p className={ "text-sm text-center opacity-60" }>
+										YOU HOLD ALL CARDS IN THIS BOOK
+									</p>
+								</div>
 							) }
 						</div>
 					) }
 					{ currentStep === 3 && (
-						<div className={ "grid grid-cols-2 gap-2" }>
+						<div className={ "grid grid-cols-3 gap-2" }>
 							{ [ ...claim.entries() ].map( ( [ cardId, playerId ] ) => (
-								<div key={ cardId } className={ "flex items-center rounded-md px-3 py-2 gap-2" }>
-									<RCard cardId={ cardId }/>
-									<ArrowBigRightDashIcon className={ "w-10 h-10 text-accent" }/>
-									<RPlayerInfo player={ shared.players[ playerId ] }/>
+								<div
+									key={ cardId }
+									className={ "flex flex-col items-center rounded-md gap-1 md:gap-2" }
+								>
+									<RPlayerInfoStrip player={ shared.players[ playerId ] } noAvatar/>
+									<RCard cardId={ cardId } small/>
 								</div>
 							) ) }
 						</div>

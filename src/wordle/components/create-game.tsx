@@ -2,6 +2,7 @@
 
 import { CreateGame } from "@/shared/components/create-game";
 import { Button } from "@/shared/primitives/button";
+import { RadioSelect } from "@/shared/primitives/radio-select";
 import { cn } from "@/shared/utils/cn";
 import { createGame } from "@/wordle/core/actions";
 import type { WordLength } from "@/wordle/core/types";
@@ -44,21 +45,12 @@ export function WordleCreateGame() {
 					</Button>
 				</div>
 				<h2>Select Word Length</h2>
-				<div className={ "flex gap-2" }>
-					{ ( [ 4, 5, 6 ] as const ).map( len => (
-						<div
-							key={ len }
-							onClick={ () => setWordLength( len ) }
-							className={ cn(
-								len === wordLength ? "bg-background" : "bg-surface",
-								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
-								"flex justify-center hover:bg-background border-inverted-surface"
-							) }
-						>
-							{ len }
-						</div>
-					) ) }
-				</div>
+				<RadioSelect
+					options={ [ 4, 5, 6 ] as const }
+					value={ wordLength }
+					onChange={ v => v !== undefined && setWordLength( v ) }
+					allowDeselect={ false }
+				/>
 			</div>
 		</CreateGame>
 	);

@@ -9,6 +9,7 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@/shared/primitives/drawer";
+import { RadioSelect } from "@/shared/primitives/radio-select";
 import { cn } from "@/shared/utils/cn";
 import { useSplendor } from "@/splendor/components/context";
 import { GameCard } from "@/splendor/components/game-card";
@@ -41,7 +42,7 @@ function ReservedCards( props: { playerId: string } ) {
 	const reserved = playerData?.reserved ?? [];
 
 	const [ open, setOpen ] = useState( false );
-	const [ selectedCardId, setSelectedCardId ] = useState<string | null>( null );
+	const [ selectedCardId, setSelectedCardId ] = useState<string>();
 
 	const selectedCard = reserved.find( c => c.id === selectedCardId );
 
@@ -57,7 +58,7 @@ function ReservedCards( props: { playerId: string } ) {
 	const handleOpenChange = ( isOpen: boolean ) => {
 		setOpen( isOpen );
 		if ( !isOpen ) {
-			setSelectedCardId( null );
+			setSelectedCardId( undefined );
 		}
 	};
 
@@ -86,22 +87,18 @@ function ReservedCards( props: { playerId: string } ) {
 						{ canSelect && <span>Select Card to Purchase</span> }
 					</DrawerDescription>
 				</DrawerHeader>
-				<div className={ "flex gap-3 flex-wrap justify-center px-4" }>
-					{ reserved.map( card => (
-						<div
-							key={ card.id }
-							className={ cn(
-								"rounded-md p-1 transition",
-								selectedCardId === card.id && "ring-2 ring-accent"
-							) }
-						>
-							<GameCard
-								card={ card }
-								disabled={ !canSelect }
-								onCardClick={ () => setSelectedCardId( card.id ) }
-							/>
-						</div>
-					) ) }
+				<div className={ "px-4" }>
+					<RadioSelect
+						options={ reserved.map( c => c.id ) }
+						value={ selectedCardId }
+						onChange={ setSelectedCardId }
+						isDisabled={ () => !canSelect }
+						className={ "justify-center" }
+						renderOption={ ( cardId ) => {
+							const card = reserved.find( c => c.id === cardId )!;
+							return <GameCard card={ card }/>;
+						} }
+					/>
 				</div>
 				<DrawerFooter>
 					{ canSelect && selectedCard && (

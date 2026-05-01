@@ -36,7 +36,7 @@ export function DealView() {
 								) }
 							>
 								<RPlayerInfo player={ shared.players[ playerId ] } key={ playerId }/>
-								{ cardId && <RCard cardId={ cardId } focused/> }
+								{ cardId && <RCard cardId={ cardId }/> }
 								{ !cardId && !!activeTrick && (
 									<div
 										className={ cn(

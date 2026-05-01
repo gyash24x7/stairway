@@ -73,7 +73,7 @@ export function ActivityFeed() {
 						<DrawerHeader>
 							<DrawerTitle>GAME ACTIVITY</DrawerTitle>
 						</DrawerHeader>
-						<div className={ "px-4 flex flex-col gap-1.5 overflow-y-auto" }>
+						<div className={ "px-4 flex flex-col gap-1.5 overflow-y-scroll max-h-110" }>
 							{ dialogEntries.map( entry => <FeedItem key={ entry.timestamp } entry={ entry }/> ) }
 						</div>
 						<DrawerFooter/>

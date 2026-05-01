@@ -1,13 +1,13 @@
 "use client";
 
 import { CreateGame } from "@/shared/components/create-game";
-import { cn } from "@/shared/utils/cn";
+import { RadioSelect } from "@/shared/primitives/radio-select";
 import { createGame } from "@/splendor/core/actions";
 import { useState } from "react";
 
 export function SplendorCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();
-	const [ winningPoints, setWinningPoints ] = useState( 15 );
+	const [ winningPoints, setWinningPoints ] = useState<10 | 15 | 20>( 15 );
 
 	const createSplendorGame = async () => {
 		if ( !!playerCount && !!winningPoints ) {
@@ -15,10 +15,6 @@ export function SplendorCreateGame() {
 		}
 		return "";
 	};
-
-	const handlePlayerCountClick = ( item: 2 | 3 | 4 ) => () => setPlayerCount(
-		playerCount === item ? undefined : item
-	);
 
 	return (
 		<CreateGame
@@ -30,40 +26,21 @@ export function SplendorCreateGame() {
 				<label className={ "text-sm text-muted-foreground" }>
 					Player Count
 				</label>
-				<div className={ "flex gap-3 flex-wrap" }>
-					{ ( [ 2, 3, 4 ] as const ).map( ( item ) => (
-						<div
-							key={ item }
-							onClick={ handlePlayerCountClick( item ) }
-							className={ cn(
-								playerCount === item ? "bg-background" : "bg-surface",
-								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
-								"hover:bg-background border-inverted-surface flex justify-center"
-							) }
-						>
-							{ item }
-						</div>
-					) ) }
-				</div>
+				<RadioSelect
+					options={ [ 2, 3, 4 ] as const }
+					value={ playerCount }
+					onChange={ setPlayerCount }
+				/>
 
 				<label className={ "text-sm text-muted-foreground" }>
 					Winning Points
 				</label>
-				<div className={ "flex gap-3 flex-wrap" }>
-					{ [ 10, 15, 20 ].map( ( points ) => (
-						<div
-							key={ points }
-							onClick={ () => setWinningPoints( points ) }
-							className={ cn(
-								winningPoints === points ? "bg-background" : "bg-surface",
-								"cursor-pointer flex-1 rounded-md border-2 px-4 py-2",
-								"hover:bg-background border-inverted-surface flex justify-center"
-							) }
-						>
-							{ points }
-						</div>
-					) ) }
-				</div>
+				<RadioSelect
+					options={ [ 10, 15, 20 ] as const }
+					value={ winningPoints }
+					onChange={ v => v !== undefined && setWinningPoints( v ) }
+					allowDeselect={ false }
+				/>
 			</div>
 		</CreateGame>
 	);

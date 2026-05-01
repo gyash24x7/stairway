@@ -13,8 +13,8 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@/shared/primitives/drawer";
+import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
 import { useState, useTransition } from "react";
 
 export function TransferTurn() {
@@ -30,14 +30,6 @@ export function TransferTurn() {
 	const closeDrawer = () => {
 		setOpen( false );
 		setSelectedPlayer( undefined );
-	};
-
-	const handlePlayerSelect = ( playerId?: string ) => () => {
-		if ( !playerId ) {
-			setSelectedPlayer( undefined );
-		} else {
-			setSelectedPlayer( playerId );
-		}
 	};
 
 	const [ isPending, startTransition ] = useTransition();
@@ -59,22 +51,19 @@ export function TransferTurn() {
 					<DrawerTitle>Transfer Turn</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "px-4 grid gap-3 grid-cols-3" }>
-					{ teammatesWithCards.map( ( pid ) => (
-						<div
-							key={ pid }
-							onClick={ handlePlayerSelect( selectedPlayer === pid ? undefined : pid ) }
-							className={ cn(
-								"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
-								selectedPlayer === pid && "border-accent"
-							) }
-						>
+				<div className={ "px-4" }>
+					<RadioSelect
+						options={ teammatesWithCards }
+						value={ selectedPlayer }
+						onChange={ setSelectedPlayer }
+						className={ "grid gap-3 grid-cols-3" }
+						renderOption={ ( pid, isSelected ) => (
 							<RPlayerInfo
 								player={ shared.players[ pid ] }
-								selected={ selectedPlayer === pid }
+								selected={ isSelected }
 							/>
-						</div>
-					) ) }
+						) }
+					/>
 				</div>
 				<DrawerFooter>
 					<Button onClick={ handleClick } disabled={ isPending } className={ "w-full" }>

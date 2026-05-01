@@ -211,3 +211,11 @@
 @view-transition {
 	navigation: auto;
 }
+
+.child-p-0 > div {
+	padding: 0;
+}
+
+.child-b-0 > div {
+	border-width: 0;
+}

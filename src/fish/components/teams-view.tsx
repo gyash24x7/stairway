@@ -1,6 +1,6 @@
 import { useFish } from "@/fish/components/context";
+import { RPlayerInfoStrip } from "@/shared/components/player-info";
 import type { PlayerId } from "@/shared/engine/types";
-import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
 import { cn } from "@/shared/utils/cn";
 
 function PlayerWithCardCount( props: { playerId: PlayerId } ) {
@@ -9,8 +9,6 @@ function PlayerWithCardCount( props: { playerId: PlayerId } ) {
 	const cardCount = shared.state.cardCounts[ player.id ];
 	const isActive = player.id === shared.context.currentPlayer;
 
-	const firstName = player.name.split( " " )[ 0 ];
-
 	return (
 		<div
 			className={ cn(
@@ -18,12 +16,7 @@ function PlayerWithCardCount( props: { playerId: PlayerId } ) {
 				isActive && "bg-accent/20"
 			) }
 		>
-			<Avatar className={ "rounded-full w-6 h-6 md:w-8 md:h-8" }>
-				<AvatarImage src={ player.avatar } alt={ "" } className={ "bg-surface" }/>
-			</Avatar>
-			<div className={ cn( "text-xs md:text-sm font-semibold" ) }>
-				{ firstName.toUpperCase() }
-			</div>
+			<RPlayerInfoStrip player={ player }/>
 			<span
 				className={ cn(
 					"text-xs md:text-sm font-bold px-2 py-0.5 rounded-full",
