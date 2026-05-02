@@ -1,3 +1,4 @@
+import { CrownIndicator } from "@/kingdomino/components/board";
 import type { Domino, DominoId, Terrain } from "@/kingdomino/core/types";
 import { cn } from "@/shared/utils/cn";
 
@@ -26,9 +27,9 @@ function RSmallTerrain( props: { terrain: Terrain; crowns: number } ) {
 				TERRAIN_CLASS[ props.terrain ]
 			) }
 		>
-			<p className={ "self-center text-sm font-semibold" }>
-				{ props.crowns > 0 ? `C${ props.crowns }` : "" }
-			</p>
+			<span className={ "self-center" }>
+				<CrownIndicator count={ props.crowns } size={ 12 }/>
+			</span>
 		</div>
 	);
 }
@@ -45,8 +46,8 @@ function RTerrain( props: { terrain: Terrain; crowns: number } ) {
 			<span className={ "leading-tight" }>
 				{ props.terrain.toUpperCase() }
 			</span>
-			<span className={ "self-end text-xs" }>
-				{ props.crowns > 0 ? `C${ props.crowns }` : "" }
+			<span className={ "self-end" }>
+				<CrownIndicator count={ props.crowns } size={ 14 }/>
 			</span>
 		</div>
 	);

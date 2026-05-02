@@ -1,9 +1,18 @@
 "use client";
 
-import type { Board, BoardSize, Castle, Coord, DominoId, Rotation } from "@/kingdomino/core/types";
+import type {
+	Board,
+	BoardSize,
+	Castle,
+	Coord,
+	DominoId,
+	Rotation,
+	Tile
+} from "@/kingdomino/core/types";
 import {
 	canDominoBePlaced,
 	coordKey,
+	DOMINO_DECK,
 	getCandidateCells,
 	getExpandedBoardBounds,
 	getPotentialCells,
@@ -11,7 +20,21 @@ import {
 } from "@/kingdomino/core/utils";
 import { Popover, PopoverContent } from "@/shared/primitives/popover";
 import { cn } from "@/shared/utils/cn";
+import { CrownIcon } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";
+
+export function CrownIndicator( { count, size = 12 }: { count: number; size?: number } ) {
+	if ( count <= 0 ) {
+		return null;
+	}
+	return (
+		<span className={ "inline-flex items-center gap-px" }>
+			{ Array.from( { length: count } ).map( ( _, i ) => (
+				<CrownIcon key={ i } size={ size } className={ "shrink-0" }/>
+			) ) }
+		</span>
+	);
+}
 
 const ALL_ROTATIONS: Rotation[] = [ 0, 90, 180, 270 ];
 
@@ -78,15 +101,13 @@ function SmallFilledCell( { cell, x, y }: { cell: CellData; x: number; y: number
 	return (
 		<div
 			className={ cn(
-				"w-6 h-6 rounded border border-inverted-surface p-1 overflow-hidden",
-				"font-semibold flex flex-col justify-between transition",
+				"w-6 h-6 rounded border border-inverted-surface overflow-hidden p-0.5",
+				"font-semibold flex flex-wrap justify-between items-center transition",
 				cell.className
 			) }
 			title={ `(${ x }, ${ y })` }
 		>
-			<span className={ "self-end text-[8px]" }>
-				{ cell.crowns > 0 ? `C${ cell.crowns }` : "" }
-			</span>
+			<CrownIndicator count={ cell.crowns } size={ 6 }/>
 		</div>
 	);
 }
@@ -102,8 +123,8 @@ function FilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } )
 			title={ `(${ x }, ${ y })` }
 		>
 			<span className={ "leading-tight" }>{ cell.label }</span>
-			<span className={ "self-end text-xs" }>
-				{ cell.crowns > 0 ? `C${ cell.crowns }` : "" }
+			<span className={ "self-end" }>
+				<CrownIndicator count={ cell.crowns } size={ 14 }/>
 			</span>
 		</div>
 	);
@@ -113,26 +134,35 @@ function PossibleCell( props: {
 	coord: Coord;
 	isClickable: boolean;
 	isPreview: boolean;
+	previewTile?: Tile;
 	onClick?: ( coord: Coord ) => void;
 	onHover?: ( coord: Coord | null ) => void;
 } ) {
+	const previewClass = props.previewTile
+		? TERRAIN_CLASS[ props.previewTile.terrain ] ?? "bg-neutral-200 text-neutral-900"
+		: null;
+
 	return (
 		<div
 			className={ cn(
-				"w-14 h-14 rounded border-2 border-dashed transition",
-				"flex items-center justify-center text-lg shrink-0",
-				props.isPreview
-					? "border-green-400 bg-green-50/60 text-green-500"
-					: props.isClickable
-						? "border-blue-400 bg-blue-50/40 text-blue-500 cursor-pointer"
-						: "border-yellow-400 bg-yellow-50/40 text-yellow-500"
+				"w-14 h-14 rounded border-2 border-dashed transition shrink-0",
+				"flex items-center justify-center text-lg font-semibold",
+				previewClass
+					? cn( "opacity-60 border-green-400", previewClass )
+					: props.isPreview
+						? "border-green-400 bg-green-50/60 text-green-500"
+						: props.isClickable
+							? "border-blue-400 bg-blue-50/40 text-blue-500 cursor-pointer"
+							: "border-yellow-400 bg-yellow-50/40 text-yellow-500"
 			) }
 			title={ `(${ props.coord.x }, ${ props.coord.y })` }
 			onClick={ props.isClickable ? () => props.onClick?.( props.coord ) : undefined }
 			onMouseEnter={ props.isClickable ? () => props.onHover?.( props.coord ) : undefined }
 			onMouseLeave={ props.isClickable ? () => props.onHover?.( null ) : undefined }
 		>
-			+
+			{ props.previewTile
+				? <CrownIndicator count={ props.previewTile.crowns } size={ 14 }/>
+				: "+" }
 		</div>
 	);
 }
@@ -202,6 +232,16 @@ export function RBoard( props: RBoardProps ) {
 	const previewKeys = new Set( previewCoords?.map( c => coordKey( c ) ) ?? [] );
 	const tentativeKeys = new Set( props.tentative?.coords.map( c => coordKey( c ) ) ?? [] );
 
+	const activeDomino = props.activeDominoId ? DOMINO_DECK[ props.activeDominoId - 1 ] : null;
+	const previewTiles: Record<string, Tile> = {};
+	if ( activeDomino ) {
+		const pair = props.tentative?.coords ?? previewCoords;
+		if ( pair && pair.length === 2 ) {
+			previewTiles[ coordKey( pair[ 0 ] ) ] = activeDomino.left;
+			previewTiles[ coordKey( pair[ 1 ] ) ] = activeDomino.right;
+		}
+	}
+
 	// Cells valid at any rotation are clickable; rotation is chosen later in the popover
 	const validCellKeys = props.isActive && props.activeDominoId
 		? new Set( possibleCells
@@ -236,6 +276,7 @@ export function RBoard( props: RBoardProps ) {
 									coord={ data.coord }
 									isClickable={ isPlacement && data.isValidPlacement }
 									isPreview={ previewKeys.has( data.key ) || tentativeKeys.has( data.key ) }
+									previewTile={ previewTiles[ data.key ] }
 									onClick={ props.onCellClick }
 									onHover={ setHoveredCoord }
 								/>
