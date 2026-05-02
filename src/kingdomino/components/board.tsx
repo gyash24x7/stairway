@@ -1,3 +1,5 @@
+"use client";
+
 import type { Board, BoardSize, Castle, Coord, DominoId, Rotation } from "@/kingdomino/core/types";
 import {
 	canDominoBePlaced,
@@ -7,8 +9,11 @@ import {
 	getPotentialCells,
 	getRowsAndCols
 } from "@/kingdomino/core/utils";
+import { Popover, PopoverContent } from "@/shared/primitives/popover";
 import { cn } from "@/shared/utils/cn";
-import { useState } from "react";
+import { Fragment, type ReactNode, useState } from "react";
+
+const ALL_ROTATIONS: Rotation[] = [ 0, 90, 180, 270 ];
 
 const TERRAIN_CLASS: Record<string, string> = {
 	desert: "bg-amber-200 text-amber-900",
@@ -165,34 +170,45 @@ function getCell( coord: Coord, board: Board, validCellKeys: Set<string> | null 
 	};
 }
 
+export type Tentative = {
+	coords: Coord[];
+	anchor: Coord;
+	toolbar: ReactNode;
+	onClose: () => void;
+};
+
 type RBoardProps = {
 	board: Board;
 	boardSize: BoardSize;
 	isActive?: boolean;
 	activeDominoId?: DominoId | null;
-	rotation?: Rotation;
 	onCellClick?: ( coord: Coord ) => void;
 	getPreviewCoords?: ( coord: Coord ) => Coord[] | null;
+	tentative?: Tentative;
 };
 
 export function RBoard( props: RBoardProps ) {
 	const bounds = getExpandedBoardBounds( props.board );
 	const possibleCells = getPotentialCells( props.board );
 	const [ hoveredCoord, setHoveredCoord ] = useState<Coord | null>( null );
+	const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>( null );
 
-	const previewCoords = hoveredCoord && props.getPreviewCoords
+	const showHoverPreview = !props.tentative;
+
+	const previewCoords = showHoverPreview && hoveredCoord && props.getPreviewCoords
 		? props.getPreviewCoords( hoveredCoord )
 		: null;
 
 	const previewKeys = new Set( previewCoords?.map( c => coordKey( c ) ) ?? [] );
+	const tentativeKeys = new Set( props.tentative?.coords.map( c => coordKey( c ) ) ?? [] );
 
-	// Cells valid for current domino + rotation (clickable)
+	// Cells valid at any rotation are clickable; rotation is chosen later in the popover
 	const validCellKeys = props.isActive && props.activeDominoId
 		? new Set( possibleCells
-			.filter( coord => canDominoBePlaced(
+			.filter( coord => ALL_ROTATIONS.some( rotation => canDominoBePlaced(
 				props.board,
-				{ dominoId: props.activeDominoId!, coord, rotation: props.rotation! }
-			) )
+				{ dominoId: props.activeDominoId!, coord, rotation }
+			) ) )
 			.map( c => coordKey( c ) ) )
 		: null;
 
@@ -205,27 +221,59 @@ export function RBoard( props: RBoardProps ) {
 			{ rows.map( y => (
 				<div className={ "flex gap-1" } key={ y }>
 					{ cols.map( x => {
-						const { cell, key, isPossible, isValidPlacement, coord } =
-							getCell( { x, y }, props.board, validCellKeys );
-						if ( cell ) {
-							return <FilledCell cell={ cell } x={ x } y={ y } key={ key }/>;
+						const data = getCell( { x, y }, props.board, validCellKeys );
+						const isAnchor = !!props.tentative
+							&& props.tentative.anchor.x === x
+							&& props.tentative.anchor.y === y;
+
+						if ( data.cell ) {
+							return <FilledCell cell={ data.cell } x={ x } y={ y } key={ data.key }/>;
 						}
-						if ( isPossible ) {
-							return (
+
+						if ( data.isPossible ) {
+							const possibleCell = (
 								<PossibleCell
-									key={ key }
-									coord={ coord }
-									isClickable={ isPlacement && isValidPlacement }
-									isPreview={ previewKeys.has( key ) }
+									coord={ data.coord }
+									isClickable={ isPlacement && data.isValidPlacement }
+									isPreview={ previewKeys.has( data.key ) || tentativeKeys.has( data.key ) }
 									onClick={ props.onCellClick }
 									onHover={ setHoveredCoord }
 								/>
 							);
+
+							if ( isAnchor ) {
+								return (
+									<div ref={ setAnchorEl } key={ data.key }>
+										{ possibleCell }
+									</div>
+								);
+							}
+
+							return <Fragment key={ data.key }>{ possibleCell }</Fragment>;
 						}
-						return <EmptyCell coord={ coord } isPlacement={ isPlacement } key={ key }/>;
+						return <EmptyCell coord={ data.coord } isPlacement={ isPlacement } key={ data.key }/>;
 					} ) }
 				</div>
 			) ) }
+			{ props.tentative && anchorEl && (
+				<Popover
+					open
+					onOpenChange={ open => {
+						if ( !open ) {
+							props.tentative!.onClose();
+						}
+					} }
+				>
+					<PopoverContent
+						anchor={ anchorEl }
+						side={ "bottom" }
+						sideOffset={ 8 }
+						className={ "w-auto" }
+					>
+						{ props.tentative.toolbar }
+					</PopoverContent>
+				</Popover>
+			) }
 		</div>
 	);
 }

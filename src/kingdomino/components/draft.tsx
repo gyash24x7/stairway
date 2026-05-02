@@ -15,7 +15,8 @@ export function RDraft( props: RDraftProps ) {
 		<div
 			className={ cn(
 				"p-3 rounded-md bg-background flex-1 justify-items-center",
-				"grid grid-cols-2 items-center gap-2 justify-center col-span-2"
+				"grid grid-cols-2 lg:grid-cols-4 col-span-2",
+				"items-center gap-2 justify-center"
 			) }
 		>
 			{ props.draft.toSorted( ( a, b ) => a.domino.id - b.domino.id ).map( e => {

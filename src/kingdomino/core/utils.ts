@@ -304,6 +304,19 @@ export function canDominoBePlaced( board: Board, placement: Placement ) {
 	return isAdjacencyValid( board, [ p1, p2 ], placement.dominoId );
 }
 
+export const ALL_ROTATIONS: Rotation[] = [ 0, 90, 180, 270 ];
+
+/**
+ * Returns the rotations under which the given domino can legally be
+ * placed at the supplied coordinate.
+ */
+export function getValidRotations( board: Board, dominoId: DominoId, coord: Coord ) {
+	return ALL_ROTATIONS.filter( rotation => canDominoBePlaced(
+		board,
+		{ dominoId, coord, rotation }
+	) );
+}
+
 /**
  * Get a list of candidate cells for placing a new domino.
  * These are empty cells that are adjacent to existing tiles.
