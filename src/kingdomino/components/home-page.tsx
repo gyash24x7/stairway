@@ -17,7 +17,7 @@ export function KingdominoHomePage() {
 			<Separator/>
 			{ !!requestInfo.ctx.authInfo
 				? (
-					<div className={ "flex gap-5 w-full" }>
+					<div className={ "grid grid-cols-1 md:grid-cols-2 gap-5 w-full" }>
 						<CreateGame/>
 						<JoinGame game={ "kingdomino" } joinGame={ joinGame }/>
 					</div>

@@ -37,7 +37,8 @@ function RTerrain( props: { terrain: Terrain; crowns: number } ) {
 	return (
 		<div
 			className={ cn(
-				"w-14 h-14 p-1 text-[10px] font-semibold flex flex-col justify-between",
+				"w-10 md:w-14 h-10 md:h-14 p-1 text-[8px] md:text-xs",
+				"font-semibold flex flex-col justify-between",
 				TERRAIN_CLASS[ props.terrain ]
 			) }
 		>

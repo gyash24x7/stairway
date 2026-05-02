@@ -57,12 +57,7 @@ export function TransferTurn() {
 						value={ selectedPlayer }
 						onChange={ setSelectedPlayer }
 						className={ "grid gap-3 grid-cols-3" }
-						renderOption={ ( pid, isSelected ) => (
-							<RPlayerInfo
-								player={ shared.players[ pid ] }
-								selected={ isSelected }
-							/>
-						) }
+						renderOption={ pid => <RPlayerInfo player={ shared.players[ pid ] }/> }
 					/>
 				</div>
 				<DrawerFooter>

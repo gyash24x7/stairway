@@ -91,7 +91,7 @@ function FilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } )
 		<div
 			className={ cn(
 				"w-14 h-14 rounded border border-inverted-surface p-1 text-[10px] overflow-hidden",
-				"font-semibold flex flex-col justify-between transition",
+				"font-semibold flex flex-col justify-between transition shrink-0",
 				cell.className
 			) }
 			title={ `(${ x }, ${ y })` }
@@ -115,7 +115,7 @@ function PossibleCell( props: {
 		<div
 			className={ cn(
 				"w-14 h-14 rounded border-2 border-dashed transition",
-				"flex items-center justify-center text-lg",
+				"flex items-center justify-center text-lg shrink-0",
 				props.isPreview
 					? "border-green-400 bg-green-50/60 text-green-500"
 					: props.isClickable
@@ -145,12 +145,24 @@ function EmptyCell( props: { coord: Coord; isPlacement: boolean } ) {
 	return (
 		<div
 			className={ cn(
-				"w-14 h-14 rounded border border-dashed border-inverted-surface transition",
+				"w-14 h-14 rounded border border-dashed border-inverted-surface transition shrink-0",
 				props.isPlacement && "border-blue-200"
 			) }
 			title={ `(${ props.coord.x }, ${ props.coord.y })` }
 		/>
 	);
+}
+
+function getCell( coord: Coord, board: Board, validCellKeys: Set<string> | null ) {
+	const possibleCells = getPotentialCells( board );
+	const key = coordKey( coord );
+	return {
+		cell: getCellData( board, coord.x, coord.y ),
+		key,
+		isPossible: possibleCells.some( c => c.x === coord.x && c.y === coord.y ),
+		isValidPlacement: validCellKeys ? validCellKeys.has( key ) : false,
+		coord
+	};
 }
 
 type RBoardProps = {
@@ -186,37 +198,34 @@ export function RBoard( props: RBoardProps ) {
 
 	const { rows, cols } = getRowsAndCols( bounds, possibleCells );
 
-	const cells = rows.flatMap( y => cols.map( x => {
-		const key = coordKey( { x, y } );
-		return {
-			cell: getCellData( props.board, x, y ),
-			key,
-			isPossible: possibleCells.some( c => c.x === x && c.y === y ),
-			isValidPlacement: validCellKeys ? validCellKeys.has( key ) : false,
-			coord: { x, y }
-		};
-	} ) );
-
 	const isPlacement = !!props.isActive;
 
 	return (
-		<div
-			className={ "inline-grid gap-1 w-fit" }
-			style={ { gridTemplateColumns: `repeat(${ cols.length }, minmax(0, 1fr))` } }
-		>
-			{ cells.map( ( { cell, key, isPossible, isValidPlacement, coord } ) => !!cell
-				? <FilledCell cell={ cell } x={ coord.x } y={ coord.y } key={ key }/>
-				: isPossible
-					? <PossibleCell
-						key={ key }
-						coord={ coord }
-						isClickable={ isPlacement && isValidPlacement }
-						isPreview={ previewKeys.has( key ) }
-						onClick={ props.onCellClick }
-						onHover={ setHoveredCoord }
-					/>
-					: <EmptyCell coord={ coord } isPlacement={ isPlacement } key={ key }/>
-			) }
+		<div className={ "flex flex-col gap-1" }>
+			{ rows.map( y => (
+				<div className={ "flex gap-1" } key={ y }>
+					{ cols.map( x => {
+						const { cell, key, isPossible, isValidPlacement, coord } =
+							getCell( { x, y }, props.board, validCellKeys );
+						if ( cell ) {
+							return <FilledCell cell={ cell } x={ x } y={ y } key={ key }/>;
+						}
+						if ( isPossible ) {
+							return (
+								<PossibleCell
+									key={ key }
+									coord={ coord }
+									isClickable={ isPlacement && isValidPlacement }
+									isPreview={ previewKeys.has( key ) }
+									onClick={ props.onCellClick }
+									onHover={ setHoveredCoord }
+								/>
+							);
+						}
+						return <EmptyCell coord={ coord } isPlacement={ isPlacement } key={ key }/>;
+					} ) }
+				</div>
+			) ) }
 		</div>
 	);
 }

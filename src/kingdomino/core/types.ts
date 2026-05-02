@@ -4,6 +4,7 @@
 
 import type {
 	BaseGameConfig,
+	BasePlayerInfo,
 	BasePlayerView,
 	GameId,
 	PlayerGameData,
@@ -114,6 +115,8 @@ export type PlayerInfo = {
 	queue: DominoId[];
 	score: ScoreBreakdown;
 };
+
+export type KingdominoPlayerInfo = BasePlayerInfo & PlayerInfo;
 
 /** Server-side Kingdomino game state including deck, draft, and all player data. */
 export type KingdominoData = {

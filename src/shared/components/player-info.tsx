@@ -4,6 +4,7 @@ import { cn } from "@/shared/utils/cn";
 
 export type PlayerInfoProps = {
 	player: BasePlayerInfo;
+	noBg?: boolean;
 }
 
 export function RPlayerInfoSmall( props: { player: BasePlayerInfo } ) {
@@ -48,8 +49,9 @@ export function RPlayerInfo( props: PlayerInfoProps ) {
 	return (
 		<div
 			className={ cn(
-				"flex flex-col gap-2 flex-1 items-center",
-				"px-2 md:px-4 py-1 md:py-2 rounded-md"
+				"flex flex-col gap-2 flex-1 items-center h-full justify-center",
+				"px-2 md:px-4 py-1 md:py-2 rounded-md bg-background",
+				props.noBg && "bg-transparent"
 			) }
 			key={ props.player.id }
 		>

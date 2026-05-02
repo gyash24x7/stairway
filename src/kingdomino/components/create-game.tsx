@@ -31,6 +31,10 @@ export function KingdominoCreateGame() {
 					options={ [ 2, 3, 4 ] as const }
 					value={ playerCount }
 					onChange={ setPlayerCount }
+					isDisabled={ count => boardSize === 7
+						? count !== 2
+						: boardSize === 5 ? count === 2 : false
+					}
 				/>
 
 				<label className={ "text-sm text-muted-foreground" }>
@@ -40,6 +44,10 @@ export function KingdominoCreateGame() {
 					options={ [ 5, 7 ] as const }
 					value={ boardSize }
 					onChange={ setBoardSize }
+					isDisabled={ size => playerCount === 2
+						? size !== 7
+						: !!playerCount ? size !== 5 : false
+					}
 				/>
 			</div>
 		</CreateGame>

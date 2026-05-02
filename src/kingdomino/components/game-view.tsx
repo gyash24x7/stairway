@@ -2,14 +2,12 @@
 
 import { RBoard } from "@/kingdomino/components/board";
 import { useKingdomino } from "@/kingdomino/components/context";
-import { RDomino } from "@/kingdomino/components/domino";
 import { RDraft } from "@/kingdomino/components/draft";
-import { ROpponent } from "@/kingdomino/components/opponent";
+import { PlayerBoards } from "@/kingdomino/components/player-boards";
 import { discardDomino, placeDomino, selectDomino } from "@/kingdomino/core/actions";
-import type { Coord, DominoId, Rotation } from "@/kingdomino/core/types";
+import type { Coord, DominoId, KingdominoPlayerInfo, Rotation } from "@/kingdomino/core/types";
 import {
 	canDominoBePlaced,
-	DOMINO_DECK,
 	getPlacementCoordinates,
 	getValidPlacements
 } from "@/kingdomino/core/utils";
@@ -20,6 +18,19 @@ import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
 import { RotateCcwIcon, RotateCwIcon } from "lucide-react";
 import { Fragment, useCallback, useState, useTransition } from "react";
+
+function PlayerScore( props: { player: KingdominoPlayerInfo } ) {
+	return (
+		<div className={ "flex flex-1 gap-2 items-center bg-background rounded-md" }>
+			<RPlayerInfo player={ props.player }/>
+			<div className={ "h-full rounded-r-md flex items-center justify-center flex-1" }>
+				<h2 className={ cn( "text-2xl md:text-4xl font-heading text-center" ) }>
+					{ props.player.score.points ?? 0 }
+				</h2>
+			</div>
+		</div>
+	);
+}
 
 export function GameView() {
 	const { shared, player } = useKingdomino();
@@ -52,11 +63,6 @@ export function GameView() {
 		return startTransition( async () => {
 			await selectDomino( { gameId: shared.id, dominoId } );
 		} );
-	};
-
-	const handleQueueDominoClick = ( dominoId: DominoId ) => {
-		setSelectedDominoId( dominoId );
-		setRotation( 0 );
 	};
 
 	const handleRotateCw = useCallback( () => {
@@ -163,40 +169,38 @@ export function GameView() {
 				</Fragment>
 			) }
 			{ !isLobby && (
-				<div className={ "grid grid-cols-8 gap-2 justify-between mb-52" }>
-					<div className={ "col-span-3 flex flex-1 flex-col gap-2" }>
-						<div className={ "flex gap-2" }>
-							<RPlayerInfo player={ shared.players[ player.playerId ] }/>
-							<div className={ "p-4 bg-background rounded-md" }>
-								<p className={ "text-xs md:text-sm" }>POINTS</p>
-								<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
-									{ myPlayerInfo.score.points ?? 0 }
-								</h2>
-							</div>
-						</div>
-						{ shared.state.draft.length > 0 && (
-							<RDraft
-								draft={ shared.state.draft }
-								active={ canSelect }
-								players={ shared.players }
-								onSelect={ handleDominoSelect }
-							/>
+				<div className={ "grid grid-cols-2 gap-2 justify-between mb-52" }>
+					<PlayerScore player={ myPlayerInfo }/>
+					{ shared.context.players.filter( pid => pid !== myPlayerInfo.id ).map( pid => (
+						<PlayerScore
+							key={ pid }
+							player={ {
+								...shared.players[ pid ],
+								...shared.state.playerData[ pid ]
+							} }
+						/>
+					) ) }
+					<div
+						className={ cn(
+							"col-span-2 min-w-0 flex flex-col gap-2",
+							"bg-background p-2 items-center rounded-md"
 						) }
-						{ shared.context.players.filter( pid => pid !== myPlayerInfo.id )
-							.map( pid => <ROpponent playerId={ pid } key={ pid }/> ) }
-					</div>
-					<div className={ "col-span-5 flex-1 flex flex-col gap-2" }>
+					>
 						{ shared.status === "IN_PROGRESS" && (
-							<div className={ "p-2 bg-background rounded-md flex flex-col gap-2 items-center" }>
-								<RBoard
-									board={ myPlayerInfo.board }
-									boardSize={ shared.config.boardSize }
-									isActive={ canPlace }
-									onCellClick={ canPlace ? handleCellClick : undefined }
-									activeDominoId={ activeDomino }
-									rotation={ rotation }
-									getPreviewCoords={ canPlace ? getPreviewCoords : undefined }
-								/>
+							<Fragment>
+								<div className={ "w-full overflow-x-auto" }>
+									<div className={ "w-fit mx-auto" }>
+										<RBoard
+											board={ myPlayerInfo.board }
+											boardSize={ shared.config.boardSize }
+											isActive={ canPlace }
+											onCellClick={ canPlace ? handleCellClick : undefined }
+											activeDominoId={ activeDomino }
+											rotation={ rotation }
+											getPreviewCoords={ canPlace ? getPreviewCoords : undefined }
+										/>
+									</div>
+								</div>
 								{ canPlace && (
 									<div className={ "flex gap-2" }>
 										<Button size={ "icon" } onClick={ handleRotateCcw }>
@@ -212,29 +216,20 @@ export function GameView() {
 										) }
 									</div>
 								) }
-							</div>
+							</Fragment>
 						) }
-						<div className={ "p-2 w-full rounded-md bg-accent text-center" }>
-							<span className={ "text-2xl font-heading" }>{ getStatusMsg() }</span>
-						</div>
-						{ canPlace && myPlayerInfo.queue.length > 0 && (
-							<div
-								className={ cn(
-									"p-2 bg-background rounded-md w-full",
-									"flex gap-2 justify-around items-center"
-								) }
-							>
-								{ myPlayerInfo.queue.toSorted( ( a, b ) => a - b ).map( ( dominoId ) => (
-									<RDomino
-										key={ dominoId }
-										domino={ DOMINO_DECK[ dominoId - 1 ] }
-										enabled={ true }
-										isSelected={ activeDomino === dominoId }
-										onClick={ handleQueueDominoClick }
-									/>
-								) ) }
-							</div>
-						) }
+					</div>
+					<div className={ "col-span-2 p-2 w-full rounded-md bg-accent text-center" }>
+						<span className={ "text-2xl font-heading" }>{ getStatusMsg() }</span>
+					</div>
+					<RDraft
+						draft={ shared.state.draft }
+						players={ shared.players }
+						active={ canSelect }
+						onSelect={ handleDominoSelect }
+					/>
+					<div className={ "col-span-2" }>
+						<PlayerBoards/>
 					</div>
 				</div>
 			) }
