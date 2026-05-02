@@ -1,6 +1,6 @@
 "use client";
 
-import { RBoard, RSmallBoard } from "@/kingdomino/components/board";
+import { RBoard } from "@/kingdomino/components/board";
 import { useKingdomino } from "@/kingdomino/components/context";
 import { RDomino } from "@/kingdomino/components/domino";
 import { RDraft } from "@/kingdomino/components/draft";
@@ -108,8 +108,17 @@ export function GameView() {
 					</div>
 				</Fragment>
 			) : (
-				<div className={ "grid grid-cols-2 gap-2 justify-between mb-52" }>
-					<PlayerScore player={ myPlayerInfo }/>
+				<div
+					className={ cn(
+						"grid grid-cols-2 gap-2 justify-between mb-52",
+						shared.status === "COMPLETED" && "grid-cols-1 md:grid-cols-2"
+					) }
+				>
+					<PlayerScore
+						player={ myPlayerInfo }
+						showBoard={ shared.status === "COMPLETED" }
+						isWinner={ shared.state.winner === myPlayerInfo.id }
+					/>
 					{ shared.context.players.filter( pid => pid !== myPlayerInfo.id ).map( pid => (
 						<PlayerScore
 							key={ pid }
@@ -117,6 +126,8 @@ export function GameView() {
 								...shared.players[ pid ],
 								...shared.state.playerData[ pid ]
 							} }
+							showBoard={ shared.status === "COMPLETED" }
+							isWinner={ shared.state.winner === pid }
 						/>
 					) ) }
 					{ shared.status === "IN_PROGRESS" && (
@@ -154,28 +165,15 @@ export function GameView() {
 							) }
 						</div>
 					) }
-					<div className={ "col-span-2 p-2 w-full rounded-md bg-accent text-center" }>
+					<div
+						className={ cn(
+							"col-span-2 p-2 w-full rounded-md bg-accent text-center",
+							shared.status === "COMPLETED" && "col-span-1 md:col-span-2"
+						) }
+					>
 						<span className={ "text-2xl font-heading" }>{ getStatusMsg() }</span>
 					</div>
-					{ shared.status === "COMPLETED" ? (
-						<div
-							className={ cn(
-								"col-span-2 grid gap-3 p-2 rounded-md bg-background",
-								"grid-cols-1 sm:grid-cols-2"
-							) }
-						>
-							{ shared.context.players.map( pid => (
-								<div key={ pid } className={ "flex flex-col gap-2 items-center" }>
-									<h2 className={ "font-heading text-lg" }>
-										{ shared.players[ pid ].name.toUpperCase() }
-										{ " — " }
-										{ shared.state.playerData[ pid ].score.points } PTS
-									</h2>
-									<RSmallBoard board={ shared.state.playerData[ pid ].board }/>
-								</div>
-							) ) }
-						</div>
-					) : (
+					{ shared.status !== "COMPLETED" && (
 						<Fragment>
 							<RDraft
 								draft={ shared.state.draft }

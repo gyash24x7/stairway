@@ -452,21 +452,22 @@ export function getBoardBounds( board: Board ) {
 }
 
 /**
- * Get the expanded bounding box of the current tile placements on the board.
- * This function takes the exact bounds of the placed tiles and expands them by a fixed margin,
- * which can be useful for rendering a larger area of the board to accommodate
- * potential placements that are just outside the current tile area.
+ * Get the expanded bounding box of the current tile placements on the board,
+ * clamped so the rendered grid never extends beyond what a placement could
+ * actually reach within the board's `size` window. Once the current span
+ * already fills `size` in an axis, expansion in that axis collapses to zero.
  *
  * @param board - The current state of the board, including existing placements and tiles.
  * @return The expanded minimum and maximum x and y coordinates of the placed tiles on the board.
  */
 export function getExpandedBoardBounds( board: Board ) {
 	const bounds = getBoardBounds( board );
+	const max = board.size - 1;
 	return {
-		minX: bounds.minX - 2,
-		maxX: bounds.maxX + 2,
-		minY: bounds.minY - 2,
-		maxY: bounds.maxY + 2
+		minX: Math.max( bounds.minX - 2, bounds.maxX - max ),
+		maxX: Math.min( bounds.maxX + 2, bounds.minX + max ),
+		minY: Math.max( bounds.minY - 2, bounds.maxY - max ),
+		maxY: Math.min( bounds.maxY + 2, bounds.minY + max )
 	};
 }
 
