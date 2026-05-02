@@ -1,6 +1,6 @@
 "use client";
 
-import { RBoard } from "@/kingdomino/components/board";
+import { RBoard, RSmallBoard } from "@/kingdomino/components/board";
 import { useKingdomino } from "@/kingdomino/components/context";
 import { RDomino } from "@/kingdomino/components/domino";
 import { RDraft } from "@/kingdomino/components/draft";
@@ -32,7 +32,9 @@ export function GameView() {
 	const [ selectedDominoId, setSelectedDominoId ] = useState<DominoId | null>( null );
 
 	const canSelect = isMyTurn && shared.context.phase === "SELECT" && !isSelectPending;
-	const canPlace = isMyTurn && shared.context.phase === "PLACE";
+	const canPlace = shared.status === "IN_PROGRESS"
+		&& shared.context.phase === "PLACE"
+		&& myPlayerInfo.queue.length > 0;
 	const activeDomino = selectedDominoId
 		?? ( canPlace ? myPlayerInfo.queue.toSorted( ( a, b ) => a - b )[ 0 ] : null );
 
@@ -63,10 +65,15 @@ export function GameView() {
 				return shared.state.winner
 					? `WINNER: ${ shared.players[ shared.state.winner ].name }`
 					: `CHECKING WINNER`;
-			case "IN_PROGRESS":
-				return shared.context.phase === "SELECT"
-					? "SELECTION IN PROGRESS"
-					: "PLACEMENT IN PROGRESS";
+			case "IN_PROGRESS": {
+				if ( shared.context.phase === "SELECT" ) {
+					const currentName = shared.players[ shared.context.currentPlayer ]?.name;
+					return isMyTurn
+						? "YOUR TURN TO PICK"
+						: `${ currentName?.toUpperCase() ?? "OPPONENT" } IS PICKING`;
+				}
+				return "PLACEMENT IN PROGRESS";
+			}
 		}
 	};
 
@@ -112,55 +119,75 @@ export function GameView() {
 							} }
 						/>
 					) ) }
-					<div
-						className={ cn(
-							"col-span-2 min-w-0 flex flex-col gap-2",
-							"bg-background p-2 items-center rounded-md"
-						) }
-					>
-						{ shared.status === "IN_PROGRESS" && (
-							<Fragment>
-								<div className={ "w-full overflow-x-auto" }>
-									<div className={ "w-fit mx-auto" }>
-										<RBoard
-											board={ myPlayerInfo.board }
-											boardSize={ shared.config.boardSize }
-											isActive={ canPlace }
-											onCellClick={ canPlace ? placement.handleCellClick : undefined }
-											activeDominoId={ activeDomino }
-											getPreviewCoords={ canPlace ? placement.getPreviewCoords : undefined }
-											tentative={ placement.tentativeProp }
-										/>
-									</div>
+					{ shared.status === "IN_PROGRESS" && (
+						<div
+							className={ cn(
+								"col-span-2 min-w-0 flex flex-col gap-2",
+								"bg-background p-2 items-center rounded-md"
+							) }
+						>
+							<div className={ "w-full overflow-x-auto" }>
+								<div className={ "w-fit mx-auto" }>
+									<RBoard
+										board={ myPlayerInfo.board }
+										boardSize={ shared.config.boardSize }
+										isActive={ canPlace }
+										onCellClick={ canPlace ? placement.handleCellClick : undefined }
+										activeDominoId={ activeDomino }
+										getPreviewCoords={ canPlace ? placement.getPreviewCoords : undefined }
+										tentative={ placement.tentativeProp }
+									/>
 								</div>
-								{ canPlace && activeDomino && (
-									<div className={ "flex gap-2 items-center" }>
-										<RDomino domino={ DOMINO_DECK[ activeDomino - 1 ] }/>
-										{ placement.canDiscard && (
-											<Button
-												onClick={ placement.handleDiscard }
-												disabled={ placement.isPending }
-											>
-												Discard
-											</Button>
-										) }
-									</div>
-								) }
-							</Fragment>
-						) }
-					</div>
+							</div>
+							{ canPlace && activeDomino && (
+								<div className={ "flex gap-2 items-center" }>
+									<RDomino domino={ DOMINO_DECK[ activeDomino - 1 ] }/>
+									{ placement.canDiscard && (
+										<Button
+											onClick={ placement.handleDiscard }
+											disabled={ placement.isPending }
+										>
+											Discard
+										</Button>
+									) }
+								</div>
+							) }
+						</div>
+					) }
 					<div className={ "col-span-2 p-2 w-full rounded-md bg-accent text-center" }>
 						<span className={ "text-2xl font-heading" }>{ getStatusMsg() }</span>
 					</div>
-					<RDraft
-						draft={ shared.state.draft }
-						players={ shared.players }
-						active={ canSelect }
-						onSelect={ handleDominoSelect }
-					/>
-					<div className={ "col-span-2" }>
-						<PlayerBoards/>
-					</div>
+					{ shared.status === "COMPLETED" ? (
+						<div
+							className={ cn(
+								"col-span-2 grid gap-3 p-2 rounded-md bg-background",
+								"grid-cols-1 sm:grid-cols-2"
+							) }
+						>
+							{ shared.context.players.map( pid => (
+								<div key={ pid } className={ "flex flex-col gap-2 items-center" }>
+									<h2 className={ "font-heading text-lg" }>
+										{ shared.players[ pid ].name.toUpperCase() }
+										{ " — " }
+										{ shared.state.playerData[ pid ].score.points } PTS
+									</h2>
+									<RSmallBoard board={ shared.state.playerData[ pid ].board }/>
+								</div>
+							) ) }
+						</div>
+					) : (
+						<Fragment>
+							<RDraft
+								draft={ shared.state.draft }
+								players={ shared.players }
+								active={ canSelect }
+								onSelect={ handleDominoSelect }
+							/>
+							<div className={ "col-span-2" }>
+								<PlayerBoards/>
+							</div>
+						</Fragment>
+					) }
 				</div>
 			) }
 		</div>

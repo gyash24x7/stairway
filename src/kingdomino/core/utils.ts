@@ -734,17 +734,16 @@ export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string )
 
 /**
  * Determine the player selection order for the next round based on the current draft.
- * Players who selected lower-numbered dominoes go first. Deduplicates for 2-player mode.
+ * Each selected draft entry contributes one slot, ordered by ascending domino id —
+ * so a 2-player draft produces 4 slots (2 per player).
  *
  * @param draft - The current draft entries with selections.
  * @returns An ordered array of player IDs for the next round's selection order.
  */
 export function getSelectionOrderFromDraft( draft: DraftEntry[] ): PlayerId[] {
-	// Order determined by domino ID — whoever picked the lowest domino goes first
 	return [ ...draft ]
 		.filter( e => !!e.selectedBy )
 		.sort( ( a, b ) => a.domino.id - b.domino.id )
-		.map( e => e.selectedBy! )
-		.filter( ( pid, idx, arr ) => arr.indexOf( pid ) === idx ); // deduplicate for 2-player
+		.map( e => e.selectedBy! );
 }
 

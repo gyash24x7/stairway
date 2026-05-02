@@ -125,10 +125,12 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 					<RotateCwIcon className={ "w-4 h-4" }/>
 					<span className={ "text-xs" }>{ tentative.rotation }°</span>
 				</Button>
-				<Button onClick={ handleConfirm } disabled={ isPending } className={ "w-8 h-8" }>
+				<Button onClick={ handleConfirm } disabled={ isPending } className={ "w-8 h-8" }
+				        size={ "icon" }>
 					<CheckIcon/>
 				</Button>
-				<Button onClick={ handleCancel } disabled={ isPending } className={ "w-8 h-8" }>
+				<Button onClick={ handleCancel } disabled={ isPending } className={ "w-8 h-8" }
+				        size={ "icon" }>
 					<XIcon/>
 				</Button>
 			</div>

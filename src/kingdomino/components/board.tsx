@@ -268,7 +268,7 @@ export function RBoard( props: RBoardProps ) {
 						anchor={ anchorEl }
 						side={ "bottom" }
 						sideOffset={ 8 }
-						className={ "w-auto" }
+						className={ "w-auto bg-background border" }
 					>
 						{ props.tentative.toolbar }
 					</PopoverContent>
