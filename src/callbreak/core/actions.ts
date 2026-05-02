@@ -1,7 +1,14 @@
 "use server";
 
 import { CallbreakEngine } from "@/callbreak/core/engine";
-import type { CreateGameInput, DeclareWinsInput, PlayCardInput } from "@/callbreak/core/types";
+import type {
+	CallbreakConfig,
+	CallbreakPlayerView,
+	CallbreakSharedView,
+	CreateGameInput,
+	DeclareWinsInput,
+	PlayCardInput
+} from "@/callbreak/core/types";
 import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
 import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
@@ -19,6 +26,12 @@ import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
 
 const logger = createLogger( "Callbreak:Actions" );
+
+const getCallbreakCompletedGame = ( gameId: string ) =>
+	getCompletedGame<CallbreakSharedView, CallbreakConfig, CallbreakPlayerView>(
+		CallbreakEngine.NAME,
+		gameId
+	);
 
 /**
  * Get a Durable Object stub for a Callbreak game engine instance.
@@ -42,7 +55,7 @@ export const getGame = serverQuery( [
 		const game = await requireGame( CallbreakEngine.NAME, input.gameId );
 
 		if ( game.completed ) {
-			const { shared, playerViews } = await getCompletedGame( CallbreakEngine.NAME, game.id );
+			const { shared, playerViews } = await getCallbreakCompletedGame( game.id );
 			logger.debug( "<< getGame() [completed]" );
 			return { shared, player: playerViews[ authInfo.id ] };
 		}

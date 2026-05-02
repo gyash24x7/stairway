@@ -304,6 +304,19 @@ export function canDominoBePlaced( board: Board, placement: Placement ) {
 	return isAdjacencyValid( board, [ p1, p2 ], placement.dominoId );
 }
 
+export const ALL_ROTATIONS: Rotation[] = [ 0, 90, 180, 270 ];
+
+/**
+ * Returns the rotations under which the given domino can legally be
+ * placed at the supplied coordinate.
+ */
+export function getValidRotations( board: Board, dominoId: DominoId, coord: Coord ) {
+	return ALL_ROTATIONS.filter( rotation => canDominoBePlaced(
+		board,
+		{ dominoId, coord, rotation }
+	) );
+}
+
 /**
  * Get a list of candidate cells for placing a new domino.
  * These are empty cells that are adjacent to existing tiles.
@@ -439,21 +452,22 @@ export function getBoardBounds( board: Board ) {
 }
 
 /**
- * Get the expanded bounding box of the current tile placements on the board.
- * This function takes the exact bounds of the placed tiles and expands them by a fixed margin,
- * which can be useful for rendering a larger area of the board to accommodate
- * potential placements that are just outside the current tile area.
+ * Get the expanded bounding box of the current tile placements on the board,
+ * clamped so the rendered grid never extends beyond what a placement could
+ * actually reach within the board's `size` window. Once the current span
+ * already fills `size` in an axis, expansion in that axis collapses to zero.
  *
  * @param board - The current state of the board, including existing placements and tiles.
  * @return The expanded minimum and maximum x and y coordinates of the placed tiles on the board.
  */
 export function getExpandedBoardBounds( board: Board ) {
 	const bounds = getBoardBounds( board );
+	const max = board.size - 1;
 	return {
-		minX: bounds.minX - 2,
-		maxX: bounds.maxX + 2,
-		minY: bounds.minY - 2,
-		maxY: bounds.maxY + 2
+		minX: Math.max( bounds.minX - 2, bounds.maxX - max ),
+		maxX: Math.min( bounds.maxX + 2, bounds.minX + max ),
+		minY: Math.max( bounds.minY - 2, bounds.maxY - max ),
+		maxY: Math.min( bounds.maxY + 2, bounds.minY + max )
 	};
 }
 
@@ -721,17 +735,16 @@ export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string )
 
 /**
  * Determine the player selection order for the next round based on the current draft.
- * Players who selected lower-numbered dominoes go first. Deduplicates for 2-player mode.
+ * Each selected draft entry contributes one slot, ordered by ascending domino id —
+ * so a 2-player draft produces 4 slots (2 per player).
  *
  * @param draft - The current draft entries with selections.
  * @returns An ordered array of player IDs for the next round's selection order.
  */
 export function getSelectionOrderFromDraft( draft: DraftEntry[] ): PlayerId[] {
-	// Order determined by domino ID — whoever picked the lowest domino goes first
 	return [ ...draft ]
 		.filter( e => !!e.selectedBy )
 		.sort( ( a, b ) => a.domino.id - b.domino.id )
-		.map( e => e.selectedBy! )
-		.filter( ( pid, idx, arr ) => arr.indexOf( pid ) === idx ); // deduplicate for 2-player
+		.map( e => e.selectedBy! );
 }
 

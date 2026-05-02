@@ -15,7 +15,7 @@ export function AddBots() {
 	} );
 
 	return (
-		<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
+		<Button onClick={ handleClick } disabled={ isPending }>
 			{ isPending ? <Spinner/> : "ADD BOTS" }
 		</Button>
 	);

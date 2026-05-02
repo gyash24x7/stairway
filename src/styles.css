@@ -184,7 +184,8 @@
 	--spacing-reverseBoxShadowX: -4px;
 	--spacing-reverseBoxShadowY: -2px;
 	--radius-base: 5px;
-	--shadow-shadow: -4px 2px 0px 0px var(--neutral-dark);
+	--shadow-md: -4px 2px 0px 0px var(--neutral-dark);
+	--shadow-sm: -2px 1px 0px 0px var(--neutral-dark);
 
 	--font-title: "Bungee", serif;
 	--font-heading: "Oswald", serif;
@@ -209,4 +210,12 @@
 
 @view-transition {
 	navigation: auto;
+}
+
+.child-p-0 > div {
+	padding: 0;
+}
+
+.child-b-0 > div {
+	border-width: 0;
 }

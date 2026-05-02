@@ -1,184 +1,65 @@
 "use client";
 
-import { Button } from "@/shared/primitives/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger
-} from "@/shared/primitives/dialog";
-import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/primitives/drawer";
 import { useSplendor } from "@/splendor/components/context";
 import { GameCard } from "@/splendor/components/game-card";
-import { TokenPicker } from "@/splendor/components/token-picker";
-import { gemLightColors } from "@/splendor/components/utils";
-import { purchaseCard, reserveCard } from "@/splendor/core/actions";
-import type { Card, Cost, Gem, Tokens } from "@/splendor/core/types";
-import { Fragment, useState, useTransition } from "react";
+import { PurchaseCard } from "@/splendor/components/purchase-card";
+import { ReserveCard } from "@/splendor/components/reserve-card";
+import type { Card } from "@/splendor/core/types";
+import { useBoolean } from "usehooks-ts";
 
 type CardActionsMenuProps = {
 	card: Card;
 }
 
 export function CardActions( props: CardActionsMenuProps ) {
-	const [ open, setOpen ] = useState( false );
-	const [ type, setType ] = useState<"default" | "payment" | "return">( "default" );
-	const [ returnedTokens, setReturnedTokens ] = useState<Partial<Tokens>>( {} );
-	const [ paymentTokens, setPaymentTokens ] = useState<Partial<Tokens>>( {} );
-	const [ isPending, startTransition ] = useTransition();
-
+	const { value, toggle, setTrue } = useBoolean();
 	const { shared, player } = useSplendor();
 
 	const isMyTurn = shared.status === "IN_PROGRESS"
 		&& shared.context.currentPlayer === player.playerId;
 
-	const handleOpenChange = ( isOpen: boolean ) => {
-		setOpen( isOpen );
-		if ( !isOpen ) {
-			setType( "default" );
-			setReturnedTokens( {} );
-			setPaymentTokens( {} );
-		}
-	};
 	const discounts = shared.state.playerData[ player.playerId ].cards;
 	const reserved = shared.state.playerData[ player.playerId ].reserved;
 	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
 
-	const canPurchaseWithoutGold = Object.keys( props.card.cost )
-		.map( g => g as keyof Cost )
-		.every( gem => {
-			const discountsForGem = discounts.filter( card => card.bonus === gem ).length;
-			return playerTokens[ gem ] + discountsForGem >= props.card.cost[ gem ];
-		} );
-
-	const goldNeededIfShort = Object.keys( props.card.cost )
-		.map( g => g as keyof Cost )
-		.reduce( ( goldNeeded, gem ) => {
-			const discountsForGem = discounts.filter( card => card.bonus === gem ).length;
-			return goldNeeded +
-				Math.max( 0, props.card.cost[ gem ] - playerTokens[ gem ] - discountsForGem );
-		}, 0 );
-
-	const canPurchase = canPurchaseWithoutGold ||
-		( ( playerTokens.gold || 0 ) >= goldNeededIfShort );
-	const canReserve = reserved.length < 3;
-
-	const handlePurchaseClick = () => startTransition( async () => {
-		if ( type === "default" ) {
-			setType( "payment" );
-			return;
-		}
-
-		await purchaseCard( {
-			gameId: shared.id,
-			cardId: props.card.id,
-			payment: paymentTokens
-		} );
-	} );
-
-	const handleReserveClick = () => startTransition( async () => {
-		const tokenCount = Object.values( playerTokens )
-			.reduce( ( sum, val ) => sum + ( val || 0 ), 0 );
-		const canTakeGold = shared.state.tokens.gold > 0;
-
-		if ( type === "default" ) {
-			if ( canTakeGold && tokenCount + 1 > 10 ) {
-				setType( "return" );
-				return;
-			}
-		}
-
-		const returnedToken = Object.keys( returnedTokens ).map( g => g as Exclude<Gem, "gold"> )
-			.find( g => ( returnedTokens[ g ] ?? 0 ) > 0 );
-
-		await reserveCard( {
-			gameId: shared.id,
-			cardId: props.card.id,
-			withGold: canTakeGold,
-			returnedToken
-		} );
-	} );
 
 	return (
-		<Dialog open={ open } onOpenChange={ handleOpenChange }>
-			<DialogTrigger>
-				<GameCard card={ props.card } disabled={ !isMyTurn }/>
-			</DialogTrigger>
-			<DialogContent>
-				<DialogHeader>
-					<DialogTitle className={ "font-bold" }>
-						{ type === "default" && "CARD ACTIONS" }
-						{ type === "payment" && "PURCHASE CARD" }
-						{ type === "return" && "RETURN TOKENS" }
-					</DialogTitle>
-					<DialogDescription/>
-				</DialogHeader>
-				<div className={ "flex flex-col gap-2 items-center" }>
-					{ type === "default" && <GameCard card={ props.card }/> }
-					{ type === "return" && (
-						<TokenPicker
-							initialTokens={ playerTokens }
-							sourceText={ "AVAILABLE" }
-							sinkText={ "RETURN" }
-							pickLimit={ 1 }
-							allowGold
-							onPickChange={ setReturnedTokens }
-						/>
-					) }
-					{ type === "payment" && (
-						<Fragment>
-							<div className={ "grid grid-cols-2" }>
-								<GameCard card={ props.card }/>
-								<div className={ "grid gap-2 grid-cols-3" }>
-									{ Object.keys( playerTokens ).map( g => g as Gem ).map( gem => (
-										<div
-											className={ cn(
-												"w-8 h-12 md:w-10 md:h-15 p-1",
-												"flex rounded-md items-center justify-center",
-												"border-3 border-inverted-surface",
-												"text-2xl md:text-3xl text-neutral-dark",
-												gemLightColors[ gem ]
-											) }
-											key={ gem }
-										>
-											{ discounts.filter( c => c.bonus === gem ).length }
-										</div>
-									) ) }
-								</div>
-							</div>
-							<TokenPicker
-								initialTokens={ playerTokens }
-								sourceText={ "TOKENS" }
-								sinkText={ "PAYMENT" }
-								allowGold
-								onPickChange={ setPaymentTokens }
-							/>
-						</Fragment>
-					) }
+		<Drawer open={ value } onOpenChange={ toggle }>
+			<GameCard card={ props.card } disabled={ !isMyTurn } onCardClick={ setTrue }/>
+			<DrawerContent>
+				<DrawerHeader>
+					<DrawerTitle>CARD ACTIONS</DrawerTitle>
+					<DrawerDescription/>
+				</DrawerHeader>
+				<div className={ "flex justify-center" }>
+					<GameCard card={ props.card }/>
 				</div>
-				<DialogFooter>
-					{ ( type === "default" || type === "payment" ) && (
-						<Button
-							onClick={ handlePurchaseClick }
-							disabled={ !canPurchase || isPending }
-						>
-							{ isPending ? <Spinner/> : "PURCHASE" }
-						</Button>
-					) }
-					{ ( type === "default" || type === "return" ) && (
-						<Button
-							onClick={ handleReserveClick }
-							disabled={ !canReserve || isPending }
-						>
-							{ isPending ? <Spinner/> : "RESERVE" }
-						</Button>
-					) }
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				<DrawerFooter>
+					<div className={ "w-full flex gap-3" }>
+						<PurchaseCard
+							gameId={ shared.id }
+							card={ props.card }
+							tokens={ playerTokens }
+							discounts={ discounts }
+						/>
+						<ReserveCard
+							gameId={ shared.id }
+							card={ props.card }
+							tokens={ playerTokens }
+							availableSlots={ 3 - reserved.length }
+							isGoldAvailable={ shared.state.tokens.gold > 0 }
+						/>
+					</div>
+				</DrawerFooter>
+			</DrawerContent>
+		</Drawer>
 	);
 }

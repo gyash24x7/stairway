@@ -26,7 +26,7 @@ export function GameCard( { card, disabled, onCardClick }: GameCardProps ) {
 			className={ cn(
 				"flex flex-col rounded-md overflow-hidden justify-between",
 				"w-16 md:w-20 h-24 md:h-30 text-neutral-dark transition",
-				"bg-background border-4 border-inverted-surface shadow-shadow",
+				"bg-background border-2 border-inverted-surface shadow-sm md:shadow-md",
 				!disabled && "cursor-pointer hover:shadow-none",
 				!disabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY"
 			) }

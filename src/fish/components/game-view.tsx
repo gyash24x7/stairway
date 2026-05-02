@@ -9,11 +9,11 @@ import { useFish } from "@/fish/components/context";
 import { CreateTeams } from "@/fish/components/create-teams";
 import { HandView } from "@/fish/components/hand-view";
 import { GameMetrics } from "@/fish/components/metrics";
-import { PlayerLobby } from "@/fish/components/player-lobby";
 import { TeamsView } from "@/fish/components/teams-view";
 import { TransferTurn } from "@/fish/components/transfer-turn";
 import { TurnIndicator } from "@/fish/components/turn-indicator";
 import { GameInfo } from "@/shared/components/game-info";
+import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
 
@@ -32,7 +32,7 @@ export function GameView() {
 		&& lastClaim.playerId === player.playerId;
 
 	return (
-		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-80 lg:mb-0` }>
+		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-20 lg:mb-0` }>
 			<GameInfo
 				code={ shared.code }
 				name={ "fish" }
@@ -63,7 +63,9 @@ export function GameView() {
 			{ shared.status === "COMPLETED" && <BooksTracker/> }
 			{ shared.status === "COMPLETED" && <GameMetrics/> }
 			<div className={ "grid grid-cols-1 gap-3 w-full justify-items-center" }>
-				{ ( shared.status === "CREATED" || isTeamConfig ) && <PlayerLobby/> }
+				{ ( shared.status === "CREATED" || isTeamConfig ) && (
+					<PlayerLobbyGrid players={ shared.context.players.map( id => shared.players[ id ] ) }/>
+				) }
 				{ isPlaying && <TeamsView/> }
 				{ isPlaying && (
 					<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full" }>
@@ -102,8 +104,8 @@ export function GameView() {
 			</div>
 			<div
 				className={ cn(
-					"fixed bottom-0 bg-surface",
-					"rounded-t-xl flex gap-3 p-3 items-center"
+					"fixed bottom-0 bg-surface left-0 right-0",
+					"rounded-t-xl flex gap-3 p-3 items-center justify-center"
 				) }
 			>
 				{ shared.status === "CREATED" && <AddBots/> }

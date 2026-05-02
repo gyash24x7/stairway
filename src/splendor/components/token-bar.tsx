@@ -22,12 +22,12 @@ export function TokenBar( props: TokenBarProps ) {
 		>
 			<div
 				className={ cn(
-					"bg-accent p-1 h-full w-1/3 min-w-20 max-w-40 text-center",
+					"bg-accent p-1 h-full w-24 md:w-32 shrink-0 text-center",
 					"flex items-center justify-center"
 				) }
 			>
-				<span className={ "font-heading text-sm md:text-lg text-neutral-dark" }>
-					{ props.tokenText }
+				<span className={ "text-sm md:text-lg text-neutral-dark" }>
+					{ props.tokenText.toUpperCase() }
 				</span>
 			</div>
 			<div className={ "flex gap-2 md:gap-3 p-2 md:p-3 flex-1" }>

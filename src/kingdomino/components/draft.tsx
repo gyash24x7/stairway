@@ -14,8 +14,9 @@ export function RDraft( props: RDraftProps ) {
 	return (
 		<div
 			className={ cn(
-				"p-3 rounded-md bg-background flex-1",
-				"flex flex-col items-center gap-2 justify-center"
+				"p-3 rounded-md bg-background flex-1 justify-items-center",
+				"grid grid-cols-2 lg:grid-cols-4 col-span-2",
+				"items-center gap-2 justify-center"
 			) }
 		>
 			{ props.draft.toSorted( ( a, b ) => a.domino.id - b.domino.id ).map( e => {
@@ -29,8 +30,13 @@ export function RDraft( props: RDraftProps ) {
 
 				return (
 					<div key={ e.domino.id } className={ "flex items-center gap-2" }>
-						<div className={ "flex justify-center items-center w-8 h-8 rounded-full bg-accent" }>
-							<span>{ e.domino.id }</span>
+						<div
+							className={ cn(
+								"flex justify-center items-center",
+								"w-6 md:w-8 h-6 md:h-8 rounded-full bg-accent"
+							) }
+						>
+							<span className={ "text-xs md:text-md" }>{ e.domino.id }</span>
 						</div>
 						<RDomino
 							domino={ e.domino }
@@ -41,7 +47,7 @@ export function RDraft( props: RDraftProps ) {
 							<img
 								src={ avatar }
 								alt={ pickedBy ? props.players[ pickedBy ].name : "picked player" }
-								className={ "w-8 h-8 rounded-full border border-border object-cover" }
+								className={ "w-6 md:w-8 h-6 md:h-8 rounded-full border border-border object-cover bg-accent" }
 							/>
 						) : (
 							<div className={ "w-8 h-8 rounded-full bg-surface" }/>

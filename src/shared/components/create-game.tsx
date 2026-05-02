@@ -20,7 +20,7 @@ export function CreateGame( { game, disabled, createGame, children }: CreateGame
 	} );
 
 	return (
-		<div className={ "rounded-md bg-background p-6 flex flex-col gap-4 flex-1" }>
+		<div className={ "rounded-md bg-background p-6 flex flex-col gap-4 flex-1 max-w-2xl" }>
 			<h2 className={ "text-xl font-heading" }>New Game</h2>
 			<p className={ "text-sm text-muted-foreground" }>
 				Create a game and share the code with a friend

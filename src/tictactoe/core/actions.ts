@@ -2,7 +2,7 @@
 
 import { db } from "@/shared/db/client";
 import { games } from "@/shared/db/schema";
-import type { GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
+import type { BaseGameConfig, GameId, GameIdInput, JoinGameInput } from "@/shared/engine/types";
 import { createLogger } from "@/shared/utils/logger";
 import {
 	getAuthInfo,
@@ -12,12 +12,18 @@ import {
 	validate
 } from "@/shared/utils/middlewares";
 import { TicTacToeEngine } from "@/tictactoe/core/engine";
-import type { PlaceInput } from "@/tictactoe/core/types";
+import type { PlaceInput, TicTacToePlayerView, TicTacToeSharedView } from "@/tictactoe/core/types";
 import { env } from "cloudflare:workers";
 import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
 
 const logger = createLogger( "TicTacToe:Actions" );
+
+const getTicTacToeCompletedGame = ( gameId: string ) =>
+	getCompletedGame<TicTacToeSharedView, BaseGameConfig, TicTacToePlayerView>(
+		TicTacToeEngine.NAME,
+		gameId
+	);
 
 /**
  * Get a Durable Object stub for a Tic-Tac-Toe game engine instance.
@@ -41,7 +47,7 @@ export const getGame = serverQuery( [
 		const game = await requireGame( TicTacToeEngine.NAME, input.gameId );
 
 		if ( game.completed ) {
-			const { shared, playerViews } = await getCompletedGame( TicTacToeEngine.NAME, game.id );
+			const { shared, playerViews } = await getTicTacToeCompletedGame( game.id );
 			logger.debug( "<< getGame() [completed]" );
 			return { shared, player: playerViews[ authInfo.id ] };
 		}

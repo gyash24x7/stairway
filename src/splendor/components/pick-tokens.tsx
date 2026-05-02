@@ -2,13 +2,13 @@
 
 import { Button } from "@/shared/primitives/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle
-} from "@/shared/primitives/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
 import { useSplendor } from "@/splendor/components/context";
 import { TokenPicker } from "@/splendor/components/token-picker";
@@ -34,7 +34,7 @@ export function PickTokens() {
 	const projectedTotal = useMemo( () => {
 		const currentTotal = GEMS_WITH_GOLD.reduce( ( sum, gem ) => sum + playerTokens[ gem ], 0 );
 		const pickedTotal = Object.values( selectedTokens )
-			.reduce( ( sum, val ) => sum + ( val ?? 0 ), 0 );
+			.reduce( ( sum, val ) => sum + val, 0 );
 
 		return currentTotal + pickedTotal;
 	}, [ playerTokens, selectedTokens ] );
@@ -68,7 +68,7 @@ export function PickTokens() {
 	} );
 
 	return (
-		<div className={ "flex flex-col gap-3" }>
+		<div className={ "flex flex-col gap-3 w-full" }>
 			<TokenPicker
 				initialTokens={ availableTokens }
 				pickLimit={ 3 }
@@ -82,24 +82,35 @@ export function PickTokens() {
 					</Button>
 				}
 			/>
-			<Dialog open={ value } onOpenChange={ toggle }>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle className={ "font-bold" }>RETURN TOKENS</DialogTitle>
-						<DialogDescription/>
-					</DialogHeader>
-					<TokenPicker
-						initialTokens={ tokensAfterPick }
-						pickLimit={ projectedTotal - 10 }
-						onPickChange={ setReturnTokens }
-					/>
-					<DialogFooter>
-						<Button onClick={ handleReturnClick } disabled={ isPending }>
+			<Drawer open={ value } onOpenChange={ toggle }>
+				<DrawerContent>
+					<DrawerHeader>
+						<DrawerTitle className={ "font-bold" }>RETURN TOKENS</DrawerTitle>
+						<DrawerDescription>
+							Return { projectedTotal - 10 } token(s)
+						</DrawerDescription>
+					</DrawerHeader>
+					<div className={ "px-4 overflow-y-auto flex flex-col gap-2" }>
+						<TokenPicker
+							sourceText={ "My Tokens" }
+							sinkText={ "Returning" }
+							initialTokens={ tokensAfterPick }
+							pickLimit={ projectedTotal - 10 }
+							onPickChange={ setReturnTokens }
+						/>
+					</div>
+					<DrawerFooter>
+						<Button
+							onClick={ handleReturnClick }
+							disabled={ isPending ||
+								Object.values( returnTokens ).reduce( ( acc, v ) => acc + v, 0 ) === 0 }
+							className={ "w-full" }
+						>
 							{ isPending ? <Spinner/> : "RETURN TOKENS" }
 						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+					</DrawerFooter>
+				</DrawerContent>
+			</Drawer>
 		</div>
 	);
 }

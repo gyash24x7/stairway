@@ -27,16 +27,16 @@ export function RCardSuit( { suit, large, themed }: CardSuitProps ) {
 	);
 }
 
-export type RCardProps = { cardId: CardId; focused?: boolean; };
+export type RCardProps = { cardId: CardId; small?: boolean; };
 
-export function RCard( { cardId, focused }: RCardProps ) {
+export function RCard( { cardId, small }: RCardProps ) {
 	return (
 		<img
 			src={ `/cards/${ cardId }.svg` }
 			className={ cn(
 				"w-16 h-24 md:w-20 md:h-30 xl:w-24 xl:h-36",
-				"rounded-lg border-inverted-surface border",
-				focused && "border-2"
+				"rounded-lg border shrink-0",
+				small && "w-12 h-18 md:w-16 md:h-24 xl:w-20 xl:h-30"
 			) }
 			alt={ cardId }
 		/>

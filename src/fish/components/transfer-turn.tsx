@@ -6,35 +6,30 @@ import { getTeammates } from "@/fish/core/utils";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle
-} from "@/shared/primitives/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/primitives/drawer";
+import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
 import { useState, useTransition } from "react";
 
 export function TransferTurn() {
 	const { shared, player } = useFish();
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
-	const [ showDialog, setShowDialog ] = useState( false );
+	const [ open, setOpen ] = useState( false );
 
 	const teammatesWithCards = getTeammates( shared.state.teams, player.playerId )
 		.filter( pid => shared.state.cardCounts[ pid ] > 0 );
 
-	const openDialog = () => setShowDialog( true );
-	const closeDialog = () => setShowDialog( false );
-
-	const handlePlayerSelect = ( playerId?: string ) => () => {
-		if ( !playerId ) {
-			setSelectedPlayer( undefined );
-		} else {
-			setSelectedPlayer( playerId );
-		}
+	const openDrawer = () => setOpen( true );
+	const closeDrawer = () => {
+		setOpen( false );
+		setSelectedPlayer( undefined );
 	};
 
 	const [ isPending, startTransition ] = useTransition();
@@ -42,40 +37,35 @@ export function TransferTurn() {
 	const handleClick = () => startTransition( async () => {
 		if ( selectedPlayer ) {
 			await transferTurn( { gameId: shared.id, transferTo: selectedPlayer } );
-			closeDialog();
+			closeDrawer();
 		}
 	} );
 
 	return (
-		<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
-			<Button className={ "flex-1 max-w-lg" } onClick={ openDialog }>
+		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDrawer() : setOpen( true ) }>
+			<Button className={ "flex-1 max-w-lg" } onClick={ openDrawer }>
 				TRANSFER TURN
 			</Button>
-			<DialogContent className={ "min-w-xl" }>
-				<DialogHeader>
-					<DialogTitle>Transfer Turn</DialogTitle>
-					<DialogDescription/>
-				</DialogHeader>
-				<div className={ "grid gap-3 grid-cols-3" }>
-					{ teammatesWithCards.map( ( pid ) => (
-						<div
-							key={ pid }
-							onClick={ handlePlayerSelect( selectedPlayer === pid ? undefined : pid ) }
-							className={ cn(
-								"cursor-pointer border-2 rounded-md flex justify-center flex-1 bg-background",
-								selectedPlayer === pid && "border-accent bg-accent/20"
-							) }
-						>
-							<RPlayerInfo player={ shared.players[ pid ] }/>
-						</div>
-					) ) }
+			<DrawerContent>
+				<DrawerHeader>
+					<DrawerTitle>Transfer Turn</DrawerTitle>
+					<DrawerDescription/>
+				</DrawerHeader>
+				<div className={ "px-4" }>
+					<RadioSelect
+						options={ teammatesWithCards }
+						value={ selectedPlayer }
+						onChange={ setSelectedPlayer }
+						className={ "grid gap-3 grid-cols-3" }
+						renderOption={ pid => <RPlayerInfo player={ shared.players[ pid ] }/> }
+					/>
 				</div>
-				<DialogFooter>
+				<DrawerFooter>
 					<Button onClick={ handleClick } disabled={ isPending } className={ "w-full" }>
 						{ isPending ? <Spinner/> : "TRANSFER TURN" }
 					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+				</DrawerFooter>
+			</DrawerContent>
+		</Drawer>
 	);
 }

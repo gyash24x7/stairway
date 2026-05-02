@@ -26,19 +26,19 @@ export function HomePage() {
 						"cursor-pointer overflow-hidden relative card h-64 md:h-96",
 						"rounded-md flex flex-col justify-between backgroundImage",
 						"bg-cover border-2 flex-1 font-heading border-inverted-surface",
-						`${ game }-bg`
+						"bg-background"
 					) }
 				>
 					<div className={ "flex flex-col gap-4 px-6 py-3 mt-6" }>
-						<h1 className={ `text-4xl z-10 text-accent font-title` }>
+						<h1 className={ `text-4xl text-accent font-title` }>
 							{ game.toUpperCase() }
 						</h1>
 					</div>
 					<Logo
 						url={ `/logos/${ game }.svg` }
-						classname={ "w-56 h-56 bg-accent absolute -bottom-6 -left-6 -rotate-6" }
+						classname={ "md:w-56 md:h-56 w-40 h-40 bg-accent absolute -bottom-6 -left-6 -rotate-6" }
 					/>
-					<div className={ "flex justify-end items-end z-10 p-6 mt-auto" }>
+					<div className={ "flex justify-end items-end p-6 mt-auto" }>
 						<a href={ `/${ game }` } rel={ "noopener noreferrer" }>
 							<Button>
 								<span>PLAY</span>

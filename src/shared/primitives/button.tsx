@@ -13,16 +13,16 @@ const buttonVariants = cva(
 		variants: {
 			variant: {
 				default: cn(
-					"text-neutral-dark bg-accent border-2 border-black shadow-shadow",
+					"text-neutral-dark bg-accent border-2 border-black shadow-sm md:shadow-md",
 					"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
 				),
 				noShadow: "text-neutral-dark bg-accent border-2 border-black",
 				neutral: cn(
-					"bg-background text-foreground border-black shadow-shadow",
+					"bg-background text-foreground border-black shadow-sm md:shadow-md",
 					"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
 				),
 				reverse: cn(
-					"text-neutral-dark bg-accent border-2 border-black hover:shadow-shadow",
+					"text-neutral-dark bg-accent border-2 border-black hover:shadow-sm md:shadow-md",
 					"hover:translate-x-reverseBoxShadowX hover:translate-y-reverseBoxShadowY"
 				)
 			},

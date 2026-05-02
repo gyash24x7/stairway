@@ -37,7 +37,8 @@ function RTerrain( props: { terrain: Terrain; crowns: number } ) {
 	return (
 		<div
 			className={ cn(
-				"w-14 h-14 p-1 text-[10px] font-semibold flex flex-col justify-between",
+				"w-10 md:w-14 h-10 md:h-14 p-1 text-[8px] md:text-xs",
+				"font-semibold flex flex-col justify-between",
 				TERRAIN_CLASS[ props.terrain ]
 			) }
 		>
@@ -57,7 +58,7 @@ export function RSmallDomino( { enabled, domino }: RDominoProps ) {
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
 				"border-2 border-inverted-surface transition",
-				!enabled ? "shadow-none" : "shadow-shadow",
+				!enabled ? "shadow-none" : "shadow-sm md:shadow-md",
 				enabled && "cursor-pointer hover:shadow-none",
 				enabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY"
 			) }
@@ -84,7 +85,7 @@ export function RDomino( { domino, enabled, isSelected, onClick }: RDominoProps 
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
 				"border-2 border-inverted-surface transition",
 				enabled && "cursor-pointer",
-				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-shadow",
+				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-sm md:shadow-md",
 				!isSelected && enabled && (
 					"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
 				)

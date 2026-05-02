@@ -3,12 +3,12 @@
 import { useFish } from "@/fish/components/context";
 import { getAskDescription, getClaimDescription, getTransferDescription } from "@/fish/core/utils";
 import {
-	Dialog,
-	DialogContent,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle
-} from "@/shared/primitives/dialog";
+	Drawer,
+	DrawerContent,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/primitives/drawer";
 import { cn } from "@/shared/utils/cn";
 import { useState } from "react";
 
@@ -59,7 +59,7 @@ export function ActivityFeed() {
 				{ inlineEntries.map( entry => <FeedItem key={ entry.timestamp } entry={ entry }/> ) }
 			</div>
 			{ entries.length > 5 && (
-				<Dialog open={ showDialog } onOpenChange={ setShowDialog }>
+				<Drawer open={ showDialog } onOpenChange={ setShowDialog }>
 					<button
 						onClick={ () => setShowDialog( true ) }
 						className={ cn(
@@ -69,16 +69,16 @@ export function ActivityFeed() {
 					>
 						VIEW MORE ACTIVITY
 					</button>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>GAME ACTIVITY</DialogTitle>
-						</DialogHeader>
-						<div className={ "flex flex-col gap-1.5 max-h-96 overflow-y-auto" }>
+					<DrawerContent>
+						<DrawerHeader>
+							<DrawerTitle>GAME ACTIVITY</DrawerTitle>
+						</DrawerHeader>
+						<div className={ "px-4 flex flex-col gap-1.5 overflow-y-scroll max-h-110" }>
 							{ dialogEntries.map( entry => <FeedItem key={ entry.timestamp } entry={ entry }/> ) }
 						</div>
-						<DialogFooter/>
-					</DialogContent>
-				</Dialog>
+						<DrawerFooter/>
+					</DrawerContent>
+				</Drawer>
 			) }
 		</div>
 	);

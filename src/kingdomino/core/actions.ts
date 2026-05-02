@@ -4,6 +4,9 @@ import { KingdominoEngine } from "@/kingdomino/core/engine";
 import type {
 	CreateGameInput,
 	DiscardDominoInput,
+	KingdominoConfig,
+	KingdominoPlayerView,
+	KingdominoSharedView,
 	PlaceDominoInput,
 	SelectDominoInput
 } from "@/kingdomino/core/types";
@@ -23,6 +26,12 @@ import { serverAction, serverQuery } from "rwsdk/worker";
 import * as v from "valibot";
 
 const logger = createLogger( "Kingdomino:Actions" );
+
+const getKingdominoCompletedGame = ( gameId: string ) =>
+	getCompletedGame<KingdominoSharedView, KingdominoConfig, KingdominoPlayerView>(
+		KingdominoEngine.NAME,
+		gameId
+	);
 
 /**
  * Get a Durable Object stub for a Kingdomino game engine instance.
@@ -46,7 +55,7 @@ export const getGame = serverQuery( [
 		const game = await requireGame( KingdominoEngine.NAME, input.gameId );
 
 		if ( game.completed ) {
-			const { shared, playerViews } = await getCompletedGame( KingdominoEngine.NAME, game.id );
+			const { shared, playerViews } = await getKingdominoCompletedGame( game.id );
 			logger.debug( "<< getGame() [completed]" );
 			return { shared, player: playerViews[ authInfo.id ] };
 		}

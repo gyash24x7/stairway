@@ -1,6 +1,6 @@
 import { useFish } from "@/fish/components/context";
+import { RPlayerInfoStrip } from "@/shared/components/player-info";
 import type { PlayerId } from "@/shared/engine/types";
-import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
 import { cn } from "@/shared/utils/cn";
 
 function PlayerWithCardCount( props: { playerId: PlayerId } ) {
@@ -8,22 +8,18 @@ function PlayerWithCardCount( props: { playerId: PlayerId } ) {
 	const player = shared.players[ props.playerId ];
 	const cardCount = shared.state.cardCounts[ player.id ];
 	const isActive = player.id === shared.context.currentPlayer;
+
 	return (
 		<div
 			className={ cn(
-				"flex gap-2 items-center rounded-md px-2 py-1",
+				"flex gap-1 md:gap-2 items-center rounded-md px-2 py-1",
 				isActive && "bg-accent/20"
 			) }
 		>
-			<Avatar className={ "rounded-full w-8 h-8" }>
-				<AvatarImage src={ player.avatar } alt={ "" } className={ "bg-surface" }/>
-			</Avatar>
-			<div className={ cn( "text-sm font-semibold" ) }>
-				{ player.name.toUpperCase() }
-			</div>
+			<RPlayerInfoStrip player={ player }/>
 			<span
 				className={ cn(
-					"text-sm font-bold px-2 py-0.5 rounded-full",
+					"text-xs md:text-sm font-bold px-2 py-0.5 rounded-full",
 					cardCount > 0
 						? "bg-accent text-neutral-dark"
 						: "bg-neutral-400 text-white"
@@ -42,19 +38,21 @@ export function TeamsView() {
 			{ Object.values( shared.state.teams ).map( team => (
 				<div
 					key={ team.id }
-					className={ cn(
-						"bg-background rounded-md p-2 md:p-3",
-						"flex items-baseline justify-between"
-					) }
+					className={ "bg-background rounded-md p-2 md:p-3 flex flex-col gap-3" }
 				>
-					<div className={ "text-2xl md:text-4xl uppercase font-heading pr-16" }>
-						{ team.name }
+					<div className={ "flex items-baseline justify-between" }>
+						<div className={ "text-2xl md:text-4xl uppercase font-heading pr-16" }>
+							{ team.name }
+						</div>
+						<div className={ "gap-3 flex-wrap flex-1 hidden md:flex" }>
+							{ team.members.map( pid => <PlayerWithCardCount playerId={ pid } key={ pid }/> ) }
+						</div>
+						<div className={ "text-2xl md:text-4xl font-heading pl-8" }>
+							{ team.score }
+						</div>
 					</div>
-					<div className={ "flex gap-3 flex-wrap flex-1" }>
+					<div className={ "md:hidden flex w-full gap-1 flex-wrap" }>
 						{ team.members.map( pid => <PlayerWithCardCount playerId={ pid } key={ pid }/> ) }
-					</div>
-					<div className={ "text-2xl md:text-4xl font-heading pl-8" }>
-						{ team.score }
 					</div>
 				</div>
 			) ) }

@@ -67,7 +67,9 @@ export class KingdominoEngine extends AbstractGameEngine<
 			},
 
 			onStart: ( { state, context } ) => {
-				state.selectionOrder = shuffle( [ ...context.players ] );
+				const selections = getSelectionsPerPlayer( context.players.length );
+				const slots = context.players.flatMap( pid => Array( selections ).fill( pid ) );
+				state.selectionOrder = shuffle( slots );
 				return state;
 			},
 
@@ -88,9 +90,9 @@ export class KingdominoEngine extends AbstractGameEngine<
 				state.playerData[ pid ].queue.length === 0
 			);
 
-			const hasUnselectedDraft = state.draft.some( e => !e.selectedBy );
+			const allDraftResolved = state.draft.every( e => !!e.selectedBy );
 
-			return allQueuesEmpty && state.deck.length === 0 && !hasUnselectedDraft;
+			return allQueuesEmpty && state.deck.length === 0 && allDraftResolved;
 		},
 
 		initialPhase: "SELECT",
@@ -101,6 +103,11 @@ export class KingdominoEngine extends AbstractGameEngine<
 					if ( state.deck.length > 0 ) {
 						state.draft = drawDraft( state.deck );
 					}
+					return state;
+				},
+
+				onExit: ( { state } ) => {
+					state.draft = state.draft.filter( e => !!e.selectedBy );
 					return state;
 				},
 
@@ -137,20 +144,13 @@ export class KingdominoEngine extends AbstractGameEngine<
 					}
 				},
 
-				resolveNextPlayer: ( { state, context } ) => {
-					const selectionsPerPlayer = getSelectionsPerPlayer( context.players.length );
-					const order = state.selectionOrder.length > 0
-						? state.selectionOrder
-						: context.players;
-
-					const nextSelector = order.find( pid =>
-						getPlayerSelectionCount( state.draft, pid ) < selectionsPerPlayer
-					);
-
-					return nextSelector ?? order[ 0 ];
+				resolveNextPlayer: ( { state } ) => {
+					const consumed = state.draft.filter( e => !!e.selectedBy ).length;
+					return state.selectionOrder[ consumed ] ?? state.selectionOrder[ 0 ];
 				},
 
-				endIf: ( { state } ) => state.draft.every( e => !!e.selectedBy ),
+				endIf: ( { state } ) =>
+					state.draft.filter( e => !!e.selectedBy ).length >= state.selectionOrder.length,
 
 				resolveNextPhase: () => "PLACE"
 			} ),
@@ -167,10 +167,17 @@ export class KingdominoEngine extends AbstractGameEngine<
 
 				moves: {
 					placeDomino: {
+						canMove: ( { state }, playerId ) =>
+							( state.playerData[ playerId ]?.queue.length ?? 0 ) > 0,
 						validate: ( { state }, playerId, input ) => {
 							const player = state.playerData[ playerId ];
 							if ( !player.queue.includes( input.placement.dominoId ) ) {
 								throw new Error( "Domino not in your queue!" );
+							}
+
+							const lowest = Math.min( ...player.queue );
+							if ( input.placement.dominoId !== lowest ) {
+								throw new Error( "Place lower-id domino first!" );
 							}
 
 							if ( !canDominoBePlaced( player.board, input.placement ) ) {
@@ -206,10 +213,17 @@ export class KingdominoEngine extends AbstractGameEngine<
 					},
 
 					discardDomino: {
+						canMove: ( { state }, playerId ) =>
+							( state.playerData[ playerId ]?.queue.length ?? 0 ) > 0,
 						validate: ( { state }, playerId, input ) => {
 							const player = state.playerData[ playerId ];
 							if ( !player.queue.includes( input.dominoId ) ) {
 								throw new Error( "Domino not in your queue!" );
+							}
+
+							const lowest = Math.min( ...player.queue );
+							if ( input.dominoId !== lowest ) {
+								throw new Error( "Discard lower-id domino first!" );
 							}
 
 							const validPlacements = getValidPlacements( player.board, input.dominoId );

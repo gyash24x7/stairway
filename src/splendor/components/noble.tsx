@@ -6,7 +6,7 @@ export function Noble( { noble }: { noble: Noble } ) {
 	return (
 		<div
 			className={ cn(
-				"border-4 border-inverted-surface rounded-lg",
+				"border-2 border-inverted-surface rounded-lg",
 				"w-16 md:w-20 h-16 md:h-20 text-neutral-dark",
 				"flex overflow-hidden justify-between gap-1 bg-background"
 			) }
@@ -24,7 +24,7 @@ export function Noble( { noble }: { noble: Noble } ) {
 				</div>
 				<img src={ `/splendor/noble.svg` } className={ cn( "w-8" ) }/>
 			</div>
-			<div className={ "flex flex-col gap-1 p-1" }>
+			<div className={ "flex flex-col gap-0.5 md:gap-1 p-1" }>
 				{ Object.keys( noble.cost )
 					.map( g => g as keyof Cost )
 					.filter( gem => noble.cost[ gem ] > 0 )
