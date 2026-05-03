@@ -9,6 +9,7 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useRef,
 	useState,
 	useTransition
 } from "react";
@@ -20,6 +21,7 @@ type WordleContextValue = {
 	currentGuess: string;
 	isPending: boolean;
 	invalidGuess: boolean;
+	lastRevealedRow: number | null;
 	handleKeyPress: ( letter: string ) => void;
 	handleBackspace: () => void;
 	handleSubmit: () => void;
@@ -44,6 +46,16 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
 	const [ isPending, startTransition ] = useTransition();
 	const [ invalidGuess, setInvalidGuess ] = useState( false );
+	const [ lastRevealedRow, setLastRevealedRow ] = useState<number | null>( null );
+	const prevGuessCountRef = useRef( shared.state.guesses.length );
+
+	useEffect( () => {
+		const count = shared.state.guesses.length;
+		if ( count > prevGuessCountRef.current ) {
+			setLastRevealedRow( count - 1 );
+		}
+		prevGuessCountRef.current = count;
+	}, [ shared.state.guesses.length ] );
 
 	const wordLength = shared.config.wordLength;
 	const gameInProgress = shared.status === "IN_PROGRESS";
@@ -104,6 +116,7 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 			currentGuess,
 			isPending,
 			invalidGuess,
+			lastRevealedRow,
 			handleKeyPress,
 			handleBackspace,
 			handleSubmit

@@ -5,6 +5,7 @@ import { cn } from "@/shared/utils/cn";
 import { Board } from "@/wordle/components/board";
 import { useWordle } from "@/wordle/components/context";
 import { Keyboard } from "@/wordle/components/keyboard";
+import { AnimatePresence, motion } from "framer-motion";
 
 export function GameView() {
 	const { shared } = useWordle();
@@ -26,22 +27,34 @@ export function GameView() {
 					</div>
 				}
 			/>
-			{ gameCompleted && (
-				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					<p className={ cn(
-						"text-xl md:text-2xl font-heading",
-						shared.state.victory ? "text-green-500" : "text-red-500"
-					) }>
-						{ shared.state.victory ? "You won!" : "Better luck next time!" }
-					</p>
-				</div>
-			) }
+			<AnimatePresence>
+				{ gameCompleted && (
+					<motion.div
+						key={ "wordle-banner" }
+						initial={ { opacity: 0, scale: 0.7 } }
+						animate={ {
+							opacity: 1,
+							scale: 1,
+							transition: { type: "spring", stiffness: 380, damping: 20, delay: 0.3 }
+						} }
+						exit={ { opacity: 0, scale: 0.7, transition: { duration: 0.2 } } }
+						className={ "rounded-md bg-background p-4 text-center w-full border-2 border-black" }
+					>
+						<p className={ cn(
+							"text-xl md:text-2xl font-heading",
+							shared.state.victory ? "text-green-500" : "text-red-500"
+						) }>
+							{ shared.state.victory ? "You won!" : "Better luck next time!" }
+						</p>
+					</motion.div>
+				) }
+			</AnimatePresence>
 			<Board/>
 			{ gameInProgress && (
 				<div
 					className={ cn(
 						"fixed bottom-0 bg-surface left-0 right-0",
-						"rounded-t-xl flex gap-3 p-3 items-center"
+						"rounded-t-xl flex gap-3 p-3 justify-center"
 					) }
 				>
 					<Keyboard/>

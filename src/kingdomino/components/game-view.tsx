@@ -14,6 +14,7 @@ import { GameInfo } from "@/shared/components/game-info";
 import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
+import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useState, useTransition } from "react";
 
 export function GameView() {
@@ -167,11 +168,22 @@ export function GameView() {
 					) }
 					<div
 						className={ cn(
-							"col-span-2 p-2 w-full rounded-md bg-accent text-center",
+							"col-span-2 p-2 w-full rounded-md bg-accent text-center overflow-hidden",
 							shared.status === "COMPLETED" && "col-span-1 md:col-span-2"
 						) }
 					>
-						<span className={ "text-2xl font-heading" }>{ getStatusMsg() }</span>
+						<AnimatePresence mode={ "wait" }>
+							<motion.span
+								key={ getStatusMsg() }
+								className={ "text-2xl font-heading inline-block" }
+								initial={ { opacity: 0, scale: 0.7 } }
+								animate={ { opacity: 1, scale: 1 } }
+								exit={ { opacity: 0, scale: 0.7 } }
+								transition={ { type: "spring", stiffness: 380, damping: 22 } }
+							>
+								{ getStatusMsg() }
+							</motion.span>
+						</AnimatePresence>
 					</div>
 					{ shared.status !== "COMPLETED" && (
 						<Fragment>

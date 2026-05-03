@@ -2,6 +2,7 @@
 
 import { useFish } from "@/fish/components/context";
 import { cn } from "@/shared/utils/cn";
+import { AnimatePresence, motion } from "framer-motion";
 
 export function TurnIndicator() {
 	const { shared, player } = useFish();
@@ -28,21 +29,50 @@ export function TurnIndicator() {
 		}
 	}
 
+	const heading = isMyTurn ? "YOUR TURN!" : `${ currentPlayerName }'S TURN`;
+
 	return (
-		<div
+		<motion.div
+			layout
 			className={ cn(
-				"p-2 md:p-3 rounded-md w-full text-center transition-colors",
+				"p-2 md:p-3 rounded-md w-full text-center",
 				isMyTurn ? "bg-accent text-neutral-dark" : "bg-background"
 			) }
+			animate={ isMyTurn
+				? {
+					boxShadow: [
+						"0 0 0 0 rgba(0,0,0,0)",
+						"0 0 0 6px var(--color-accent)",
+						"0 0 0 0 rgba(0,0,0,0)"
+					]
+				}
+				: { boxShadow: "0 0 0 0 rgba(0,0,0,0)" }
+			}
 		>
-			<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
-				{ isMyTurn ? "YOUR TURN!" : `${ currentPlayerName }'S TURN` }
-			</p>
+			<AnimatePresence mode={ "wait" }>
+				<motion.p
+					key={ heading }
+					className={ "text-sm md:text-lg xl:text-xl font-semibold" }
+					initial={ { opacity: 0, scale: 0.7 } }
+					animate={ { opacity: 1, scale: 1 } }
+					exit={ { opacity: 0, scale: 0.7 } }
+					transition={ { type: "spring", stiffness: 380, damping: 22 } }
+				>
+					{ heading }
+				</motion.p>
+			</AnimatePresence>
 			{ isMyTurn && hint && (
-				<p className={ "text-xs md:text-sm mt-1 opacity-80" }>
+				<motion.p
+					className={ "text-xs md:text-sm mt-1 opacity-80" }
+					key={ hint }
+					initial={ { opacity: 0 } }
+					animate={ { opacity: 0.8 } }
+					exit={ { opacity: 0 } }
+					transition={ { duration: 0.25 } }
+				>
 					{ hint }
-				</p>
+				</motion.p>
 			) }
-		</div>
+		</motion.div>
 	);
 }

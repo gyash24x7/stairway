@@ -7,6 +7,7 @@ import { PLAYER_COUNT } from "@/callbreak/core/utils";
 import { RCard } from "@/shared/components/card";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { cn } from "@/shared/utils/cn";
+import { AnimatePresence, motion } from "framer-motion";
 import { Fragment } from "react";
 
 export function DealView() {
@@ -24,29 +25,69 @@ export function DealView() {
 						const playerId = shared.context.players[ idx ];
 						const cardId = activeTrick?.cards[ playerId ];
 						const isRightSide = idx === 1 || idx === 2;
+						const isWinner = activeTrick?.winner === playerId;
+						const isCurrent = !allPlayersPlayed && currentTurn === playerId;
 						return (
-							<div
+							<motion.div
 								key={ playerId }
 								className={ cn(
 									"w-full p-2 md:p-4 rounded-md bg-background",
-									"flex gap-3 items-center justify-between",
-									!allPlayersPlayed && currentTurn === playerId && "border-accent border-4",
-									activeTrick?.winner === playerId && "border-green-500 border-4",
+									"flex gap-3 items-center justify-between relative",
+									isCurrent && "border-accent border-4",
+									isWinner && "border-green-500 border-4",
 									isRightSide ? "flex-row-reverse" : "flex-row"
 								) }
+								animate={ isWinner
+									? {
+										scale: [ 1, 1.04, 1 ],
+										boxShadow: [
+											"0 0 0 0 rgba(34,197,94,0)",
+											"0 0 0 12px rgba(34,197,94,0.4)",
+											"0 0 0 0 rgba(34,197,94,0)"
+										]
+									}
+									: { scale: 1 }
+								}
+								transition={ isWinner
+									? { duration: 1, repeat: 1 }
+									: { type: "spring", stiffness: 400, damping: 28 }
+								}
 							>
 								<RPlayerInfo player={ shared.players[ playerId ] } key={ playerId }/>
-								{ cardId && <RCard cardId={ cardId }/> }
-								{ !cardId && !!activeTrick && (
-									<div
-										className={ cn(
-											"w-16 md:w-20 xl:w-24 p-1 md:p-1.5 md:text-lg h-24 md:h-30 xl:h-36",
-											"rounded-lg border-2 bg-surface border-dotted border-inverted-surface",
-											"flex flex-col justify-between"
-										) }
-									/>
-								) }
-							</div>
+								<AnimatePresence mode={ "wait" }>
+									{ cardId ? (
+										<motion.div
+											key={ cardId }
+											layoutId={ `card-${ cardId }` }
+											initial={ { scale: 0.5, opacity: 0 } }
+											animate={ {
+												scale: 1,
+												opacity: 1,
+												transition: { type: "spring", stiffness: 380, damping: 22 }
+											} }
+											exit={ {
+												opacity: 0,
+												scale: 0.6,
+												transition: { duration: 0.35 }
+											} }
+										>
+											<RCard cardId={ cardId }/>
+										</motion.div>
+									) : !!activeTrick ? (
+										<motion.div
+											key={ `empty-${ playerId }` }
+											initial={ { opacity: 0 } }
+											animate={ { opacity: 1 } }
+											exit={ { opacity: 0 } }
+											className={ cn(
+												"w-16 md:w-20 xl:w-24 p-1 md:p-1.5 md:text-lg h-24 md:h-30 xl:h-36",
+												"rounded-lg border-2 bg-surface border-dotted border-inverted-surface",
+												"flex flex-col justify-between"
+											) }
+										/>
+									) : null }
+								</AnimatePresence>
+							</motion.div>
 						);
 					} ) }
 				</div>

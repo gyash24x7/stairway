@@ -20,6 +20,7 @@ import {
 } from "@/kingdomino/core/utils";
 import { Popover, PopoverContent } from "@/shared/primitives/popover";
 import { cn } from "@/shared/utils/cn";
+import { motion } from "framer-motion";
 import { CrownIcon } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";
 
@@ -99,25 +100,33 @@ export function RSmallBoard( { board }: { board: Board; } ) {
 
 function SmallFilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } ) {
 	return (
-		<div
+		<motion.div
+			layout
+			initial={ { scale: 0.5, opacity: 0 } }
+			animate={ { scale: 1, opacity: 1 } }
+			transition={ { type: "spring", stiffness: 360, damping: 22 } }
 			className={ cn(
 				"w-6 h-6 rounded border border-inverted-surface overflow-hidden p-0.5",
-				"font-semibold flex flex-wrap justify-between items-center transition",
+				"font-semibold flex flex-wrap justify-between items-center",
 				cell.className
 			) }
 			title={ `(${ x }, ${ y })` }
 		>
 			<CrownIndicator count={ cell.crowns } size={ 6 }/>
-		</div>
+		</motion.div>
 	);
 }
 
 function FilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } ) {
 	return (
-		<div
+		<motion.div
+			layout
+			initial={ { scale: 0.4, opacity: 0 } }
+			animate={ { scale: 1, opacity: 1 } }
+			transition={ { type: "spring", stiffness: 380, damping: 22 } }
 			className={ cn(
 				"w-14 h-14 rounded border border-inverted-surface p-1 text-[10px] overflow-hidden",
-				"font-semibold flex flex-col justify-between transition shrink-0",
+				"font-semibold flex flex-col justify-between shrink-0",
 				cell.className
 			) }
 			title={ `(${ x }, ${ y })` }
@@ -126,7 +135,7 @@ function FilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } )
 			<span className={ "self-end" }>
 				<CrownIndicator count={ cell.crowns } size={ 14 }/>
 			</span>
-		</div>
+		</motion.div>
 	);
 }
 
