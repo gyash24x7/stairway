@@ -1,7 +1,7 @@
 import { RDomino } from "@/kingdomino/components/domino";
 import type { DominoId, DraftEntry } from "@/kingdomino/core/types";
-import { cn } from "@/shared/utils/cn";
 import type { BasePlayerInfo, PlayerId } from "@/shared/engine/types";
+import { cn } from "@/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 
 export type RDraftProps = {
