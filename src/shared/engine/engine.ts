@@ -118,19 +118,17 @@ export abstract class AbstractGameEngine<
 			this.state = this.structure.hooks.onJoin( this.readonlyGameData(), player.id );
 		}
 
-		await this.saveGameData();
-		await this.syncClients();
-
 		if ( this.isFull() ) {
 			if ( !this.config.autoStart ) {
 				this.status = "PLAYERS_READY";
-				await this.saveGameData();
-				await this.syncClients();
 			} else {
 				await this.ctx.storage.put( "alarmType", "auto-start" );
 				await this.ctx.storage.setAlarm( Date.now() + 5000 );
 			}
 		}
+
+		await this.saveGameData();
+		await this.syncClients();
 
 		this.logger.debug( "<< join()" );
 	}

@@ -5,6 +5,7 @@ import { CardActions } from "@/splendor/components/card-actions";
 import { useSplendor } from "@/splendor/components/context";
 import { GameCardBack } from "@/splendor/components/game-card";
 import { Noble, NobleBack } from "@/splendor/components/noble";
+import { AnimatePresence, motion } from "framer-motion";
 
 export function Board() {
 	const { shared } = useSplendor();
@@ -18,9 +19,28 @@ export function Board() {
 				<div className={ "hidden md:block" }>
 					<NobleBack/>
 				</div>
-				{ shared.state.nobles.map(
-					noble => <Noble noble={ noble } key={ noble.id }/>
-				) }
+				<AnimatePresence mode={ "popLayout" } initial={ false }>
+					{ shared.state.nobles.map( noble => (
+						<motion.div
+							key={ noble.id }
+							layout
+							layoutId={ `noble-${ noble.id }` }
+							initial={ { scale: 0.5, opacity: 0 } }
+							animate={ {
+								scale: 1,
+								opacity: 1,
+								transition: { type: "spring", stiffness: 380, damping: 22 }
+							} }
+							exit={ {
+								opacity: 0,
+								scale: 0.4,
+								transition: { duration: 0.4 }
+							} }
+						>
+							<Noble noble={ noble }/>
+						</motion.div>
+					) ) }
+				</AnimatePresence>
 				{ new Array( shared.config.playerCount + 1 - shared.state.nobles.length ).fill( 0 )
 					.map( ( _, i ) => (
 						<div
@@ -41,9 +61,28 @@ export function Board() {
 						<div className={ "hidden md:block" }>
 							<GameCardBack level={ level }/>
 						</div>
-						{ shared.state.cards[ level ].map(
-							card => <CardActions card={ card } key={ card.id }/>
-						) }
+						<AnimatePresence mode={ "popLayout" } initial={ false }>
+							{ shared.state.cards[ level ].map( card => (
+								<motion.div
+									key={ card.id }
+									layout
+									layoutId={ `card-${ card.id }` }
+									initial={ { scale: 0.5, opacity: 0 } }
+									animate={ {
+										scale: 1,
+										opacity: 1,
+										transition: { type: "spring", stiffness: 380, damping: 22 }
+									} }
+									exit={ {
+										opacity: 0,
+										scale: 0.5,
+										transition: { duration: 0.3 }
+									} }
+								>
+									<CardActions card={ card }/>
+								</motion.div>
+							) ) }
+						</AnimatePresence>
 						{ Array.from( { length: 4 - shared.state.cards[ level ].length } )
 							.map( ( _, i ) => (
 								<div

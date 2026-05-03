@@ -1,5 +1,6 @@
 "use client";
 
+import { popIn, slideInUp } from "@/shared/animations/variants";
 import { GameInfo } from "@/shared/components/game-info";
 import { RPlayerInfoSmall } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
@@ -8,6 +9,7 @@ import { cn } from "@/shared/utils/cn";
 import { Board } from "@/tictactoe/components/board";
 import { useTicTacToe } from "@/tictactoe/components/context";
 import { addBots } from "@/tictactoe/core/actions";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTransition } from "react";
 
 export function GameView() {
@@ -46,17 +48,33 @@ export function GameView() {
 				</div>
 			) }
 
-			{ isCompleted && shared.state.winner && (
-				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					{ shared.state.winner !== "draw" ? (
-						<p className={ "text-lg font-heading" }>
-							{ shared.state.winner === player.playerId ? "You won!" : "You lost!" }
-						</p>
-					) : (
-						<p className={ "text-lg font-heading" }>It's a draw!</p>
-					) }
-				</div>
-			) }
+			<AnimatePresence>
+				{ isCompleted && shared.state.winner && (
+					<motion.div
+						key={ "winner-banner" }
+						variants={ slideInUp }
+						initial={ "initial" }
+						animate={ "animate" }
+						exit={ "exit" }
+						className={ "rounded-md bg-background p-4 text-center w-full border-2 border-black" }
+					>
+						{ shared.state.winner !== "draw" ? (
+							<p className={ "text-lg font-heading" }>
+								{ shared.state.winner === player.playerId ? "You won!" : "You lost!" }
+							</p>
+						) : (
+							<motion.p
+								className={ "text-lg font-heading" }
+								variants={ popIn }
+								initial={ "initial" }
+								animate={ "animate" }
+							>
+								It's a draw!
+							</motion.p>
+						) }
+					</motion.div>
+				) }
+			</AnimatePresence>
 
 			<Board/>
 
@@ -66,17 +84,29 @@ export function GameView() {
 						"flex justify-around border-2 rounded-md bg-background w-full max-w-xl"
 					) }
 				>
-					{ players.map( ( p, index ) => (
-						<div key={ p.id } className={ "flex items-center gap-2" }>
-							<span className={ "text-2xl font-title" }>
-								{ index === 0 ? "X" : "O" }
-							</span>
-							<RPlayerInfoSmall player={ p }/>
-							{ shared.context.currentPlayer === p.id && isActive && (
-								<span className={ "text-xs text-accent" }>●</span>
-							) }
-						</div>
-					) ) }
+					{ players.map( ( p, index ) => {
+						const isCurrent = shared.context.currentPlayer === p.id && isActive;
+						return (
+							<div
+								key={ p.id }
+								className={ "relative flex items-center gap-2 p-2 rounded-base" }
+							>
+								<span className={ "text-2xl font-title" }>
+									{ index === 0 ? "X" : "O" }
+								</span>
+								<RPlayerInfoSmall player={ p }/>
+								{ isCurrent && (
+									<motion.span
+										className={ "text-xs text-accent" }
+										animate={ { opacity: [ 0.4, 1, 0.4 ], scale: [ 1, 1.3, 1 ] } }
+										transition={ { duration: 1.4, repeat: Infinity, ease: "easeInOut" } }
+									>
+										●
+									</motion.span>
+								) }
+							</div>
+						);
+					} ) }
 				</div>
 			) }
 		</div>

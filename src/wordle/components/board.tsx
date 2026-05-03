@@ -2,6 +2,7 @@ import { cn } from "@/shared/utils/cn";
 import { useWordle } from "@/wordle/components/context";
 import { getWords } from "@/wordle/core/actions";
 import type { GuessResult, GuessResultsForWord, LetterStatus } from "@/wordle/core/types";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 function getBlockColor( status: LetterStatus ) {
@@ -15,9 +16,16 @@ function getBlockColor( status: LetterStatus ) {
 	}
 }
 
-function GuessTiles( { result, isCurrentRow }: { result: GuessResult[]; isCurrentRow: boolean } ) {
-	const { shared, currentGuess, invalidGuess } = useWordle();
+type GuessTilesProps = {
+	result: GuessResult[];
+	isCurrentRow: boolean;
+	rowIndex: number;
+};
+
+function GuessTiles( { result, isCurrentRow, rowIndex }: GuessTilesProps ) {
+	const { shared, currentGuess, invalidGuess, lastRevealedRow } = useWordle();
 	const hasResult = result.some( ( r ) => r.letter !== "" );
+	const isRevealing = hasResult && lastRevealedRow === rowIndex;
 
 	const getCurrentLetter = ( idx: number ) => !hasResult && isCurrentRow
 		? currentGuess.charAt( idx )
@@ -26,35 +34,56 @@ function GuessTiles( { result, isCurrentRow }: { result: GuessResult[]; isCurren
 	const isCompleted = shared.status === "COMPLETED";
 
 	return (
-		<div
+		<motion.div
 			className={ cn(
 				"grid gap-1",
 				shared.config.wordLength === 4 && "grid-cols-4",
 				shared.config.wordLength === 5 && "grid-cols-5",
 				shared.config.wordLength === 6 && "grid-cols-6"
 			) }
+			animate={ isCurrentRow && invalidGuess ? { x: [ 0, -8, 8, -8, 8, -4, 4, 0 ] } : { x: 0 } }
+			transition={ { duration: 0.5 } }
 		>
-			{ result.map( ( { letter, status }, idx ) => (
-				<div
-					key={ `guess-tiles-${ idx }` }
-					className={ cn(
-						"border-inverted-surface",
-						hasResult ? getBlockColor( status ) : "bg-background",
-						"border rounded flex items-center justify-center",
-						isCurrentRow && !!getCurrentLetter( idx ) && "border-foreground",
-						isCurrentRow && invalidGuess && "border-red-500",
-						!isCompleted && "w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12",
-						isCompleted && "w-5 h-5 md:h-8 md:w-8"
-					) }
-				>
-					{ !isCompleted && (
-						<p className={ "text-lg sm:text-xl md:text-2xl font-semibold" }>
-							{ ( hasResult ? letter : getCurrentLetter( idx ) )?.toUpperCase() }
-						</p>
-					) }
-				</div>
-			) ) }
-		</div>
+			{ result.map( ( { letter, status }, idx ) => {
+				const displayLetter = ( hasResult ? letter : getCurrentLetter( idx ) )?.toUpperCase();
+				return (
+					<motion.div
+						key={ `guess-tiles-${ idx }` }
+						className={ cn(
+							"border-inverted-surface",
+							hasResult ? getBlockColor( status ) : "bg-background",
+							"border rounded flex items-center justify-center",
+							isCurrentRow && !!getCurrentLetter( idx ) && "border-foreground",
+							isCurrentRow && invalidGuess && "border-red-500",
+							!isCompleted && "w-7 h-7 sm:w-10 sm:h-10 md:w-12 md:h-12",
+							isCompleted && "w-5 h-5 md:h-8 md:w-8"
+						) }
+						style={ { perspective: 600 } }
+						initial={ false }
+						animate={ isRevealing
+							? { rotateX: [ 0, 90, 0 ], scale: [ 1, 1, 1 ] }
+							: { rotateX: 0 }
+						}
+						transition={ isRevealing
+							? { duration: 0.55, times: [ 0, 0.5, 1 ], delay: idx * 0.12 }
+							: { duration: 0 }
+						}
+					>
+						{ !isCompleted && displayLetter && (
+							<motion.p
+								key={ `${ displayLetter }-${ hasResult ? "r" : "c" }` }
+								className={ "text-lg sm:text-xl md:text-2xl font-semibold" }
+								initial={ !hasResult ? { scale: 0.6, opacity: 0 } : false }
+								animate={ { scale: 1, opacity: 1 } }
+								transition={ { type: "spring", stiffness: 500, damping: 20 } }
+							>
+								{ displayLetter }
+							</motion.p>
+						) }
+					</motion.div>
+				);
+			} ) }
+		</motion.div>
 	);
 }
 
@@ -70,6 +99,7 @@ function WordTiles( { results }: { results: GuessResultsForWord } ) {
 				<GuessTiles
 					result={ result }
 					isCurrentRow={ !isSolved && shared.state.guesses.length === idx }
+					rowIndex={ idx }
 					key={ `word-tiles-${ idx }` }
 				/>
 			) ) }
@@ -93,9 +123,14 @@ export function Board() {
 				<div key={ `word-${ idx }` } className={ "flex flex-col gap-2 items-center" }>
 					<WordTiles results={ guessResultsForWord }/>
 					{ !!words[ idx ] && (
-						<h1 className={ "font-heading text-xl" }>
+						<motion.h1
+							className={ "font-heading text-xl" }
+							initial={ { opacity: 0, scale: 0.7 } }
+							animate={ { opacity: 1, scale: 1 } }
+							transition={ { type: "spring", stiffness: 380, damping: 22, delay: idx * 0.1 } }
+						>
 							{ words[ idx ].toUpperCase() }
-						</h1>
+						</motion.h1>
 					) }
 				</div>
 			) ) }

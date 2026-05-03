@@ -10,6 +10,7 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { cn } from "@/shared/utils/cn";
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 
 type FeedEntry = {
@@ -55,9 +56,11 @@ export function ActivityFeed() {
 
 	return (
 		<div className={ "flex flex-col gap-2 w-full" }>
-			<div className={ "flex flex-col gap-1.5" }>
-				{ inlineEntries.map( entry => <FeedItem key={ entry.timestamp } entry={ entry }/> ) }
-			</div>
+			<motion.div className={ "flex flex-col gap-1.5" } layout>
+				<AnimatePresence initial={ false } mode={ "popLayout" }>
+					{ inlineEntries.map( entry => <FeedItem key={ entry.timestamp } entry={ entry }/> ) }
+				</AnimatePresence>
+			</motion.div>
 			{ entries.length > 5 && (
 				<Drawer open={ showDialog } onOpenChange={ setShowDialog }>
 					<button
@@ -86,7 +89,15 @@ export function ActivityFeed() {
 
 function FeedItem( { entry }: { entry: FeedEntry } ) {
 	return (
-		<div
+		<motion.div
+			layout
+			initial={ { opacity: 0, scale: 0.7 } }
+			animate={ {
+				opacity: 1,
+				scale: 1,
+				transition: { type: "spring", stiffness: 380, damping: 22 }
+			} }
+			exit={ { opacity: 0, scale: 0.7, transition: { duration: 0.2 } } }
 			className={ cn(
 				"p-3 rounded-md text-xs md:text-sm font-semibold text-foreground",
 				entry.success === true && "bg-green-500/20 dark:bg-green-500/30",
@@ -95,6 +106,6 @@ function FeedItem( { entry }: { entry: FeedEntry } ) {
 			) }
 		>
 			{ entry.description.toUpperCase() }
-		</div>
+		</motion.div>
 	);
 }

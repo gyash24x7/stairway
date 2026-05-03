@@ -1,6 +1,7 @@
 import { CrownIndicator } from "@/kingdomino/components/board";
 import type { Domino, DominoId, Terrain } from "@/kingdomino/core/types";
 import { cn } from "@/shared/utils/cn";
+import { motion } from "framer-motion";
 
 const TERRAIN_CLASS: Record<string, string> = {
 	desert: "bg-amber-200 text-amber-900",
@@ -81,20 +82,24 @@ export function RDomino( { domino, enabled, isSelected, onClick }: RDominoProps 
 	};
 
 	return (
-		<div
+		<motion.div
+			whileHover={ enabled ? { scale: 1.04 } : undefined }
+			whileTap={ enabled ? { scale: 0.96 } : undefined }
+			animate={ isSelected ? { scale: [ 1, 1.05, 1 ] } : { scale: 1 } }
+			transition={ isSelected
+				? { duration: 1.2, repeat: Infinity, ease: "easeInOut" }
+				: { type: "spring", stiffness: 400, damping: 22 }
+			}
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
-				"border-2 border-inverted-surface transition",
+				"border-2 border-inverted-surface",
 				enabled && "cursor-pointer",
-				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-sm md:shadow-md",
-				!isSelected && enabled && (
-					"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
-				)
+				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-sm md:shadow-md"
 			) }
 			onClick={ handleDominoClick }
 		>
 			<RTerrain terrain={ domino.left.terrain } crowns={ domino.left.crowns }/>
 			<RTerrain terrain={ domino.right.terrain } crowns={ domino.right.crowns }/>
-		</div>
+		</motion.div>
 	);
 }

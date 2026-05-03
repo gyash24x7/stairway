@@ -4,6 +4,7 @@ import { useFish } from "@/fish/components/context";
 import type { Book } from "@/fish/core/types";
 import { getBookDisplayString } from "@/fish/core/utils";
 import { cn } from "@/shared/utils/cn";
+import { motion } from "framer-motion";
 
 export function BooksTracker() {
 	const { shared } = useFish();
@@ -31,8 +32,17 @@ export function BooksTracker() {
 				{ shared.config.books.map( book => {
 					const owner = bookOwners.get( book );
 					return (
-						<div
+						<motion.div
 							key={ book }
+							layout
+							animate={ owner
+								? {
+									backgroundColor: undefined,
+									scale: [ 1, 1.08, 1 ],
+									transition: { duration: 0.6 }
+								}
+								: { scale: 1 }
+							}
 							className={ cn(
 								"rounded-md px-2 py-2 text-center",
 								owner ? getTeamColor( owner.teamId ) : "bg-surface"
@@ -47,11 +57,16 @@ export function BooksTracker() {
 								{ getBookDisplayString( book, shared.config.type ) }
 							</p>
 							{ owner && (
-								<p className={ "text-xs text-white/80 truncate" }>
+								<motion.p
+									className={ "text-xs text-white/80 truncate" }
+									initial={ { opacity: 0, y: -4 } }
+									animate={ { opacity: 1, y: 0 } }
+									transition={ { delay: 0.2 } }
+								>
 									{ owner.teamName.toUpperCase() }
-								</p>
+								</motion.p>
 							) }
-						</div>
+						</motion.div>
 					);
 				} ) }
 			</div>

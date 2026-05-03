@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallbreak } from "@/callbreak/components/context";
+import { CounterTween } from "@/shared/animations/counter-tween";
 import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
 import {
 	Table,
@@ -40,11 +41,12 @@ export function Scores() {
 								<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>
 							</TableCell>
 							<TableCell className={ "text-center" }>
-								{ shared.state.scores[ player.id ] }
+								<CounterTween value={ shared.state.scores[ player.id ] ?? 0 }/>
 							</TableCell>
 							{ shared.status !== "COMPLETED" && (
 								<TableCell className={ "text-center" }>
-									{ deal?.wins[ player.id ] ?? 0 }/{ deal?.declarations[ player.id ] ?? 0 }
+									<CounterTween value={ deal?.wins[ player.id ] ?? 0 }/>
+									/{ deal?.declarations[ player.id ] ?? 0 }
 								</TableCell>
 							) }
 						</TableRow>
