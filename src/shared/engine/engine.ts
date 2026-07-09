@@ -558,21 +558,15 @@ export abstract class AbstractGameEngine<
 	}
 
 	/**
-	 * Syncs the current game state to all connected non-bot players via SyncedStateServer.
-	 * Uses a single DO per game (gameName:gameId) with key "shared" for common state
-	 * and each playerId as key for player-specific state.
+	 * Pushes the current game state to connected clients.
+	 *
+	 * Realtime sync has been disabled during the SPA migration — clients now refetch
+	 * game state on demand (on-action) via the oRPC `getGame` query. This method is
+	 * intentionally a no-op so that re-enabling realtime later is a single-method change;
+	 * all call sites remain in place.
 	 */
 	private async syncClients() {
-		const syncName = `${ this.structure.name }:${ this.id }`;
-		const syncId = this.env.SYNCED_STATE_SERVER.idFromName( syncName );
-		const syncStub = this.env.SYNCED_STATE_SERVER.get( syncId );
-
-		await syncStub.setState( this.getSharedGameInfo(), "shared" );
-
-		const nonBotPlayers = Object.keys( this.players ).filter( id => !this.players[ id ].isBot );
-		for ( const playerId of nonBotPlayers ) {
-			await syncStub.setState( this.getPlayerSpecificInfo( playerId ), playerId );
-		}
+		// no-op (realtime disabled)
 	}
 
 	/**
