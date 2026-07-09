@@ -8,11 +8,6 @@ export type AuthInfo = {
 	avatar: string;
 };
 
-/** Session data containing the authenticated user info, or null if not logged in. */
-export type SessionData = {
-	authInfo: AuthInfo | null;
-}
-
 /** Input containing a username for auth actions. */
 export type UsernameInput = { username: string };
 
