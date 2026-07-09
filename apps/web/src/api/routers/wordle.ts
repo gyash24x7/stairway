@@ -1,5 +1,5 @@
-import { getCompletedGame, requireGame } from "@/api/helpers";
-import { authed } from "@/api/middleware";
+import { getCompletedGame, requireGame } from "@s2h/api/helpers";
+import { authed } from "@s2h/api/middleware";
 import { db } from "@s2h/db";
 import { games } from "@s2h/db/schema";
 import { createLogger } from "@s2h/shared/utils/logger";

@@ -1,4 +1,4 @@
-import * as auth from "@/api/routers/auth";
+import * as auth from "@s2h/auth/router";
 import * as callbreak from "@/api/routers/callbreak";
 import * as fish from "@/api/routers/fish";
 import * as kingdomino from "@/api/routers/kingdomino";

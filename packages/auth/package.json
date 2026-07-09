@@ -1,0 +1,27 @@
+{
+	"name": "@s2h/auth",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/sessions.ts",
+		"./router": "./src/router.ts",
+		"./types": "./src/types.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@orpc/server": "catalog:",
+		"@s2h/api": "workspace:*",
+		"@s2h/db": "workspace:*",
+		"@s2h/shared": "workspace:*",
+		"@simplewebauthn/server": "catalog:",
+		"cookie": "catalog:",
+		"drizzle-orm": "catalog:",
+		"valibot": "catalog:"
+	},
+	"devDependencies": {
+		"typescript": "catalog:"
+	}
+}

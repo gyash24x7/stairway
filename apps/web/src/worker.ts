@@ -1,5 +1,5 @@
 import { router } from "@/api/routers";
-import { loadSession } from "@/auth/core/sessions";
+import { loadSession } from "@s2h/auth";
 import { db } from "@s2h/db";
 import { games } from "@s2h/db/schema";
 import { RPCHandler } from "@orpc/server/fetch";

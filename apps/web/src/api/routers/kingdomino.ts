@@ -1,5 +1,5 @@
-import { getCompletedGame, requireGame, requireGameByCode } from "@/api/helpers";
-import { authed } from "@/api/middleware";
+import { getCompletedGame, requireGame, requireGameByCode } from "@s2h/api/helpers";
+import { authed } from "@s2h/api/middleware";
 import { KingdominoEngine } from "@/kingdomino/core/engine";
 import type {
 	KingdominoConfig,

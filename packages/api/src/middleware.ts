@@ -1,4 +1,4 @@
-import { base } from "@/api/orpc";
+import { base } from "./orpc";
 import { ORPCError } from "@orpc/server";
 
 /**

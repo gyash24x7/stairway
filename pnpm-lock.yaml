@@ -161,6 +161,12 @@ importers:
       '@orpc/tanstack-query':
         specifier: 'catalog:'
         version: 1.14.7(@orpc/client@1.14.7)(@tanstack/query-core@5.101.2)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@s2h/auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
       '@s2h/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -282,6 +288,59 @@ importers:
       wrangler:
         specifier: 'catalog:'
         version: 4.107.1
+
+  packages/api:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/auth:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../api
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../db
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@simplewebauthn/server':
+        specifier: 'catalog:'
+        version: 13.3.0
+      cookie:
+        specifier: 'catalog:'
+        version: 1.1.1
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/db:
     dependencies:

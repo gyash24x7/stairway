@@ -1,5 +1,5 @@
-import { base } from "@/api/orpc";
-import { createSession, destroySession } from "@/auth/core/sessions";
+import { base } from "@s2h/api";
+import { createSession, destroySession } from "./sessions";
 import type { AuthInfo } from "@s2h/shared/auth";
 import { db } from "@s2h/db";
 import { passkeys, users, webauthnOptions } from "@s2h/db/schema";

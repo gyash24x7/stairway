@@ -4,8 +4,8 @@ import type {
 	CallbreakPlayerView,
 	CallbreakSharedView
 } from "@/callbreak/core/types";
-import { getCompletedGame, requireGame, requireGameByCode } from "@/api/helpers";
-import { authed } from "@/api/middleware";
+import { getCompletedGame, requireGame, requireGameByCode } from "@s2h/api/helpers";
+import { authed } from "@s2h/api/middleware";
 import { db } from "@s2h/db";
 import { games } from "@s2h/db/schema";
 import { CARD_SUITS, SORTED_DECK } from "@s2h/shared/utils/cards";

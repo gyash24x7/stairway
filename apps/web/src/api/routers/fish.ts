@@ -1,5 +1,5 @@
-import { getCompletedGame, requireGame, requireGameByCode } from "@/api/helpers";
-import { authed } from "@/api/middleware";
+import { getCompletedGame, requireGame, requireGameByCode } from "@s2h/api/helpers";
+import { authed } from "@s2h/api/middleware";
 import { FishEngine } from "@/fish/core/engine";
 import type { FishConfig, FishPlayerView, FishSharedView } from "@/fish/core/types";
 import { buildConfig } from "@/fish/core/utils";
