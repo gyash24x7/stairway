@@ -1,8 +1,6 @@
-"use client";
-
 import { Button } from "@/shared/primitives/button";
+import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useTransition } from "react";
-import { navigate } from "rwsdk/client";
 
 type CreateGameProps = {
 	game: string;
@@ -12,11 +10,12 @@ type CreateGameProps = {
 };
 
 export function CreateGame( { game, disabled, createGame, children }: CreateGameProps ) {
+	const navigate = useNavigate();
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleCreate = () => startTransition( async () => {
 		const gameId = await createGame();
-		await navigate( `/${ game }/${ gameId }` );
+		await navigate( { to: "/$game/$gameId", params: { game, gameId } } );
 	} );
 
 	return (

@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/shared/primitives/button";
 import {
 	Select,
@@ -9,45 +7,31 @@ import {
 	SelectSeparator,
 	SelectTrigger
 } from "@/shared/primitives/select";
-import { type Theme, type ThemeMode, themeModes, themes } from "@/shared/utils/cn";
-import { updateTheme } from "@/shared/utils/theme";
+import { type Theme, type ThemeMode, themes } from "@/shared/utils/cn";
+import { applyTheme, readTheme } from "@/shared/utils/theme";
 import { MoonIcon, SunIcon } from "lucide-react";
-import { Fragment, useEffect, useState, useTransition } from "react";
+import { Fragment, useState } from "react";
 
-type ThemeSwitcherProps = {
-	initialTheme: Theme;
-	initialThemeMode: ThemeMode;
-}
+export function ThemeSwitcher() {
+	const [ { theme, mode }, setState ] = useState( () => readTheme() );
 
-export function ThemeSwitcher( { initialTheme, initialThemeMode }: ThemeSwitcherProps ) {
-	const [ theme, setTheme ] = useState<Theme>( initialTheme );
-	const [ themeMode, setThemeMode ] = useState<ThemeMode>( initialThemeMode );
-	const [ isPending, startTransition ] = useTransition();
-
-	const handleThemeChange = ( theme: Theme, mode: ThemeMode ) => startTransition( async () => {
-		await updateTheme( theme, mode );
-		setTheme( theme );
-		setThemeMode( mode );
-	} );
-
-	useEffect( () => {
-		document.body.classList.remove( ...themes );
-		document.body.classList.remove( ...themeModes );
-		document.body.classList.add( theme, themeMode );
-	}, [ theme, themeMode ] );
+	const handleThemeChange = ( nextTheme: Theme, nextMode: ThemeMode ) => {
+		applyTheme( nextTheme, nextMode );
+		setState( { theme: nextTheme, mode: nextMode } );
+	};
 
 	return (
 		<Fragment>
 			<Select
-				onValueChange={ ( t ) => handleThemeChange( t ?? "apple", themeMode ) }
+				onValueChange={ ( t ) => handleThemeChange( ( t as Theme ) ?? "apple", mode ) }
 				value={ theme }
 			>
-				<SelectTrigger disabled={ isPending }/>
+				<SelectTrigger/>
 				<SelectContent>
 					<SelectGroup>
-						{ themes.map( ( theme ) => (
-							<Fragment key={ theme }>
-								<SelectItem label={ theme.toUpperCase() } value={ theme }/>
+						{ themes.map( ( t ) => (
+							<Fragment key={ t }>
+								<SelectItem label={ t.toUpperCase() } value={ t }/>
 								<SelectSeparator/>
 							</Fragment>
 						) ) }
@@ -56,13 +40,9 @@ export function ThemeSwitcher( { initialTheme, initialThemeMode }: ThemeSwitcher
 			</Select>
 			<Button
 				size={ "icon" }
-				disabled={ isPending }
-				onClick={ () => handleThemeChange(
-					theme,
-					themeMode === "light" ? "dark" : "light"
-				) }
+				onClick={ () => handleThemeChange( theme, mode === "light" ? "dark" : "light" ) }
 			>
-				{ themeMode === "light"
+				{ mode === "light"
 					? <SunIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 					: <MoonIcon className={ "w-4 h-4 md:h-6 md:w-6" }/> }
 			</Button>

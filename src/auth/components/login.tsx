@@ -1,12 +1,5 @@
-"use client";
-
-import {
-	checkIfUserExists,
-	getLoginOptions,
-	getRegisterOptions,
-	verifyLogin,
-	verifyRegistration
-} from "@/auth/core/actions";
+import { client } from "@/api/client";
+import { useRefreshAuth } from "@/shared/hooks/use-auth";
 import { Button } from "@/shared/primitives/button";
 import {
 	Dialog,
@@ -19,34 +12,43 @@ import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
+import { useNavigate } from "@tanstack/react-router";
 import { LogInIcon } from "lucide-react";
 import { Fragment, useState, useTransition } from "react";
 
 export function Login() {
+	const navigate = useNavigate();
+	const refreshAuth = useRefreshAuth();
 	const [ isPending, startTransition ] = useTransition();
 	const [ mode, setMode ] = useState<"login" | "register">( "login" );
 	const [ open, setOpen ] = useState( false );
 	const [ username, setUsername ] = useState( "" );
 	const [ name, setName ] = useState( "" );
 
+	const finishAuth = async () => {
+		await refreshAuth();
+		setOpen( false );
+		await navigate( { to: "/" } );
+	};
+
 	const passkeyLogin = async () => {
-		const exists = await checkIfUserExists( { username } );
+		const exists = await client.auth.checkIfUserExists( { username } );
 		if ( !exists ) {
 			setMode( "register" );
 			return;
 		}
 
-		const optionsJSON = await getLoginOptions( { username } );
+		const optionsJSON = await client.auth.getLoginOptions( { username } );
 		const response = await startAuthentication( { optionsJSON } );
-		await verifyLogin( { username, response } );
-		window.location.href = "/";
+		await client.auth.verifyLogin( { username, response } );
+		await finishAuth();
 	};
 
 	const passkeyRegister = async () => {
-		const optionsJSON = await getRegisterOptions( { username, name } );
+		const optionsJSON = await client.auth.getRegisterOptions( { username, name } );
 		const response = await startRegistration( { optionsJSON } );
-		await verifyRegistration( { username, name, response } );
-		window.location.href = "/";
+		await client.auth.verifyRegistration( { username, name, response } );
+		await finishAuth();
 	};
 
 	const isValidInput = () => mode === "register"

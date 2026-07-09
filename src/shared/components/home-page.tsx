@@ -1,16 +1,11 @@
+import { GAME_NAMES } from "@/games";
 import { Logo } from "@/shared/components/logo";
 import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
+import { Link } from "@tanstack/react-router";
 
 export function HomePage() {
-	const games = [
-		"fish",
-		"callbreak",
-		"wordle",
-		"tic-tac-toe",
-		"splendor",
-		"kingdomino"
-	];
+	const games = GAME_NAMES;
 
 	return (
 		<div
@@ -39,11 +34,11 @@ export function HomePage() {
 						classname={ "md:w-56 md:h-56 w-40 h-40 bg-accent absolute -bottom-6 -left-6 -rotate-6" }
 					/>
 					<div className={ "flex justify-end items-end p-6 mt-auto" }>
-						<a href={ `/${ game }` } rel={ "noopener noreferrer" }>
+						<Link to={ "/$game" } params={ { game } }>
 							<Button>
 								<span>PLAY</span>
 							</Button>
-						</a>
+						</Link>
 					</div>
 				</div>
 			) ) }

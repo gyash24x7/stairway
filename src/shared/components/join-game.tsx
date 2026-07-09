@@ -1,10 +1,8 @@
-"use client";
-
 import type { JoinGameInput } from "@/shared/engine/types";
 import { Button } from "@/shared/primitives/button";
 import { Input } from "@/shared/primitives/input";
+import { useNavigate } from "@tanstack/react-router";
 import { useState, useTransition } from "react";
-import { navigate } from "rwsdk/client";
 
 type JoinGameProps = {
 	game: string;
@@ -12,6 +10,7 @@ type JoinGameProps = {
 };
 
 export function JoinGame( { game, joinGame }: JoinGameProps ) {
+	const navigate = useNavigate();
 	const [ joinCode, setJoinCode ] = useState( "" );
 	const [ error, setError ] = useState( "" );
 	const [ isPending, startTransition ] = useTransition();
@@ -25,7 +24,7 @@ export function JoinGame( { game, joinGame }: JoinGameProps ) {
 		setError( "" );
 
 		const gameId = await joinGame( { code } );
-		await navigate( `/${ game }/${ gameId }` );
+		await navigate( { to: "/$game/$gameId", params: { game, gameId } } );
 	} );
 
 	return (

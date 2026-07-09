@@ -1,24 +1,18 @@
-"use client";
-
 import { RAuthInfo } from "@/auth/components/auth-info";
 import { Login } from "@/auth/components/login";
-import type { AuthInfo } from "@/auth/core/types";
 import { Logo } from "@/shared/components/logo";
 import { ThemeSwitcher } from "@/shared/components/theme-switcher";
+import { useAuth } from "@/shared/hooks/use-auth";
 import { Button } from "@/shared/primitives/button";
 import { Separator } from "@/shared/primitives/separator";
-import type { Theme, ThemeMode } from "@/shared/utils/cn";
 import { cn } from "@/shared/utils/cn";
+import { useNavigate } from "@tanstack/react-router";
 import { HomeIcon } from "lucide-react";
-import { navigate } from "rwsdk/client";
 
-type NavbarProps = {
-	initialTheme: Theme;
-	initialThemeMode: ThemeMode;
-	authInfo: AuthInfo | null;
-}
+export function Navbar() {
+	const navigate = useNavigate();
+	const { authInfo } = useAuth();
 
-export function Navbar( { authInfo, ...props }: NavbarProps ) {
 	return (
 		<div
 			className={ cn(
@@ -34,13 +28,13 @@ export function Navbar( { authInfo, ...props }: NavbarProps ) {
 					</h2>
 				</div>
 				<div className={ "flex flex-1 justify-end gap-3 items-center" }>
-					<Button size={ "icon" } onClick={ () => navigate( "/" ) }>
+					<Button size={ "icon" } onClick={ () => navigate( { to: "/" } ) }>
 						<HomeIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 					</Button>
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
 					{ !!authInfo ? <RAuthInfo authInfo={ authInfo }/> : <Login/> }
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
-					<ThemeSwitcher { ...props }/>
+					<ThemeSwitcher/>
 				</div>
 			</div>
 		</div>

@@ -1,17 +1,20 @@
-"use client";
-
-import { logout } from "@/auth/core/actions";
+import { client } from "@/api/client";
+import { useRefreshAuth } from "@/shared/hooks/use-auth";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
+import { useNavigate } from "@tanstack/react-router";
 import { LogOutIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";
 
 export function LogoutButton() {
+	const navigate = useNavigate();
+	const refreshAuth = useRefreshAuth();
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleLogout = () => startTransition( async () => {
-		await logout();
-		window.location.href = "/";
+		await client.auth.logout();
+		await refreshAuth();
+		await navigate( { to: "/" } );
 	} );
 
 	return (

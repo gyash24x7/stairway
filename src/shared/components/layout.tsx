@@ -1,17 +1,11 @@
 import { Navbar } from "@/shared/components/navbar";
 import { cn } from "@/shared/utils/cn";
-import type { LayoutProps } from "rwsdk/worker";
+import type { ReactNode } from "react";
 
-export function AppLayout( { children, requestInfo }: LayoutProps ) {
-	const initialThemeMode = requestInfo?.ctx.themeMode ?? "light";
-	const initialTheme = requestInfo?.ctx.theme ?? "apple";
+export function AppLayout( { children }: { children: ReactNode } ) {
 	return (
 		<main className="flex min-h-screen flex-col bg-surface">
-			<Navbar
-				initialTheme={ initialTheme }
-				initialThemeMode={ initialThemeMode }
-				authInfo={ requestInfo?.ctx.authInfo ?? null }
-			/>
+			<Navbar/>
 			<div
 				className={ cn(
 					"px-2 py-2 md:px-4 md:py-4 md:mt-20",
