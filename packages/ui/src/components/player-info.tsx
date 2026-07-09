@@ -1,5 +1,5 @@
 import type { BasePlayerInfo } from "@s2h/engine/types";
-import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
+import { Avatar, AvatarImage } from "../primitives/avatar";
 import { cn } from "@s2h/shared/utils/cn";
 
 export type PlayerInfoProps = {

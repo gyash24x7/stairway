@@ -1,4 +1,4 @@
-import { Navbar } from "@/shared/components/navbar";
+import { Navbar } from "@/components/navbar";
 import { cn } from "@s2h/shared/utils/cn";
 import type { ReactNode } from "react";
 

@@ -3,6 +3,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Workspace packages are reached through node_modules symlinks, which
+   Tailwind's auto-detection ignores — list their sources explicitly. */
+@source "../../../packages/ui/src";
+
 @plugin "@tailwindcss/typography";
 
 @custom-variant apple-light (&:is(.apple.light *));

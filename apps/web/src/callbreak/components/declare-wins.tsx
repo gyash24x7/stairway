@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallbreak } from "@/callbreak/components/context";
-import { Button } from "@/shared/primitives/button";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -9,8 +9,8 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
-import { Spinner } from "@/shared/primitives/spinner";
+} from "@s2h/ui/primitives/drawer";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";

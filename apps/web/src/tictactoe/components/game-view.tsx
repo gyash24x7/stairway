@@ -1,10 +1,10 @@
 "use client";
 
-import { popIn, slideInUp } from "@/shared/animations/variants";
-import { GameInfo } from "@/shared/components/game-info";
-import { RPlayerInfoSmall } from "@/shared/components/player-info";
-import { Button } from "@/shared/primitives/button";
-import { Spinner } from "@/shared/primitives/spinner";
+import { popIn, slideInUp } from "@s2h/ui/animations/variants";
+import { GameInfo } from "@s2h/ui/components/game-info";
+import { RPlayerInfoSmall } from "@s2h/ui/components/player-info";
+import { Button } from "@s2h/ui/primitives/button";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 import { Board } from "@/tictactoe/components/board";
 import { useTicTacToe } from "@/tictactoe/components/context";

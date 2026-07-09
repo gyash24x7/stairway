@@ -1,4 +1,4 @@
-import { Button } from "@/shared/primitives/button";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	Select,
 	SelectContent,
@@ -6,7 +6,7 @@ import {
 	SelectItem,
 	SelectSeparator,
 	SelectTrigger
-} from "@/shared/primitives/select";
+} from "@s2h/ui/primitives/select";
 import { type Theme, type ThemeMode, themes } from "@s2h/shared/utils/cn";
 import { applyTheme, readTheme } from "@s2h/shared/utils/theme";
 import { MoonIcon, SunIcon } from "lucide-react";

@@ -1,4 +1,4 @@
-import { Button } from "@/shared/primitives/button";
+import { Button } from "../primitives/button";
 import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useTransition } from "react";
 

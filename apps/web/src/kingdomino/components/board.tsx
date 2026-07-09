@@ -18,7 +18,7 @@ import {
 	getPotentialCells,
 	getRowsAndCols
 } from "@s2h/kingdomino-core/utils";
-import { Popover, PopoverContent } from "@/shared/primitives/popover";
+import { Popover, PopoverContent } from "@s2h/ui/primitives/popover";
 import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";
 import { CrownIcon } from "lucide-react";

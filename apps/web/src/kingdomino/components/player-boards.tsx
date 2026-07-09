@@ -1,13 +1,13 @@
 import { RSmallBoard } from "@/kingdomino/components/board";
 import { useKingdomino } from "@/kingdomino/components/context";
-import { Button } from "@/shared/primitives/button";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerDescription,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
+} from "@s2h/ui/primitives/drawer";
 import { LayoutDashboardIcon } from "lucide-react";
 import { useBoolean } from "usehooks-ts";
 

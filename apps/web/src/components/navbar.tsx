@@ -1,10 +1,10 @@
-import { RAuthInfo } from "@/auth/components/auth-info";
-import { Login } from "@/auth/components/login";
-import { Logo } from "@/shared/components/logo";
-import { ThemeSwitcher } from "@/shared/components/theme-switcher";
-import { useAuth } from "@/shared/hooks/use-auth";
-import { Button } from "@/shared/primitives/button";
-import { Separator } from "@/shared/primitives/separator";
+import { RAuthInfo } from "@s2h/ui/auth/auth-info";
+import { Login } from "@s2h/ui/auth/login";
+import { Logo } from "@s2h/ui/components/logo";
+import { ThemeSwitcher } from "@/components/theme-switcher";
+import { useAuth } from "@s2h/ui/hooks/use-auth";
+import { Button } from "@s2h/ui/primitives/button";
+import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/shared/utils/cn";
 import { useNavigate } from "@tanstack/react-router";
 import { HomeIcon } from "lucide-react";

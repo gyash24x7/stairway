@@ -1,8 +1,8 @@
 import { RSmallBoard } from "@/kingdomino/components/board";
 import type { KingdominoPlayerInfo } from "@s2h/kingdomino-core/types";
-import { CounterTween } from "@/shared/animations/counter-tween";
-import { FloatPlusN } from "@/shared/animations/float-plus-n";
-import { RPlayerInfo } from "@/shared/components/player-info";
+import { CounterTween } from "@s2h/ui/animations/counter-tween";
+import { FloatPlusN } from "@s2h/ui/animations/float-plus-n";
+import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { LogoutButton } from "@/auth/components/logout-button";
+import { LogoutButton } from "./logout-button";
 import type { AuthInfo } from "@s2h/shared/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/primitives/avatar";
-import { Dialog, DialogContent, DialogTrigger } from "@/shared/primitives/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "../primitives/avatar";
+import { Dialog, DialogContent, DialogTrigger } from "../primitives/dialog";
 import { useState } from "react";
 
 export function RAuthInfo( { authInfo }: { authInfo: AuthInfo } ) {

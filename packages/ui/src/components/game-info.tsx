@@ -1,14 +1,14 @@
 "use client";
 
-import { Logo } from "@/shared/components/logo";
-import { Button } from "@/shared/primitives/button";
+import { Logo } from "./logo";
+import { Button } from "../primitives/button";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerDescription,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
+} from "../primitives/drawer";
 import { cn } from "@s2h/shared/utils/cn";
 import { CheckIcon, CopyIcon, MenuIcon } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useState } from "react";

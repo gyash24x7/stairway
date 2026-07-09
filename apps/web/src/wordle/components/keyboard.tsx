@@ -1,4 +1,4 @@
-import { Spinner } from "@/shared/primitives/spinner";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 import { useWordle } from "@/wordle/components/context";
 import { dictionaries } from "@s2h/wordle-core/dictionary";

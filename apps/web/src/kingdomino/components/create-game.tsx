@@ -2,8 +2,8 @@
 
 import { client } from "@s2h/client";
 import type { BoardSize } from "@s2h/kingdomino-core/types";
-import { CreateGame } from "@/shared/components/create-game";
-import { RadioSelect } from "@/shared/primitives/radio-select";
+import { CreateGame } from "@s2h/ui/components/create-game";
+import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { useState } from "react";
 
 export function KingdominoCreateGame() {

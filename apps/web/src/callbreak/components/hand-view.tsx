@@ -2,7 +2,7 @@
 
 import { useCallbreak } from "@/callbreak/components/context";
 import { getPlayableCards } from "@s2h/callbreak-core/utils";
-import { RCard } from "@/shared/components/card";
+import { RCard } from "@s2h/ui/components/card";
 import { type CardId, getSortedHand } from "@s2h/shared/utils/cards";
 import { cn } from "@s2h/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";

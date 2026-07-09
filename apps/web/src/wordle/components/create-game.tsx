@@ -1,7 +1,7 @@
 import { client } from "@s2h/client";
-import { CreateGame } from "@/shared/components/create-game";
-import { Button } from "@/shared/primitives/button";
-import { RadioSelect } from "@/shared/primitives/radio-select";
+import { CreateGame } from "@s2h/ui/components/create-game";
+import { Button } from "@s2h/ui/primitives/button";
+import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { cn } from "@s2h/shared/utils/cn";
 import type { WordLength } from "@s2h/wordle-core/types";
 import { MinusIcon, PlusIcon } from "lucide-react";

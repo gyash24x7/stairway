@@ -1,4 +1,4 @@
-import { Button } from "@/shared/primitives/button";
+import { Button } from "@s2h/ui/primitives/button";
 import { cn } from "@s2h/shared/utils/cn";
 import { gemColors } from "@/splendor/components/utils";
 import type { Gem, Tokens } from "@s2h/splendor-core/types";

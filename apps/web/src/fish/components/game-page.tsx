@@ -1,7 +1,7 @@
 import { orpc } from "@s2h/client/query";
 import { FishProvider } from "@/fish/components/context";
 import { GameView } from "@/fish/components/game-view";
-import { Spinner } from "@/shared/primitives/spinner";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
 
 export function FishGamePage( { gameId }: { gameId: string } ) {

@@ -4,7 +4,7 @@ import { RSmallBoard } from "@/kingdomino/components/board";
 import { useKingdomino } from "@/kingdomino/components/context";
 import { RSmallDomino } from "@/kingdomino/components/domino";
 import { DOMINO_DECK } from "@s2h/kingdomino-core/utils";
-import { RPlayerInfoSmall } from "@/shared/components/player-info";
+import { RPlayerInfoSmall } from "@s2h/ui/components/player-info";
 import type { PlayerId } from "@s2h/engine/types";
 import { cn } from "@s2h/shared/utils/cn";
 

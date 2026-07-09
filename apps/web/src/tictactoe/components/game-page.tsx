@@ -1,5 +1,5 @@
 import { orpc } from "@s2h/client/query";
-import { Spinner } from "@/shared/primitives/spinner";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { TicTacToeProvider } from "@/tictactoe/components/context";
 import { GameView } from "@/tictactoe/components/game-view";
 import { useQuery } from "@tanstack/react-query";

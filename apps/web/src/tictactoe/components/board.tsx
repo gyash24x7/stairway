@@ -1,6 +1,6 @@
 "use client";
 
-import { popIn } from "@/shared/animations/variants";
+import { popIn } from "@s2h/ui/animations/variants";
 import { cn } from "@s2h/shared/utils/cn";
 import { useTicTacToe } from "@/tictactoe/components/context";
 import { findWinningLine } from "@s2h/tictactoe-core/utils";

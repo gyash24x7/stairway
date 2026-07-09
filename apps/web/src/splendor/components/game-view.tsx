@@ -1,8 +1,8 @@
 "use client";
 
-import { GameInfo } from "@/shared/components/game-info";
-import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
-import { Button } from "@/shared/primitives/button";
+import { GameInfo } from "@s2h/ui/components/game-info";
+import { PlayerLobbyGrid } from "@s2h/ui/components/player-lobby";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -10,8 +10,8 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
-import { Spinner } from "@/shared/primitives/spinner";
+} from "@s2h/ui/primitives/drawer";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 import { Board } from "@/splendor/components/board";
 import { useSplendor } from "@/splendor/components/context";

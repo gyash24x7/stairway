@@ -1,7 +1,7 @@
 import { client } from "@s2h/client";
-import { useRefreshAuth } from "@/shared/hooks/use-auth";
-import { Button } from "@/shared/primitives/button";
-import { Spinner } from "@/shared/primitives/spinner";
+import { useRefreshAuth } from "../hooks/use-auth";
+import { Button } from "../primitives/button";
+import { Spinner } from "../primitives/spinner";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOutIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";

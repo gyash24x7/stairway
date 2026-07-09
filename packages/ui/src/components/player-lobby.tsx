@@ -1,4 +1,4 @@
-import { RPlayerInfo } from "@/shared/components/player-info";
+import { RPlayerInfo } from "./player-info";
 import type { BasePlayerInfo } from "@s2h/engine/types";
 import { cn } from "@s2h/shared/utils/cn";
 

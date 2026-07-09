@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallbreak } from "@/callbreak/components/context";
-import { Button } from "@/shared/primitives/button";
-import { Spinner } from "@/shared/primitives/spinner";
+import { Button } from "@s2h/ui/primitives/button";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 
 export function PlayCard() {
 	const { shared, selectedCard, selectCard, playCard } = useCallbreak();

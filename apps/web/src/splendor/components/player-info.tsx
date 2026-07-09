@@ -1,8 +1,8 @@
 "use client";
 
-import { CounterTween } from "@/shared/animations/counter-tween";
-import { FloatPlusN } from "@/shared/animations/float-plus-n";
-import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
+import { CounterTween } from "@s2h/ui/animations/counter-tween";
+import { FloatPlusN } from "@s2h/ui/animations/float-plus-n";
+import { Avatar, AvatarImage } from "@s2h/ui/primitives/avatar";
 import {
 	Drawer,
 	DrawerContent,
@@ -10,8 +10,8 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
-import { RadioSelect } from "@/shared/primitives/radio-select";
+} from "@s2h/ui/primitives/drawer";
+import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { cn } from "@s2h/shared/utils/cn";
 import { useSplendor } from "@/splendor/components/context";
 import { GameCard } from "@/splendor/components/game-card";

@@ -3,11 +3,11 @@
 import { ActionPanel } from "@/callbreak/components/action-panel";
 import { useCallbreak } from "@/callbreak/components/context";
 import { DealView } from "@/callbreak/components/deal-view";
-import { RCardSuit } from "@/shared/components/card";
-import { GameInfo } from "@/shared/components/game-info";
-import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
-import { Button } from "@/shared/primitives/button";
-import { Spinner } from "@/shared/primitives/spinner";
+import { RCardSuit } from "@s2h/ui/components/card";
+import { GameInfo } from "@s2h/ui/components/game-info";
+import { PlayerLobbyGrid } from "@s2h/ui/components/player-lobby";
+import { Button } from "@s2h/ui/primitives/button";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 import { Fragment } from "react";
 

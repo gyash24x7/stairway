@@ -1,9 +1,9 @@
 "use client";
 
 import { client } from "@s2h/client";
-import { RCardSuit } from "@/shared/components/card";
-import { CreateGame } from "@/shared/components/create-game";
-import { RadioSelect } from "@/shared/primitives/radio-select";
+import { RCardSuit } from "@s2h/ui/components/card";
+import { CreateGame } from "@s2h/ui/components/create-game";
+import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { CARD_SUITS, type CardSuit } from "@s2h/shared/utils/cards";
 import { useState } from "react";
 

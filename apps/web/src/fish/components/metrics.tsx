@@ -6,7 +6,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow
-} from "@/shared/primitives/table";
+} from "@s2h/ui/primitives/table";
 
 export function GameMetrics() {
 	const { shared } = useFish();

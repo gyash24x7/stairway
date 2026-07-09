@@ -1,7 +1,7 @@
 import { orpc } from "@s2h/client/query";
 import { CallbreakProvider } from "@/callbreak/components/context";
 import { GameView } from "@/callbreak/components/game-view";
-import { Spinner } from "@/shared/primitives/spinner";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
 
 export function CallbreakGamePage( { gameId }: { gameId: string } ) {

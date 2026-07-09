@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/shared/primitives/button";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -8,8 +8,8 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
-import { Spinner } from "@/shared/primitives/spinner";
+} from "@s2h/ui/primitives/drawer";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { orpc } from "@s2h/client/query";
 import { useSplendor } from "@/splendor/components/context";
 import { TokenPicker } from "@/splendor/components/token-picker";

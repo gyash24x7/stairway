@@ -10,10 +10,10 @@ import {
 	getMissingCards,
 	getTeammates
 } from "@s2h/fish-core/utils";
-import { RCard } from "@/shared/components/card";
-import { RPlayerInfoStrip } from "@/shared/components/player-info";
+import { RCard } from "@s2h/ui/components/card";
+import { RPlayerInfoStrip } from "@s2h/ui/components/player-info";
 import type { PlayerId } from "@s2h/engine/types";
-import { Button } from "@/shared/primitives/button";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -21,9 +21,9 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
-import { RadioSelect } from "@/shared/primitives/radio-select";
-import { Spinner } from "@/shared/primitives/spinner";
+} from "@s2h/ui/primitives/drawer";
+import { RadioSelect } from "@s2h/ui/primitives/radio-select";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { type CardId } from "@s2h/shared/utils/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowBigRightDashIcon } from "lucide-react";

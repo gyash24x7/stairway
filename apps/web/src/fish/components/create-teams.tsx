@@ -2,8 +2,8 @@
 
 import { orpc } from "@s2h/client/query";
 import { useFish } from "@/fish/components/context";
-import { RPlayerInfo } from "@/shared/components/player-info";
-import { Button } from "@/shared/primitives/button";
+import { RPlayerInfo } from "@s2h/ui/components/player-info";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -11,9 +11,9 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
-import { Input } from "@/shared/primitives/input";
-import { Spinner } from "@/shared/primitives/spinner";
+} from "@s2h/ui/primitives/drawer";
+import { Input } from "@s2h/ui/primitives/input";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { chunk, shuffle } from "@s2h/shared/utils/array";
 import { cn } from "@s2h/shared/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

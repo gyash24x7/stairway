@@ -1,6 +1,6 @@
 import { GAME_REGISTRY } from "@/games";
-import { useAuth } from "@/shared/hooks/use-auth";
-import { Spinner } from "@/shared/primitives/spinner";
+import { useAuth } from "@s2h/ui/hooks/use-auth";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute( "/$game/$gameId" )( {

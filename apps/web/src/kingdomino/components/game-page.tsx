@@ -1,7 +1,7 @@
 import { orpc } from "@s2h/client/query";
 import { KingdominoProvider } from "@/kingdomino/components/context";
 import { GameView } from "@/kingdomino/components/game-view";
-import { Spinner } from "@/shared/primitives/spinner";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
 
 export function KingdominoGamePage( { gameId }: { gameId: string } ) {

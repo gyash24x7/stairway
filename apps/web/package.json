@@ -26,6 +26,7 @@
 		"@s2h/shared": "workspace:*",
 		"@s2h/splendor-core": "workspace:*",
 		"@s2h/tictactoe-core": "workspace:*",
+		"@s2h/ui": "workspace:*",
 		"@s2h/wordle-core": "workspace:*",
 		"@base-ui/react": "catalog:",
 		"@orpc/client": "catalog:",

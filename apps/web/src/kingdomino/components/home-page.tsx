@@ -1,8 +1,8 @@
 import { client } from "@s2h/client";
 import { KingdominoCreateGame as CreateGame } from "@/kingdomino/components/create-game";
-import { JoinGame } from "@/shared/components/join-game";
-import { useAuth } from "@/shared/hooks/use-auth";
-import { Separator } from "@/shared/primitives/separator";
+import { JoinGame } from "@s2h/ui/components/join-game";
+import { useAuth } from "@s2h/ui/hooks/use-auth";
+import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/shared/utils/cn";
 
 export function KingdominoHomePage() {

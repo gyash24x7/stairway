@@ -1,15 +1,15 @@
 import { client } from "@s2h/client";
-import { useRefreshAuth } from "@/shared/hooks/use-auth";
-import { Button } from "@/shared/primitives/button";
+import { useRefreshAuth } from "../hooks/use-auth";
+import { Button } from "../primitives/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle
-} from "@/shared/primitives/dialog";
-import { Input } from "@/shared/primitives/input";
-import { Spinner } from "@/shared/primitives/spinner";
+} from "../primitives/dialog";
+import { Input } from "../primitives/input";
+import { Spinner } from "../primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { useNavigate } from "@tanstack/react-router";

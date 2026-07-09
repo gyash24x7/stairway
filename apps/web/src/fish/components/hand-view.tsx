@@ -2,7 +2,7 @@
 
 import { useFish } from "@/fish/components/context";
 import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@s2h/fish-core/utils";
-import { RCard } from "@/shared/components/card";
+import { RCard } from "@s2h/ui/components/card";
 import { cn } from "@s2h/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo } from "react";

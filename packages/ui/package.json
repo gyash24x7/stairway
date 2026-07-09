@@ -1,0 +1,38 @@
+{
+	"name": "@s2h/ui",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		"./components/*": "./src/components/*.tsx",
+		"./primitives/*": "./src/primitives/*.tsx",
+		"./hooks/*": "./src/hooks/*.ts",
+		"./auth/*": "./src/auth/*.tsx",
+		"./animations/variants": "./src/animations/variants.ts",
+		"./animations/counter-tween": "./src/animations/counter-tween.tsx",
+		"./animations/float-plus-n": "./src/animations/float-plus-n.tsx"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@base-ui/react": "catalog:",
+		"@s2h/client": "workspace:*",
+		"@s2h/engine": "workspace:*",
+		"@s2h/shared": "workspace:*",
+		"@simplewebauthn/browser": "catalog:",
+		"@tanstack/react-query": "catalog:",
+		"@tanstack/react-router": "catalog:",
+		"class-variance-authority": "catalog:",
+		"framer-motion": "catalog:",
+		"lucide-react": "catalog:",
+		"react": "catalog:",
+		"sonner": "catalog:",
+		"usehooks-ts": "catalog:",
+		"vaul": "catalog:"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:",
+		"typescript": "catalog:"
+	}
+}

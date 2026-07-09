@@ -8,7 +8,7 @@ import {
 	getValidPlacements,
 	getValidRotations
 } from "@s2h/kingdomino-core/utils";
-import { Button } from "@/shared/primitives/button";
+import { Button } from "@s2h/ui/primitives/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { useState } from "react";

@@ -1,6 +1,6 @@
 import { GAME_NAMES } from "@/games";
-import { Logo } from "@/shared/components/logo";
-import { Button } from "@/shared/primitives/button";
+import { Logo } from "@s2h/ui/components/logo";
+import { Button } from "@s2h/ui/primitives/button";
 import { cn } from "@s2h/shared/utils/cn";
 import { Link } from "@tanstack/react-router";
 

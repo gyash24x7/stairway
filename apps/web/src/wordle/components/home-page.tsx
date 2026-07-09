@@ -1,5 +1,5 @@
-import { useAuth } from "@/shared/hooks/use-auth";
-import { Separator } from "@/shared/primitives/separator";
+import { useAuth } from "@s2h/ui/hooks/use-auth";
+import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/shared/utils/cn";
 import { WordleCreateGame } from "@/wordle/components/create-game";
 

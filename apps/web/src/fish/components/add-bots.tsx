@@ -2,8 +2,8 @@
 
 import { orpc } from "@s2h/client/query";
 import { useFish } from "@/fish/components/context";
-import { Button } from "@/shared/primitives/button";
-import { Spinner } from "@/shared/primitives/spinner";
+import { Button } from "@s2h/ui/primitives/button";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function AddBots() {

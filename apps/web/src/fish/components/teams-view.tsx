@@ -1,5 +1,5 @@
 import { useFish } from "@/fish/components/context";
-import { RPlayerInfoStrip } from "@/shared/components/player-info";
+import { RPlayerInfoStrip } from "@s2h/ui/components/player-info";
 import type { PlayerId } from "@s2h/engine/types";
 import { cn } from "@s2h/shared/utils/cn";
 

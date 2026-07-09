@@ -7,7 +7,7 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/primitives/drawer";
+} from "@s2h/ui/primitives/drawer";
 import { useSplendor } from "@/splendor/components/context";
 import { GameCard } from "@/splendor/components/game-card";
 import { PurchaseCard } from "@/splendor/components/purchase-card";

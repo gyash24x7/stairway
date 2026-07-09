@@ -12,9 +12,9 @@ import { GameMetrics } from "@/fish/components/metrics";
 import { TeamsView } from "@/fish/components/teams-view";
 import { TransferTurn } from "@/fish/components/transfer-turn";
 import { TurnIndicator } from "@/fish/components/turn-indicator";
-import { GameInfo } from "@/shared/components/game-info";
-import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
-import { Spinner } from "@/shared/primitives/spinner";
+import { GameInfo } from "@s2h/ui/components/game-info";
+import { PlayerLobbyGrid } from "@s2h/ui/components/player-lobby";
+import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 
 export function GameView() {
