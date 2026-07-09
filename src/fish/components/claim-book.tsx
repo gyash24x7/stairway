@@ -1,7 +1,7 @@
 "use client";
 
+import { orpc } from "@/api/query";
 import { useFish } from "@/fish/components/context";
-import { claimBook } from "@/fish/core/actions";
 import type { Book } from "@/fish/core/types";
 import {
 	getBookDisplayString,
@@ -25,8 +25,9 @@ import {
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
 import { type CardId } from "@/shared/utils/cards";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowBigRightDashIcon } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useStep } from "usehooks-ts";
 
 export function ClaimBook() {
@@ -86,11 +87,17 @@ export function ClaimBook() {
 		} );
 	};
 
-	const [ isPending, startTransition ] = useTransition();
+	const queryClient = useQueryClient();
 
-	const handleClick = () => startTransition( async () => {
+	const claimBook = useMutation( orpc.fish.claimBook.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+		} )
+	} ) );
+
+	const handleClick = async () => {
 		if ( selectedBook && allAssigned ) {
-			await claimBook( {
+			await claimBook.mutateAsync( {
 				gameId: shared.id,
 				claim: claim.entries().reduce(
 					( acc, [ cardId, playerId ] ) => {
@@ -103,7 +110,7 @@ export function ClaimBook() {
 
 			closeDrawer();
 		}
-	} );
+	};
 
 	const [ currentStep, { goToNextStep, goToPrevStep, reset } ] = useStep( 3 );
 
@@ -188,8 +195,8 @@ export function ClaimBook() {
 					{ currentStep === 3 && (
 						<div className={ "w-full flex gap-3" }>
 							<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
-							<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
-								{ isPending ? <Spinner/> : "CLAIM BOOK" }
+							<Button onClick={ handleClick } disabled={ claimBook.isPending } className={ "flex-1" }>
+								{ claimBook.isPending ? <Spinner/> : "CLAIM BOOK" }
 							</Button>
 						</div>
 					) }

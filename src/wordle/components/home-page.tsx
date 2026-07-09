@@ -1,9 +1,10 @@
+import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
 import { WordleCreateGame } from "@/wordle/components/create-game";
-import { requestInfo } from "rwsdk/worker";
 
 export function WordleHomePage() {
+	const { authInfo } = useAuth();
 	return (
 		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>WORDLE</h2>
@@ -21,7 +22,7 @@ export function WordleHomePage() {
 				within a single game, raising the challenge for experienced players.
 			</p>
 			<Separator/>
-			{ !!requestInfo.ctx.authInfo
+			{ !!authInfo
 				? (
 					<div className={ "flex gap-5 justify-center w-full" }>
 						<WordleCreateGame/>

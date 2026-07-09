@@ -1,10 +1,8 @@
-"use client";
-
+import { client } from "@/api/client";
 import { CreateGame } from "@/shared/components/create-game";
 import { Button } from "@/shared/primitives/button";
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { cn } from "@/shared/utils/cn";
-import { createGame } from "@/wordle/core/actions";
 import type { WordLength } from "@/wordle/core/types";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -17,7 +15,7 @@ export function WordleCreateGame() {
 	const decrement = () => setWordCount( wordCount - 1 );
 
 	const createWordleGame = async () => {
-		return createGame( { wordLength, wordCount } );
+		return client.wordle.createGame( { wordLength, wordCount } );
 	};
 
 	return (

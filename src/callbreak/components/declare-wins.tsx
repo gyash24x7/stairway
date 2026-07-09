@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallbreak } from "@/callbreak/components/context";
-import { declareWins } from "@/callbreak/core/actions";
 import { Button } from "@/shared/primitives/button";
 import {
 	Drawer,
@@ -14,17 +13,17 @@ import {
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
 import { MinusIcon, PlusIcon } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useCounter } from "usehooks-ts";
 
 export function DeclareWins() {
 	const [ open, setOpen ] = useState( false );
 	const { count: wins, increment, decrement, reset } = useCounter( 2 );
-	const { shared } = useCallbreak();
-	const [ isPending, startTransition ] = useTransition();
+	const { shared, declareWins } = useCallbreak();
+	const isPending = declareWins.isPending;
 
-	const handleClick = () => startTransition( async () => {
-		await declareWins( {
+	const handleClick = async () => {
+		await declareWins.mutateAsync( {
 			dealId: shared.state.activeDeal?.id!,
 			gameId: shared.id,
 			wins
@@ -32,7 +31,7 @@ export function DeclareWins() {
 
 		reset();
 		setOpen( false );
-	} );
+	};
 
 	return (
 		<Drawer open={ open } onOpenChange={ setOpen }>

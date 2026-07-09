@@ -1,7 +1,7 @@
 "use client";
 
+import { orpc } from "@/api/query";
 import { useFish } from "@/fish/components/context";
-import { createTeams } from "@/fish/core/actions";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
 import {
@@ -16,7 +16,8 @@ import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
 import { chunk, shuffle } from "@/shared/utils/array";
 import { cn } from "@/shared/utils/cn";
-import { Fragment, useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Fragment, useState } from "react";
 
 export function CreateTeams() {
 	const { shared } = useFish();
@@ -43,17 +44,21 @@ export function CreateTeams() {
 
 	const closeDrawer = () => setOpen( false );
 
-	const [ isPending, startTransition ] = useTransition();
+	const queryClient = useQueryClient();
 
-	const handleCreateTeams = () => {
+	const createTeams = useMutation( orpc.fish.createTeams.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+		} )
+	} ) );
+
+	const handleCreateTeams = async () => {
 		if ( teamsNotCreated ) {
 			return;
 		}
 
-		return startTransition( async () => {
-			await createTeams( { gameId: shared.id, teams: teamMemberData } );
-			closeDrawer();
-		} );
+		await createTeams.mutateAsync( { gameId: shared.id, teams: teamMemberData } );
+		closeDrawer();
 	};
 
 	return (
@@ -110,10 +115,10 @@ export function CreateTeams() {
 				<DrawerFooter>
 					<Button
 						onClick={ handleCreateTeams }
-						disabled={ isPending || teamsNotCreated }
+						disabled={ createTeams.isPending || teamsNotCreated }
 						className={ "w-full" }
 					>
-						{ isPending ? <Spinner/> : "CREATE TEAMS" }
+						{ createTeams.isPending ? <Spinner/> : "CREATE TEAMS" }
 					</Button>
 				</DrawerFooter>
 			</DrawerContent>

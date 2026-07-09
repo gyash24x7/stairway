@@ -1,22 +1,26 @@
 "use client";
 
+import { orpc } from "@/api/query";
 import { useFish } from "@/fish/components/context";
-import { addBots } from "@/fish/core/actions";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
-import { useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function AddBots() {
 	const { shared } = useFish();
-	const [ isPending, startTransition ] = useTransition();
+	const queryClient = useQueryClient();
 
-	const handleClick = () => startTransition( async () => {
-		await addBots( { gameId: shared.id } );
-	} );
+	const addBots = useMutation( orpc.fish.addBots.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+		} )
+	} ) );
+
+	const handleClick = () => addBots.mutate( { gameId: shared.id } );
 
 	return (
-		<Button onClick={ handleClick } disabled={ isPending }>
-			{ isPending ? <Spinner/> : "ADD BOTS" }
+		<Button onClick={ handleClick } disabled={ addBots.isPending }>
+			{ addBots.isPending ? <Spinner/> : "ADD BOTS" }
 		</Button>
 	);
 }

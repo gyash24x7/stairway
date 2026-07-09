@@ -7,15 +7,16 @@ import { RDraft } from "@/kingdomino/components/draft";
 import { PlayerBoards } from "@/kingdomino/components/player-boards";
 import { PlayerScore } from "@/kingdomino/components/player-score";
 import { usePlacement } from "@/kingdomino/components/use-placement";
-import { selectDomino } from "@/kingdomino/core/actions";
+import { orpc } from "@/api/query";
 import type { DominoId } from "@/kingdomino/core/types";
 import { DOMINO_DECK } from "@/kingdomino/core/utils";
 import { GameInfo } from "@/shared/components/game-info";
 import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Button } from "@/shared/primitives/button";
 import { cn } from "@/shared/utils/cn";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Fragment, useState, useTransition } from "react";
+import { Fragment, useState } from "react";
 
 export function GameView() {
 	const { shared, player } = useKingdomino();
@@ -29,7 +30,13 @@ export function GameView() {
 		...shared.state.playerData[ player.playerId ]
 	};
 
-	const [ isSelectPending, startSelectTransition ] = useTransition();
+	const queryClient = useQueryClient();
+	const selectDomino = useMutation( orpc.kingdomino.selectDomino.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.kingdomino.getGame.key( { input: { gameId: shared.id } } )
+		} )
+	} ) );
+	const isSelectPending = selectDomino.isPending;
 	const [ selectedDominoId, setSelectedDominoId ] = useState<DominoId | null>( null );
 
 	const canSelect = isMyTurn && shared.context.phase === "SELECT" && !isSelectPending;
@@ -43,9 +50,7 @@ export function GameView() {
 		if ( !canSelect ) {
 			return;
 		}
-		startSelectTransition( async () => {
-			await selectDomino( { gameId: shared.id, dominoId } );
-		} );
+		selectDomino.mutate( { gameId: shared.id, dominoId } );
 	};
 
 	const placement = usePlacement( {

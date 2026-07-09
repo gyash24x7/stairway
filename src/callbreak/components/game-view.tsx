@@ -3,20 +3,19 @@
 import { ActionPanel } from "@/callbreak/components/action-panel";
 import { useCallbreak } from "@/callbreak/components/context";
 import { DealView } from "@/callbreak/components/deal-view";
-import { addBots } from "@/callbreak/core/actions";
 import { RCardSuit } from "@/shared/components/card";
 import { GameInfo } from "@/shared/components/game-info";
 import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
-import { Fragment, useTransition } from "react";
+import { Fragment } from "react";
 
 export function GameView() {
-	const { shared } = useCallbreak();
-	const [ isPending, startTransition ] = useTransition();
+	const { shared, addBots } = useCallbreak();
+	const isPending = addBots.isPending;
 
-	const handleAddBots = () => startTransition( () => addBots( { gameId: shared.id } ) );
+	const handleAddBots = () => addBots.mutate( { gameId: shared.id } );
 
 	return (
 		<div className={ `flex flex-col gap-3 w-full max-w-6xl mb-20` }>

@@ -1,6 +1,6 @@
 "use client";
 
-import { createGame } from "@/callbreak/core/actions";
+import { client } from "@/api/client";
 import { RCardSuit } from "@/shared/components/card";
 import { CreateGame } from "@/shared/components/create-game";
 import { RadioSelect } from "@/shared/primitives/radio-select";
@@ -13,7 +13,7 @@ export function CallbreakCreateGame() {
 
 	const createCallbreakGame = async () => {
 		if ( !!dealCount && !!trumpSuit ) {
-			return createGame( { dealCount, trumpSuit } );
+			return client.callbreak.createGame( { dealCount, trumpSuit } );
 		}
 		return "";
 	};

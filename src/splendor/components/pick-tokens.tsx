@@ -10,16 +10,24 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
+import { orpc } from "@/api/query";
 import { useSplendor } from "@/splendor/components/context";
 import { TokenPicker } from "@/splendor/components/token-picker";
-import { pickTokens } from "@/splendor/core/actions";
 import type { Gem, Tokens } from "@/splendor/core/types";
 import { GEMS_WITH_GOLD } from "@/splendor/core/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
 
 export function PickTokens() {
 	const { shared, player } = useSplendor();
+	const queryClient = useQueryClient();
+
+	const pickTokens = useMutation( orpc.splendor.pickTokens.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.splendor.getGame.key( { input: { gameId: shared.id } } )
+		} )
+	} ) );
 
 	const availableTokens = shared.state.tokens;
 	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
@@ -55,7 +63,7 @@ export function PickTokens() {
 
 	const handlePickClick = () => startTransition( async () => {
 		if ( projectedTotal <= 10 ) {
-			await pickTokens( { gameId: shared.id, tokens: selectedTokens } );
+			await pickTokens.mutateAsync( { gameId: shared.id, tokens: selectedTokens } );
 			reset();
 		} else {
 			setTrue();
@@ -63,7 +71,11 @@ export function PickTokens() {
 	} );
 
 	const handleReturnClick = () => startTransition( async () => {
-		await pickTokens( { gameId: shared.id, tokens: selectedTokens, returned: returnTokens } );
+		await pickTokens.mutateAsync( {
+			gameId: shared.id,
+			tokens: selectedTokens,
+			returned: returnTokens
+		} );
 		reset();
 	} );
 

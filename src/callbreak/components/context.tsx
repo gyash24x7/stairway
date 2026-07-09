@@ -1,9 +1,14 @@
-"use client";
-
+import { orpc } from "@/api/query";
 import type { CallbreakGame } from "@/callbreak/core/types";
 import type { CardId } from "@/shared/utils/cards";
-import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
-import { useSyncedState } from "rwsdk/use-synced-state/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+	createContext,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useState
+} from "react";
 
 type CallbreakContextValue = {
 	shared: CallbreakGame["shared"];
@@ -11,6 +16,9 @@ type CallbreakContextValue = {
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
+	declareWins: ReturnType<typeof useMutation<unknown, Error, { gameId: string; dealId: string; wins: number }>>;
+	playCard: ReturnType<typeof useMutation<unknown, Error, { gameId: string; dealId: string; cardId: CardId }>>;
+	addBots: ReturnType<typeof useMutation<unknown, Error, { gameId: string }>>;
 };
 
 const CallbreakContext = createContext<CallbreakContextValue | null>( null );
@@ -26,10 +34,25 @@ export function useCallbreak() {
 type CallbreakProviderProps = { data: CallbreakGame; children: ReactNode; };
 
 export function CallbreakProvider( { data, children }: CallbreakProviderProps ) {
-	const room = `callbreak:${ data.shared.id }`;
-	const [ shared ] = useSyncedState( data.shared, "shared", room );
-	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
+	const { shared, player } = data;
+	const queryClient = useQueryClient();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
+
+	const invalidate = () => queryClient.invalidateQueries( {
+		queryKey: orpc.callbreak.getGame.key( { input: { gameId: shared.id } } )
+	} );
+
+	const declareWins = useMutation( orpc.callbreak.declareWins.mutationOptions( {
+		onSuccess: () => invalidate()
+	} ) );
+
+	const playCard = useMutation( orpc.callbreak.playCard.mutationOptions( {
+		onSuccess: () => invalidate()
+	} ) );
+
+	const addBots = useMutation( orpc.callbreak.addBots.mutationOptions( {
+		onSuccess: () => invalidate()
+	} ) );
 
 	const isMyTurn = shared.status === "IN_PROGRESS"
 		&& shared.context.currentPlayer === player.playerId;
@@ -46,7 +69,16 @@ export function CallbreakProvider( { data, children }: CallbreakProviderProps ) 
 	);
 
 	return (
-		<CallbreakContext value={ { shared, player, isMyTurn, selectCard, selectedCard } }>
+		<CallbreakContext value={ {
+			shared,
+			player,
+			isMyTurn,
+			selectCard,
+			selectedCard,
+			declareWins,
+			playCard,
+			addBots
+		} }>
 			{ children }
 		</CallbreakContext>
 	);

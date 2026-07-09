@@ -1,9 +1,16 @@
+import { orpc } from "@/api/query";
+import { Spinner } from "@/shared/primitives/spinner";
 import { WordleProvider } from "@/wordle/components/context";
 import { GameView } from "@/wordle/components/game-view";
-import { getGame } from "@/wordle/core/actions";
+import { useQuery } from "@tanstack/react-query";
 
-export async function WordleGamePage( { params }: { params: { gameId: string } } ) {
-	const data = await getGame( { gameId: params.gameId } );
+export function WordleGamePage( { gameId }: { gameId: string } ) {
+	const { data, isLoading } = useQuery( orpc.wordle.getGame.queryOptions( { input: { gameId } } ) );
+
+	if ( isLoading || !data ) {
+		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
+	}
+
 	return (
 		<WordleProvider data={ data }>
 			<GameView/>

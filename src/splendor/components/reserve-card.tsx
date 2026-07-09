@@ -9,9 +9,10 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
+import { orpc } from "@/api/query";
 import { TokenPicker } from "@/splendor/components/token-picker";
-import { reserveCard } from "@/splendor/core/actions";
 import type { Card, Gem, Tokens } from "@/splendor/core/types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
 
@@ -27,6 +28,13 @@ export function ReserveCard( props: ReserveCardProps ) {
 	const [ isPending ] = useTransition();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ returned, setReturned ] = useState<Partial<Tokens>>( {} );
+	const queryClient = useQueryClient();
+
+	const reserveCard = useMutation( orpc.splendor.reserveCard.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.splendor.getGame.key( { input: { gameId: props.gameId } } )
+		} )
+	} ) );
 
 	const isReturnValid = Object.values( returned ).reduce( ( sum, v ) => sum + v, 0 ) === 1;
 
@@ -41,11 +49,13 @@ export function ReserveCard( props: ReserveCardProps ) {
 
 	const handleReserveClick = () => {
 		if ( value ) {
-			const returnedToken = Object.keys( returned ).map( g => g as Gem )
+			// The engine only ever accepts a non-gold gem back (you cannot return the
+			// gold you just gained), matching the reserveCard input schema.
+			const returnedToken = Object.keys( returned ).map( g => g as Exclude<Gem, "gold"> )
 				.find( g => ( returned[ g ] ?? 0 ) > 0 );
 
 			return startTransition( async () => {
-				await reserveCard( {
+				await reserveCard.mutateAsync( {
 					gameId: props.gameId,
 					cardId: props.card.id,
 					returnedToken,
@@ -63,7 +73,7 @@ export function ReserveCard( props: ReserveCardProps ) {
 		}
 
 		return startTransition( async () => {
-			await reserveCard( {
+			await reserveCard.mutateAsync( {
 				gameId: props.gameId,
 				cardId: props.card.id,
 				withGold: props.isGoldAvailable

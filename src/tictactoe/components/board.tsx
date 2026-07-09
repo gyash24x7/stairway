@@ -3,10 +3,8 @@
 import { popIn } from "@/shared/animations/variants";
 import { cn } from "@/shared/utils/cn";
 import { useTicTacToe } from "@/tictactoe/components/context";
-import { placeMove } from "@/tictactoe/core/actions";
 import { findWinningLine } from "@/tictactoe/core/utils";
 import { AnimatePresence, motion } from "framer-motion";
-import { useTransition } from "react";
 
 const CELL_CENTERS = [
 	{ x: 16.66, y: 16.66 }, { x: 50, y: 16.66 }, { x: 83.33, y: 16.66 },
@@ -15,17 +13,14 @@ const CELL_CENTERS = [
 ];
 
 export function Board() {
-	const { shared, player } = useTicTacToe();
-	const [ isPending, startTransition ] = useTransition();
+	const { shared, player, placeMove, isPending } = useTicTacToe();
 
 	const isMyTurn = shared.context.currentPlayer === player.playerId;
 	const gameInProgress = shared.status === "IN_PROGRESS";
 	const disabled = !gameInProgress || !isMyTurn || isPending;
 	const winningLine = findWinningLine( shared.state.board );
 
-	const handlePlace = ( position: number ) => startTransition( async () => {
-		await placeMove( { gameId: shared.id, position } );
-	} );
+	const handlePlace = ( position: number ) => placeMove( position );
 
 	return (
 		<div className={ "relative grid grid-cols-3 gap-2 w-full max-w-xl" }>

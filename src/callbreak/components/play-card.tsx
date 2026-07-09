@@ -1,18 +1,16 @@
 "use client";
 
 import { useCallbreak } from "@/callbreak/components/context";
-import { playCard } from "@/callbreak/core/actions";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
-import { useTransition } from "react";
 
 export function PlayCard() {
-	const { shared, selectedCard, selectCard } = useCallbreak();
-	const [ isPending, startTransition ] = useTransition();
+	const { shared, selectedCard, selectCard, playCard } = useCallbreak();
+	const isPending = playCard.isPending;
 
-	const handleClick = () => startTransition( async () => {
+	const handleClick = async () => {
 		if ( selectedCard ) {
-			await playCard( {
+			await playCard.mutateAsync( {
 				dealId: shared.state.activeDeal?.id!,
 				gameId: shared.id,
 				cardId: selectedCard
@@ -20,7 +18,7 @@ export function PlayCard() {
 
 			selectCard( selectedCard );
 		}
-	} );
+	};
 
 	return (
 		<Button

@@ -2,7 +2,6 @@
 
 import type { KingdominoGame } from "@/kingdomino/core/types";
 import { createContext, type ReactNode, useContext } from "react";
-import { useSyncedState } from "rwsdk/use-synced-state/client";
 
 type KingdominoContextValue = {
 	shared: KingdominoGame["shared"];
@@ -22,9 +21,7 @@ export function useKingdomino() {
 type KingdominoProviderProps = { data: KingdominoGame; children: ReactNode; };
 
 export function KingdominoProvider( { data, children }: KingdominoProviderProps ) {
-	const room = `kingdomino:${ data.shared.id }`;
-	const [ shared ] = useSyncedState( data.shared, "shared", room );
-	const [ player ] = useSyncedState( data.player, data.player.playerId, room );
+	const { shared, player } = data;
 	return (
 		<KingdominoContext value={ { shared, player } }>
 			{ children }

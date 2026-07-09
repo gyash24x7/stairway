@@ -8,20 +8,15 @@ import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@/shared/utils/cn";
 import { Board } from "@/tictactoe/components/board";
 import { useTicTacToe } from "@/tictactoe/components/context";
-import { addBots } from "@/tictactoe/core/actions";
 import { AnimatePresence, motion } from "framer-motion";
-import { useTransition } from "react";
 
 export function GameView() {
-	const { shared, player } = useTicTacToe();
-	const [ isPending, startTransition ] = useTransition();
+	const { shared, player, addBots, isPending } = useTicTacToe();
 	const players = Object.values( shared.players );
 	const isActive = shared.status === "IN_PROGRESS";
 	const isCompleted = shared.status === "COMPLETED";
 
-	const handleAddBots = () => startTransition( async () => {
-		await addBots( { gameId: shared.id } );
-	} );
+	const handleAddBots = () => addBots();
 
 	return (
 		<div className={ "flex flex-col gap-3 items-center mb-40 max-w-6xl w-full" }>

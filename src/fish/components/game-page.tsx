@@ -1,12 +1,19 @@
+import { orpc } from "@/api/query";
 import { FishProvider } from "@/fish/components/context";
 import { GameView } from "@/fish/components/game-view";
-import { getGame } from "@/fish/core/actions";
+import { Spinner } from "@/shared/primitives/spinner";
+import { useQuery } from "@tanstack/react-query";
 
-export async function FishGamePage( { params }: { params: { gameId: string } } ) {
-	const data = await getGame( { gameId: params.gameId } );
+export function FishGamePage( { gameId }: { gameId: string } ) {
+	const { data, isLoading } = useQuery( orpc.fish.getGame.queryOptions( { input: { gameId } } ) );
+
+	if ( isLoading || !data ) {
+		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
+	}
+
 	return (
 		<FishProvider data={ data }>
 			<GameView/>
 		</FishProvider>
 	);
-} 
+}

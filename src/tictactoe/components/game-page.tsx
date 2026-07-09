@@ -1,9 +1,18 @@
+import { orpc } from "@/api/query";
+import { Spinner } from "@/shared/primitives/spinner";
 import { TicTacToeProvider } from "@/tictactoe/components/context";
 import { GameView } from "@/tictactoe/components/game-view";
-import { getGame } from "@/tictactoe/core/actions";
+import { useQuery } from "@tanstack/react-query";
 
-export async function TicTacToeGamePage( { params }: { params: { gameId: string } } ) {
-	const data = await getGame( { gameId: params.gameId } );
+export function TicTacToeGamePage( { gameId }: { gameId: string } ) {
+	const { data, isLoading } = useQuery(
+		orpc.tictactoe.getGame.queryOptions( { input: { gameId } } )
+	);
+
+	if ( isLoading || !data ) {
+		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
+	}
+
 	return (
 		<TicTacToeProvider data={ data }>
 			<GameView/>

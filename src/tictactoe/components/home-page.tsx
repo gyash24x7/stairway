@@ -1,11 +1,12 @@
+import { client } from "@/api/client";
 import { CreateGame } from "@/shared/components/create-game";
 import { JoinGame } from "@/shared/components/join-game";
+import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
-import { createGame, joinGame } from "@/tictactoe/core/actions";
-import { requestInfo } from "rwsdk/worker";
 
 export function TicTacToeHomePage() {
+	const { authInfo } = useAuth();
 	return (
 		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>TIC TAC TOE</h2>
@@ -22,11 +23,17 @@ export function TicTacToeHomePage() {
 				game ends in a draw.
 			</p>
 			<Separator/>
-			{ !!requestInfo.ctx.authInfo
+			{ !!authInfo
 				? (
 					<div className={ "grid grid-cols-1 md:grid-cols-2 gap-5 w-full" }>
-						<CreateGame game={ "tic-tac-toe" } createGame={ createGame }/>
-						<JoinGame game={ "tic-tac-toe" } joinGame={ joinGame }/>
+						<CreateGame
+							game={ "tic-tac-toe" }
+							createGame={ () => client.tictactoe.createGame() }
+						/>
+						<JoinGame
+							game={ "tic-tac-toe" }
+							joinGame={ input => client.tictactoe.joinGame( input ) }
+						/>
 					</div>
 				)
 				: (

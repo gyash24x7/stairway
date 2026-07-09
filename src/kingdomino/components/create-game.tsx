@@ -1,6 +1,6 @@
 "use client";
 
-import { createGame } from "@/kingdomino/core/actions";
+import { client } from "@/api/client";
 import type { BoardSize } from "@/kingdomino/core/types";
 import { CreateGame } from "@/shared/components/create-game";
 import { RadioSelect } from "@/shared/primitives/radio-select";
@@ -12,7 +12,7 @@ export function KingdominoCreateGame() {
 
 	const createKingdominoGame = async () => {
 		if ( !!playerCount && !!boardSize ) {
-			return createGame( { playerCount, boardSize } );
+			return client.kingdomino.createGame( { playerCount, boardSize } );
 		}
 		return "";
 	};

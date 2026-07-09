@@ -1,7 +1,7 @@
 "use client";
 
+import { orpc } from "@/api/query";
 import { useFish } from "@/fish/components/context";
-import { askCard } from "@/fish/core/actions";
 import type { Book } from "@/fish/core/types";
 import {
 	getBookDisplayString,
@@ -24,7 +24,8 @@ import {
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
 import { type CardId, getCardDisplayString } from "@/shared/utils/cards";
-import { useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useStep } from "usehooks-ts";
 
 export function AskCard() {
@@ -82,14 +83,20 @@ export function AskCard() {
 		setOpen( false );
 	};
 
-	const [ isPending, startTransition ] = useTransition();
+	const queryClient = useQueryClient();
 
-	const handleClick = () => startTransition( async () => {
+	const askCard = useMutation( orpc.fish.askCard.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+		} )
+	} ) );
+
+	const handleClick = async () => {
 		if ( selectedCard && selectedPlayer ) {
-			await askCard( { gameId: shared.id, cardId: selectedCard, from: selectedPlayer } );
+			await askCard.mutateAsync( { gameId: shared.id, cardId: selectedCard, from: selectedPlayer } );
 			closeDialog();
 		}
-	} );
+	};
 
 	return (
 		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDialog() : setOpen( true ) }>
@@ -162,8 +169,8 @@ export function AskCard() {
 					{ currentStep === 4 && (
 						<div className={ "w-full flex gap-3" }>
 							<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
-							<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
-								{ isPending ? <Spinner/> : "ASK CARD" }
+							<Button onClick={ handleClick } disabled={ askCard.isPending } className={ "flex-1" }>
+								{ askCard.isPending ? <Spinner/> : "ASK CARD" }
 							</Button>
 						</div>
 					) }

@@ -1,7 +1,7 @@
 "use client";
 
+import { orpc } from "@/api/query";
 import { useFish } from "@/fish/components/context";
-import { transferTurn } from "@/fish/core/actions";
 import { getTeammates } from "@/fish/core/utils";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
@@ -15,7 +15,8 @@ import {
 } from "@/shared/primitives/drawer";
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
-import { useState, useTransition } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 export function TransferTurn() {
 	const { shared, player } = useFish();
@@ -32,14 +33,20 @@ export function TransferTurn() {
 		setSelectedPlayer( undefined );
 	};
 
-	const [ isPending, startTransition ] = useTransition();
+	const queryClient = useQueryClient();
 
-	const handleClick = () => startTransition( async () => {
+	const transferTurn = useMutation( orpc.fish.transferTurn.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+		} )
+	} ) );
+
+	const handleClick = async () => {
 		if ( selectedPlayer ) {
-			await transferTurn( { gameId: shared.id, transferTo: selectedPlayer } );
+			await transferTurn.mutateAsync( { gameId: shared.id, transferTo: selectedPlayer } );
 			closeDrawer();
 		}
-	} );
+	};
 
 	return (
 		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDrawer() : setOpen( true ) }>
@@ -61,8 +68,8 @@ export function TransferTurn() {
 					/>
 				</div>
 				<DrawerFooter>
-					<Button onClick={ handleClick } disabled={ isPending } className={ "w-full" }>
-						{ isPending ? <Spinner/> : "TRANSFER TURN" }
+					<Button onClick={ handleClick } disabled={ transferTurn.isPending } className={ "w-full" }>
+						{ transferTurn.isPending ? <Spinner/> : "TRANSFER TURN" }
 					</Button>
 				</DrawerFooter>
 			</DrawerContent>

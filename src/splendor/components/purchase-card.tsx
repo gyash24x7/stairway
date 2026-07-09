@@ -1,3 +1,4 @@
+import { orpc } from "@/api/query";
 import type { GameId } from "@/shared/engine/types";
 import { Button } from "@/shared/primitives/button";
 import {
@@ -13,9 +14,9 @@ import { cn } from "@/shared/utils/cn";
 import { GameCard } from "@/splendor/components/game-card";
 import { TokenPicker } from "@/splendor/components/token-picker";
 import { gemLightColors } from "@/splendor/components/utils";
-import { purchaseCard } from "@/splendor/core/actions";
 import type { Card, Gem, Tokens } from "@/splendor/core/types";
 import { canPurchaseCard, isValidPayment } from "@/splendor/core/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
 
@@ -30,6 +31,13 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 	const [ isPending ] = useTransition();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ payment, setPayment ] = useState<Partial<Tokens>>( {} );
+	const queryClient = useQueryClient();
+
+	const purchaseCard = useMutation( orpc.splendor.purchaseCard.mutationOptions( {
+		onSuccess: () => queryClient.invalidateQueries( {
+			queryKey: orpc.splendor.getGame.key( { input: { gameId: props.gameId } } )
+		} )
+	} ) );
 
 	const canPurchase = canPurchaseCard( props.card, props.tokens, props.discounts );
 	const isPaymentCorrect = isValidPayment( props.card, payment, props.discounts );
@@ -44,7 +52,7 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 	};
 
 	const handlePurchaseClick = () => startTransition( async () => {
-		await purchaseCard( {
+		await purchaseCard.mutateAsync( {
 			gameId: props.gameId,
 			cardId: props.card.id,
 			payment

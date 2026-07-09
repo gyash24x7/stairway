@@ -1,9 +1,9 @@
+import { orpc } from "@/api/query";
 import { cn } from "@/shared/utils/cn";
 import { useWordle } from "@/wordle/components/context";
-import { getWords } from "@/wordle/core/actions";
 import type { GuessResult, GuessResultsForWord, LetterStatus } from "@/wordle/core/types";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
 
 function getBlockColor( status: LetterStatus ) {
 	switch ( status ) {
@@ -109,13 +109,10 @@ function WordTiles( { results }: { results: GuessResultsForWord } ) {
 
 export function Board() {
 	const { shared } = useWordle();
-	const [ words, setWords ] = useState<string[]>( [] );
-
-	useEffect( () => {
-		if ( shared.status === "COMPLETED" ) {
-			getWords( { gameId: shared.id } ).then( setWords );
-		}
-	}, [ shared.id, shared.status ] );
+	const { data: words = [] } = useQuery( orpc.wordle.getWords.queryOptions( {
+		input: { gameId: shared.id },
+		enabled: shared.status === "COMPLETED"
+	} ) );
 
 	return (
 		<div className={ "flex justify-center flex-wrap gap-3 w-full" }>

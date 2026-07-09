@@ -1,6 +1,6 @@
 "use client";
 
-import { createGame } from "@/fish/core/actions";
+import { client } from "@/api/client";
 import type { BookType } from "@/fish/core/types";
 import { CreateGame } from "@/shared/components/create-game";
 import { RadioSelect } from "@/shared/primitives/radio-select";
@@ -13,7 +13,7 @@ export function FishCreateGame() {
 
 	const createFishGame = async () => {
 		if ( !!playerCount && !!teamCount ) {
-			return createGame( { playerCount, type: bookType, teamCount } );
+			return client.fish.createGame( { playerCount, type: bookType, teamCount } );
 		}
 		return "";
 	};

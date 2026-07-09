@@ -1,7 +1,7 @@
 "use client";
 
+import { orpc } from "@/api/query";
 import type { Tentative } from "@/kingdomino/components/board";
-import { discardDomino, placeDomino } from "@/kingdomino/core/actions";
 import type { Board, Coord, DominoId, Rotation } from "@/kingdomino/core/types";
 import {
 	getPlacementCoordinates,
@@ -9,8 +9,9 @@ import {
 	getValidRotations
 } from "@/kingdomino/core/utils";
 import { Button } from "@/shared/primitives/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 type UsePlacementParams = {
 	gameId: string;
@@ -33,7 +34,20 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 	const { gameId, board, activeDominoId, canPlace, onClear } = params;
 
 	const [ tentative, setTentative ] = useState<{ coord: Coord; rotation: Rotation } | null>( null );
-	const [ isPending, startTransition ] = useTransition();
+
+	const queryClient = useQueryClient();
+	const invalidate = () => queryClient.invalidateQueries( {
+		queryKey: orpc.kingdomino.getGame.key( { input: { gameId } } )
+	} );
+
+	const placeDomino = useMutation( orpc.kingdomino.placeDomino.mutationOptions( {
+		onSuccess: invalidate
+	} ) );
+	const discardDomino = useMutation( orpc.kingdomino.discardDomino.mutationOptions( {
+		onSuccess: invalidate
+	} ) );
+
+	const isPending = placeDomino.isPending || discardDomino.isPending;
 
 	const handleCellClick = ( coord: Coord ) => {
 		if ( !canPlace || !activeDominoId ) {
@@ -58,11 +72,11 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 		}
 
 		const placement = { dominoId: activeDominoId, ...tentative };
-		startTransition( async () => {
-			await placeDomino( { gameId, placement } );
+		void ( async () => {
+			await placeDomino.mutateAsync( { gameId, placement } );
 			setTentative( null );
 			onClear?.();
-		} );
+		} )();
 	};
 
 	const handleCancel = () => setTentative( null );
@@ -90,11 +104,11 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 			return;
 		}
 
-		startTransition( async () => {
-			await discardDomino( { gameId, dominoId: activeDominoId } );
+		void ( async () => {
+			await discardDomino.mutateAsync( { gameId, dominoId: activeDominoId } );
 			setTentative( null );
 			onClear?.();
-		} );
+		} )();
 	};
 
 	const getPreviewCoords = ( coord: Coord ): Coord[] | null => {

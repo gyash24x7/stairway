@@ -1,8 +1,8 @@
 "use client";
 
+import { client } from "@/api/client";
 import { CreateGame } from "@/shared/components/create-game";
 import { RadioSelect } from "@/shared/primitives/radio-select";
-import { createGame } from "@/splendor/core/actions";
 import { useState } from "react";
 
 export function SplendorCreateGame() {
@@ -11,7 +11,7 @@ export function SplendorCreateGame() {
 
 	const createSplendorGame = async () => {
 		if ( !!playerCount && !!winningPoints ) {
-			return createGame( { playerCount, winningPoints } );
+			return client.splendor.createGame( { playerCount, winningPoints } );
 		}
 		return "";
 	};

@@ -1,12 +1,19 @@
+import { orpc } from "@/api/query";
 import { CallbreakProvider } from "@/callbreak/components/context";
 import { GameView } from "@/callbreak/components/game-view";
-import { getGame } from "@/callbreak/core/actions";
+import { Spinner } from "@/shared/primitives/spinner";
+import { useQuery } from "@tanstack/react-query";
 
-export async function CallbreakGamePage( { params }: { params: { gameId: string } } ) {
-	const data = await getGame( { gameId: params.gameId } );
+export function CallbreakGamePage( { gameId }: { gameId: string } ) {
+	const { data, isLoading } = useQuery( orpc.callbreak.getGame.queryOptions( { input: { gameId } } ) );
+
+	if ( isLoading || !data ) {
+		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
+	}
+
 	return (
 		<CallbreakProvider data={ data }>
 			<GameView/>
 		</CallbreakProvider>
 	);
-} 
+}

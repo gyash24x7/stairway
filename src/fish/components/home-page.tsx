@@ -1,11 +1,16 @@
+import { client } from "@/api/client";
 import { FishCreateGame as CreateGame } from "@/fish/components/create-game";
-import { joinGame } from "@/fish/core/actions";
 import { JoinGame } from "@/shared/components/join-game";
+import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
-import { requestInfo } from "rwsdk/worker";
+import type { JoinGameInput } from "@/shared/engine/types";
 
 export function FishHomePage() {
+	const { authInfo } = useAuth();
+
+	const joinFishGame = ( input: JoinGameInput ) => client.fish.joinGame( input );
+
 	return (
 		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>FISH</h2>
@@ -15,11 +20,11 @@ export function FishHomePage() {
 				prominent variants Normal Fish and Canadian Fish.
 			</p>
 			<Separator/>
-			{ !!requestInfo.ctx.authInfo
+			{ !!authInfo
 				? (
 					<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-5 w-full" }>
 						<CreateGame/>
-						<JoinGame game={ "fish" } joinGame={ joinGame }/>
+						<JoinGame game={ "fish" } joinGame={ joinFishGame }/>
 					</div>
 				)
 				: (

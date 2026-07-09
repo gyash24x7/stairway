@@ -1,11 +1,14 @@
+import { client } from "@/api/client";
 import { JoinGame } from "@/shared/components/join-game";
+import type { JoinGameInput } from "@/shared/engine/types";
+import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
 import { cn } from "@/shared/utils/cn";
 import { SplendorCreateGame as CreateGame } from "@/splendor/components/create-game";
-import { joinGame } from "@/splendor/core/actions";
-import { requestInfo } from "rwsdk/worker";
 
 export function SplendorHomePage() {
+	const { authInfo } = useAuth();
+	const joinGame = ( input: JoinGameInput ) => client.splendor.joinGame( input );
 	return (
 		<div
 			className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
@@ -25,7 +28,7 @@ export function SplendorHomePage() {
 				the same goals.
 			</p>
 			<Separator/>
-			{ !!requestInfo.ctx.authInfo
+			{ !!authInfo
 				? (
 					<div className={ "grid grid-cols-1 md:grid-cols-2 gap-5 w-full" }>
 						<CreateGame/>
