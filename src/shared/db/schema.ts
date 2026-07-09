@@ -23,6 +23,13 @@ export const webauthnOptions = sqliteTable( "webauthn_options", {
 	challenge: text().notNull()
 } );
 
+/** Server-side sessions. The row id doubles as the opaque token carried in the signed cookie. */
+export const sessions = sqliteTable( "sessions", {
+	id: text().primaryKey().$default( () => generateId() ),
+	userId: text().notNull(),
+	expiresAt: integer().notNull()
+} );
+
 /** The games table tracking all game instances with auto-generated IDs and join codes. */
 export const games = sqliteTable(
 	"games",
