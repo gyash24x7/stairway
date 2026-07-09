@@ -1,7 +1,7 @@
 "use client";
 
 import { client } from "@/api/client";
-import type { BoardSize } from "@/kingdomino/core/types";
+import type { BoardSize } from "@s2h/kingdomino-core/types";
 import { CreateGame } from "@/shared/components/create-game";
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { useState } from "react";

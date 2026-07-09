@@ -1,10 +1,10 @@
 import * as auth from "@s2h/auth/router";
-import * as callbreak from "@/api/routers/callbreak";
-import * as fish from "@/api/routers/fish";
-import * as kingdomino from "@/api/routers/kingdomino";
-import * as splendor from "@/api/routers/splendor";
-import * as tictactoe from "@/api/routers/tictactoe";
-import * as wordle from "@/api/routers/wordle";
+import * as callbreak from "@s2h/callbreak-core/router";
+import * as fish from "@s2h/fish-core/router";
+import * as kingdomino from "@s2h/kingdomino-core/router";
+import * as splendor from "@s2h/splendor-core/router";
+import * as tictactoe from "@s2h/tictactoe-core/router";
+import * as wordle from "@s2h/wordle-core/router";
 
 /**
  * The root oRPC router. Domains are nested keys, so procedures dispatch under

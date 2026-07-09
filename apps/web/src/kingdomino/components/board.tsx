@@ -8,7 +8,7 @@ import type {
 	DominoId,
 	Rotation,
 	Tile
-} from "@/kingdomino/core/types";
+} from "@s2h/kingdomino-core/types";
 import {
 	canDominoBePlaced,
 	coordKey,
@@ -17,7 +17,7 @@ import {
 	getExpandedBoardBounds,
 	getPotentialCells,
 	getRowsAndCols
-} from "@/kingdomino/core/utils";
+} from "@s2h/kingdomino-core/utils";
 import { Popover, PopoverContent } from "@/shared/primitives/popover";
 import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";

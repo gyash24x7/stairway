@@ -1,6 +1,6 @@
 "use client";
 
-import type { FishGame } from "@/fish/core/types";
+import type { FishGame } from "@s2h/fish-core/types";
 import { createContext, type ReactNode, useContext } from "react";
 
 type FishContextValue = {

@@ -1,7 +1,7 @@
 import { Spinner } from "@/shared/primitives/spinner";
 import { cn } from "@s2h/shared/utils/cn";
 import { useWordle } from "@/wordle/components/context";
-import { dictionaries } from "@/wordle/core/dictionary";
+import { dictionaries } from "@s2h/wordle-core/dictionary";
 import { DeleteIcon, LogOutIcon } from "lucide-react";
 
 const LINES = [

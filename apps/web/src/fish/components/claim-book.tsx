@@ -2,14 +2,14 @@
 
 import { orpc } from "@/api/query";
 import { useFish } from "@/fish/components/context";
-import type { Book } from "@/fish/core/types";
+import type { Book } from "@s2h/fish-core/types";
 import {
 	getBookDisplayString,
 	getBooksInHand,
 	getCardsOfBook,
 	getMissingCards,
 	getTeammates
-} from "@/fish/core/utils";
+} from "@s2h/fish-core/utils";
 import { RCard } from "@/shared/components/card";
 import { RPlayerInfoStrip } from "@/shared/components/player-info";
 import type { PlayerId } from "@s2h/engine/types";

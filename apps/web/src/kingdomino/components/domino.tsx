@@ -1,5 +1,5 @@
 import { CrownIndicator } from "@/kingdomino/components/board";
-import type { Domino, DominoId, Terrain } from "@/kingdomino/core/types";
+import type { Domino, DominoId, Terrain } from "@s2h/kingdomino-core/types";
 import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";
 

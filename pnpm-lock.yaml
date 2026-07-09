@@ -167,15 +167,33 @@ importers:
       '@s2h/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@s2h/callbreak-core':
+        specifier: workspace:*
+        version: link:../../games/callbreak/core
       '@s2h/db':
         specifier: workspace:*
         version: link:../../packages/db
       '@s2h/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@s2h/fish-core':
+        specifier: workspace:*
+        version: link:../../games/fish/core
+      '@s2h/kingdomino-core':
+        specifier: workspace:*
+        version: link:../../games/kingdomino/core
       '@s2h/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@s2h/splendor-core':
+        specifier: workspace:*
+        version: link:../../games/splendor/core
+      '@s2h/tictactoe-core':
+        specifier: workspace:*
+        version: link:../../games/tictactoe/core
+      '@s2h/wordle-core':
+        specifier: workspace:*
+        version: link:../../games/wordle/core
       '@simplewebauthn/browser':
         specifier: 'catalog:'
         version: 13.3.0
@@ -288,6 +306,156 @@ importers:
       wrangler:
         specifier: 'catalog:'
         version: 4.107.1
+
+  games/callbreak/core:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../../../packages/api
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../../../packages/db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/fish/core:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../../../packages/api
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../../../packages/db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/kingdomino/core:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../../../packages/api
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../../../packages/db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/splendor/core:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../../../packages/api
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../../../packages/db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/tictactoe/core:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../../../packages/api
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../../../packages/db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/wordle/core:
+    dependencies:
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@s2h/api':
+        specifier: workspace:*
+        version: link:../../../packages/api
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../../../packages/db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      valibot:
+        specifier: 'catalog:'
+        version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/api:
     dependencies:

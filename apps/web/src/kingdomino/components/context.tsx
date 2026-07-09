@@ -1,6 +1,6 @@
 "use client";
 
-import type { KingdominoGame } from "@/kingdomino/core/types";
+import type { KingdominoGame } from "@s2h/kingdomino-core/types";
 import { createContext, type ReactNode, useContext } from "react";
 
 type KingdominoContextValue = {

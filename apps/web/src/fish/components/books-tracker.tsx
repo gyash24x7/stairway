@@ -1,8 +1,8 @@
 "use client";
 
 import { useFish } from "@/fish/components/context";
-import type { Book } from "@/fish/core/types";
-import { getBookDisplayString } from "@/fish/core/utils";
+import type { Book } from "@s2h/fish-core/types";
+import { getBookDisplayString } from "@s2h/fish-core/utils";
 import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";
 

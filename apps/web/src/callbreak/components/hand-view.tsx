@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallbreak } from "@/callbreak/components/context";
-import { getPlayableCards } from "@/callbreak/core/utils";
+import { getPlayableCards } from "@s2h/callbreak-core/utils";
 import { RCard } from "@/shared/components/card";
 import { type CardId, getSortedHand } from "@s2h/shared/utils/cards";
 import { cn } from "@s2h/shared/utils/cn";

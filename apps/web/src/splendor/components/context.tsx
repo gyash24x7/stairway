@@ -1,6 +1,6 @@
 "use client";
 
-import type { SplendorGame } from "@/splendor/core/types";
+import type { SplendorGame } from "@s2h/splendor-core/types";
 import { createContext, type ReactNode, useContext } from "react";
 
 type SplendorContextValue = {

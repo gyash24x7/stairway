@@ -1,6 +1,6 @@
 import { cn } from "@s2h/shared/utils/cn";
 import { gemColors } from "@/splendor/components/utils";
-import type { Cost, Noble } from "@/splendor/core/types";
+import type { Cost, Noble } from "@s2h/splendor-core/types";
 
 export function Noble( { noble }: { noble: Noble } ) {
 	return (

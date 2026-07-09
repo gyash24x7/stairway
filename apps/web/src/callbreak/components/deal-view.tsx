@@ -3,7 +3,7 @@
 import { useCallbreak } from "@/callbreak/components/context";
 import { HandView } from "@/callbreak/components/hand-view";
 import { Scores } from "@/callbreak/components/scores";
-import { PLAYER_COUNT } from "@/callbreak/core/utils";
+import { PLAYER_COUNT } from "@s2h/callbreak-core/utils";
 import { RCard } from "@/shared/components/card";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { cn } from "@s2h/shared/utils/cn";

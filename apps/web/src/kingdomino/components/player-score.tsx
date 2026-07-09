@@ -1,5 +1,5 @@
 import { RSmallBoard } from "@/kingdomino/components/board";
-import type { KingdominoPlayerInfo } from "@/kingdomino/core/types";
+import type { KingdominoPlayerInfo } from "@s2h/kingdomino-core/types";
 import { CounterTween } from "@/shared/animations/counter-tween";
 import { FloatPlusN } from "@/shared/animations/float-plus-n";
 import { RPlayerInfo } from "@/shared/components/player-info";

@@ -2,7 +2,7 @@
 
 import { orpc } from "@/api/query";
 import { useFish } from "@/fish/components/context";
-import { getTeammates } from "@/fish/core/utils";
+import { getTeammates } from "@s2h/fish-core/utils";
 import { RPlayerInfo } from "@/shared/components/player-info";
 import { Button } from "@/shared/primitives/button";
 import {

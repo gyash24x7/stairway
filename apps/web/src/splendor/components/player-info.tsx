@@ -17,8 +17,8 @@ import { useSplendor } from "@/splendor/components/context";
 import { GameCard } from "@/splendor/components/game-card";
 import { PurchaseCard } from "@/splendor/components/purchase-card";
 import { gemColors, gemLightColors } from "@/splendor/components/utils";
-import type { Gem } from "@/splendor/core/types";
-import { GEMS_WITH_GOLD } from "@/splendor/core/utils";
+import type { Gem } from "@s2h/splendor-core/types";
+import { GEMS_WITH_GOLD } from "@s2h/splendor-core/utils";
 import { motion } from "framer-motion";
 import { useState } from "react";
 

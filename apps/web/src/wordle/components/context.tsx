@@ -1,6 +1,6 @@
 import { orpc } from "@/api/query";
-import { dictionaries } from "@/wordle/core/dictionary";
-import type { WordleGame } from "@/wordle/core/types";
+import { dictionaries } from "@s2h/wordle-core/dictionary";
+import type { WordleGame } from "@s2h/wordle-core/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,

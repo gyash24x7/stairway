@@ -88,9 +88,9 @@ function getGameStub( game: string, gameId: string ) {
 }
 
 // Engine Durable Objects must be re-exported from the Worker entry (Cloudflare requirement).
-export { WordleEngine } from "@/wordle/core/engine";
-export { TicTacToeEngine } from "@/tictactoe/core/engine";
-export { SplendorEngine } from "@/splendor/core/engine";
-export { FishEngine } from "@/fish/core/engine";
-export { CallbreakEngine } from "@/callbreak/core/engine";
-export { KingdominoEngine } from "@/kingdomino/core/engine";
+export { WordleEngine } from "@s2h/wordle-core/engine";
+export { TicTacToeEngine } from "@s2h/tictactoe-core/engine";
+export { SplendorEngine } from "@s2h/splendor-core/engine";
+export { FishEngine } from "@s2h/fish-core/engine";
+export { CallbreakEngine } from "@s2h/callbreak-core/engine";
+export { KingdominoEngine } from "@s2h/kingdomino-core/engine";

@@ -1,0 +1,27 @@
+{
+	"name": "@s2h/wordle-core",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		"./types": "./src/types.ts",
+		"./utils": "./src/utils.ts",
+		"./dictionary": "./src/dictionary.ts",
+		"./engine": "./src/engine.ts",
+		"./router": "./src/router.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@orpc/server": "catalog:",
+		"@s2h/api": "workspace:*",
+		"@s2h/db": "workspace:*",
+		"@s2h/engine": "workspace:*",
+		"@s2h/shared": "workspace:*",
+		"valibot": "catalog:"
+	},
+	"devDependencies": {
+		"typescript": "catalog:"
+	}
+}

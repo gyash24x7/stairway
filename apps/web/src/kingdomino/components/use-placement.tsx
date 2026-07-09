@@ -2,12 +2,12 @@
 
 import { orpc } from "@/api/query";
 import type { Tentative } from "@/kingdomino/components/board";
-import type { Board, Coord, DominoId, Rotation } from "@/kingdomino/core/types";
+import type { Board, Coord, DominoId, Rotation } from "@s2h/kingdomino-core/types";
 import {
 	getPlacementCoordinates,
 	getValidPlacements,
 	getValidRotations
-} from "@/kingdomino/core/utils";
+} from "@s2h/kingdomino-core/utils";
 import { Button } from "@/shared/primitives/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";

@@ -12,7 +12,7 @@ import { useSplendor } from "@/splendor/components/context";
 import { GameCard } from "@/splendor/components/game-card";
 import { PurchaseCard } from "@/splendor/components/purchase-card";
 import { ReserveCard } from "@/splendor/components/reserve-card";
-import type { Card } from "@/splendor/core/types";
+import type { Card } from "@s2h/splendor-core/types";
 import { useBoolean } from "usehooks-ts";
 
 type CardActionsMenuProps = {

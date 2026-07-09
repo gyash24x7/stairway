@@ -3,7 +3,7 @@
 import { popIn } from "@/shared/animations/variants";
 import { cn } from "@s2h/shared/utils/cn";
 import { useTicTacToe } from "@/tictactoe/components/context";
-import { findWinningLine } from "@/tictactoe/core/utils";
+import { findWinningLine } from "@s2h/tictactoe-core/utils";
 import { AnimatePresence, motion } from "framer-motion";
 
 const CELL_CENTERS = [

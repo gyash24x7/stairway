@@ -1,8 +1,8 @@
 "use client";
 
 import { TokenBar } from "@/splendor/components/token-bar";
-import type { Gem, Tokens } from "@/splendor/core/types";
-import { DEFAULT_TOKENS } from "@/splendor/core/utils";
+import type { Gem, Tokens } from "@s2h/splendor-core/types";
+import { DEFAULT_TOKENS } from "@s2h/splendor-core/utils";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
 
 type TokenPickerProps = {

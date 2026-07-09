@@ -1,7 +1,7 @@
 "use client";
 
 import { useFish } from "@/fish/components/context";
-import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@/fish/core/utils";
+import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@s2h/fish-core/utils";
 import { RCard } from "@/shared/components/card";
 import { cn } from "@s2h/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";

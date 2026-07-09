@@ -1,7 +1,7 @@
 import { Button } from "@/shared/primitives/button";
 import { cn } from "@s2h/shared/utils/cn";
 import { gemColors } from "@/splendor/components/utils";
-import type { Gem, Tokens } from "@/splendor/core/types";
+import type { Gem, Tokens } from "@s2h/splendor-core/types";
 import type { ReactNode } from "react";
 
 export type TokenBarProps = {

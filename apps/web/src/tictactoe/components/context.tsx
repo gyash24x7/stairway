@@ -2,7 +2,7 @@
 
 import { orpc } from "@/api/query";
 import type { BaseGameConfig, PlayerGameData, SharedGameData } from "@s2h/engine/types";
-import type { TicTacToePlayerView, TicTacToeSharedView } from "@/tictactoe/core/types";
+import type { TicTacToePlayerView, TicTacToeSharedView } from "@s2h/tictactoe-core/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext } from "react";
 

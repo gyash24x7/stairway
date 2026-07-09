@@ -1,7 +1,7 @@
 "use client";
 
 import { useFish } from "@/fish/components/context";
-import { getAskDescription, getClaimDescription, getTransferDescription } from "@/fish/core/utils";
+import { getAskDescription, getClaimDescription, getTransferDescription } from "@s2h/fish-core/utils";
 import {
 	Drawer,
 	DrawerContent,

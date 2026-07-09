@@ -1,5 +1,5 @@
 import { orpc } from "@/api/query";
-import type { CallbreakGame } from "@/callbreak/core/types";
+import type { CallbreakGame } from "@s2h/callbreak-core/types";
 import type { CardId } from "@s2h/shared/utils/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
