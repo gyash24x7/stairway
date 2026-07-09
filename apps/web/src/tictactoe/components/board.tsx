@@ -1,7 +1,7 @@
 "use client";
 
 import { popIn } from "@/shared/animations/variants";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { useTicTacToe } from "@/tictactoe/components/context";
 import { findWinningLine } from "@/tictactoe/core/utils";
 import { AnimatePresence, motion } from "framer-motion";

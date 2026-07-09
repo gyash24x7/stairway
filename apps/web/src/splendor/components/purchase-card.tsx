@@ -1,5 +1,5 @@
 import { orpc } from "@/api/query";
-import type { GameId } from "@/shared/engine/types";
+import type { GameId } from "@s2h/engine/types";
 import { Button } from "@/shared/primitives/button";
 import {
 	Drawer,
@@ -10,7 +10,7 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { GameCard } from "@/splendor/components/game-card";
 import { TokenPicker } from "@/splendor/components/token-picker";
 import { gemLightColors } from "@/splendor/components/utils";

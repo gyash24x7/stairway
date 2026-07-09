@@ -1,4 +1,4 @@
-import type { PlayerId } from "@/shared/engine/types";
+import type { PlayerId } from "@s2h/engine/types";
 import type { Board, CellValue, TicTacToeData } from "@/tictactoe/core/types";
 
 /** All possible winning line combinations for a 3x3 tic-tac-toe board. */

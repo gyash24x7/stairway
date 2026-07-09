@@ -3,8 +3,8 @@
 import { useCallbreak } from "@/callbreak/components/context";
 import { getPlayableCards } from "@/callbreak/core/utils";
 import { RCard } from "@/shared/components/card";
-import { type CardId, getSortedHand } from "@/shared/utils/cards";
-import { cn } from "@/shared/utils/cn";
+import { type CardId, getSortedHand } from "@s2h/shared/utils/cards";
+import { cn } from "@s2h/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 
 export function HandView() {

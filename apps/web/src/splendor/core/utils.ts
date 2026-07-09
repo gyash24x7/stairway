@@ -1,4 +1,4 @@
-import { shuffle } from "@/shared/utils/array";
+import { shuffle } from "@s2h/shared/utils/array";
 import type { Card, CardLevel, Cost, Noble, PlayerInfo, Tokens } from "@/splendor/core/types";
 
 export const GEMS: Array<keyof Cost> = [ "diamond", "sapphire", "emerald", "ruby", "onyx" ];

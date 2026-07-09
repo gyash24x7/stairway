@@ -12,7 +12,7 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { Board } from "@/splendor/components/board";
 import { useSplendor } from "@/splendor/components/context";
 import { PickTokens } from "@/splendor/components/pick-tokens";

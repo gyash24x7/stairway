@@ -6,10 +6,10 @@ import type {
 } from "@/callbreak/core/types";
 import { getCompletedGame, requireGame, requireGameByCode } from "@/api/helpers";
 import { authed } from "@/api/middleware";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
-import { CARD_SUITS, SORTED_DECK } from "@/shared/utils/cards";
-import { createLogger } from "@/shared/utils/logger";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
+import { CARD_SUITS, SORTED_DECK } from "@s2h/shared/utils/cards";
+import { createLogger } from "@s2h/shared/utils/logger";
 import * as v from "valibot";
 
 const logger = createLogger( "Callbreak:Router" );

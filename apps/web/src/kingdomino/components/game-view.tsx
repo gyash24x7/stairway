@@ -13,7 +13,7 @@ import { DOMINO_DECK } from "@/kingdomino/core/utils";
 import { GameInfo } from "@/shared/components/game-info";
 import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Button } from "@/shared/primitives/button";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useState } from "react";

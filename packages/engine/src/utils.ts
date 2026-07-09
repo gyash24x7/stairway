@@ -1,4 +1,4 @@
-import type { ResolveNextPlayerFn } from "@/shared/engine/types";
+import type { ResolveNextPlayerFn } from "./types";
 
 /**
  * A round-robin player resolution function that cycles through players based on turn number.

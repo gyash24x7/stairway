@@ -1,5 +1,5 @@
 import type { Deal, Trick } from "@/callbreak/core/types";
-import type { PlayerId } from "@/shared/engine/types";
+import type { PlayerId } from "@s2h/engine/types";
 import {
 	type CardId,
 	type CardRank,
@@ -8,8 +8,8 @@ import {
 	generateHands,
 	getCardRank,
 	getCardSuit
-} from "@/shared/utils/cards";
-import { generateId } from "@/shared/utils/generator";
+} from "@s2h/shared/utils/cards";
+import { generateId } from "@s2h/shared/utils/generator";
 
 export const PLAYER_COUNT = 4;
 export const TRICKS_PER_DEAL = 13;

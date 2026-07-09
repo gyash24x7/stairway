@@ -1,7 +1,7 @@
 "use client";
 
 import { LogoutButton } from "@/auth/components/logout-button";
-import type { AuthInfo } from "@/auth/core/types";
+import type { AuthInfo } from "@s2h/shared/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/primitives/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "@/shared/primitives/dialog";
 import { useState } from "react";

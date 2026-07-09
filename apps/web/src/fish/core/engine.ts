@@ -20,17 +20,17 @@ import {
 	getOpponents,
 	getTeammates
 } from "@/fish/core/utils";
-import { AbstractGameEngine } from "@/shared/engine/engine";
-import type { PlayerId } from "@/shared/engine/types";
-import { remove } from "@/shared/utils/array";
+import { AbstractGameEngine } from "@s2h/engine";
+import type { PlayerId } from "@s2h/engine/types";
+import { remove } from "@s2h/shared/utils/array";
 import {
 	CARD_RANKS,
 	type CardId,
 	generateDeck,
 	generateHands,
 	getCardRank
-} from "@/shared/utils/cards";
-import { generateId } from "@/shared/utils/generator";
+} from "@s2h/shared/utils/cards";
+import { generateId } from "@s2h/shared/utils/generator";
 
 const DEFAULT_METRICS: Metrics = {
 	totalAsks: 0,

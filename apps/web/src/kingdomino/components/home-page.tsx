@@ -3,7 +3,7 @@ import { KingdominoCreateGame as CreateGame } from "@/kingdomino/components/crea
 import { JoinGame } from "@/shared/components/join-game";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 
 export function KingdominoHomePage() {
 	const { authInfo } = useAuth();

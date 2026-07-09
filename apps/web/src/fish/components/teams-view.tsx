@@ -1,7 +1,7 @@
 import { useFish } from "@/fish/components/context";
 import { RPlayerInfoStrip } from "@/shared/components/player-info";
-import type { PlayerId } from "@/shared/engine/types";
-import { cn } from "@/shared/utils/cn";
+import type { PlayerId } from "@s2h/engine/types";
+import { cn } from "@s2h/shared/utils/cn";
 
 function PlayerWithCardCount( props: { playerId: PlayerId } ) {
 	const { shared } = useFish();

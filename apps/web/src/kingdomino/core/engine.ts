@@ -21,8 +21,8 @@ import {
 	getShiftedTiles,
 	getValidPlacements
 } from "@/kingdomino/core/utils";
-import { AbstractGameEngine } from "@/shared/engine/engine";
-import { shuffle } from "@/shared/utils/array";
+import { AbstractGameEngine } from "@s2h/engine";
+import { shuffle } from "@s2h/shared/utils/array";
 
 /**
  * Durable Object game engine for Kingdomino, a tile-drafting and placement game.

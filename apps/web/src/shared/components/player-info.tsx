@@ -1,6 +1,6 @@
-import type { BasePlayerInfo } from "@/shared/engine/types";
+import type { BasePlayerInfo } from "@s2h/engine/types";
 import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 
 export type PlayerInfoProps = {
 	player: BasePlayerInfo;

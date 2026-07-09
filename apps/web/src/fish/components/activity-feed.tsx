@@ -9,7 +9,7 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@/shared/primitives/drawer";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 

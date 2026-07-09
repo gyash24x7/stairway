@@ -1,13 +1,5 @@
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from "@simplewebauthn/server";
 
-/** Authenticated user information stored in the session. */
-export type AuthInfo = {
-	id: string;
-	name: string;
-	username: string;
-	avatar: string;
-};
-
 /** Input containing a username for auth actions. */
 export type UsernameInput = { username: string };
 

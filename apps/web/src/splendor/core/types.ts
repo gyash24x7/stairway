@@ -5,7 +5,7 @@ import type {
 	PlayerGameData,
 	PlayerId,
 	SharedGameData
-} from "@/shared/engine/types";
+} from "@s2h/engine/types";
 
 export type Gem = "diamond" | "sapphire" | "emerald" | "ruby" | "onyx" | "gold";
 export type CardLevel = 1 | 2 | 3;

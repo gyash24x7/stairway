@@ -1,6 +1,6 @@
 import { CrownIndicator } from "@/kingdomino/components/board";
 import type { Domino, DominoId, Terrain } from "@/kingdomino/core/types";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";
 
 const TERRAIN_CLASS: Record<string, string> = {

@@ -1,8 +1,8 @@
 import { getCompletedGame, requireGame } from "@/api/helpers";
 import { authed } from "@/api/middleware";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
-import { createLogger } from "@/shared/utils/logger";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
+import { createLogger } from "@s2h/shared/utils/logger";
 import { WordleEngine } from "@/wordle/core/engine";
 import type { WordleConfig, WordlePlayerView, WordleSharedView } from "@/wordle/core/types";
 import * as v from "valibot";

@@ -5,8 +5,8 @@ import type {
 	PlayerGameData,
 	PlayerId,
 	SharedGameData
-} from "@/shared/engine/types";
-import type { CardId, CardSuit } from "@/shared/utils/cards";
+} from "@s2h/engine/types";
+import type { CardId, CardSuit } from "@s2h/shared/utils/cards";
 
 /** A single trick in a deal, tracking lead player, suit, cards played, and winner. */
 export type Trick = {

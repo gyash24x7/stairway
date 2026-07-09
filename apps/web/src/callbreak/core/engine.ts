@@ -15,8 +15,8 @@ import {
 	PLAYER_COUNT,
 	TRICKS_PER_DEAL
 } from "@/callbreak/core/utils";
-import { AbstractGameEngine } from "@/shared/engine/engine";
-import { getCardSuit } from "@/shared/utils/cards";
+import { AbstractGameEngine } from "@s2h/engine";
+import { getCardSuit } from "@s2h/shared/utils/cards";
 
 /**
  * Durable Object game engine for Callbreak, a trick-taking card game.

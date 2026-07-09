@@ -1,9 +1,9 @@
 import { getCompletedGame, requireGame, requireGameByCode } from "@/api/helpers";
 import { authed } from "@/api/middleware";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
-import type { BaseGameConfig } from "@/shared/engine/types";
-import { createLogger } from "@/shared/utils/logger";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
+import type { BaseGameConfig } from "@s2h/engine/types";
+import { createLogger } from "@s2h/shared/utils/logger";
 import { TicTacToeEngine } from "@/tictactoe/core/engine";
 import type { TicTacToePlayerView, TicTacToeSharedView } from "@/tictactoe/core/types";
 import * as v from "valibot";

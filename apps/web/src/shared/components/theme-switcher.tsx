@@ -7,8 +7,8 @@ import {
 	SelectSeparator,
 	SelectTrigger
 } from "@/shared/primitives/select";
-import { type Theme, type ThemeMode, themes } from "@/shared/utils/cn";
-import { applyTheme, readTheme } from "@/shared/utils/theme";
+import { type Theme, type ThemeMode, themes } from "@s2h/shared/utils/cn";
+import { applyTheme, readTheme } from "@s2h/shared/utils/theme";
 import { MoonIcon, SunIcon } from "lucide-react";
 import { Fragment, useState } from "react";
 

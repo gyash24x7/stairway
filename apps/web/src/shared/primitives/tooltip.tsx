@@ -1,4 +1,4 @@
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { ComponentProps } from "react";
 

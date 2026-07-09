@@ -6,9 +6,9 @@ import type {
 	KingdominoPlayerView,
 	KingdominoSharedView
 } from "@/kingdomino/core/types";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
-import { createLogger } from "@/shared/utils/logger";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
+import { createLogger } from "@s2h/shared/utils/logger";
 import * as v from "valibot";
 
 const logger = createLogger( "Kingdomino:Router" );

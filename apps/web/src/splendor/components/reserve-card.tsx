@@ -1,4 +1,4 @@
-import type { GameId } from "@/shared/engine/types";
+import type { GameId } from "@s2h/engine/types";
 import { Button } from "@/shared/primitives/button";
 import {
 	Drawer,

@@ -1,7 +1,7 @@
 import { router } from "@/api/routers";
 import { loadSession } from "@/auth/core/sessions";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
 import { RPCHandler } from "@orpc/server/fetch";
 import { env } from "cloudflare:workers";
 import { and, eq, inArray, lt } from "drizzle-orm";

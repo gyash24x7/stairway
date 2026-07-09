@@ -5,7 +5,7 @@ import type {
 	PlayerGameData,
 	PlayerId,
 	SharedGameData
-} from "@/shared/engine/types";
+} from "@s2h/engine/types";
 
 /** A cell on the board: "X", "O", or null (empty). */
 export type CellValue = "X" | "O" | null;

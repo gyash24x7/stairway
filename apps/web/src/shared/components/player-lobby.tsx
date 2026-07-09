@@ -1,6 +1,6 @@
 import { RPlayerInfo } from "@/shared/components/player-info";
-import type { BasePlayerInfo } from "@/shared/engine/types";
-import { cn } from "@/shared/utils/cn";
+import type { BasePlayerInfo } from "@s2h/engine/types";
+import { cn } from "@s2h/shared/utils/cn";
 
 export type PlayerLobbyGridProps = {
 	players: BasePlayerInfo[];

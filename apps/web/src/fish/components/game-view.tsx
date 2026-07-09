@@ -15,7 +15,7 @@ import { TurnIndicator } from "@/fish/components/turn-indicator";
 import { GameInfo } from "@/shared/components/game-info";
 import { PlayerLobbyGrid } from "@/shared/components/player-lobby";
 import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 
 export function GameView() {
 	const { shared, player } = useFish();

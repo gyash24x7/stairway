@@ -1,4 +1,4 @@
-import { chunk, shuffle } from "@/shared/utils/array";
+import { chunk, shuffle } from "./array";
 
 export const CARD_RANKS = {
 	ACE: "A",

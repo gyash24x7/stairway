@@ -1,6 +1,6 @@
 import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { WordleCreateGame } from "@/wordle/components/create-game";
 
 export function WordleHomePage() {

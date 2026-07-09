@@ -12,8 +12,8 @@ import type {
 	TeamId,
 	Transfer
 } from "@/fish/core/types";
-import type { BasePlayerInfo, PlayerId } from "@/shared/engine/types";
-import { type CardId, getCardDisplayString } from "@/shared/utils/cards";
+import type { BasePlayerInfo, PlayerId } from "@s2h/engine/types";
+import { type CardId, getCardDisplayString } from "@s2h/shared/utils/cards";
 
 /** Mapping of normal book names to their card IDs (4 cards per book, grouped by rank). */
 export const NORMAL_BOOKS = {

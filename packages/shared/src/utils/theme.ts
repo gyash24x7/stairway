@@ -1,4 +1,4 @@
-import { type Theme, type ThemeMode, themeModes, themes } from "@/shared/utils/cn";
+import { type Theme, type ThemeMode, themeModes, themes } from "./cn";
 
 const STORAGE_KEY = "theme";
 const DEFAULT_THEME: Theme = "apple";

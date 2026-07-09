@@ -1,4 +1,4 @@
-import { games, passkeys, sessions, users, webauthnOptions } from "@/shared/db/schema";
+import { games, passkeys, sessions, users, webauthnOptions } from "./schema";
 import { env } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 

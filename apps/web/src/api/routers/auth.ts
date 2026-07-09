@@ -1,10 +1,10 @@
 import { base } from "@/api/orpc";
 import { createSession, destroySession } from "@/auth/core/sessions";
-import type { AuthInfo } from "@/auth/core/types";
-import { db } from "@/shared/db/client";
-import { passkeys, users, webauthnOptions } from "@/shared/db/schema";
-import { generateAvatar, generateId } from "@/shared/utils/generator";
-import { createLogger } from "@/shared/utils/logger";
+import type { AuthInfo } from "@s2h/shared/auth";
+import { db } from "@s2h/db";
+import { passkeys, users, webauthnOptions } from "@s2h/db/schema";
+import { generateAvatar, generateId } from "@s2h/shared/utils/generator";
+import { createLogger } from "@s2h/shared/utils/logger";
 import { ORPCError } from "@orpc/server";
 import {
 	type AuthenticationResponseJSON,

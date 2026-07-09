@@ -1,6 +1,6 @@
 import type { CallbreakBotView, CallbreakConfig, Trick } from "@/callbreak/core/types";
 import { getCardValue, getPlayableCards } from "@/callbreak/core/utils";
-import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@/shared/utils/cards";
+import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@s2h/shared/utils/cards";
 
 /**
  * Sort cards by their rank value in ascending order.

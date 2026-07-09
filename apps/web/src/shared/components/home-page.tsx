@@ -1,7 +1,7 @@
 import { GAME_NAMES } from "@/games";
 import { Logo } from "@/shared/components/logo";
 import { Button } from "@/shared/primitives/button";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { Link } from "@tanstack/react-router";
 
 export function HomePage() {

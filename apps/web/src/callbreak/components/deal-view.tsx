@@ -6,7 +6,7 @@ import { Scores } from "@/callbreak/components/scores";
 import { PLAYER_COUNT } from "@/callbreak/core/utils";
 import { RCard } from "@/shared/components/card";
 import { RPlayerInfo } from "@/shared/components/player-info";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fragment } from "react";
 

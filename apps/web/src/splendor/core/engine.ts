@@ -1,6 +1,6 @@
-import { AbstractGameEngine } from "@/shared/engine/engine";
-import { roundRobin } from "@/shared/engine/utils";
-import { createLogger } from "@/shared/utils/logger";
+import { AbstractGameEngine } from "@s2h/engine";
+import { roundRobin } from "@s2h/engine/utils";
+import { createLogger } from "@s2h/shared/utils/logger";
 import type {
 	Cost,
 	Gem,

@@ -4,8 +4,8 @@ import type {
 	PlayerGameData,
 	PlayerId,
 	SharedGameData
-} from "@/shared/engine/types";
-import type { CardId } from "@/shared/utils/cards";
+} from "@s2h/engine/types";
+import type { CardId } from "@s2h/shared/utils/cards";
 
 /** The variant of book grouping used in the game. */
 export type BookType = "NORMAL" | "CANADIAN";

@@ -1,12 +1,12 @@
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
 import type {
 	BaseGameConfig,
 	BasePlayerView,
 	CompletedGameData,
 	GameId
-} from "@/shared/engine/types";
-import { createLogger } from "@/shared/utils/logger";
+} from "@s2h/engine/types";
+import { createLogger } from "@s2h/shared/utils/logger";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 

@@ -3,8 +3,8 @@ import { FishCreateGame as CreateGame } from "@/fish/components/create-game";
 import { JoinGame } from "@/shared/components/join-game";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
-import { cn } from "@/shared/utils/cn";
-import type { JoinGameInput } from "@/shared/engine/types";
+import { cn } from "@s2h/shared/utils/cn";
+import type { JoinGameInput } from "@s2h/engine/types";
 
 export function FishHomePage() {
 	const { authInfo } = useAuth();

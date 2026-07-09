@@ -11,7 +11,7 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useCounter } from "usehooks-ts";

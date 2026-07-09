@@ -10,7 +10,7 @@ import {
 } from "@/shared/primitives/dialog";
 import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { useNavigate } from "@tanstack/react-router";
 import { LogInIcon } from "lucide-react";

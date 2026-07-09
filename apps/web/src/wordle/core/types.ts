@@ -4,7 +4,7 @@ import type {
 	GameId,
 	PlayerGameData,
 	SharedGameData
-} from "@/shared/engine/types";
+} from "@s2h/engine/types";
 
 /** Supported word lengths for Wordle games. */
 export type WordLength = 4 | 5 | 6;

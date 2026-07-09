@@ -2,7 +2,7 @@ import { client } from "@/api/client";
 import { CreateGame } from "@/shared/components/create-game";
 import { Button } from "@/shared/primitives/button";
 import { RadioSelect } from "@/shared/primitives/radio-select";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import type { WordLength } from "@/wordle/core/types";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";

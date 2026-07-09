@@ -16,7 +16,7 @@ import type {
 	Tile,
 	Tiles
 } from "@/kingdomino/core/types";
-import type { PlayerId } from "@/shared/engine/types";
+import type { PlayerId } from "@s2h/engine/types";
 
 const DRAFT_SIZE = 4;
 

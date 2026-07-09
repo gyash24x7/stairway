@@ -1,7 +1,7 @@
 "use client";
 
 import { GameInfo } from "@/shared/components/game-info";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { Board } from "@/wordle/components/board";
 import { useWordle } from "@/wordle/components/context";
 import { Keyboard } from "@/wordle/components/keyboard";

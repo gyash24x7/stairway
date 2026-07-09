@@ -14,8 +14,8 @@ import {
 } from "@/shared/primitives/drawer";
 import { Input } from "@/shared/primitives/input";
 import { Spinner } from "@/shared/primitives/spinner";
-import { chunk, shuffle } from "@/shared/utils/array";
-import { cn } from "@/shared/utils/cn";
+import { chunk, shuffle } from "@s2h/shared/utils/array";
+import { cn } from "@s2h/shared/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 

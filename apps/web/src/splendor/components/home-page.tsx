@@ -1,9 +1,9 @@
 import { client } from "@/api/client";
 import { JoinGame } from "@/shared/components/join-game";
-import type { JoinGameInput } from "@/shared/engine/types";
+import type { JoinGameInput } from "@s2h/engine/types";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { SplendorCreateGame as CreateGame } from "@/splendor/components/create-game";
 
 export function SplendorHomePage() {

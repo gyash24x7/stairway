@@ -10,7 +10,7 @@ import type {
 	PlayerGameData,
 	PlayerId,
 	SharedGameData
-} from "@/shared/engine/types";
+} from "@s2h/engine/types";
 
 /** The castle color assigned to each player. */
 export type Castle = "red" | "blue" | "yellow" | "green";

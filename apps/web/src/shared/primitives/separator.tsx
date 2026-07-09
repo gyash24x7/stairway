@@ -1,4 +1,4 @@
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { Separator as Root } from "@base-ui/react/separator";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
 

@@ -1,4 +1,4 @@
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
 

@@ -2,7 +2,9 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": [ "@tsconfig/node24", "@tsconfig/strictest" ],
 	"compilerOptions": {
-		"types": [ "./apps/web/env.d.ts" ],
+		// Each package sets "types" itself, pointing at apps/web/env.d.ts —
+		// relative "types" entries resolve against the config that declares
+		// them, so they cannot be inherited from here.
 		"target": "esnext",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
 		"module": "esnext",
@@ -11,6 +13,12 @@
 		"jsx": "react-jsx",
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
-		"noEmit": true
+		"noEmit": true,
+		// Temporary during the monorepo migration: env.d.ts pulls the worker
+		// graph into every package's type program, and that graph still uses
+		// the @/ alias until all packages are extracted. Removed in M8.
+		"paths": {
+			"@/*": [ "./apps/web/src/*" ]
+		}
 	}
 }

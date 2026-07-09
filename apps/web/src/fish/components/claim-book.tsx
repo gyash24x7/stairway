@@ -12,7 +12,7 @@ import {
 } from "@/fish/core/utils";
 import { RCard } from "@/shared/components/card";
 import { RPlayerInfoStrip } from "@/shared/components/player-info";
-import type { PlayerId } from "@/shared/engine/types";
+import type { PlayerId } from "@s2h/engine/types";
 import { Button } from "@/shared/primitives/button";
 import {
 	Drawer,
@@ -24,7 +24,7 @@ import {
 } from "@/shared/primitives/drawer";
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
-import { type CardId } from "@/shared/utils/cards";
+import { type CardId } from "@s2h/shared/utils/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowBigRightDashIcon } from "lucide-react";
 import { useState } from "react";

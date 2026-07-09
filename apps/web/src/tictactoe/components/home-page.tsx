@@ -3,7 +3,7 @@ import { CreateGame } from "@/shared/components/create-game";
 import { JoinGame } from "@/shared/components/join-game";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 
 export function TicTacToeHomePage() {
 	const { authInfo } = useAuth();

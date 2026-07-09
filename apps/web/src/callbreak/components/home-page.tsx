@@ -3,7 +3,7 @@ import { CallbreakCreateGame as CreateGame } from "@/callbreak/components/create
 import { JoinGame } from "@/shared/components/join-game";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { Separator } from "@/shared/primitives/separator";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 
 export function CallbreakHomePage() {
 	const { authInfo } = useAuth();

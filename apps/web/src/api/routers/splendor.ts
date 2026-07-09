@@ -1,8 +1,8 @@
 import { getCompletedGame, requireGame, requireGameByCode } from "@/api/helpers";
 import { authed } from "@/api/middleware";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
-import { createLogger } from "@/shared/utils/logger";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
+import { createLogger } from "@s2h/shared/utils/logger";
 import { SplendorEngine } from "@/splendor/core/engine";
 import type {
 	SplendorConfig,

@@ -15,9 +15,9 @@ import {
 	getMissingCards,
 	getTeammates
 } from "@/fish/core/utils";
-import type { PlayerId } from "@/shared/engine/types";
-import type { CardId } from "@/shared/utils/cards";
-import { createLogger } from "@/shared/utils/logger";
+import type { PlayerId } from "@s2h/engine/types";
+import type { CardId } from "@s2h/shared/utils/cards";
+import { createLogger } from "@s2h/shared/utils/logger";
 
 const MAX_WEIGHT = 720;
 const SIGNAL_WINDOW = 30;

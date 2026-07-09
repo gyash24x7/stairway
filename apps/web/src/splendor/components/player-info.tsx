@@ -12,7 +12,7 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { RadioSelect } from "@/shared/primitives/radio-select";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { useSplendor } from "@/splendor/components/context";
 import { GameCard } from "@/splendor/components/game-card";
 import { PurchaseCard } from "@/splendor/components/purchase-card";

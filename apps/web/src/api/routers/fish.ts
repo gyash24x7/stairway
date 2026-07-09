@@ -3,10 +3,10 @@ import { authed } from "@/api/middleware";
 import { FishEngine } from "@/fish/core/engine";
 import type { FishConfig, FishPlayerView, FishSharedView } from "@/fish/core/types";
 import { buildConfig } from "@/fish/core/utils";
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
-import { SORTED_DECK } from "@/shared/utils/cards";
-import { createLogger } from "@/shared/utils/logger";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
+import { SORTED_DECK } from "@s2h/shared/utils/cards";
+import { createLogger } from "@s2h/shared/utils/logger";
 import * as v from "valibot";
 
 const logger = createLogger( "Fish:Router" );

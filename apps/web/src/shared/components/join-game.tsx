@@ -1,4 +1,4 @@
-import type { JoinGameInput } from "@/shared/engine/types";
+import type { JoinGameInput } from "@s2h/engine/types";
 import { Button } from "@/shared/primitives/button";
 import { Input } from "@/shared/primitives/input";
 import { useNavigate } from "@tanstack/react-router";

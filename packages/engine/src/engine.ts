@@ -1,7 +1,7 @@
 "use server";
 
-import { db } from "@/shared/db/client";
-import { games } from "@/shared/db/schema";
+import { db } from "@s2h/db";
+import { games } from "@s2h/db/schema";
 import type {
 	BaseGameConfig,
 	BaseGameData,
@@ -17,9 +17,9 @@ import type {
 	PlayerId,
 	ReadonlyGameData,
 	SharedGameData
-} from "@/shared/engine/types";
-import { generateBotInfo } from "@/shared/utils/generator";
-import { createLogger } from "@/shared/utils/logger";
+} from "./types";
+import { generateBotInfo } from "@s2h/shared/utils/generator";
+import { createLogger } from "@s2h/shared/utils/logger";
 import { DurableObject } from "cloudflare:workers";
 import { eq } from "drizzle-orm";
 

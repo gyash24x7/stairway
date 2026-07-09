@@ -1,6 +1,6 @@
-import { AbstractGameEngine } from "@/shared/engine/engine";
-import type { BaseGameConfig } from "@/shared/engine/types";
-import { roundRobin } from "@/shared/engine/utils";
+import { AbstractGameEngine } from "@s2h/engine";
+import type { BaseGameConfig } from "@s2h/engine/types";
+import { roundRobin } from "@s2h/engine/utils";
 import type {
 	Board,
 	TicTacToeData,

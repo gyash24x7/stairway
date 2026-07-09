@@ -1,7 +1,7 @@
 "use client";
 
 import { useFish } from "@/fish/components/context";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 
 export function TurnIndicator() {

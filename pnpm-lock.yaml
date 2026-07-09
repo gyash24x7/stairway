@@ -161,6 +161,15 @@ importers:
       '@orpc/tanstack-query':
         specifier: 'catalog:'
         version: 1.14.7(@orpc/client@1.14.7)(@tanstack/query-core@5.101.2)
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@simplewebauthn/browser':
         specifier: 'catalog:'
         version: 13.3.0
@@ -273,6 +282,57 @@ importers:
       wrangler:
         specifier: 'catalog:'
         version: 4.107.1
+
+  packages/db:
+    dependencies:
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/engine:
+    dependencies:
+      '@s2h/db':
+        specifier: workspace:*
+        version: link:../db
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/shared:
+    dependencies:
+      clsx:
+        specifier: 'catalog:'
+        version: 2.1.1
+      tailwind-merge:
+        specifier: 'catalog:'
+        version: 3.6.0
+      tslog:
+        specifier: 'catalog:'
+        version: 4.11.0
+      ulid:
+        specifier: 'catalog:'
+        version: 3.0.2
+      unique-names-generator:
+        specifier: 'catalog:'
+        version: 4.7.1
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
 packages:
 

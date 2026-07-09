@@ -1,5 +1,5 @@
 import { orpc } from "@/api/query";
-import type { AuthInfo } from "@/auth/core/types";
+import type { AuthInfo } from "@s2h/shared/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 /**

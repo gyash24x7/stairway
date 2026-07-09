@@ -3,7 +3,7 @@ import type { KingdominoPlayerInfo } from "@/kingdomino/core/types";
 import { CounterTween } from "@/shared/animations/counter-tween";
 import { FloatPlusN } from "@/shared/animations/float-plus-n";
 import { RPlayerInfo } from "@/shared/components/player-info";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";
 
 type PlayerScoreProps = {

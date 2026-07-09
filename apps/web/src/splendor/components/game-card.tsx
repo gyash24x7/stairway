@@ -1,4 +1,4 @@
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { gemColors } from "@/splendor/components/utils";
 import type { Card, CardLevel, Cost } from "@/splendor/core/types";
 

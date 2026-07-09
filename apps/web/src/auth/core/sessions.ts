@@ -1,7 +1,7 @@
-import type { AuthInfo } from "@/auth/core/types";
-import { db } from "@/shared/db/client";
-import { sessions, users } from "@/shared/db/schema";
-import { generateId } from "@/shared/utils/generator";
+import type { AuthInfo } from "@s2h/shared/auth";
+import { db } from "@s2h/db";
+import { sessions, users } from "@s2h/db/schema";
+import { generateId } from "@s2h/shared/utils/generator";
 import { env } from "cloudflare:workers";
 import * as cookie from "cookie";
 import { and, eq, gt } from "drizzle-orm";

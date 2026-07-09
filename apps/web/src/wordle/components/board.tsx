@@ -1,5 +1,5 @@
 import { orpc } from "@/api/query";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { useWordle } from "@/wordle/components/context";
 import type { GuessResult, GuessResultsForWord, LetterStatus } from "@/wordle/core/types";
 import { useQuery } from "@tanstack/react-query";

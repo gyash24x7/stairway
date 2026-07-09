@@ -23,7 +23,7 @@ import {
 } from "@/shared/primitives/drawer";
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { Spinner } from "@/shared/primitives/spinner";
-import { type CardId, getCardDisplayString } from "@/shared/utils/cards";
+import { type CardId, getCardDisplayString } from "@s2h/shared/utils/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";

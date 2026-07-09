@@ -1,4 +1,4 @@
-import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator";
+import { generateAvatar, generateGameCode, generateId } from "@s2h/shared/utils/generator";
 import { blob, index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /** The users table storing user profiles with auto-generated IDs and avatars. */

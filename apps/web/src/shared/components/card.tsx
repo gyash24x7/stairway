@@ -1,5 +1,5 @@
-import type { CardId, CardSuit } from "@/shared/utils/cards";
-import { cn } from "@/shared/utils/cn";
+import type { CardId, CardSuit } from "@s2h/shared/utils/cards";
+import { cn } from "@s2h/shared/utils/cn";
 
 function isRed( suit: CardSuit ) {
 	return suit === "H" || suit === "D";

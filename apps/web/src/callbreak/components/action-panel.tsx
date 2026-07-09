@@ -3,7 +3,7 @@
 import { useCallbreak } from "@/callbreak/components/context";
 import { DeclareWins } from "@/callbreak/components/declare-wins";
 import { PlayCard } from "@/callbreak/components/play-card";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 
 export function ActionPanel() {
 	const { isMyTurn, shared } = useCallbreak();

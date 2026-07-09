@@ -5,8 +5,8 @@ import { useKingdomino } from "@/kingdomino/components/context";
 import { RSmallDomino } from "@/kingdomino/components/domino";
 import { DOMINO_DECK } from "@/kingdomino/core/utils";
 import { RPlayerInfoSmall } from "@/shared/components/player-info";
-import type { PlayerId } from "@/shared/engine/types";
-import { cn } from "@/shared/utils/cn";
+import type { PlayerId } from "@s2h/engine/types";
+import { cn } from "@s2h/shared/utils/cn";
 
 export function ROpponent( { playerId }: { playerId: PlayerId } ) {
 	const { shared } = useKingdomino();

@@ -5,7 +5,7 @@ import { ThemeSwitcher } from "@/shared/components/theme-switcher";
 import { useAuth } from "@/shared/hooks/use-auth";
 import { Button } from "@/shared/primitives/button";
 import { Separator } from "@/shared/primitives/separator";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { useNavigate } from "@tanstack/react-router";
 import { HomeIcon } from "lucide-react";
 

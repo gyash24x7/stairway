@@ -1,4 +1,4 @@
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import type { ComponentProps } from "react";
 import { Toaster as Sonner } from "sonner";
 

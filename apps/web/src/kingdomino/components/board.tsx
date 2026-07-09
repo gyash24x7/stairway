@@ -19,7 +19,7 @@ import {
 	getRowsAndCols
 } from "@/kingdomino/core/utils";
 import { Popover, PopoverContent } from "@/shared/primitives/popover";
-import { cn } from "@/shared/utils/cn";
+import { cn } from "@s2h/shared/utils/cn";
 import { motion } from "framer-motion";
 import { CrownIcon } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";
