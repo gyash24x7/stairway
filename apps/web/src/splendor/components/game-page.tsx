@@ -1,4 +1,4 @@
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import { Spinner } from "@/shared/primitives/spinner";
 import { SplendorProvider } from "@/splendor/components/context";
 import { GameView } from "@/splendor/components/game-view";

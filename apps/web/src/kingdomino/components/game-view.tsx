@@ -7,7 +7,7 @@ import { RDraft } from "@/kingdomino/components/draft";
 import { PlayerBoards } from "@/kingdomino/components/player-boards";
 import { PlayerScore } from "@/kingdomino/components/player-score";
 import { usePlacement } from "@/kingdomino/components/use-placement";
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import type { DominoId } from "@s2h/kingdomino-core/types";
 import { DOMINO_DECK } from "@s2h/kingdomino-core/utils";
 import { GameInfo } from "@/shared/components/game-info";

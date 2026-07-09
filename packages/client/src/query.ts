@@ -1,4 +1,4 @@
-import { client } from "@/api/client";
+import { client } from "./client";
 import { createTanstackQueryUtils } from "@orpc/tanstack-query";
 
 /**

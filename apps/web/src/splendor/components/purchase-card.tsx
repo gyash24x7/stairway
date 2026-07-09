@@ -1,4 +1,4 @@
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import type { GameId } from "@s2h/engine/types";
 import { Button } from "@/shared/primitives/button";
 import {

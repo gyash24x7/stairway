@@ -1,6 +1,6 @@
 "use client";
 
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import { useFish } from "@/fish/components/context";
 import type { Book } from "@s2h/fish-core/types";
 import {

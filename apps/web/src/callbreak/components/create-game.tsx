@@ -1,6 +1,6 @@
 "use client";
 
-import { client } from "@/api/client";
+import { client } from "@s2h/client";
 import { RCardSuit } from "@/shared/components/card";
 import { CreateGame } from "@/shared/components/create-game";
 import { RadioSelect } from "@/shared/primitives/radio-select";

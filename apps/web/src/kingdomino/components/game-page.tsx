@@ -1,4 +1,4 @@
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import { KingdominoProvider } from "@/kingdomino/components/context";
 import { GameView } from "@/kingdomino/components/game-view";
 import { Spinner } from "@/shared/primitives/spinner";

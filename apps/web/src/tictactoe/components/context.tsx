@@ -1,6 +1,6 @@
 "use client";
 
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import type { BaseGameConfig, PlayerGameData, SharedGameData } from "@s2h/engine/types";
 import type { TicTacToePlayerView, TicTacToeSharedView } from "@s2h/tictactoe-core/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

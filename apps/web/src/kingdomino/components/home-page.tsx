@@ -1,4 +1,4 @@
-import { client } from "@/api/client";
+import { client } from "@s2h/client";
 import { KingdominoCreateGame as CreateGame } from "@/kingdomino/components/create-game";
 import { JoinGame } from "@/shared/components/join-game";
 import { useAuth } from "@/shared/hooks/use-auth";

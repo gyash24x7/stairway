@@ -1,0 +1,30 @@
+{
+	"name": "@s2h/client",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/client.ts",
+		"./query": "./src/query.ts",
+		"./router": "./src/router.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@orpc/client": "catalog:",
+		"@orpc/server": "catalog:",
+		"@orpc/tanstack-query": "catalog:",
+		"@s2h/auth": "workspace:*",
+		"@s2h/callbreak-core": "workspace:*",
+		"@s2h/fish-core": "workspace:*",
+		"@s2h/kingdomino-core": "workspace:*",
+		"@s2h/splendor-core": "workspace:*",
+		"@s2h/tictactoe-core": "workspace:*",
+		"@s2h/wordle-core": "workspace:*",
+		"@tanstack/react-query": "catalog:"
+	},
+	"devDependencies": {
+		"typescript": "catalog:"
+	}
+}

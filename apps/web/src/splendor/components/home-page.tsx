@@ -1,4 +1,4 @@
-import { client } from "@/api/client";
+import { client } from "@s2h/client";
 import { JoinGame } from "@/shared/components/join-game";
 import type { JoinGameInput } from "@s2h/engine/types";
 import { useAuth } from "@/shared/hooks/use-auth";

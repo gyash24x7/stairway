@@ -13,18 +13,14 @@ interface __BaseEnv_Env {
 	CALLBREAK_ENGINE: DurableObjectNamespace<import("./src/worker").CallbreakEngine>;
 	KINGDOMINO_ENGINE: DurableObjectNamespace<import("./src/worker").KingdominoEngine>;
 }
-
 declare namespace Cloudflare {
 	interface GlobalProps {
 		mainModule: typeof import("./src/worker");
 		durableNamespaces: "WordleEngine" | "TicTacToeEngine" | "SplendorEngine" | "FishEngine" | "CallbreakEngine" | "KingdominoEngine";
 	}
-
 	interface Env extends __BaseEnv_Env {}
 }
-
 interface Env extends __BaseEnv_Env {}
-
 type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };

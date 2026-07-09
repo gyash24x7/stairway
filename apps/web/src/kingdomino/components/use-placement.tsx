@@ -1,6 +1,6 @@
 "use client";
 
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import type { Tentative } from "@/kingdomino/components/board";
 import type { Board, Coord, DominoId, Rotation } from "@s2h/kingdomino-core/types";
 import {

@@ -1,4 +1,4 @@
-import { client } from "@/api/client";
+import { client } from "@s2h/client";
 import { useRefreshAuth } from "@/shared/hooks/use-auth";
 import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";

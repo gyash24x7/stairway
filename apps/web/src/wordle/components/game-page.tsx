@@ -1,4 +1,4 @@
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import { Spinner } from "@/shared/primitives/spinner";
 import { WordleProvider } from "@/wordle/components/context";
 import { GameView } from "@/wordle/components/game-view";

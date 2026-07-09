@@ -1,4 +1,4 @@
-import { router } from "@/api/routers";
+import { router } from "@s2h/client/router";
 import { loadSession } from "@s2h/auth";
 import { db } from "@s2h/db";
 import { games } from "@s2h/db/schema";

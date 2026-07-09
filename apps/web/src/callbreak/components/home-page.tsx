@@ -1,4 +1,4 @@
-import { client } from "@/api/client";
+import { client } from "@s2h/client";
 import { CallbreakCreateGame as CreateGame } from "@/callbreak/components/create-game";
 import { JoinGame } from "@/shared/components/join-game";
 import { useAuth } from "@/shared/hooks/use-auth";

@@ -18,6 +18,7 @@
 		"@s2h/api": "workspace:*",
 		"@s2h/auth": "workspace:*",
 		"@s2h/callbreak-core": "workspace:*",
+		"@s2h/client": "workspace:*",
 		"@s2h/db": "workspace:*",
 		"@s2h/engine": "workspace:*",
 		"@s2h/fish-core": "workspace:*",

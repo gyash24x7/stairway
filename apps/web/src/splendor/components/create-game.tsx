@@ -1,6 +1,6 @@
 "use client";
 
-import { client } from "@/api/client";
+import { client } from "@s2h/client";
 import { CreateGame } from "@/shared/components/create-game";
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import { useState } from "react";

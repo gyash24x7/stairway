@@ -1,4 +1,4 @@
-import { client } from "@/api/client";
+import { client } from "@s2h/client";
 import { CreateGame } from "@/shared/components/create-game";
 import { Button } from "@/shared/primitives/button";
 import { RadioSelect } from "@/shared/primitives/radio-select";

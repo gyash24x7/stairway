@@ -1,4 +1,4 @@
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import { CallbreakProvider } from "@/callbreak/components/context";
 import { GameView } from "@/callbreak/components/game-view";
 import { Spinner } from "@/shared/primitives/spinner";

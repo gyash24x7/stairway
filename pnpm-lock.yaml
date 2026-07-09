@@ -170,6 +170,9 @@ importers:
       '@s2h/callbreak-core':
         specifier: workspace:*
         version: link:../../games/callbreak/core
+      '@s2h/client':
+        specifier: workspace:*
+        version: link:../../packages/client
       '@s2h/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -505,6 +508,46 @@ importers:
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@7.0.2)
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/client:
+    dependencies:
+      '@orpc/client':
+        specifier: 'catalog:'
+        version: 1.14.7
+      '@orpc/server':
+        specifier: 'catalog:'
+        version: 1.14.7(ws@8.21.0)
+      '@orpc/tanstack-query':
+        specifier: 'catalog:'
+        version: 1.14.7(@orpc/client@1.14.7)(@tanstack/query-core@5.101.2)
+      '@s2h/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@s2h/callbreak-core':
+        specifier: workspace:*
+        version: link:../../games/callbreak/core
+      '@s2h/fish-core':
+        specifier: workspace:*
+        version: link:../../games/fish/core
+      '@s2h/kingdomino-core':
+        specifier: workspace:*
+        version: link:../../games/kingdomino/core
+      '@s2h/splendor-core':
+        specifier: workspace:*
+        version: link:../../games/splendor/core
+      '@s2h/tictactoe-core':
+        specifier: workspace:*
+        version: link:../../games/tictactoe/core
+      '@s2h/wordle-core':
+        specifier: workspace:*
+        version: link:../../games/wordle/core
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
     devDependencies:
       typescript:
         specifier: 'catalog:'

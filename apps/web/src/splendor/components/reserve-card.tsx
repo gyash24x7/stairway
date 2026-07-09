@@ -9,7 +9,7 @@ import {
 	DrawerTitle
 } from "@/shared/primitives/drawer";
 import { Spinner } from "@/shared/primitives/spinner";
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import { TokenPicker } from "@/splendor/components/token-picker";
 import type { Card, Gem, Tokens } from "@s2h/splendor-core/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

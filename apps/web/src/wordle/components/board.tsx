@@ -1,4 +1,4 @@
-import { orpc } from "@/api/query";
+import { orpc } from "@s2h/client/query";
 import { cn } from "@s2h/shared/utils/cn";
 import { useWordle } from "@/wordle/components/context";
 import type { GuessResult, GuessResultsForWord, LetterStatus } from "@s2h/wordle-core/types";
