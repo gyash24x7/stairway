@@ -170,6 +170,9 @@ importers:
       '@s2h/callbreak-core':
         specifier: workspace:*
         version: link:../../games/callbreak/core
+      '@s2h/callbreak-ui':
+        specifier: workspace:*
+        version: link:../../games/callbreak/ui
       '@s2h/client':
         specifier: workspace:*
         version: link:../../packages/client
@@ -182,24 +185,39 @@ importers:
       '@s2h/fish-core':
         specifier: workspace:*
         version: link:../../games/fish/core
+      '@s2h/fish-ui':
+        specifier: workspace:*
+        version: link:../../games/fish/ui
       '@s2h/kingdomino-core':
         specifier: workspace:*
         version: link:../../games/kingdomino/core
+      '@s2h/kingdomino-ui':
+        specifier: workspace:*
+        version: link:../../games/kingdomino/ui
       '@s2h/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@s2h/splendor-core':
         specifier: workspace:*
         version: link:../../games/splendor/core
+      '@s2h/splendor-ui':
+        specifier: workspace:*
+        version: link:../../games/splendor/ui
       '@s2h/tictactoe-core':
         specifier: workspace:*
         version: link:../../games/tictactoe/core
+      '@s2h/tictactoe-ui':
+        specifier: workspace:*
+        version: link:../../games/tictactoe/ui
       '@s2h/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@s2h/wordle-core':
         specifier: workspace:*
         version: link:../../games/wordle/core
+      '@s2h/wordle-ui':
+        specifier: workspace:*
+        version: link:../../games/wordle/ui
       '@simplewebauthn/browser':
         specifier: 'catalog:'
         version: 13.3.0
@@ -338,6 +356,43 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
+  games/callbreak/ui:
+    dependencies:
+      '@s2h/callbreak-core':
+        specifier: workspace:*
+        version: link:../core
+      '@s2h/client':
+        specifier: workspace:*
+        version: link:../../../packages/client
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      '@s2h/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.23.0(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      usehooks-ts:
+        specifier: 'catalog:'
+        version: 3.1.1(react@19.2.7)
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   games/fish/core:
     dependencies:
       '@orpc/server':
@@ -359,6 +414,46 @@ importers:
         specifier: 'catalog:'
         version: 1.4.2(typescript@7.0.2)
     devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/fish/ui:
+    dependencies:
+      '@s2h/client':
+        specifier: workspace:*
+        version: link:../../../packages/client
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/fish-core':
+        specifier: workspace:*
+        version: link:../core
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      '@s2h/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.23.0(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      usehooks-ts:
+        specifier: 'catalog:'
+        version: 3.1.1(react@19.2.7)
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -388,6 +483,46 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
+  games/kingdomino/ui:
+    dependencies:
+      '@s2h/client':
+        specifier: workspace:*
+        version: link:../../../packages/client
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/kingdomino-core':
+        specifier: workspace:*
+        version: link:../core
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      '@s2h/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.23.0(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      usehooks-ts:
+        specifier: 'catalog:'
+        version: 3.1.1(react@19.2.7)
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   games/splendor/core:
     dependencies:
       '@orpc/server':
@@ -409,6 +544,46 @@ importers:
         specifier: 'catalog:'
         version: 1.4.2(typescript@7.0.2)
     devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/splendor/ui:
+    dependencies:
+      '@s2h/client':
+        specifier: workspace:*
+        version: link:../../../packages/client
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      '@s2h/splendor-core':
+        specifier: workspace:*
+        version: link:../core
+      '@s2h/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.23.0(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      usehooks-ts:
+        specifier: 'catalog:'
+        version: 3.1.1(react@19.2.7)
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -438,6 +613,46 @@ importers:
         specifier: 'catalog:'
         version: 7.0.2
 
+  games/tictactoe/ui:
+    dependencies:
+      '@s2h/client':
+        specifier: workspace:*
+        version: link:../../../packages/client
+      '@s2h/engine':
+        specifier: workspace:*
+        version: link:../../../packages/engine
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      '@s2h/tictactoe-core':
+        specifier: workspace:*
+        version: link:../core
+      '@s2h/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.23.0(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      usehooks-ts:
+        specifier: 'catalog:'
+        version: 3.1.1(react@19.2.7)
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
   games/wordle/core:
     dependencies:
       '@orpc/server':
@@ -459,6 +674,43 @@ importers:
         specifier: 'catalog:'
         version: 1.4.2(typescript@7.0.2)
     devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  games/wordle/ui:
+    dependencies:
+      '@s2h/client':
+        specifier: workspace:*
+        version: link:../../../packages/client
+      '@s2h/shared':
+        specifier: workspace:*
+        version: link:../../../packages/shared
+      '@s2h/ui':
+        specifier: workspace:*
+        version: link:../../../packages/ui
+      '@s2h/wordle-core':
+        specifier: workspace:*
+        version: link:../core
+      '@tanstack/react-query':
+        specifier: 'catalog:'
+        version: 5.101.2(react@19.2.7)
+      framer-motion:
+        specifier: 'catalog:'
+        version: 12.42.2(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.23.0(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      usehooks-ts:
+        specifier: 'catalog:'
+        version: 3.1.1(react@19.2.7)
+    devDependencies:
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

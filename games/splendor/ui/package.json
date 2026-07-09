@@ -1,0 +1,28 @@
+{
+	"name": "@s2h/splendor-ui",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@s2h/splendor-core": "workspace:*",
+		"@s2h/client": "workspace:*",
+		"@s2h/engine": "workspace:*",
+		"@s2h/shared": "workspace:*",
+		"@s2h/ui": "workspace:*",
+		"@tanstack/react-query": "catalog:",
+		"framer-motion": "catalog:",
+		"lucide-react": "catalog:",
+		"react": "catalog:",
+		"usehooks-ts": "catalog:"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:",
+		"typescript": "catalog:"
+	}
+}
