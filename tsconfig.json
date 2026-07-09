@@ -2,12 +2,7 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": [ "@tsconfig/node24", "@tsconfig/strictest" ],
 	"compilerOptions": {
-		"types": [
-			"./types/vite.d.ts",
-			"./types/env.d.ts",
-			"./types/css.d.ts",
-			"node"
-		],
+		"types": [ "./env.d.ts", "node", "vite/client" ],
 		"target": "esnext",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
 		"module": "esnext",
@@ -21,6 +16,6 @@
 			"@/*": [ "./src/*" ]
 		}
 	},
-	"include": [ "src", "worker", "types", "vite.config.ts", "drizzle.config.ts" ],
+	"include": [ "src", "types", "vite.config.ts", "drizzle.config.ts" ],
 	"exclude": [ "node_modules" ]
 }

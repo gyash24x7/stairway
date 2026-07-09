@@ -15,6 +15,10 @@ export function HandView() {
 	const isTrickComplete = !!trick?.winner;
 
 	const isSelectionAllowed = ( cardId: CardId ) => {
+		if ( !trick ) {
+			return false;
+		}
+
 		if ( isTrickComplete ) {
 			return true;
 		}
