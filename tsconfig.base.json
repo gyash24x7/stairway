@@ -13,12 +13,6 @@
 		"jsx": "react-jsx",
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
-		"noEmit": true,
-		// Temporary during the monorepo migration: env.d.ts pulls the worker
-		// graph into every package's type program, and that graph still uses
-		// the @/ alias until all packages are extracted. Removed in M8.
-		"paths": {
-			"@/*": [ "./apps/web/src/*" ]
-		}
+		"noEmit": true
 	}
 }

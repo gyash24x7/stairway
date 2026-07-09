@@ -1,5 +1,3 @@
-"use server";
-
 import { db } from "@s2h/db";
 import { games } from "@s2h/db/schema";
 import type {

@@ -10,6 +10,7 @@
 		"preview": "pnpm --filter @s2h/web preview",
 		"clean": "rm -rf apps/web/node_modules/.vite",
 		"typecheck": "turbo run typecheck",
+		"test": "turbo run test",
 		"generate": "pnpm --filter @s2h/web generate",
 		"migrate:new": "pnpm --filter @s2h/web migrate:new",
 		"migrate:dev": "pnpm --filter @s2h/web migrate:dev",
