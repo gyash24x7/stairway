@@ -1,15 +1,15 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
-import { redwood } from "rwsdk/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig( {
-	environments: {
-		ssr: {}
-	},
 	plugins: [
-		cloudflare( { viteEnvironment: { name: "worker" } } ),
-		redwood(),
+		// Must be listed before the react plugin.
+		tanstackRouter( { target: "react", autoCodeSplitting: true } ),
+		react(),
+		cloudflare(),
 		tailwindcss()
 	]
 } );

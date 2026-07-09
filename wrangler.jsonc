@@ -1,7 +1,7 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "stairway",
-	"main": "src/worker.tsx",
+	"main": "worker/index.ts",
 	"compatibility_date": "2025-08-21",
 	"compatibility_flags": [ "nodejs_compat" ],
 	"observability": {
@@ -18,7 +18,9 @@
 		"crons": [ "0 0 */2 * *" ]
 	},
 	"assets": {
-		"binding": "ASSETS"
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": [ "/api/*" ]
 	},
 	"d1_databases": [
 		{
@@ -32,9 +34,7 @@
 	],
 	"durable_objects": {
 		"bindings": [
-			{ "name": "SESSION", "class_name": "UserSession" },
 			{ "name": "WORDLE_ENGINE", "class_name": "WordleEngine" },
-			{ "name": "SYNCED_STATE_SERVER", "class_name": "SyncedStateServer" },
 			{ "name": "TIC_TAC_TOE_ENGINE", "class_name": "TicTacToeEngine" },
 			{ "name": "SPLENDOR_ENGINE", "class_name": "SplendorEngine" },
 			{ "name": "FISH_ENGINE", "class_name": "FishEngine" },
@@ -42,6 +42,8 @@
 			{ "name": "KINGDOMINO_ENGINE", "class_name": "KingdominoEngine" }
 		]
 	},
+	// Migration history is append-only. v1/v3 created UserSession & SyncedStateServer;
+	// v9 removes them now that sessions are D1-backed and realtime is disabled.
 	"migrations": [
 		{ "tag": "v1", "new_sqlite_classes": [ "UserSession" ] },
 		{ "tag": "v2", "new_sqlite_classes": [ "WordleEngine" ] },
@@ -50,6 +52,7 @@
 		{ "tag": "v5", "new_sqlite_classes": [ "SplendorEngine" ] },
 		{ "tag": "v6", "new_sqlite_classes": [ "FishEngine" ] },
 		{ "tag": "v7", "new_sqlite_classes": [ "CallbreakEngine" ] },
-		{ "tag": "v8", "new_sqlite_classes": [ "KingdominoEngine" ] }
+		{ "tag": "v8", "new_sqlite_classes": [ "KingdominoEngine" ] },
+		{ "tag": "v9", "deleted_classes": [ "UserSession", "SyncedStateServer" ] }
 	]
 }
