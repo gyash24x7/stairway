@@ -19,7 +19,7 @@
 	"devDependencies": {
 		"@tsconfig/node24": "catalog:",
 		"@tsconfig/strictest": "catalog:",
-		"turbo": "^2.5.8",
+		"turbo": "^2.10.4",
 		"typescript": "catalog:"
 	}
 }

@@ -6,7 +6,7 @@ import type {
 	CompletedGameData,
 	GameId
 } from "@s2h/engine/types";
-import { createLogger } from "@s2h/shared/utils/logger";
+import { createLogger } from "@s2h/utils/logger";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 

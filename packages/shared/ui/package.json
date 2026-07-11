@@ -1,0 +1,36 @@
+{
+	"name": "@s2h/ui",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		"./components/*": "./src/components/*.tsx",
+		"./primitives/*": "./src/primitives/*.tsx",
+		"./hooks/*": "./src/hooks/*.ts",
+		"./utils/*": "./src/utils/*.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@base-ui/react": "catalog:",
+		"@s2h/engine": "workspace:*",
+		"@s2h/utils": "workspace:*",
+		"@simplewebauthn/browser": "catalog:",
+		"@tanstack/react-query": "catalog:",
+		"@tanstack/react-router": "catalog:",
+		"clsx": "2.1.1",
+		"class-variance-authority": "catalog:",
+		"framer-motion": "catalog:",
+		"lucide-react": "catalog:",
+		"react": "catalog:",
+		"sonner": "catalog:",
+		"tailwind-merge": "3.6.0",
+		"usehooks-ts": "catalog:",
+		"vaul": "catalog:"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:",
+		"typescript": "catalog:"
+	}
+}

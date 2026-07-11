@@ -15,7 +15,7 @@
 		"@orpc/server": "catalog:",
 		"@s2h/db": "workspace:*",
 		"@s2h/engine": "workspace:*",
-		"@s2h/shared": "workspace:*",
+		"@s2h/utils": "workspace:*",
 		"drizzle-orm": "catalog:"
 	},
 	"devDependencies": {

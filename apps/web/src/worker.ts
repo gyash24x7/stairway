@@ -1,8 +1,8 @@
+import { RPCHandler } from "@orpc/server/fetch";
+import { loadSession } from "@s2h/auth/sessions";
 import { router } from "@s2h/client/router";
-import { loadSession } from "@s2h/auth";
 import { db } from "@s2h/db";
 import { games } from "@s2h/db/schema";
-import { RPCHandler } from "@orpc/server/fetch";
 import { env } from "cloudflare:workers";
 import { and, eq, inArray, lt } from "drizzle-orm";
 
@@ -88,9 +88,9 @@ function getGameStub( game: string, gameId: string ) {
 }
 
 // Engine Durable Objects must be re-exported from the Worker entry (Cloudflare requirement).
-export { WordleEngine } from "@s2h/wordle-core/engine";
-export { TicTacToeEngine } from "@s2h/tictactoe-core/engine";
-export { SplendorEngine } from "@s2h/splendor-core/engine";
-export { FishEngine } from "@s2h/fish-core/engine";
-export { CallbreakEngine } from "@s2h/callbreak-core/engine";
-export { KingdominoEngine } from "@s2h/kingdomino-core/engine";
+export { WordleEngine } from "@s2h/wordle/engine";
+export { TicTacToeEngine } from "@s2h/tictactoe/engine";
+export { SplendorEngine } from "@s2h/splendor/engine";
+export { FishEngine } from "@s2h/fish/engine";
+export { CallbreakEngine } from "@s2h/callbreak/engine";
+export { KingdominoEngine } from "@s2h/kingdomino/engine";

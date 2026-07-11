@@ -1,0 +1,20 @@
+{
+	"name": "@s2h/db",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		".": "./src/client.ts",
+		"./schema": "./src/schema.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@s2h/utils": "workspace:*",
+		"drizzle-orm": "catalog:"
+	},
+	"devDependencies": {
+		"typescript": "catalog:"
+	}
+}

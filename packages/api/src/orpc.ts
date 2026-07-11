@@ -1,5 +1,5 @@
-import type { AuthInfo } from "@s2h/shared/auth";
 import { os } from "@orpc/server";
+import type { AuthInfo } from "@s2h/utils/auth";
 
 /**
  * Per-request context injected by the Worker fetch handler into every oRPC procedure.

@@ -1,0 +1,20 @@
+{
+	"name": "@s2h/utils",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"exports": {
+		"./*": "./src/*.ts"
+	},
+	"scripts": {
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"tslog": "catalog:",
+		"ulid": "catalog:",
+		"unique-names-generator": "catalog:"
+	},
+	"devDependencies": {
+		"typescript": "catalog:"
+	}
+}

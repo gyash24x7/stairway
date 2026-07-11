@@ -5,13 +5,13 @@
 
 /* Workspace packages are reached through node_modules symlinks, which
    Tailwind's auto-detection ignores — list their sources explicitly. */
-@source "../../../packages/ui/src";
-@source "../../../games/wordle/ui/src";
-@source "../../../games/tictactoe/ui/src";
-@source "../../../games/splendor/ui/src";
-@source "../../../games/fish/ui/src";
-@source "../../../games/callbreak/ui/src";
-@source "../../../games/kingdomino/ui/src";
+@source "../../../packages/shared/ui/src";
+@source "../../../packages/ui/wordle/src";
+@source "../../../packages/ui/tictactoe/src";
+@source "../../../packages/ui//splendor/src";
+@source "../../../packages/ui/fish/src";
+@source "../../../packages/ui/callbreak/src";
+@source "../../../packages/ui/kingdomino/src";
 
 @plugin "@tailwindcss/typography";
 

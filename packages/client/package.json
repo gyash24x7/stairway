@@ -16,12 +16,12 @@
 		"@orpc/server": "catalog:",
 		"@orpc/tanstack-query": "catalog:",
 		"@s2h/auth": "workspace:*",
-		"@s2h/callbreak-core": "workspace:*",
-		"@s2h/fish-core": "workspace:*",
-		"@s2h/kingdomino-core": "workspace:*",
-		"@s2h/splendor-core": "workspace:*",
-		"@s2h/tictactoe-core": "workspace:*",
-		"@s2h/wordle-core": "workspace:*",
+		"@s2h/callbreak": "workspace:*",
+		"@s2h/fish": "workspace:*",
+		"@s2h/kingdomino": "workspace:*",
+		"@s2h/splendor": "workspace:*",
+		"@s2h/tictactoe": "workspace:*",
+		"@s2h/wordle": "workspace:*",
 		"@tanstack/react-query": "catalog:"
 	},
 	"devDependencies": {

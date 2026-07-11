@@ -1,9 +1,9 @@
-import { CallbreakGamePage, CallbreakHomePage } from "@s2h/callbreak-ui";
-import { FishGamePage, FishHomePage } from "@s2h/fish-ui";
-import { KingdominoGamePage, KingdominoHomePage } from "@s2h/kingdomino-ui";
-import { SplendorGamePage, SplendorHomePage } from "@s2h/splendor-ui";
-import { TicTacToeGamePage, TicTacToeHomePage } from "@s2h/tictactoe-ui";
-import { WordleGamePage, WordleHomePage } from "@s2h/wordle-ui";
+import { CallbreakGamePage, CallbreakHomePage } from "@s2h-ui/callbreak";
+import { FishGamePage, FishHomePage } from "@s2h-ui/fish";
+import { KingdominoGamePage, KingdominoHomePage } from "@s2h-ui/kingdomino";
+import { SplendorGamePage, SplendorHomePage } from "@s2h-ui/splendor";
+import { TicTacToeGamePage, TicTacToeHomePage } from "@s2h-ui/tictactoe";
+import { WordleGamePage, WordleHomePage } from "@s2h-ui/wordle";
 import type { ComponentType } from "react";
 
 /** The routed components a game contributes: its home page and its per-game board page. */
