@@ -1,12 +1,17 @@
-// @s2h/swish/engine — the engine runtime.
+// @s2h/swish/engine — the engine runtime (CQRS + event sourcing).
 //
-// Server-only, but Cloudflare-free: every lifecycle action is an `Effect` over
-// the service tags in `./services`, never over `ctx.storage`/KV/D1 directly.
-// The heart of the old class engine's `executeMove` becomes `submitMove`: it
-// computes the next persisted record as a *value* and writes it exactly once at
-// the end, so a mid-pipeline failure can never persist partial state.
+// Server-only, Cloudflare-free: every action is an `Effect` over the service
+// tags in `./services`. Commands (join/start/submitMove/undo/redo/…) are the
+// only event producers; a query (getState) is a pure read of the snapshot.
+//
+// A command's shape is: load the current snapshot → validate (may fail, emits
+// nothing) → decide (run deciders, EMIT events, fold each batch onto a working
+// copy) → commit ONCE (append the commit to the append-only `EventStore` + save
+// the new snapshot to `GameStore`). State only ever changes inside `fold`
+// (`events.ts`), so the whole game is replayable and undo/redo is a cursor move
+// + refold.
 
-import { Effect, Option, Schema } from "effect";
+import { Clock, Effect, Option, Schema } from "effect";
 import {
 	CannotStart,
 	CorruptState,
@@ -15,9 +20,23 @@ import {
 	GameNotInProgress,
 	MoveError,
 	MoveNotAllowed,
+	NothingToRedo,
+	NothingToUndo,
 	NotYourTurn,
 	PhaseNotFound
 } from "./errors";
+import {
+	CurrentPlayerSet,
+	type EngineEvent,
+	foldEvents,
+	GameCompleted,
+	makeCommitSchema,
+	PhaseEntered,
+	PhaseExited,
+	PlayerJoined,
+	StatusChanged,
+	TurnAdvanced
+} from "./events";
 import {
 	type BaseGameConfig,
 	CompletedGameData,
@@ -29,59 +48,68 @@ import {
 	PlayerId,
 	PlayerInfo
 } from "./schema";
-import { GameArchive, GameRepo, GameStore, Ids, Scheduler } from "./services";
+import { EventStore, GameArchive, GameRepo, GameStore, Ids, Scheduler } from "./services";
 import { type GameStructure, type MoveMap } from "./structure";
 
 /** The full set of host services every engine program may require. */
-export type EngineServices = GameStore | Scheduler | GameArchive | GameRepo | Ids;
+export type EngineServices = GameStore | Scheduler | GameArchive | GameRepo | Ids | EventStore;
 
 const BOT_DELAY_MS = 5000;
 const AUTO_START_DELAY_MS = 5000;
 
-const persistedSchema = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->( structure: GameStructure<State, Config, M, SV, PV, R> ) =>
-	PersistedGameData( structure.stateSchema, structure.configSchema );
+// A game structure with concrete generics erased down to what the engine needs.
+type Struct<State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R> =
+	GameStructure<State, Config, Ev, M, SV, PV, R>;
 
-const readonly = <State, Config>( data: PersistedGameData<State, Config> ) => ( {
+// A folding accumulator: the events emitted so far + the running work state.
+interface Acc<State, Config, Ev> {
+	events: Array<EngineEvent | Ev>;
+	work: PersistedGameData<State, Config>;
+}
+
+const persistedSchema = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>
+) => PersistedGameData( structure.stateSchema, structure.configSchema );
+
+const commitSchema = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>
+) => makeCommitSchema( structure.eventSchema );
+
+const readonly = <State, Config extends BaseGameConfig>(
+	data: PersistedGameData<State, Config>
+) => ( {
 	state: data.state,
 	config: data.config,
 	context: data.context
 } );
 
-const withState = <State, Config>(
+/** Fold events onto a record via the game's `apply` (the only state-changer). */
+const fold = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
 	data: PersistedGameData<State, Config>,
-	state: State
-) => ( { ...data, state } );
-
-const contextWith = ( ctx: GameContext, patch: Partial<GameContext> ): GameContext =>
-	new GameContext( {
-		turn: patch.turn ?? ctx.turn,
-		players: patch.players ?? ctx.players,
-		currentPlayer: patch.currentPlayer ?? ctx.currentPlayer,
-		phase: patch.phase ?? ctx.phase
-	} );
+	events: ReadonlyArray<EngineEvent | Ev>
+): PersistedGameData<State, Config> => foldEvents( structure.apply, data, events );
 
 // --- storage helpers -------------------------------------------------------
 
-const load = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->( structure: GameStructure<State, Config, M, SV, PV, R> ) =>
+const load = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>
+) =>
 	Effect.gen( function* () {
 		const store = yield* GameStore;
 		const raw = yield* store.load;
 		if ( Option.isNone( raw ) ) {
-			return yield* Effect.fail( new GameNotFound( { id: GameId.make( "unknown" ) } ) );
+			return yield* new GameNotFound( { id: GameId.make( "unknown" ) } );
 		}
 		return yield* Schema.decodeUnknownEffect( persistedSchema( structure ) )( raw.value ).pipe(
 			Effect.mapError( ( issue ) => new CorruptState( {
@@ -91,15 +119,10 @@ const load = <
 		);
 	} );
 
-const save = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
+const save = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
 	data: PersistedGameData<State, Config>
 ) =>
 	Effect.gen( function* () {
@@ -109,15 +132,10 @@ const save = <
 		yield* store.save( encoded );
 	} );
 
-const snapshot = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
+const snapshot = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
 	data: PersistedGameData<State, Config>,
 	playerId: PlayerId
 ) =>
@@ -126,6 +144,7 @@ const snapshot = <
 		const shared = yield* structure.sharedView( rd );
 		const player = yield* structure.playerView( rd, playerId );
 		return {
+			_tag: "swish/GameSnapshot" as const,
 			id: data.id,
 			code: data.code,
 			status: data.status,
@@ -148,15 +167,10 @@ const scheduleBotIfNeeded = <State, Config>( data: PersistedGameData<State, Conf
 		}
 	} );
 
-const archive = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
+const archive = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
 	data: PersistedGameData<State, Config>
 ) =>
 	Effect.gen( function* () {
@@ -165,12 +179,11 @@ const archive = <
 		const rd = readonly( data );
 		const shared = yield* structure.sharedView( rd );
 		const playerViews: Record<string, unknown> = {};
-		// Iterate values, not keys: `PlayerInfo.id` is already a branded `PlayerId`,
-		// whereas `Object.keys` widens to `string`.
 		for ( const player of Object.values( data.players ) ) {
 			playerViews[ player.id ] = yield* structure.playerView( rd, player.id );
 		}
 		const completed = {
+			_tag: "swish/CompletedGameData" as const,
 			id: data.id,
 			code: data.code,
 			status: data.status,
@@ -186,47 +199,134 @@ const archive = <
 		yield* repo.markCompleted( data.id );
 	} );
 
-// --- lifecycle programs ----------------------------------------------------
+// --- event-sourcing helpers ------------------------------------------------
 
-const initialize = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
-	// `config` is already decoded: the `initialize` RPC validates it against the
-	// game's `configSchema` on the wire, so the engine trusts it here (no
-	// redundant — and, for branded/transformed configs, failing — re-decode).
+/**
+ * Persist one command: mint id + timestamp, encode the commit, append it to the
+ * log (dropping any redo tail), and save the new snapshot. The single commit
+ * point of a command.
+ */
+const commitAndSave = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
+	work: PersistedGameData<State, Config>,
+	meta: { command: string; actor?: PlayerId; moveType?: string },
+	events: ReadonlyArray<EngineEvent | Ev>
+) =>
+	Effect.gen( function* () {
+		const ids = yield* Ids;
+		const log = yield* EventStore;
+		const id = yield* ids.commitId;
+		const at = yield* Clock.currentTimeMillis;
+		const commit = {
+			id,
+			command: meta.command,
+			actor: meta.actor,
+			moveType: meta.moveType,
+			at,
+			events
+		};
+		const encoded = yield* Schema.encodeUnknownEffect( commitSchema( structure ) )( commit )
+			.pipe( Effect.orDie );
+		yield* log.append( encoded );
+		yield* save( structure, work );
+	} );
+
+/** Enter a phase: emit PhaseEntered, run `onEnter`, set the starting player. */
+const enterPhase = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
+	from: PersistedGameData<State, Config>,
+	phaseName: string
+) =>
+	Effect.gen( function* () {
+		const phase = structure.phases?.[ phaseName ];
+		if ( !phase ) {
+			return yield* new PhaseNotFound( { phase: phaseName } );
+		}
+		const acc: Acc<State, Config, Ev> = { events: [], work: from };
+		const emit = ( es: ReadonlyArray<EngineEvent | Ev> ) => {
+			acc.events.push( ...es );
+			acc.work = fold( structure, acc.work, es );
+		};
+		emit( [ PhaseEntered.make( { phase: phaseName } ) ] );
+		if ( phase.onEnter ) {
+			emit( yield* phase.onEnter( readonly( acc.work ) ) );
+		}
+		if ( phase.resolveStartingPlayer ) {
+			const starting = yield* phase.resolveStartingPlayer( readonly( acc.work ) );
+			emit( [ CurrentPlayerSet.make( { playerId: starting } ) ] );
+		}
+		return acc;
+	} );
+
+/** Refold the current state from the log's genesis up to the cursor. */
+const refold = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>
+) =>
+	Effect.gen( function* () {
+		const log = yield* EventStore;
+		const { base, commits, cursor } = yield* log.read;
+		const corrupt = ( issue: unknown ) => new CorruptState( {
+			id: GameId.make( "unknown" ),
+			reason: String( issue )
+		} );
+		let work = yield* Schema.decodeUnknownEffect( persistedSchema( structure ) )( base )
+			.pipe( Effect.mapError( corrupt ) );
+		for ( const raw of commits.slice( 0, cursor + 1 ) ) {
+			const commit = yield* Schema.decodeUnknownEffect( commitSchema( structure ) )( raw )
+				.pipe( Effect.mapError( corrupt ) );
+			work = fold( structure, work, commit.events );
+		}
+		return work;
+	} );
+
+/** After undo/redo: cancel any stale bot alarm and reschedule for the new turn. */
+const reconcile = <State, Config>( work: PersistedGameData<State, Config> ) =>
+	Effect.gen( function* () {
+		const scheduler = yield* Scheduler;
+		yield* scheduler.cancel;
+		yield* scheduleBotIfNeeded( work );
+	} );
+
+// --- lifecycle commands ----------------------------------------------------
+
+const initialize = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
+	// `config` is already decoded by the RPC boundary; the engine trusts it.
 	payload: { id: GameId; code: GameCode; config: Config }
 ) =>
 	Effect.gen( function* () {
+		const store = yield* GameStore;
+		const log = yield* EventStore;
 		const state = yield* structure.setup( payload.config );
-		const data = {
+		const genesis: PersistedGameData<State, Config> = {
+			_tag: "swish/PersistedGameData",
 			version: 1,
 			id: payload.id,
 			code: payload.code,
-			status: "CREATED" as const,
-			context: new GameContext( { turn: 0, players: [], currentPlayer: PlayerId.make( "" ) } ),
+			status: "CREATED",
+			context: GameContext.make( { turn: 0, players: [], currentPlayer: PlayerId.make( "" ) } ),
 			players: {},
 			config: payload.config,
 			state
 		};
-
-		yield* save( structure, data );
+		const encoded = yield* Schema.encodeUnknownEffect( persistedSchema( structure ) )( genesis )
+			.pipe( Effect.orDie );
+		yield* log.setBase( encoded );
+		yield* store.save( encoded );
 	} ).pipe( Effect.withSpan( "engine.initialize" ) );
 
-const join = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
+const join = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
 	player: PlayerInfo
 ) =>
 	Effect.gen( function* () {
@@ -235,43 +335,44 @@ const join = <
 		if ( data.players[ player.id ] ) {
 			return;
 		} // idempotent re-join
-
-		const count = Object.keys( data.players ).length;
-		if ( count >= data.config.playerCount ) {
-			return yield* Effect.fail( new GameFull( { playerCount: data.config.playerCount } ) );
+		if ( Object.keys( data.players ).length >= data.config.playerCount ) {
+			return yield* new GameFull( { playerCount: data.config.playerCount } );
 		}
 
-		const players = { ...data.players, [ player.id ]: player };
-		const playerIds = [ ...data.context.players, player.id ];
-		const currentPlayer = data.context.players.length === 0
-			? player.id
-			: data.context.currentPlayer;
+		const acc: Acc<State, Config, Ev> = { events: [], work: data };
+		const emit = ( es: ReadonlyArray<EngineEvent | Ev> ) => {
+			acc.events.push( ...es );
+			acc.work = fold( structure, acc.work, es );
+		};
 
-		let state = data.state;
 		if ( structure.hooks?.onJoin ) {
-			state = yield* structure.hooks.onJoin( readonly( data ), player.id );
+			emit( yield* structure.hooks.onJoin(
+				readonly( acc.work ),
+				player.id
+			) );
+		}
+		emit( [ PlayerJoined.make( { player } ) ] );
+
+		const nowFull = Object.keys( acc.work.players ).length >= acc.work.config.playerCount;
+		if ( nowFull &&
+			!acc.work.config.autoStart ) {
+			emit( [ StatusChanged.make( { status: "PLAYERS_READY" } ) ] );
 		}
 
-		const nowFull = playerIds.length >= data.config.playerCount;
-		const status = nowFull && !data.config.autoStart ? "PLAYERS_READY" : data.status;
-		const context = contextWith( data.context, { players: playerIds, currentPlayer } );
-
-		const next = { ...data, players, context, state, status };
-		yield* save( structure, next );
-
-		if ( nowFull && data.config.autoStart ) {
-			yield* scheduler.schedule( AUTO_START_DELAY_MS, "auto-start" );
+		yield* commitAndSave( structure, acc.work, { command: "join", actor: player.id }, acc.events );
+		if ( nowFull && acc.work.config.autoStart ) {
+			yield* scheduler.schedule(
+				AUTO_START_DELAY_MS,
+				"auto-start"
+			);
 		}
 	} ).pipe( Effect.withSpan( "engine.join" ) );
 
-const start = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->( structure: GameStructure<State, Config, M, SV, PV, R> ) =>
+const start = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>
+) =>
 	Effect.gen( function* () {
 		const data = yield* load( structure );
 		const count = Object.keys( data.players ).length;
@@ -281,215 +382,142 @@ const start = <
 			"COMPLETED" ||
 			count <
 			data.config.playerCount ) {
-			return yield* Effect.fail( new CannotStart( { status: data.status } ) );
+			return yield* new CannotStart( { status: data.status } );
 		}
 
-		let state = data.state;
+		const acc: Acc<State, Config, Ev> = { events: [], work: data };
+		const emit = ( es: ReadonlyArray<EngineEvent | Ev> ) => {
+			acc.events.push( ...es );
+			acc.work = fold( structure, acc.work, es );
+		};
+
 		if ( structure.hooks?.onStart ) {
-			state =
-				yield* structure.hooks.onStart( readonly( withState( data, state ) ) );
+			emit( yield* structure.hooks.onStart( readonly( acc.work ) ) );
 		}
-
-		let context = data.context;
 		if ( structure.phases ) {
-			const entered = yield* enterPhase(
-				structure,
-				withState( data, state ),
-				structure.initialPhase
-			);
-			state = entered.state;
-			context = entered.context;
+			const entered = yield* enterPhase( structure, acc.work, structure.initialPhase );
+			acc.events.push( ...entered.events );
+			acc.work = entered.work;
 		}
+		emit( [ StatusChanged.make( { status: "IN_PROGRESS" } ) ] );
 
-		const next = { ...data, state, context, status: "IN_PROGRESS" as const };
-		yield* save( structure, next );
-		yield* scheduleBotIfNeeded( next );
+		yield* commitAndSave( structure, acc.work, { command: "start" }, acc.events );
+		yield* scheduleBotIfNeeded( acc.work );
 	} ).pipe( Effect.withSpan( "engine.start" ) );
 
-/** Enter a phase: mark it current, run `onEnter`, pick the starting player. */
-const enterPhase = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
-	data: PersistedGameData<State, Config>,
-	phaseName: string
-) =>
-	Effect.gen( function* () {
-		if ( !structure.phases ) {
-			return { state: data.state, context: data.context };
-		}
-		const phase = structure.phases[ phaseName ];
-		if ( !phase ) {
-			return yield* Effect.fail( new PhaseNotFound( { phase: phaseName } ) );
-		}
-
-		let context = contextWith( data.context, { phase: phaseName } );
-		let state = data.state;
-		if ( phase.onEnter ) {
-			state = yield* phase.onEnter( readonly( { ...data, context } ) );
-		}
-		if ( phase.resolveStartingPlayer ) {
-			const starting = yield* phase.resolveStartingPlayer(
-				readonly( withState( { ...data, context }, state ) )
-			);
-			context = contextWith( context, { currentPlayer: starting } );
-		}
-		return { state, context };
-	} );
-
-const transitionToPhase = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
-	data: PersistedGameData<State, Config>,
-	fromPhase: string | undefined,
-	toPhase: string
-) =>
-	Effect.gen( function* () {
-		let state = data.state;
-		if ( structure.phases && fromPhase ) {
-			const prev = structure.phases[ fromPhase ];
-			if ( prev?.onExit ) {
-				state = yield* prev.onExit( readonly( data ) );
-			}
-		}
-		return yield* enterPhase( structure, withState( data, state ), toPhase );
-	} );
-
-const submitMove = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	MoveType extends keyof M,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
+const submitMove = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, MoveType extends keyof M, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
 	moveType: MoveType,
-	input: Schema.Schema.Type<M[MoveType]["input"]>,
+	input: Schema.Schema.Type<M[MoveType][ "input" ]>,
 	playerId: PlayerId
 ) =>
 	Effect.gen( function* () {
 		const data = yield* load( structure );
 		if ( data.status !== "IN_PROGRESS" ) {
-			return yield* Effect.fail( new GameNotInProgress( { status: data.status } ) );
+			return yield* new GameNotInProgress( { status: data.status } );
 		}
 
 		const phaseName = data.context.phase ??
 			( structure.phases ? structure.initialPhase : undefined );
 		const phase = structure.phases && phaseName ? structure.phases[ phaseName ] : undefined;
 		if ( structure.phases && !phase ) {
-			return yield* Effect.fail( new PhaseNotFound( { phase: phaseName ?? "" } ) );
+			return yield* new PhaseNotFound( { phase: phaseName ?? "" } );
 		}
 
 		const moveDef = phase ? phase.moves[ moveType ] : structure.moves?.[ moveType ];
 		if ( !moveDef ) {
-			return yield* Effect.fail( new MoveNotAllowed( { move: String( moveType ) } ) );
+			return yield* new MoveNotAllowed( { move: String( moveType ) } );
 		}
 
 		const allowed = moveDef.canMove
 			? yield* moveDef.canMove( readonly( data ), playerId )
 			: data.context.currentPlayer === playerId;
-
 		if ( !allowed ) {
-			return yield* Effect.fail( new NotYourTurn( {
-				playerId,
-				currentPlayer: data.context.currentPlayer
-			} ) );
+			return yield* new NotYourTurn( { playerId, currentPlayer: data.context.currentPlayer } );
 		}
 
 		yield* moveDef.validate( readonly( data ), playerId, input );
 
-		let state = data.state;
+		// decide — emit events, fold onto the working copy as we go
+		const acc: Acc<State, Config, Ev> = { events: [], work: data };
+		const emit = ( es: ReadonlyArray<EngineEvent | Ev> ) => {
+			acc.events.push( ...es );
+			acc.work = fold( structure, acc.work, es );
+		};
+		const move = String( moveType );
+
 		if ( phase?.hooks?.beforeMove ) {
-			state = yield* phase.hooks.beforeMove(
-				readonly( withState( data, state ) ),
+			emit( yield* phase.hooks.beforeMove(
+				readonly( acc.work ),
 				playerId,
-				String( moveType )
-			);
+				move
+			) );
 		}
 		if ( structure.hooks?.beforeMove ) {
-			state = yield* structure.hooks.beforeMove(
-				readonly( withState( data, state ) ),
+			emit( yield* structure.hooks.beforeMove(
+				readonly( acc.work ),
 				playerId,
-				String( moveType )
-			);
+				move
+			) );
 		}
-
-		state = yield* moveDef.execute( readonly( withState( data, state ) ), playerId, input );
-
+		emit( yield* moveDef.execute( readonly( acc.work ), playerId, input ) );
 		if ( structure.hooks?.afterMove ) {
-			state = yield* structure.hooks.afterMove(
-				readonly( withState( data, state ) ),
+			emit( yield* structure.hooks.afterMove(
+				readonly( acc.work ),
 				playerId,
-				String( moveType )
-			);
+				move
+			) );
 		}
 		if ( phase?.hooks?.afterMove ) {
-			state = yield* phase.hooks.afterMove(
-				readonly( withState( data, state ) ),
+			emit( yield* phase.hooks.afterMove(
+				readonly( acc.work ),
 				playerId,
-				String( moveType )
-			);
+				move
+			) );
 		}
 
-		let context = contextWith( data.context, { turn: data.context.turn + 1 } );
-		let advanced = { ...data, state, context };
+		emit( [ TurnAdvanced.make( {} ) ] );
 
 		if ( structure.phases && phase ) {
-			const phaseEnded = yield* phase.endIf( readonly( advanced ) );
+			const phaseEnded = yield* phase.endIf( readonly( acc.work ) );
 			if ( phaseEnded ) {
-				const nextPhaseName = yield* phase.resolveNextPhase( readonly( advanced ) );
-				const entered = yield* transitionToPhase( structure, advanced, phaseName, nextPhaseName );
-				advanced = { ...advanced, state: entered.state, context: entered.context };
+				const nextPhaseName = yield* phase.resolveNextPhase( readonly( acc.work ) );
+				if ( phase.onExit ) {
+					emit( yield* phase.onExit( readonly( acc.work ) ) );
+				}
+				emit( [ PhaseExited.make( { phase: phaseName ?? "" } ) ] );
+				const entered = yield* enterPhase( structure, acc.work, nextPhaseName );
+				acc.events.push( ...entered.events );
+				acc.work = entered.work;
 			} else {
-				const next = yield* phase.resolveNextPlayer(
-					readonly( advanced ),
-					playerId,
-					String( moveType )
-				);
-				context = contextWith( context, { currentPlayer: next } );
-				advanced = { ...advanced, context };
+				const next = yield* phase.resolveNextPlayer( readonly( acc.work ), playerId, move );
+				emit( [ CurrentPlayerSet.make( { playerId: next } ) ] );
 			}
 		} else if ( !structure.phases ) {
-			const next = yield* structure.resolveNextPlayer(
-				readonly( advanced ),
-				playerId,
-				String( moveType )
-			);
-			context = contextWith( context, { currentPlayer: next } );
-			advanced = { ...advanced, context };
+			const next = yield* structure.resolveNextPlayer( readonly( acc.work ), playerId, move );
+			emit( [ CurrentPlayerSet.make( { playerId: next } ) ] );
 		}
 
-		const ended = yield* structure.endIf( readonly( advanced ) );
-		let finalState = advanced.state;
-		let status = advanced.status;
+		const ended = yield* structure.endIf( readonly( acc.work ) );
 		if ( ended ) {
 			if ( structure.hooks?.onEnd ) {
-				finalState =
-					yield* structure.hooks.onEnd( readonly( advanced ) );
+				emit( yield* structure.hooks.onEnd( readonly( acc.work ) ) );
 			}
-			status = "COMPLETED";
+			emit( [ GameCompleted.make( {} ) ] );
 		}
 
-		const finalData = { ...advanced, state: finalState, status };
-		yield* save( structure, finalData );
-
-		if ( status === "COMPLETED" ) {
-			yield* archive( structure, finalData );
+		yield* commitAndSave(
+			structure,
+			acc.work,
+			{ command: "submitMove", actor: playerId, moveType: move },
+			acc.events
+		);
+		if ( acc.work.status === "COMPLETED" ) {
+			yield* archive( structure, acc.work );
 		} else {
-			yield* scheduleBotIfNeeded( finalData );
+			yield* scheduleBotIfNeeded( acc.work );
 		}
 	} )
 		.pipe( Effect.withSpan(
@@ -497,15 +525,10 @@ const submitMove = <
 			{ attributes: { moveType: String( moveType ) } }
 		) );
 
-const getState = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>,
+const getState = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
 	playerInfo: PlayerInfo
 ) =>
 	Effect.gen( function* () {
@@ -513,14 +536,11 @@ const getState = <
 		return yield* snapshot( structure, data, playerInfo.id );
 	} ).pipe( Effect.withSpan( "engine.getState" ) );
 
-const addBots = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->( structure: GameStructure<State, Config, M, SV, PV, R> ) =>
+const addBots = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>
+) =>
 	Effect.gen( function* () {
 		const ids = yield* Ids;
 		const data = yield* load( structure );
@@ -529,7 +549,7 @@ const addBots = <
 			const bot = yield* ids.botIdentity;
 			yield* join(
 				structure,
-				new PlayerInfo( {
+				PlayerInfo.make( {
 					id: PlayerId.make( bot.id ),
 					name: bot.name,
 					avatar: bot.avatar,
@@ -539,27 +559,60 @@ const addBots = <
 		}
 	} ).pipe( Effect.withSpan( "engine.addBots" ) );
 
+const undo = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
+	playerId: PlayerId
+) =>
+	Effect.gen( function* () {
+		const log = yield* EventStore;
+		const moved = yield* log.moveCursor( -1 );
+		if ( Option.isNone( moved ) ) {
+			return yield* new NothingToUndo();
+		}
+		const work = yield* refold( structure );
+		yield* save( structure, work );
+		yield* reconcile( work );
+		return yield* snapshot( structure, work, playerId );
+	} ).pipe( Effect.withSpan( "engine.undo" ) );
+
+const redo = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>,
+	playerId: PlayerId
+) =>
+	Effect.gen( function* () {
+		const log = yield* EventStore;
+		const moved = yield* log.moveCursor( 1 );
+		if ( Option.isNone( moved ) ) {
+			return yield* new NothingToRedo();
+		}
+		const work = yield* refold( structure );
+		yield* save( structure, work );
+		yield* reconcile( work );
+		return yield* snapshot( structure, work, playerId );
+	} ).pipe( Effect.withSpan( "engine.redo" ) );
+
 const cleanup = () =>
 	Effect.gen( function* () {
 		const scheduler = yield* Scheduler;
 		const store = yield* GameStore;
 		yield* scheduler.cancel;
 		yield* store.clear;
-	} ).pipe( Effect.withSpan( "engine.cleanup" ) );
+	} );
 
 /**
- * The Durable Object alarm entry point. Either fires a scheduled auto-start or
- * plays the current bot's move. Failures are swallowed — an alarm must not
- * throw back into the runtime.
+ * The Durable Object alarm entry point. Fires a scheduled auto-start or plays
+ * the current bot's move. Failures are logged, not thrown (an alarm must not
+ * throw back into the runtime).
  */
-const runBotTurn = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->( structure: GameStructure<State, Config, M, SV, PV, R> ) =>
+const runBotTurn = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
+	structure: Struct<State, Config, Ev, M, SV, PV, R>
+) =>
 	Effect.gen( function* () {
 		const scheduler = yield* Scheduler;
 		const kind = yield* scheduler.read;
@@ -608,31 +661,21 @@ const runBotTurn = <
 
 /**
  * The public engine surface. One instance drives a single game's whole
- * lifecycle over the host services. `submitMove` is generic per move, so each
- * move's `input` keeps its exact decoded type. Games map these methods onto
- * their RPC group via `toLayer` (moves discard `submitMove`'s result — their
- * RPC returns `Void`; clients re-read via `getState`).
+ * lifecycle over the host services. `submitMove` is generic per move so each
+ * move's `input` keeps its exact decoded type. Commands produce events;
+ * `getState` is a pure read. `undo`/`redo` move the log cursor and refold.
  */
-export type Engine<
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
-> = {
+export interface Engine<State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R = never> {
 	readonly initialize: ( payload: { id: GameId; code: GameCode; config: Config } ) =>
 		Effect.Effect<void, never, EngineServices | R>;
-
 	readonly getState: ( playerInfo: PlayerInfo ) =>
 		Effect.Effect<GameSnapshotType<SV, PV>, GameNotFound | CorruptState, EngineServices | R>;
-
 	readonly join: ( playerInfo: PlayerInfo ) =>
 		Effect.Effect<void, GameFull | GameNotFound | CorruptState, EngineServices | R>;
-
 	readonly addBots: () =>
 		Effect.Effect<void, GameFull | GameNotFound | CorruptState, EngineServices | R>;
-
 	readonly start: () =>
 		Effect.Effect<void, CannotStart | GameNotFound | CorruptState | PhaseNotFound, EngineServices | R>;
 	readonly submitMove: <MoveType extends keyof M>(
@@ -640,25 +683,24 @@ export type Engine<
 		playerInfo: PlayerInfo,
 		input: Schema.Schema.Type<M[MoveType][ "input" ]>
 	) => Effect.Effect<void, Schema.Schema.Type<typeof MoveError>, EngineServices | R>;
+	readonly undo: ( playerInfo: PlayerInfo ) =>
+		Effect.Effect<GameSnapshotType<SV, PV>, NothingToUndo | GameNotFound | CorruptState, EngineServices | R>;
+	readonly redo: ( playerInfo: PlayerInfo ) =>
+		Effect.Effect<GameSnapshotType<SV, PV>, NothingToRedo | GameNotFound | CorruptState, EngineServices | R>;
 	readonly runBotTurn: () => Effect.Effect<void, never, EngineServices | R>;
 	readonly cleanup: () => Effect.Effect<void, never, EngineServices | R>;
 }
 
 /**
  * Build the engine for a game. Accepts flat or phased structures; the returned
- * methods are the game-agnostic lifecycle plus a generic `submitMove`. Games
- * wire these onto their per-move RPCs in `toLayer`.
+ * methods are the game-agnostic lifecycle plus a generic `submitMove` and the
+ * additive `undo`/`redo`. Games wire these onto their RPCs in `toLayer`.
  */
-export const makeEngine = <
-	State,
-	Config extends BaseGameConfig,
-	M extends MoveMap<State, Config, R>,
-	SV,
-	PV,
-	R = never
->(
-	structure: GameStructure<State, Config, M, SV, PV, R>
-): Engine<State, Config, M, SV, PV, R> => ( {
+export const makeEngine = <State, Config extends BaseGameConfig, Ev extends {
+	readonly _tag: string
+}, M extends MoveMap<State, Config, Ev, R>, SV, PV, R = never>(
+	structure: GameStructure<State, Config, Ev, M, SV, PV, R>
+): Engine<State, Config, Ev, M, SV, PV, R> => ( {
 	initialize: ( payload ) => initialize( structure, payload ),
 	getState: ( playerInfo ) => getState( structure, playerInfo ),
 	join: ( playerInfo ) => join( structure, playerInfo ),
@@ -670,6 +712,8 @@ export const makeEngine = <
 		input,
 		playerInfo.id
 	),
+	undo: ( playerInfo ) => undo( structure, playerInfo.id ),
+	redo: ( playerInfo ) => redo( structure, playerInfo.id ),
 	runBotTurn: () => runBotTurn( structure ),
 	cleanup: () => cleanup()
 } );

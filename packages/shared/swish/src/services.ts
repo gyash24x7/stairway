@@ -75,4 +75,33 @@ export class Ids extends Context.Service<Ids, {
 	readonly code: Effect.Effect<GameCode>;
 	readonly avatar: Effect.Effect<string>;
 	readonly botIdentity: Effect.Effect<BotIdentity>;
+	/** A unique id for one command's commit in the event log. */
+	readonly commitId: Effect.Effect<string>;
 }>()( "swish/Ids" ) {}
+
+/** The persisted shape of the event log: a genesis snapshot + ordered commits. */
+export interface EventLog {
+	/** Encoded genesis `PersistedGameData` — the base of every replay. */
+	readonly base: unknown;
+	/** Encoded commits, append order. `commits.slice(0, cursor + 1)` is applied. */
+	readonly commits: ReadonlyArray<unknown>;
+	/** Index of the last applied commit; `-1` means only the genesis. */
+	readonly cursor: number;
+}
+
+/**
+ * The append-only event log — the write model / history that makes a game
+ * replayable and undoable. Game-agnostic: it stores schema-*encoded* commits
+ * (plain JSON); the engine owns encode/decode. Backed by durable storage on the
+ * host; an in-memory layer backs tests.
+ */
+export class EventStore extends Context.Service<EventStore, {
+	/** Record the genesis snapshot (once, at `initialize`). Resets the log. */
+	readonly setBase: ( encoded: unknown ) => Effect.Effect<void>;
+	/** Append a commit: drop any redo tail after the cursor, push, advance cursor. */
+	readonly append: ( commit: unknown ) => Effect.Effect<void>;
+	/** Move the cursor by ±1 (undo/redo); returns the moved-over commit, or None. */
+	readonly moveCursor: ( delta: 1 | -1 ) => Effect.Effect<Option.Option<unknown>>;
+	/** The full log state (for replay/refold). */
+	readonly read: Effect.Effect<EventLog>;
+}>()( "swish/EventStore" ) {}

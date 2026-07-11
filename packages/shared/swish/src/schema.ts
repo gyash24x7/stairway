@@ -31,19 +31,21 @@ export type GameStatus = typeof GameStatus.Type;
 
 // --- Core structs ----------------------------------------------------------
 
-export class PlayerInfo extends Schema.TaggedClass<PlayerInfo>()( "swish/PlayerInfo", {
+export const PlayerInfo = Schema.TaggedStruct( "swish/PlayerInfo", {
 	id: PlayerId,
 	name: Schema.String,
 	avatar: Schema.String,
 	isBot: Schema.optional( Schema.Boolean )
-} ) {}
+} );
+export type PlayerInfo = typeof PlayerInfo.Type;
 
-export class GameContext extends Schema.TaggedClass<GameContext>()( "swish/GameContext", {
+export const GameContext = Schema.TaggedStruct( "swish/GameContext", {
 	turn: Schema.Number,
 	players: Schema.Array( PlayerId ),
 	currentPlayer: PlayerId,
 	phase: Schema.optional( Schema.String )
-} ) {}
+} );
+export type GameContext = typeof GameContext.Type;
 
 /** Map of playerId -> PlayerInfo, the roster the engine tracks. */
 export const Players = Schema.Record( PlayerId, PlayerInfo );
@@ -69,7 +71,7 @@ export const PersistedGameData = <State extends Schema.Top, Config extends Schem
 	state: State,
 	config: Config
 ) =>
-	Schema.Struct( {
+	Schema.TaggedStruct( "swish/PersistedGameData", {
 		version: Schema.Number,
 		id: GameId,
 		code: GameCode,
@@ -80,7 +82,11 @@ export const PersistedGameData = <State extends Schema.Top, Config extends Schem
 		state
 	} );
 
+// The DECODED record (the schema factory's `.Type`), parameterised by the
+// game's decoded `State`/`Config`. The engine operates on this; `stateSchema`
+// / `configSchema` encode/decode it.
 export type PersistedGameData<State, Config> = {
+	readonly _tag: "swish/PersistedGameData";
 	readonly version: number;
 	readonly id: GameId;
 	readonly code: GameCode;
@@ -96,7 +102,7 @@ export const GameSnapshot = <Shared extends Schema.Top, Player extends Schema.To
 	sharedView: Shared,
 	playerView: Player
 ) =>
-	Schema.Struct( {
+	Schema.TaggedStruct( "swish/GameSnapshot", {
 		id: GameId,
 		code: GameCode,
 		status: GameStatus,
@@ -107,6 +113,7 @@ export const GameSnapshot = <Shared extends Schema.Top, Player extends Schema.To
 	} );
 
 export type GameSnapshot<Shared, Player> = {
+	readonly _tag: "swish/GameSnapshot";
 	readonly id: GameId;
 	readonly code: GameCode;
 	readonly status: GameStatus;
@@ -121,7 +128,7 @@ export const CompletedGameData = <Shared extends Schema.Top, Player extends Sche
 	sharedView: Shared,
 	playerView: Player
 ) =>
-	Schema.Struct( {
+	Schema.TaggedStruct( "swish/CompletedGameData", {
 		id: GameId,
 		code: GameCode,
 		status: GameStatus,

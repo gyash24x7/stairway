@@ -69,6 +69,18 @@ export class CorruptState extends Schema.TaggedErrorClass<CorruptState>()(
 	{ id: GameId, reason: Schema.String }
 ) {}
 
+/** `undo` was called but the cursor is already at the genesis snapshot. */
+export class NothingToUndo extends Schema.TaggedErrorClass<NothingToUndo>()(
+	"swish/NothingToUndo",
+	{}
+) {}
+
+/** `redo` was called but the cursor is already at the newest commit. */
+export class NothingToRedo extends Schema.TaggedErrorClass<NothingToRedo>()(
+	"swish/NothingToRedo",
+	{}
+) {}
+
 /** Union of the errors a `submitMove` can surface to the client. */
 export const MoveError = Schema.Union( [
 	InvalidMove,

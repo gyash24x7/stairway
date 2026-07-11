@@ -14,6 +14,8 @@ import {
 	GameFull,
 	GameNotFound,
 	MoveError,
+	NothingToRedo,
+	NothingToUndo,
 	PhaseNotFound
 } from "./errors";
 import { GameCode, GameId, GameSnapshot, PlayerInfo } from "./schema";
@@ -68,5 +70,25 @@ export class EngineRpc {
 			success: Schema.Void,
 			payload: { playerInfo: PlayerInfo, input },
 			error: MoveError
+		} );
+
+	public static makeUndo = <SV extends Schema.Top, PV extends Schema.Top>(
+		shared: SV,
+		player: PV
+	) =>
+		Rpc.make( "undo", {
+			success: GameSnapshot( shared, player ),
+			payload: PlayerInfo,
+			error: Schema.Union( [ NothingToUndo, GameNotFound, CorruptState ] )
+		} );
+
+	public static makeRedo = <SV extends Schema.Top, PV extends Schema.Top>(
+		shared: SV,
+		player: PV
+	) =>
+		Rpc.make( "redo", {
+			success: GameSnapshot( shared, player ),
+			payload: PlayerInfo,
+			error: Schema.Union( [ NothingToRedo, GameNotFound, CorruptState ] )
 		} );
 }
