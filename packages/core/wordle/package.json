@@ -8,7 +8,9 @@
 		"./utils": "./src/utils.ts",
 		"./dictionary": "./src/dictionary.ts",
 		"./engine": "./src/engine.ts",
-		"./router": "./src/router.ts"
+		"./router": "./src/router.ts",
+		"./swish": "./src/swish.ts",
+		"./http": "./src/http.ts"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"
@@ -19,7 +21,9 @@
 		"@s2h/db": "workspace:*",
 		"@s2h/engine": "workspace:*",
 		"@s2h/utils": "workspace:*",
-		"valibot": "catalog:"
+		"valibot": "catalog:",
+		"@s2h/swish": "workspace:*",
+		"effect": "catalog:"
 	},
 	"devDependencies": {
 		"typescript": "catalog:"

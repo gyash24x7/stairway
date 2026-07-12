@@ -462,9 +462,15 @@ importers:
       '@s2h/engine':
         specifier: workspace:*
         version: link:../../shared/engine
+      '@s2h/swish':
+        specifier: workspace:*
+        version: link:../../shared/swish
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../shared/utils
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@6.0.3)
@@ -487,9 +493,15 @@ importers:
       '@s2h/engine':
         specifier: workspace:*
         version: link:../../shared/engine
+      '@s2h/swish':
+        specifier: workspace:*
+        version: link:../../shared/swish
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../shared/utils
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@6.0.3)
@@ -512,9 +524,15 @@ importers:
       '@s2h/engine':
         specifier: workspace:*
         version: link:../../shared/engine
+      '@s2h/swish':
+        specifier: workspace:*
+        version: link:../../shared/swish
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../shared/utils
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@6.0.3)
@@ -537,9 +555,15 @@ importers:
       '@s2h/engine':
         specifier: workspace:*
         version: link:../../shared/engine
+      '@s2h/swish':
+        specifier: workspace:*
+        version: link:../../shared/swish
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../shared/utils
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@6.0.3)
@@ -562,9 +586,15 @@ importers:
       '@s2h/engine':
         specifier: workspace:*
         version: link:../../shared/engine
+      '@s2h/swish':
+        specifier: workspace:*
+        version: link:../../shared/swish
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../shared/utils
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@6.0.3)
@@ -587,9 +617,15 @@ importers:
       '@s2h/engine':
         specifier: workspace:*
         version: link:../../shared/engine
+      '@s2h/swish':
+        specifier: workspace:*
+        version: link:../../shared/swish
       '@s2h/utils':
         specifier: workspace:*
         version: link:../../shared/utils
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@6.0.3)
