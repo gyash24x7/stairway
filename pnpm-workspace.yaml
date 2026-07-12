@@ -4,6 +4,7 @@ packages:
   - games/*/*
 
 catalog:
+  alchemy: 2.0.0-beta.61
   "@base-ui/react": 1.6.0
   "@cloudflare/vite-plugin": 1.43.1
   "@orpc/client": 1.14.7

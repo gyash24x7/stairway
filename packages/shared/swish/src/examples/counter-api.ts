@@ -56,11 +56,13 @@ export class CounterEngine extends Context.Service<CounterEngine, {
 	readonly join: (
 		gameId: GameId,
 		playerInfo: PlayerInfo
-	) => Effect.Effect<void, GameFull | GameNotFound | CorruptState>;
-	readonly addBots: ( gameId: GameId ) => Effect.Effect<void, GameFull | GameNotFound | CorruptState>;
+	) => Effect.Effect<void, GameFull | AlreadyJoined | GameNotFound | CorruptState>;
+	readonly addBots: (
+		gameId: GameId
+	) => Effect.Effect<void, GameFull | AlreadyJoined | GameNotFound | CorruptState>;
 	readonly start: (
 		gameId: GameId
-	) => Effect.Effect<void, CannotStart | GameNotFound | CorruptState | PhaseNotFound>;
+	) => Effect.Effect<void, CannotStart | AlreadyJoined | GameNotFound | CorruptState | PhaseNotFound>;
 	readonly increment: (
 		gameId: GameId,
 		playerInfo: PlayerInfo,
