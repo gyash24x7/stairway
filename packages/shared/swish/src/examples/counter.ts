@@ -15,22 +15,24 @@ import { EngineRpc } from "../rpc";
 import { PlayerId } from "../schema";
 import { defineGame } from "../structure";
 
-const CounterConfig = Schema.Struct( {
+// Exported so the HttpApi surface in `./counter-api` can reuse the exact same
+// schemas (config, views, move inputs) the engine is built from.
+export const CounterConfig = Schema.Struct( {
 	playerCount: Schema.Number,
 	autoStart: Schema.optional( Schema.Boolean ),
 	target: Schema.Number
 } );
 
-const CounterState = Schema.Struct( {
+export const CounterState = Schema.Struct( {
 	count: Schema.Number,
 	target: Schema.Number
 } );
 
-const CounterShared = CounterState;
-const CounterPlayer = Schema.Struct( { playerId: PlayerId } );
+export const CounterShared = CounterState;
+export const CounterPlayer = Schema.Struct( { playerId: PlayerId } );
 
-const IncrementInput = Schema.Struct( {} );
-const AddInput = Schema.Struct( { amount: Schema.Number } );
+export const IncrementInput = Schema.Struct( {} );
+export const AddInput = Schema.Struct( { amount: Schema.Number } );
 
 // --- Domain events + reducer ------------------------------------------------
 
@@ -49,7 +51,9 @@ const apply = ( state: CounterState, event: CounterEvent ): CounterState =>
 		Match.exhaustive
 	);
 
-const counter = makeEngine(
+// Exported so the host adapter (a Durable Object) can provide the concrete
+// `CounterEngine` service by driving this engine over the host service layers.
+export const counter = makeEngine(
 	defineGame( {
 		name: "counter",
 		stateSchema: CounterState,

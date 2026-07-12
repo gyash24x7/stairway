@@ -17,6 +17,7 @@
 		"@simplewebauthn/server": "catalog:",
 		"cookie": "catalog:",
 		"drizzle-orm": "catalog:",
+		"effect": "catalog:",
 		"valibot": "catalog:"
 	},
 	"devDependencies": {

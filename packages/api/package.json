@@ -6,7 +6,9 @@
 	"exports": {
 		".": "./src/orpc.ts",
 		"./middleware": "./src/middleware.ts",
-		"./helpers": "./src/helpers.ts"
+		"./helpers": "./src/helpers.ts",
+		"./context": "./src/context.ts",
+		"./errors": "./src/errors.ts"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"
@@ -16,7 +18,8 @@
 		"@s2h/db": "workspace:*",
 		"@s2h/engine": "workspace:*",
 		"@s2h/utils": "workspace:*",
-		"drizzle-orm": "catalog:"
+		"drizzle-orm": "catalog:",
+		"effect": "catalog:"
 	},
 	"devDependencies": {
 		"typescript": "catalog:"

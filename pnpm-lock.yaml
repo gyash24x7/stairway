@@ -354,6 +354,9 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
     devDependencies:
       typescript:
         specifier: 'catalog:'
@@ -422,6 +425,9 @@ importers:
       drizzle-orm:
         specifier: 'catalog:'
         version: 0.45.2
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.97
       valibot:
         specifier: 'catalog:'
         version: 1.4.2(typescript@6.0.3)
