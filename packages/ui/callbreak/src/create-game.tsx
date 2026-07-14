@@ -1,21 +1,26 @@
-"use client";
-
-import { client } from "@s2h/client";
+import { PLAYER_COUNT } from "@s2h/callbreak/utils";
 import { RCardSuit } from "@s2h/ui/components/card";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { CARD_SUITS, type CardSuit } from "@s2h/utils/cards";
 import { useState } from "react";
+import { createCallbreakGameFn } from "./client";
 
 export function CallbreakCreateGame() {
 	const [ trumpSuit, setTrumpSuit ] = useState<CardSuit>();
 	const [ dealCount, setDealCount ] = useState<5 | 9 | 13>();
 
-	const createCallbreakGame = async () => {
-		if ( !!dealCount && !!trumpSuit ) {
-			return client.callbreak.createGame( { dealCount, trumpSuit } );
+	const createCallbreakGame = async (): Promise<string> => {
+		if ( !dealCount || !trumpSuit ) {
+			return "";
 		}
-		return "";
+		const { id } = await createCallbreakGameFn( {
+			playerCount: PLAYER_COUNT,
+			autoStart: false,
+			dealCount,
+			trumpSuit
+		} );
+		return id;
 	};
 
 	return (

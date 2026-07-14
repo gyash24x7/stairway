@@ -1,40 +1,72 @@
-import { GAME_NAME } from "./utils";
-import { AbstractGameEngine } from "@s2h/engine";
-import type { PlayerId } from "@s2h/engine/types";
-import { roundRobin } from "@s2h/engine/utils";
+// @s2h/wordle/swish — Wordle as an event-sourced swish game.
+//
+// The swish port of ./engine.ts (the old `AbstractGameEngine` DO). Same rules,
+// re-expressed under event sourcing: the `guess` move EMITS a domain event
+// carrying the computed per-word results, and a pure `apply` reducer folds it
+// onto `state` (the only place state changes). Random target selection happens
+// once in `setup` and its result becomes the genesis state (deterministic on
+// replay). The dictionary is reused as-is for validation.
+
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
+import { EngineRpc } from "@s2h/swish/rpc";
+import { BasePlayerView } from "@s2h/swish/schema";
+import { defineGame } from "@s2h/swish/structure";
+import * as Effect from "effect/Effect";
+import * as RpcGroup from "effect/unstable/rpc/RpcGroup";
 import { dictionaries } from "./dictionary";
-import type {
-	GuessResult,
-	GuessResults,
+import {
+	GuessedEvent,
+	GuessInput,
+	GuessRow,
+	VictoryDecidedEvent,
 	WordleConfig,
-	WordleData,
-	WordleMoves,
-	WordlePlayerView,
-	WordleSharedView
-} from "./types";
-
-/**
- * Durable Object game engine for Wordle, a single-player word guessing game.
- * Supports configurable word count, word length, and uses a two-pass algorithm
- * for marking correct, present, and absent letters.
- */
-export class WordleEngine extends AbstractGameEngine<
-	WordleData,
-	WordleMoves,
-	WordleConfig,
+	WordleEvent,
 	WordleSharedView,
-	WordlePlayerView
-> {
+	WordleSnapshot,
+	WordleState
+} from "./schema";
+import { allWordsGuessed, apply, computeRow } from "./utils";
 
-	public static readonly NAME = GAME_NAME;
+// --- Engine ----------------------------------------------------------------
 
-	protected override readonly structure = this.defineStructure( {
-		name: WordleEngine.NAME,
-		resolveNextPlayer: roundRobin,
+export const wordle = makeEngine(
+	defineGame( {
+		name: "wordle",
+		stateSchema: WordleState,
+		configSchema: WordleConfig,
+		sharedViewSchema: WordleSharedView,
+		playerViewSchema: BasePlayerView,
+		eventSchema: WordleEvent,
+		apply,
 
-		sharedView: ( { state, config } ) => {
-			const emptyRow = Array( config.wordLength )
-				.fill( { letter: "", status: "absent" as const } );
+		setup: ( config ) => Effect.sync( () => {
+			const wordLength = config.wordLength;
+			const dictionary = dictionaries[ wordLength ];
+			const maxGuesses = config.wordCount + config.wordLength;
+			const selected = new Set<string>();
+			while ( selected.size < config.wordCount ) {
+				selected.add( dictionary[ Math.floor( Math.random() * dictionary.length ) ]! );
+			}
+			const words = [ ...selected ];
+			const guessResults = words.reduce(
+				( acc, word ) => {
+					acc[ word ] = [];
+					return acc;
+				},
+				{} as Record<string, ReadonlyArray<typeof GuessRow.Type>>
+			);
+			return { words, guesses: [], guessResults, maxGuesses };
+		} ),
+
+		endIf: ( { state } ) =>
+			Effect.succeed( allWordsGuessed( state ) || state.guesses.length === state.maxGuesses ),
+
+		sharedView: ( { state, config } ) => Effect.sync( () => {
+			const emptyRow: typeof GuessRow.Type = Array.from(
+				{ length: config.wordLength },
+				() => ( { letter: "", status: "absent" as const } )
+			);
 
 			return {
 				guesses: state.guesses,
@@ -43,143 +75,77 @@ export class WordleEngine extends AbstractGameEngine<
 				guessResults: state.words.map( ( word ) => {
 					const results = state.guessResults[ word ] ?? [];
 					const solvedAt = results.findIndex(
-						row => row.every( r => r.status === "correct" )
+						( row ) => row.every( ( r ) => r.status === "correct" )
 					);
 					const truncated = solvedAt !== -1 ? results.slice( 0, solvedAt + 1 ) : results;
 					return [
 						...truncated,
-						...Array( state.maxGuesses - truncated.length ).fill( emptyRow )
+						...Array.from( { length: state.maxGuesses - truncated.length }, () => emptyRow )
 					];
 				} )
 			};
-		},
+		} ),
 
-		playerView: ( _data, playerId ) => ( { playerId } ),
+		playerView: ( _data, playerId ) => Effect.succeed( { playerId } ),
+		resolveNextPlayer: ( _data, playerId ) => Effect.succeed( playerId ),
 
-		setup: ( { wordCount, wordLength } ) => {
-			const dictionary = dictionaries[ wordLength ];
-			const maxGuesses = wordCount + wordLength;
-			const selected = new Set<string>();
-
-			while ( selected.size < wordCount ) {
-				selected.add( dictionary[ Math.floor( Math.random() * dictionary.length ) ] );
-			}
-
-			const words = [ ...selected ];
-			const guessResults = words.reduce( ( acc, word ) => {
-				acc[ word ] = [];
-				return acc;
-			}, {} as GuessResults );
-
-			return { words, guesses: [] as string[], guessResults, maxGuesses };
+		hooks: {
+			onEnd: ( { state } ) =>
+				Effect.succeed( [
+					VictoryDecidedEvent.make( { victory: allWordsGuessed( state ) } )
+				] )
 		},
 
 		moves: {
 			guess: {
+				input: GuessInput,
 				validate: ( { state, config }, _playerId, { guess } ) => {
 					if ( state.guesses.length >= state.maxGuesses ) {
-						throw new Error( "No more guesses left" );
+						return Effect.fail( new InvalidMove( {
+							move: "guess",
+							reason: "No more guesses left"
+						} ) );
 					}
-
 					const dictionary = dictionaries[ config.wordLength ];
 					if ( !dictionary.includes( guess ) ) {
-						throw new Error( "The guess is not a valid word" );
+						return Effect.fail(
+							new InvalidMove( { move: "guess", reason: "The guess is not a valid word" } )
+						);
 					}
+					return Effect.void;
 				},
-				execute: ( { state }, _playerId, { guess } ) => {
-					state.guesses.push( guess );
-
-					for ( const word of state.words ) {
-						const results: GuessResult[] = Array( word.length )
-							.fill( null )
-							.map( ( _, i ) => ( {
-								letter: guess[ i ],
-								status: "absent" as const
-							} ) );
-
-						const remaining: Record<string, number> = {};
-						for ( const ch of word ) {
-							remaining[ ch ] = ( remaining[ ch ] ?? 0 ) + 1;
-						}
-
-						// Pass 1: mark correct matches
-						for ( let i = 0; i < word.length; i++ ) {
-							if ( guess[ i ] === word[ i ] ) {
-								results[ i ].status = "correct";
-								remaining[ guess[ i ] ]--;
-							}
-						}
-
-						// Pass 2: mark present letters from remaining pool
-						for ( let i = 0; i < word.length; i++ ) {
-							if ( results[ i ].status !==
-								"correct" &&
-								( remaining[ guess[ i ] ] ?? 0 ) >
-								0 ) {
-								results[ i ].status = "present";
-								remaining[ guess[ i ] ]--;
-							}
-						}
-
-						state.guessResults[ word ].push( results );
-					}
-
-					return state;
-				}
-			}
-		},
-
-		endIf: ( { state } ) => {
-			const allWordsGuessed = state.words.every(
-				( word: string ) => state.guesses.includes( word )
-			);
-
-			return allWordsGuessed || state.guesses.length === state.maxGuesses;
-		},
-
-		hooks: {
-			onEnd: ( { state } ) => {
-				const allWordsGuessed = state.words.every(
-					( word: string ) => state.guesses.includes( word )
-				);
-
-				if ( allWordsGuessed ) {
-					state.victory = true;
-					return state;
-				}
-
-				if ( state.guesses.length === state.maxGuesses ) {
-					state.victory = false;
-					return state;
-				}
-
-				return state;
+				execute: ( { state }, _playerId, { guess } ) =>
+					Effect.succeed( [
+						GuessedEvent.make( {
+							guess,
+							rows: state.words.map( ( word ) => computeRow( guess, word ) )
+						} )
+					] )
 			}
 		}
+	} )
+);
+
+// --- RPC surface -----------------------------------------------------------
+
+export class WordleRpcs extends RpcGroup.make(
+	EngineRpc.makeInitialize( WordleConfig ),
+	EngineRpc.makeGetState( WordleSnapshot ),
+	EngineRpc.makeJoin(),
+	EngineRpc.makeAddBots(),
+	EngineRpc.makeStart(),
+	EngineRpc.makeForMove( "guess", GuessInput ),
+	EngineRpc.makeUndo( WordleSnapshot ),
+	EngineRpc.makeRedo( WordleSnapshot )
+) {
+	public static layer = WordleRpcs.toLayer( {
+		initialize: wordle.initialize,
+		getState: wordle.getState,
+		join: wordle.join,
+		addBots: wordle.addBots,
+		start: wordle.start,
+		undo: wordle.undo,
+		redo: wordle.redo,
+		guess: ( { playerInfo, input } ) => wordle.submitMove( "guess", playerInfo, input )
 	} );
-
-	/**
-	 * Get the words of a wordle game after the game is completed.
-	 * @param playerId - Player requesting the words
-	 */
-	public async getWords( playerId: PlayerId ) {
-		this.logger.debug( ">> getWords()" );
-
-		const { state, status, context } = this.getGameData();
-
-		if ( !context.players.includes( playerId ) ) {
-			this.logger.error( "Player not part of game!" );
-			this.logger.debug( "<< getWords()" );
-			return { words: [] };
-		}
-
-		if ( status !== "COMPLETED" ) {
-			this.logger.error( "Game not completed!" );
-			this.logger.debug( "<< getWords()" );
-			return { words: [] };
-		}
-
-		this.logger.debug( "<< getWords()" );
-		return { words: state.words };
-	}
 }

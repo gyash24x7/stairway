@@ -1,11 +1,11 @@
-import { client } from "@s2h/client";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { Button } from "@s2h/ui/primitives/button";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { cn } from "@s2h/ui/utils/cn";
-import type { WordLength } from "@s2h/wordle/types";
+import type { WordLength } from "@s2h/wordle/schema";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
+import { createWordleGameFn } from "./client";
 
 export function WordleCreateGame() {
 	const [ wordLength, setWordLength ] = useState<WordLength>( 5 );
@@ -14,8 +14,15 @@ export function WordleCreateGame() {
 	const increment = () => setWordCount( wordCount + 1 );
 	const decrement = () => setWordCount( wordCount - 1 );
 
-	const createWordleGame = async () => {
-		return client.wordle.createGame( { wordLength, wordCount } );
+	// Wordle is effectively single-player: one seat, auto-started on create.
+	const createWordleGame = async (): Promise<string> => {
+		const { id } = await createWordleGameFn( {
+			playerCount: 1,
+			autoStart: true,
+			wordCount,
+			wordLength
+		} );
+		return id;
 	};
 
 	return (

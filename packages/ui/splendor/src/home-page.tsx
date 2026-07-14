@@ -1,12 +1,17 @@
-import { client } from "@s2h/client";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import type { JoinGameInput } from "@s2h/engine/types";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
+import { joinSplendorGameFn, toPlayerInfo } from "./client";
 import { SplendorCreateGame as CreateGame } from "./create-game";
 
 export function SplendorHomePage( props: { isLoggedIn?: boolean } ) {
-	const joinGame = ( input: JoinGameInput ) => client.splendor.joinGame( input );
+	const { authInfo } = useAuth();
+	const joinGame = async ( input: JoinGameInput ): Promise<string> => {
+		const { id } = await joinSplendorGameFn( input.code, toPlayerInfo( authInfo! ) );
+		return id;
+	};
 	return (
 		<div
 			className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>

@@ -11,5 +11,6 @@
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
 		"noEmit": true
-	}
+	},
+	"include": [ "alchemy.run.ts" ]
 }

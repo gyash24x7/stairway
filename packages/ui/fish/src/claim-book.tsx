@@ -1,8 +1,7 @@
 "use client";
 
-import { orpc } from "@s2h/client/query";
-import type { PlayerId } from "@s2h/engine/types";
-import type { Book } from "@s2h/fish/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { Book } from "@s2h/fish/schema";
 import {
 	getBookDisplayString,
 	getBooksInHand,
@@ -21,6 +20,7 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@s2h/ui/primitives/drawer";
+import type { PlayerId } from "@s2h/swish/schema";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { type CardId } from "@s2h/utils/cards";
@@ -28,10 +28,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowBigRightDashIcon } from "lucide-react";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
+import { claimBookFn, toPlayerInfo } from "./client";
 import { useFish } from "./context";
 
 export function ClaimBook() {
 	const { shared, player } = useFish();
+	const { authInfo } = useAuth();
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );
@@ -89,24 +91,25 @@ export function ClaimBook() {
 
 	const queryClient = useQueryClient();
 
-	const claimBook = useMutation( orpc.fish.claimBook.mutationOptions( {
+	const claimBook = useMutation( {
+		mutationFn: ( claimInput: Record<string, PlayerId> ) =>
+			claimBookFn( shared.id, toPlayerInfo( authInfo! ), { claim: claimInput } ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+			queryKey: [ "fish", "getState", shared.id ]
 		} )
-	} ) );
+	} );
 
 	const handleClick = async () => {
-		if ( selectedBook && allAssigned ) {
-			await claimBook.mutateAsync( {
-				gameId: shared.id,
-				claim: claim.entries().reduce(
+		if ( selectedBook && allAssigned && authInfo ) {
+			await claimBook.mutateAsync(
+				claim.entries().reduce(
 					( acc, [ cardId, playerId ] ) => {
 						acc[ cardId ] = playerId;
 						return acc;
 					},
-					{} as Record<CardId, PlayerId>
+					{} as Record<string, PlayerId>
 				)
-			} );
+			);
 
 			closeDrawer();
 		}

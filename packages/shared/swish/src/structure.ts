@@ -9,7 +9,8 @@
 // lives in the deciders and is captured in the emitted events, so replay is
 // deterministic — `apply` must stay pure.
 
-import type { Effect, Schema } from "effect";
+import type * as Effect from "effect/Effect";
+import type * as Schema from "effect/Schema";
 import type { InvalidMove } from "./errors";
 import type { BaseGameConfig, GameContext, PlayerId } from "./schema";
 

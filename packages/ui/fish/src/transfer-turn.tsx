@@ -1,7 +1,8 @@
 "use client";
 
-import { orpc } from "@s2h/client/query";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { getTeammates } from "@s2h/fish/utils";
+import type { PlayerId } from "@s2h/swish/schema";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -16,12 +17,14 @@ import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toPlayerInfo, transferTurnFn } from "./client";
 import { useFish } from "./context";
 
 export function TransferTurn() {
 	const { shared, player } = useFish();
+	const { authInfo } = useAuth();
 
-	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
+	const [ selectedPlayer, setSelectedPlayer ] = useState<PlayerId>();
 	const [ open, setOpen ] = useState( false );
 
 	const teammatesWithCards = getTeammates( shared.state.teams, player.playerId )
@@ -35,15 +38,17 @@ export function TransferTurn() {
 
 	const queryClient = useQueryClient();
 
-	const transferTurn = useMutation( orpc.fish.transferTurn.mutationOptions( {
+	const transferTurn = useMutation( {
+		mutationFn: ( transferTo: PlayerId ) =>
+			transferTurnFn( shared.id, toPlayerInfo( authInfo! ), { transferTo } ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+			queryKey: [ "fish", "getState", shared.id ]
 		} )
-	} ) );
+	} );
 
 	const handleClick = async () => {
-		if ( selectedPlayer ) {
-			await transferTurn.mutateAsync( { gameId: shared.id, transferTo: selectedPlayer } );
+		if ( selectedPlayer && authInfo ) {
+			await transferTurn.mutateAsync( selectedPlayer );
 			closeDrawer();
 		}
 	};

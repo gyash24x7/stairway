@@ -1,13 +1,14 @@
-import type { BasePlayerInfo, PlayerId } from "@s2h/engine/types";
-import type { DominoId, DraftEntry } from "@s2h/kingdomino/types";
+import type { DraftEntry } from "@s2h/kingdomino/schema";
+import type { DominoId } from "@s2h/kingdomino/utils";
+import type { Players } from "@s2h/swish/schema";
 import { cn } from "@s2h/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { RDomino } from "./domino";
 
 export type RDraftProps = {
-	draft: DraftEntry[];
+	draft: readonly DraftEntry[];
 	active?: boolean;
-	players: Record<PlayerId, BasePlayerInfo>;
+	players: Players;
 	onSelect?: ( dominoId: DominoId ) => void;
 }
 

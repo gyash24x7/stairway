@@ -1,13 +1,7 @@
-import type {
-	Book,
-	FishBotView,
-	FishConfig,
-	TeammateSignal,
-	WeightedAsk,
-	WeightedBook,
-	WeightedClaim,
-	WeightedTransfer
-} from "./types";
+import { PlayerId } from "@s2h/swish/schema";
+import type { CardId } from "@s2h/utils/cards";
+import { createLogger } from "@s2h/utils/logger";
+import type { Book, FishBotView, FishConfig } from "./schema";
 import {
 	getBookForCard,
 	getBooksInHand,
@@ -15,9 +9,43 @@ import {
 	getMissingCards,
 	getTeammates
 } from "./utils";
-import type { PlayerId } from "@s2h/engine/types";
-import type { CardId } from "@s2h/utils/cards";
-import { createLogger } from "@s2h/utils/logger";
+
+/** A book with a calculated priority weight for bot decision-making. */
+type WeightedBook = {
+	book: Book;
+	weight: number;
+	isBookWithTeam: boolean;
+	isClaimable: boolean;
+	isKnown: boolean;
+};
+
+/** An ask proposal with a calculated priority weight for bot decision-making. */
+type WeightedAsk = {
+	cardId: CardId;
+	playerId: PlayerId;
+	weight: number;
+};
+
+/** A claim proposal with a calculated confidence weight for bot decision-making. */
+type WeightedClaim = {
+	book: Book;
+	claim: Partial<Record<CardId, PlayerId>>;
+	weight: number;
+};
+
+/** A transfer target with a calculated weight for bot decision-making. */
+type WeightedTransfer = {
+	weight: number;
+	transferTo: PlayerId;
+};
+
+/** A detected signal pattern suggesting a teammate likely holds a specific card. */
+type TeammateSignal = {
+	cardId: CardId;
+	likelyHolder: PlayerId;
+	book: Book;
+	confidence: number;
+};
 
 const MAX_WEIGHT = 720;
 const SIGNAL_WINDOW = 30;
@@ -478,7 +506,7 @@ export function suggestTransfers( state: FishBotView, config: FishConfig ) {
 	}
 
 	const transfers: WeightedTransfer[] = Object.entries( weightedTransfers )
-		.map( ( [ transferTo, weight ] ) => ( { transferTo, weight } ) )
+		.map( ( [ transferTo, weight ] ) => ( { transferTo: transferTo as PlayerId, weight } ) )
 		.toSorted( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 );
 
 	logger.debug( "<< suggestTransfers()" );

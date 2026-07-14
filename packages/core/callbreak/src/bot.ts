@@ -1,4 +1,4 @@
-import type { CallbreakBotView, CallbreakConfig, Trick } from "./types";
+import type { CallbreakBotView, CallbreakConfig, Trick } from "./schema";
 import { getCardValue, getPlayableCards } from "./utils";
 import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@s2h/utils/cards";
 
@@ -79,7 +79,8 @@ function getSuitCards( hand: CardId[], suit: string ) {
 export function botDeclare( state: CallbreakBotView, config: CallbreakConfig ) {
 	let score = 0;
 
-	const trumpCards = getSuitCards( state.hand, config.trumpSuit );
+	const hand = [ ...state.hand ];
+	const trumpCards = getSuitCards( hand, config.trumpSuit );
 	const suits = [ "C", "S", "H", "D" ].filter( s => s !== config.trumpSuit );
 
 	// High trumps are near-guaranteed wins
@@ -94,7 +95,7 @@ export function botDeclare( state: CallbreakBotView, config: CallbreakConfig ) {
 
 	// Non-trump aces
 	for ( const suit of suits ) {
-		const suitCards = getSuitCards( state.hand, suit );
+		const suitCards = getSuitCards( hand, suit );
 		if ( suitCards.length === 0 ) {
 			// Void suit with trumps means we can trump in
 			if ( trumpCards.length > 0 ) {
@@ -126,8 +127,8 @@ export function botDeclare( state: CallbreakBotView, config: CallbreakConfig ) {
  */
 export function botPlayCard( state: CallbreakBotView, config: CallbreakConfig ) {
 	const activeDeal = state.activeDeal!;
-	const activeTrick = activeDeal.tricks[ 0 ];
-	const playable = getPlayableCards( state.hand, config.trumpSuit, activeTrick );
+	const activeTrick = activeDeal.tricks[ 0 ]!;
+	const playable = getPlayableCards( [ ...state.hand ], config.trumpSuit, activeTrick );
 
 	if ( playable.length === 1 ) {
 		return playable[ 0 ];

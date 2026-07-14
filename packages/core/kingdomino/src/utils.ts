@@ -1,22 +1,83 @@
+import * as Match from "effect/Match";
+import { PlayerId } from "@s2h/swish/schema";
 import type {
-	Board,
-	BoardSize,
-	Bounds,
-	Castle,
-	Coord,
-	Domino,
-	DominoId,
-	DraftEntry,
-	KingdominoData,
-	Placement,
-	Region,
-	Rotation,
-	ScoreBreakdown,
-	Terrain,
-	Tile,
-	Tiles
-} from "./types";
-import type { PlayerId } from "@s2h/engine/types";
+	Domino as DominoSchema,
+	KingdominoEvent,
+	KingdominoState,
+	PlayerData as PlayerDataSchema,
+	Placement as PlacementSchema,
+	Board as BoardSchema,
+	ScoreBreakdown as ScoreBreakdownSchema
+} from "./schema";
+
+// --- Pure structural (mutable) board types ---------------------------------
+// The board helpers below mutate local copies (`push`/`splice`/`sort`), so they
+// speak plain mutable TS shapes. These are structurally identical to the schema
+// `.Type`s (which are readonly); the engine casts across the boundary.
+
+/** The castle color assigned to each player. */
+export type Castle = "red" | "blue" | "yellow" | "green";
+
+/** The terrain types available for tiles on the board. */
+export type Terrain =
+	| "castle"
+	| "desert"
+	| "forest"
+	| "water"
+	| "grassland"
+	| "wasteland"
+	| "mine";
+
+/** A single tile with a terrain type and crown count. */
+export type Tile = { terrain: Terrain; crowns: number; };
+
+/** Numeric identifier for a domino (1-48). */
+export type DominoId = number;
+
+/** A domino piece with two tiles (left and right). */
+export type Domino = { id: DominoId; left: Tile; right: Tile; };
+
+/** A coordinate on the board grid. */
+export type Coord = { x: number; y: number; };
+
+/** Board size: 5x5 for standard play or 7x7 for extended. */
+export type BoardSize = 5 | 7;
+
+/** Rotation of a domino: 0=right, 90=down, 180=left, 270=up. */
+export type Rotation = 0 | 90 | 180 | 270;
+
+/** Map of coordinate keys to tiles placed on the board. */
+export type Tiles = Record<string, Tile>;
+
+/** A domino placement specifying which domino, where, and at what rotation. */
+export type Placement = { dominoId: DominoId; coord: Coord; rotation: Rotation; };
+
+/** Rectangular bounding box defined by min/max coordinates. */
+export type Bounds = { minX: number; maxX: number; minY: number; maxY: number };
+
+/** A player's board containing placed tiles, castle, and board size. */
+export type Board = {
+	size: BoardSize;
+	castle: Castle;
+	placements: Placement[];
+	tiles: Tiles;
+};
+
+/** A connected region of same-terrain tiles with its score calculation. */
+export type Region = {
+	id: string;
+	terrain: Terrain;
+	tiles: number;
+	placement: Coord[];
+	crowns: number;
+	points: number;
+};
+
+/** Score breakdown showing all regions and total points. */
+export type ScoreBreakdown = { regions: Region[]; points: number; };
+
+/** A draft entry: a domino available for selection, optionally claimed by a player. */
+export type DraftEntry = { domino: Domino; selectedBy?: PlayerId; };
 
 const DRAFT_SIZE = 4;
 
@@ -703,7 +764,7 @@ export function createBoard( castle: Castle, boardSize: BoardSize ) {
  * @param deck - The remaining deck of dominoes (mutated in-place).
  * @returns An array of DraftEntry objects for the current round.
  */
-export function drawDraft( deck: KingdominoData["deck"] ): DraftEntry[] {
+export function drawDraft( deck: Domino[] ): DraftEntry[] {
 	const count = Math.min( DRAFT_SIZE, deck.length );
 	return deck
 		.splice( 0, count )
@@ -751,3 +812,102 @@ export function getSelectionOrderFromDraft( draft: DraftEntry[] ): PlayerId[] {
 
 /** Registry slug for this game (also the DO name prefix). */
 export const GAME_NAME = "kingdomino";
+
+// --- schema <-> structural bridges -----------------------------------------
+// The helpers above speak the mutable structural shapes; the schema `.Type`s are
+// structurally identical (readonly), so we cast at the boundary.
+
+export const asBoard = ( board: typeof PlayerDataSchema.Type[ "board" ] ): Board =>
+	board as unknown as Board;
+export const asPlacement = ( placement: typeof PlacementSchema.Type ): Placement =>
+	placement as unknown as Placement;
+export const asBoardResult = ( board: Board ): typeof BoardSchema.Type =>
+	board as unknown as typeof BoardSchema.Type;
+export const asScoreResult = ( score: ScoreBreakdown ): typeof ScoreBreakdownSchema.Type =>
+	score as unknown as typeof ScoreBreakdownSchema.Type;
+
+/**
+ * The selection order derived from the resolved draft, cast to the swish
+ * (branded) `PlayerId`. `getSelectionOrderFromDraft` speaks the engine's
+ * `PlayerId`; the two are structurally identical strings.
+ */
+export const draftPlayerOrder = (
+	draft: KingdominoState[ "draft" ]
+): ReadonlyArray<PlayerId> =>
+	getSelectionOrderFromDraft( [ ...draft ] as never ) as unknown as ReadonlyArray<PlayerId>;
+
+/** Pure, deterministic draft draw from a given deck (no mutation). */
+export const drawDraftPure = ( deck: ReadonlyArray<typeof DominoSchema.Type> ) => {
+	const count = Math.min( DRAFT_SIZE, deck.length );
+	const drawn = deck.slice( 0, count )
+		.slice()
+		.sort( ( a, b ) => a.id - b.id )
+		.map( ( domino ) => ( { domino } ) );
+	const rest = deck.slice( count );
+	return { draft: drawn, deck: rest };
+};
+
+// --- Pure reducer ----------------------------------------------------------
+
+/** Pure reducer — the ONLY place `state` changes. No Effect, no Random. */
+export const apply = (
+	state: KingdominoState,
+	event: KingdominoEvent
+): KingdominoState =>
+	Match.value( event ).pipe(
+		Match.tag( "kingdomino/DeckShuffled", ( e ) => ( { ...state, deck: e.deck } ) ),
+		Match.tag( "kingdomino/PlayerBoardCreated", ( e ) => ( {
+			...state,
+			playerData: {
+				...state.playerData,
+				[ e.playerId ]: { board: e.board, queue: [], score: { regions: [], points: 0 } }
+			}
+		} ) ),
+		Match.tag( "kingdomino/SelectionOrderSet", ( e ) => ( { ...state, selectionOrder: e.order } ) ),
+		Match.tag( "kingdomino/DraftDrawn", ( e ) => ( { ...state, draft: e.draft, deck: e.deck } ) ),
+		Match.tag( "kingdomino/DraftPruned", () => ( {
+			...state,
+			draft: state.draft.filter( ( entry ) => !!entry.selectedBy )
+		} ) ),
+		Match.tag( "kingdomino/DominoSelected", ( e ) => {
+			const draft = state.draft.map( ( entry ) =>
+				entry.domino.id === e.dominoId ? { ...entry, selectedBy: e.playerId } : entry );
+			const player = state.playerData[ e.playerId ]!;
+			return {
+				...state,
+				draft,
+				playerData: {
+					...state.playerData,
+					[ e.playerId ]: { ...player, queue: [ ...player.queue, e.dominoId ] }
+				}
+			};
+		} ),
+		Match.tag( "kingdomino/DominoPlaced", ( e ) => {
+			const player = state.playerData[ e.playerId ]!;
+			return {
+				...state,
+				playerData: {
+					...state.playerData,
+					[ e.playerId ]: {
+						...player,
+						board: e.board,
+						score: e.score,
+						queue: player.queue.filter( ( id ) => id !== e.dominoId )
+					}
+				}
+			};
+		} ),
+		Match.tag( "kingdomino/DominoDiscarded", ( e ) => {
+			const player = state.playerData[ e.playerId ]!;
+			return {
+				...state,
+				playerData: {
+					...state.playerData,
+					[ e.playerId ]: { ...player, queue: player.queue.filter( ( id ) => id !== e.dominoId ) }
+				}
+			};
+		} ),
+		Match.tag( "kingdomino/SelectionOrderRecomputed", ( e ) => ( { ...state, selectionOrder: e.order } ) ),
+		Match.tag( "kingdomino/WinnerDecided", ( e ) => ( { ...state, winner: e.winner } ) ),
+		Match.exhaustive
+	);

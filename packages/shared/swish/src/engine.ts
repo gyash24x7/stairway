@@ -11,7 +11,11 @@
 // (`events.ts`), so the whole game is replayable and undo/redo is a cursor move
 // + refold.
 
-import { Clock, Effect, Option, Schema } from "effect";
+import { generateBotInfo, generateId } from "@s2h/utils/generator";
+import * as Clock from "effect/Clock";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 import {
 	CannotStart,
 	CorruptState,
@@ -38,21 +42,23 @@ import {
 	TurnAdvanced
 } from "./events";
 import {
-	type BaseGameConfig,
+	BaseGameConfig,
 	CompletedGameData,
-	type GameCode,
 	GameContext,
 	GameId,
-	type GameSnapshot as GameSnapshotType,
+	type GameSnapshot,
+	type InitializeInput,
+	InitializeResponse,
+	JoinGameResponse,
 	PersistedGameData,
 	PlayerId,
 	PlayerInfo
 } from "./schema";
-import { EventStore, GameArchive, GameRepo, GameStore, Ids, Scheduler } from "./services";
+import { EventStore, GameArchive, GameStore, Scheduler } from "./services";
 import { type GameStructure, type MoveMap } from "./structure";
 
 /** The full set of host services every engine program may require. */
-export type EngineServices = GameStore | Scheduler | GameArchive | GameRepo | Ids | EventStore;
+export type EngineServices = GameStore | Scheduler | GameArchive | EventStore;
 
 const BOT_DELAY_MS = 5000;
 const AUTO_START_DELAY_MS = 5000;
@@ -107,7 +113,7 @@ const load = <State, Config extends BaseGameConfig, Ev extends {
 ) =>
 	Effect.gen( function* () {
 		const store = yield* GameStore;
-		const raw = yield* store.load;
+		const raw = yield* store.load();
 		if ( Option.isNone( raw ) ) {
 			return yield* new GameNotFound( { id: GameId.make( "unknown" ) } );
 		}
@@ -150,6 +156,7 @@ const snapshot = <State, Config extends BaseGameConfig, Ev extends {
 			status: data.status,
 			context: data.context,
 			players: data.players,
+			config: data.config,
 			shared,
 			player
 		};
@@ -175,7 +182,6 @@ const archive = <State, Config extends BaseGameConfig, Ev extends {
 ) =>
 	Effect.gen( function* () {
 		const arch = yield* GameArchive;
-		const repo = yield* GameRepo;
 		const rd = readonly( data );
 		const shared = yield* structure.sharedView( rd );
 		const playerViews: Record<string, unknown> = {};
@@ -196,7 +202,6 @@ const archive = <State, Config extends BaseGameConfig, Ev extends {
 			CompletedGameData( structure.sharedViewSchema, structure.playerViewSchema )
 		)( completed ).pipe( Effect.orDie );
 		yield* arch.put( `${ structure.name }:${ data.id }`, encoded );
-		yield* repo.markCompleted( data.id );
 	} );
 
 // --- event-sourcing helpers ------------------------------------------------
@@ -215,12 +220,10 @@ const commitAndSave = <State, Config extends BaseGameConfig, Ev extends {
 	events: ReadonlyArray<EngineEvent | Ev>
 ) =>
 	Effect.gen( function* () {
-		const ids = yield* Ids;
 		const log = yield* EventStore;
-		const id = yield* ids.commitId;
 		const at = yield* Clock.currentTimeMillis;
 		const commit = {
-			id,
+			id: generateId(),
 			command: meta.command,
 			actor: meta.actor,
 			moveType: meta.moveType,
@@ -299,8 +302,7 @@ const initialize = <State, Config extends BaseGameConfig, Ev extends {
 	readonly _tag: string
 }, M extends MoveMap<State, Config, Ev, R>, SV, PV, R>(
 	structure: Struct<State, Config, Ev, M, SV, PV, R>,
-	// `config` is already decoded by the RPC boundary; the engine trusts it.
-	payload: { id: GameId; code: GameCode; config: Config }
+	payload: InitializeInput<Config>
 ) =>
 	Effect.gen( function* () {
 		const store = yield* GameStore;
@@ -321,6 +323,8 @@ const initialize = <State, Config extends BaseGameConfig, Ev extends {
 			.pipe( Effect.orDie );
 		yield* log.setBase( encoded );
 		yield* store.save( encoded );
+
+		return InitializeResponse.make( { id: payload.id } );
 	} ).pipe( Effect.withSpan( "engine.initialize" ) );
 
 const join = <State, Config extends BaseGameConfig, Ev extends {
@@ -333,7 +337,7 @@ const join = <State, Config extends BaseGameConfig, Ev extends {
 		const scheduler = yield* Scheduler;
 		const data = yield* load( structure );
 		if ( data.players[ player.id ] ) {
-			return;
+			return JoinGameResponse.make( { id: data.id, code: data.code } );
 		} // idempotent re-join
 		if ( Object.keys( data.players ).length >= data.config.playerCount ) {
 			return yield* new GameFull( { playerCount: data.config.playerCount } );
@@ -366,6 +370,8 @@ const join = <State, Config extends BaseGameConfig, Ev extends {
 				"auto-start"
 			);
 		}
+
+		return JoinGameResponse.make( { id: data.id, code: data.code } );
 	} ).pipe( Effect.withSpan( "engine.join" ) );
 
 const start = <State, Config extends BaseGameConfig, Ev extends {
@@ -542,11 +548,10 @@ const addBots = <State, Config extends BaseGameConfig, Ev extends {
 	structure: Struct<State, Config, Ev, M, SV, PV, R>
 ) =>
 	Effect.gen( function* () {
-		const ids = yield* Ids;
 		const data = yield* load( structure );
 		const remaining = data.config.playerCount - Object.keys( data.players ).length;
 		for ( let i = 0; i < remaining; i++ ) {
-			const bot = yield* ids.botIdentity;
+			const bot = generateBotInfo();
 			yield* join(
 				structure,
 				PlayerInfo.make( {
@@ -600,7 +605,7 @@ const cleanup = () =>
 		const scheduler = yield* Scheduler;
 		const store = yield* GameStore;
 		yield* scheduler.cancel;
-		yield* store.clear;
+		yield* store.clear();
 	} );
 
 /**
@@ -668,12 +673,12 @@ const runBotTurn = <State, Config extends BaseGameConfig, Ev extends {
 export interface Engine<State, Config extends BaseGameConfig, Ev extends {
 	readonly _tag: string
 }, M extends MoveMap<State, Config, Ev, R>, SV, PV, R = never> {
-	readonly initialize: ( payload: { id: GameId; code: GameCode; config: Config } ) =>
-		Effect.Effect<void, never, EngineServices | R>;
+	readonly initialize: ( payload: InitializeInput<Config> ) =>
+		Effect.Effect<InitializeResponse, never, EngineServices | R>;
 	readonly getState: ( playerInfo: PlayerInfo ) =>
-		Effect.Effect<GameSnapshotType<SV, PV>, GameNotFound | CorruptState, EngineServices | R>;
+		Effect.Effect<GameSnapshot<SV, PV, Config>, GameNotFound | CorruptState, EngineServices | R>;
 	readonly join: ( playerInfo: PlayerInfo ) =>
-		Effect.Effect<void, GameFull | GameNotFound | CorruptState, EngineServices | R>;
+		Effect.Effect<JoinGameResponse, GameFull | GameNotFound | CorruptState, EngineServices | R>;
 	readonly addBots: () =>
 		Effect.Effect<void, GameFull | GameNotFound | CorruptState, EngineServices | R>;
 	readonly start: () =>
@@ -684,9 +689,9 @@ export interface Engine<State, Config extends BaseGameConfig, Ev extends {
 		input: Schema.Schema.Type<M[MoveType][ "input" ]>
 	) => Effect.Effect<void, Schema.Schema.Type<typeof MoveError>, EngineServices | R>;
 	readonly undo: ( playerInfo: PlayerInfo ) =>
-		Effect.Effect<GameSnapshotType<SV, PV>, NothingToUndo | GameNotFound | CorruptState, EngineServices | R>;
+		Effect.Effect<GameSnapshot<SV, PV, Config>, NothingToUndo | GameNotFound | CorruptState, EngineServices | R>;
 	readonly redo: ( playerInfo: PlayerInfo ) =>
-		Effect.Effect<GameSnapshotType<SV, PV>, NothingToRedo | GameNotFound | CorruptState, EngineServices | R>;
+		Effect.Effect<GameSnapshot<SV, PV, Config>, NothingToRedo | GameNotFound | CorruptState, EngineServices | R>;
 	readonly runBotTurn: () => Effect.Effect<void, never, EngineServices | R>;
 	readonly cleanup: () => Effect.Effect<void, never, EngineServices | R>;
 }

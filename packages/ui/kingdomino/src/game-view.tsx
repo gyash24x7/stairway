@@ -1,7 +1,7 @@
 "use client";
 
-import { orpc } from "@s2h/client/query";
-import type { DominoId } from "@s2h/kingdomino/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { DominoId } from "@s2h/kingdomino/utils";
 import { DOMINO_DECK } from "@s2h/kingdomino/utils";
 import { GameInfo } from "@s2h/ui/components/game-info";
 import { PlayerLobbyGrid } from "@s2h/ui/components/player-lobby";
@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useState } from "react";
 import { RBoard } from "./board";
+import { selectDominoFn, toPlayerInfo } from "./client";
 import { useKingdomino } from "./context";
 import { RDomino } from "./domino";
 import { RDraft } from "./draft";
@@ -20,6 +21,7 @@ import { usePlacement } from "./use-placement";
 
 export function GameView() {
 	const { shared, player } = useKingdomino();
+	const { authInfo } = useAuth();
 
 	const isMyTurn = shared.status === "IN_PROGRESS"
 		&& shared.context.currentPlayer === player.playerId;
@@ -31,11 +33,13 @@ export function GameView() {
 	};
 
 	const queryClient = useQueryClient();
-	const selectDomino = useMutation( orpc.kingdomino.selectDomino.mutationOptions( {
+	const selectDomino = useMutation( {
+		mutationFn: ( dominoId: DominoId ) =>
+			selectDominoFn( shared.id, toPlayerInfo( authInfo! ), { dominoId } ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.kingdomino.getGame.key( { input: { gameId: shared.id } } )
+			queryKey: [ "kingdomino", "getState", shared.id ]
 		} )
-	} ) );
+	} );
 	const isSelectPending = selectDomino.isPending;
 	const [ selectedDominoId, setSelectedDominoId ] = useState<DominoId | null>( null );
 
@@ -50,7 +54,7 @@ export function GameView() {
 		if ( !canSelect ) {
 			return;
 		}
-		selectDomino.mutate( { gameId: shared.id, dominoId } );
+		selectDomino.mutate( dominoId );
 	};
 
 	const placement = usePlacement( {

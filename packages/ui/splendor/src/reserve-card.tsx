@@ -1,6 +1,5 @@
-import { orpc } from "@s2h/client/query";
-import type { GameId } from "@s2h/engine/types";
-import type { Card, Gem, Tokens } from "@s2h/splendor/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { Card, Gem, Tokens } from "@s2h/splendor/schema";
 import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
@@ -14,10 +13,11 @@ import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
+import { reserveCardFn, toPlayerInfo } from "./client";
 import { TokenPicker } from "./token-picker";
 
 type ReserveCardProps = {
-	gameId: GameId;
+	gameId: string;
 	card: Card;
 	tokens: Tokens;
 	availableSlots: number;
@@ -26,15 +26,18 @@ type ReserveCardProps = {
 
 export function ReserveCard( props: ReserveCardProps ) {
 	const [ isPending ] = useTransition();
+	const { authInfo } = useAuth();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ returned, setReturned ] = useState<Partial<Tokens>>( {} );
 	const queryClient = useQueryClient();
 
-	const reserveCard = useMutation( orpc.splendor.reserveCard.mutationOptions( {
+	const reserveCard = useMutation( {
+		mutationFn: ( input: { cardId: string; withGold: boolean; returnedToken?: Gem } ) =>
+			reserveCardFn( props.gameId, toPlayerInfo( authInfo! ), input ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.splendor.getGame.key( { input: { gameId: props.gameId } } )
+			queryKey: [ "splendor", "getState", props.gameId ]
 		} )
-	} ) );
+	} );
 
 	const isReturnValid = Object.values( returned ).reduce( ( sum, v ) => sum + v, 0 ) === 1;
 
@@ -56,7 +59,6 @@ export function ReserveCard( props: ReserveCardProps ) {
 
 			return startTransition( async () => {
 				await reserveCard.mutateAsync( {
-					gameId: props.gameId,
 					cardId: props.card.id,
 					returnedToken,
 					withGold: props.isGoldAvailable
@@ -74,7 +76,6 @@ export function ReserveCard( props: ReserveCardProps ) {
 
 		return startTransition( async () => {
 			await reserveCard.mutateAsync( {
-				gameId: props.gameId,
 				cardId: props.card.id,
 				withGold: props.isGoldAvailable
 			} );

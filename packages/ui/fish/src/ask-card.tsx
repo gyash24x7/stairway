@@ -1,7 +1,7 @@
 "use client";
 
-import { orpc } from "@s2h/client/query";
-import type { Book } from "@s2h/fish/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { Book } from "@s2h/fish/schema";
 import {
 	getBookDisplayString,
 	getBooksInHand,
@@ -20,21 +20,24 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@s2h/ui/primitives/drawer";
+import type { PlayerId } from "@s2h/swish/schema";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { type CardId, getCardDisplayString } from "@s2h/utils/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
+import { askCardFn, toPlayerInfo } from "./client";
 import { useFish } from "./context";
 
 export function AskCard() {
 	const { shared, player } = useFish();
+	const { authInfo } = useAuth();
 	const playerInfo = shared.players[ player.playerId ];
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
-	const [ selectedPlayer, setSelectedPlayer ] = useState<string>();
+	const [ selectedPlayer, setSelectedPlayer ] = useState<PlayerId>();
 	const [ open, setOpen ] = useState( false );
 	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
 
@@ -68,7 +71,7 @@ export function AskCard() {
 		}
 	};
 
-	const handlePlayerSelect = ( pid: string | undefined ) => {
+	const handlePlayerSelect = ( pid: PlayerId | undefined ) => {
 		setSelectedPlayer( pid );
 		if ( pid !== undefined ) {
 			goToNextStep();
@@ -85,19 +88,17 @@ export function AskCard() {
 
 	const queryClient = useQueryClient();
 
-	const askCard = useMutation( orpc.fish.askCard.mutationOptions( {
+	const askCard = useMutation( {
+		mutationFn: ( input: { from: PlayerId; cardId: CardId } ) =>
+			askCardFn( shared.id, toPlayerInfo( authInfo! ), input ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+			queryKey: [ "fish", "getState", shared.id ]
 		} )
-	} ) );
+	} );
 
 	const handleClick = async () => {
-		if ( selectedCard && selectedPlayer ) {
-			await askCard.mutateAsync( {
-				gameId: shared.id,
-				cardId: selectedCard,
-				from: selectedPlayer
-			} );
+		if ( selectedCard && selectedPlayer && authInfo ) {
+			await askCard.mutateAsync( { cardId: selectedCard, from: selectedPlayer } );
 			closeDialog();
 		}
 	};

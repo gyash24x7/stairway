@@ -10,17 +10,15 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@orpc/server": "catalog:",
-		"@s2h/api": "workspace:*",
 		"@s2h/db": "workspace:*",
 		"@s2h/utils": "workspace:*",
 		"@simplewebauthn/server": "catalog:",
 		"cookie": "catalog:",
 		"drizzle-orm": "catalog:",
-		"effect": "catalog:",
-		"valibot": "catalog:"
+		"effect": "catalog:"
 	},
 	"devDependencies": {
+		"@cloudflare/workers-types": "catalog:",
 		"typescript": "catalog:"
 	}
 }

@@ -22,7 +22,7 @@ export function HandView() {
 		if ( isTrickComplete ) {
 			return true;
 		}
-		const playableCards = getPlayableCards( player.hand, shared.config.trumpSuit, trick! );
+		const playableCards = getPlayableCards( [ ...player.hand ], shared.config.trumpSuit, trick! );
 		return playableCards.includes( cardId );
 	};
 
@@ -47,7 +47,7 @@ export function HandView() {
 			) }
 		>
 			<AnimatePresence mode={ "popLayout" }>
-				{ getSortedHand( player.hand ).map( ( cardId ) => (
+				{ getSortedHand( [ ...player.hand ] ).map( ( cardId ) => (
 					<motion.div
 						key={ cardId }
 						layoutId={ `card-${ cardId }` }

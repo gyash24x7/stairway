@@ -1,14 +1,15 @@
 "use client";
 
+import type { Board } from "@s2h/kingdomino/schema";
 import type {
-	Board,
+	Board as MutableBoard,
 	BoardSize,
 	Castle,
 	Coord,
 	DominoId,
 	Rotation,
 	Tile
-} from "@s2h/kingdomino/types";
+} from "@s2h/kingdomino/utils";
 import {
 	canDominoBePlaced,
 	coordKey,
@@ -18,6 +19,11 @@ import {
 	getPotentialCells,
 	getRowsAndCols
 } from "@s2h/kingdomino/utils";
+
+// The board helpers below only read from the board; the wire snapshot delivers a
+// readonly `Board` (schema `.Type`) whereas the pure util fns declare the mutable
+// structural `Board`. They never mutate the input, so this widening is sound.
+const asMutable = ( board: Board ) => board as unknown as MutableBoard;
 import { Popover, PopoverContent } from "@s2h/ui/primitives/popover";
 import { cn } from "@s2h/ui/utils/cn";
 import { motion } from "framer-motion";
@@ -76,8 +82,8 @@ function getCellData( board: Board, x: number, y: number ) {
 }
 
 export function RSmallBoard( { board }: { board: Board; } ) {
-	const possibleCells = getCandidateCells( board );
-	const { rows, cols } = getRowsAndCols( getExpandedBoardBounds( board ), possibleCells );
+	const possibleCells = getCandidateCells( asMutable( board ) );
+	const { rows, cols } = getRowsAndCols( getExpandedBoardBounds( asMutable( board ) ), possibleCells );
 
 	const cells = rows.flatMap( y => cols.map( x => ( {
 		cell: getCellData( board, x, y ),
@@ -198,7 +204,7 @@ function EmptyCell( props: { coord: Coord; isPlacement: boolean } ) {
 }
 
 function getCell( coord: Coord, board: Board, validCellKeys: Set<string> | null ) {
-	const possibleCells = getPotentialCells( board );
+	const possibleCells = getPotentialCells( asMutable( board ) );
 	const key = coordKey( coord );
 	return {
 		cell: getCellData( board, coord.x, coord.y ),
@@ -227,8 +233,8 @@ type RBoardProps = {
 };
 
 export function RBoard( props: RBoardProps ) {
-	const bounds = getExpandedBoardBounds( props.board );
-	const possibleCells = getPotentialCells( props.board );
+	const bounds = getExpandedBoardBounds( asMutable( props.board ) );
+	const possibleCells = getPotentialCells( asMutable( props.board ) );
 	const [ hoveredCoord, setHoveredCoord ] = useState<Coord | null>( null );
 	const [ anchorEl, setAnchorEl ] = useState<HTMLElement | null>( null );
 
@@ -255,7 +261,7 @@ export function RBoard( props: RBoardProps ) {
 	const validCellKeys = props.isActive && props.activeDominoId
 		? new Set( possibleCells
 			.filter( coord => ALL_ROTATIONS.some( rotation => canDominoBePlaced(
-				props.board,
+				asMutable( props.board ),
 				{ dominoId: props.activeDominoId!, coord, rotation }
 			) ) )
 			.map( c => coordKey( c ) ) )

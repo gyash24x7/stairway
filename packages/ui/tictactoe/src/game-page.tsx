@@ -1,20 +1,25 @@
-import { orpc } from "@s2h/client/query";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { Spinner } from "@s2h/ui/primitives/spinner";
+import { useQuery } from "@tanstack/react-query";
+import { getStateFn, snapshotToData, toPlayerInfo } from "./client";
 import { TicTacToeProvider } from "./context";
 import { GameView } from "./game-view";
-import { useQuery } from "@tanstack/react-query";
 
 export function TicTacToeGamePage( { gameId }: { gameId: string } ) {
-	const { data, isLoading } = useQuery(
-		orpc.tictactoe.getGame.queryOptions( { input: { gameId } } )
-	);
+	const { authInfo } = useAuth();
+
+	const { data, isLoading } = useQuery( {
+		queryKey: [ "tic-tac-toe", "getState", gameId ],
+		enabled: !!authInfo,
+		queryFn: ( { signal } ) => getStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+	} );
 
 	if ( isLoading || !data ) {
 		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
 	}
 
 	return (
-		<TicTacToeProvider data={ data }>
+		<TicTacToeProvider data={ snapshotToData( data ) } gameId={ gameId }>
 			<GameView/>
 		</TicTacToeProvider>
 	);

@@ -1,20 +1,19 @@
-"use client";
-
-import { client } from "@s2h/client";
-import type { BoardSize } from "@s2h/kingdomino/types";
+import type { BoardSize } from "@s2h/kingdomino/schema";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { useState } from "react";
+import { createKingdominoGameFn } from "./client";
 
 export function KingdominoCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();
 	const [ boardSize, setBoardSize ] = useState<BoardSize>();
 
-	const createKingdominoGame = async () => {
-		if ( !!playerCount && !!boardSize ) {
-			return client.kingdomino.createGame( { playerCount, boardSize } );
+	const createKingdominoGame = async (): Promise<string> => {
+		if ( !playerCount || !boardSize ) {
+			return "";
 		}
-		return "";
+		const { id } = await createKingdominoGameFn( { playerCount, autoStart: true, boardSize } );
+		return id;
 	};
 
 	return (

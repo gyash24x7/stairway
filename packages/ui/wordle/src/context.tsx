@@ -1,6 +1,6 @@
-import { orpc } from "@s2h/client/query";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { dictionaries } from "@s2h/wordle/dictionary";
-import type { WordleGame } from "@s2h/wordle/types";
+import type { WordleData } from "@s2h/wordle/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
@@ -11,10 +11,10 @@ import {
 	useRef,
 	useState
 } from "react";
+import { submitGuessFn, toPlayerInfo } from "./client";
 
 type WordleContextValue = {
-	shared: WordleGame["shared"];
-	player: WordleGame["player"];
+	data: WordleData;
 	currentGuess: string;
 	isPending: boolean;
 	invalidGuess: boolean;
@@ -34,36 +34,39 @@ export function useWordle() {
 	return ctx;
 }
 
-type WordleProviderProps = { data: WordleGame; children: ReactNode; }
+type WordleProviderProps = { data: WordleData; gameId: string; children: ReactNode; };
 
-export function WordleProvider( { data, children }: WordleProviderProps ) {
-	const { shared, player } = data;
+export function WordleProvider( { data, gameId, children }: WordleProviderProps ) {
 	const queryClient = useQueryClient();
+	const { authInfo } = useAuth();
+	const { shared, config, status } = data;
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
 	const [ invalidGuess, setInvalidGuess ] = useState( false );
 	const [ lastRevealedRow, setLastRevealedRow ] = useState<number | null>( null );
-	const prevGuessCountRef = useRef( shared.state.guesses.length );
+	const prevGuessCountRef = useRef( shared.guesses.length );
 
-	const submitGuess = useMutation( orpc.wordle.submitGuess.mutationOptions( {
+	const submitGuess = useMutation( {
+		mutationFn: ( guess: string ) =>
+			submitGuessFn( gameId, toPlayerInfo( authInfo! ), guess ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.wordle.getGame.key( { input: { gameId: shared.id } } )
+			queryKey: [ "wordle", "getState", gameId ]
 		} )
-	} ) );
+	} );
 
 	useEffect( () => {
-		const count = shared.state.guesses.length;
+		const count = shared.guesses.length;
 		if ( count > prevGuessCountRef.current ) {
 			setLastRevealedRow( count - 1 );
 		}
 		prevGuessCountRef.current = count;
-	}, [ shared.state.guesses.length ] );
+	}, [ shared.guesses.length ] );
 
-	const wordLength = shared.config.wordLength;
-	const gameInProgress = shared.status === "IN_PROGRESS";
+	const wordLength = config.wordLength;
+	const gameInProgress = status === "IN_PROGRESS";
 
 	const handleSubmit = () => {
 		const guess = currentGuess.trim().toLowerCase();
-		if ( !guess || guess.length !== wordLength ) {
+		if ( !guess || guess.length !== wordLength || !authInfo ) {
 			return;
 		}
 
@@ -75,7 +78,7 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 		}
 
 		setCurrentGuess( "" );
-		submitGuess.mutate( { gameId: shared.id, guess } );
+		submitGuess.mutate( guess );
 	};
 
 	const handleKeyPress = useCallback( ( letter: string ) => {
@@ -112,8 +115,7 @@ export function WordleProvider( { data, children }: WordleProviderProps ) {
 
 	return (
 		<WordleContext value={ {
-			shared,
-			player,
+			data,
 			currentGuess,
 			isPending: submitGuess.isPending,
 			invalidGuess,

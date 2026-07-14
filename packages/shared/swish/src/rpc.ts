@@ -5,8 +5,8 @@
 // first-class RPC per declared move (the "per-game move RPCs" model). A game
 // composes them into an `RpcGroup` and binds it to its `Engine` via `toLayer`.
 
-import { Schema } from "effect";
-import { Rpc } from "effect/unstable/rpc";
+import * as Schema from "effect/Schema";
+import * as Rpc from "effect/unstable/rpc/Rpc";
 import {
 	AlreadyJoined,
 	CannotStart,
@@ -18,28 +18,25 @@ import {
 	NothingToUndo,
 	PhaseNotFound
 } from "./errors";
-import { GameCode, GameId, GameSnapshot, PlayerInfo } from "./schema";
+import { InitializeInput, InitializeResponse, JoinGameResponse, PlayerInfo } from "./schema";
 
 export class EngineRpc {
 	public static makeInitialize = <Config extends Schema.Top>( config: Config ) =>
 		Rpc.make( "initialize", {
-			success: Schema.Void,
-			payload: { id: GameId, code: GameCode, config }
+			success: InitializeResponse,
+			payload: InitializeInput( config )
 		} );
 
-	public static makeGetState = <SV extends Schema.Top, PV extends Schema.Top>(
-		shared: SV,
-		player: PV
-	) =>
+	public static makeGetState = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
 		Rpc.make( "getState", {
-			success: GameSnapshot( shared, player ),
+			success: snapshot,
 			payload: PlayerInfo,
 			error: Schema.Union( [ GameNotFound, CorruptState ] )
 		} );
 
 	public static makeJoin = () =>
 		Rpc.make( "join", {
-			success: Schema.Void,
+			success: JoinGameResponse,
 			payload: PlayerInfo,
 			error: Schema.Union( [ GameFull, AlreadyJoined, GameNotFound, CorruptState ] )
 		} );
@@ -72,22 +69,16 @@ export class EngineRpc {
 			error: MoveError
 		} );
 
-	public static makeUndo = <SV extends Schema.Top, PV extends Schema.Top>(
-		shared: SV,
-		player: PV
-	) =>
+	public static makeUndo = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
 		Rpc.make( "undo", {
-			success: GameSnapshot( shared, player ),
+			success: snapshot,
 			payload: PlayerInfo,
 			error: Schema.Union( [ NothingToUndo, GameNotFound, CorruptState ] )
 		} );
 
-	public static makeRedo = <SV extends Schema.Top, PV extends Schema.Top>(
-		shared: SV,
-		player: PV
-	) =>
+	public static makeRedo = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
 		Rpc.make( "redo", {
-			success: GameSnapshot( shared, player ),
+			success: snapshot,
 			payload: PlayerInfo,
 			error: Schema.Union( [ NothingToRedo, GameNotFound, CorruptState ] )
 		} );

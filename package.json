@@ -20,6 +20,9 @@
 		"@tsconfig/node24": "catalog:",
 		"@tsconfig/strictest": "catalog:",
 		"turbo": "^2.10.4",
-		"typescript": "catalog:"
+		"typescript": "catalog:",
+		"alchemy": "catalog:",
+		"effect": "catalog:",
+		"vite": "catalog:"
 	}
 }

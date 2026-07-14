@@ -1,6 +1,5 @@
-import { orpc } from "@s2h/client/query";
-import type { GameId } from "@s2h/engine/types";
-import type { Card, Gem, Tokens } from "@s2h/splendor/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { Card, Gem, Tokens } from "@s2h/splendor/schema";
 import { canPurchaseCard, isValidPayment } from "@s2h/splendor/utils";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -16,31 +15,36 @@ import { cn } from "@s2h/ui/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
+import { purchaseCardFn, toPlayerInfo } from "./client";
 import { GameCard } from "./game-card";
 import { TokenPicker } from "./token-picker";
 import { gemLightColors } from "./utils";
 
 type PurchaseCardProps = {
-	gameId: GameId;
+	gameId: string;
 	card: Card;
 	tokens: Tokens;
-	discounts: Card[];
+	discounts: readonly Card[];
 }
 
 export function PurchaseCard( props: PurchaseCardProps ) {
 	const [ isPending ] = useTransition();
+	const { authInfo } = useAuth();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ payment, setPayment ] = useState<Partial<Tokens>>( {} );
 	const queryClient = useQueryClient();
 
-	const purchaseCard = useMutation( orpc.splendor.purchaseCard.mutationOptions( {
+	const purchaseCard = useMutation( {
+		mutationFn: ( input: { cardId: string; payment: Partial<Tokens> } ) =>
+			purchaseCardFn( props.gameId, toPlayerInfo( authInfo! ), input ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.splendor.getGame.key( { input: { gameId: props.gameId } } )
+			queryKey: [ "splendor", "getState", props.gameId ]
 		} )
-	} ) );
+	} );
 
-	const canPurchase = canPurchaseCard( props.card, props.tokens, props.discounts );
-	const isPaymentCorrect = isValidPayment( props.card, payment, props.discounts );
+	const discounts = props.discounts as Card[];
+	const canPurchase = canPurchaseCard( props.card, props.tokens, discounts );
+	const isPaymentCorrect = isValidPayment( props.card, payment, discounts );
 
 	const openDrawer = () => {
 		setTrue();
@@ -53,7 +57,6 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 
 	const handlePurchaseClick = () => startTransition( async () => {
 		await purchaseCard.mutateAsync( {
-			gameId: props.gameId,
 			cardId: props.card.id,
 			payment
 		} );

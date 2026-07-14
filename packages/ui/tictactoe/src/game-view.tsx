@@ -11,22 +11,23 @@ import { Board } from "./board";
 import { useTicTacToe } from "./context";
 
 export function GameView() {
-	const { shared, player, addBots, isPending } = useTicTacToe();
-	const players = Object.values( shared.players );
-	const isActive = shared.status === "IN_PROGRESS";
-	const isCompleted = shared.status === "COMPLETED";
+	const { data, addBots, isPending } = useTicTacToe();
+	const { shared, player } = data;
+	const players = Object.values( data.players );
+	const isActive = data.status === "IN_PROGRESS";
+	const isCompleted = data.status === "COMPLETED";
 
 	const handleAddBots = () => addBots();
 
 	return (
 		<div className={ "flex flex-col gap-3 items-center mb-40 max-w-6xl w-full" }>
 			<GameInfo
-				code={ shared.code }
+				code={ data.code }
 				name={ "tic-tac-toe" }
 				completed={ isCompleted }
 			/>
 
-			{ shared.status === "CREATED" && (
+			{ data.status === "CREATED" && (
 				<div
 					className={ cn(
 						"rounded-md bg-background p-8 text-center",
@@ -44,7 +45,7 @@ export function GameView() {
 			) }
 
 			<AnimatePresence>
-				{ isCompleted && shared.state.winner && (
+				{ isCompleted && shared.winner && (
 					<motion.div
 						key={ "winner-banner" }
 						variants={ slideInUp }
@@ -53,9 +54,9 @@ export function GameView() {
 						exit={ "exit" }
 						className={ "rounded-md bg-background p-4 text-center w-full border-2 border-black" }
 					>
-						{ shared.state.winner !== "draw" ? (
+						{ shared.winner !== "draw" ? (
 							<p className={ "text-lg font-heading" }>
-								{ shared.state.winner === player.playerId ? "You won!" : "You lost!" }
+								{ shared.winner === player.playerId ? "You won!" : "You lost!" }
 							</p>
 						) : (
 							<motion.p
@@ -80,7 +81,7 @@ export function GameView() {
 					) }
 				>
 					{ players.map( ( p, index ) => {
-						const isCurrent = shared.context.currentPlayer === p.id && isActive;
+						const isCurrent = data.context.currentPlayer === p.id && isActive;
 						return (
 							<div
 								key={ p.id }

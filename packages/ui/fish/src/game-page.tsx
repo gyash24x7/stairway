@@ -1,11 +1,18 @@
-import { orpc } from "@s2h/client/query";
-import { FishProvider } from "./context";
-import { GameView } from "./game-view";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
+import { getStateFn, toPlayerInfo } from "./client";
+import { FishProvider } from "./context";
+import { GameView } from "./game-view";
 
 export function FishGamePage( { gameId }: { gameId: string } ) {
-	const { data, isLoading } = useQuery( orpc.fish.getGame.queryOptions( { input: { gameId } } ) );
+	const { authInfo } = useAuth();
+
+	const { data, isLoading } = useQuery( {
+		queryKey: [ "fish", "getState", gameId ],
+		enabled: !!authInfo,
+		queryFn: ( { signal } ) => getStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+	} );
 
 	if ( isLoading || !data ) {
 		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;

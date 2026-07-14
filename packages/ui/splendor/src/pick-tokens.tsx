@@ -1,7 +1,7 @@
 "use client";
 
-import { orpc } from "@s2h/client/query";
-import type { Gem, Tokens } from "@s2h/splendor/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { Gem, Tokens } from "@s2h/splendor/schema";
 import { GEMS_WITH_GOLD } from "@s2h/splendor/utils";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -16,18 +16,22 @@ import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
+import { pickTokensFn, toPlayerInfo } from "./client";
 import { useSplendor } from "./context";
 import { TokenPicker } from "./token-picker";
 
 export function PickTokens() {
-	const { shared, player } = useSplendor();
+	const { shared, player, gameId } = useSplendor();
+	const { authInfo } = useAuth();
 	const queryClient = useQueryClient();
 
-	const pickTokens = useMutation( orpc.splendor.pickTokens.mutationOptions( {
+	const pickTokens = useMutation( {
+		mutationFn: ( input: { tokens: Partial<Tokens>; returned?: Partial<Tokens> } ) =>
+			pickTokensFn( gameId, toPlayerInfo( authInfo! ), input ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.splendor.getGame.key( { input: { gameId: shared.id } } )
+			queryKey: [ "splendor", "getState", gameId ]
 		} )
-	} ) );
+	} );
 
 	const availableTokens = shared.state.tokens;
 	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
@@ -63,7 +67,7 @@ export function PickTokens() {
 
 	const handlePickClick = () => startTransition( async () => {
 		if ( projectedTotal <= 10 ) {
-			await pickTokens.mutateAsync( { gameId: shared.id, tokens: selectedTokens } );
+			await pickTokens.mutateAsync( { tokens: selectedTokens } );
 			reset();
 		} else {
 			setTrue();
@@ -72,7 +76,6 @@ export function PickTokens() {
 
 	const handleReturnClick = () => startTransition( async () => {
 		await pickTokens.mutateAsync( {
-			gameId: shared.id,
 			tokens: selectedTokens,
 			returned: returnTokens
 		} );

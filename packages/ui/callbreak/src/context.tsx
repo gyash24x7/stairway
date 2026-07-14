@@ -1,12 +1,20 @@
-import type { CallbreakGame } from "@s2h/callbreak/types";
-import { orpc } from "@s2h/client/query";
-import type { CardId } from "@s2h/utils/cards";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { CardIdSchema } from "@s2h/callbreak/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
+import {
+	addBotsFn,
+	type CallbreakGame,
+	declareWinsFn,
+	playCardFn,
+	toPlayerInfo
+} from "./client";
+
+type CardId = CallbreakGame[ "player" ][ "hand" ][ number ];
 
 type CallbreakContextValue = {
-	shared: CallbreakGame["shared"];
-	player: CallbreakGame["player"];
+	shared: CallbreakGame[ "shared" ];
+	player: CallbreakGame[ "player" ];
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
@@ -18,7 +26,7 @@ type CallbreakContextValue = {
 	playCard: ReturnType<typeof useMutation<unknown, Error, {
 		gameId: string;
 		dealId: string;
-		cardId: CardId
+		cardId: CardIdSchema
 	}>>;
 	addBots: ReturnType<typeof useMutation<unknown, Error, { gameId: string }>>;
 };
@@ -33,28 +41,34 @@ export function useCallbreak() {
 	return ctx;
 }
 
-type CallbreakProviderProps = { data: CallbreakGame; children: ReactNode; };
+type CallbreakProviderProps = { data: CallbreakGame; gameId: string; children: ReactNode; };
 
-export function CallbreakProvider( { data, children }: CallbreakProviderProps ) {
+export function CallbreakProvider( { data, gameId, children }: CallbreakProviderProps ) {
 	const { shared, player } = data;
 	const queryClient = useQueryClient();
+	const { authInfo } = useAuth();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
 
 	const invalidate = () => queryClient.invalidateQueries( {
-		queryKey: orpc.callbreak.getGame.key( { input: { gameId: shared.id } } )
+		queryKey: [ "callbreak", "getState", gameId ]
 	} );
 
-	const declareWins = useMutation( orpc.callbreak.declareWins.mutationOptions( {
+	const declareWins = useMutation( {
+		mutationFn: ( { dealId, wins }: { gameId: string; dealId: string; wins: number } ) =>
+			declareWinsFn( gameId, toPlayerInfo( authInfo! ), { wins, dealId } ),
 		onSuccess: () => invalidate()
-	} ) );
+	} );
 
-	const playCard = useMutation( orpc.callbreak.playCard.mutationOptions( {
+	const playCard = useMutation( {
+		mutationFn: ( { dealId, cardId }: { gameId: string; dealId: string; cardId: CardIdSchema } ) =>
+			playCardFn( gameId, toPlayerInfo( authInfo! ), { cardId, dealId } ),
 		onSuccess: () => invalidate()
-	} ) );
+	} );
 
-	const addBots = useMutation( orpc.callbreak.addBots.mutationOptions( {
+	const addBots = useMutation( {
+		mutationFn: ( _vars: { gameId: string } ) => addBotsFn( gameId ),
 		onSuccess: () => invalidate()
-	} ) );
+	} );
 
 	const isMyTurn = shared.status === "IN_PROGRESS"
 		&& shared.context.currentPlayer === player.playerId;

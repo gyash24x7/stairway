@@ -1,7 +1,8 @@
 "use client";
 
-import type { Gem } from "@s2h/splendor/types";
+import type { Gem } from "@s2h/splendor/schema";
 import { GEMS_WITH_GOLD } from "@s2h/splendor/utils";
+import type { PlayerId } from "@s2h/swish/schema";
 import { CounterTween } from "@s2h/ui/components/counter-tween";
 import { FloatPlusN } from "@s2h/ui/components/float-plus-n";
 import { Avatar, AvatarImage } from "@s2h/ui/primitives/avatar";
@@ -22,7 +23,7 @@ import { GameCard } from "./game-card";
 import { PurchaseCard } from "./purchase-card";
 import { gemColors, gemLightColors } from "./utils";
 
-function PlayerTokenCount( props: { gem: Gem; playerId: string } ) {
+function PlayerTokenCount( props: { gem: Gem; playerId: PlayerId } ) {
 	const { shared } = useSplendor();
 	const count = shared.state.playerData[ props.playerId ].tokens[ props.gem ];
 
@@ -43,7 +44,7 @@ function PlayerTokenCount( props: { gem: Gem; playerId: string } ) {
 	);
 }
 
-function ReservedCards( props: { playerId: string } ) {
+function ReservedCards( props: { playerId: PlayerId } ) {
 	const { shared, player } = useSplendor();
 	const playerData = shared.state.playerData[ props.playerId ];
 	const playerName = shared.players[ props.playerId ].name.toUpperCase();
@@ -123,7 +124,7 @@ function ReservedCards( props: { playerId: string } ) {
 	);
 }
 
-function PurchasedCards( props: { gem: Exclude<Gem, "gold">; playerId: string; } ) {
+function PurchasedCards( props: { gem: Exclude<Gem, "gold">; playerId: PlayerId; } ) {
 	const { shared } = useSplendor();
 	const cards = shared.state.playerData[ props.playerId ].cards;
 	const count = cards.filter( c => c.bonus === props.gem ).length;
@@ -145,7 +146,7 @@ function PurchasedCards( props: { gem: Exclude<Gem, "gold">; playerId: string; }
 	);
 }
 
-function PlayerGemInfo( props: { playerId: string } ) {
+function PlayerGemInfo( props: { playerId: PlayerId } ) {
 	return (
 		<div className={ cn( "flex justify-around gap-2 flex-1 p-2" ) }>
 			{ GEMS_WITH_GOLD.map( gem => (
@@ -159,7 +160,7 @@ function PlayerGemInfo( props: { playerId: string } ) {
 	);
 }
 
-export function PlayerInfo( { playerId, bg }: { playerId: string; bg?: boolean; } ) {
+export function PlayerInfo( { playerId, bg }: { playerId: PlayerId; bg?: boolean; } ) {
 	const { shared } = useSplendor();
 	const baseInfo = shared.players[ playerId ];
 	const gameInfo = shared.state.playerData[ playerId ];

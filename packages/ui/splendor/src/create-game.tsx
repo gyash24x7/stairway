@@ -1,19 +1,24 @@
 "use client";
 
-import { client } from "@s2h/client";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { useState } from "react";
+import { createSplendorGameFn } from "./client";
 
 export function SplendorCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();
 	const [ winningPoints, setWinningPoints ] = useState<10 | 15 | 20>( 15 );
 
-	const createSplendorGame = async () => {
-		if ( !!playerCount && !!winningPoints ) {
-			return client.splendor.createGame( { playerCount, winningPoints } );
+	const createSplendorGame = async (): Promise<string> => {
+		if ( !playerCount || !winningPoints ) {
+			return "";
 		}
-		return "";
+		const { id } = await createSplendorGameFn( {
+			playerCount,
+			autoStart: true,
+			winningPoints
+		} );
+		return id;
 	};
 
 	return (

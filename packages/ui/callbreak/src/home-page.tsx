@@ -1,10 +1,12 @@
-import { client } from "@s2h/client";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
+import { joinCallbreakGameFn, toPlayerInfo } from "./client";
 import { CallbreakCreateGame as CreateGame } from "./create-game";
 
 export function CallbreakHomePage( props: { isLoggedIn?: boolean } ) {
+	const { authInfo } = useAuth();
 	return (
 		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>CALLBREAK</h2>
@@ -20,7 +22,9 @@ export function CallbreakHomePage( props: { isLoggedIn?: boolean } ) {
 						<CreateGame/>
 						<JoinGame
 							game={ "callbreak" }
-							joinGame={ input => client.callbreak.joinGame( input ) }
+							joinGame={ ( { code } ) =>
+								joinCallbreakGameFn( code, toPlayerInfo( authInfo! ) )
+									.then( ( { id } ) => id ) }
 						/>
 					</div>
 				)

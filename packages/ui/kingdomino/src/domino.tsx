@@ -1,4 +1,4 @@
-import type { Domino, DominoId, Terrain } from "@s2h/kingdomino/types";
+import type { Domino, DominoId, Terrain } from "@s2h/kingdomino/utils";
 import { cn } from "@s2h/ui/utils/cn";
 import { motion } from "framer-motion";
 import { CrownIndicator } from "./board";

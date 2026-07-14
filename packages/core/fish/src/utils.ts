@@ -1,19 +1,57 @@
+import { PlayerId, type PlayerInfo } from "@s2h/swish/schema";
+import { remove } from "@s2h/utils/array";
+import {
+	CARD_RANKS,
+	type CardId,
+	getCardDisplayString,
+	getCardRank
+} from "@s2h/utils/cards";
+import * as Match from "effect/Match";
 import type {
 	Ask,
 	Book,
 	BookType,
-	CanadianBook,
 	Claim,
-	FishData,
-	NormalBook,
-	PlayerCount,
-	TeamCount,
-	TeamData,
-	TeamId,
+	FishEvent,
+	FishState,
+	Team,
 	Transfer
-} from "./types";
-import type { BasePlayerInfo, PlayerId } from "@s2h/engine/types";
-import { type CardId, getCardDisplayString } from "@s2h/utils/cards";
+} from "./schema";
+import {
+	BookClaimed,
+	CardAsked
+} from "./schema";
+
+/** Normal book names representing card ranks (all four suits per rank). */
+export type NormalBook =
+	"ACES"
+	| "TWOS"
+	| "THREES"
+	| "FOURS"
+	| "FIVES"
+	| "SIXES"
+	| "SEVENS"
+	| "EIGHTS"
+	| "NINES"
+	| "TENS"
+	| "JACKS"
+	| "QUEENS"
+	| "KINGS";
+
+/** Canadian book names representing suit halves (L=low A-6, U=high 8-K). */
+export type CanadianBook = "LC" | "LD" | "LH" | "LS" | "UC" | "UD" | "UH" | "US";
+
+/** Supported player counts for Fish games. */
+export type PlayerCount = 4 | 6 | 8;
+
+/** Supported team counts for Fish games. */
+export type TeamCount = 2 | 3 | 4;
+
+/** Unique identifier for a team. */
+export type TeamId = string;
+
+/** Map of team IDs to team objects. */
+export type TeamData = Record<TeamId, Team>;
 
 /** Mapping of normal book names to their card IDs (4 cards per book, grouped by rank). */
 export const NORMAL_BOOKS = {
@@ -70,7 +108,7 @@ export function getBookForCard( card: CardId, bookType: BookType ) {
  * @returns An array of unique books found in the hand
  * @public
  */
-export function getBooksInHand( hand: CardId[], bookType: BookType ) {
+export function getBooksInHand( hand: readonly CardId[], bookType: BookType ) {
 	const books = new Set<Book>( hand.map( cardId => getBookForCard( cardId, bookType ) ) );
 	return Array.from( books );
 }
@@ -83,7 +121,7 @@ export function getBooksInHand( hand: CardId[], bookType: BookType ) {
  * @returns True if the book is in hand, false otherwise
  * @public
  */
-export function isBookInHand( hand: CardId[], book: Book, bookType: BookType ) {
+export function isBookInHand( hand: readonly CardId[], book: Book, bookType: BookType ) {
 	return getBooksInHand( hand, bookType ).includes( book );
 }
 
@@ -95,7 +133,7 @@ export function isBookInHand( hand: CardId[], book: Book, bookType: BookType ) {
  * @returns An array of card IDs that are missing from the hand for the specified book
  * @public
  */
-export function getMissingCards( hand: CardId[], book: Book, bookType: BookType ) {
+export function getMissingCards( hand: readonly CardId[], book: Book, bookType: BookType ) {
 	return bookType === "NORMAL"
 		? NORMAL_BOOKS[ book as NormalBook ].filter( ( cardId ) => !hand.includes( cardId ) )
 		: CANADIAN_BOOKS[ book as CanadianBook ].filter( ( cardId ) => !hand.includes( cardId ) );
@@ -109,7 +147,7 @@ export function getMissingCards( hand: CardId[], book: Book, bookType: BookType 
  * @returns An array of PlayingCards from the specified book, filtered by the hand if provided
  * @public
  */
-export function getCardsOfBook( book: Book, bookType: BookType, hand?: CardId[] ) {
+export function getCardsOfBook( book: Book, bookType: BookType, hand?: readonly CardId[] ) {
 	const cards = bookType === "NORMAL"
 		? NORMAL_BOOKS[ book as NormalBook ]
 		: CANADIAN_BOOKS[ book as CanadianBook ];
@@ -205,7 +243,7 @@ export function getBookSuit( book: Book, bookType: BookType ): string | undefine
  * @param players - The player info records for name lookup.
  * @returns A description string like "Alice asked Bob for ACE OF HEARTS and got the card!".
  */
-export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlayerInfo> ) {
+export function getAskDescription( ask: Ask, players: Record<PlayerId, PlayerInfo> ) {
 	const askingPlayer = players[ ask.playerId ].name;
 	const askedPlayer = players[ ask.from ].name;
 	const cardString = getCardDisplayString( ask.cardId );
@@ -223,7 +261,7 @@ export function getAskDescription( ask: Ask, players: Record<PlayerId, BasePlaye
  */
 export function getClaimDescription(
 	claim: Claim,
-	players: Record<PlayerId, BasePlayerInfo>,
+	players: Record<PlayerId, PlayerInfo>,
 	bookType: BookType
 ) {
 	const successString = claim.success ? "correctly!" : "incorrectly!";
@@ -240,7 +278,7 @@ export function getClaimDescription(
  */
 export function getTransferDescription(
 	transfer: Transfer,
-	players: Record<PlayerId, BasePlayerInfo>
+	players: Record<PlayerId, PlayerInfo>
 ) {
 	const transferringPlayer = players[ transfer.playerId ].name;
 	const receivingPlayer = players[ transfer.transferTo ].name;
@@ -253,7 +291,7 @@ export function getTransferDescription(
  * @param state - The game state.
  * @returns An array of claimed book names.
  */
-export function getClaimedBooks( state: FishData ): Book[] {
+export function getClaimedBooks( state: FishState ): Book[] {
 	return Object.values( state.teams ).flatMap( s => s.booksWon );
 }
 
@@ -285,3 +323,187 @@ export function buildConfig( playerCount: PlayerCount, type: BookType, teamCount
 
 /** Registry slug for this game (also the DO name prefix). */
 export const GAME_NAME = "fish";
+
+// --- Reducer ---------------------------------------------------------------
+// The ONLY place `state` changes. Pure, synchronous — no Effect, no Random. The
+// deterministic card-tracking bookkeeping the old `execute` did inline lives
+// here; nondeterministic facts are read straight from the event payload.
+
+const DEFAULT_METRICS = {
+	totalAsks: 0,
+	cardsGiven: 0,
+	cardsTaken: 0,
+	totalClaims: 0,
+	successfulClaims: 0
+};
+
+// The book variant is derivable from any team's booksWon or the deck; simpler to
+// infer from the presence of 7s in the tracked deck (Canadian removes 7s). When
+// the deck is fully claimed this is ambiguous, but claims resolve before that
+// point; fall back to NORMAL only when no cards remain.
+const bookTypeOf = ( state: FishState ): BookType => {
+	const cards = Object.keys( state.cardLocations );
+	const hasSeven = cards.some( c => getCardRank( c as CardId ) === CARD_RANKS.SEVEN );
+	return hasSeven ? "NORMAL" : ( cards.length > 0 ? "CANADIAN" : "NORMAL" );
+};
+
+const applyAsk = ( state: FishState, e: CardAsked ): FishState => {
+	const hands = { ...state.hands } as Record<PlayerId, CardId[]>;
+	const cardCounts = { ...state.cardCounts };
+	const playerData = { ...state.playerData };
+	const cardLocations = { ...state.cardLocations } as Record<CardId, PlayerId[]>;
+
+	const asker = playerData[ e.playerId ];
+	const askerData = { ...asker, metrics: { ...asker.metrics } };
+	playerData[ e.playerId ] = askerData;
+
+	if ( e.success ) {
+		hands[ e.from ] = ( hands[ e.from ] ?? [] ).filter( c => c !== e.cardId );
+		cardCounts[ e.from ] = ( cardCounts[ e.from ] ?? 0 ) - 1;
+		const fromData = { ...playerData[ e.from ], metrics: { ...playerData[ e.from ].metrics } };
+		fromData.metrics.cardsGiven++;
+		playerData[ e.from ] = fromData;
+
+		hands[ e.playerId ] = [ ...( hands[ e.playerId ] ?? [] ), e.cardId ];
+		cardCounts[ e.playerId ] = ( cardCounts[ e.playerId ] ?? 0 ) + 1;
+		askerData.metrics.cardsTaken++;
+	}
+
+	askerData.metrics.totalAsks++;
+
+	const askHistory = [
+		{ success: e.success, playerId: e.playerId, from: e.from, cardId: e.cardId, timestamp: e.timestamp },
+		...state.askHistory
+	];
+
+	const possibleOwners = cardLocations[ e.cardId ] ?? [];
+	cardLocations[ e.cardId ] = e.success
+		? [ e.playerId ]
+		: remove( p => p === e.from || p === e.playerId, possibleOwners );
+
+	if ( e.success && ( cardCounts[ e.from ] ?? 0 ) <= 0 ) {
+		for ( const cid of Object.keys( cardLocations ) as CardId[] ) {
+			const owners = cardLocations[ cid ];
+			if ( owners && owners.includes( e.from ) ) {
+				cardLocations[ cid ] = owners.filter( pid => pid !== e.from );
+			}
+		}
+	}
+
+	return { ...state, hands, cardCounts, playerData, cardLocations, askHistory, lastMoveType: "ask" };
+};
+
+const applyClaim = ( state: FishState, e: BookClaimed ): FishState => {
+	const allBookCards = getCardsOfBook( e.book, bookTypeOf( state ) );
+	const hands: Record<PlayerId, CardId[]> = {};
+	for ( const [ pid, hand ] of Object.entries( state.hands ) ) {
+		hands[ pid as PlayerId ] = hand.filter( c => !allBookCards.includes( c ) );
+	}
+
+	const cardCounts = { ...state.cardCounts };
+	const cardLocations = { ...state.cardLocations } as Record<CardId, PlayerId[]>;
+	for ( const card of allBookCards ) {
+		const owner = e.correctClaim[ card ];
+		if ( owner ) {
+			cardCounts[ owner ] = ( cardCounts[ owner ] ?? 0 ) - 1;
+		}
+		delete cardLocations[ card ];
+	}
+
+	const emptyPlayers = new Set(
+		Object.keys( cardCounts ).filter( pid => ( cardCounts[ pid as PlayerId ] ?? 0 ) <= 0 )
+	);
+	if ( emptyPlayers.size > 0 ) {
+		for ( const cardId of Object.keys( cardLocations ) as CardId[] ) {
+			const owners = cardLocations[ cardId ];
+			if ( owners ) {
+				const filtered = owners.filter( pid => !emptyPlayers.has( pid ) );
+				if ( filtered.length > 0 ) {
+					cardLocations[ cardId ] = filtered;
+				}
+			}
+		}
+	}
+
+	const winner = state.teams[ e.winningTeamId ];
+	const teams = {
+		...state.teams,
+		[ e.winningTeamId ]: {
+			...winner,
+			booksWon: [ ...winner.booksWon, e.book ],
+			score: winner.score + 1
+		}
+	};
+
+	const claimer = state.playerData[ e.playerId ];
+	const claimerData = { ...claimer, metrics: { ...claimer.metrics } };
+	claimerData.metrics.totalClaims++;
+	if ( e.success ) {
+		claimerData.metrics.successfulClaims++;
+	}
+	const playerData = { ...state.playerData, [ e.playerId ]: claimerData };
+
+	const claimHistory = [
+		{
+			success: e.success,
+			playerId: e.playerId,
+			book: e.book,
+			correctClaim: e.correctClaim,
+			actualClaim: e.actualClaim,
+			timestamp: e.timestamp
+		},
+		...state.claimHistory
+	];
+
+	return {
+		...state,
+		hands,
+		cardCounts,
+		cardLocations,
+		teams,
+		playerData,
+		claimHistory,
+		lastMoveType: "claim"
+	};
+};
+
+/** Pure reducer — the ONLY place `state` changes. */
+export const apply = ( state: FishState, event: FishEvent ): FishState =>
+	Match.value( event ).pipe(
+		Match.tag( "fish/PlayerSeated", ( e ) => ( {
+			...state,
+			playerData: {
+				...state.playerData,
+				[ e.playerId ]: { teamId: "", metrics: { ...DEFAULT_METRICS } }
+			}
+		} ) ),
+		Match.tag( "fish/TeamsCreated", ( e ) => {
+			const teams = { ...state.teams };
+			const playerData = { ...state.playerData };
+			for ( const t of e.teams ) {
+				teams[ t.id ] = { id: t.id, name: t.name, members: [ ...t.members ], score: 0, booksWon: [] };
+				for ( const pid of t.members ) {
+					playerData[ pid ] = { ...playerData[ pid ], teamId: t.id };
+				}
+			}
+			return { ...state, teams, playerData };
+		} ),
+		Match.tag( "fish/HandsDealt", ( e ) => ( {
+			...state,
+			hands: { ...e.hands },
+			cardCounts: { ...e.cardCounts },
+			cardLocations: { ...e.cardLocations }
+		} ) ),
+		Match.tag( "fish/CardAsked", ( e ) => applyAsk( state, e ) ),
+		Match.tag( "fish/BookClaimed", ( e ) => applyClaim( state, e ) ),
+		Match.tag( "fish/TurnTransferred", ( e ) => ( {
+			...state,
+			lastMoveType: "transfer" as const,
+			transferHistory: [
+				{ playerId: e.playerId, transferTo: e.transferTo, timestamp: e.timestamp },
+				...state.transferHistory
+			]
+		} ) ),
+		Match.tag( "fish/WinningTeamDecided", ( e ) => ( { ...state, winningTeam: e.teamId } ) ),
+		Match.exhaustive
+	);

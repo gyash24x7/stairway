@@ -1,18 +1,25 @@
-import { orpc } from "@s2h/client/query";
-import { CallbreakProvider } from "./context";
-import { GameView } from "./game-view";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
+import { getStateFn, snapshotToCallbreakGame, toPlayerInfo } from "./client";
+import { CallbreakProvider } from "./context";
+import { GameView } from "./game-view";
 
 export function CallbreakGamePage( { gameId }: { gameId: string } ) {
-	const { data, isLoading } = useQuery( orpc.callbreak.getGame.queryOptions( { input: { gameId } } ) );
+	const { authInfo } = useAuth();
+
+	const { data, isLoading } = useQuery( {
+		queryKey: [ "callbreak", "getState", gameId ],
+		enabled: !!authInfo,
+		queryFn: ( { signal } ) => getStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+	} );
 
 	if ( isLoading || !data ) {
 		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
 	}
 
 	return (
-		<CallbreakProvider data={ data }>
+		<CallbreakProvider data={ snapshotToCallbreakGame( data ) } gameId={ gameId }>
 			<GameView/>
 		</CallbreakProvider>
 	);

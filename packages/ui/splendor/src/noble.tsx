@@ -1,8 +1,8 @@
-import type { Cost, Noble } from "@s2h/splendor/types";
+import type { Cost, Noble as NobleType } from "@s2h/splendor/schema";
 import { cn } from "@s2h/ui/utils/cn";
 import { gemColors } from "./utils";
 
-export function Noble( { noble }: { noble: Noble } ) {
+export function Noble( { noble }: { noble: NobleType } ) {
 	return (
 		<div
 			className={ cn(

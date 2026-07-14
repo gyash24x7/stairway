@@ -1,4 +1,4 @@
-import type { KingdominoPlayerInfo } from "@s2h/kingdomino/types";
+import type { KingdominoPlayerInfo } from "./context";
 import { CounterTween } from "@s2h/ui/components/counter-tween";
 import { FloatPlusN } from "@s2h/ui/components/float-plus-n";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";

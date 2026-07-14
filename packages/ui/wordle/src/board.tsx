@@ -1,7 +1,5 @@
-import { orpc } from "@s2h/client/query";
 import { cn } from "@s2h/ui/utils/cn";
-import type { GuessResult, GuessResultsForWord, LetterStatus } from "@s2h/wordle/types";
-import { useQuery } from "@tanstack/react-query";
+import type { GuessResult, GuessResultsForWord, LetterStatus } from "@s2h/wordle/schema";
 import { motion } from "framer-motion";
 import { useWordle } from "./context";
 
@@ -17,13 +15,13 @@ function getBlockColor( status: LetterStatus ) {
 }
 
 type GuessTilesProps = {
-	result: GuessResult[];
+	result: ReadonlyArray<GuessResult>;
 	isCurrentRow: boolean;
 	rowIndex: number;
 };
 
 function GuessTiles( { result, isCurrentRow, rowIndex }: GuessTilesProps ) {
-	const { shared, currentGuess, invalidGuess, lastRevealedRow } = useWordle();
+	const { data, currentGuess, invalidGuess, lastRevealedRow } = useWordle();
 	const hasResult = result.some( ( r ) => r.letter !== "" );
 	const isRevealing = hasResult && lastRevealedRow === rowIndex;
 
@@ -31,15 +29,15 @@ function GuessTiles( { result, isCurrentRow, rowIndex }: GuessTilesProps ) {
 		? currentGuess.charAt( idx )
 		: undefined;
 
-	const isCompleted = shared.status === "COMPLETED";
+	const isCompleted = data.status === "COMPLETED";
 
 	return (
 		<motion.div
 			className={ cn(
 				"grid gap-1",
-				shared.config.wordLength === 4 && "grid-cols-4",
-				shared.config.wordLength === 5 && "grid-cols-5",
-				shared.config.wordLength === 6 && "grid-cols-6"
+				data.config.wordLength === 4 && "grid-cols-4",
+				data.config.wordLength === 5 && "grid-cols-5",
+				data.config.wordLength === 6 && "grid-cols-6"
 			) }
 			animate={ isCurrentRow && invalidGuess ? { x: [ 0, -8, 8, -8, 8, -4, 4, 0 ] } : { x: 0 } }
 			transition={ { duration: 0.5 } }
@@ -88,7 +86,7 @@ function GuessTiles( { result, isCurrentRow, rowIndex }: GuessTilesProps ) {
 }
 
 function WordTiles( { results }: { results: GuessResultsForWord } ) {
-	const { shared } = useWordle();
+	const { data } = useWordle();
 	const isSolved = results.some(
 		( row ) => row.every( ( r ) => r.status === "correct" && r.letter !== "" )
 	);
@@ -98,7 +96,7 @@ function WordTiles( { results }: { results: GuessResultsForWord } ) {
 			{ results.map( ( result, idx ) => (
 				<GuessTiles
 					result={ result }
-					isCurrentRow={ !isSolved && shared.state.guesses.length === idx }
+					isCurrentRow={ !isSolved && data.shared.guesses.length === idx }
 					rowIndex={ idx }
 					key={ `word-tiles-${ idx }` }
 				/>
@@ -108,15 +106,12 @@ function WordTiles( { results }: { results: GuessResultsForWord } ) {
 }
 
 export function Board() {
-	const { shared } = useWordle();
-	const { data: words = [] } = useQuery( orpc.wordle.getWords.queryOptions( {
-		input: { gameId: shared.id },
-		enabled: shared.status === "COMPLETED"
-	} ) );
+	const { data } = useWordle();
+	const words: string[] = [];
 
 	return (
 		<div className={ "flex justify-center flex-wrap gap-3 w-full" }>
-			{ shared.state.guessResults.map( ( guessResultsForWord, idx ) => (
+			{ data.shared.guessResults.map( ( guessResultsForWord, idx ) => (
 				<div key={ `word-${ idx }` } className={ "flex flex-col gap-2 items-center" }>
 					<WordTiles results={ guessResultsForWord }/>
 					{ !!words[ idx ] && (

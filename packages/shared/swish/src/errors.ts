@@ -5,7 +5,7 @@
 // they are schemas, they travel through the RPC error channel and are decoded
 // on the client as discriminated `_tag` members — no string matching.
 
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 import { GameId, PlayerId } from "./schema";
 
 /** The game is already at capacity; a further `Join` is rejected. */

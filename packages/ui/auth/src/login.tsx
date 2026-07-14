@@ -1,4 +1,3 @@
-import { client } from "@s2h/client";
 import { Button } from "@s2h/ui/primitives/button";
 import {
 	Dialog,
@@ -10,10 +9,21 @@ import {
 import { Input } from "@s2h/ui/primitives/input";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/ui/utils/cn";
+import type {
+	PublicKeyCredentialCreationOptionsJSON,
+	PublicKeyCredentialRequestOptionsJSON
+} from "@simplewebauthn/browser";
 import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { useNavigate } from "@tanstack/react-router";
 import { LogInIcon } from "lucide-react";
 import { Fragment, useState, useTransition } from "react";
+import {
+	checkUserFn,
+	getLoginOptionsFn,
+	getRegisterOptionsFn,
+	verifyLoginFn,
+	verifyRegistrationFn
+} from "./client";
 import { useRefreshAuth } from "./use-auth";
 
 export function Login() {
@@ -32,22 +42,22 @@ export function Login() {
 	};
 
 	const passkeyLogin = async () => {
-		const exists = await client.auth.checkIfUserExists( { username } );
+		const exists = await checkUserFn( username );
 		if ( !exists ) {
 			setMode( "register" );
 			return;
 		}
 
-		const optionsJSON = await client.auth.getLoginOptions( { username } );
+		const optionsJSON = await getLoginOptionsFn( username ) as PublicKeyCredentialRequestOptionsJSON;
 		const response = await startAuthentication( { optionsJSON } );
-		await client.auth.verifyLogin( { username, response } );
+		await verifyLoginFn( username, response );
 		await finishAuth();
 	};
 
 	const passkeyRegister = async () => {
-		const optionsJSON = await client.auth.getRegisterOptions( { username, name } );
+		const optionsJSON = await getRegisterOptionsFn( username, name ) as PublicKeyCredentialCreationOptionsJSON;
 		const response = await startRegistration( { optionsJSON } );
-		await client.auth.verifyRegistration( { username, name, response } );
+		await verifyRegistrationFn( username, name, response );
 		await finishAuth();
 	};
 

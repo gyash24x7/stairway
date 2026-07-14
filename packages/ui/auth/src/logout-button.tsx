@@ -1,9 +1,9 @@
-import { client } from "@s2h/client";
 import { Button } from "@s2h/ui/primitives/button";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOutIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";
+import { logoutFn } from "./client";
 import { useRefreshAuth } from "./use-auth";
 
 export function LogoutButton() {
@@ -12,7 +12,7 @@ export function LogoutButton() {
 	const [ isPending, startTransition ] = useTransition();
 
 	const handleLogout = () => startTransition( async () => {
-		await client.auth.logout();
+		await logoutFn();
 		await refreshAuth();
 		await navigate( { to: "/" } );
 	} );

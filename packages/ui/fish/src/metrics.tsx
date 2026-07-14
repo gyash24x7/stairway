@@ -1,3 +1,4 @@
+import type { PlayerId } from "@s2h/swish/schema";
 import { useFish } from "./context";
 import {
 	Table,
@@ -28,7 +29,7 @@ export function GameMetrics() {
 				<TableBody>
 					{ Object.entries( shared.state.playerData ).map( ( [ id, { metrics } ] ) => (
 						<TableRow key={ id } className={ "font-semibold" }>
-							<TableCell>{ shared.players[ id ].name }</TableCell>
+							<TableCell>{ shared.players[ id as PlayerId ].name }</TableCell>
 							<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>
 							<TableCell className={ "text-center" }>{ metrics.cardsTaken }</TableCell>
 							<TableCell className={ "text-center" }>{ metrics.cardsGiven }</TableCell>

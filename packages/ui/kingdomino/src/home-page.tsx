@@ -1,10 +1,13 @@
-import { client } from "@s2h/client";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
+import { joinKingdominoGameFn, toPlayerInfo } from "./client";
 import { KingdominoCreateGame as CreateGame } from "./create-game";
 
 export function KingdominoHomePage( props: { isLoggedIn?: boolean } ) {
+	const { authInfo } = useAuth();
+
 	return (
 		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>KINGDOMINO</h2>
@@ -20,7 +23,10 @@ export function KingdominoHomePage( props: { isLoggedIn?: boolean } ) {
 						<CreateGame/>
 						<JoinGame
 							game={ "kingdomino" }
-							joinGame={ input => client.kingdomino.joinGame( input ) }
+							joinGame={ async ( { code } ) => {
+								const { id } = await joinKingdominoGameFn( code, toPlayerInfo( authInfo! ) );
+								return id;
+							} }
 						/>
 					</div>
 				)

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Card } from "@s2h/splendor/types";
+import type { Card } from "@s2h/splendor/schema";
 import {
 	Drawer,
 	DrawerContent,

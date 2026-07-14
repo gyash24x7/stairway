@@ -1,20 +1,25 @@
-import { orpc } from "@s2h/client/query";
-import { KingdominoProvider } from "./context";
-import { GameView } from "./game-view";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
+import { getKingdominoStateFn, toPlayerInfo } from "./client";
+import { KingdominoProvider } from "./context";
+import { GameView } from "./game-view";
 
 export function KingdominoGamePage( { gameId }: { gameId: string } ) {
-	const { data, isLoading } = useQuery(
-		orpc.kingdomino.getGame.queryOptions( { input: { gameId } } )
-	);
+	const { authInfo } = useAuth();
+
+	const { data, isLoading } = useQuery( {
+		queryKey: [ "kingdomino", "getState", gameId ],
+		enabled: !!authInfo,
+		queryFn: ( { signal } ) => getKingdominoStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+	} );
 
 	if ( isLoading || !data ) {
 		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
 	}
 
 	return (
-		<KingdominoProvider data={ data }>
+		<KingdominoProvider data={ data } >
 			<GameView/>
 		</KingdominoProvider>
 	);

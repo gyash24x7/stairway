@@ -10,7 +10,7 @@ const LINES = [
 	[ "enter", "z", "x", "c", "v", "b", "n", "m", "back" ]
 ];
 
-function getAvailableLetters( guesses: string[] ): string[] {
+function getAvailableLetters( guesses: ReadonlyArray<string> ): string[] {
 	let letters = "abcdefghijklmnopqrstuvwxyz".split( "" );
 	for ( const guess of guesses ) {
 		for ( const letter of guess.toLowerCase().split( "" ) ) {
@@ -22,14 +22,14 @@ function getAvailableLetters( guesses: string[] ): string[] {
 
 function KeyboardKey( { letter }: { letter: string } ) {
 	const {
-		shared,
+		data: shared,
 		currentGuess,
 		isPending,
 		handleKeyPress,
 		handleBackspace,
 		handleSubmit
 	} = useWordle();
-	const availableLetters = getAvailableLetters( shared.state.guesses );
+	const availableLetters = getAvailableLetters( shared.shared.guesses );
 	const isValidWord = dictionaries[ shared.config.wordLength ].includes( currentGuess );
 	const isLetterAvailable = letter.length !== 1 || availableLetters.includes( letter );
 

@@ -1,12 +1,20 @@
-import { client } from "@s2h/client";
-import type { JoinGameInput } from "@s2h/engine/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
+import { joinFishGameFn, toPlayerInfo } from "./client";
 import { FishCreateGame as CreateGame } from "./create-game";
 
 export function FishHomePage( props: { isLoggedIn?: boolean } ) {
-	const joinFishGame = ( input: JoinGameInput ) => client.fish.joinGame( input );
+	const { authInfo } = useAuth();
+
+	const joinFishGame = async ( input: { code: string } ): Promise<string> => {
+		if ( !authInfo ) {
+			return "";
+		}
+		const { id } = await joinFishGameFn( input.code, toPlayerInfo( authInfo ) );
+		return id;
+	};
 
 	return (
 		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>

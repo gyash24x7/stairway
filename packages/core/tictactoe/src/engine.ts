@@ -1,91 +1,129 @@
-import { GAME_NAME } from "./utils";
-import { AbstractGameEngine } from "@s2h/engine";
-import type { BaseGameConfig } from "@s2h/engine/types";
-import { roundRobin } from "@s2h/engine/utils";
-import type {
-	Board,
-	TicTacToeData,
-	TicTacToeMoves,
+// @s2h/tictactoe/swish — Tic-Tac-Toe as an event-sourced swish game.
+//
+// The swish port of ./engine.ts (the old `AbstractGameEngine` DO). Same rules,
+// re-expressed under event sourcing: moves/hooks EMIT domain events and a pure
+// `apply` reducer folds them onto `state` (the only place state changes). The
+// pure board helpers in ./utils are reused as-is.
+
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
+import { EngineRpc } from "@s2h/swish/rpc";
+import { PlayerId } from "@s2h/swish/schema";
+import { defineGame } from "@s2h/swish/structure";
+import * as Effect from "effect/Effect";
+import * as RpcGroup from "effect/unstable/rpc/RpcGroup";
+import {
+	Placed,
+	PlaceInput,
+	SymbolAssigned,
+	TicTacToeConfig,
+	TicTacToeEvent,
 	TicTacToePlayerView,
-	TicTacToeSharedView
-} from "./types";
-import { checkWinner, findBestMove, getSymbol, isBoardFull } from "./utils";
-
-/**
- * Durable Object game engine for Tic-Tac-Toe, a two-player game.
- * Uses a flat (non-phased) game structure with round-robin turns and minimax bot support.
- */
-export class TicTacToeEngine extends AbstractGameEngine<
-	TicTacToeData,
-	TicTacToeMoves,
-	BaseGameConfig,
 	TicTacToeSharedView,
-	TicTacToePlayerView
-> {
+	TicTacToeSnapshot,
+	TicTacToeState,
+	WinnerDecided
+} from "./schema";
+import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "./utils";
 
-	public static readonly NAME = GAME_NAME;
+// --- Engine ----------------------------------------------------------------
 
-	protected readonly structure = this.defineStructure( {
-		name: TicTacToeEngine.NAME,
-		resolveNextPlayer: roundRobin,
+export const tictactoe = makeEngine(
+	defineGame( {
+		name: "tic-tac-toe",
+		stateSchema: TicTacToeState,
+		configSchema: TicTacToeConfig,
+		sharedViewSchema: TicTacToeSharedView,
+		playerViewSchema: TicTacToePlayerView,
+		eventSchema: TicTacToeEvent,
+		apply,
 
-		sharedView: ( { state } ) => state,
-		playerView: ( _data, playerId ) => ( { playerId } ),
-
-		setup: () => ( {
-			board: Array( 9 ).fill( null ) as Board,
-			symbols: { X: "", O: "" }
+		setup: () => Effect.succeed( {
+			board: Array.from( { length: 9 }, () => null ),
+			symbols: { X: PlayerId.make( "" ), O: PlayerId.make( "" ) }
 		} ),
 
+		endIf: ( { state } ) => Effect.succeed(
+			checkWinner( [ ...state.board ] ) !== null || isBoardFull( [ ...state.board ] )
+		),
+
+		sharedView: ( { state } ) => Effect.succeed( state ),
+		playerView: ( _data, playerId ) => Effect.succeed( { playerId } ),
+		resolveNextPlayer: ( { context } ) =>
+			Effect.succeed( context.players[ context.turn % context.players.length ] ),
+
 		hooks: {
-			onJoin: ( { state, context }, playerId ) => {
-				const symbol = context.players.length === 1 ? "X" : "O";
-				state.symbols[ symbol ] = playerId;
-				return state;
-			},
+			onJoin: ( { state }, playerId ) =>
+				Effect.succeed( [
+					SymbolAssigned.make( {
+						symbol: state.symbols.X ? "O" : "X",
+						playerId
+					} )
+				] ),
 
 			onEnd: ( { state } ) => {
-				const winner = checkWinner( state.board );
-
-				if ( winner ) {
-					state.winner = state.symbols[ winner ];
-					return state;
+				const board = [ ...state.board ];
+				const winnerSymbol = checkWinner( board );
+				if ( winnerSymbol ) {
+					return Effect.succeed( [ WinnerDecided.make( { winner: state.symbols[ winnerSymbol ] } ) ] );
 				}
 
-				if ( isBoardFull( state.board ) ) {
-					state.winner = "draw";
-					return state;
+				if ( isBoardFull( board ) ) {
+					return Effect.succeed( [ WinnerDecided.make( { winner: "draw" as const } ) ] );
 				}
 
-				return state;
+				return Effect.succeed( [] );
 			}
 		},
 
 		moves: {
 			place: {
+				input: PlaceInput,
 				validate: ( { state }, _playerId, { position } ) => {
 					if ( position < 0 || position > 8 ) {
-						throw new Error( "Invalid position." );
+						return new InvalidMove( { move: "place", reason: "Invalid position." } );
 					}
 
 					if ( state.board[ position ] !== null ) {
-						throw new Error( "Cell is already occupied." );
+						return new InvalidMove( { move: "place", reason: "Cell is already occupied." } );
 					}
+
+					return Effect.void;
 				},
-				execute: ( { state }, playerId, { position } ) => {
-					state.board[ position ] = getSymbol( state, playerId );
-					return state;
-				}
+				execute: ( { state }, playerId, { position } ) => Effect.succeed( [
+					Placed.make( { position, symbol: symbolOf( state.symbols, playerId ) } )
+				] )
 			}
 		},
 
-		endIf: ( { state } ) => !!checkWinner( state.board ) || isBoardFull( state.board ),
-
 		botMove: ( { state } ) => {
-			const botSymbol = getSymbol( state, state.playerId );
 			const board = [ ...state.board ];
-			const position = findBestMove( board, botSymbol );
-			return { moveType: "place", input: { gameId: "", position } };
+			const position = findBestMove( board, symbolOf( state.symbols, state.playerId ) );
+			return Effect.succeed( { moveType: "place" as const, input: { position } } );
 		}
+	} )
+);
+
+// --- RPC surface -----------------------------------------------------------
+
+export class TicTacToeRpcs extends RpcGroup.make(
+	EngineRpc.makeInitialize( TicTacToeConfig ),
+	EngineRpc.makeGetState( TicTacToeSnapshot ),
+	EngineRpc.makeJoin(),
+	EngineRpc.makeAddBots(),
+	EngineRpc.makeStart(),
+	EngineRpc.makeForMove( "place", PlaceInput ),
+	EngineRpc.makeUndo( TicTacToeSnapshot ),
+	EngineRpc.makeRedo( TicTacToeSnapshot )
+) {
+	public static layer = TicTacToeRpcs.toLayer( {
+		initialize: tictactoe.initialize,
+		getState: tictactoe.getState,
+		join: tictactoe.join,
+		addBots: tictactoe.addBots,
+		start: tictactoe.start,
+		undo: tictactoe.undo,
+		redo: tictactoe.redo,
+		place: ( { playerInfo, input } ) => tictactoe.submitMove( "place", playerInfo, input )
 	} );
 }

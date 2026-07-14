@@ -17,6 +17,7 @@
 		"drizzle-orm": "catalog:"
 	},
 	"devDependencies": {
+		"@cloudflare/workers-types": "catalog:",
 		"typescript": "catalog:"
 	}
 }

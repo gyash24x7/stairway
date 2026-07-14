@@ -13,18 +13,18 @@ const CELL_CENTERS = [
 ];
 
 export function Board() {
-	const { shared, player, placeMove, isPending } = useTicTacToe();
+	const { data, placeMove, isPending } = useTicTacToe();
 
-	const isMyTurn = shared.context.currentPlayer === player.playerId;
-	const gameInProgress = shared.status === "IN_PROGRESS";
+	const isMyTurn = data.context.currentPlayer === data.player.playerId;
+	const gameInProgress = data.status === "IN_PROGRESS";
 	const disabled = !gameInProgress || !isMyTurn || isPending;
-	const winningLine = findWinningLine( shared.state.board );
+	const winningLine = findWinningLine( data.shared.board );
 
 	const handlePlace = ( position: number ) => placeMove( position );
 
 	return (
 		<div className={ "relative grid grid-cols-3 gap-2 w-full max-w-xl" }>
-			{ shared.state.board.map( ( cell, index ) => (
+			{ data.shared.board.map( ( cell, index ) => (
 				<button
 					key={ `Cell ${ index }` }
 					onClick={ () => handlePlace( index ) }

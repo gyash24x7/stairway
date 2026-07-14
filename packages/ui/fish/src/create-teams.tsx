@@ -1,6 +1,7 @@
 "use client";
 
-import { orpc } from "@s2h/client/query";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { PlayerId } from "@s2h/swish/schema";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -17,19 +18,21 @@ import { cn } from "@s2h/ui/utils/cn";
 import { chunk, shuffle } from "@s2h/utils/array";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
+import { createTeamsFn, toPlayerInfo } from "./client";
 import { useFish } from "./context";
 
 export function CreateTeams() {
 	const { shared } = useFish();
+	const { authInfo } = useAuth();
 	const [ teamNames, setTeamNames ] = useState<string[]>( [] );
-	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, string[]>>( {} );
+	const [ teamMemberData, setTeamMemberData ] = useState<Record<string, PlayerId[]>>( {} );
 	const [ open, setOpen ] = useState( false );
 
 	const teamsNotCreated = Object.keys( teamMemberData ).length === 0;
 
 	const groupPlayers = () => {
 		const teamMembers = chunk(
-			shuffle( shared.context.players ),
+			shuffle( [ ...shared.context.players ] ),
 			shared.config.playerCount / shared.config.teamCount
 		);
 
@@ -38,7 +41,7 @@ export function CreateTeams() {
 				acc[ name ] = teamMembers[ idx ] || [];
 				return acc;
 			},
-			{} as Record<string, string[]>
+			{} as Record<string, PlayerId[]>
 		) );
 	};
 
@@ -46,18 +49,23 @@ export function CreateTeams() {
 
 	const queryClient = useQueryClient();
 
-	const createTeams = useMutation( orpc.fish.createTeams.mutationOptions( {
+	const createTeams = useMutation( {
+		mutationFn: () => createTeamsFn(
+			shared.id,
+			toPlayerInfo( authInfo! ),
+			{ teams: teamMemberData }
+		),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: orpc.fish.getGame.key( { input: { gameId: shared.id } } )
+			queryKey: [ "fish", "getState", shared.id ]
 		} )
-	} ) );
+	} );
 
 	const handleCreateTeams = async () => {
-		if ( teamsNotCreated ) {
+		if ( teamsNotCreated || !authInfo ) {
 			return;
 		}
 
-		await createTeams.mutateAsync( { gameId: shared.id, teams: teamMemberData } );
+		await createTeams.mutateAsync();
 		closeDrawer();
 	};
 

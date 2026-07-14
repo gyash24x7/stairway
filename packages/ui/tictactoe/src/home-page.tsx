@@ -1,10 +1,18 @@
-import { client } from "@s2h/client";
-import { CreateGame } from "@s2h/ui/components/create-game";
+import { useAuth } from "@s2h-ui/auth/use-auth";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
+import { joinTicTacToeGameFn, toPlayerInfo } from "./client";
+import { TicTacToeCreateGame } from "./create-game";
 
 export function TicTacToeHomePage( props: { isLoggedIn?: boolean } ) {
+	const { authInfo } = useAuth();
+
+	const joinTicTacToeGame = async ( input: { code: string } ): Promise<string> => {
+		const { id } = await joinTicTacToeGameFn( input.code, toPlayerInfo( authInfo! ) );
+		return id;
+	};
+
 	return (
 		<div className={ "flex gap-5 flex-col mt-2 text-foreground w-full max-w-6xl" }>
 			<h2 className={ cn( "text-4xl font-heading" ) }>TIC TAC TOE</h2>
@@ -24,13 +32,10 @@ export function TicTacToeHomePage( props: { isLoggedIn?: boolean } ) {
 			{ !!props.isLoggedIn
 				? (
 					<div className={ "grid grid-cols-1 md:grid-cols-2 gap-5 w-full" }>
-						<CreateGame
-							game={ "tic-tac-toe" }
-							createGame={ () => client.tictactoe.createGame() }
-						/>
+						<TicTacToeCreateGame/>
 						<JoinGame
 							game={ "tic-tac-toe" }
-							joinGame={ input => client.tictactoe.joinGame( input ) }
+							joinGame={ joinTicTacToeGame }
 						/>
 					</div>
 				)

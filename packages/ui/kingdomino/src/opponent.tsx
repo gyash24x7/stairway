@@ -1,6 +1,6 @@
 "use client";
 
-import type { PlayerId } from "@s2h/engine/types";
+import type { PlayerId } from "@s2h/swish/schema";
 import { DOMINO_DECK } from "@s2h/kingdomino/utils";
 import { RPlayerInfoSmall } from "@s2h/ui/components/player-info";
 import { cn } from "@s2h/ui/utils/cn";

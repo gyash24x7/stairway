@@ -1,5 +1,25 @@
-import type { PlayerId } from "@s2h/engine/types";
-import type { Board, CellValue, TicTacToeData } from "./types";
+import type { PlayerId } from "@s2h/swish/schema";
+import * as Match from "effect/Match";
+import * as Types from "effect/Types";
+import { Board, CellValue, TicTacToeEvent, TicTacToeState } from "./schema";
+
+/** Pure reducer — the ONLY place `state` changes. */
+export const apply = ( state: typeof TicTacToeState.Type, event: typeof TicTacToeEvent.Type ) =>
+	Match.value( event ).pipe(
+		Match.tag( "tictactoe/SymbolAssigned", ( e ) =>
+			( { ...state, symbols: { ...state.symbols, [ e.symbol ]: e.playerId } } ) ),
+		Match.tag( "tictactoe/Placed", ( e ) => {
+			const board = [ ...state.board ];
+			board[ e.position ] = e.symbol;
+			return { ...state, board };
+		} ),
+		Match.tag( "tictactoe/WinnerDecided", ( e ) => ( { ...state, winner: e.winner } ) ),
+		Match.exhaustive
+	);
+
+/** The X/O symbol assigned to a player. */
+export const symbolOf = ( symbols: typeof TicTacToeState.Type[ "symbols" ], playerId: PlayerId ) =>
+	symbols.X === playerId ? "X" : "O";
 
 /** All possible winning line combinations for a 3x3 tic-tac-toe board. */
 export const WINNING_LINES = [
@@ -14,7 +34,7 @@ export const WINNING_LINES = [
  * @param board - The current board state.
  * @returns The winning symbol ("X" or "O"), or null if no winner.
  */
-export function checkWinner( board: Board ): CellValue {
+export function checkWinner( board: typeof Board.Type ) {
 	for ( const [ a, b, c ] of WINNING_LINES ) {
 		if ( board[ a ] && board[ a ] === board[ b ] && board[ a ] === board[ c ] ) {
 			return board[ a ];
@@ -29,7 +49,7 @@ export function checkWinner( board: Board ): CellValue {
  * @param board - The current board state.
  * @returns The three indices forming the winning line, or null if no winner.
  */
-export function findWinningLine( board: Board ): [ number, number, number ] | null {
+export function findWinningLine( board: typeof Board.Type ) {
 	for ( const line of WINNING_LINES ) {
 		const [ a, b, c ] = line;
 		if ( board[ a ] && board[ a ] === board[ b ] && board[ a ] === board[ c ] ) {
@@ -45,21 +65,8 @@ export function findWinningLine( board: Board ): [ number, number, number ] | nu
  * @param board - The current board state.
  * @returns True if every cell is filled.
  */
-export function isBoardFull( board: Board ): boolean {
+export function isBoardFull( board: typeof Board.Type ) {
 	return board.every( cell => cell !== null );
-}
-
-/**
- * Get the X/O symbol assigned to a player.
- *
- * @param state - The game state containing symbol assignments.
- * @param playerId - The player to look up.
- * @returns The player's assigned symbol ("X" or "O").
- */
-export function getSymbol( state: TicTacToeData, playerId: PlayerId ) {
-	return Object.keys( state.symbols )
-		.map( k => k as "X" | "O" )
-		.find( sym => state.symbols[ sym ] === playerId )!;
 }
 
 /**
@@ -70,10 +77,13 @@ export function getSymbol( state: TicTacToeData, playerId: PlayerId ) {
  * @param botSymbol - The bot's assigned symbol ("X" or "O").
  * @returns The board position index (0-8) for the optimal move.
  */
-export function findBestMove( board: Board, botSymbol: CellValue ): number {
-	const opponent: CellValue = botSymbol === "X" ? "O" : "X";
+export function findBestMove(
+	board: Types.Mutable<typeof Board.Type>,
+	botSymbol: typeof CellValue.Type
+) {
+	const opponent = botSymbol === "X" ? "O" : "X";
 
-	function minimax( b: Board, isMaximizing: boolean, depth: number ): number {
+	function minimax( b: Types.Mutable<typeof Board.Type>, isMaximizing: boolean, depth: number ) {
 		const winner = checkWinner( b );
 		if ( winner === botSymbol ) {
 			return 10 - depth;

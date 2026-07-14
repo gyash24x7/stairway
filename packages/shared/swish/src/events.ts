@@ -11,7 +11,8 @@
 // *decider* (`execute`/hooks) and is captured in the emitted event's payload,
 // so replaying the log reproduces state exactly.
 
-import { Match, Schema } from "effect";
+import * as Match from "effect/Match";
+import * as Schema from "effect/Schema";
 import {
 	GameContext,
 	GameStatus,

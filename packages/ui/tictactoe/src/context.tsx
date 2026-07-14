@@ -1,19 +1,13 @@
 "use client";
 
-import { orpc } from "@s2h/client/query";
-import type { BaseGameConfig, PlayerGameData, SharedGameData } from "@s2h/engine/types";
-import type { TicTacToePlayerView, TicTacToeSharedView } from "@s2h/tictactoe/types";
+import { useAuth } from "@s2h-ui/auth/use-auth";
+import type { TicTacToeData } from "@s2h/tictactoe/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext } from "react";
-
-type TicTacToeData = {
-	shared: SharedGameData<TicTacToeSharedView, BaseGameConfig>;
-	player: PlayerGameData<TicTacToePlayerView>;
-};
+import { addBotsFn, placeFn, toPlayerInfo } from "./client";
 
 type TicTacToeContextValue = {
-	shared: SharedGameData<TicTacToeSharedView, BaseGameConfig>;
-	player: PlayerGameData<TicTacToePlayerView>;
+	data: TicTacToeData;
 	placeMove: ( position: number ) => void;
 	addBots: () => void;
 	isPending: boolean;
@@ -31,37 +25,35 @@ export function useTicTacToe() {
 
 type TicTacToeProviderProps = {
 	data: TicTacToeData;
+	gameId: string;
 	children: ReactNode;
 };
 
-export function TicTacToeProvider( { data, children }: TicTacToeProviderProps ) {
-	const { shared, player } = data;
+export function TicTacToeProvider( { data, gameId, children }: TicTacToeProviderProps ) {
 	const queryClient = useQueryClient();
+	const { authInfo } = useAuth();
 
 	const invalidate = () => queryClient.invalidateQueries( {
-		queryKey: orpc.tictactoe.getGame.key( { input: { gameId: shared.id } } )
+		queryKey: [ "tic-tac-toe", "getState", gameId ]
 	} );
 
-	const placeMoveMutation = useMutation( orpc.tictactoe.placeMove.mutationOptions( {
+	const place = useMutation( {
+		mutationFn: ( position: number ) =>
+			placeFn( gameId, toPlayerInfo( authInfo! ), position ),
 		onSuccess: invalidate
-	} ) );
+	} );
 
-	const addBotsMutation = useMutation( orpc.tictactoe.addBots.mutationOptions( {
+	const bots = useMutation( {
+		mutationFn: () => addBotsFn( gameId ),
 		onSuccess: invalidate
-	} ) );
-
-	const placeMove = ( position: number ) =>
-		placeMoveMutation.mutate( { gameId: shared.id, position } );
-
-	const addBots = () => addBotsMutation.mutate( { gameId: shared.id } );
+	} );
 
 	return (
 		<TicTacToeContext value={ {
-			shared,
-			player,
-			placeMove,
-			addBots,
-			isPending: placeMoveMutation.isPending || addBotsMutation.isPending
+			data,
+			placeMove: ( position: number ) => place.mutate( position ),
+			addBots: () => bots.mutate(),
+			isPending: place.isPending || bots.isPending
 		} }>
 			{ children }
 		</TicTacToeContext>

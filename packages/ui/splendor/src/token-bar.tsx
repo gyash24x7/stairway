@@ -1,4 +1,4 @@
-import type { Gem, Tokens } from "@s2h/splendor/types";
+import type { Gem, Tokens } from "@s2h/splendor/schema";
 import { Button } from "@s2h/ui/primitives/button";
 import { cn } from "@s2h/ui/utils/cn";
 import type { ReactNode } from "react";

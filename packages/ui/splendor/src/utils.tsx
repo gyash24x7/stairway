@@ -1,4 +1,4 @@
-import type { Gem } from "@s2h/splendor/types";
+import type { Gem } from "@s2h/splendor/schema";
 
 export const gemColors: Record<Gem, string> = {
 	diamond: "bg-gray-100 text-gray-600",
