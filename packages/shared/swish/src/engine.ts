@@ -101,20 +101,13 @@ export const makeEngine = <
 		context: data.context
 	} );
 
-	/** Every declared move name — flat `moves`, or the union across all phases. */
-	const moveNames = (): Array<keyof MoveInputs> => {
-		if ( structure.phases ) {
-			const names = new Set<string>();
-			for ( const phase of Object.values( structure.phases ) ) {
-				for ( const name of Object.keys( phase.moves ) ) {
-					names.add( name );
-				}
-			}
-			return [ ...names ].map( move => move as keyof MoveInputs );
-		}
-
-		return Object.keys( structure.moves ?? {} ).map( move => move as keyof MoveInputs );
-	};
+	/**
+	 * Every declared move name. In the new structure all moves — flat or phased —
+	 * live in the top-level `moves` map (a phased move just tags itself with its
+	 * `phase`); `phases[k].moves` is only a name list for enumeration/validation.
+	 */
+	const moveNames = (): Array<keyof MoveInputs> =>
+		Object.keys( structure.moves ?? {} ).map( move => move as keyof MoveInputs );
 
 	type MovePayload<K extends keyof MoveInputs> = {
 		readonly playerInfo: PlayerInfo;
@@ -410,7 +403,10 @@ export const makeEngine = <
 			return yield* new NotYourTurn( { playerId, currentPlayer: data.context.currentPlayer } );
 		}
 
-		yield* moveDef.validate( readonly( data ), playerId, input );
+		const error = moveDef.validate( readonly( data ), playerId, input );
+		if ( error ) {
+			return yield* error;
+		}
 
 		// decide — emit events, fold onto the working copy as we go
 		const acc: Acc = { events: [], work: data };

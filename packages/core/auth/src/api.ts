@@ -8,7 +8,6 @@
 // serving app (`apps/api/src/auth.ts`), built against the merged root api.
 
 import * as Schema from "effect/Schema";
-import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
@@ -38,7 +37,7 @@ export const RegisterInput = Schema.Struct( {
 
 // --- API definition --------------------------------------------------------
 
-const AuthGroup = HttpApiGroup.make( "auth" ).prefix( "/auth" ).add(
+export const AuthApiGroup = HttpApiGroup.make( "auth" ).prefix( "/auth" ).add(
 	HttpApiEndpoint.get( "me", "/me", { success: Schema.NullOr( AuthInfoSchema ) } ),
 	HttpApiEndpoint.post( "checkIfUserExists", "/auth/checkIfUserExists", {
 		payload: UsernameInput,
@@ -63,5 +62,3 @@ const AuthGroup = HttpApiGroup.make( "auth" ).prefix( "/auth" ).add(
 	} ),
 	HttpApiEndpoint.post( "logout", "/logout" )
 );
-
-export class AuthApi extends HttpApi.make( "auth" ).add( AuthGroup ) {}

@@ -1,8 +1,8 @@
 // @s2h/wordle/engine — Wordle as an event-sourced swish game.
 //
-// The swish port of the old `AbstractGameEngine` DO, on the new `defineNewGame`
-// structure: `setup`/`apply`/`endIf`/views/hooks/`execute` are plain synchronous
-// functions (only `validate` is an `Effect`, since it can fail with InvalidMove).
+// The swish port of the old `AbstractGameEngine` DO, on the new `GameStructure`:
+// `setup`/`apply`/`endIf`/views/hooks/`execute`/`validate` are plain synchronous
+// functions — `validate` returns an `InvalidMove` to reject, or nothing to pass.
 // The `guess` move EMITS a domain event carrying the computed per-word results,
 // and the pure `apply` reducer in ./utils folds it onto `state` (the only place
 // state changes). Random target selection happens once in `setup` and becomes the
@@ -13,8 +13,6 @@ import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
 import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
 import { BasePlayerView } from "@s2h/swish/schema";
-import { defineGame } from "@s2h/swish/structure";
-import * as Effect from "effect/Effect";
 import { dictionaries } from "./dictionary";
 import {
 	GuessedEvent,
@@ -31,7 +29,7 @@ import { allWordsGuessed, apply, computeRow } from "./utils";
 
 // --- Engine ----------------------------------------------------------------
 
-const wordle = makeEngine( defineGame( {
+const wordle = makeEngine( {
 	name: "wordle",
 	schemas: {
 		state: WordleState,
@@ -104,20 +102,18 @@ const wordle = makeEngine( defineGame( {
 
 	moves: {
 		guess: {
-			validate: ( { state, config }, _playerId, { guess } ) =>
-				Effect.gen( function* () {
-					if ( state.guesses.length >= state.maxGuesses ) {
-						return yield* new InvalidMove( { move: "guess", reason: "No more guesses left" } );
-					}
+			validate: ( { state, config }, _playerId, { guess } ) => {
+				if ( state.guesses.length >= state.maxGuesses ) {
+					return new InvalidMove( { move: "guess", reason: "No more guesses left" } );
+				}
 
-					const dictionary = dictionaries[ config.wordLength ];
-					if ( !dictionary.includes( guess ) ) {
-						return yield* new InvalidMove( {
-							move: "guess",
-							reason: "The guess is not a valid word"
-						} );
-					}
-				} ),
+				const dictionary = dictionaries[ config.wordLength ];
+				if ( !dictionary.includes( guess ) ) {
+					return new InvalidMove( { move: "guess", reason: "The guess is not a valid word" } );
+				}
+
+				return;
+			},
 
 			execute: ( { state }, _playerId, { guess } ) => [
 				GuessedEvent.make( {
@@ -127,7 +123,7 @@ const wordle = makeEngine( defineGame( {
 			]
 		}
 	}
-} ) );
+} );
 
 // --- RPC surface -----------------------------------------------------------
 

@@ -5,7 +5,6 @@
 // pure/browser-safe.
 
 import { GameApiGroup, MoveApiEndpoint } from "@s2h/swish/api";
-import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import {
 	PickTokensInput,
 	PurchaseCardInput,
@@ -14,14 +13,12 @@ import {
 	SplendorSnapshot
 } from "./schema";
 
-export class SplendorApi extends HttpApi.make( "splendor" ).add(
-	GameApiGroup( "splendor", {
-		config: SplendorConfig,
-		snapshot: SplendorSnapshot,
-		moves: [
-			MoveApiEndpoint( "pickTokens", PickTokensInput ),
-			MoveApiEndpoint( "reserveCard", ReserveCardInput ),
-			MoveApiEndpoint( "purchaseCard", PurchaseCardInput )
-		]
-	} )
-) {}
+export const SplendorApiGroup = GameApiGroup( "splendor", {
+	config: SplendorConfig,
+	snapshot: SplendorSnapshot,
+	moves: [
+		MoveApiEndpoint( "pickTokens", PickTokensInput ),
+		MoveApiEndpoint( "reserveCard", ReserveCardInput ),
+		MoveApiEndpoint( "purchaseCard", PurchaseCardInput )
+	]
+} );

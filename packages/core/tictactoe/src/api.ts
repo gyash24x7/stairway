@@ -5,13 +5,10 @@
 // pure/browser-safe.
 
 import { GameApiGroup, MoveApiEndpoint } from "@s2h/swish/api";
-import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import { PlaceInput, TicTacToeConfig, TicTacToeSnapshot } from "./schema";
 
-export class TicTacToeApi extends HttpApi.make( "tic-tac-toe" ).add(
-	GameApiGroup( "tic-tac-toe", {
-		config: TicTacToeConfig,
-		snapshot: TicTacToeSnapshot,
-		moves: [ MoveApiEndpoint( "place", PlaceInput ) ]
-	} )
-) {}
+export const TicTacToeApiGroup = GameApiGroup( "tic-tac-toe", {
+	config: TicTacToeConfig,
+	snapshot: TicTacToeSnapshot,
+	moves: [ MoveApiEndpoint( "place", PlaceInput ) ]
+} );

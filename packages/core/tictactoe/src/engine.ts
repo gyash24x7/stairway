@@ -7,11 +7,8 @@
 
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpc } from "@s2h/swish/rpc";
+import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
 import { PlayerId } from "@s2h/swish/schema";
-import { defineGame } from "@s2h/swish/structure";
-import * as Effect from "effect/Effect";
-import * as RpcGroup from "effect/unstable/rpc/RpcGroup";
 import {
 	Placed,
 	PlaceInput,
@@ -28,102 +25,93 @@ import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "./utils
 
 // --- Engine ----------------------------------------------------------------
 
-export const tictactoe = makeEngine(
-	defineGame( {
-		name: "tic-tac-toe",
-		stateSchema: TicTacToeState,
-		configSchema: TicTacToeConfig,
-		sharedViewSchema: TicTacToeSharedView,
-		playerViewSchema: TicTacToePlayerView,
-		eventSchema: TicTacToeEvent,
-		apply,
-
-		setup: () => Effect.succeed( {
-			board: Array.from( { length: 9 }, () => null ),
-			symbols: { X: PlayerId.make( "" ), O: PlayerId.make( "" ) }
-		} ),
-
-		endIf: ( { state } ) => Effect.succeed(
-			checkWinner( [ ...state.board ] ) !== null || isBoardFull( [ ...state.board ] )
-		),
-
-		sharedView: ( { state } ) => Effect.succeed( state ),
-		playerView: ( _data, playerId ) => Effect.succeed( { playerId } ),
-		resolveNextPlayer: ( { context } ) =>
-			Effect.succeed( context.players[ context.turn % context.players.length ] ),
-
-		hooks: {
-			onJoin: ( { state }, playerId ) =>
-				Effect.succeed( [
-					SymbolAssigned.make( {
-						symbol: state.symbols.X ? "O" : "X",
-						playerId
-					} )
-				] ),
-
-			onEnd: ( { state } ) => {
-				const board = [ ...state.board ];
-				const winnerSymbol = checkWinner( board );
-				if ( winnerSymbol ) {
-					return Effect.succeed( [ WinnerDecided.make( { winner: state.symbols[ winnerSymbol ] } ) ] );
-				}
-
-				if ( isBoardFull( board ) ) {
-					return Effect.succeed( [ WinnerDecided.make( { winner: "draw" as const } ) ] );
-				}
-
-				return Effect.succeed( [] );
-			}
-		},
-
+export const tictactoe = makeEngine( {
+	name: "tic-tac-toe",
+	schemas: {
+		state: TicTacToeState,
+		config: TicTacToeConfig,
+		events: TicTacToeEvent,
 		moves: {
-			place: {
-				input: PlaceInput,
-				validate: ( { state }, _playerId, { position } ) => {
-					if ( position < 0 || position > 8 ) {
-						return new InvalidMove( { move: "place", reason: "Invalid position." } );
-					}
-
-					if ( state.board[ position ] !== null ) {
-						return new InvalidMove( { move: "place", reason: "Cell is already occupied." } );
-					}
-
-					return Effect.void;
-				},
-				execute: ( { state }, playerId, { position } ) => Effect.succeed( [
-					Placed.make( { position, symbol: symbolOf( state.symbols, playerId ) } )
-				] )
-			}
+			place: PlaceInput
 		},
-
-		botMove: ( { state } ) => {
-			const board = [ ...state.board ];
-			const position = findBestMove( board, symbolOf( state.symbols, state.playerId ) );
-			return Effect.succeed( { moveType: "place" as const, input: { position } } );
+		views: {
+			shared: TicTacToeSharedView,
+			player: TicTacToePlayerView
 		}
-	} )
-);
+	},
+
+	setup: () => ( {
+		board: Array.from( { length: 9 }, () => null ),
+		symbols: { X: PlayerId.make( "" ), O: PlayerId.make( "" ) }
+	} ),
+
+	apply,
+
+	endIf: ( { state } ) =>
+		checkWinner( [ ...state.board ] ) !== null || isBoardFull( [ ...state.board ] ),
+
+	sharedView: ( { state } ) => state,
+	playerView: ( _data, playerId ) => ( { playerId } ),
+
+	resolveNextPlayer: ( { context } ) => context.players[ context.turn % context.players.length ],
+
+	hooks: {
+		onJoin: ( { state }, playerId ) => [
+			SymbolAssigned.make( {
+				symbol: state.symbols.X ? "O" : "X",
+				playerId
+			} )
+		],
+
+		onEnd: ( { state } ) => {
+			const board = [ ...state.board ];
+			const winnerSymbol = checkWinner( board );
+			if ( winnerSymbol ) {
+				return [ WinnerDecided.make( { winner: state.symbols[ winnerSymbol ] } ) ];
+			}
+
+			if ( isBoardFull( board ) ) {
+				return [ WinnerDecided.make( { winner: "draw" as const } ) ];
+			}
+
+			return [];
+		}
+	},
+
+	moves: {
+		place: {
+			validate: ( { state }, _playerId, { position } ) => {
+				if ( position < 0 || position > 8 ) {
+					return new InvalidMove( { move: "place", reason: "Invalid position." } );
+				}
+
+				if ( state.board[ position ] !== null ) {
+					return new InvalidMove( { move: "place", reason: "Cell is already occupied." } );
+				}
+
+				return;
+			},
+
+			execute: ( { state }, playerId, { position } ) => [
+				Placed.make( { position, symbol: symbolOf( state.symbols, playerId ) } )
+			]
+		}
+	},
+
+	botMove: ( snapshot ) => {
+		const position = findBestMove(
+			[ ...snapshot.shared.board ],
+			symbolOf( snapshot.shared.symbols, snapshot.player.playerId )
+		);
+		return { moveType: "place" as const, input: { position } };
+	}
+} );
 
 // --- RPC surface -----------------------------------------------------------
 
-export class TicTacToeRpcs extends RpcGroup.make(
-	EngineRpc.makeInitialize( TicTacToeConfig ),
-	EngineRpc.makeGetState( TicTacToeSnapshot ),
-	EngineRpc.makeJoin(),
-	EngineRpc.makeAddBots(),
-	EngineRpc.makeStart(),
-	EngineRpc.makeForMove( "place", PlaceInput ),
-	EngineRpc.makeUndo( TicTacToeSnapshot ),
-	EngineRpc.makeRedo( TicTacToeSnapshot )
-) {
-	public static layer = TicTacToeRpcs.toLayer( {
-		initialize: tictactoe.initialize,
-		getState: tictactoe.getState,
-		join: tictactoe.join,
-		addBots: tictactoe.addBots,
-		start: tictactoe.start,
-		undo: tictactoe.undo,
-		redo: tictactoe.redo,
-		place: ( { playerInfo, input } ) => tictactoe.submitMove( "place", playerInfo, input )
-	} );
+export class TicTacToeRpcs extends EngineRpcs( TicTacToeConfig, TicTacToeSnapshot, [
+	MoveRpc( "place", PlaceInput )
+] ) {
+
+	public static layer = TicTacToeRpcs.toLayer( tictactoe );
 }

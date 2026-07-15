@@ -10,7 +10,6 @@
 // Nondeterminism (e.g. random setup) is captured in the emitted/genesis state, so
 // replay is deterministic — `apply` must stay pure.
 
-import type * as Effect from "effect/Effect";
 import type * as Schema from "effect/Schema";
 import type { InvalidMove } from "./errors";
 import type { BaseGameConfig, GameContext, GameSnapshot, PlayerId } from "./schema";
@@ -87,7 +86,7 @@ export type GameStructure<
 				data: ReadonlyGameData<State, Config>,
 				playerId: PlayerId,
 				input: MoveInputs[K]["Type"]
-			) => Effect.Effect<void, InvalidMove>;
+			) => InvalidMove | undefined;
 
 			readonly execute: (
 				data: ReadonlyGameData<State, Config>,
@@ -97,12 +96,12 @@ export type GameStructure<
 		};
 	};
 
-	readonly botMove?: <const K extends keyof MoveInputs>(
-		data: GameSnapshot<SharedView, PlayerView, Config>
-	) => {
-		readonly moveType: K;
-		readonly input: MoveInputs[K]["Type"]
-	};
+	readonly botMove?: ( data: GameSnapshot<SharedView, PlayerView, Config> ) => {
+		readonly [K in keyof MoveInputs]: {
+			readonly moveType: K;
+			readonly input: MoveInputs[K]["Type"]
+		}
+	}[keyof MoveInputs];
 
 	readonly resolveNextPlayer?: (
 		data: ReadonlyGameData<State, Config>,
@@ -127,19 +126,3 @@ export type GameStructure<
 		}
 	};
 }
-
-/**
- * Identity helper that infers all type parameters from a game structure, keeping
- * the literal `moves` map so each game can declare a typed RPC per move (via
- * `EngineRpc.makeForMove` / `MoveRpc`) and have `makeEngine` auto-wire it.
- */
-export const defineGame = <
-	Name extends string,
-	State,
-	Config extends BaseGameConfig,
-	MoveInputs extends BaseMoveInputs,
-	PhaseMoves extends Record<string, ReadonlyArray<keyof MoveInputs>>,
-	Events extends { readonly _tag: string },
-	SharedView,
-	PlayerView
->( structure: GameStructure<Name, State, Config, MoveInputs, PhaseMoves, Events, SharedView, PlayerView> ) => structure;

@@ -9,22 +9,23 @@
 // The handler implementations live in `./handlers` (games + health) and
 // `./auth` (the WebAuthn/session flows), and are wired up by `./worker`.
 
-import { AuthApi } from "@s2h/auth/api";
+import { AuthApiGroup } from "@s2h/auth/api";
 import { CallbreakApiGroup } from "@s2h/callbreak/api";
-import { FishApi } from "@s2h/fish/api";
-import { KingdominoApi } from "@s2h/kingdomino/api";
-import { SplendorApi } from "@s2h/splendor/api";
-import { TicTacToeApi } from "@s2h/tictactoe/api";
-import { WordleApi } from "@s2h/wordle/api";
+import { FishApiGroup } from "@s2h/fish/api";
+import { KingdominoApiGroup } from "@s2h/kingdomino/api";
+import { SplendorApiGroup } from "@s2h/splendor/api";
+import { TicTacToeApiGroup } from "@s2h/tictactoe/api";
+import { WordleApiGroup } from "@s2h/wordle/api";
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
-import { HealthApi } from "./health";
+import { HealthApiGroup } from "./health";
 
 export class StairwayAPI extends HttpApi.make( "api" )
-	.addHttpApi( HealthApi )
-	.addHttpApi( AuthApi )
-	.addHttpApi( WordleApi )
-	.addHttpApi( TicTacToeApi )
-	.addHttpApi( SplendorApi )
-	.addHttpApi( FishApi )
-	.addHttpApi( CallbreakApiGroup )
-	.addHttpApi( KingdominoApi ) {}
+	.prefix( "/auth" )
+	.add( HealthApiGroup )
+	.add( AuthApiGroup )
+	.add( WordleApiGroup )
+	.add( TicTacToeApiGroup )
+	.add( SplendorApiGroup )
+	.add( FishApiGroup )
+	.add( CallbreakApiGroup )
+	.add( KingdominoApiGroup ) {}

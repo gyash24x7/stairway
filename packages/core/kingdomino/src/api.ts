@@ -5,7 +5,6 @@
 // pure/browser-safe.
 
 import { GameApiGroup, MoveApiEndpoint } from "@s2h/swish/api";
-import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import {
 	DiscardDominoInput,
 	KingdominoConfig,
@@ -14,14 +13,12 @@ import {
 	SelectDominoInput
 } from "./schema";
 
-export class KingdominoApi extends HttpApi.make( "kingdomino" ).add(
-	GameApiGroup( "kingdomino", {
-		config: KingdominoConfig,
-		snapshot: KingdominoSnapshot,
-		moves: [
-			MoveApiEndpoint( "selectDomino", SelectDominoInput ),
-			MoveApiEndpoint( "placeDomino", PlaceDominoInput ),
-			MoveApiEndpoint( "discardDomino", DiscardDominoInput )
-		]
-	} )
-) {}
+export const KingdominoApiGroup = GameApiGroup( "kingdomino", {
+	config: KingdominoConfig,
+	snapshot: KingdominoSnapshot,
+	moves: [
+		MoveApiEndpoint( "selectDomino", SelectDominoInput ),
+		MoveApiEndpoint( "placeDomino", PlaceDominoInput ),
+		MoveApiEndpoint( "discardDomino", DiscardDominoInput )
+	]
+} );

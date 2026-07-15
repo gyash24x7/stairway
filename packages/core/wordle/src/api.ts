@@ -5,13 +5,10 @@
 // Definition only — the handlers live in the serving app. Pure/browser-safe.
 
 import { GameApiGroup, MoveApiEndpoint } from "@s2h/swish/api";
-import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import { GuessInput, WordleConfig, WordleSnapshot } from "./schema";
 
-export class WordleApi extends HttpApi.make( "wordle" ).add(
-	GameApiGroup( "wordle", {
-		config: WordleConfig,
-		snapshot: WordleSnapshot,
-		moves: [ MoveApiEndpoint( "guess", GuessInput ) ]
-	} )
-) {}
+export const WordleApiGroup = GameApiGroup( "wordle", {
+	config: WordleConfig,
+	snapshot: WordleSnapshot,
+	moves: [ MoveApiEndpoint( "guess", GuessInput ) ]
+} );

@@ -7,11 +7,11 @@
 import { GameApiGroup, MoveApiEndpoint } from "@s2h/swish/api";
 import { CallbreakConfig, CallbreakSnapshot, DeclareWinsInput, PlayCardInput } from "./schema";
 
-export class CallbreakApiGroup extends GameApiGroup( "callbreak", {
+export const CallbreakApiGroup = GameApiGroup( "callbreak", {
 	config: CallbreakConfig,
 	snapshot: CallbreakSnapshot,
 	moves: [
 		MoveApiEndpoint( "declareWins", DeclareWinsInput ),
 		MoveApiEndpoint( "playCard", PlayCardInput )
 	]
-} ) {}
+} );
