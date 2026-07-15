@@ -10,7 +10,7 @@
 // `./auth` (the WebAuthn/session flows), and are wired up by `./worker`.
 
 import { AuthApi } from "@s2h/auth/api";
-import { CallbreakApi } from "@s2h/callbreak/api";
+import { CallbreakApiGroup } from "@s2h/callbreak/api";
 import { FishApi } from "@s2h/fish/api";
 import { KingdominoApi } from "@s2h/kingdomino/api";
 import { SplendorApi } from "@s2h/splendor/api";
@@ -26,5 +26,5 @@ export class StairwayAPI extends HttpApi.make( "api" )
 	.addHttpApi( TicTacToeApi )
 	.addHttpApi( SplendorApi )
 	.addHttpApi( FishApi )
-	.addHttpApi( CallbreakApi )
+	.addHttpApi( CallbreakApiGroup )
 	.addHttpApi( KingdominoApi ) {}

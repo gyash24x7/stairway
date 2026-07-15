@@ -9,6 +9,6 @@ export default Alchemy.Stack(
 		state: Cloudflare.state()
 	},
 	Effect.gen( function* () {
-		// we'll add resources here next
+
 	} )
 );

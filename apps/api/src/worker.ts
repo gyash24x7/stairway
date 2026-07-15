@@ -18,7 +18,7 @@ import {
 	WordleApiLive
 } from "./handlers";
 
-export default Cloudflare.Worker(
+export default class StairwayApiWorker extends Cloudflare.Worker<StairwayApiWorker>()(
 	"StairwayApi",
 	{ main: import.meta.url },
 	Effect.gen( function* () {
@@ -33,8 +33,6 @@ export default Cloudflare.Worker(
 					Layer.provide( FishApiLive ),
 					Layer.provide( CallbreakApiLive ),
 					Layer.provide( KingdominoApiLive ),
-					// Global middleware: provides `AuthHttpContext` per request and merges
-					// the auth handlers' `Set-Cookie` values onto the response.
 					Layer.provide( AuthHttpContextLive ),
 					Layer.provide( [ Etag.layer, HttpPlatform.layer, Path.layer ] ),
 					Layer.provide(
@@ -48,4 +46,4 @@ export default Cloudflare.Worker(
 			)
 		};
 	} )
-);
+) {}

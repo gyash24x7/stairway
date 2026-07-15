@@ -16,7 +16,6 @@
 		"@s2h/auth": "workspace:*",
 		"@s2h/callbreak": "workspace:*",
 		"@s2h/db": "workspace:*",
-		"@s2h/engine": "workspace:*",
 		"@s2h/fish": "workspace:*",
 		"@s2h/kingdomino": "workspace:*",
 		"@s2h/utils": "workspace:*",

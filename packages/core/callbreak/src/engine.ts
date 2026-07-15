@@ -14,16 +14,14 @@
 
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpc } from "@s2h/swish/rpc";
+import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
 import { PlayerId } from "@s2h/swish/schema";
 import { definePhasedGame, type ReadonlyGameData } from "@s2h/swish/structure";
 import { type CardId, getCardSuit } from "@s2h/utils/cards";
 import * as Effect from "effect/Effect";
-import * as RpcGroup from "effect/unstable/rpc/RpcGroup";
 import { botDeclare, botPlayCard } from "./bot";
 import {
 	CallbreakConfig,
-	type CallbreakBotView,
 	CallbreakEvent,
 	CallbreakPlayerView,
 	CallbreakSharedView,
@@ -35,7 +33,6 @@ import {
 	DeclareWinsInput,
 	PlayCardInput,
 	ScoreInitializedEvent,
-	type Trick,
 	TrickStartedEvent,
 	TrickWonEvent,
 	WinnerDecidedEvent,
@@ -56,7 +53,7 @@ type Data = ReadonlyGameData<CallbreakState, CallbreakConfig>;
 
 // --- Engine ----------------------------------------------------------------
 
-export const callbreak = makeEngine(
+const callbreak = makeEngine(
 	definePhasedGame( {
 		name: "callbreak",
 		stateSchema: CallbreakState,
@@ -72,7 +69,7 @@ export const callbreak = makeEngine(
 		// when any player's per-deal score is non-zero (matches the old engine).
 		endIf: ( { state, config } ) => Effect.succeed(
 			state.deals.filter( ( d ) => Object.values( d.scores ).some( ( s ) => s !== 0 ) ).length
-				>= config.dealCount
+			>= config.dealCount
 		),
 
 		sharedView: ( { state } ) => Effect.succeed( ( () => {
@@ -127,20 +124,26 @@ export const callbreak = makeEngine(
 				moves: {
 					declareWins: {
 						input: DeclareWinsInput,
-						validate: ( { state }: Data, playerId: PlayerId, input: DeclareWinsInput ) => {
-							const activeDeal = state.deals[ 0 ];
-							if ( !activeDeal || activeDeal.id !== input.dealId ) {
-								return Effect.fail(
-									new InvalidMove( { move: "declareWins", reason: "Active Deal Not Found!" } )
-								);
-							}
-							if ( ( activeDeal.declarations[ playerId ] ?? 0 ) > 0 ) {
-								return Effect.fail(
-									new InvalidMove( { move: "declareWins", reason: "Already declared wins!" } )
-								);
-							}
-							return Effect.void;
-						},
+						validate: ( { state }: Data, playerId: PlayerId, input: DeclareWinsInput ) =>
+							Effect.gen( function* () {
+								const activeDeal = state.deals[ 0 ];
+								if ( !activeDeal || activeDeal.id !== input.dealId ) {
+									return yield* new InvalidMove( {
+										move: "declareWins",
+										reason: "Active Deal Not Found!"
+									} );
+								}
+
+								if ( ( activeDeal.declarations[ playerId ] ?? 0 ) > 0 ) {
+									return yield* new InvalidMove( {
+										move: "declareWins",
+										reason: "Already declared wins!"
+									} );
+
+								}
+
+								return Effect.void;
+							} ),
 						execute: ( _data: Data, playerId: PlayerId, input: DeclareWinsInput ) =>
 							Effect.succeed( [ WinsDeclaredEvent.make( { playerId, wins: input.wins } ) ] )
 					}
@@ -168,11 +171,10 @@ export const callbreak = makeEngine(
 				resolveNextPhase: () => Effect.succeed( "PLAYING" ),
 
 				botMove: ( { state, config } ) => {
-					const view = state as unknown as CallbreakBotView;
-					const wins = botDeclare( view, config );
+					const wins = botDeclare( state, config );
 					return Effect.succeed( {
 						moveType: "declareWins" as const,
-						input: { wins, dealId: view.activeDeal!.id }
+						input: { wins, dealId: state.activeDeal!.id }
 					} );
 				}
 			},
@@ -180,7 +182,9 @@ export const callbreak = makeEngine(
 			PLAYING: {
 				// Start the first trick of the round, led by the deal's starter.
 				onEnter: ( { state } ) =>
-					Effect.succeed( [ TrickStartedEvent.make( { leadPlayer: state.deals[ 0 ]!.startingPlayer } ) ] ),
+					Effect.succeed( [
+						TrickStartedEvent.make( { leadPlayer: state.deals[ 0 ]!.startingPlayer } )
+					] ),
 
 				resolveStartingPlayer: ( { state } ) =>
 					Effect.succeed( state.deals[ 0 ]!.startingPlayer ),
@@ -188,57 +192,76 @@ export const callbreak = makeEngine(
 				moves: {
 					playCard: {
 						input: PlayCardInput,
-						validate: ( { state, config }: Data, playerId: PlayerId, input: PlayCardInput ) => {
-							const activeDeal = state.deals[ 0 ];
-							if ( !activeDeal || activeDeal.id !== input.dealId ) {
-								return Effect.fail(
-									new InvalidMove( { move: "playCard", reason: "Active Deal Not Found!" } )
-								);
-							}
-							const activeTrick = activeDeal.tricks[ 0 ];
-							if ( !activeTrick ) {
-								return Effect.fail(
-									new InvalidMove( { move: "playCard", reason: "Active Trick Not Found!" } )
-								);
-							}
-							if ( activeTrick.cards[ playerId ] ) {
-								return Effect.fail(
-									new InvalidMove( { move: "playCard", reason: "Already played card!" } )
-								);
-							}
-							const hand = activeDeal.hands[ playerId ] ?? [];
-							if ( !hand.includes( input.cardId ) ) {
-								return Effect.fail(
-									new InvalidMove( { move: "playCard", reason: "Card not in hand!" } )
-								);
-							}
-							const playable = getPlayableCards( [ ...hand ], config.trumpSuit, activeTrick );
-							if ( !playable.includes( input.cardId ) ) {
-								return Effect.fail(
-									new InvalidMove( { move: "playCard", reason: "Card cannot be played!" } )
-								);
-							}
-							return Effect.void;
-						},
-						execute: ( { state, config, context }: Data, playerId: PlayerId, input: PlayCardInput ) => {
+						validate: ( { state, config }: Data, playerId: PlayerId, input: PlayCardInput ) =>
+							Effect.gen( function* () {
+								const activeDeal = state.deals[ 0 ];
+								if ( !activeDeal || activeDeal.id !== input.dealId ) {
+									return yield* new InvalidMove( {
+										move: "playCard",
+										reason: "Active Deal Not Found!"
+									} );
+
+								}
+
+								const activeTrick = activeDeal.tricks[ 0 ];
+								if ( !activeTrick ) {
+									return yield* new InvalidMove( {
+										move: "playCard",
+										reason: "Active Trick Not Found!"
+									} );
+								}
+
+								if ( activeTrick.cards[ playerId ] ) {
+									return yield* new InvalidMove( {
+										move: "playCard",
+										reason: "Already played card!"
+									} );
+								}
+
+								const hand = activeDeal.hands[ playerId ] ?? [];
+								if ( !hand.includes( input.cardId ) ) {
+									return yield* new InvalidMove( {
+										move: "playCard",
+										reason: "Card not in hand!"
+									} );
+								}
+
+								const playable = getPlayableCards( [ ...hand ], config.trumpSuit, activeTrick );
+								if ( !playable.includes( input.cardId ) ) {
+									return yield* new InvalidMove( {
+										move: "playCard",
+										reason: "Card cannot be played!"
+									} );
+								}
+								return Effect.void;
+							} ),
+						execute: (
+							{ state, config, context }: Data,
+							playerId: PlayerId,
+							input: PlayCardInput
+						) => {
 							const events: Array<CallbreakEvent> = [
 								CardPlayedEvent.make( { playerId, cardId: input.cardId } )
 							];
+
 							const activeDeal = state.deals[ 0 ]!;
 							const activeTrick = activeDeal.tricks[ 0 ]!;
+
 							// This card completes the trick — decide the winner now. The
 							// projected trick includes the just-played card + resolved suit.
 							if ( Object.keys( activeTrick.cards ).length + 1 >= PLAYER_COUNT ) {
-								const projected: Trick = {
+								const projected = {
 									...activeTrick,
 									cards: { ...activeTrick.cards, [ playerId ]: input.cardId },
 									suit: activeTrick.suit ?? getCardSuit( input.cardId )
 								};
+
 								const winner = determineTrickWinner(
 									projected,
 									config.trumpSuit,
 									[ ...context.players ]
 								);
+
 								events.push( TrickWonEvent.make( { winner } ) );
 							}
 							return Effect.succeed( events );
@@ -254,6 +277,7 @@ export const callbreak = makeEngine(
 						if ( activeTrick?.winner ) {
 							return Effect.succeed( [ TrickStartedEvent.make( { leadPlayer: activeTrick.winner } ) ] );
 						}
+
 						return Effect.succeed( [] );
 					}
 				},
@@ -263,13 +287,16 @@ export const callbreak = makeEngine(
 					if ( !activeTrick ) {
 						return Effect.succeed( context.players[ 0 ]! );
 					}
+
 					if ( activeTrick.winner ) {
 						return Effect.succeed( activeTrick.winner );
 					}
+
 					const played = Object.keys( activeTrick.cards );
 					if ( played.length === 0 ) {
 						return Effect.succeed( activeTrick.leadPlayer );
 					}
+
 					const lastPlayer = played[ played.length - 1 ]!;
 					const lastIdx = context.players.indexOf( lastPlayer as PlayerId );
 					return Effect.succeed( context.players[ ( lastIdx + 1 ) % PLAYER_COUNT ]! );
@@ -291,17 +318,17 @@ export const callbreak = makeEngine(
 							activeDeal.wins[ pid ] ?? 0
 						);
 					}
+
 					return Effect.succeed( [ DealScoredEvent.make( { scores } ) ] );
 				},
 
 				resolveNextPhase: () => Effect.succeed( "DECLARING" ),
 
 				botMove: ( { state, config } ) => {
-					const view = state as unknown as CallbreakBotView;
-					const cardId = botPlayCard( view, config ) as CardId;
+					const cardId = botPlayCard( state, config ) as CardId;
 					return Effect.succeed( {
 						moveType: "playCard" as const,
-						input: { cardId, dealId: view.activeDeal!.id }
+						input: { cardId, dealId: state.activeDeal!.id }
 					} );
 				}
 			}
@@ -311,26 +338,10 @@ export const callbreak = makeEngine(
 
 // --- RPC surface -----------------------------------------------------------
 
-export class CallbreakRpcs extends RpcGroup.make(
-	EngineRpc.makeInitialize( CallbreakConfig ),
-	EngineRpc.makeGetState( CallbreakSnapshot ),
-	EngineRpc.makeJoin(),
-	EngineRpc.makeAddBots(),
-	EngineRpc.makeStart(),
-	EngineRpc.makeForMove( "declareWins", DeclareWinsInput ),
-	EngineRpc.makeForMove( "playCard", PlayCardInput ),
-	EngineRpc.makeUndo( CallbreakSnapshot ),
-	EngineRpc.makeRedo( CallbreakSnapshot )
-) {
-	public static layer = CallbreakRpcs.toLayer( {
-		initialize: callbreak.initialize,
-		getState: callbreak.getState,
-		join: callbreak.join,
-		addBots: callbreak.addBots,
-		start: callbreak.start,
-		undo: callbreak.undo,
-		redo: callbreak.redo,
-		declareWins: ( { playerInfo, input } ) => callbreak.submitMove( "declareWins", playerInfo, input ),
-		playCard: ( { playerInfo, input } ) => callbreak.submitMove( "playCard", playerInfo, input )
-	} );
+export class CallbreakRpcs extends EngineRpcs( CallbreakConfig, CallbreakSnapshot, [
+	MoveRpc( "declareWins", DeclareWinsInput ),
+	MoveRpc( "playCard", PlayCardInput )
+] ) {
+
+	public static layer = CallbreakRpcs.toLayer( callbreak );
 }

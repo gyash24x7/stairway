@@ -1,4 +1,4 @@
-import type { JoinGameInput } from "@s2h/engine/types";
+import { GameCode } from "@s2h/swish/schema";
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useTransition } from "react";
 import { Button } from "../primitives/button";
@@ -6,7 +6,7 @@ import { Input } from "../primitives/input";
 
 type JoinGameProps = {
 	game: string;
-	joinGame: ( input: JoinGameInput ) => Promise<string>;
+	joinGame: ( input: { code: GameCode } ) => Promise<string>;
 };
 
 export function JoinGame( { game, joinGame }: JoinGameProps ) {
@@ -23,7 +23,7 @@ export function JoinGame( { game, joinGame }: JoinGameProps ) {
 
 		setError( "" );
 
-		const gameId = await joinGame( { code } );
+		const gameId = await joinGame( { code: GameCode.make( code ) } );
 		await navigate( { to: `/${ game }/${ gameId }` } );
 	} );
 

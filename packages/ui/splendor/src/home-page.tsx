@@ -1,5 +1,5 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { JoinGameInput } from "@s2h/engine/types";
+import type { GameCode } from "@s2h/swish/schema";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
@@ -8,7 +8,7 @@ import { SplendorCreateGame as CreateGame } from "./create-game";
 
 export function SplendorHomePage( props: { isLoggedIn?: boolean } ) {
 	const { authInfo } = useAuth();
-	const joinGame = async ( input: JoinGameInput ): Promise<string> => {
+	const joinGame = async ( input: { code: GameCode } ): Promise<string> => {
 		const { id } = await joinSplendorGameFn( input.code, toPlayerInfo( authInfo! ) );
 		return id;
 	};

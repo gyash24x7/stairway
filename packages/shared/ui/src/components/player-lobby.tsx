@@ -1,9 +1,9 @@
-import type { BasePlayerInfo } from "@s2h/engine/types";
+import type { PlayerInfo } from "@s2h/swish/schema";
 import { cn } from "@s2h/ui/utils/cn";
 import { RPlayerInfo } from "./player-info";
 
 export type PlayerLobbyGridProps = {
-	players: BasePlayerInfo[];
+	players: PlayerInfo[];
 	className?: string;
 };
 

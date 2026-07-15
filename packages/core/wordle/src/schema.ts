@@ -34,6 +34,9 @@ export const WordleState = Schema.Struct( {
 	victory: Schema.optional( Schema.Boolean )
 } );
 
+export type WordleMoves = typeof WordleMoves.Type;
+export const WordleMoves = Schema.Literals( [ "guess" ] );
+
 export type WordleSharedView = typeof WordleSharedView.Type;
 export const WordleSharedView = Schema.Struct( {
 	guesses: Schema.Array( Schema.String ),
@@ -63,8 +66,8 @@ export const VictoryDecidedEvent = Schema.TaggedStruct(
 	{ victory: Schema.Boolean }
 );
 
-export type WordleEvent = typeof WordleEvent.Type;
-export const WordleEvent = Schema.Union( [ GuessedEvent, VictoryDecidedEvent ] );
+export type WordleEvents = typeof WordleEvents.Type;
+export const WordleEvents = Schema.Union( [ GuessedEvent, VictoryDecidedEvent ] );
 
 export type WordleData = BaseGameData & {
 	config: typeof WordleConfig.Type;

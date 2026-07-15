@@ -1,13 +1,13 @@
-import type { BasePlayerInfo } from "@s2h/engine/types";
+import type { PlayerInfo } from "@s2h/swish/schema";
 import { cn } from "@s2h/ui/utils/cn";
 import { Avatar, AvatarImage } from "../primitives/avatar";
 
 export type PlayerInfoProps = {
-	player: BasePlayerInfo;
+	player: PlayerInfo;
 	noBg?: boolean;
 }
 
-export function RPlayerInfoSmall( props: { player: BasePlayerInfo } ) {
+export function RPlayerInfoSmall( props: { player: PlayerInfo } ) {
 	const firstName = props.player.name.split( " " )[ 0 ].toUpperCase();
 	return (
 		<div
@@ -26,7 +26,7 @@ export function RPlayerInfoSmall( props: { player: BasePlayerInfo } ) {
 	);
 }
 
-export function RPlayerInfoStrip( props: { player: BasePlayerInfo; noAvatar?: boolean; } ) {
+export function RPlayerInfoStrip( props: { player: PlayerInfo; noAvatar?: boolean; } ) {
 	const firstName = props.player.name.split( " " )[ 0 ].toUpperCase();
 	return (
 		<div className={ "flex gap-1 items-center md:gap-2" } key={ props.player.id }>

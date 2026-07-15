@@ -25,13 +25,11 @@ const build = ( baseUrl: string ) =>
 	);
 
 // The generated client is stateless over a base URL, so build it once per URL.
-const clients = new Map<string, ReturnType<typeof build>>();
+declare let client: ReturnType<typeof build>;
 
 export function getClient( baseUrl: string ) {
-	let client = clients.get( baseUrl );
 	if ( !client ) {
 		client = build( baseUrl );
-		clients.set( baseUrl, client );
 	}
 	return client;
 }
@@ -42,7 +40,7 @@ export function getClient( baseUrl: string ) {
  * domain error itself rather than a wrapping `FiberFailure` so `error` in the
  * query/mutation is the tagged error the endpoint declares.
  */
-export function run<A, E>( effect: Effect.Effect<A, E>, signal?: AbortSignal ): Promise<A> {
+export function run<A, E>( effect: Effect.Effect<A, E>, signal?: AbortSignal ) {
 	return Effect.runPromiseExit( effect, { signal } ).then( ( exit ) => {
 		if ( Exit.isSuccess( exit ) ) {
 			return exit.value;

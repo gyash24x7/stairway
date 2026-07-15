@@ -81,7 +81,26 @@ export class NothingToRedo extends Schema.TaggedErrorClass<NothingToRedo>()(
 	{}
 ) {}
 
+/** Union of the errors a `getState` can surface to the client. */
+export type GetStateError = typeof GetStateError.Type;
+export const GetStateError = Schema.Union( [ GameNotFound, CorruptState ] );
+
+/** Union of the errors a `join` can surface to the client. */
+export type JoinError = typeof JoinError.Type;
+export const JoinError = Schema.Union( [ GameFull, AlreadyJoined, GameNotFound, CorruptState ] );
+
+/** Union of the errors a `start` can surface to the client. */
+export type StartError = typeof StartError.Type;
+export const StartError = Schema.Union( [
+	CannotStart,
+	AlreadyJoined,
+	GameNotFound,
+	CorruptState,
+	PhaseNotFound
+] );
+
 /** Union of the errors a `submitMove` can surface to the client. */
+export type MoveError = typeof MoveError.Type;
 export const MoveError = Schema.Union( [
 	InvalidMove,
 	NotYourTurn,
@@ -91,4 +110,11 @@ export const MoveError = Schema.Union( [
 	GameNotFound,
 	CorruptState
 ] );
-export type MoveError = typeof MoveError.Type;
+
+/** Union of the errors a `undo` can surface to the client. */
+export type UndoError = typeof UndoError.Type;
+export const UndoError = Schema.Union( [ NothingToUndo, GetStateError ] );
+
+/** Union of the errors a `redo` can surface to the client. */
+export type RedoError = typeof RedoError.Type;
+export const RedoError = Schema.Union( [ NothingToRedo, GetStateError ] );

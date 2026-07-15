@@ -13,24 +13,27 @@
 
 import * as Match from "effect/Match";
 import * as Schema from "effect/Schema";
-import {
-	GameContext,
-	GameStatus,
-	type PersistedGameData,
-	PlayerId,
-	PlayerInfo
-} from "./schema";
+import { GameContext, GameStatus, type PersistedGameData, PlayerId, PlayerInfo } from "./schema";
 
 // --- Engine events ---------------------------------------------------------
 // Tags are namespaced `swish/ev/*` so they never collide with a game's own
 // event tags in the combined union.
 
 export const PlayerJoined = Schema.TaggedStruct( "swish/ev/PlayerJoined", { player: PlayerInfo } );
-export const CurrentPlayerSet = Schema.TaggedStruct( "swish/ev/CurrentPlayerSet", { playerId: PlayerId } );
+export const CurrentPlayerSet = Schema.TaggedStruct(
+	"swish/ev/CurrentPlayerSet",
+	{ playerId: PlayerId }
+);
 export const TurnAdvanced = Schema.TaggedStruct( "swish/ev/TurnAdvanced", {} );
-export const PhaseEntered = Schema.TaggedStruct( "swish/ev/PhaseEntered", { phase: Schema.String } );
+export const PhaseEntered = Schema.TaggedStruct(
+	"swish/ev/PhaseEntered",
+	{ phase: Schema.String }
+);
 export const PhaseExited = Schema.TaggedStruct( "swish/ev/PhaseExited", { phase: Schema.String } );
-export const StatusChanged = Schema.TaggedStruct( "swish/ev/StatusChanged", { status: GameStatus } );
+export const StatusChanged = Schema.TaggedStruct(
+	"swish/ev/StatusChanged",
+	{ status: GameStatus }
+);
 export const GameCompleted = Schema.TaggedStruct( "swish/ev/GameCompleted", {} );
 
 /** The union of built-in engine events. */
@@ -51,7 +54,7 @@ export const isEngineEvent = ( event: { readonly _tag: string } ): event is Engi
 
 // Rebuild a `GameContext` (a TaggedClass) with a field patch — constructing
 // explicitly avoids spreading the instance's `_tag`.
-const patchContext = ( ctx: GameContext, patch: Partial<Omit<GameContext, "_tag">> ): GameContext =>
+const patchContext = ( ctx: GameContext, patch: Partial<Omit<GameContext, "_tag">> ) =>
 	GameContext.make( {
 		turn: patch.turn ?? ctx.turn,
 		players: patch.players ?? ctx.players,
@@ -66,7 +69,7 @@ const patchContext = ( ctx: GameContext, patch: Partial<Omit<GameContext, "_tag"
 export const engineApply = <State, Config>(
 	data: PersistedGameData<State, Config>,
 	event: EngineEvent
-): PersistedGameData<State, Config> =>
+) =>
 	Match.value( event ).pipe(
 		Match.tag( "swish/ev/PlayerJoined", ( e ) => {
 			const players = { ...data.players, [ e.player.id ]: e.player };
@@ -74,7 +77,11 @@ export const engineApply = <State, Config>(
 			const currentPlayer = data.context.players.length === 0
 				? e.player.id
 				: data.context.currentPlayer;
-			return { ...data, players, context: patchContext( data.context, { players: ids, currentPlayer } ) };
+			return {
+				...data,
+				players,
+				context: patchContext( data.context, { players: ids, currentPlayer } )
+			};
 		} ),
 		Match.tag( "swish/ev/CurrentPlayerSet", ( e ) =>
 			( { ...data, context: patchContext( data.context, { currentPlayer: e.playerId } ) } ) ),
@@ -98,7 +105,7 @@ export const foldEvents = <State, Config, Ev extends { readonly _tag: string }>(
 	apply: ( state: State, event: Ev ) => State,
 	data: PersistedGameData<State, Config>,
 	events: ReadonlyArray<EngineEvent | Ev>
-): PersistedGameData<State, Config> =>
+) =>
 	events.reduce(
 		( acc, event ) => isEngineEvent( event )
 			? engineApply( acc, event )
@@ -116,7 +123,7 @@ export const makeEventSchema = <Ev extends Schema.Top>( gameEvent: Ev ) =>
  * The schema of a commit — one command's batch of events plus metadata. Stored
  * (encoded) in the append-only `EventStore`.
  */
-export const makeCommitSchema = <Ev extends Schema.Top>( gameEvent: Ev ) =>
+export const EventsCommit = <Ev extends Schema.Top>( gameEvent: Ev ) =>
 	Schema.Struct( {
 		id: Schema.String,
 		command: Schema.String,
@@ -125,13 +132,3 @@ export const makeCommitSchema = <Ev extends Schema.Top>( gameEvent: Ev ) =>
 		at: Schema.Number,
 		events: Schema.Array( makeEventSchema( gameEvent ) )
 	} );
-
-/** A decoded commit for a game whose domain-event type is `Ev`. */
-export type Commit<Ev> = {
-	readonly id: string;
-	readonly command: string;
-	readonly actor?: PlayerId;
-	readonly moveType?: string;
-	readonly at: number;
-	readonly events: ReadonlyArray<EngineEvent | Ev>;
-};

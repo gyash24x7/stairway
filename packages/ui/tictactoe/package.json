@@ -14,7 +14,6 @@
 		"@s2h/api": "workspace:*",
 		"@s2h/swish": "workspace:*",
 		"@s2h/tictactoe": "workspace:*",
-		"@s2h/engine": "workspace:*",
 		"@s2h/utils": "workspace:*",
 		"@s2h/ui": "workspace:*",
 		"@tanstack/react-query": "catalog:",

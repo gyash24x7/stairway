@@ -1,5 +1,5 @@
 import * as Match from "effect/Match";
-import { GuessResult, WordleEvent, WordleState } from "./schema";
+import { GuessResult, WordleEvents, WordleState } from "./schema";
 
 // --- Guess-result computation (pure) ---------------------------------------
 // The two-pass algorithm from the old `execute`, lifted into a pure helper so
@@ -39,7 +39,7 @@ export const allWordsGuessed = ( state: typeof WordleState.Type ) =>
 	state.words.every( ( word ) => state.guesses.includes( word ) );
 
 /** Pure reducer — the ONLY place `state` changes. */
-export const apply = ( state: typeof WordleState.Type, event: typeof WordleEvent.Type ) =>
+export const apply = ( state: typeof WordleState.Type, event: typeof WordleEvents.Type ) =>
 	Match.value( event ).pipe(
 		Match.tag( "wordle/evt/Guessed", ( e ) => {
 			const guesses = [ ...state.guesses, e.guess ];

@@ -20,18 +20,12 @@ import type {
 	DeclareWinsInput,
 	PlayCardInput
 } from "@s2h/callbreak/schema";
-import {
-	GameCode,
-	GameIdParams,
-	JoinGameInput,
-	PlayerId,
-	PlayerInfo
-} from "@s2h/swish/schema";
+import { GameCode, GameIdParams, JoinGameInput, PlayerId, PlayerInfo } from "@s2h/swish/schema";
 import type { AuthInfo } from "@s2h/utils/auth";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
-const client = getClient( API_URL ).callbreak;
+const client = getClient( API_URL );
 
 /** Build the branded `:gameId` path-param struct the endpoints expect. */
 const gameIdParams = ( gameId: string ) =>
@@ -40,7 +34,7 @@ const gameIdParams = ( gameId: string ) =>
 // --- Mutations -------------------------------------------------------------
 
 export const createCallbreakGameFn = ( config: CallbreakConfig, signal?: AbortSignal ) =>
-	run( client.createGame( { payload: config } ), signal );
+	run( client.callbreak.createGame( { payload: config } ), signal );
 
 export const joinCallbreakGameFn = (
 	code: string,
@@ -48,17 +42,17 @@ export const joinCallbreakGameFn = (
 	signal?: AbortSignal
 ) =>
 	run(
-		client.join( {
+		client.callbreak.join( {
 			payload: JoinGameInput.make( { code: GameCode.make( code ), playerInfo } )
 		} ),
 		signal
 	);
 
 export const startCallbreakFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.start( { params: gameIdParams( gameId ) } ), signal );
+	run( client.callbreak.start( { params: gameIdParams( gameId ) } ), signal );
 
 export const addBotsFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.addBots( { params: gameIdParams( gameId ) } ), signal );
+	run( client.callbreak.addBots( { params: gameIdParams( gameId ) } ), signal );
 
 export const declareWinsFn = (
 	gameId: string,
@@ -67,7 +61,10 @@ export const declareWinsFn = (
 	signal?: AbortSignal
 ) =>
 	run(
-		client.declareWins( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ),
+		client.callbreak.declareWins( {
+			params: gameIdParams( gameId ),
+			payload: { playerInfo, input }
+		} ),
 		signal
 	);
 
@@ -78,20 +75,23 @@ export const playCardFn = (
 	signal?: AbortSignal
 ) =>
 	run(
-		client.playCard( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ),
+		client.callbreak.playCard( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ),
 		signal
 	);
 
 export const undoFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
-	run( client.undo( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
+	run( client.callbreak.undo( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
 
 export const redoFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
-	run( client.redo( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
+	run( client.callbreak.redo( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
 
 // --- Queries ---------------------------------------------------------------
 
 export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
-	run( client.getState( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
+	run(
+		client.callbreak.getState( { params: gameIdParams( gameId ), payload: playerInfo } ),
+		signal
+	);
 
 // --- Adapters --------------------------------------------------------------
 // The new HTTP surface returns a lifecycle-generic `CallbreakSnapshot` and takes

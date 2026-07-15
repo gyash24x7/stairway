@@ -1,9 +1,10 @@
 // Server-only handler implementations for the game + health HttpApi groups.
 //
 // Each `*ApiLive` is built against the merged `StairwayAPI` (so the group is
-// keyed by the root api id) and resolves `gameId -> Durable Object stub` via the
-// per-game `*EngineDO` from `./cloudflare`. Imported only by `./worker` — NOT by
-// `./api`/`./client`, so the browser client never sees this graph.
+// keyed by the root api id). Every handler is the same shape — resolve
+// `gameId -> Durable Object stub`, call one stub RPC, `orDie` transport errors —
+// factored into `forward`. Imported only by `./worker` (not `./api`/`./client`),
+// so the browser client never sees this graph.
 
 import { GameCode, GameId } from "@s2h/swish/schema";
 import { generateGameCode, generateId } from "@s2h/utils/generator";
@@ -19,6 +20,29 @@ import {
 	WordleEngineDO
 } from "./cloudflare";
 
+/**
+ * Resolve a game's Durable Object stub by id and run one RPC against it, turning
+ * RPC transport failures into defects (`orDie`). `call` receives the concrete,
+ * fully-typed stub — the game-specific type safety is preserved; only the DO
+ * binding's error/requirement channels are erased at this transport seam.
+ */
+const forward = <Stub, A, E, R1, R2, R3>(
+	DO: Effect.Effect<{ getByName: ( id: GameId ) => Effect.Effect<Stub, unknown, R2> }, unknown, R1>,
+	gameId: GameId,
+	call: ( stub: Stub ) => Effect.Effect<A, E, R3>
+): Effect.Effect<A, never, R1 | R2 | R3> =>
+	DO.pipe(
+		Effect.flatMap( ns => ns.getByName( gameId ) ),
+		Effect.flatMap( call ),
+		Effect.orDie
+	);
+
+/** A freshly-minted `{ id, code }` for a new game instance. */
+const newGame = () => ( {
+	id: GameId.make( generateId() ),
+	code: GameCode.make( generateGameCode() )
+} );
+
 export const HealthApiLive = HttpApiBuilder.group( StairwayAPI, "health", ( handlers ) =>
 	handlers.handle( "healthCheck", () => Effect.succeed( { healthy: true } ) ) );
 
@@ -26,362 +50,168 @@ export const WordleApiLive = HttpApiBuilder.group(
 	StairwayAPI,
 	"wordle",
 	handlers => handlers
-		.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-			const gameId = GameId.make( generateId() );
-			const code = GameCode.make( generateGameCode() );
-			return yield* WordleEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.initialize( { id: gameId, code, config: payload } ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "join", ( { payload } ) => Effect.gen( function* () {
-			// TODO: Get Id from DB using Code
-			const gameId = GameId.make( payload.code );
-			return yield* WordleEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.join( payload.playerInfo ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "getState", ( { params, payload } ) => WordleEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.getState( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "addBots", ( { params } ) => WordleEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.addBots() ),
-			Effect.orDie
-		) )
-		.handle( "start", ( { params } ) => WordleEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.start() ),
-			Effect.orDie
-		) )
-		.handle( "undo", ( { params, payload } ) => WordleEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.undo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "redo", ( { params, payload } ) => WordleEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.redo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "guess", ( { params, payload } ) => WordleEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.guess( payload ) ),
-			Effect.orDie
-		) )
+		.handle( "createGame", ( { payload } ) => {
+			const { id, code } = newGame();
+			return forward( WordleEngineDO, id, s => s.initialize( { id, code, config: payload } ) );
+		} )
+		// TODO: Get Id from DB using Code
+		.handle( "join", ( { payload } ) =>
+			forward( WordleEngineDO, GameId.make( payload.code ), s => s.join( payload.playerInfo ) ) )
+		.handle( "getState", ( { params, payload } ) =>
+			forward( WordleEngineDO, params.gameId, s => s.getState( payload ) ) )
+		.handle( "addBots", ( { params } ) =>
+			forward( WordleEngineDO, params.gameId, s => s.addBots() ) )
+		.handle( "start", ( { params } ) =>
+			forward( WordleEngineDO, params.gameId, s => s.start() ) )
+		.handle( "undo", ( { params, payload } ) =>
+			forward( WordleEngineDO, params.gameId, s => s.undo( payload ) ) )
+		.handle( "redo", ( { params, payload } ) =>
+			forward( WordleEngineDO, params.gameId, s => s.redo( payload ) ) )
+		.handle( "guess", ( { params, payload } ) =>
+			forward( WordleEngineDO, params.gameId, s => s.guess( payload ) ) )
 );
 
 export const TicTacToeApiLive = HttpApiBuilder.group(
 	StairwayAPI,
 	"tic-tac-toe",
 	handlers => handlers
-		.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-			const gameId = GameId.make( generateId() );
-			const code = GameCode.make( generateGameCode() );
-			return yield* TicTacToeEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.initialize( { id: gameId, code, config: payload } ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "join", ( { payload } ) => Effect.gen( function* () {
-			// TODO: Get Id from DB using Code
-			const gameId = GameId.make( payload.code );
-			return yield* TicTacToeEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.join( payload.playerInfo ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "getState", ( { params, payload } ) => TicTacToeEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.getState( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "addBots", ( { params } ) => TicTacToeEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.addBots() ),
-			Effect.orDie
-		) )
-		.handle( "start", ( { params } ) => TicTacToeEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.start() ),
-			Effect.orDie
-		) )
-		.handle( "undo", ( { params, payload } ) => TicTacToeEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.undo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "redo", ( { params, payload } ) => TicTacToeEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.redo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "place", ( { params, payload } ) => TicTacToeEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.place( payload ) ),
-			Effect.orDie
-		) )
+		.handle( "createGame", ( { payload } ) => {
+			const { id, code } = newGame();
+			return forward( TicTacToeEngineDO, id, s => s.initialize( { id, code, config: payload } ) );
+		} )
+		// TODO: Get Id from DB using Code
+		.handle( "join", ( { payload } ) =>
+			forward( TicTacToeEngineDO, GameId.make( payload.code ), s => s.join( payload.playerInfo ) ) )
+		.handle( "getState", ( { params, payload } ) =>
+			forward( TicTacToeEngineDO, params.gameId, s => s.getState( payload ) ) )
+		.handle( "addBots", ( { params } ) =>
+			forward( TicTacToeEngineDO, params.gameId, s => s.addBots() ) )
+		.handle( "start", ( { params } ) =>
+			forward( TicTacToeEngineDO, params.gameId, s => s.start() ) )
+		.handle( "undo", ( { params, payload } ) =>
+			forward( TicTacToeEngineDO, params.gameId, s => s.undo( payload ) ) )
+		.handle( "redo", ( { params, payload } ) =>
+			forward( TicTacToeEngineDO, params.gameId, s => s.redo( payload ) ) )
+		.handle( "place", ( { params, payload } ) =>
+			forward( TicTacToeEngineDO, params.gameId, s => s.place( payload ) ) )
 );
 
 export const SplendorApiLive = HttpApiBuilder.group(
 	StairwayAPI,
 	"splendor",
 	handlers => handlers
-		.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-			const gameId = GameId.make( generateId() );
-			const code = GameCode.make( generateGameCode() );
-			return yield* SplendorEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.initialize( { id: gameId, code, config: payload } ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "join", ( { payload } ) => Effect.gen( function* () {
-			// TODO: Get Id from DB using Code
-			const gameId = GameId.make( payload.code );
-			return yield* SplendorEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.join( payload.playerInfo ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "getState", ( { params, payload } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.getState( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "addBots", ( { params } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.addBots() ),
-			Effect.orDie
-		) )
-		.handle( "start", ( { params } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.start() ),
-			Effect.orDie
-		) )
-		.handle( "undo", ( { params, payload } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.undo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "redo", ( { params, payload } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.redo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "pickTokens", ( { params, payload } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.pickTokens( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "reserveCard", ( { params, payload } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.reserveCard( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "purchaseCard", ( { params, payload } ) => SplendorEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.purchaseCard( payload ) ),
-			Effect.orDie
-		) )
+		.handle( "createGame", ( { payload } ) => {
+			const { id, code } = newGame();
+			return forward( SplendorEngineDO, id, s => s.initialize( { id, code, config: payload } ) );
+		} )
+		// TODO: Get Id from DB using Code
+		.handle( "join", ( { payload } ) =>
+			forward( SplendorEngineDO, GameId.make( payload.code ), s => s.join( payload.playerInfo ) ) )
+		.handle( "getState", ( { params, payload } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.getState( payload ) ) )
+		.handle( "addBots", ( { params } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.addBots() ) )
+		.handle( "start", ( { params } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.start() ) )
+		.handle( "undo", ( { params, payload } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.undo( payload ) ) )
+		.handle( "redo", ( { params, payload } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.redo( payload ) ) )
+		.handle( "pickTokens", ( { params, payload } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.pickTokens( payload ) ) )
+		.handle( "reserveCard", ( { params, payload } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.reserveCard( payload ) ) )
+		.handle( "purchaseCard", ( { params, payload } ) =>
+			forward( SplendorEngineDO, params.gameId, s => s.purchaseCard( payload ) ) )
 );
 
 export const FishApiLive = HttpApiBuilder.group(
 	StairwayAPI,
 	"fish",
 	handlers => handlers
-		.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-			const gameId = GameId.make( generateId() );
-			const code = GameCode.make( generateGameCode() );
-			return yield* FishEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.initialize( { id: gameId, code, config: payload } ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "join", ( { payload } ) => Effect.gen( function* () {
-			// TODO: Get Id from DB using Code
-			const gameId = GameId.make( payload.code );
-			return yield* FishEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.join( payload.playerInfo ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "getState", ( { params, payload } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.getState( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "addBots", ( { params } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.addBots() ),
-			Effect.orDie
-		) )
-		.handle( "start", ( { params } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.start() ),
-			Effect.orDie
-		) )
-		.handle( "undo", ( { params, payload } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.undo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "redo", ( { params, payload } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.redo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "createTeams", ( { params, payload } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.createTeams( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "askCard", ( { params, payload } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.askCard( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "claimBook", ( { params, payload } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.claimBook( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "transferTurn", ( { params, payload } ) => FishEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.transferTurn( payload ) ),
-			Effect.orDie
-		) )
+		.handle( "createGame", ( { payload } ) => {
+			const { id, code } = newGame();
+			return forward( FishEngineDO, id, s => s.initialize( { id, code, config: payload } ) );
+		} )
+		// TODO: Get Id from DB using Code
+		.handle( "join", ( { payload } ) =>
+			forward( FishEngineDO, GameId.make( payload.code ), s => s.join( payload.playerInfo ) ) )
+		.handle( "getState", ( { params, payload } ) =>
+			forward( FishEngineDO, params.gameId, s => s.getState( payload ) ) )
+		.handle( "addBots", ( { params } ) =>
+			forward( FishEngineDO, params.gameId, s => s.addBots() ) )
+		.handle( "start", ( { params } ) =>
+			forward( FishEngineDO, params.gameId, s => s.start() ) )
+		.handle( "undo", ( { params, payload } ) =>
+			forward( FishEngineDO, params.gameId, s => s.undo( payload ) ) )
+		.handle( "redo", ( { params, payload } ) =>
+			forward( FishEngineDO, params.gameId, s => s.redo( payload ) ) )
+		.handle( "createTeams", ( { params, payload } ) =>
+			forward( FishEngineDO, params.gameId, s => s.createTeams( payload ) ) )
+		.handle( "askCard", ( { params, payload } ) =>
+			forward( FishEngineDO, params.gameId, s => s.askCard( payload ) ) )
+		.handle( "claimBook", ( { params, payload } ) =>
+			forward( FishEngineDO, params.gameId, s => s.claimBook( payload ) ) )
+		.handle( "transferTurn", ( { params, payload } ) =>
+			forward( FishEngineDO, params.gameId, s => s.transferTurn( payload ) ) )
 );
 
 export const CallbreakApiLive = HttpApiBuilder.group(
 	StairwayAPI,
 	"callbreak",
 	handlers => handlers
-		.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-			const gameId = GameId.make( generateId() );
-			const code = GameCode.make( generateGameCode() );
-			return yield* CallbreakEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.initialize( { id: gameId, code, config: payload } ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "join", ( { payload } ) => Effect.gen( function* () {
-			// TODO: Get Id from DB using Code
-			const gameId = GameId.make( payload.code );
-			return yield* CallbreakEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.join( payload.playerInfo ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "getState", ( { params, payload } ) => CallbreakEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.getState( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "addBots", ( { params } ) => CallbreakEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.addBots() ),
-			Effect.orDie
-		) )
-		.handle( "start", ( { params } ) => CallbreakEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.start() ),
-			Effect.orDie
-		) )
-		.handle( "undo", ( { params, payload } ) => CallbreakEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.undo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "redo", ( { params, payload } ) => CallbreakEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.redo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "declareWins", ( { params, payload } ) => CallbreakEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.declareWins( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "playCard", ( { params, payload } ) => CallbreakEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.playCard( payload ) ),
-			Effect.orDie
-		) )
+		.handle( "createGame", ( { payload } ) => {
+			const { id, code } = newGame();
+			return forward( CallbreakEngineDO, id, s => s.initialize( { id, code, config: payload } ) );
+		} )
+		// TODO: Get Id from DB using Code
+		.handle( "join", ( { payload } ) =>
+			forward( CallbreakEngineDO, GameId.make( payload.code ), s => s.join( payload.playerInfo ) ) )
+		.handle( "getState", ( { params, payload } ) =>
+			forward( CallbreakEngineDO, params.gameId, s => s.getState( payload ) ) )
+		.handle( "addBots", ( { params } ) =>
+			forward( CallbreakEngineDO, params.gameId, s => s.addBots() ) )
+		.handle( "start", ( { params } ) =>
+			forward( CallbreakEngineDO, params.gameId, s => s.start() ) )
+		.handle( "undo", ( { params, payload } ) =>
+			forward( CallbreakEngineDO, params.gameId, s => s.undo( payload ) ) )
+		.handle( "redo", ( { params, payload } ) =>
+			forward( CallbreakEngineDO, params.gameId, s => s.redo( payload ) ) )
+		.handle( "declareWins", ( { params, payload } ) =>
+			forward( CallbreakEngineDO, params.gameId, s => s.declareWins( payload ) ) )
+		.handle( "playCard", ( { params, payload } ) =>
+			forward( CallbreakEngineDO, params.gameId, s => s.playCard( payload ) ) )
 );
 
 export const KingdominoApiLive = HttpApiBuilder.group(
 	StairwayAPI,
 	"kingdomino",
 	handlers => handlers
-		.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-			const gameId = GameId.make( generateId() );
-			const code = GameCode.make( generateGameCode() );
-			return yield* KingdominoEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.initialize( { id: gameId, code, config: payload } ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "join", ( { payload } ) => Effect.gen( function* () {
-			// TODO: Get Id from DB using Code
-			const gameId = GameId.make( payload.code );
-			return yield* KingdominoEngineDO.pipe(
-				Effect.flatMap( DO => DO.getByName( gameId ) ),
-				Effect.flatMap( stub => stub.join( payload.playerInfo ) ),
-				Effect.orDie
-			);
-		} ) )
-		.handle( "getState", ( { params, payload } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.getState( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "addBots", ( { params } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.addBots() ),
-			Effect.orDie
-		) )
-		.handle( "start", ( { params } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.start() ),
-			Effect.orDie
-		) )
-		.handle( "undo", ( { params, payload } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.undo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "redo", ( { params, payload } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.redo( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "selectDomino", ( { params, payload } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.selectDomino( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "placeDomino", ( { params, payload } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.placeDomino( payload ) ),
-			Effect.orDie
-		) )
-		.handle( "discardDomino", ( { params, payload } ) => KingdominoEngineDO.pipe(
-			Effect.flatMap( DO => DO.getByName( params.gameId ) ),
-			Effect.flatMap( stub => stub.discardDomino( payload ) ),
-			Effect.orDie
-		) )
+		.handle( "createGame", ( { payload } ) => {
+			const { id, code } = newGame();
+			return forward( KingdominoEngineDO, id, s => s.initialize( { id, code, config: payload } ) );
+		} )
+		// TODO: Get Id from DB using Code
+		.handle( "join", ( { payload } ) =>
+			forward(
+				KingdominoEngineDO,
+				GameId.make( payload.code ),
+				s => s.join( payload.playerInfo )
+			) )
+		.handle( "getState", ( { params, payload } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.getState( payload ) ) )
+		.handle( "addBots", ( { params } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.addBots() ) )
+		.handle( "start", ( { params } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.start() ) )
+		.handle( "undo", ( { params, payload } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.undo( payload ) ) )
+		.handle( "redo", ( { params, payload } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.redo( payload ) ) )
+		.handle( "selectDomino", ( { params, payload } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.selectDomino( payload ) ) )
+		.handle( "placeDomino", ( { params, payload } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.placeDomino( payload ) ) )
+		.handle( "discardDomino", ( { params, payload } ) =>
+			forward( KingdominoEngineDO, params.gameId, s => s.discardDomino( payload ) ) )
 );
