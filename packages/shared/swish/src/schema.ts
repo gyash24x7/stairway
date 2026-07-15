@@ -81,12 +81,13 @@ export type InitializeInput<Config extends BaseGameConfig> = {
 	id: GameId;
 	code: GameCode;
 	config: Config;
+	seed?: string;
 };
 
 export const InitializeInput = <Config extends Schema.Top>( config: Config ) =>
 	Schema.TaggedStruct(
 		"swish/InitializeInput",
-		{ id: GameId, code: GameCode, config }
+		{ id: GameId, code: GameCode, config, seed: Schema.optional( Schema.String ) }
 	);
 
 export type InitializeResponse = typeof InitializeResponse.Type;
@@ -125,6 +126,10 @@ export const PersistedGameData = <State extends Schema.Top, Config extends Schem
 ) =>
 	Schema.TaggedStruct( "swish/PersistedGameData", {
 		version: Schema.Number,
+		// Server-only PRNG seed captured at initialize. Optional so records
+		// persisted before seeding was added still decode. NEVER exposed to
+		// clients (absent from GameContext / GameSnapshot / CompletedGameData).
+		seed: Schema.optional( Schema.String ),
 		id: GameId,
 		code: GameCode,
 		status: GameStatus,
@@ -140,6 +145,7 @@ export const PersistedGameData = <State extends Schema.Top, Config extends Schem
 export type PersistedGameData<State, Config> = {
 	readonly _tag: "swish/PersistedGameData";
 	readonly version: number;
+	readonly seed?: string;
 	readonly id: GameId;
 	readonly code: GameCode;
 	readonly status: GameStatus;

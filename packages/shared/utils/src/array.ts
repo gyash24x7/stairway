@@ -1,12 +1,15 @@
 /**
- * Shuffles an array using the Fisher-Yates algorithm.
+ * Shuffles an array by decorating each element with a random sort key.
  * @template T - The type of elements in the array.
  * @param {T[]} arr - The array to shuffle.
+ * @param {() => number} rng - Randomness source in [0, 1); defaults to
+ *   `Math.random`. Pass a seeded generator (e.g. `@s2h/utils/rng`) for a
+ *   deterministic, reproducible shuffle.
  * @returns {T[]} A new array with the elements shuffled.
  */
-export function shuffle<T>( arr: T[] ): T[] {
+export function shuffle<T>( arr: T[], rng: () => number = Math.random ): T[] {
 	return arr
-		.map( value => ( { value, sort: Math.random() } ) )
+		.map( value => ( { value, sort: rng() } ) )
 		.sort( ( a, b ) => a.sort - b.sort )
 		.map( ( { value } ) => value );
 }

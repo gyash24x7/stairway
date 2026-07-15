@@ -10,6 +10,7 @@
 // Nondeterminism (e.g. random setup) is captured in the emitted/genesis state, so
 // replay is deterministic — `apply` must stay pure.
 
+import type { Rng } from "@s2h/utils/rng";
 import type * as Schema from "effect/Schema";
 import type { InvalidMove } from "./errors";
 import type { BaseGameConfig, GameContext, GameSnapshot, PlayerId } from "./schema";
@@ -19,6 +20,13 @@ export type ReadonlyGameData<State, Config> = {
 	readonly state: State;
 	readonly config: Config;
 	readonly context: GameContext;
+	/**
+	 * A deterministic PRNG for deciders. Seeded from the game's server-only seed
+	 * plus the current turn plus the decider's role, so it is a pure function of
+	 * persisted state (replay-exact). Pass a `salt` to draw independent streams
+	 * within one decider. Outputs must still be captured in emitted events.
+	 */
+	readonly rng: ( salt?: string ) => Rng;
 }
 
 /** A named map of move-name -> payload schema; instantiated with a literal to preserve input types. */

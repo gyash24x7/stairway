@@ -12,6 +12,7 @@
 // + refold.
 
 import { generateBotInfo, generateId } from "@s2h/utils/generator";
+import { hashSeed, makeRng } from "@s2h/utils/rng";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
@@ -95,10 +96,14 @@ export const makeEngine = <
 		work: PersistedGameData<State, Config>;
 	}
 
-	const readonly = ( data: PersistedGameData<State, Config> ) => ( {
+	const readonly = ( data: PersistedGameData<State, Config>, role = "" ) => ( {
 		state: data.state,
 		config: data.config,
-		context: data.context
+		context: data.context,
+		// A deterministic PRNG seeded by the server-only seed + turn + decider
+		// role (+ optional caller salt). The role keeps same-turn deciders
+		// (beforeMove/execute/afterMove/onEnter/…) from sharing a stream.
+		rng: ( salt = "" ) => makeRng( hashSeed( data.seed ?? "", data.context.turn, role, salt ) )
 	} );
 
 	/**
@@ -212,11 +217,11 @@ export const makeEngine = <
 			emit( acc, [ PhaseEntered.make( { phase: String( phaseName ) } ) ] );
 
 			if ( phase.onEnter ) {
-				emit( acc, phase.onEnter( readonly( acc.work ) ) );
+				emit( acc, phase.onEnter( readonly( acc.work, "onEnter" ) ) );
 			}
 
 			if ( phase.resolveStartingPlayer ) {
-				const starting = phase.resolveStartingPlayer( readonly( acc.work ) );
+				const starting = phase.resolveStartingPlayer( readonly( acc.work, "startingPlayer" ) );
 				emit( acc, [ CurrentPlayerSet.make( { playerId: starting } ) ] );
 			}
 
@@ -268,6 +273,7 @@ export const makeEngine = <
 			const state = structure.setup( payload.config );
 			const genesis = PersistedData.make( {
 				version: 1,
+				seed: payload.seed ?? generateId(),
 				id: payload.id,
 				code: payload.code,
 				status: "CREATED",
@@ -297,7 +303,7 @@ export const makeEngine = <
 		const acc: Acc = { events: [], work: data };
 		if ( structure.hooks?.onJoin ) {
 			emit( acc, structure.hooks.onJoin(
-				readonly( acc.work ),
+				readonly( acc.work, "onJoin" ),
 				playerInfo.id
 			) );
 		}
@@ -350,7 +356,7 @@ export const makeEngine = <
 
 		const acc: Acc = { events: [], work: data };
 		if ( structure.hooks?.onStart ) {
-			emit( acc, structure.hooks.onStart( readonly( acc.work ) ) );
+			emit( acc, structure.hooks.onStart( readonly( acc.work, "onStart" ) ) );
 		}
 
 		if ( structure.phases && structure.initialPhase ) {
@@ -412,13 +418,13 @@ export const makeEngine = <
 		const acc: Acc = { events: [], work: data };
 
 		if ( structure.hooks?.beforeMove ) {
-			emit( acc, structure.hooks.beforeMove( readonly( acc.work ), playerId, move ) );
+			emit( acc, structure.hooks.beforeMove( readonly( acc.work, "beforeMove" ), playerId, move ) );
 		}
 
-		emit( acc, moveDef.execute( readonly( acc.work ), playerId, input ) );
+		emit( acc, moveDef.execute( readonly( acc.work, "execute" ), playerId, input ) );
 
 		if ( structure.hooks?.afterMove ) {
-			emit( acc, structure.hooks.afterMove( readonly( acc.work ), playerId, move ) );
+			emit( acc, structure.hooks.afterMove( readonly( acc.work, "afterMove" ), playerId, move ) );
 		}
 
 		emit( acc, [ TurnAdvanced.make( {} ) ] );
@@ -431,7 +437,7 @@ export const makeEngine = <
 			if ( phaseEnded ) {
 				const nextPhaseName = phase.resolveNextPhase( readonly( acc.work ) );
 				if ( phase.onExit ) {
-					emit( acc, phase.onExit( readonly( acc.work ) ) );
+					emit( acc, phase.onExit( readonly( acc.work, "onExit" ) ) );
 				}
 
 				emit( acc, [ PhaseExited.make( { phase: String( phaseName ) ?? "" } ) ] );
@@ -452,7 +458,7 @@ export const makeEngine = <
 		const ended = structure.endIf( readonly( acc.work ) );
 		if ( ended ) {
 			if ( structure.hooks?.onEnd ) {
-				emit( acc, structure.hooks.onEnd( readonly( acc.work ) ) );
+				emit( acc, structure.hooks.onEnd( readonly( acc.work, "onEnd" ) ) );
 			}
 
 			emit( acc, [ GameCompleted.make( {} ) ] );
