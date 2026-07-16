@@ -124,11 +124,23 @@ export const FishPlayerView = Schema.Struct( {
 	hand: Schema.Array( Card )
 } );
 
+/**
+ * The single audience view: the shared board (hands hidden, counts derived),
+ * plus `playerId` + own `hand` for a Player audience (both absent for the
+ * Table / spectator audience).
+ */
+export type FishView = typeof FishView.Type;
+export const FishView = Schema.Struct( {
+	...FishSharedView.fields,
+	playerId: Schema.optional( PlayerId ),
+	hand: Schema.optional( Schema.Array( Card ) )
+} );
+
 /** Merged view fed to the bot AI (shared + player-specific state). */
 export type FishBotView = FishSharedView & FishPlayerView;
 
 export type FishSnapshot = typeof FishSnapshot.Type;
-export const FishSnapshot = GameSnapshot( FishSharedView, FishPlayerView, FishConfig );
+export const FishSnapshot = GameSnapshot( FishView, FishConfig );
 
 // --- Move inputs -----------------------------------------------------------
 

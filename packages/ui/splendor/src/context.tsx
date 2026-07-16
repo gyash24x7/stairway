@@ -1,4 +1,5 @@
 import type { SplendorSnapshot } from "@s2h/splendor/schema";
+import type { PlayerId } from "@s2h/swish/schema";
 import { createContext, type ReactNode, useContext } from "react";
 
 // The wire snapshot is flat (`{ id, code, status, context, players, config,
@@ -10,11 +11,11 @@ import { createContext, type ReactNode, useContext } from "react";
 type SharedGameData = Pick<
 	SplendorSnapshot,
 	"id" | "code" | "status" | "context" | "players" | "config"
-> & { state: SplendorSnapshot["shared"] };
+> & { state: SplendorSnapshot["view"] };
 
 type SplendorContextValue = {
 	shared: SharedGameData;
-	player: SplendorSnapshot["player"];
+	player: { playerId: PlayerId };
 	gameId: string;
 };
 
@@ -42,10 +43,10 @@ export function SplendorProvider( { snapshot, gameId, children }: SplendorProvid
 		context: snapshot.context,
 		players: snapshot.players,
 		config: snapshot.config,
-		state: snapshot.shared
+		state: snapshot.view
 	};
 	return (
-		<SplendorContext value={ { shared, player: snapshot.player, gameId } }>
+		<SplendorContext value={ { shared, player: { playerId: snapshot.view.playerId! }, gameId } }>
 			{ children }
 		</SplendorContext>
 	);

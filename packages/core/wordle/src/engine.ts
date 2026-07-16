@@ -12,7 +12,6 @@
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
 import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
-import { BasePlayerView } from "@s2h/swish/schema";
 import { dictionaries } from "./dictionary";
 import {
 	GuessedEvent,
@@ -21,9 +20,9 @@ import {
 	VictoryDecidedEvent,
 	WordleConfig,
 	WordleEvents,
-	WordleSharedView,
 	WordleSnapshot,
-	WordleState
+	WordleState,
+	WordleView
 } from "./schema";
 import { allWordsGuessed, apply, computeRow } from "./utils";
 
@@ -39,8 +38,7 @@ const wordle = makeEngine( {
 			guess: GuessInput
 		},
 		views: {
-			shared: WordleSharedView,
-			player: BasePlayerView
+			view: WordleView
 		}
 	},
 
@@ -70,13 +68,13 @@ const wordle = makeEngine( {
 
 	endIf: ( { state } ) => allWordsGuessed( state ) || state.guesses.length === state.maxGuesses,
 
-	sharedView: ( { state, config } ) => {
+	view: ( { state, config }, audience ): WordleView => {
 		const emptyRow: typeof GuessRow.Type = Array.from(
 			{ length: config.wordLength },
 			() => ( { letter: "", status: "absent" as const } )
 		);
 
-		return {
+		const shared = {
 			guesses: state.guesses,
 			maxGuesses: state.maxGuesses,
 			victory: state.victory,
@@ -92,9 +90,9 @@ const wordle = makeEngine( {
 				];
 			} )
 		};
-	},
 
-	playerView: ( _data, playerId ) => BasePlayerView.make( { playerId } ),
+		return audience._tag === "swish/Table" ? shared : { ...shared, playerId: audience.id };
+	},
 
 	hooks: {
 		onEnd: ( { state } ) => [ VictoryDecidedEvent.make( { victory: allWordsGuessed( state ) } ) ]

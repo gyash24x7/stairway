@@ -94,8 +94,16 @@ export const SplendorSharedView = Schema.Struct( {
 export type SplendorPlayerView = typeof SplendorPlayerView.Type;
 export const SplendorPlayerView = Schema.Struct( { playerId: PlayerId } );
 
+// The single audience view: the shared board (decks hidden), plus `playerId`
+// for a Player audience (absent for the Table / spectator audience).
+export type SplendorView = typeof SplendorView.Type;
+export const SplendorView = Schema.Struct( {
+	...SplendorSharedView.fields,
+	playerId: Schema.optional( PlayerId )
+} );
+
 export type SplendorSnapshot = typeof SplendorSnapshot.Type;
-export const SplendorSnapshot = GameSnapshot( SplendorSharedView, SplendorPlayerView, SplendorConfig );
+export const SplendorSnapshot = GameSnapshot( SplendorView, SplendorConfig );
 
 // A `Partial<Tokens>` on the wire: only the picked/paid/returned gems present.
 export type PartialTokens = typeof PartialTokens.Type;

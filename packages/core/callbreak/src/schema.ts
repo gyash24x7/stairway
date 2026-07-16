@@ -81,10 +81,26 @@ export const CallbreakPlayerView = Schema.Struct( {
 } );
 
 /** Merged view used by bot AI (shared + player-specific state). */
-export type CallbreakBotView = CallbreakSharedView & CallbreakPlayerView;
+export type CallbreakBotView = typeof CallbreakBotView.Type;
+export const CallbreakBotView = Schema.Struct( {
+	...CallbreakSharedView.fields,
+	...CallbreakPlayerView.fields
+} );
+
+/**
+ * The single audience view: cumulative scores + the active deal (hands hidden),
+ * plus `playerId` + own `hand` for a Player audience (both absent for the
+ * Table / spectator audience).
+ */
+export type CallbreakView = typeof CallbreakView.Type;
+export const CallbreakView = Schema.Struct( {
+	...CallbreakSharedView.fields,
+	playerId: Schema.optional( PlayerId ),
+	hand: Schema.optional( Schema.Array( CardIdSchema ) )
+} );
 
 export type CallbreakSnapshot = typeof CallbreakSnapshot.Type;
-export const CallbreakSnapshot = GameSnapshot( CallbreakSharedView, CallbreakPlayerView, CallbreakConfig );
+export const CallbreakSnapshot = GameSnapshot( CallbreakView, CallbreakConfig );
 
 // --- Move inputs -----------------------------------------------------------
 

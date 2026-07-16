@@ -15,10 +15,9 @@ import {
 	SymbolAssigned,
 	TicTacToeConfig,
 	TicTacToeEvent,
-	TicTacToePlayerView,
-	TicTacToeSharedView,
 	TicTacToeSnapshot,
 	TicTacToeState,
+	TicTacToeView,
 	WinnerDecided
 } from "./schema";
 import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "./utils";
@@ -35,8 +34,7 @@ export const tictactoe = makeEngine( {
 			place: PlaceInput
 		},
 		views: {
-			shared: TicTacToeSharedView,
-			player: TicTacToePlayerView
+			view: TicTacToeView
 		}
 	},
 
@@ -50,8 +48,8 @@ export const tictactoe = makeEngine( {
 	endIf: ( { state } ) =>
 		checkWinner( [ ...state.board ] ) !== null || isBoardFull( [ ...state.board ] ),
 
-	sharedView: ( { state } ) => state,
-	playerView: ( _data, playerId ) => ( { playerId } ),
+	view: ( { state }, audience ): TicTacToeView =>
+		audience._tag === "swish/Table" ? state : { ...state, playerId: audience.id },
 
 	resolveNextPlayer: ( { context } ) => context.players[ context.turn % context.players.length ],
 
@@ -100,8 +98,8 @@ export const tictactoe = makeEngine( {
 
 	botMove: ( snapshot ) => {
 		const position = findBestMove(
-			[ ...snapshot.shared.board ],
-			symbolOf( snapshot.shared.symbols, snapshot.player.playerId )
+			[ ...snapshot.view.board ],
+			symbolOf( snapshot.view.symbols, snapshot.view.playerId! )
 		);
 		return { moveType: "place" as const, input: { position } };
 	}

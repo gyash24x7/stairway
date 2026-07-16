@@ -11,8 +11,8 @@ import type {
 } from "@s2h/swish/schema";
 import type {
 	KingdominoConfig,
-	KingdominoData,
 	KingdominoSharedView,
+	KingdominoSnapshot,
 	PlayerData
 } from "@s2h/kingdomino/schema";
 import { createContext, type ReactNode, useContext } from "react";
@@ -52,7 +52,7 @@ export function useKingdomino() {
 	return ctx;
 }
 
-type KingdominoProviderProps = { data: KingdominoData; children: ReactNode; };
+type KingdominoProviderProps = { data: KingdominoSnapshot; children: ReactNode; };
 
 export function KingdominoProvider( { data, children }: KingdominoProviderProps ) {
 	const shared: KingdominoShared = {
@@ -62,9 +62,9 @@ export function KingdominoProvider( { data, children }: KingdominoProviderProps 
 		context: data.context,
 		players: data.players,
 		config: data.config,
-		state: data.shared
+		state: data.view
 	};
-	const player = { playerId: data.player.playerId };
+	const player = { playerId: data.view.playerId! };
 	return (
 		<KingdominoContext value={ { shared, player } }>
 			{ children }

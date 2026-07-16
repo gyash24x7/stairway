@@ -39,17 +39,68 @@ export const PlayerInfo = Schema.TaggedStruct( "swish/PlayerInfo", {
 	isBot: Schema.optional( Schema.Boolean )
 } );
 
+// --- Reaction / interaction windows ----------------------------------------
+// An opt-in priority window (challenge / block / "Just Say No" / rent / bid).
+// When one is open the engine routes moves to the frame's `responders` instead
+// of `currentPlayer` and suppresses turn advancement until it resolves. Nesting
+// is a stack (array on GameContext); the top frame is the active one. `payload`
+// / `responses` are `Unknown` so the engine stays game-agnostic — the game's
+// `resolve` narrows them.
+
+// Per-seat status. Absent ⇒ "active". Games flip a seat to folded/eliminated/out
+// (poker fold/all-in, Coup influence loss, Monopoly bankruptcy) and use the
+// `activeSeats`/`isActiveSeat` helpers (events.ts) to skip them in turn order.
+export type SeatStatus = typeof SeatStatus.Type;
+export const SeatStatus = Schema.Literals( [ "active", "folded", "eliminated", "out" ] );
+
+export type InteractionMode = typeof InteractionMode.Type;
+export const InteractionMode = Schema.Literals( [ "sequential", "simultaneous" ] );
+
+export type InteractionFrame = typeof InteractionFrame.Type;
+export const InteractionFrame = Schema.TaggedStruct( "swish/InteractionFrame", {
+	kind: Schema.String,
+	initiator: PlayerId,
+	responders: Schema.Array( PlayerId ),
+	mode: InteractionMode,
+	responses: Schema.Record( PlayerId, Schema.Unknown ),
+	target: Schema.optional( PlayerId ),
+	payload: Schema.optional( Schema.Unknown ),
+	deadline: Schema.optional( Schema.Number )
+} );
+
 export type GameContext = typeof GameContext.Type;
 export const GameContext = Schema.TaggedStruct( "swish/GameContext", {
 	turn: Schema.Number,
 	players: Schema.Array( PlayerId ),
 	currentPlayer: PlayerId,
-	phase: Schema.optional( Schema.String )
+	phase: Schema.optional( Schema.String ),
+	// The reaction stack; undefined/absent for games that never open one.
+	interactions: Schema.optional( Schema.Array( InteractionFrame ) ),
+	// Per-seat status map; absent entries (and the whole field) mean "active".
+	seats: Schema.optional( Schema.Record( PlayerId, SeatStatus ) )
 } );
 
 /** Map of playerId -> PlayerInfo, the roster the engine tracks. */
 export type Players = typeof Players.Type;
 export const Players = Schema.Record( PlayerId, PlayerInfo );
+
+// --- Audience --------------------------------------------------------------
+// Who a view is being rendered for. A `Player` audience sees the public board
+// PLUS their own private slice; `Table` is the shared spectator / board view
+// (couch mode) — no private slice, and no player identity required. The tag is
+// the seam a future per-audience event redaction would switch on too.
+
+export type Audience = typeof Audience.Type;
+export const Audience = Schema.Union( [
+	Schema.TaggedStruct( "swish/Player", { id: PlayerId } ),
+	Schema.TaggedStruct( "swish/Table", {} )
+] );
+
+// Return the NARROW variant types (not the `Audience` union): the generated
+// HttpApi client gives `getState` a per-member payload overload, so a value
+// typed as the wide union is not assignable to a single member.
+export const playerAudience = ( id: PlayerId ) => ( { _tag: "swish/Player" as const, id } );
+export const tableAudience = () => ( { _tag: "swish/Table" as const } );
 
 /**
  * The minimum every game config must provide. The engine reads `playerCount`
@@ -157,12 +208,10 @@ export type PersistedGameData<State, Config> = {
 
 /** What a client receives from `GetState` / after a move: config + shared + own view. */
 export const GameSnapshot = <
-	Shared extends Schema.Top,
-	Player extends Schema.Top,
+	View extends Schema.Top,
 	Config extends Schema.Top
 >(
-	sharedView: Shared,
-	playerView: Player,
+	view: View,
 	config: Config
 ) =>
 	Schema.TaggedStruct( "swish/GameSnapshot", {
@@ -172,11 +221,10 @@ export const GameSnapshot = <
 		context: GameContext,
 		players: Players,
 		config,
-		shared: sharedView,
-		player: playerView
+		view
 	} );
 
-export type GameSnapshot<Shared, Player, Config> = {
+export type GameSnapshot<View, Config> = {
 	readonly _tag: "swish/GameSnapshot";
 	readonly id: GameId;
 	readonly code: GameCode;
@@ -184,21 +232,68 @@ export type GameSnapshot<Shared, Player, Config> = {
 	readonly context: GameContext;
 	readonly players: Players;
 	readonly config: Config;
-	readonly shared: Shared;
-	readonly player: Player;
+	readonly view: View;
 };
 
+// --- Standings -------------------------------------------------------------
+// Canonical end-of-game result (#12): a ranking + optional winner, computed by
+// a game's `resolveResults` on completion so every UI (and the couch winner
+// screen) renders placement without re-deriving it.
+
+export type Standing = typeof Standing.Type;
+export const Standing = Schema.Struct( {
+	playerId: PlayerId,
+	rank: Schema.Number,
+	score: Schema.optional( Schema.Number ),
+	team: Schema.optional( Schema.String )
+} );
+
+export type Standings = typeof Standings.Type;
+export const Standings = Schema.Struct( {
+	ranking: Schema.Array( Standing ),
+	winner: Schema.optional( PlayerId )
+} );
+
+// --- Action feed -----------------------------------------------------------
+// A structured, human-readable log entry derived from the event stream (#11):
+// the TV ticker / chat feed / debugging feed. `at`/`actor` come from the commit;
+// `text` from the game's `describe`. Redaction-safe by construction.
+
+export type LogEntry = typeof LogEntry.Type;
+export const LogEntry = Schema.Struct( {
+	at: Schema.Number,
+	actor: Schema.optional( PlayerId ),
+	kind: Schema.String,
+	text: Schema.String
+} );
+
+export type GameLog = typeof GameLog.Type;
+export const GameLog = Schema.Array( LogEntry );
+
+export type MovePayload<In extends Schema.Top> = {
+	readonly playerInfo: PlayerInfo;
+	readonly input: In[ "Type" ];
+	readonly requestId?: string;
+	readonly expectedTurn?: number;
+};
+
+export const MovePayload = <In extends Schema.Top>( input: In ) =>
+	Schema.Struct( {
+		playerInfo: PlayerInfo,
+		input,
+		requestId: Schema.optionalKey( Schema.String ),
+		expectedTurn: Schema.optionalKey( Schema.Number )
+	} );
+
 /** Archived to KV when a game completes: shared view + every player's view. */
-export const CompletedGameData = <Shared extends Schema.Top, Player extends Schema.Top>(
-	sharedView: Shared,
-	playerView: Player
-) =>
+export const CompletedGameData = <View extends Schema.Top>( view: View ) =>
 	Schema.TaggedStruct( "swish/CompletedGameData", {
 		id: GameId,
 		code: GameCode,
 		status: GameStatus,
 		context: GameContext,
 		players: Players,
-		shared: sharedView,
-		playerViews: Schema.Record( PlayerId, playerView )
+		table: view,
+		playerViews: Schema.Record( PlayerId, view ),
+		results: Schema.optional( Standings )
 	} );

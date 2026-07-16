@@ -22,10 +22,9 @@ import {
 	ReserveCardInput,
 	SplendorConfig,
 	SplendorEvent,
-	SplendorPlayerView,
-	SplendorSharedView,
 	SplendorSnapshot,
 	SplendorState,
+	SplendorView,
 	type Tokens,
 	TokensPickedEvent,
 	WinnerDecidedEvent
@@ -65,8 +64,7 @@ export const splendor = makeEngine( {
 			purchaseCard: PurchaseCardInput
 		},
 		views: {
-			shared: SplendorSharedView,
-			player: SplendorPlayerView
+			view: SplendorView
 		}
 	},
 	apply,
@@ -90,11 +88,10 @@ export const splendor = makeEngine( {
 		return roundComplete && someoneWon;
 	},
 
-	sharedView: ( { state } ) => {
+	view: ( { state }, audience ): SplendorView => {
 		const { decks: _decks, ...rest } = state;
-		return rest;
+		return audience._tag === "swish/Table" ? rest : { ...rest, playerId: audience.id };
 	},
-	playerView: ( _data, playerId ) => ( { playerId } ),
 	resolveNextPlayer: ( { context } ) =>
 		context.players[ context.turn % context.players.length ]!,
 

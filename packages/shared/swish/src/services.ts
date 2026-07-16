@@ -14,8 +14,8 @@ import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
 
-/** The two kinds of deferred wake-up the engine schedules. */
-export type AlarmKind = "auto-start" | "bot";
+/** The kinds of deferred wake-up the engine schedules. */
+export type AlarmKind = "auto-start" | "bot" | "interaction-timeout" | "move-timeout";
 
 /**
  * Durable, single-key game state. Values crossing this boundary are already
@@ -29,13 +29,17 @@ export class GameStore extends Context.Service<GameStore, {
 }>()( "swish/GameStore" ) {}
 
 /**
- * Deferred work: schedule/cancel a future wake-up and record which kind it is
- * (auto-start vs. bot move). Backed by a host timer/alarm.
+ * Deferred work: multiple named timers, each firing an `AlarmKind`. The host
+ * keeps a `key -> { at, alarm }` map and arms its single wake-up at the earliest
+ * pending time; on wake it returns (and clears) the timers now due and re-arms
+ * for the next. This lets a bot delay, a reaction deadline, and a move clock all
+ * run concurrently. `cancel(key)` drops one timer; `cancelAll` drops them all.
  */
 export class Scheduler extends Context.Service<Scheduler, {
-	readonly schedule: ( delayMillis: number, alarm: AlarmKind ) => Effect.Effect<void>;
-	readonly cancel: Effect.Effect<void>;
-	readonly read: Effect.Effect<Option.Option<AlarmKind>>;
+	readonly schedule: ( key: string, delayMillis: number, alarm: AlarmKind ) => Effect.Effect<void>;
+	readonly cancel: ( key: string ) => Effect.Effect<void>;
+	readonly cancelAll: Effect.Effect<void>;
+	readonly due: Effect.Effect<ReadonlyArray<AlarmKind>>;
 }>()( "swish/Scheduler" ) {}
 
 /** Archive for completed games (shared view + per-player views). */

@@ -31,8 +31,16 @@ export const TicTacToeSharedView = TicTacToeState;
 export type TicTacToePlayerView = typeof TicTacToePlayerView.Type;
 export const TicTacToePlayerView = Schema.Struct( { playerId: PlayerId } );
 
+// The single audience view: the full board, plus `playerId` for a Player
+// audience (absent for the Table / spectator audience).
+export type TicTacToeView = typeof TicTacToeView.Type;
+export const TicTacToeView = Schema.Struct( {
+	...TicTacToeState.fields,
+	playerId: Schema.optional( PlayerId )
+} );
+
 export type TicTacToeSnapshot = typeof TicTacToeSnapshot.Type;
-export const TicTacToeSnapshot = GameSnapshot( TicTacToeSharedView, TicTacToePlayerView, TicTacToeConfig );
+export const TicTacToeSnapshot = GameSnapshot( TicTacToeView, TicTacToeConfig );
 
 export type PlaceInput = typeof PlaceInput.Type;
 export const PlaceInput = Schema.Struct( { position: Schema.Number } );

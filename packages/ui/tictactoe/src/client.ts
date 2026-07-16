@@ -8,7 +8,14 @@
 // `run`, or `Effect` directly.
 
 import { getClient, run } from "@s2h/api/client";
-import { GameCode, GameIdParams, JoinGameInput, PlayerId, PlayerInfo } from "@s2h/swish/schema";
+import {
+	GameCode,
+	GameIdParams,
+	JoinGameInput,
+	playerAudience,
+	PlayerId,
+	PlayerInfo
+} from "@s2h/swish/schema";
 import type { TicTacToeConfig, TicTacToeData, TicTacToeSnapshot } from "@s2h/tictactoe/schema";
 import type { AuthInfo } from "@s2h/utils/auth";
 
@@ -53,7 +60,7 @@ export const redoFn = ( gameId: string, playerInfo: PlayerInfo ) =>
 export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
 	run( client.getState( {
 		params: gameIdParams( gameId ),
-		payload: playerInfo
+		payload: playerAudience( playerInfo.id )
 	} ), signal );
 
 // --- Adapters --------------------------------------------------------------
@@ -83,6 +90,6 @@ export const snapshotToData = ( snapshot: TicTacToeSnapshot ): TicTacToeData => 
 	status: snapshot.status,
 	context: snapshot.context,
 	config: snapshot.config,
-	shared: snapshot.shared,
-	player: snapshot.player
+	shared: snapshot.view,
+	player: { playerId: snapshot.view.playerId! }
 } );

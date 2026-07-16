@@ -14,7 +14,7 @@
 //   - each call returns Effect<Success, …>; `Effect.runPromise` yields Success.
 
 import { getClient, run } from "@s2h/api/client";
-import { GameCode, GameIdParams, PlayerId, PlayerInfo } from "@s2h/swish/schema";
+import { GameCode, GameIdParams, playerAudience, PlayerId, PlayerInfo } from "@s2h/swish/schema";
 import type { AuthInfo } from "@s2h/utils/auth";
 import type { WordleConfig, WordleData, WordleSnapshot } from "@s2h/wordle/schema";
 
@@ -57,7 +57,10 @@ export const redoFn = ( gameId: string, playerInfo: PlayerInfo ) =>
 // --- Queries ---------------------------------------------------------------
 
 export const getWordleStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
-	run( client.getState( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
+	run( client.getState( {
+		params: gameIdParams( gameId ),
+		payload: playerAudience( playerInfo.id )
+	} ), signal );
 
 // --- Adapters --------------------------------------------------------------
 // The new HTTP surface returns lifecycle-generic `GameSnapshot`s and takes a
@@ -86,6 +89,6 @@ export const snapshotToWordleData = ( snapshot: WordleSnapshot ): WordleData => 
 	status: snapshot.status,
 	context: snapshot.context,
 	config: snapshot.config,
-	shared: snapshot.shared,
-	player: snapshot.player
+	shared: snapshot.view,
+	player: { playerId: snapshot.view.playerId! }
 } );

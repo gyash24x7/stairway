@@ -41,10 +41,9 @@ import {
 	FishBotView,
 	FishConfig,
 	FishEvent,
-	FishPlayerView,
-	FishSharedView,
 	FishSnapshot,
 	FishState,
+	FishView,
 	HandsDealt,
 	PlayerSeated,
 	TeamsCreated,
@@ -93,8 +92,7 @@ export const fish = makeEngine( {
 			transferTurn: TransferTurnInput
 		},
 		views: {
-			shared: FishSharedView,
-			player: FishPlayerView
+			view: FishView
 		}
 	},
 
@@ -114,13 +112,12 @@ export const fish = makeEngine( {
 	endIf: ( { state, config } ) =>
 		getClaimedBooks( state ).length === config.books.length,
 
-	sharedView: ( { state } ) => {
+	view: ( { state }, audience ): FishView => {
 		const { hands: _hands, ...rest } = state;
-		return rest;
+		return audience._tag === "swish/Table"
+			? rest
+			: { ...rest, playerId: audience.id, hand: [ ...( state.hands[ audience.id ] ?? [] ) ] };
 	},
-
-	playerView: ( { state }, playerId ) =>
-		( { playerId, hand: [ ...( state.hands[ playerId ] ?? [] ) ] } ),
 
 	hooks: {
 		// A joining player's `playerData` seat is created here (mirrors old onJoin).
@@ -469,11 +466,7 @@ function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove {
 	const config = snapshot.config;
 
 	if ( phase === "PLAY" ) {
-		const view = {
-			...snapshot.shared,
-			playerId: snapshot.player.playerId,
-			hand: snapshot.player.hand
-		} as unknown as FishBotView;
+		const view = snapshot.view as unknown as FishBotView;
 
 		const signals = detectTeammateSignals( view, config );
 		const weightedBooks = suggestBooks( view, config, signals );

@@ -19,7 +19,14 @@ import type {
 	FishConfig,
 	TransferTurnInput
 } from "@s2h/fish/schema";
-import { GameCode, GameIdParams, JoinGameInput, PlayerId, PlayerInfo } from "@s2h/swish/schema";
+import {
+	GameCode,
+	GameIdParams,
+	JoinGameInput,
+	playerAudience,
+	PlayerId,
+	PlayerInfo
+} from "@s2h/swish/schema";
 import type { AuthInfo } from "@s2h/utils/auth";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
@@ -77,7 +84,10 @@ export const redoFn = ( gameId: string, playerInfo: PlayerInfo ) =>
 // --- Queries ---------------------------------------------------------------
 
 export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
-	run( client.getState( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
+	run( client.getState( {
+		params: gameIdParams( gameId ),
+		payload: playerAudience( playerInfo.id )
+	} ), signal );
 
 // --- Adapters --------------------------------------------------------------
 

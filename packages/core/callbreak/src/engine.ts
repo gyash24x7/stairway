@@ -19,13 +19,12 @@ import { PlayerId } from "@s2h/swish/schema";
 import { type CardId, getCardSuit } from "@s2h/utils/cards";
 import { botDeclare, botPlayCard } from "./bot";
 import {
-	type CallbreakBotView,
+	CallbreakBotView,
 	CallbreakConfig,
 	CallbreakEvent,
-	CallbreakPlayerView,
-	CallbreakSharedView,
 	CallbreakSnapshot,
 	CallbreakState,
+	CallbreakView,
 	CardPlayedEvent,
 	DealDealtEvent,
 	DealScoredEvent,
@@ -47,38 +46,6 @@ import {
 	TRICKS_PER_DEAL
 } from "./utils";
 
-/**
- * The bot's move, per phase — a discriminated union over the moves. This matches
- * the structure's `botMove` return (one `{ moveType, input }` variant per declared
- * move), so it feeds `botMove` directly with no cast.
- */
-type CallbreakBotMove =
-	| { readonly moveType: "declareWins"; readonly input: DeclareWinsInput }
-	| { readonly moveType: "playCard"; readonly input: PlayCardInput };
-
-/**
- * Pick the bot's move from a game snapshot. Dispatches on the current phase
- * (`context.phase`) and rebuilds a `CallbreakBotView` (exactly `shared & player`)
- * for the AI helpers in ./bot.
- */
-function callbreakBotMove( snapshot: typeof CallbreakSnapshot.Type ): CallbreakBotMove {
-	const view: CallbreakBotView = { ...snapshot.shared, ...snapshot.player };
-	if ( snapshot.context.phase === "DECLARING" ) {
-		return {
-			moveType: "declareWins",
-			input: { wins: botDeclare( view, snapshot.config ), dealId: snapshot.shared.activeDeal!.id }
-		};
-	}
-
-	return {
-		moveType: "playCard",
-		input: {
-			cardId: botPlayCard( view, snapshot.config ) as CardId,
-			dealId: snapshot.shared.activeDeal!.id
-		}
-	};
-}
-
 // --- Engine ----------------------------------------------------------------
 
 const callbreak = makeEngine( {
@@ -92,8 +59,7 @@ const callbreak = makeEngine( {
 			playCard: PlayCardInput
 		},
 		views: {
-			shared: CallbreakSharedView,
-			player: CallbreakPlayerView
+			view: CallbreakView
 		}
 	},
 	apply,
@@ -106,19 +72,20 @@ const callbreak = makeEngine( {
 		state.deals.filter( ( d ) => Object.values( d.scores ).some( ( s ) => s !== 0 ) ).length
 		>= config.dealCount,
 
-	sharedView: ( { state } ) => {
+	view: ( { state }, audience ): CallbreakView => {
 		const activeDeal = state.deals[ 0 ];
 		const previousDeal = state.deals[ 1 ];
 		const lastCompletedTrick = previousDeal?.tricks[ 0 ];
-		if ( activeDeal ) {
-			const { hands: _hands, ...deal } = activeDeal;
-			return { activeDeal: deal, scores: state.scores, lastCompletedTrick, winner: state.winner };
-		}
-		return { scores: state.scores, winner: state.winner };
+		const table = activeDeal
+			? ( () => {
+				const { hands: _hands, ...deal } = activeDeal;
+				return { activeDeal: deal, scores: state.scores, lastCompletedTrick, winner: state.winner };
+			} )()
+			: { scores: state.scores, winner: state.winner };
+		return audience._tag === "swish/Table"
+			? table
+			: { ...table, playerId: audience.id, hand: state.deals[ 0 ]?.hands[ audience.id ] ?? [] };
 	},
-
-	playerView: ( { state }, playerId ) =>
-		( { playerId, hand: state.deals[ 0 ]?.hands[ playerId ] ?? [] } ),
 
 	hooks: {
 		// Seed each joining player's cumulative score at 0.
@@ -221,9 +188,34 @@ const callbreak = makeEngine( {
 		}
 	},
 
-	// One bot dispatcher over both phases. The bot's `CallbreakBotView` is
-	// exactly `shared & player`, which the snapshot provides directly.
-	botMove: ( snapshot ) => callbreakBotMove( snapshot ),
+
+	/**
+	 * Pick the bot's move from a game snapshot. Dispatches on the current phase
+	 * (`context.phase`) and rebuilds a `CallbreakBotView` (exactly `shared & player`)
+	 * for the AI helpers in ./bot.
+	 */
+	botMove: ( snapshot ) => {
+		const { playerId, hand } = snapshot.view;
+		if ( !playerId || !hand ) {
+			return;
+		}
+
+		const view = CallbreakBotView.make( { ...snapshot.view, playerId, hand } );
+		if ( snapshot.context.phase === "DECLARING" ) {
+			return {
+				moveType: "declareWins",
+				input: { wins: botDeclare( view, snapshot.config ), dealId: view.activeDeal!.id }
+			};
+		}
+
+		return {
+			moveType: "playCard",
+			input: {
+				cardId: botPlayCard( view, snapshot.config ) as CardId,
+				dealId: view.activeDeal!.id
+			}
+		};
+	},
 
 	initialPhase: "DECLARING",
 

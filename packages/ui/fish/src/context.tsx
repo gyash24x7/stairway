@@ -1,6 +1,6 @@
 "use client";
 
-import type { FishSharedView, FishSnapshot } from "@s2h/fish/schema";
+import type { FishPlayerView, FishSharedView, FishSnapshot } from "@s2h/fish/schema";
 import type { GameContext, GameStatus, Players } from "@s2h/swish/schema";
 import { createContext, type ReactNode, useContext } from "react";
 
@@ -17,7 +17,7 @@ type FishShared = {
 
 type FishContextValue = {
 	shared: FishShared;
-	player: FishSnapshot[ "player" ];
+	player: FishPlayerView;
 };
 
 const FishContext = createContext<FishContextValue | null>( null );
@@ -43,14 +43,19 @@ export function FishProvider( { data, children }: FishProviderProps ) {
 		id: data.id,
 		code: data.code,
 		config: data.config,
-		state: data.shared,
+		state: data.view,
 		players: data.players,
 		status: data.status,
 		context: data.context
 	};
 
+	const player: FishPlayerView = {
+		playerId: data.view.playerId!,
+		hand: data.view.hand ?? []
+	};
+
 	return (
-		<FishContext value={ { shared, player: data.player } }>
+		<FishContext value={ { shared, player } }>
 			{ children }
 		</FishContext>
 	);

@@ -17,7 +17,7 @@ const KEY_GAME = "gameData";
 const KEY_LOG_BASE = "log:base";
 const KEY_LOG_COMMITS = "log:commits";
 const KEY_LOG_CURSOR = "log:cursor";
-const KEY_ALARM = "alarm:kind";
+const KEY_TIMERS = "timers";
 
 export const DurableGameStoreLive = Layer.effect( GameStore, Effect.gen( function* () {
 	const ctx = yield* Cloudflare.DurableObjectState;
@@ -87,21 +87,58 @@ export const DurableSchedulerLive = Layer.effect( Scheduler, Effect.gen( functio
 	const ctx = yield* Cloudflare.DurableObjectState;
 	const rc = yield* RuntimeContext;
 
-	return Scheduler.of( {
-		schedule: ( delayMillis, alarm ) => Effect.gen( function* () {
-			yield* ctx.storage.put( KEY_ALARM, alarm );
-			yield* ctx.storage.setAlarm( Date.now() + delayMillis );
-		} ).pipe( Effect.provideService( RuntimeContext, rc ) ),
+	type Timer = { at: number; alarm: AlarmKind };
 
-		cancel: Effect.gen( function* () {
+	const readTimers = ctx.storage.get<Record<string, Timer>>( KEY_TIMERS )
+		.pipe( Effect.map( ( t ) => t ?? {} ) );
+
+	// Arm the DO's single alarm at the earliest pending timer (or clear it).
+	const rearm = ( timers: Record<string, Timer> ) => Effect.gen( function* () {
+		const times = Object.values( timers ).map( ( t ) => t.at );
+		if ( times.length === 0 ) {
 			yield* ctx.storage.deleteAlarm();
-			yield* ctx.storage.delete( KEY_ALARM );
+		} else {
+			yield* ctx.storage.setAlarm( Math.min( ...times ) );
+		}
+	} );
+
+	return Scheduler.of( {
+		schedule: ( key, delayMillis, alarm ) => Effect.gen( function* () {
+			const timers = yield* readTimers;
+			timers[ key ] = { at: Date.now() + delayMillis, alarm };
+			yield* ctx.storage.put( KEY_TIMERS, timers );
+			yield* rearm( timers );
 		} ).pipe( Effect.provideService( RuntimeContext, rc ) ),
 
-		read: ctx.storage.get<AlarmKind>( KEY_ALARM ).pipe(
-			Effect.map( ( value ) => Option.fromNullishOr( value ) ),
-			Effect.provideService( RuntimeContext, rc )
-		)
+		cancel: ( key ) => Effect.gen( function* () {
+			const timers = yield* readTimers;
+			delete timers[ key ];
+			yield* ctx.storage.put( KEY_TIMERS, timers );
+			yield* rearm( timers );
+		} ).pipe( Effect.provideService( RuntimeContext, rc ) ),
+
+		cancelAll: Effect.gen( function* () {
+			yield* ctx.storage.delete( KEY_TIMERS );
+			yield* ctx.storage.deleteAlarm();
+		} ).pipe( Effect.provideService( RuntimeContext, rc ) ),
+
+		// Return (and clear) every timer whose time has passed, then re-arm for the
+		// next earliest. The DO `alarm()` handler calls this via `runBotTurn`.
+		due: Effect.gen( function* () {
+			const timers = yield* readTimers;
+			const now = Date.now();
+			const fired: Array<AlarmKind> = [];
+			for ( const key of Object.keys( timers ) ) {
+				const timer = timers[ key ]!;
+				if ( timer.at <= now ) {
+					fired.push( timer.alarm );
+					delete timers[ key ];
+				}
+			}
+			yield* ctx.storage.put( KEY_TIMERS, timers );
+			yield* rearm( timers );
+			return fired;
+		} ).pipe( Effect.provideService( RuntimeContext, rc ) )
 	} );
 } ) );
 
@@ -129,6 +166,14 @@ export const DurableSwishLive = Layer.mergeAll(
 	KVArchiveLive
 );
 
+// #7 TODO — wire the DO `alarm()` so scheduled wake-ups actually fire. The
+// multi-timer `Scheduler` above + `engine.runBotTurn` (which now drains `due`)
+// are alarm-ready; what's missing is the DO alarm handler. `RpcDurableObject`
+// props accept `& Partial<DurableObjectProps>`, whose `alarm?: (info?) =>
+// Effect<void, never, never>` is the hook. It must run `<game>.runBotTurn`
+// provided with `DurableSwishLive` (so the ambient DurableObjectState/RuntimeContext
+// resolve the engine services). This was already unwired before the scheduler
+// work, so auto-start/bot moves depend on completing this binding.
 export class WordleEngineDO extends Cloudflare.RpcDurableObject<WordleEngineDO>()(
 	"cf/WordleEngine",
 	{ schema: WordleRpcs },

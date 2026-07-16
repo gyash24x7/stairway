@@ -1,6 +1,6 @@
+import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@s2h/utils/cards";
 import type { CallbreakBotView, CallbreakConfig, Trick } from "./schema";
 import { getCardValue, getPlayableCards } from "./utils";
-import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@s2h/utils/cards";
 
 /**
  * Sort cards by their rank value in ascending order.

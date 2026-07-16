@@ -16,11 +16,19 @@
 import { getClient, run } from "@s2h/api/client";
 import type {
 	CallbreakConfig,
+	CallbreakPlayerView,
 	CallbreakSnapshot,
 	DeclareWinsInput,
 	PlayCardInput
 } from "@s2h/callbreak/schema";
-import { GameCode, GameIdParams, JoinGameInput, PlayerId, PlayerInfo } from "@s2h/swish/schema";
+import {
+	GameCode,
+	GameIdParams,
+	JoinGameInput,
+	playerAudience,
+	PlayerId,
+	PlayerInfo
+} from "@s2h/swish/schema";
 import type { AuthInfo } from "@s2h/utils/auth";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
@@ -89,7 +97,10 @@ export const redoFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSi
 
 export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
 	run(
-		client.callbreak.getState( { params: gameIdParams( gameId ), payload: playerInfo } ),
+		client.callbreak.getState( {
+			params: gameIdParams( gameId ),
+			payload: playerAudience( playerInfo.id )
+		} ),
 		signal
 	);
 
@@ -122,12 +133,16 @@ export type CallbreakGame = {
 		context: CallbreakSnapshot[ "context" ];
 		players: CallbreakSnapshot[ "players" ];
 		config: CallbreakSnapshot[ "config" ];
-		state: CallbreakSnapshot[ "shared" ];
+		state: CallbreakSnapshot[ "view" ];
 	};
-	player: CallbreakSnapshot[ "player" ];
+	player: CallbreakPlayerView;
 };
 
-/** Reshape a wire `CallbreakSnapshot` into the `{ shared, player }` the UI reads. */
+/**
+ * Reshape a wire `CallbreakSnapshot` into the `{ shared, player }` the UI reads.
+ * The snapshot now carries a single audience `view`; for the logged-in player it
+ * folds in `playerId` + `hand`, which we split back into the `player` half.
+ */
 export const snapshotToCallbreakGame = ( snapshot: CallbreakSnapshot ): CallbreakGame => ( {
 	shared: {
 		id: snapshot.id,
@@ -136,7 +151,7 @@ export const snapshotToCallbreakGame = ( snapshot: CallbreakSnapshot ): Callbrea
 		context: snapshot.context,
 		players: snapshot.players,
 		config: snapshot.config,
-		state: snapshot.shared
+		state: snapshot.view
 	},
-	player: snapshot.player
+	player: { playerId: snapshot.view.playerId!, hand: snapshot.view.hand ?? [] }
 } );

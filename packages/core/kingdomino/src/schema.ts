@@ -119,8 +119,16 @@ export const KingdominoSharedView = Schema.Struct( {
 export type KingdominoPlayerView = typeof KingdominoPlayerView.Type;
 export const KingdominoPlayerView = Schema.Struct( { playerId: PlayerId } );
 
+// The single audience view: the shared board (deck hidden), plus `playerId` for
+// a Player audience (absent for the Table / spectator audience).
+export type KingdominoView = typeof KingdominoView.Type;
+export const KingdominoView = Schema.Struct( {
+	...KingdominoSharedView.fields,
+	playerId: Schema.optional( PlayerId )
+} );
+
 export type KingdominoSnapshot = typeof KingdominoSnapshot.Type;
-export const KingdominoSnapshot = GameSnapshot( KingdominoSharedView, KingdominoPlayerView, KingdominoConfig );
+export const KingdominoSnapshot = GameSnapshot( KingdominoView, KingdominoConfig );
 
 // --- Move inputs (one per move; also each RPC's wire schema) ----------------
 

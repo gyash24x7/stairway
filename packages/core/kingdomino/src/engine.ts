@@ -28,10 +28,9 @@ import {
 	DraftPruned,
 	KingdominoConfig,
 	KingdominoEvent,
-	KingdominoPlayerView,
-	KingdominoSharedView,
 	KingdominoSnapshot,
 	KingdominoState,
+	KingdominoView,
 	PlaceDominoInput,
 	PlayerBoardCreated,
 	SelectDominoInput,
@@ -75,8 +74,7 @@ export const kingdomino = makeEngine( {
 			discardDomino: DiscardDominoInput
 		},
 		views: {
-			shared: KingdominoSharedView,
-			player: KingdominoPlayerView
+			view: KingdominoView
 		}
 	},
 
@@ -99,11 +97,10 @@ export const kingdomino = makeEngine( {
 		return allQueuesEmpty && state.deck.length === 0 && allDraftResolved;
 	},
 
-	sharedView: ( { state } ) => {
+	view: ( { state }, audience ): KingdominoView => {
 		const { deck: _deck, ...rest } = state;
-		return rest;
+		return audience._tag === "swish/Table" ? rest : { ...rest, playerId: audience.id };
 	},
-	playerView: ( _data, playerId ) => ( { playerId } ),
 
 	hooks: {
 		// Seed each joiner's board (castle by join index). Config supplies boardSize.

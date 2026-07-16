@@ -9,50 +9,21 @@ import * as Schema from "effect/Schema";
 import * as Rpc from "effect/unstable/rpc/Rpc";
 import * as RpcGroup from "effect/unstable/rpc/RpcGroup";
 import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors";
-import { InitializeInput, InitializeResponse, JoinGameResponse, PlayerInfo } from "./schema";
-
-export class EngineRpc {
-	public static makeInitialize = <Config extends Schema.Top>( config: Config ) =>
-		Rpc.make( "initialize", { success: InitializeResponse, payload: InitializeInput( config ) } );
-
-	public static makeGetState = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
-		Rpc.make( "getState", { success: snapshot, payload: PlayerInfo, error: GetStateError } );
-
-	public static makeJoin = () =>
-		Rpc.make( "join", { success: JoinGameResponse, payload: PlayerInfo, error: JoinError } );
-
-	public static makeAddBots = () =>
-		Rpc.make( "addBots", { success: Schema.Void, error: JoinError } );
-
-	public static makeStart = () =>
-		Rpc.make( "start", { success: Schema.Void, error: StartError } );
-
-	public static makeForMove = <Move extends string, In extends Schema.Top>(
-		move: Move,
-		input: In
-	) =>
-		Rpc.make( move, {
-			success: Schema.Void,
-			payload: { playerInfo: PlayerInfo, input },
-			error: MoveError
-		} );
-
-	public static makeUndo = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
-		Rpc.make( "undo", { success: snapshot, payload: PlayerInfo, error: UndoError } );
-
-	public static makeRedo = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
-		Rpc.make( "redo", { success: snapshot, payload: PlayerInfo, error: RedoError } );
-}
+import {
+	Audience,
+	GameLog,
+	InitializeInput,
+	InitializeResponse,
+	JoinGameResponse,
+	MovePayload,
+	PlayerInfo
+} from "./schema";
 
 export const MoveRpc = <const Move extends string, In extends Schema.Top>(
 	move: Move,
 	input: In
 ) =>
-	Rpc.make( move, {
-		success: Schema.Void,
-		payload: { playerInfo: PlayerInfo, input },
-		error: MoveError
-	} );
+	Rpc.make( move, { success: Schema.Void, payload: MovePayload( input ), error: MoveError } );
 
 export const EngineRpcs = <
 	Config extends Schema.Top,
@@ -65,7 +36,8 @@ export const EngineRpcs = <
 ) =>
 	RpcGroup.make(
 		Rpc.make( "initialize", { success: InitializeResponse, payload: InitializeInput( config ) } ),
-		Rpc.make( "getState", { success: snapshot, payload: PlayerInfo, error: GetStateError } ),
+		Rpc.make( "getState", { success: snapshot, payload: Audience, error: GetStateError } ),
+		Rpc.make( "getLog", { success: GameLog, payload: Audience, error: GetStateError } ),
 		Rpc.make( "join", { success: JoinGameResponse, payload: PlayerInfo, error: JoinError } ),
 		Rpc.make( "addBots", { success: Schema.Void, error: JoinError } ),
 		Rpc.make( "start", { success: Schema.Void, error: StartError } ),

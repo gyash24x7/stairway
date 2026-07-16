@@ -57,6 +57,12 @@ export class GameNotFound extends Schema.TaggedErrorClass<GameNotFound>()(
 	{ id: GameId }
 ) {}
 
+/** Optimistic-concurrency guard: the client acted on a stale turn; it should refetch. */
+export class StaleCommand extends Schema.TaggedErrorClass<StaleCommand>()(
+	"swish/StaleCommand",
+	{ expected: Schema.Number, actual: Schema.Number }
+) {}
+
 /** A phased structure referenced a phase name that does not exist. */
 export class PhaseNotFound extends Schema.TaggedErrorClass<PhaseNotFound>()(
 	"swish/PhaseNotFound",
@@ -108,7 +114,8 @@ export const MoveError = Schema.Union( [
 	GameNotInProgress,
 	PhaseNotFound,
 	GameNotFound,
-	CorruptState
+	CorruptState,
+	StaleCommand
 ] );
 
 /** Union of the errors a `undo` can surface to the client. */

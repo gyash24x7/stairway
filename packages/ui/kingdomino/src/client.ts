@@ -17,6 +17,7 @@ import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
+	playerAudience,
 	PlayerId,
 	PlayerInfo
 } from "@s2h/swish/schema";
@@ -86,7 +87,10 @@ export const getKingdominoStateFn = (
 	playerInfo: PlayerInfo,
 	signal?: AbortSignal
 ) =>
-	run( client.getState( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
+	run( client.getState( {
+		params: gameIdParams( gameId ),
+		payload: playerAudience( playerInfo.id )
+	} ), signal );
 
 // --- Adapters --------------------------------------------------------------
 

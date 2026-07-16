@@ -1,4 +1,4 @@
-import { BaseGameConfig, type BaseGameData, BasePlayerView, GameSnapshot } from "@s2h/swish/schema";
+import { BaseGameConfig, type BaseGameData, BasePlayerView, GameSnapshot, PlayerId } from "@s2h/swish/schema";
 import * as Schema from "effect/Schema";
 
 // --- Schemas ---------------------------------------------------------------
@@ -45,8 +45,16 @@ export const WordleSharedView = Schema.Struct( {
 	guessResults: Schema.Array( GuessResultsForWord )
 } );
 
+// The single audience view: the shared board, plus `playerId` for a Player
+// audience (absent for the Table / spectator audience).
+export type WordleView = typeof WordleView.Type;
+export const WordleView = Schema.Struct( {
+	...WordleSharedView.fields,
+	playerId: Schema.optional( PlayerId )
+} );
+
 export type WordleSnapshot = typeof WordleSnapshot.Type;
-export const WordleSnapshot = GameSnapshot( WordleSharedView, BasePlayerView, WordleConfig );
+export const WordleSnapshot = GameSnapshot( WordleView, WordleConfig );
 
 export type GuessInput = typeof GuessInput.Type;
 export const GuessInput = Schema.Struct( { guess: Schema.String } );

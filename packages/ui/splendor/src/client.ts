@@ -20,7 +20,14 @@ import type {
 	SplendorConfig,
 	Tokens
 } from "@s2h/splendor/schema";
-import { GameCode, GameIdParams, JoinGameInput, PlayerId, PlayerInfo } from "@s2h/swish/schema";
+import {
+	GameCode,
+	GameIdParams,
+	JoinGameInput,
+	playerAudience,
+	PlayerId,
+	PlayerInfo
+} from "@s2h/swish/schema";
 import type { AuthInfo } from "@s2h/utils/auth";
 
 // The wire `PickTokensInput`/`PurchaseCardInput` model their token maps as a
@@ -82,7 +89,10 @@ export const redoFn = ( gameId: string, playerInfo: PlayerInfo ) =>
 // --- Queries ---------------------------------------------------------------
 
 export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
-	run( client.getState( { params: gameIdParams( gameId ), payload: playerInfo } ), signal );
+	run( client.getState( {
+		params: gameIdParams( gameId ),
+		payload: playerAudience( playerInfo.id )
+	} ), signal );
 
 // --- Adapters --------------------------------------------------------------
 

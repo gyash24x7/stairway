@@ -9,12 +9,9 @@
 		"build": "turbo run build",
 		"preview": "pnpm --filter @s2h/web preview",
 		"clean": "rm -rf apps/web/node_modules/.vite",
-		"typecheck": "turbo run typecheck",
+		"typecheck": "turbo run typecheck --force",
 		"test": "turbo run test",
-		"generate": "pnpm --filter @s2h/web generate",
-		"migrate:new": "pnpm --filter @s2h/web migrate:new",
-		"migrate:dev": "pnpm --filter @s2h/web migrate:dev",
-		"migrate:prod": "pnpm --filter @s2h/web migrate:prod"
+		"generate": "pnpm --filter @s2h/web generate"
 	},
 	"devDependencies": {
 		"@tsconfig/node24": "catalog:",

@@ -13,10 +13,13 @@ import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors";
 import {
+	Audience,
 	GameIdParams,
+	GameLog,
 	InitializeResponse,
 	JoinGameInput,
 	JoinGameResponse,
+	MovePayload,
 	PlayerInfo
 } from "./schema";
 
@@ -31,7 +34,7 @@ export const MoveApiEndpoint = <const Name extends string, Input extends Schema.
 ) =>
 	HttpApiEndpoint.post( name, `/:gameId/${ name }`, {
 		params: GameIdParams,
-		payload: Schema.Struct( { playerInfo: PlayerInfo, input } ),
+		payload: MovePayload( input ),
 		error: MoveError
 	} );
 
@@ -58,8 +61,14 @@ export const GameApiGroup = <
 		} ),
 		HttpApiEndpoint.post( "getState", "/:gameId/getState", {
 			params: GameIdParams,
-			payload: PlayerInfo,
+			payload: Audience,
 			success: options.snapshot,
+			error: GetStateError
+		} ),
+		HttpApiEndpoint.post( "getLog", "/:gameId/getLog", {
+			params: GameIdParams,
+			payload: Audience,
+			success: GameLog,
 			error: GetStateError
 		} ),
 		HttpApiEndpoint.post( "join", "/join", {
