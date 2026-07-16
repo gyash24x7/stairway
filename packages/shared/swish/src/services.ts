@@ -48,6 +48,21 @@ export class GameArchive extends Context.Service<GameArchive, {
 	readonly get: ( key: string ) => Effect.Effect<Option.Option<unknown>>;
 }>()( "swish/GameArchive" ) {}
 
+/**
+ * Realtime fan-out. After every state-changing command the engine hands the host
+ * the fresh per-audience snapshots (`table` + one per player) for a `channel`
+ * (the game's `${name}:${id}`); the host pushes each connected client the
+ * snapshot for its own audience. Game-agnostic: the payloads are already-plain
+ * (JSON-serializable) `GameSnapshot`s the engine computed, so the host never
+ * touches game schemas. A no-op layer backs tests / pushless deployments.
+ */
+export class Sync extends Context.Service<Sync, {
+	readonly broadcast: (
+		channel: string,
+		snapshot: { readonly table: unknown; readonly playerViews: Record<string, unknown> }
+	) => Effect.Effect<void>;
+}>()( "swish/Sync" ) {}
+
 /** The persisted shape of the event log: a genesis snapshot + ordered commits. */
 export interface EventLog {
 	readonly base: unknown;

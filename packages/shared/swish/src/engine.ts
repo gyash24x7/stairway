@@ -66,7 +66,7 @@ import {
 	PlayerInfo,
 	tableAudience
 } from "./schema";
-import { EventStore, GameArchive, GameStore, Scheduler } from "./services";
+import { EventStore, GameArchive, GameStore, Scheduler, Sync } from "./services";
 import type { BaseMoveInputs, GameStructure } from "./structure";
 
 const BOT_DELAY_MS = 5000;
@@ -251,6 +251,23 @@ export const makeEngine = <
 		} );
 	};
 
+	/**
+	 * Push the fresh per-audience snapshots to connected clients (the same shapes
+	 * `getState` returns — table + one per player, each redacted for its audience).
+	 * Called after every commit; broadcast failures are swallowed so a delivery
+	 * problem never fails the command that produced the state.
+	 */
+	const broadcastState = ( data: PersistedGameData<State, Config> ) =>
+		Effect.gen( function* () {
+			const sync = yield* Sync;
+			const table = snapshot( data, tableAudience() );
+			const playerViews: Record<PlayerId, unknown> = {};
+			for ( const player of Object.values( data.players ) ) {
+				playerViews[ player.id ] = snapshot( data, playerAudience( player.id ) );
+			}
+			yield* sync.broadcast( `${ structure.name }:${ data.id }`, { table, playerViews } );
+		} ).pipe( Effect.ignore );
+
 	// --- Event Sourcing Helpers ------------------------------------------------
 
 	/**
@@ -278,6 +295,7 @@ export const makeEngine = <
 
 			yield* log.append( commit );
 			yield* save( work );
+			yield* broadcastState( work );
 		} );
 
 	const emit = ( acc: Acc, es: ReadonlyArray<EngineEvent | Events> ) => {
@@ -740,6 +758,7 @@ export const makeEngine = <
 			const work = yield* refold();
 			yield* save( work );
 			yield* reconcile( work );
+			yield* broadcastState( work );
 
 			return snapshot( work, playerAudience( playerInfo.id ) );
 		} );
@@ -756,6 +775,7 @@ export const makeEngine = <
 			const work = yield* refold();
 			yield* save( work );
 			yield* reconcile( work );
+			yield* broadcastState( work );
 
 			return snapshot( work, playerAudience( playerInfo.id ) );
 		} );

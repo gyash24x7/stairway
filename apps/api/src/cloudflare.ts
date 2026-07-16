@@ -2,10 +2,11 @@ import { CallbreakRpcs } from "@s2h/callbreak/engine";
 import { FishRpcs } from "@s2h/fish/engine";
 import { KingdominoRpcs } from "@s2h/kingdomino/engine";
 import { SplendorRpcs } from "@s2h/splendor/engine";
-import { type AlarmKind, EventStore, GameArchive, GameStore, Scheduler } from "@s2h/swish/services";
+import { type AlarmKind, EventStore, GameArchive, GameStore, Scheduler, Sync } from "@s2h/swish/services";
 import { TicTacToeRpcs } from "@s2h/tictactoe/engine";
 import { WordleRpcs } from "@s2h/wordle/engine";
 import { RuntimeContext } from "alchemy";
+import { GameChannel } from "./sync";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -159,11 +160,25 @@ export const KVArchiveLive = Layer.effect( GameArchive, Effect.gen( function* ()
 	} );
 } ) ).pipe( Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding ) );
 
+// Realtime fan-out: resolve the local `GameChannel` namespace and, on each
+// broadcast, hand the per-audience snapshots to that game's channel DO
+// (`${gameName}:${gameId}`), which pushes them to its connected sockets.
+export const DurableSyncLive = Layer.effect( Sync, Effect.gen( function* () {
+	const channels = yield* GameChannel;
+	const rc = yield* RuntimeContext;
+
+	return Sync.of( {
+		broadcast: ( channel, snapshot ) => channels.getByName( channel ).broadcast( snapshot )
+			.pipe( Effect.provideService( RuntimeContext, rc ), Effect.ignore )
+	} );
+} ) );
+
 export const DurableSwishLive = Layer.mergeAll(
 	DurableGameStoreLive,
 	DurableEventStoreLive,
 	DurableSchedulerLive,
-	KVArchiveLive
+	KVArchiveLive,
+	DurableSyncLive
 );
 
 // #7 TODO — wire the DO `alarm()` so scheduled wake-ups actually fire. The
