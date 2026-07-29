@@ -121,6 +121,26 @@
         "@types/react": "catalog:",
       },
     },
+    "packages/ui/wordle": {
+      "name": "@s2h-ui/wordle",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h-ui/auth": "workspace:*",
+        "@s2h/contract": "workspace:*",
+        "@s2h/schema": "workspace:*",
+        "@s2h/swish": "workspace:*",
+        "@s2h/ui": "workspace:*",
+        "@s2h/utils": "workspace:*",
+        "@tanstack/react-query": "catalog:",
+        "@tanstack/react-router": "catalog:",
+        "framer-motion": "catalog:",
+        "lucide-react": "catalog:",
+        "react": "catalog:",
+      },
+      "devDependencies": {
+        "@types/react": "catalog:",
+      },
+    },
   },
   "catalog": {
     "@base-ui/react": "1.6.0",
@@ -470,6 +490,8 @@
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
     "@s2h-ui/auth": ["@s2h-ui/auth@workspace:packages/ui/auth"],
+
+    "@s2h-ui/wordle": ["@s2h-ui/wordle@workspace:packages/ui/wordle"],
 
     "@s2h/auth": ["@s2h/auth@workspace:packages/core/auth"],
 

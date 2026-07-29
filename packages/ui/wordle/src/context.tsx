@@ -1,6 +1,6 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import { dictionaries } from "@s2h/wordle/dictionary";
-import type { WordleData } from "@s2h/wordle/schema";
+import { toPlayerInfo } from "@s2h/contract/client";
+import type { WordleSnapshot } from "@s2h/schema/wordle";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
@@ -11,10 +11,10 @@ import {
 	useRef,
 	useState
 } from "react";
-import { submitGuessFn, toPlayerInfo } from "./client";
+import { submitGuessFn } from "./client";
 
 type WordleContextValue = {
-	data: WordleData;
+	data: WordleSnapshot;
 	currentGuess: string;
 	isPending: boolean;
 	invalidGuess: boolean;
@@ -34,46 +34,38 @@ export function useWordle() {
 	return ctx;
 }
 
-type WordleProviderProps = { data: WordleData; gameId: string; children: ReactNode; };
+type WordleProviderProps = { data: WordleSnapshot; gameId: string; children: ReactNode; };
 
 export function WordleProvider( { data, gameId, children }: WordleProviderProps ) {
 	const queryClient = useQueryClient();
 	const { authInfo } = useAuth();
-	const { shared, config, status } = data;
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
-	const [ invalidGuess, setInvalidGuess ] = useState( false );
+	const [ invalidGuess, _setInvalidGuess ] = useState( false );
 	const [ lastRevealedRow, setLastRevealedRow ] = useState<number | null>( null );
-	const prevGuessCountRef = useRef( shared.guesses.length );
+	const prevGuessCountRef = useRef( data.view.guesses.length );
 
 	const submitGuess = useMutation( {
-		mutationFn: ( guess: string ) =>
-			submitGuessFn( gameId, toPlayerInfo( authInfo! ), guess ),
+		mutationFn: ( guess: string ) => submitGuessFn( gameId, toPlayerInfo( authInfo! ), guess ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "wordle", "getState", gameId ]
 		} )
 	} );
 
 	useEffect( () => {
-		const count = shared.guesses.length;
+		const count = data.view.guesses.length;
 		if ( count > prevGuessCountRef.current ) {
 			setLastRevealedRow( count - 1 );
 		}
-		prevGuessCountRef.current = count;
-	}, [ shared.guesses.length ] );
 
-	const wordLength = config.wordLength;
-	const gameInProgress = status === "IN_PROGRESS";
+		prevGuessCountRef.current = count;
+	}, [ data.view.guesses.length ] );
+
+	const wordLength = data.config.wordLength;
+	const gameInProgress = data.status === "IN_PROGRESS";
 
 	const handleSubmit = () => {
 		const guess = currentGuess.trim().toLowerCase();
 		if ( !guess || guess.length !== wordLength || !authInfo ) {
-			return;
-		}
-
-		const dictionary = dictionaries[ wordLength ];
-		if ( !dictionary.includes( guess ) ) {
-			setInvalidGuess( true );
-			setTimeout( () => setInvalidGuess( false ), 1500 );
 			return;
 		}
 

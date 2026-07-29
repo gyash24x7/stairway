@@ -1,6 +1,5 @@
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/ui/utils/cn";
-import { dictionaries } from "@s2h/wordle/dictionary";
 import { DeleteIcon, LogOutIcon } from "lucide-react";
 import { useWordle } from "./context";
 
@@ -22,15 +21,13 @@ function getAvailableLetters( guesses: ReadonlyArray<string> ): string[] {
 
 function KeyboardKey( { letter }: { letter: string } ) {
 	const {
-		data: shared,
-		currentGuess,
+		data,
 		isPending,
 		handleKeyPress,
 		handleBackspace,
 		handleSubmit
 	} = useWordle();
-	const availableLetters = getAvailableLetters( shared.shared.guesses );
-	const isValidWord = dictionaries[ shared.config.wordLength ].includes( currentGuess );
+	const availableLetters = getAvailableLetters( data.view.guesses );
 	const isLetterAvailable = letter.length !== 1 || availableLetters.includes( letter );
 
 	if ( letter === "enter" ) {
@@ -41,7 +38,7 @@ function KeyboardKey( { letter }: { letter: string } ) {
 					"p-2 rounded bg-green-500 text-center text-sm font-medium",
 					"transition-all duration-100 ease-in-out col-span-2 cursor-pointer"
 				) }
-				disabled={ !isValidWord || isPending }
+				disabled={ isPending }
 			>
 				{ isPending ? <Spinner/> : <LogOutIcon className={ "w-6 h-6" }/> }
 			</button>

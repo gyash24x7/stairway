@@ -1,8 +1,8 @@
+import type { WordLength } from "@s2h/schema/wordle";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { Button } from "@s2h/ui/primitives/button";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { cn } from "@s2h/ui/utils/cn";
-import type { WordLength } from "@s2h/wordle/schema";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { createWordleGameFn } from "./client";

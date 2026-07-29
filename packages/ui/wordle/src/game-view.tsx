@@ -22,7 +22,7 @@ export function GameView() {
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>GUESSES</p>
 						<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
-							{ data.shared.guesses.length + "/" + data.shared.maxGuesses }
+							{ data.view.guesses.length + "/" + data.view.maxGuesses }
 						</h2>
 					</div>
 				}
@@ -42,9 +42,9 @@ export function GameView() {
 					>
 						<p className={ cn(
 							"text-xl md:text-2xl font-heading",
-							data.shared.victory ? "text-green-500" : "text-red-500"
+							data.view.victory ? "text-green-500" : "text-red-500"
 						) }>
-							{ data.shared.victory ? "You won!" : "Better luck next time!" }
+							{ data.view.victory ? "You won!" : "Better luck next time!" }
 						</p>
 					</motion.div>
 				) }

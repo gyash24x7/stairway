@@ -1,7 +1,8 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
+import { toPlayerInfo } from "@s2h/contract/client";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
-import { getWordleStateFn, snapshotToWordleData, toPlayerInfo } from "./client";
+import { getWordleStateFn } from "./client";
 import { WordleProvider } from "./context";
 import { GameView } from "./game-view";
 
@@ -19,7 +20,7 @@ export function WordleGamePage( { gameId }: { gameId: string } ) {
 	}
 
 	return (
-		<WordleProvider data={ snapshotToWordleData( data ) } gameId={ gameId }>
+		<WordleProvider data={ data } gameId={ gameId }>
 			<GameView/>
 		</WordleProvider>
 	);

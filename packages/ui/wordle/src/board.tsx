@@ -1,5 +1,5 @@
+import type { GuessResult, GuessResultsForWord, LetterStatus } from "@s2h/schema/wordle";
 import { cn } from "@s2h/ui/utils/cn";
-import type { GuessResult, GuessResultsForWord, LetterStatus } from "@s2h/wordle/schema";
 import { motion } from "framer-motion";
 import { useWordle } from "./context";
 
@@ -96,7 +96,7 @@ function WordTiles( { results }: { results: GuessResultsForWord } ) {
 			{ results.map( ( result, idx ) => (
 				<GuessTiles
 					result={ result }
-					isCurrentRow={ !isSolved && data.shared.guesses.length === idx }
+					isCurrentRow={ !isSolved && data.view.guesses.length === idx }
 					rowIndex={ idx }
 					key={ `word-tiles-${ idx }` }
 				/>
@@ -111,7 +111,7 @@ export function Board() {
 
 	return (
 		<div className={ "flex justify-center flex-wrap gap-3 w-full" }>
-			{ data.shared.guessResults.map( ( guessResultsForWord, idx ) => (
+			{ data.view.guessResults.map( ( guessResultsForWord, idx ) => (
 				<div key={ `word-${ idx }` } className={ "flex flex-col gap-2 items-center" }>
 					<WordTiles results={ guessResultsForWord }/>
 					{ !!words[ idx ] && (
