@@ -1,29 +1,11 @@
+import { Scheduler } from "@s2h/swish/services";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 /** The kinds of deferred wake-up the engine schedules. */
 export type AlarmKind = "auto-start" | "bot" | "interaction-timeout" | "move-timeout";
-
-/**
- * Deferred work: multiple named timers, each firing an `AlarmKind`. The host
- * keeps a `key -> alarm` map and arms its single wake-up at the earliest pending
- * time; on wake it returns (and clears) the timers now due and re-arms for the
- * next. This lets a bot delay, a reaction deadline, and a move clock all run
- * concurrently. `cancel(key)` drops one timer; `cancelAll` drops them all.
- */
-export class Scheduler extends Context.Service<Scheduler, {
-	readonly schedule: ( key: string, delayMillis: number, alarm: AlarmKind ) =>
-		Effect.Effect<void, never, Alchemy.RuntimeContext>;
-
-	readonly cancel: ( key: string ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
-
-	readonly cancelAll: () => Effect.Effect<void, never, Alchemy.RuntimeContext>;
-
-	readonly due: () => Effect.Effect<ReadonlyArray<AlarmKind>, never, Alchemy.RuntimeContext>;
-}>()( "stairway/Scheduler" ) {}
 
 /**
  * Backs {@link Scheduler} with Alchemy's SQLite-backed scheduled-events API
@@ -36,7 +18,10 @@ export const DurableSchedulerLive = ( ctx: Cloudflare.DurableObjectState[ "Servi
 	// The scheduled-events helpers resolve `DurableObjectState` from context;
 	// supply the one we hold so callers only need `RuntimeContext`.
 	const withState = <A, E, R>( effect: Effect.Effect<A, E, R> ) =>
-		effect.pipe( Effect.provideService( Cloudflare.DurableObjectState, ctx ) );
+		effect.pipe(
+			Effect.provideService( Cloudflare.DurableObjectState, ctx ),
+			Effect.provide( Alchemy.RuntimeContext.phantom )
+		);
 
 	return Layer.succeed( Scheduler, Scheduler.of( {
 		schedule: ( key, delayMillis, alarm ) => withState(

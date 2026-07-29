@@ -1,12 +1,10 @@
+import type { GuessResult, WordleEvents, WordleState } from "@s2h/schema/wordle";
 import * as Match from "effect/Match";
-import { GuessResult, WordleEvents, WordleState } from "./schema";
 
 // --- Guess-result computation (pure) ---------------------------------------
-// The two-pass algorithm from the old `execute`, lifted into a pure helper so
-// it can run in the decider and its output is captured in the emitted event.
 
 export const computeRow = ( guess: string, word: string ) => {
-	const results: typeof GuessResult.Type[] = Array.from(
+	const results: GuessResult[] = Array.from(
 		{ length: word.length },
 		( _, i ) => ( { letter: guess[ i ] ?? "", status: "absent" as const } )
 	);
@@ -35,11 +33,11 @@ export const computeRow = ( guess: string, word: string ) => {
 	return results;
 };
 
-export const allWordsGuessed = ( state: typeof WordleState.Type ) =>
+export const allWordsGuessed = ( state: WordleState ) =>
 	state.words.every( ( word ) => state.guesses.includes( word ) );
 
 /** Pure reducer — the ONLY place `state` changes. */
-export const apply = ( state: typeof WordleState.Type, event: typeof WordleEvents.Type ) =>
+export const apply = ( state: WordleState, event: WordleEvents ) =>
 	Match.value( event ).pipe(
 		Match.tag( "wordle/evt/Guessed", ( e ) => {
 			const guesses = [ ...state.guesses, e.guess ];

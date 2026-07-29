@@ -1,18 +1,3 @@
-// @s2h/wordle/engine — Wordle as an event-sourced swish game.
-//
-// The swish port of the old `AbstractGameEngine` DO, on the new `GameStructure`:
-// `setup`/`apply`/`endIf`/views/hooks/`execute`/`validate` are plain synchronous
-// functions — `validate` returns an `InvalidMove` to reject, or nothing to pass.
-// The `guess` move EMITS a domain event carrying the computed per-word results,
-// and the pure `apply` reducer in ./utils folds it onto `state` (the only place
-// state changes). Random target selection happens once in `setup` and becomes the
-// genesis state, so replay is deterministic. The pure helpers in ./utils are the
-// single source of truth for the reducer and guess-result algorithm.
-
-import { makeEngine } from "@s2h/swish/engine";
-import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
-import { dictionaries } from "./dictionary";
 import {
 	GuessedEvent,
 	GuessInput,
@@ -20,25 +5,34 @@ import {
 	VictoryDecidedEvent,
 	WordleConfig,
 	WordleEvents,
-	WordleSnapshot,
 	WordleState,
 	WordleView
-} from "./schema";
-import { allWordsGuessed, apply, computeRow } from "./utils";
+} from "@s2h/schema/wordle";
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
+import { dictionaries } from "./dictionary.ts";
+import { allWordsGuessed, apply, computeRow } from "./utils.ts";
+
 
 // --- Engine ----------------------------------------------------------------
 
-const wordle = makeEngine( {
+export const wordle = makeEngine<
+	"wordle",
+	WordleState,
+	WordleConfig,
+	{ guess: typeof GuessInput },
+	Record<string, never>,
+	WordleEvents,
+	WordleView
+>( {
 	name: "wordle",
 	schemas: {
 		state: WordleState,
 		config: WordleConfig,
 		events: WordleEvents,
+		view: WordleView,
 		moves: {
 			guess: GuessInput
-		},
-		views: {
-			view: WordleView
 		}
 	},
 
@@ -122,12 +116,3 @@ const wordle = makeEngine( {
 		}
 	}
 } );
-
-// --- RPC surface -----------------------------------------------------------
-
-export class WordleRpcs extends EngineRpcs( WordleConfig, WordleSnapshot, [
-	MoveRpc( "guess", GuessInput )
-] ) {
-
-	public static layer = WordleRpcs.toLayer( wordle );
-}

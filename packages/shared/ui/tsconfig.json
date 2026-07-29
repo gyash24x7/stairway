@@ -9,7 +9,7 @@
 		"isolatedModules": true,
 		"jsx": "react-jsx",
 		"noEmit": true,
-		"types": [ "bun", "vite/client" ]
+		"types": [ "bun" ]
 	},
 	"include": [ "src", "tests" ]
 }

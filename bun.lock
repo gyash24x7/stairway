@@ -25,6 +25,18 @@
         "effect": "catalog:",
       },
     },
+    "packages/core/wordle": {
+      "name": "@s2h/wordle",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h/contract": "workspace:",
+        "@s2h/platform": "workspace:",
+        "@s2h/schema": "workspace:",
+        "@s2h/swish": "workspace:",
+        "alchemy": "catalog:",
+        "effect": "catalog:",
+      },
+    },
     "packages/shared/contract": {
       "name": "@s2h/contract",
       "version": "1.0.0",
@@ -452,6 +464,8 @@
     "@s2h/ui": ["@s2h/ui@workspace:packages/shared/ui"],
 
     "@s2h/utils": ["@s2h/utils@workspace:packages/shared/utils"],
+
+    "@s2h/wordle": ["@s2h/wordle@workspace:packages/core/wordle"],
 
     "@simplewebauthn/browser": ["@simplewebauthn/browser@13.3.0", "", {}, "sha512-BE/UWv6FOToAdVk0EokzkqQQDOWtNydYlY6+OrmiZ5SCNmb41VehttboTetUM3T/fr6EAFYVXjz4My2wg230rQ=="],
 

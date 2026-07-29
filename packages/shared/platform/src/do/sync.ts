@@ -1,7 +1,6 @@
 import { type Audience, PlayerAudience, PlayerId, TableAudience } from "@s2h/swish/schema";
-import * as Alchemy from "alchemy";
+import { Sync } from "@s2h/swish/services";
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
@@ -11,19 +10,6 @@ interface BroadcastSnapshot {
 	readonly table: unknown;
 	readonly playerViews: Record<string, unknown>;
 }
-
-/**
- * Realtime fan-out. After every state-changing command the engine hands the host
- * the fresh per-audience snapshots (`table` + one per player) for a `channel`
- * (the game's `${name}:${id}`); the host pushes each connected client the
- * snapshot for its own audience. Game-agnostic: the payloads are already-plain
- * (JSON-serializable) `GameSnapshot`s the engine computed, so the host never
- * touches game schemas. A no-op layer backs tests / pushless deployments.
- */
-export class Sync extends Context.Service<Sync, {
-	readonly broadcast: ( channel: string, snapshot: BroadcastSnapshot ) =>
-		Effect.Effect<void, never, Alchemy.RuntimeContext>;
-}>()( "stairway/Sync" ) {}
 
 interface Attachment {
 	readonly audience: Audience;
