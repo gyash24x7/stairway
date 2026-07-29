@@ -12,7 +12,6 @@ import { useTicTacToe } from "./context";
 
 export function GameView() {
 	const { data, addBots, isPending } = useTicTacToe();
-	const { shared, player } = data;
 	const players = Object.values( data.players );
 	const isActive = data.status === "IN_PROGRESS";
 	const isCompleted = data.status === "COMPLETED";
@@ -45,7 +44,7 @@ export function GameView() {
 			) }
 
 			<AnimatePresence>
-				{ isCompleted && shared.winner && (
+				{ isCompleted && data.view.winner && (
 					<motion.div
 						key={ "winner-banner" }
 						variants={ slideInUp }
@@ -54,9 +53,9 @@ export function GameView() {
 						exit={ "exit" }
 						className={ "rounded-md bg-background p-4 text-center w-full border-2 border-black" }
 					>
-						{ shared.winner !== "draw" ? (
+						{ data.view.winner !== "draw" ? (
 							<p className={ "text-lg font-heading" }>
-								{ shared.winner === player.playerId ? "You won!" : "You lost!" }
+								{ data.view.winner === data.view.playerId ? "You won!" : "You lost!" }
 							</p>
 						) : (
 							<motion.p

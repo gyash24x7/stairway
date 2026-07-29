@@ -1,10 +1,15 @@
 "use client";
 
-import { findWinningLine } from "@s2h/tictactoe/utils";
 import { popIn } from "@s2h/ui/utils/animation";
 import { cn } from "@s2h/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTicTacToe } from "./context";
+
+export const WINNING_LINES = [
+	[ 0, 1, 2 ], [ 3, 4, 5 ], [ 6, 7, 8 ], // rows
+	[ 0, 3, 6 ], [ 1, 4, 7 ], [ 2, 5, 8 ], // columns
+	[ 0, 4, 8 ], [ 2, 4, 6 ]               // diagonals
+];
 
 const CELL_CENTERS = [
 	{ x: 16.66, y: 16.66 }, { x: 50, y: 16.66 }, { x: 83.33, y: 16.66 },
@@ -15,16 +20,28 @@ const CELL_CENTERS = [
 export function Board() {
 	const { data, placeMove, isPending } = useTicTacToe();
 
-	const isMyTurn = data.context.currentPlayer === data.player.playerId;
+	const isMyTurn = data.context.currentPlayer === data.view.playerId;
 	const gameInProgress = data.status === "IN_PROGRESS";
 	const disabled = !gameInProgress || !isMyTurn || isPending;
-	const winningLine = findWinningLine( data.shared.board );
+
+	const findWinningLine = () => {
+		const board = data.view.board;
+		for ( const line of WINNING_LINES ) {
+			const [ a, b, c ] = line;
+			if ( board[ a ] && board[ a ] === board[ b ] && board[ a ] === board[ c ] ) {
+				return [ a, b, c ];
+			}
+		}
+		return null;
+	};
+
+	const winningLine = findWinningLine();
 
 	const handlePlace = ( position: number ) => placeMove( position );
 
 	return (
 		<div className={ "relative grid grid-cols-3 gap-2 w-full max-w-xl" }>
-			{ data.shared.board.map( ( cell, index ) => (
+			{ data.view.board.map( ( cell, index ) => (
 				<button
 					key={ `Cell ${ index }` }
 					onClick={ () => handlePlace( index ) }

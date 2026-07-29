@@ -1,13 +1,14 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { TicTacToeData } from "@s2h/tictactoe/schema";
+import { toPlayerInfo } from "@s2h/contract/client";
+import type { TicTacToeSnapshot } from "@s2h/schema/tictactoe";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext } from "react";
-import { addBotsFn, placeFn, toPlayerInfo } from "./client";
+import { addBotsFn, placeFn } from "./client";
 
 type TicTacToeContextValue = {
-	data: TicTacToeData;
+	data: TicTacToeSnapshot;
 	placeMove: ( position: number ) => void;
 	addBots: () => void;
 	isPending: boolean;
@@ -24,7 +25,7 @@ export function useTicTacToe() {
 }
 
 type TicTacToeProviderProps = {
-	data: TicTacToeData;
+	data: TicTacToeSnapshot;
 	gameId: string;
 	children: ReactNode;
 };

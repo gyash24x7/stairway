@@ -44,22 +44,6 @@ export function checkWinner( board: Board ) {
 }
 
 /**
- * Find the indices of the winning three-in-a-row, if any.
- *
- * @param board - The current board state.
- * @returns The three indices forming the winning line, or null if no winner.
- */
-export function findWinningLine( board: Board ) {
-	for ( const line of WINNING_LINES ) {
-		const [ a, b, c ] = line;
-		if ( board[ a ] && board[ a ] === board[ b ] && board[ a ] === board[ c ] ) {
-			return [ a, b, c ];
-		}
-	}
-	return null;
-}
-
-/**
  * Check if all cells on the board are occupied.
  *
  * @param board - The current board state.
