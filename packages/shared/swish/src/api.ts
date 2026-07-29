@@ -1,16 +1,5 @@
-// @s2h/swish/api — the engine's HttpApi surface builder.
-//
-// Pure / browser-safe (schema only). The definition-side twin of `./rpc`
-// (`EngineRpc`): `defineEngineApi` assembles a game's `HttpApiGroup` from the
-// shared lifecycle endpoints (createGame/getState/join/addBots/start/undo/redo)
-// plus its move endpoints, so each game's `api.ts` only supplies its slug,
-// config/snapshot schemas, and moves. `moveEndpoint` builds one first-class move
-// endpoint. Endpoint names/paths/schemas exactly mirror the `EngineRpc`
-// descriptors, so the generated client surface is unchanged.
-
 import * as Schema from "effect/Schema";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors.ts";
 import {
 	Audience,
@@ -24,9 +13,13 @@ import {
 } from "./schema.ts";
 
 /**
- * A first-class move endpoint: `POST /:gameId/<name>` whose payload is
+ * Builds a first-class move endpoint: `POST /:gameId/<name>` whose payload is
  * `{ playerInfo, input }` and whose error is the shared `MoveError`. `const Name`
  * keeps the move name a literal so it flows into the generated client type.
+ *
+ * @param {string} name - The move name (becomes the path segment and endpoint id).
+ * @param {Schema.Top} input - The move's input payload schema.
+ * @returns The typed move endpoint.
  */
 export const MoveApiEndpoint = <const Name extends string, Input extends Schema.Top>(
 	name: Name,
@@ -39,62 +32,91 @@ export const MoveApiEndpoint = <const Name extends string, Input extends Schema.
 	} );
 
 /**
- * Assemble a game's `HttpApiGroup`: the shared engine lifecycle endpoints + the
- * game's move endpoints (built via `defineMoveEndpoint`). `const Slug`/`const Moves`
- * preserve the group name and move-name literals; the moves tuple is spread
- * among the fixed lifecycle endpoints, so `.add`'s `const A` inference keeps
- * every endpoint's exact type.
+ * `POST /create` — create a new game from its `config`, succeeding with the new
+ * game's id. Parameterized by the game's config schema (the request payload).
+ *
+ * @param {Schema.Top} config - The game's config schema.
+ * @returns The typed create-game endpoint.
  */
-export const GameApiGroup = <
-	const Slug extends string,
-	Config extends Schema.Top,
-	Snapshot extends Schema.Top,
-	const Moves extends ReadonlyArray<ReturnType<typeof MoveApiEndpoint>>
->(
-	slug: Slug,
-	options: { config: Config; snapshot: Snapshot; moves: Moves }
-) =>
-	HttpApiGroup.make( slug ).prefix( `/${ slug }` ).add(
-		HttpApiEndpoint.post( "createGame", "/create", {
-			payload: options.config,
-			success: InitializeResponse
-		} ),
-		HttpApiEndpoint.post( "getState", "/:gameId/getState", {
-			params: GameIdParams,
-			payload: Audience,
-			success: options.snapshot,
-			error: GetStateError
-		} ),
-		HttpApiEndpoint.post( "getLog", "/:gameId/getLog", {
-			params: GameIdParams,
-			payload: Audience,
-			success: GameLog,
-			error: GetStateError
-		} ),
-		HttpApiEndpoint.post( "join", "/join", {
-			success: JoinGameResponse,
-			payload: JoinGameInput,
-			error: JoinError
-		} ),
-		HttpApiEndpoint.post( "addBots", "/:gameId/addBots", {
-			params: GameIdParams,
-			error: JoinError
-		} ),
-		HttpApiEndpoint.post( "start", "/:gameId/start", {
-			params: GameIdParams,
-			error: StartError
-		} ),
-		...options.moves,
-		HttpApiEndpoint.post( "undo", "/:gameId/undo", {
-			params: GameIdParams,
-			payload: PlayerInfo,
-			success: options.snapshot,
-			error: UndoError
-		} ),
-		HttpApiEndpoint.post( "redo", "/:gameId/redo", {
-			params: GameIdParams,
-			payload: PlayerInfo,
-			success: options.snapshot,
-			error: RedoError
-		} )
-	);
+export const CreateGameApiEndpoint = <Config extends Schema.Top>( config: Config ) =>
+	HttpApiEndpoint.post( "createGame", "/create", {
+		payload: config,
+		success: InitializeResponse,
+		error: JoinError
+	} );
+
+/**
+ * `POST /:gameId/getState` — the audience-redacted game snapshot. Parameterized
+ * by the game's snapshot schema (the success type).
+ *
+ * @param {Schema.Top} snapshot - The game's snapshot schema.
+ * @returns The typed get-state endpoint.
+ */
+export const GetStateApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
+	HttpApiEndpoint.post( "getState", "/:gameId/getState", {
+		params: GameIdParams,
+		payload: Audience,
+		success: snapshot,
+		error: GetStateError
+	} );
+
+/** `POST /:gameId/getLog` — the game's redacted, human-readable action feed. */
+export const GetLogApiEndpoint = () =>
+	HttpApiEndpoint.post( "getLog", "/:gameId/getLog", {
+		params: GameIdParams,
+		payload: Audience,
+		success: GameLog,
+		error: GetStateError
+	} );
+
+/** `POST /join` — seat a player by game code. */
+export const JoinApiEndpoint = () =>
+	HttpApiEndpoint.post( "join", "/join", {
+		success: JoinGameResponse,
+		payload: JoinGameInput,
+		error: JoinError
+	} );
+
+/** `POST /:gameId/addBots` — fill the remaining seats with bots. */
+export const AddBotsApiEndpoint = () =>
+	HttpApiEndpoint.post( "addBots", "/:gameId/addBots", {
+		params: GameIdParams,
+		error: JoinError
+	} );
+
+/** `POST /:gameId/start` — start a filled game. */
+export const StartApiEndpoint = () =>
+	HttpApiEndpoint.post( "start", "/:gameId/start", {
+		params: GameIdParams,
+		error: StartError
+	} );
+
+/**
+ * `POST /:gameId/undo` — step the log cursor back one commit and return the
+ * rebuilt snapshot. Parameterized by the game's snapshot schema.
+ *
+ * @param {Schema.Top} snapshot - The game's snapshot schema.
+ * @returns The typed undo endpoint.
+ */
+export const UndoApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
+	HttpApiEndpoint.post( "undo", "/:gameId/undo", {
+		params: GameIdParams,
+		payload: PlayerInfo,
+		success: snapshot,
+		error: UndoError
+	} );
+
+/**
+ * `POST /:gameId/redo` — step the log cursor forward one commit and return the
+ * rebuilt snapshot. Parameterized by the game's snapshot schema.
+ *
+ * @param {Schema.Top} snapshot - The game's snapshot schema.
+ * @returns The typed redo endpoint.
+ */
+export const RedoApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
+	HttpApiEndpoint.post( "redo", "/:gameId/redo", {
+		params: GameIdParams,
+		payload: PlayerInfo,
+		success: snapshot,
+		error: RedoError
+	} );

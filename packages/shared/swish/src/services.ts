@@ -1,15 +1,3 @@
-// @s2h/swish/services — the host abstraction boundary.
-//
-// Every capability the engine needs from its host (durable storage, alarms,
-// completed-game archive, the game index, id generation) is declared here as a
-// `Context.Service` tag with a pure interface. The engine runtime depends on
-// these tags and nothing else — no host imports, no direct storage access. The
-// host adapter (added later — e.g. a Cloudflare Durable Object, or an in-memory
-// layer for tests) provides the concrete implementations, swappable without
-// touching engine logic.
-//
-// This module is pure: it imports only `effect` and local schema types.
-
 import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
@@ -30,23 +18,17 @@ export class GameStore extends Context.Service<GameStore, {
 
 /**
  * Deferred work: multiple named timers, each firing an `AlarmKind`. The host
- * keeps a `key -> { at, alarm }` map and arms its single wake-up at the earliest
- * pending time; on wake it returns (and clears) the timers now due and re-arms
- * for the next. This lets a bot delay, a reaction deadline, and a move clock all
- * run concurrently. `cancel(key)` drops one timer; `cancelAll` drops them all.
+ * keeps a `key -> alarm` map and arms its single wake-up at the earliest pending
+ * time; on wake it returns (and clears) the timers now due and re-arms for the
+ * next. This lets a bot delay, a reaction deadline, and a move clock all run
+ * concurrently. `cancel(key)` drops one timer; `cancelAll` drops them all.
  */
 export class Scheduler extends Context.Service<Scheduler, {
 	readonly schedule: ( key: string, delayMillis: number, alarm: AlarmKind ) => Effect.Effect<void>;
 	readonly cancel: ( key: string ) => Effect.Effect<void>;
-	readonly cancelAll: Effect.Effect<void>;
-	readonly due: Effect.Effect<ReadonlyArray<AlarmKind>>;
+	readonly cancelAll: () => Effect.Effect<void>;
+	readonly due: () => Effect.Effect<ReadonlyArray<AlarmKind>>;
 }>()( "swish/Scheduler" ) {}
-
-/** Archive for completed games (shared view + per-player views). */
-export class GameArchive extends Context.Service<GameArchive, {
-	readonly put: ( key: string, encoded: unknown ) => Effect.Effect<void>;
-	readonly get: ( key: string ) => Effect.Effect<Option.Option<unknown>>;
-}>()( "swish/GameArchive" ) {}
 
 /**
  * Realtime fan-out. After every state-changing command the engine hands the host
@@ -80,5 +62,6 @@ export class EventStore extends Context.Service<EventStore, {
 	readonly setBase: ( encoded: unknown ) => Effect.Effect<void>;
 	readonly append: ( commit: unknown ) => Effect.Effect<void>;
 	readonly moveCursor: ( delta: 1 | -1 ) => Effect.Effect<Option.Option<unknown>>;
-	readonly read: Effect.Effect<EventLog>;
+	readonly read: () => Effect.Effect<EventLog>;
 }>()( "swish/EventStore" ) {}
+
