@@ -1,10 +1,10 @@
 "use client";
 
+import type { AuthInfo } from "@s2h/schema/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@s2h/ui/primitives/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "@s2h/ui/primitives/dialog";
-import type { AuthInfo } from "@s2h/utils/auth";
 import { useState } from "react";
-import { LogoutButton } from "./logout-button";
+import { LogoutButton } from "./logout-button.tsx";
 
 export function RAuthInfo( { authInfo }: { authInfo: AuthInfo } ) {
 	const [ open, setOpen ] = useState( false );
@@ -41,9 +41,6 @@ export function RAuthInfo( { authInfo }: { authInfo: AuthInfo } ) {
 						<div>
 							<h2 className="text-2xl font-semibold mb-1 text-foreground">
 								{ authInfo.name }
-							</h2>
-							<h2 className="text-md mb-1 text-accent">
-								@{ authInfo.username }
 							</h2>
 						</div>
 						<div className={ "flex justify-end" }>

@@ -4,7 +4,9 @@
 	"type": "module",
 	"private": true,
 	"exports": {
-		"./*": "./src/*.ts"
+		"./components/*": "./src/components/*.tsx",
+		"./primitives/*": "./src/primitives/*.tsx",
+		"./utils/*": "./src/utils/*.ts"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"

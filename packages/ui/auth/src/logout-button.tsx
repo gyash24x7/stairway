@@ -3,8 +3,8 @@ import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOutIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";
-import { logoutFn } from "./client";
-import { useRefreshAuth } from "./use-auth";
+import { logoutFn } from "./client.ts";
+import { useRefreshAuth } from "./use-auth.tsx";
 
 export function LogoutButton() {
 	const navigate = useNavigate();

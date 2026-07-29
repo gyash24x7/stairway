@@ -9,22 +9,11 @@ import {
 import { Input } from "@s2h/ui/primitives/input";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/ui/utils/cn";
-import type {
-	PublicKeyCredentialCreationOptionsJSON,
-	PublicKeyCredentialRequestOptionsJSON
-} from "@simplewebauthn/browser";
-import { startAuthentication, startRegistration } from "@simplewebauthn/browser";
 import { useNavigate } from "@tanstack/react-router";
 import { LogInIcon } from "lucide-react";
 import { Fragment, useState, useTransition } from "react";
-import {
-	checkUserFn,
-	getLoginOptionsFn,
-	getRegisterOptionsFn,
-	verifyLoginFn,
-	verifyRegistrationFn
-} from "./client";
-import { useRefreshAuth } from "./use-auth";
+import { loginPasskeyFn, registerPasskeyFn } from "./client.ts";
+import { useRefreshAuth } from "./use-auth.tsx";
 
 export function Login() {
 	const navigate = useNavigate();
@@ -32,8 +21,9 @@ export function Login() {
 	const [ isPending, startTransition ] = useTransition();
 	const [ mode, setMode ] = useState<"login" | "register">( "login" );
 	const [ open, setOpen ] = useState( false );
-	const [ username, setUsername ] = useState( "" );
+	const [ email, setEmail ] = useState( "" );
 	const [ name, setName ] = useState( "" );
+	const [ error, setError ] = useState<string | null>( null );
 
 	const finishAuth = async () => {
 		await refreshAuth();
@@ -41,40 +31,22 @@ export function Login() {
 		await navigate( { to: "/" } );
 	};
 
-	const passkeyLogin = async () => {
-		const exists = await checkUserFn( username );
-		if ( !exists ) {
-			setMode( "register" );
-			return;
-		}
-
-		const optionsJSON = await getLoginOptionsFn( username ) as PublicKeyCredentialRequestOptionsJSON;
-		const response = await startAuthentication( { optionsJSON } );
-		await verifyLoginFn( username, response );
-		await finishAuth();
-	};
-
-	const passkeyRegister = async () => {
-		const optionsJSON = await getRegisterOptionsFn( username, name ) as PublicKeyCredentialCreationOptionsJSON;
-		const response = await startRegistration( { optionsJSON } );
-		await verifyRegistrationFn( username, name, response );
-		await finishAuth();
-	};
-
 	const isValidInput = () => mode === "register"
-		? !!username.trim() && !!name.trim()
-		: !!username.trim();
+		? !!name.trim() && /.+@.+/.test( email )
+		: true;
 
-	const performPasskeyLogin = () => startTransition( async () => {
-		if ( !isValidInput() ) {
-			alert( "Please fill in all required fields." );
-			return;
-		}
-
-		if ( mode === "register" ) {
-			await passkeyRegister();
-		} else {
-			await passkeyLogin();
+	const submit = () => startTransition( async () => {
+		setError( null );
+		try {
+			if ( mode === "register" ) {
+				await registerPasskeyFn( { name: name.trim(), email: email.trim() } );
+			} else {
+				await loginPasskeyFn();
+			}
+			await finishAuth();
+		} catch ( err ) {
+			console.error( err );
+			setError( err instanceof Error ? err.message : "Something went wrong." );
 		}
 	} );
 
@@ -88,14 +60,7 @@ export function Login() {
 					</DialogTitle>
 				</DialogHeader>
 				<div className={ "flex flex-col gap-3" }>
-					<label>Username</label>
-					<Input
-						type={ "text" }
-						value={ username }
-						onChange={ ( e ) => setUsername( e.target.value ) }
-						placeholder={ "Enter your username" }
-					/>
-					{ mode === "register" && (
+					{ mode === "register" ? (
 						<Fragment>
 							<label>Name</label>
 							<Input
@@ -104,13 +69,41 @@ export function Login() {
 								onChange={ ( e ) => setName( e.target.value ) }
 								placeholder={ "Enter your name" }
 							/>
+							<label>Email</label>
+							<Input
+								type={ "email" }
+								autoComplete={ "username webauthn" }
+								value={ email }
+								onChange={ ( e ) => setEmail( e.target.value ) }
+								placeholder={ "Enter your email" }
+							/>
 						</Fragment>
+					) : (
+						<p className={ "text-sm text-muted-foreground" }>
+							Use your device passkey to sign in.
+						</p>
 					) }
+					{ error && <p className={ "text-sm text-destructive" }>{ error }</p> }
+					<div className={ "flex items-center gap-3" }>
+						<p className={ "text-sm text-muted-foreground" }>
+							{ mode === "login" ? "New here?" : "Already have a passkey?" }
+						</p>
+						<button
+							type={ "button" }
+							className={ "text-sm text-accent underline cursor-pointer" }
+							onClick={ () => {
+								setError( null );
+								setMode( mode === "register" ? "login" : "register" );
+							} }
+						>
+							{ mode === "register" ? "Sign in" : "Create an account" }
+						</button>
+					</div>
 				</div>
 				<DialogFooter>
 					<Button
 						className={ "flex gap-2 items-center" }
-						onClick={ performPasskeyLogin }
+						onClick={ submit }
 						disabled={ isPending || !isValidInput() }
 					>
 						{ isPending ? <Spinner/> : (

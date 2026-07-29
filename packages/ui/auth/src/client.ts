@@ -1,45 +1,47 @@
-// Data-access layer for the auth UI.
-//
-// Thin, typed helpers over the Effect v4 `HttpApiClient` returned by
-// `getClient()` (`@s2h/api/client`). Every helper builds the endpoint's
-// `{ payload }` request, bridges the returned `Effect` to a Promise with
-// `run()` (which throws the typed failure), and hands the decoded success
-// value back to the caller. Components never touch `getClient` or `Effect`
-// directly.
-//
-// The seven auth endpoints are all payload-only (no path params); WebAuthn
-// option/response objects are opaque JSON at the boundary (`Schema.Unknown`).
+import { passkeyClient } from "@better-auth/passkey/client";
+import { AuthInfo, type RegisterInput } from "@s2h/schema/auth";
+import { createAuthClient } from "better-auth/client";
 
-import { getClient, run } from "@s2h/api/client";
+const authClient = createAuthClient( {
+	baseURL: import.meta.env[ "VITE_API_URL" ],
+	basePath: "/api/auth",
+	fetchOptions: { credentials: "include" },
+	plugins: [ passkeyClient() ]
+} );
 
-const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
+export const fetchMeFn = async () => {
+	const { data } = await authClient.getSession();
+	if ( !data?.user ) {
+		return null;
+	}
 
-const client = getClient( API_URL ).auth;
+	return AuthInfo.make( {
+		id: data.user.id,
+		name: data.user.name,
+		avatar: data.user.image ?? ""
+	} );
+};
 
-/** True if a passkey user already exists for `username`. */
-export const checkUserFn = ( username: string ): Promise<boolean> =>
-	run( client.checkIfUserExists( { payload: { username } } ) );
+export const loginPasskeyFn = async (): Promise<void> => {
+	const { error } = await authClient.signIn.passkey();
+	if ( error ) {
+		throw new Error( error.message ?? "Passkey sign-in failed." );
+	}
+};
 
-/** Fetch WebAuthn authentication options (opaque JSON for `startAuthentication`). */
-export const getLoginOptionsFn = ( username: string ): Promise<unknown> =>
-	run( client.getLoginOptions( { payload: { username } } ) );
+export const registerPasskeyFn = async ( input: RegisterInput ): Promise<void> => {
+	const { error } = await authClient.passkey.addPasskey( {
+		name: input.email,
+		context: JSON.stringify( input )
+	} );
 
-/** Verify a WebAuthn authentication response; sets the session cookie server-side. */
-export const verifyLoginFn = ( username: string, response: unknown ): Promise<void> =>
-	run( client.verifyLogin( { payload: { username, response } } ) );
+	if ( error ) {
+		throw new Error( error.message ?? "Passkey registration failed." );
+	}
 
-/** Fetch WebAuthn registration options (opaque JSON for `startRegistration`). */
-export const getRegisterOptionsFn = ( username: string, name: string ): Promise<unknown> =>
-	run( client.getRegisterOptions( { payload: { username, name } } ) );
+	await loginPasskeyFn();
+};
 
-/** Verify a WebAuthn registration response; sets the session cookie server-side. */
-export const verifyRegistrationFn = (
-	username: string,
-	name: string,
-	response: unknown
-): Promise<void> =>
-	run( client.verifyRegistration( { payload: { username, name, response } } ) );
-
-/** Clear the session cookie server-side. */
-export const logoutFn = (): Promise<void> =>
-	run( client.logout( {} ) );
+export const logoutFn = async (): Promise<void> => {
+	await authClient.signOut();
+};
