@@ -11,6 +11,13 @@
 		"test": "turbo run test",
 		"generate": "drizzle-kit generate"
 	},
+	"dependencies": {
+		"@s2h/api": "workspace:*",
+		"@s2h/platform": "workspace:*",
+		"alchemy": "catalog:",
+		"drizzle-kit": "catalog:",
+		"effect": "catalog:"
+	},
 	"devDependencies": {
 		"@tsconfig/bun": "1.0.10",
 		"@tsconfig/strictest": "2.0.8",

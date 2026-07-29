@@ -75,3 +75,6 @@ coverage
 # Claude
 .claude
 CLAUDE.md
+
+# Alchemy
+.alchemy
