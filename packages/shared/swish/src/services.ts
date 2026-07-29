@@ -11,7 +11,7 @@ export type AlarmKind = "auto-start" | "bot" | "interaction-timeout" | "move-tim
  * stays game-agnostic.
  */
 export class GameStore extends Context.Service<GameStore, {
-	readonly load: <T, R = never>() => Effect.Effect<Option.Option<NonNullable<T>>, never, R>;
+	readonly load: <T, R = never>() => Effect.Effect<Option.Option<T>, never, R>;
 	readonly save: <T, R = never>( encoded: T ) => Effect.Effect<void, never, R>;
 	readonly clear: <R = never>() => Effect.Effect<void, never, R>;
 }>()( "swish/GameStore" ) {}
