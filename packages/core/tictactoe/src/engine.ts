@@ -1,25 +1,16 @@
-// @s2h/tictactoe/swish — Tic-Tac-Toe as an event-sourced swish game.
-//
-// The swish port of ./engine.ts (the old `AbstractGameEngine` DO). Same rules,
-// re-expressed under event sourcing: moves/hooks EMIT domain events and a pure
-// `apply` reducer folds them onto `state` (the only place state changes). The
-// pure board helpers in ./utils are reused as-is.
-
-import { makeEngine } from "@s2h/swish/engine";
-import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
-import { PlayerId } from "@s2h/swish/schema";
 import {
 	Placed,
 	PlaceInput,
 	SymbolAssigned,
 	TicTacToeConfig,
 	TicTacToeEvent,
-	TicTacToeSnapshot,
 	TicTacToeState,
 	TicTacToeView,
 	WinnerDecided
-} from "./schema";
+} from "@s2h/schema/tictactoe";
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
+import { PlayerId } from "@s2h/swish/schema";
 import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "./utils";
 
 // --- Engine ----------------------------------------------------------------
@@ -30,11 +21,9 @@ export const tictactoe = makeEngine( {
 		state: TicTacToeState,
 		config: TicTacToeConfig,
 		events: TicTacToeEvent,
+		view: TicTacToeView,
 		moves: {
 			place: PlaceInput
-		},
-		views: {
-			view: TicTacToeView
 		}
 	},
 
@@ -45,8 +34,7 @@ export const tictactoe = makeEngine( {
 
 	apply,
 
-	endIf: ( { state } ) =>
-		checkWinner( [ ...state.board ] ) !== null || isBoardFull( [ ...state.board ] ),
+	endIf: ( { state } ) => checkWinner( state.board ) !== null || isBoardFull( state.board ),
 
 	view: ( { state }, audience ): TicTacToeView =>
 		audience._tag === "swish/Table" ? state : { ...state, playerId: audience.id },
@@ -104,12 +92,3 @@ export const tictactoe = makeEngine( {
 		return { moveType: "place" as const, input: { position } };
 	}
 } );
-
-// --- RPC surface -----------------------------------------------------------
-
-export class TicTacToeRpcs extends EngineRpcs( TicTacToeConfig, TicTacToeSnapshot, [
-	MoveRpc( "place", PlaceInput )
-] ) {
-
-	public static layer = TicTacToeRpcs.toLayer( tictactoe );
-}

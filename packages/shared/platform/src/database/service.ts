@@ -27,3 +27,4 @@ export const DatabaseLive = Layer.effect(
 	Layer.provide( Alchemy.RuntimeContext.phantom )
 );
 
+export * as ops from "drizzle-orm/sql";

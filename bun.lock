@@ -25,6 +25,18 @@
         "effect": "catalog:",
       },
     },
+    "packages/core/tictactoe": {
+      "name": "@s2h/tictactoe",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h/contract": "workspace:",
+        "@s2h/platform": "workspace:",
+        "@s2h/schema": "workspace:",
+        "@s2h/swish": "workspace:",
+        "alchemy": "catalog:",
+        "effect": "catalog:",
+      },
+    },
     "packages/core/wordle": {
       "name": "@s2h/wordle",
       "version": "1.0.0",
@@ -502,6 +514,8 @@
     "@s2h/schema": ["@s2h/schema@workspace:packages/shared/schema"],
 
     "@s2h/swish": ["@s2h/swish@workspace:packages/shared/swish"],
+
+    "@s2h/tictactoe": ["@s2h/tictactoe@workspace:packages/core/tictactoe"],
 
     "@s2h/ui": ["@s2h/ui@workspace:packages/shared/ui"],
 
