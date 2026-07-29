@@ -12,6 +12,24 @@
         "typescript": "6.0.3",
       },
     },
+    "packages/shared/api": {
+      "name": "@s2h/api",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h/schema": "workspace:*",
+        "@s2h/swish": "workspace:*",
+        "effect": "catalog:",
+      },
+    },
+    "packages/shared/schema": {
+      "name": "@s2h/schema",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h/swish": "workspace:*",
+        "@s2h/utils": "workspace:*",
+        "effect": "catalog:",
+      },
+    },
     "packages/shared/swish": {
       "name": "@s2h/swish",
       "version": "1.0.0",
@@ -146,6 +164,10 @@
     "@radix-ui/react-use-effect-event": ["@radix-ui/react-use-effect-event@0.0.5", "", { "dependencies": { "@radix-ui/react-use-layout-effect": "1.1.4" }, "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-7cshFL8HGS/7HEiHH+9kL9HBwp2sa9yX18Knwek6KYWmXwM7pegMgta2AXMQKI+rq3JnfSj9x8wYqFMTdG1Jgg=="],
 
     "@radix-ui/react-use-layout-effect": ["@radix-ui/react-use-layout-effect@1.1.4", "", { "peerDependencies": { "@types/react": "*", "react": "^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc" }, "optionalPeers": ["@types/react"] }, "sha512-K20DkRkUwDnxEYMBPcg3Y6voLkEy5p5QQmszZgLngKKiC7dzBR/aEuK3w1qlx2JWDUNH6FluahYdgR3BP+QbYw=="],
+
+    "@s2h/api": ["@s2h/api@workspace:packages/shared/api"],
+
+    "@s2h/schema": ["@s2h/schema@workspace:packages/shared/schema"],
 
     "@s2h/swish": ["@s2h/swish@workspace:packages/shared/swish"],
 
