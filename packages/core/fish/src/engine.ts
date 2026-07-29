@@ -1,36 +1,3 @@
-// @s2h/fish/engine — Fish (Literature) as an event-sourced swish game.
-//
-// The swish engine for Fish: moves/hooks/phase transitions EMIT domain events
-// and the pure `apply` reducer (in ./utils) folds them onto `state` (the only
-// place state changes). Nondeterminism (team ids, deck shuffle/deal, timestamps)
-// is produced in the deciders and CAPTURED in the emitted event payloads so
-// replay is exact. Fish is a phased game (TEAM_CONFIG → PLAY) with bots.
-//
-// Authoring is synchronous: `setup`/`apply`/`endIf`/views/hooks/`execute`/`validate`/
-// phase functions/`botMove` are plain functions — `validate` returns an `InvalidMove`
-// to reject, or nothing to pass. Timestamps come from `Date.now()` (captured in the
-// emitted event, so replay stays exact).
-
-import { makeEngine } from "@s2h/swish/engine";
-import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
-import { PlayerId } from "@s2h/swish/schema";
-import { remove } from "@s2h/utils/array";
-import {
-	CARD_RANKS,
-	type CardId,
-	generateDeck,
-	generateHands,
-	getCardRank
-} from "@s2h/utils/cards";
-import { generateId } from "@s2h/utils/generator";
-import {
-	detectTeammateSignals,
-	suggestAsks,
-	suggestBooks,
-	suggestClaims,
-	suggestTransfers
-} from "./bot";
 import {
 	AskCardInput,
 	BookClaimed,
@@ -50,7 +17,26 @@ import {
 	TransferTurnInput,
 	TurnTransferred,
 	WinningTeamDecided
-} from "./schema";
+} from "@s2h/schema/fish";
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
+import { PlayerId } from "@s2h/swish/schema";
+import { remove } from "@s2h/utils/array";
+import {
+	CARD_RANKS,
+	type CardId,
+	generateDeck,
+	generateHands,
+	getCardRank
+} from "@s2h/utils/cards";
+import { generateId } from "@s2h/utils/generator";
+import {
+	detectTeammateSignals,
+	suggestAsks,
+	suggestBooks,
+	suggestClaims,
+	suggestTransfers
+} from "./bot";
 import {
 	apply,
 	getBookForCard,
@@ -85,14 +71,12 @@ export const fish = makeEngine( {
 		state: FishState,
 		config: FishConfig,
 		events: FishEvent,
+		view: FishView,
 		moves: {
 			createTeams: CreateTeamsInput,
 			askCard: AskCardInput,
 			claimBook: ClaimBookInput,
 			transferTurn: TransferTurnInput
-		},
-		views: {
-			view: FishView
 		}
 	},
 
@@ -109,8 +93,7 @@ export const fish = makeEngine( {
 
 	apply,
 
-	endIf: ( { state, config } ) =>
-		getClaimedBooks( state ).length === config.books.length,
+	endIf: ( { state, config } ) => getClaimedBooks( state ).length === config.books.length,
 
 	view: ( { state }, audience ): FishView => {
 		const { hands: _hands, ...rest } = state;
@@ -122,17 +105,18 @@ export const fish = makeEngine( {
 	hooks: {
 		// A joining player's `playerData` seat is created here (mirrors old onJoin).
 		onJoin: ( { state }, playerId ) =>
-			state.playerData[ playerId ]
-				? []
-				: [ PlayerSeated.make( { playerId } ) ],
+			state.playerData[ playerId ] ? [] : [ PlayerSeated.make( { playerId } ) ],
+
 		onEnd: ( { state } ) => {
 			const teamIds = Object.keys( state.teams );
 			if ( teamIds.length === 0 ) {
 				return [];
 			}
+
 			const best = teamIds.reduce( ( acc, tid ) =>
 				state.teams[ tid ].score > state.teams[ acc ].score ? tid : acc
 			);
+
 			return [ WinningTeamDecided.make( { teamId: best } ) ];
 		}
 	},
@@ -142,6 +126,7 @@ export const fish = makeEngine( {
 	moves: {
 		createTeams: {
 			phase: "TEAM_CONFIG",
+
 			validate: ( { state, config }, _playerId, input ) => {
 				if ( Object.keys( state.teams ).length > 0 ) {
 					return new InvalidMove( {
@@ -149,6 +134,7 @@ export const fish = makeEngine( {
 						reason: "Teams have already been created!"
 					} );
 				}
+
 				const teamCount = Object.keys( input.teams ).length;
 				if ( teamCount !== config.teamCount ) {
 					return new InvalidMove( {
@@ -156,6 +142,7 @@ export const fish = makeEngine( {
 						reason: "Team count does not match the game config!"
 					} );
 				}
+
 				const playersSpecified = new Set( Object.values( input.teams ).flat() );
 				if ( playersSpecified.size !== config.playerCount ) {
 					return new InvalidMove( {
@@ -163,6 +150,7 @@ export const fish = makeEngine( {
 						reason: "Not all players are divided into teams!"
 					} );
 				}
+
 				const playersPerTeam = config.playerCount / teamCount;
 				for ( const teamName of Object.keys( input.teams ) ) {
 					const playerIds: ReadonlyArray<PlayerId> = input.teams[ teamName ] ?? [];
@@ -172,6 +160,7 @@ export const fish = makeEngine( {
 							reason: `Invalid number of players in team ${ teamName }!`
 						} );
 					}
+
 					for ( const pid of playerIds ) {
 						if ( !playerSeated( state, pid ) ) {
 							return new InvalidMove( {
@@ -181,22 +170,23 @@ export const fish = makeEngine( {
 						}
 					}
 				}
+
 				return undefined;
 			},
+
 			execute: ( _data, _playerId, input ) =>
 				[
 					TeamsCreated.make( {
-						teams: Object.keys( input.teams ).map( ( name ) => ( {
-							id: generateId(),
-							name,
-							members: [ ...( input.teams[ name ] ?? [] ) ]
-						} ) )
+						teams: Object.keys( input.teams ).map(
+							name => ( { id: generateId(), name, members: input.teams[ name ] } )
+						)
 					} )
 				]
 		},
 
 		askCard: {
 			phase: "PLAY",
+
 			validate: ( { state, config }, playerId, input ) => {
 				const hand = state.hands[ playerId ];
 				if ( !hand || hand.length === 0 ) {
@@ -205,6 +195,7 @@ export const fish = makeEngine( {
 						reason: "You have no cards! Transfer your turn instead."
 					} );
 				}
+
 				const opponents = getOpponents( state.teams, playerId );
 				if ( !opponents.includes( input.from ) ) {
 					return new InvalidMove( {
@@ -212,6 +203,7 @@ export const fish = makeEngine( {
 						reason: "You can only ask opponents for cards!"
 					} );
 				}
+
 				const book = getBookForCard( input.cardId, config.type );
 				const hasCardFromBook = hand.some( c => getBookForCard( c, config.type ) === book );
 				if ( !hasCardFromBook ) {
@@ -220,37 +212,34 @@ export const fish = makeEngine( {
 						reason: "You must hold atleast 1 card from the book!"
 					} );
 				}
+
 				if ( hand.includes( input.cardId ) ) {
 					return new InvalidMove( {
 						move: "askCard",
 						reason: "You already have this card!"
 					} );
 				}
+
 				if ( getClaimedBooks( state ).includes( book ) ) {
 					return new InvalidMove( {
 						move: "askCard",
 						reason: "This book has already been claimed!"
 					} );
 				}
+
 				return undefined;
 			},
+
 			execute: ( { state }, playerId, input ) => {
 				const timestamp = Date.now();
 				const success = ( state.hands[ input.from ] ?? [] ).includes( input.cardId );
-				return [
-					CardAsked.make( {
-						success,
-						playerId,
-						from: input.from,
-						cardId: input.cardId,
-						timestamp
-					} )
-				];
+				return [ CardAsked.make( { success, playerId, timestamp, ...input } ) ];
 			}
 		},
 
 		claimBook: {
 			phase: "PLAY",
+
 			validate: ( { state, config, context }, _playerId, input ) => {
 				const claimedCards = Object.keys( input.claim ) as CardId[];
 				if ( claimedCards.length === 0 ) {
@@ -259,6 +248,7 @@ export const fish = makeEngine( {
 						reason: "Claim cannot be empty!"
 					} );
 				}
+
 				const books = new Set( claimedCards.map( c => getBookForCard( c, config.type ) ) );
 				if ( books.size !== 1 ) {
 					return new InvalidMove( {
@@ -266,6 +256,7 @@ export const fish = makeEngine( {
 						reason: "All cards must belong to the same book!"
 					} );
 				}
+
 				const book = [ ...books ][ 0 ];
 				if ( getClaimedBooks( state ).includes( book ) ) {
 					return new InvalidMove( {
@@ -273,6 +264,7 @@ export const fish = makeEngine( {
 						reason: "This book has already been claimed!"
 					} );
 				}
+
 				const allBookCards = getCardsOfBook( book, config.type );
 				if ( claimedCards.length !== allBookCards.length ) {
 					return new InvalidMove( {
@@ -280,6 +272,7 @@ export const fish = makeEngine( {
 						reason: `Must claim all ${ allBookCards.length } cards in the book!`
 					} );
 				}
+
 				for ( const card of allBookCards ) {
 					if ( !claimedCards.includes( card ) ) {
 						return new InvalidMove( {
@@ -288,6 +281,7 @@ export const fish = makeEngine( {
 						} );
 					}
 				}
+
 				for ( const card of Object.keys( input.claim ) ) {
 					const pid = input.claim[ card ] as PlayerId | undefined;
 					if ( pid && !context.players.includes( pid ) ) {
@@ -297,6 +291,7 @@ export const fish = makeEngine( {
 						} );
 					}
 				}
+
 				return undefined;
 			},
 			execute: ( { state, config }, playerId, input ) => {
@@ -319,6 +314,7 @@ export const fish = makeEngine( {
 				const success = allBookCards.every( card =>
 					input.claim[ card ] === correctClaim[ card ]
 				);
+
 				const winningTeamId = success
 					? playerTeamId
 					: Object.keys( state.teams ).find( tid => tid !== playerTeamId )!;
@@ -330,7 +326,7 @@ export const fish = makeEngine( {
 						book,
 						winningTeamId,
 						correctClaim,
-						actualClaim: { ...input.claim },
+						actualClaim: input.claim,
 						timestamp
 					} )
 				];
@@ -339,17 +335,20 @@ export const fish = makeEngine( {
 
 		transferTurn: {
 			phase: "PLAY",
+
 			validate: ( { state }, playerId, input ) => {
 				const lastClaimWasSuccessful = state.lastMoveType === "claim"
 					&& state.claimHistory.length > 0
 					&& state.claimHistory[ 0 ].success
 					&& state.claimHistory[ 0 ].playerId === playerId;
+
 				if ( !lastClaimWasSuccessful ) {
 					return new InvalidMove( {
 						move: "transferTurn",
 						reason: "You can only transfer turn after a successful claim!"
 					} );
 				}
+
 				const teamMates = getTeammates( state.teams, playerId );
 				if ( !teamMates.includes( input.transferTo ) ) {
 					return new InvalidMove( {
@@ -357,12 +356,14 @@ export const fish = makeEngine( {
 						reason: "You can only transfer to a teammate!"
 					} );
 				}
+
 				if ( ( state.hands[ input.transferTo ] ?? [] ).length === 0 ) {
 					return new InvalidMove( {
 						move: "transferTurn",
 						reason: "Cannot transfer to a teammate with no cards!"
 					} );
 				}
+
 				return undefined;
 			},
 			execute: ( _data, playerId, input ) => {
@@ -390,17 +391,21 @@ export const fish = makeEngine( {
 				if ( config.deckType === 48 ) {
 					deck = remove( card => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
 				}
+
 				const dealt = generateHands( deck, context.players.length );
 				const hands: Record<PlayerId, CardId[]> = {};
 				const cardCounts: Record<PlayerId, number> = {};
+
 				for ( let i = 0; i < context.players.length; i++ ) {
 					hands[ context.players[ i ] ] = dealt[ i ];
 					cardCounts[ context.players[ i ] ] = dealt[ i ].length;
 				}
+
 				const cardLocations: Record<string, PlayerId[]> = {};
 				for ( const card of deck ) {
 					cardLocations[ card ] = [ ...context.players ];
 				}
+
 				return [ HandsDealt.make( { hands, cardCounts, cardLocations } ) ];
 			},
 
@@ -419,9 +424,11 @@ export const fish = makeEngine( {
 							nextPlayer = lastClaim.playerId;
 							break;
 						}
+
 						const opponents = getOpponents( state.teams, lastClaim.playerId );
-						nextPlayer = opponents.find( pid => ( state.hands[ pid ]?.length ?? 0 ) > 0 )
+						nextPlayer = opponents.find( pid => ( state.hands[ pid ].length ?? 0 ) > 0 )
 							?? context.players[ 0 ];
+
 						break;
 					}
 					case "transfer": {
@@ -435,14 +442,16 @@ export const fish = makeEngine( {
 				}
 
 				if ( ( state.hands[ nextPlayer ]?.length ?? 0 ) === 0 ) {
-					const teammates = getTeammates( state.teams, nextPlayer );
-					const teammateWithCards = teammates.find( pid => ( state.hands[ pid ]?.length ?? 0 ) >
-						0 );
+					const teammateWithCards = getTeammates( state.teams, nextPlayer ).find(
+						pid => ( state.hands[ pid ]?.length ?? 0 ) > 0
+					);
+
 					if ( teammateWithCards ) {
 						return teammateWithCards;
 					}
-					return context.players.find( pid => ( state.hands[ pid ]?.length ?? 0 ) > 0 ) ??
-						nextPlayer;
+
+					return context.players.find( pid => ( state.hands[ pid ]?.length ?? 0 ) > 0 )
+						?? nextPlayer;
 				}
 
 				return nextPlayer;
@@ -483,6 +492,7 @@ function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove {
 					input: { transferTo: weightedTransfers[ 0 ].transferTo }
 				};
 			}
+
 			const teammates = getTeammates( view.teams, view.playerId );
 			const transferTo = teammates.find( pid => ( view.cardCounts[ pid ] ?? 0 ) > 0 );
 			if ( transferTo ) {
@@ -518,6 +528,7 @@ function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove {
 				const owners = view.cardLocations[ cardId ] ?? snapshot.context.players;
 				claim[ cardId ] = owners[ 0 ];
 			}
+
 			return {
 				moveType: "claimBook" as const,
 				input: { claim: claim as Record<string, PlayerId> }
@@ -544,15 +555,4 @@ function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove {
 		moveType: "createTeams" as const,
 		input: { teams }
 	};
-}
-
-// --- RPC surface -----------------------------------------------------------
-
-export class FishRpcs extends EngineRpcs( FishConfig, FishSnapshot, [
-	MoveRpc( "createTeams", CreateTeamsInput ),
-	MoveRpc( "askCard", AskCardInput ),
-	MoveRpc( "claimBook", ClaimBookInput ),
-	MoveRpc( "transferTurn", TransferTurnInput )
-] ) {
-	public static layer = FishRpcs.toLayer( fish );
 }

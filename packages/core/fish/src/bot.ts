@@ -1,7 +1,6 @@
+import type { Book, FishBotView, FishConfig } from "@s2h/schema/fish";
 import { PlayerId } from "@s2h/swish/schema";
 import type { CardId } from "@s2h/utils/cards";
-import { createLogger } from "@s2h/utils/logger";
-import type { Book, FishBotView, FishConfig } from "./schema";
 import {
 	getBookForCard,
 	getBooksInHand,
@@ -50,8 +49,6 @@ type TeammateSignal = {
 const MAX_WEIGHT = 720;
 const SIGNAL_WINDOW = 30;
 
-const logger = createLogger( "Fish:Bot" );
-
 /**
  * Detects teammate signaling patterns from ask history.
  * Pattern: Teammate T fails to get card X from book B, then teammate T2's next ask
@@ -63,8 +60,6 @@ const logger = createLogger( "Fish:Bot" );
  * @public
  */
 export function detectTeammateSignals( state: FishBotView, config: FishConfig ) {
-	logger.debug( ">> detectTeammateSignals()" );
-
 	const teammates = getTeammates( state.teams, state.playerId );
 	if ( teammates.length === 0 ) {
 		return [];
@@ -137,10 +132,7 @@ export function detectTeammateSignals( state: FishBotView, config: FishConfig ) 
 		}
 	}
 
-	const result = Array.from( signals.values() );
-	logger.debug( "Signals detected: %o", result.map( s => `${ s.cardId } → ${ s.likelyHolder }` ) );
-	logger.debug( "<< detectTeammateSignals()" );
-	return result;
+	return Array.from( signals.values() );
 }
 
 /**
@@ -164,7 +156,6 @@ export function suggestBooks(
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
-	logger.debug( ">> suggestBooks()" );
 
 	const booksInGame = new Set( Object.keys( state.cardLocations )
 		.map( k => getBookForCard( k as CardId, config.type ) ) );
@@ -214,7 +205,6 @@ export function suggestBooks(
 		weightedBooks.push( { ...weightedBook, weight: weightedBook.weight / cardsInBook.length } );
 	}
 
-	logger.debug( "<< suggestBooks()" );
 	return weightedBooks
 		.filter( a => a.weight > 0 )
 		.toSorted( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 );
@@ -239,7 +229,6 @@ export function suggestAsks(
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
-	logger.debug( ">> suggestAsks()" );
 
 	const teamMates = getTeammates( state.teams, state.playerId );
 	const booksInHand = getBooksInHand( state.hand, config.type );
@@ -309,7 +298,6 @@ export function suggestAsks(
 		weightedAsks.push( ...shuffledAsks );
 	}
 
-	logger.debug( "<< suggestAsks()" );
 	return weightedAsks;
 }
 
@@ -411,7 +399,6 @@ export function suggestClaims(
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
-	logger.debug( ">> suggestClaims()" );
 
 	const teamMates = getTeammates( state.teams, state.playerId );
 	const signalMap = new Map( signals.map( s => [ s.cardId, s ] ) );
@@ -467,7 +454,6 @@ export function suggestClaims(
 		}
 	}
 
-	logger.debug( "<< suggestClaims()" );
 	return claims.sort( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 );
 }
 
@@ -482,7 +468,6 @@ export function suggestClaims(
  * @public
  */
 export function suggestTransfers( state: FishBotView, config: FishConfig ) {
-	logger.debug( ">> suggestTransfers()" );
 
 	const teamMates = getTeammates( state.teams, state.playerId );
 	const validBooks = new Set( Object.keys( state.cardLocations )
@@ -509,6 +494,5 @@ export function suggestTransfers( state: FishBotView, config: FishConfig ) {
 		.map( ( [ transferTo, weight ] ) => ( { transferTo: transferTo as PlayerId, weight } ) )
 		.toSorted( ( a, b ) => b.weight - a.weight || Math.random() - 0.5 );
 
-	logger.debug( "<< suggestTransfers()" );
 	return transfers;
 }

@@ -1,12 +1,3 @@
-import { PlayerId, type PlayerInfo } from "@s2h/swish/schema";
-import { remove } from "@s2h/utils/array";
-import {
-	CARD_RANKS,
-	type CardId,
-	getCardDisplayString,
-	getCardRank
-} from "@s2h/utils/cards";
-import * as Match from "effect/Match";
 import type {
 	Ask,
 	Book,
@@ -16,11 +7,12 @@ import type {
 	FishState,
 	Team,
 	Transfer
-} from "./schema";
-import {
-	BookClaimed,
-	CardAsked
-} from "./schema";
+} from "@s2h/schema/fish";
+import { BookClaimed, CardAsked } from "@s2h/schema/fish";
+import { PlayerId, type PlayerInfo } from "@s2h/swish/schema";
+import { remove } from "@s2h/utils/array";
+import { CARD_RANKS, type CardId, getCardDisplayString, getCardRank } from "@s2h/utils/cards";
+import * as Match from "effect/Match";
 
 /** Normal book names representing card ranks (all four suits per rank). */
 export type NormalBook =
@@ -372,7 +364,13 @@ const applyAsk = ( state: FishState, e: CardAsked ): FishState => {
 	askerData.metrics.totalAsks++;
 
 	const askHistory = [
-		{ success: e.success, playerId: e.playerId, from: e.from, cardId: e.cardId, timestamp: e.timestamp },
+		{
+			success: e.success,
+			playerId: e.playerId,
+			from: e.from,
+			cardId: e.cardId,
+			timestamp: e.timestamp
+		},
 		...state.askHistory
 	];
 
@@ -390,7 +388,15 @@ const applyAsk = ( state: FishState, e: CardAsked ): FishState => {
 		}
 	}
 
-	return { ...state, hands, cardCounts, playerData, cardLocations, askHistory, lastMoveType: "ask" };
+	return {
+		...state,
+		hands,
+		cardCounts,
+		playerData,
+		cardLocations,
+		askHistory,
+		lastMoveType: "ask"
+	};
 };
 
 const applyClaim = ( state: FishState, e: BookClaimed ): FishState => {
@@ -481,7 +487,8 @@ export const apply = ( state: FishState, event: FishEvent ): FishState =>
 			const teams = { ...state.teams };
 			const playerData = { ...state.playerData };
 			for ( const t of e.teams ) {
-				teams[ t.id ] = { id: t.id, name: t.name, members: [ ...t.members ], score: 0, booksWon: [] };
+				teams[ t.id ] =
+					{ id: t.id, name: t.name, members: [ ...t.members ], score: 0, booksWon: [] };
 				for ( const pid of t.members ) {
 					playerData[ pid ] = { ...playerData[ pid ], teamId: t.id };
 				}

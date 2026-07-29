@@ -25,6 +25,19 @@
         "effect": "catalog:",
       },
     },
+    "packages/core/fish": {
+      "name": "@s2h/fish",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h/contract": "workspace:",
+        "@s2h/platform": "workspace:",
+        "@s2h/schema": "workspace:",
+        "@s2h/swish": "workspace:",
+        "@s2h/utils": "workspace:",
+        "alchemy": "catalog:",
+        "effect": "catalog:",
+      },
+    },
     "packages/core/kingdomino": {
       "name": "@s2h/kingdomino",
       "version": "1.0.0",
@@ -534,6 +547,8 @@
     "@s2h/auth": ["@s2h/auth@workspace:packages/core/auth"],
 
     "@s2h/contract": ["@s2h/contract@workspace:packages/shared/contract"],
+
+    "@s2h/fish": ["@s2h/fish@workspace:packages/core/fish"],
 
     "@s2h/kingdomino": ["@s2h/kingdomino@workspace:packages/core/kingdomino"],
 
