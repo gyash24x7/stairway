@@ -1,26 +1,6 @@
-// @s2h/kingdomino/engine — Kingdomino as an event-sourced swish game.
-//
-// Server-only. The swish port of the old `AbstractGameEngine` DO. Same rules,
-// re-expressed under event sourcing: the deciders (`onJoin`, `onStart`, phase
-// `onEnter`/`onExit`, hooks, `execute`) EMIT domain events and a pure `apply`
-// reducer (in ./utils) folds them onto `state` (the ONLY place state changes).
-//
-// PHASED game: SELECT (draft dominoes) and PLACE (place / discard) phases.
-//
-// Nondeterminism (deck shuffle, per-round draft draw, shuffled first selection
-// order) lives in the deciders and is CAPTURED in the emitted events' payloads —
-// the drawn dominoes / shuffled orders travel in the event so replay is exact.
-// `apply` never calls `Math.random`.
-
-import { makeEngine } from "@s2h/swish/engine";
-import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
-import { type PlayerId } from "@s2h/swish/schema";
-import { shuffle } from "@s2h/utils/array";
 import {
 	DeckShuffled,
 	DiscardDominoInput,
-	type Domino,
 	DominoDiscarded,
 	DominoPlaced,
 	DominoSelected,
@@ -28,7 +8,6 @@ import {
 	DraftPruned,
 	KingdominoConfig,
 	KingdominoEvent,
-	KingdominoSnapshot,
 	KingdominoState,
 	KingdominoView,
 	PlaceDominoInput,
@@ -37,14 +16,14 @@ import {
 	SelectionOrderRecomputed,
 	SelectionOrderSet,
 	WinnerDecided
-} from "./schema";
+} from "@s2h/schema/kingdomino";
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
+import { type PlayerId } from "@s2h/swish/schema";
+import { shuffle } from "@s2h/utils/array";
 import {
 	apply,
 	applyPlacement,
-	asBoard,
-	asBoardResult,
-	asPlacement,
-	asScoreResult,
 	calculateScore,
 	calculateShift,
 	canDominoBePlaced,
@@ -68,13 +47,11 @@ export const kingdomino = makeEngine( {
 		state: KingdominoState,
 		config: KingdominoConfig,
 		events: KingdominoEvent,
+		view: KingdominoView,
 		moves: {
 			selectDomino: SelectDominoInput,
 			placeDomino: PlaceDominoInput,
 			discardDomino: DiscardDominoInput
-		},
-		views: {
-			view: KingdominoView
 		}
 	},
 
@@ -107,9 +84,7 @@ export const kingdomino = makeEngine( {
 		onJoin: ( { state, config }, playerId ) => {
 			const castleIndex = Object.keys( state.playerData ).length;
 			const board = createBoard( CASTLES[ castleIndex ]!, config.boardSize );
-			return [
-				PlayerBoardCreated.make( { playerId, board: asBoardResult( board ) } )
-			];
+			return [ PlayerBoardCreated.make( { playerId, board } ) ];
 		},
 
 		// At start: shuffle the deck (captured) and shuffle the first-round
@@ -120,7 +95,7 @@ export const kingdomino = makeEngine( {
 			const slots = context.players.flatMap( ( pid ) => Array( selections ).fill( pid ) );
 			const order = shuffle( slots ) as ReadonlyArray<PlayerId>;
 			return [
-				DeckShuffled.make( { deck: deck as ReadonlyArray<typeof Domino.Type> } ),
+				DeckShuffled.make( { deck } ),
 				SelectionOrderSet.make( { order } )
 			];
 		},
@@ -139,55 +114,73 @@ export const kingdomino = makeEngine( {
 	moves: {
 		selectDomino: {
 			phase: "SELECT",
+
 			validate: ( { state, context: { players } }, playerId, { dominoId } ) => {
 				const entry = state.draft.find( ( e ) => e.domino.id === dominoId );
 				if ( !entry ) {
 					return new InvalidMove( { move: "selectDomino", reason: "Domino not in draft!" } );
 				}
+
 				if ( entry.selectedBy ) {
 					return new InvalidMove( { move: "selectDomino", reason: "Domino already selected!" } );
 				}
+
 				const selectionsPerPlayer = getSelectionsPerPlayer( players.length );
 				const playerSelections = getPlayerSelectionCount( [ ...state.draft ] as never, playerId );
+
 				if ( playerSelections >= selectionsPerPlayer ) {
 					return new InvalidMove( {
 						move: "selectDomino",
 						reason: "Already selected maximum dominos this round!"
 					} );
 				}
+
 				return undefined;
 			},
-			execute: ( _data, playerId, { dominoId } ) =>
-				[ DominoSelected.make( { dominoId, playerId } ) ]
+
+			execute: ( _data, playerId, { dominoId } ) => [
+				DominoSelected.make( { dominoId, playerId } )
+			]
 		},
 
 		placeDomino: {
 			phase: "PLACE",
-			canMove: ( { state }, playerId ) =>
-				( state.playerData[ playerId ]?.queue.length ?? 0 ) > 0,
+
+			canMove: ( { state }, playerId ) => ( state.playerData[ playerId ]?.queue.length ?? 0 ) > 0,
+
 			validate: ( { state }, playerId, { placement } ) => {
 				const player = state.playerData[ playerId ]!;
 				if ( !player.queue.includes( placement.dominoId ) ) {
-					return new InvalidMove( { move: "placeDomino", reason: "Domino not in your queue!" } );
+					return new InvalidMove( {
+						move: "placeDomino",
+						reason: "Domino not in your queue!"
+					} );
 				}
+
 				const lowest = Math.min( ...player.queue );
 				if ( placement.dominoId !== lowest ) {
-					return new InvalidMove( { move: "placeDomino", reason: "Place lower-id domino first!" } );
+					return new InvalidMove( {
+						move: "placeDomino",
+						reason: "Place lower-id domino first!"
+					} );
 				}
-				if ( !canDominoBePlaced( asBoard( player.board ), asPlacement( placement ) ) ) {
+
+				if ( !canDominoBePlaced( player.board, placement ) ) {
 					return new InvalidMove( { move: "placeDomino", reason: "Invalid placement!" } );
 				}
+
 				return undefined;
 			},
-			execute: ( { state }, playerId, { placement: input } ) => {
+
+			execute: ( { state }, playerId, { placement } ) => {
 				const player = state.playerData[ playerId ]!;
-				let board = asBoard( player.board );
-				let placement = asPlacement( input );
+				let board = player.board;
 
 				const coords = getPlacementCoordinates( placement );
-				const shift = calculateShift( coords, board.size );
+				const shift = calculateShift( coords, player.board.size );
+
 				if ( shift.x !== 0 || shift.y !== 0 ) {
-					const shiftedTiles = getShiftedTiles( board, shift );
+					const shiftedTiles = getShiftedTiles( player.board, shift );
 					if ( shiftedTiles ) {
 						board = { ...board, tiles: shiftedTiles };
 						placement = {
@@ -200,28 +193,27 @@ export const kingdomino = makeEngine( {
 					}
 				}
 
-				const nextBoard = applyPlacement( board, placement );
-				const score = calculateScore( nextBoard );
-				return [
-					DominoPlaced.make( {
-						playerId,
-						dominoId: input.dominoId,
-						board: asBoardResult( nextBoard ),
-						score: asScoreResult( score )
-					} )
-				];
+				board = applyPlacement( board, placement );
+				const score = calculateScore( board );
+
+				return [ DominoPlaced.make( { playerId, dominoId: placement.dominoId, board, score } ) ];
 			}
 		},
 
 		discardDomino: {
 			phase: "PLACE",
-			canMove: ( { state }, playerId ) =>
-				( state.playerData[ playerId ]?.queue.length ?? 0 ) > 0,
+
+			canMove: ( { state }, playerId ) => ( state.playerData[ playerId ]?.queue.length ?? 0 ) > 0,
+
 			validate: ( { state }, playerId, { dominoId } ) => {
 				const player = state.playerData[ playerId ]!;
 				if ( !player.queue.includes( dominoId ) ) {
-					return new InvalidMove( { move: "discardDomino", reason: "Domino not in your queue!" } );
+					return new InvalidMove( {
+						move: "discardDomino",
+						reason: "Domino not in your queue!"
+					} );
 				}
+
 				const lowest = Math.min( ...player.queue );
 				if ( dominoId !== lowest ) {
 					return new InvalidMove( {
@@ -229,14 +221,21 @@ export const kingdomino = makeEngine( {
 						reason: "Discard lower-id domino first!"
 					} );
 				}
-				const validPlacements = getValidPlacements( asBoard( player.board ), dominoId );
+
+				const validPlacements = getValidPlacements( player.board, dominoId );
 				if ( validPlacements.length > 0 ) {
-					return new InvalidMove( { move: "discardDomino", reason: "Domino can still be placed!" } );
+					return new InvalidMove( {
+						move: "discardDomino",
+						reason: "Domino can still be placed!"
+					} );
 				}
+
 				return undefined;
 			},
-			execute: ( _data, playerId, { dominoId } ) =>
-				[ DominoDiscarded.make( { playerId, dominoId } ) ]
+
+			execute: ( _data, playerId, { dominoId } ) => [
+				DominoDiscarded.make( { playerId, dominoId } )
+			]
 		}
 	},
 
@@ -252,6 +251,7 @@ export const kingdomino = makeEngine( {
 				if ( state.deck.length === 0 ) {
 					return [];
 				}
+
 				const { draft, deck } = drawDraftPure( state.deck );
 				return [ DraftDrawn.make( { draft, deck } ) ];
 			},
@@ -269,8 +269,8 @@ export const kingdomino = makeEngine( {
 				return state.selectionOrder[ consumed ] ?? state.selectionOrder[ 0 ]!;
 			},
 
-			endIf: ( { state } ) =>
-				state.draft.filter( ( e ) => !!e.selectedBy ).length >= state.selectionOrder.length,
+			endIf: ( { state: { draft, selectionOrder } } ) =>
+				draft.filter( e => !!e.selectedBy ).length >= selectionOrder.length,
 
 			resolveNextPhase: () => "PLACE"
 		},
@@ -290,10 +290,9 @@ export const kingdomino = makeEngine( {
 				return nextPlacer ?? draftOrder[ 0 ]!;
 			},
 
-			endIf: ( { state, context } ) =>
-				context.players.every(
-					( pid ) => ( state.playerData[ pid ]?.queue.length ?? 0 ) === 0
-				),
+			endIf: ( { state, context } ) => context.players.every(
+				pid => ( state.playerData[ pid ]?.queue.length ?? 0 ) === 0
+			),
 
 			// Recompute next-round selection order from the resolved draft.
 			onExit: ( { state } ) => {
@@ -305,13 +304,3 @@ export const kingdomino = makeEngine( {
 		}
 	}
 } );
-
-// --- RPC surface -----------------------------------------------------------
-
-export class KingdominoRpcs extends EngineRpcs( KingdominoConfig, KingdominoSnapshot, [
-	MoveRpc( "selectDomino", SelectDominoInput ),
-	MoveRpc( "placeDomino", PlaceDominoInput ),
-	MoveRpc( "discardDomino", DiscardDominoInput )
-] ) {
-	public static layer = KingdominoRpcs.toLayer( kingdomino );
-}

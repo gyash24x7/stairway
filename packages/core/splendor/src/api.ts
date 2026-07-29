@@ -17,13 +17,6 @@ import { splendor } from "./engine.ts";
 
 // --- Durable Object ----------------------------------------------------------
 
-/**
- * One Durable Object instance per splendor game. Its inner effect builds the
- * game-agnostic engine (`makeEngine( splendor )`), backing the engine's five
- * service ports with this DO's storage/alarm/KV, and exposes the lifecycle plus
- * the `guess` move as native RPC methods. The DO `alarm` drives deferred
- * bot/auto-start turns through the engine's `runBotTurn`.
- */
 export class SplendorEngineDO extends Cloudflare.DurableObject<SplendorEngineDO>()(
 	"SplendorEngineDO",
 	Effect.gen( function* () {

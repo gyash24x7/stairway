@@ -17,13 +17,6 @@ import { tictactoe } from "./engine.ts";
 
 // --- Durable Object ----------------------------------------------------------
 
-/**
- * One Durable Object instance per ticTacToe game. Its inner effect builds the
- * game-agnostic engine (`makeEngine( ticTacToe )`), backing the engine's five
- * service ports with this DO's storage/alarm/KV, and exposes the lifecycle plus
- * the `guess` move as native RPC methods. The DO `alarm` drives deferred
- * bot/auto-start turns through the engine's `runBotTurn`.
- */
 export class TicTacToeEngineDO extends Cloudflare.DurableObject<TicTacToeEngineDO>()(
 	"TicTacToeEngineDO",
 	Effect.gen( function* () {

@@ -1,83 +1,21 @@
-import * as Match from "effect/Match";
-import { PlayerId } from "@s2h/swish/schema";
 import type {
-	Domino as DominoSchema,
+	Board,
+	BoardSize,
+	Castle,
+	Domino,
 	KingdominoEvent,
 	KingdominoState,
-	PlayerData as PlayerDataSchema,
-	Placement as PlacementSchema,
-	Board as BoardSchema,
-	ScoreBreakdown as ScoreBreakdownSchema
-} from "./schema";
-
-// --- Pure structural (mutable) board types ---------------------------------
-// The board helpers below mutate local copies (`push`/`splice`/`sort`), so they
-// speak plain mutable TS shapes. These are structurally identical to the schema
-// `.Type`s (which are readonly); the engine casts across the boundary.
-
-/** The castle color assigned to each player. */
-export type Castle = "red" | "blue" | "yellow" | "green";
-
-/** The terrain types available for tiles on the board. */
-export type Terrain =
-	| "castle"
-	| "desert"
-	| "forest"
-	| "water"
-	| "grassland"
-	| "wasteland"
-	| "mine";
-
-/** A single tile with a terrain type and crown count. */
-export type Tile = { terrain: Terrain; crowns: number; };
-
-/** Numeric identifier for a domino (1-48). */
-export type DominoId = number;
-
-/** A domino piece with two tiles (left and right). */
-export type Domino = { id: DominoId; left: Tile; right: Tile; };
-
-/** A coordinate on the board grid. */
-export type Coord = { x: number; y: number; };
-
-/** Board size: 5x5 for standard play or 7x7 for extended. */
-export type BoardSize = 5 | 7;
-
-/** Rotation of a domino: 0=right, 90=down, 180=left, 270=up. */
-export type Rotation = 0 | 90 | 180 | 270;
-
-/** Map of coordinate keys to tiles placed on the board. */
-export type Tiles = Record<string, Tile>;
-
-/** A domino placement specifying which domino, where, and at what rotation. */
-export type Placement = { dominoId: DominoId; coord: Coord; rotation: Rotation; };
+	Placement,
+	Rotation,
+	ScoreBreakdown,
+	Terrain,
+	Tile
+} from "@s2h/schema/kingdomino";
+import { Coord, DraftEntry, Region } from "@s2h/schema/kingdomino";
+import * as Match from "effect/Match";
 
 /** Rectangular bounding box defined by min/max coordinates. */
-export type Bounds = { minX: number; maxX: number; minY: number; maxY: number };
-
-/** A player's board containing placed tiles, castle, and board size. */
-export type Board = {
-	size: BoardSize;
-	castle: Castle;
-	placements: Placement[];
-	tiles: Tiles;
-};
-
-/** A connected region of same-terrain tiles with its score calculation. */
-export type Region = {
-	id: string;
-	terrain: Terrain;
-	tiles: number;
-	placement: Coord[];
-	crowns: number;
-	points: number;
-};
-
-/** Score breakdown showing all regions and total points. */
-export type ScoreBreakdown = { regions: Region[]; points: number; };
-
-/** A draft entry: a domino available for selection, optionally claimed by a player. */
-export type DraftEntry = { domino: Domino; selectedBy?: PlayerId; };
+type Bounds = { minX: number; maxX: number; minY: number; maxY: number };
 
 const DRAFT_SIZE = 4;
 
@@ -175,9 +113,9 @@ export function coordKey( coord: Coord ) {
  * @param key - The string key to parse.
  * @returns A Coord object representing the coordinate.
  */
-export function parseCoordKey( key: string ): Coord {
+export function parseCoordKey( key: string ) {
 	const [ x, y ] = key.split( "," ).map( Number );
-	return { x, y };
+	return Coord.make( { x, y } );
 }
 
 /**
@@ -211,7 +149,7 @@ export function getPlacementCoordinates( { coord, rotation }: Omit<Placement, "d
  * @param terrain - The terrain type of the new tile being placed.
  * @returns True if there is a valid connection, false otherwise.
  */
-function hasConnection( tiles: Tiles, coord: Coord, terrain: Terrain ) {
+function hasConnection( tiles: Board["tiles"], coord: Coord, terrain: Terrain ) {
 
 	for ( const { x: dx, y: dy } of neighbors ) {
 		const cell = tiles[ coordKey( { x: coord.x + dx, y: coord.y + dy } ) ];
@@ -234,15 +172,15 @@ function hasConnection( tiles: Tiles, coord: Coord, terrain: Terrain ) {
  *
  * @param board - The current state of the board, including existing placements and tiles.
  * @param shift - The amount to shift in x and y directions, calculated based on the new placement.
- * @returns A new Tiles mapping with all tiles shifted accordingly,
+ * @returns A new Board["tiles"] mapping with all tiles shifted accordingly,
  * or null if the shift would still result in out-of-bounds placements.
  */
 export function getShiftedTiles(
 	board: Board,
 	shift: ReturnType<typeof calculateShift>
-): Tiles | null {
+) {
 
-	const newTiles: Tiles = {};
+	const newTiles: Record<string, Tile> = {};
 
 	for ( const key in board.tiles ) {
 		const { x, y } = parseCoordKey( key );
@@ -333,7 +271,7 @@ function isPlacementWithinBounds( board: Board, [ p1, p2 ]: Coord[] ) {
  * @param dominoId - The ID of the domino, used to determine the terrain types of the new tiles.
  * @returns True if there is a valid adjacency, false otherwise.
  */
-function isAdjacencyValid( board: Board, [ p1, p2 ]: Coord[], dominoId: DominoId ) {
+function isAdjacencyValid( board: Board, [ p1, p2 ]: Coord[], dominoId: number ) {
 	const domino = DOMINO_DECK[ dominoId - 1 ];
 
 	// Check adjacency: at least one tile must connect to gameing terrain or castle
@@ -371,7 +309,7 @@ export const ALL_ROTATIONS: Rotation[] = [ 0, 90, 180, 270 ];
  * Returns the rotations under which the given domino can legally be
  * placed at the supplied coordinate.
  */
-export function getValidRotations( board: Board, dominoId: DominoId, coord: Coord ) {
+export function getValidRotations( board: Board, dominoId: number, coord: Coord ) {
 	return ALL_ROTATIONS.filter( rotation => canDominoBePlaced(
 		board,
 		{ dominoId, coord, rotation }
@@ -442,7 +380,7 @@ export function getPotentialCells( board: Board ): Coord[] {
  * @param dominoId - The ID of the domino to consider for potential placements.
  * @returns An coordintes representing potential cells that can be occupied by the domino.
  */
-export function getPotentialCellsForDomino( board: Board, dominoId: DominoId ): Coord[] {
+export function getPotentialCellsForDomino( board: Board, dominoId: number ): Coord[] {
 	const occupied = new Set<string>();
 	const candidates = getPotentialCells( board );
 	const rotations: Rotation[] = [ 0, 90, 180, 270 ];
@@ -582,7 +520,7 @@ export function getRowsAndCols( { minX, maxX, maxY, minY }: Bounds, possibleCell
  * @param dominoId - The ID of the domino to place.
  * @returns Valid placements for the specified domino.
  */
-export function getValidPlacements( board: Board, dominoId: DominoId ) {
+export function getValidPlacements( board: Board, dominoId: number ) {
 	const placements: Placement[] = [];
 	const cells = getCandidateCells( board );
 
@@ -646,7 +584,7 @@ function exploreRegion(
 	start: Coord,
 	terrain: Terrain,
 	visited: Set<string>
-): Region | null {
+) {
 
 	const queue: Coord[] = [ start ];
 	const coords: Coord[] = [];
@@ -689,14 +627,14 @@ function exploreRegion(
 	const tiles = coords.length;
 	const points = tiles * crowns;
 
-	return {
+	return Region.make( {
 		id: `${ terrain }-${ coords[ 0 ].x }-${ coords[ 0 ].y }`,
 		terrain,
 		tiles,
 		placement: coords,
 		crowns,
 		points
-	};
+	} );
 }
 
 /**
@@ -764,12 +702,12 @@ export function createBoard( castle: Castle, boardSize: BoardSize ) {
  * @param deck - The remaining deck of dominoes (mutated in-place).
  * @returns An array of DraftEntry objects for the current round.
  */
-export function drawDraft( deck: Domino[] ): DraftEntry[] {
+export function drawDraft( deck: Domino[] ) {
 	const count = Math.min( DRAFT_SIZE, deck.length );
 	return deck
 		.splice( 0, count )
 		.sort( ( a, b ) => a.id - b.id )
-		.map( domino => ( { domino } ) );
+		.map( domino => DraftEntry.make( { domino } ) );
 }
 
 /**
@@ -779,7 +717,7 @@ export function drawDraft( deck: Domino[] ): DraftEntry[] {
  * @param playerCount - The number of players in the game.
  * @returns The number of selections per player per round.
  */
-export function getSelectionsPerPlayer( playerCount: number ): number {
+export function getSelectionsPerPlayer( playerCount: number ) {
 	return playerCount <= 2 ? 2 : 1;
 }
 
@@ -790,7 +728,7 @@ export function getSelectionsPerPlayer( playerCount: number ): number {
  * @param playerId - The player to count selections for.
  * @returns The number of dominoes selected by this player.
  */
-export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string ): number {
+export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string ) {
 	return draft.filter( e => e.selectedBy === playerId ).length;
 }
 
@@ -802,42 +740,23 @@ export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string )
  * @param draft - The current draft entries with selections.
  * @returns An ordered array of player IDs for the next round's selection order.
  */
-export function getSelectionOrderFromDraft( draft: DraftEntry[] ): PlayerId[] {
+export function getSelectionOrderFromDraft( draft: readonly DraftEntry[] ) {
 	return [ ...draft ]
 		.filter( e => !!e.selectedBy )
 		.sort( ( a, b ) => a.domino.id - b.domino.id )
 		.map( e => e.selectedBy! );
 }
 
-
-/** Registry slug for this game (also the DO name prefix). */
-export const GAME_NAME = "kingdomino";
-
-// --- schema <-> structural bridges -----------------------------------------
-// The helpers above speak the mutable structural shapes; the schema `.Type`s are
-// structurally identical (readonly), so we cast at the boundary.
-
-export const asBoard = ( board: typeof PlayerDataSchema.Type[ "board" ] ): Board =>
-	board as unknown as Board;
-export const asPlacement = ( placement: typeof PlacementSchema.Type ): Placement =>
-	placement as unknown as Placement;
-export const asBoardResult = ( board: Board ): typeof BoardSchema.Type =>
-	board as unknown as typeof BoardSchema.Type;
-export const asScoreResult = ( score: ScoreBreakdown ): typeof ScoreBreakdownSchema.Type =>
-	score as unknown as typeof ScoreBreakdownSchema.Type;
-
 /**
  * The selection order derived from the resolved draft, cast to the swish
  * (branded) `PlayerId`. `getSelectionOrderFromDraft` speaks the engine's
  * `PlayerId`; the two are structurally identical strings.
  */
-export const draftPlayerOrder = (
-	draft: KingdominoState[ "draft" ]
-): ReadonlyArray<PlayerId> =>
-	getSelectionOrderFromDraft( [ ...draft ] as never ) as unknown as ReadonlyArray<PlayerId>;
+export const draftPlayerOrder = ( draft: readonly DraftEntry[] ) =>
+	getSelectionOrderFromDraft( draft );
 
 /** Pure, deterministic draft draw from a given deck (no mutation). */
-export const drawDraftPure = ( deck: ReadonlyArray<typeof DominoSchema.Type> ) => {
+export const drawDraftPure = ( deck: ReadonlyArray<Domino> ) => {
 	const count = Math.min( DRAFT_SIZE, deck.length );
 	const drawn = deck.slice( 0, count )
 		.slice()
@@ -907,7 +826,10 @@ export const apply = (
 				}
 			};
 		} ),
-		Match.tag( "kingdomino/SelectionOrderRecomputed", ( e ) => ( { ...state, selectionOrder: e.order } ) ),
+		Match.tag(
+			"kingdomino/SelectionOrderRecomputed",
+			( e ) => ( { ...state, selectionOrder: e.order } )
+		),
 		Match.tag( "kingdomino/WinnerDecided", ( e ) => ( { ...state, winner: e.winner } ) ),
 		Match.exhaustive
 	);
