@@ -1,6 +1,6 @@
 import { MoonIcon, SunIcon } from "lucide-react";
 import { Fragment, useState } from "react";
-import { Button } from "../primitives/button";
+import { Button } from "../primitives/button.tsx";
 import {
 	Select,
 	SelectContent,
@@ -8,9 +8,9 @@ import {
 	SelectItem,
 	SelectSeparator,
 	SelectTrigger
-} from "../primitives/select";
-import { type Theme, type ThemeMode, themes } from "../utils/cn";
-import { applyTheme, readTheme } from "../utils/theme";
+} from "../primitives/select.tsx";
+import { type Theme, type ThemeMode, themes } from "../utils/cn.ts";
+import { applyTheme, readTheme } from "../utils/theme.ts";
 
 export function ThemeSwitcher() {
 	const [ { theme, mode }, setState ] = useState( () => readTheme() );

@@ -4,20 +4,14 @@
 	"type": "module",
 	"private": true,
 	"exports": {
-		"./components/*": "./src/components/*.tsx",
-		"./primitives/*": "./src/primitives/*.tsx",
-		"./hooks/*": "./src/hooks/*.ts",
-		"./utils/*": "./src/utils/*.ts"
+		"./*": "./src/*.ts"
 	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@base-ui/react": "catalog:",
-		"@s2h/swish": "workspace:*",
 		"@s2h/utils": "workspace:*",
-		"@simplewebauthn/browser": "catalog:",
-		"@tanstack/react-query": "catalog:",
 		"@tanstack/react-router": "catalog:",
 		"clsx": "2.1.1",
 		"class-variance-authority": "catalog:",
@@ -30,7 +24,6 @@
 		"vaul": "catalog:"
 	},
 	"devDependencies": {
-		"@types/react": "catalog:",
-		"typescript": "catalog:"
+		"@types/react": "catalog:"
 	}
 }

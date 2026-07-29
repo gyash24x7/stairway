@@ -10,12 +10,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"effect": "catalog:",
-		"tslog": "catalog:",
 		"ulid": "catalog:",
 		"unique-names-generator": "catalog:"
-	},
-	"devDependencies": {
-		"typescript": "catalog:"
 	}
 }

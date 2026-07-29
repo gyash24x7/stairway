@@ -1,6 +1,6 @@
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
-import { cn } from "@s2h/ui/utils/cn";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
+import { cn } from "../utils/cn.ts";
 
 const { Fallback, Image, Root } = AvatarPrimitive;
 

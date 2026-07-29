@@ -8,7 +8,7 @@
 import * as Schema from "effect/Schema";
 import * as Rpc from "effect/unstable/rpc/Rpc";
 import * as RpcGroup from "effect/unstable/rpc/RpcGroup";
-import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors";
+import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors.ts";
 import {
 	Audience,
 	GameLog,
@@ -17,7 +17,7 @@ import {
 	JoinGameResponse,
 	MovePayload,
 	PlayerInfo
-} from "./schema";
+} from "./schema.ts";
 
 export const MoveRpc = <const Move extends string, In extends Schema.Top>(
 	move: Move,

@@ -1,5 +1,4 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { cn } from "@s2h/ui/utils/cn";
 import { XIcon } from "lucide-react";
 import {
 	type ComponentProps,
@@ -8,6 +7,7 @@ import {
 	forwardRef,
 	type HTMLAttributes
 } from "react";
+import { cn } from "../utils/cn.ts";
 
 const { Close, Description, Backdrop, Portal, Root, Title, Trigger, Popup } = DialogPrimitive;
 

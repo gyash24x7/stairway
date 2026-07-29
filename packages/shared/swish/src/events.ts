@@ -21,7 +21,7 @@ import {
 	PlayerId,
 	PlayerInfo,
 	SeatStatus
-} from "./schema";
+} from "./schema.ts";
 
 // --- Engine events ---------------------------------------------------------
 // Tags are namespaced `swish/ev/*` so they never collide with a game's own
@@ -221,7 +221,8 @@ export const nextSequentialResponder = ( frame: InteractionFrame ): PlayerId | u
 export const seatStatus = ( ctx: GameContext, id: PlayerId ) => ctx.seats?.[ id ] ?? "active";
 
 /** Whether a seat is still in play. */
-export const isActiveSeat = ( ctx: GameContext, id: PlayerId ) => seatStatus( ctx, id ) === "active";
+export const isActiveSeat = ( ctx: GameContext, id: PlayerId ) => seatStatus( ctx, id ) ===
+	"active";
 
 /** The roster, in order, filtered to seats still in play. */
 export const activeSeats = ( ctx: GameContext ): ReadonlyArray<PlayerId> =>

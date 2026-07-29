@@ -11,7 +11,7 @@
 import * as Schema from "effect/Schema";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
-import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors";
+import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors.ts";
 import {
 	Audience,
 	GameIdParams,
@@ -21,7 +21,7 @@ import {
 	JoinGameResponse,
 	MovePayload,
 	PlayerInfo
-} from "./schema";
+} from "./schema.ts";
 
 /**
  * A first-class move endpoint: `POST /:gameId/<name>` whose payload is

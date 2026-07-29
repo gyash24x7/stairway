@@ -29,7 +29,7 @@ import {
 	NotYourTurn,
 	PhaseNotFound,
 	StaleCommand
-} from "./errors";
+} from "./errors.ts";
 import {
 	activeInteraction,
 	CurrentPlayerSet,
@@ -46,7 +46,7 @@ import {
 	PlayerJoined,
 	StatusChanged,
 	TurnAdvanced
-} from "./events";
+} from "./events.ts";
 import {
 	Audience,
 	BaseGameConfig,
@@ -65,9 +65,9 @@ import {
 	PlayerId,
 	PlayerInfo,
 	tableAudience
-} from "./schema";
-import { EventStore, GameArchive, GameStore, Scheduler, Sync } from "./services";
-import type { BaseMoveInputs, GameStructure } from "./structure";
+} from "./schema.ts";
+import { EventStore, GameArchive, GameStore, Scheduler, Sync } from "./services.ts";
+import type { BaseMoveInputs, GameStructure } from "./structure.ts";
 
 const BOT_DELAY_MS = 5000;
 const AUTO_START_DELAY_MS = 5000;

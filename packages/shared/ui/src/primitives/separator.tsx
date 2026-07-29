@@ -1,6 +1,6 @@
 import { Separator as Root } from "@base-ui/react/separator";
-import { cn } from "@s2h/ui/utils/cn";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
+import { cn } from "../utils/cn.ts";
 
 export const Separator = forwardRef<ComponentRef<typeof Root>, ComponentPropsWithoutRef<typeof Root>>(
 	( { className, orientation = "horizontal", ...props }, ref ) => (

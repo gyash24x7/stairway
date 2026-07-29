@@ -1,5 +1,5 @@
-import { cn } from "@s2h/ui/utils/cn";
 import type { CardId, CardSuit } from "@s2h/utils/cards";
+import { cn } from "../utils/cn.ts";
 
 function isRed( suit: CardSuit ) {
 	return suit === "H" || suit === "D";

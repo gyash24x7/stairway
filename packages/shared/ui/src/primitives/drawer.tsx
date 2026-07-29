@@ -1,8 +1,8 @@
 "use client";
 
-import { cn } from "@s2h/ui/utils/cn";
 import type { ComponentProps } from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
+import { cn } from "../utils/cn.ts";
 
 const { Root, Trigger, Portal, Description, Close, Title, Overlay, Content } = DrawerPrimitive;
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@s2h/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "../utils/cn.ts";
 
 type CounterTweenProps = {
 	value: number | string;

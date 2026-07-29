@@ -12,8 +12,8 @@
 
 import type { Rng } from "@s2h/utils/rng";
 import type * as Schema from "effect/Schema";
-import type { InvalidMove } from "./errors";
-import type { InteractionOpened, SeatStatusChanged } from "./events";
+import type { InvalidMove } from "./errors.ts";
+import type { InteractionOpened, SeatStatusChanged } from "./events.ts";
 import type {
 	Audience,
 	BaseGameConfig,
@@ -23,7 +23,7 @@ import type {
 	PlayerId,
 	Players,
 	Standings
-} from "./schema";
+} from "./schema.ts";
 
 /** The read-only snapshot passed into every game function. */
 export type ReadonlyGameData<State, Config> = {

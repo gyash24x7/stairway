@@ -1,10 +1,3 @@
-// @s2h/utils/rng — a tiny seeded, deterministic PRNG.
-//
-// Pure / browser-safe. Used by the swish engine so game randomness (shuffles,
-// deals, dice) is reproducible from a stored seed and replay-exact: the same
-// seed always yields the same stream. NOT cryptographically secure — never use
-// it for secrets or anything an adversary must not predict.
-
 export type Rng = {
 	readonly next: () => number;
 	readonly int: ( max: number ) => number;

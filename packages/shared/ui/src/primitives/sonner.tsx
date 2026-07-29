@@ -1,6 +1,6 @@
-import { cn } from "@s2h/ui/utils/cn";
 import type { ComponentProps } from "react";
 import { Toaster as Sonner } from "sonner";
+import { cn } from "../utils/cn.ts";
 
 export const Toaster = ( { ...props }: ComponentProps<typeof Sonner> ) => {
 	return (

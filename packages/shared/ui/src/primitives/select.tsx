@@ -1,9 +1,9 @@
 "use client";
 
 import { Select as SelectPrimitive } from "@base-ui/react/select";
-import { cn } from "@s2h/ui/utils/cn";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
 import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
+import { cn } from "../utils/cn.ts";
 
 const {
 	Group,
