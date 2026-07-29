@@ -1,5 +1,3 @@
-import { shuffle } from "@s2h/utils/array";
-import * as Match from "effect/Match";
 import type {
 	Card,
 	CardLevel,
@@ -11,10 +9,10 @@ import type {
 	SplendorEvent,
 	SplendorState,
 	Tokens
-} from "./schema";
+} from "@s2h/schema/splendor";
+import { shuffle } from "@s2h/utils/array";
+import * as Match from "effect/Match";
 
-// Locally-mutable variants of the deeply-readonly schema types, used by the
-// pure builders/reducer below (the schema `.Type`s are deeply readonly).
 type MutableCost = Record<GemNoGold, number>;
 type MutableTokens = Record<Gem, number>;
 
@@ -219,7 +217,10 @@ function getPlayerBonuses( player: PlayerData ): MutableCost {
 	return bonuses;
 }
 
-export function checkNobleVisit( player: PlayerData, nobles: ReadonlyArray<Noble> ): string | undefined {
+export function checkNobleVisit(
+	player: PlayerData,
+	nobles: ReadonlyArray<Noble>
+): string | undefined {
 	const bonuses = getPlayerBonuses( player );
 
 	for ( const noble of nobles ) {
@@ -417,11 +418,18 @@ export const apply = ( state: SplendorState, event: SplendorEvent ): SplendorSta
 			return {
 				...state,
 				tokens,
-				cards: { ...state.cards, [ level ]: refillOpen( state.cards[ level ], e.card, e.replacement ) },
+				cards: {
+					...state.cards,
+					[ level ]: refillOpen( state.cards[ level ], e.card, e.replacement )
+				},
 				decks: { ...state.decks, [ level ]: dropFromDeck( state.decks[ level ], e.replacement ) },
 				playerData: {
 					...state.playerData,
-					[ e.playerId ]: { ...player, tokens: playerTokens, reserved: [ ...player.reserved, e.card ] }
+					[ e.playerId ]: {
+						...player,
+						tokens: playerTokens,
+						reserved: [ ...player.reserved, e.card ]
+					}
 				}
 			};
 		} ),

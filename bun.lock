@@ -25,6 +25,19 @@
         "effect": "catalog:",
       },
     },
+    "packages/core/splendor": {
+      "name": "@s2h/splendor",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h/contract": "workspace:",
+        "@s2h/platform": "workspace:",
+        "@s2h/schema": "workspace:",
+        "@s2h/swish": "workspace:",
+        "@s2h/utils": "workspace:",
+        "alchemy": "catalog:",
+        "effect": "catalog:",
+      },
+    },
     "packages/core/tictactoe": {
       "name": "@s2h/tictactoe",
       "version": "1.0.0",
@@ -512,6 +525,8 @@
     "@s2h/platform": ["@s2h/platform@workspace:packages/shared/platform"],
 
     "@s2h/schema": ["@s2h/schema@workspace:packages/shared/schema"],
+
+    "@s2h/splendor": ["@s2h/splendor@workspace:packages/core/splendor"],
 
     "@s2h/swish": ["@s2h/swish@workspace:packages/shared/swish"],
 

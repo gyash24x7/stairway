@@ -6,6 +6,7 @@ import {
 	PlayerId
 } from "@s2h/swish/schema";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 // --- Primitives ---------------------------------------------------------------
 
@@ -90,7 +91,7 @@ export const SplendorState = Schema.Struct( {
 
 export type SplendorView = typeof SplendorView.Type;
 export const SplendorView = Schema.Struct( {
-	...SplendorState.fields,
+	...SplendorState.mapFields( Struct.omit( [ "decks" ] ) ).fields,
 	playerId: Schema.optional( PlayerId )
 } );
 

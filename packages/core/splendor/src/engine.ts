@@ -1,15 +1,3 @@
-// @s2h/splendor/engine — Splendor as an event-sourced swish game.
-//
-// The swish port of the old `AbstractGameEngine` DO. Same rules re-expressed
-// under event sourcing: moves/hooks EMIT domain events and a pure `apply`
-// reducer (in ./utils) folds them onto `state` (the only place state changes).
-// All nondeterminism (deck shuffles, card draws, noble deal) happens in the
-// deciders (`setup`/hooks/`execute`) and the concrete drawn cards are CAPTURED
-// in the emitted event payloads so replay is exact.
-
-import { makeEngine } from "@s2h/swish/engine";
-import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
 import {
 	CardPurchasedEvent,
 	CardReservedEvent,
@@ -22,13 +10,14 @@ import {
 	ReserveCardInput,
 	SplendorConfig,
 	SplendorEvent,
-	SplendorSnapshot,
 	SplendorState,
 	SplendorView,
 	type Tokens,
 	TokensPickedEvent,
 	WinnerDecidedEvent
-} from "./schema";
+} from "@s2h/schema/splendor";
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
 import {
 	apply,
 	DEFAULT_TOKENS,
@@ -58,13 +47,11 @@ export const splendor = makeEngine( {
 		state: SplendorState,
 		config: SplendorConfig,
 		events: SplendorEvent,
+		view: SplendorView,
 		moves: {
 			pickTokens: PickTokensInput,
 			reserveCard: ReserveCardInput,
 			purchaseCard: PurchaseCardInput
-		},
-		views: {
-			view: SplendorView
 		}
 	},
 	apply,
@@ -88,7 +75,7 @@ export const splendor = makeEngine( {
 		return roundComplete && someoneWon;
 	},
 
-	view: ( { state }, audience ): SplendorView => {
+	view: ( { state }, audience ) => {
 		const { decks: _decks, ...rest } = state;
 		return audience._tag === "swish/Table" ? rest : { ...rest, playerId: audience.id };
 	},
@@ -344,13 +331,3 @@ export const splendor = makeEngine( {
 		}
 	}
 } );
-
-// --- RPC surface -----------------------------------------------------------
-
-export class SplendorRpcs extends EngineRpcs( SplendorConfig, SplendorSnapshot, [
-	MoveRpc( "pickTokens", PickTokensInput ),
-	MoveRpc( "reserveCard", ReserveCardInput ),
-	MoveRpc( "purchaseCard", PurchaseCardInput )
-] ) {
-	public static layer = SplendorRpcs.toLayer( splendor );
-}
