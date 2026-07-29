@@ -18,40 +18,40 @@ import { TransferTurn } from "./transfer-turn";
 import { TurnIndicator } from "./turn-indicator";
 
 export function GameView() {
-	const { shared, player } = useFish();
+	const { data } = useFish();
 
-	const isMyTurn = shared.status === "IN_PROGRESS"
-		&& shared.context.currentPlayer === player.playerId;
+	const isMyTurn = data.status === "IN_PROGRESS"
+		&& data.context.currentPlayer === player.playerId;
 
 	const hasCards = player.hand.length > 0;
-	const isTeamConfig = shared.status === "IN_PROGRESS" && shared.context.phase === "TEAM_CONFIG";
-	const isPlaying = shared.status === "IN_PROGRESS" && shared.context.phase === "PLAY";
-	const lastClaim = shared.state.claimHistory[ 0 ];
-	const canTransfer = shared.state.lastMoveType === "claim"
+	const isTeamConfig = data.status === "IN_PROGRESS" && data.context.phase === "TEAM_CONFIG";
+	const isPlaying = data.status === "IN_PROGRESS" && data.context.phase === "PLAY";
+	const lastClaim = data.view.claimHistory[ 0 ];
+	const canTransfer = data.view.lastMoveType === "claim"
 		&& lastClaim?.success
 		&& lastClaim.playerId === player.playerId;
 
 	return (
 		<div className={ `flex flex-col gap-3 items-center max-w-6xl w-full mb-20 lg:mb-0` }>
 			<GameInfo
-				code={ shared.code }
+				code={ data.code }
 				name={ "fish" }
-				completed={ shared.status === "COMPLETED" }
+				completed={ data.status === "COMPLETED" }
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>TYPE</p>
 						<h1 className={ "text-2xl md:text-4xl font-heading" }>
-							{ shared.config.type }
+							{ data.config.type }
 						</h1>
 					</div>
 				}
 			/>
-			{ shared.status === "COMPLETED" && (
+			{ data.status === "COMPLETED" && (
 				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					{ shared.state.winningTeam ? (
+					{ data.view.winningTeam ? (
 						<p className={ "text-lg font-heading" }>
-							{ shared.state.teams[ shared.state.winningTeam ].members.includes( player.playerId )
-								? `${ shared.state.teams[ shared.state.winningTeam ].name } won!`
+							{ data.view.teams[ data.view.winningTeam ].members.includes( player.playerId )
+								? `${ data.view.teams[ data.view.winningTeam ].name } won!`
 								: "You lost!"
 							}
 						</p>
@@ -60,11 +60,11 @@ export function GameView() {
 					) }
 				</div>
 			) }
-			{ shared.status === "COMPLETED" && <BooksTracker/> }
-			{ shared.status === "COMPLETED" && <GameMetrics/> }
+			{ data.status === "COMPLETED" && <BooksTracker/> }
+			{ data.status === "COMPLETED" && <GameMetrics/> }
 			<div className={ "grid grid-cols-1 gap-3 w-full justify-items-center" }>
-				{ ( shared.status === "CREATED" || isTeamConfig ) && (
-					<PlayerLobbyGrid players={ shared.context.players.map( id => shared.players[ id ] ) }/>
+				{ ( data.status === "CREATED" || isTeamConfig ) && (
+					<PlayerLobbyGrid players={ data.context.players.map( id => data.players[ id ] ) }/>
 				) }
 				{ isPlaying && <TeamsView/> }
 				{ isPlaying && (
@@ -74,7 +74,7 @@ export function GameView() {
 					</div>
 				) }
 				<div className={ cn( "flex flex-col justify-end gap-3 w-full" ) }>
-					{ shared.status === "CREATED" && (
+					{ data.status === "CREATED" && (
 						<div
 							className={ cn(
 								"p-2 md:p-3 rounded-md w-full bg-background",
@@ -108,7 +108,7 @@ export function GameView() {
 					"rounded-t-xl flex gap-3 p-3 items-center justify-center"
 				) }
 			>
-				{ shared.status === "CREATED" && <AddBots/> }
+				{ data.status === "CREATED" && <AddBots/> }
 				{ isTeamConfig && <CreateTeams/> }
 				{ isPlaying && isMyTurn && hasCards && <AskCard/> }
 				{ isPlaying && isMyTurn && <ClaimBook/> }

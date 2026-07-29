@@ -1,4 +1,3 @@
-import { PLAYER_COUNT } from "@s2h/callbreak/utils";
 import { RCardSuit } from "@s2h/ui/components/card";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
@@ -15,11 +14,12 @@ export function CallbreakCreateGame() {
 			return "";
 		}
 		const { id } = await createCallbreakGameFn( {
-			playerCount: PLAYER_COUNT,
+			playerCount: 4,
 			autoStart: false,
 			dealCount,
 			trumpSuit
 		} );
+		
 		return id;
 	};
 

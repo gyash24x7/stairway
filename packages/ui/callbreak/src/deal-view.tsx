@@ -1,6 +1,5 @@
 "use client";
 
-import { PLAYER_COUNT } from "@s2h/callbreak/utils";
 import { RCard } from "@s2h/ui/components/card";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { cn } from "@s2h/ui/utils/cn";
@@ -11,10 +10,10 @@ import { HandView } from "./hand-view";
 import { Scores } from "./scores";
 
 export function DealView() {
-	const { shared } = useCallbreak();
-	const currentTurn = shared.context.currentPlayer;
-	const activeTrick = shared.state.activeDeal?.tricks[ 0 ];
-	const allPlayersPlayed = Object.keys( activeTrick?.cards ?? {} ).length === PLAYER_COUNT;
+	const { data } = useCallbreak();
+	const currentTurn = data.context.currentPlayer;
+	const activeTrick = data.view.activeDeal?.tricks[ 0 ];
+	const allPlayersPlayed = Object.keys( activeTrick?.cards ?? {} ).length === 4;
 
 	return (
 		<Fragment>
@@ -22,7 +21,7 @@ export function DealView() {
 				<Scores/>
 				<div className={ "grid gap-3 grid-cols-2" }>
 					{ [ 0, 1, 3, 2 ].map( ( idx ) => {
-						const playerId = shared.context.players[ idx ];
+						const playerId = data.context.players[ idx ];
 						const cardId = activeTrick?.cards[ playerId ];
 						const isRightSide = idx === 1 || idx === 2;
 						const isWinner = activeTrick?.winner === playerId;
@@ -53,7 +52,7 @@ export function DealView() {
 									: { type: "spring", stiffness: 400, damping: 28 }
 								}
 							>
-								<RPlayerInfo player={ shared.players[ playerId ] } key={ playerId }/>
+								<RPlayerInfo player={ data.players[ playerId ] } key={ playerId }/>
 								<AnimatePresence mode={ "wait" }>
 									{ cardId ? (
 										<motion.div
@@ -92,7 +91,7 @@ export function DealView() {
 					} ) }
 				</div>
 			</div>
-			{ shared.status !== "COMPLETED" && <HandView/> }
+			{ data.status !== "COMPLETED" && <HandView/> }
 		</Fragment>
 	);
 }

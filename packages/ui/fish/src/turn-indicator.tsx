@@ -5,14 +5,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useFish } from "./context";
 
 export function TurnIndicator() {
-	const { shared, player } = useFish();
+	const { data } = useFish();
 
-	const isMyTurn = shared.status === "IN_PROGRESS"
-		&& shared.context.currentPlayer === player.playerId;
-	const currentPlayerName = shared.players[ shared.context.currentPlayer ].name.toUpperCase();
+	const isMyTurn = data.status === "IN_PROGRESS"
+		&& data.context.currentPlayer === player.playerId;
+	const currentPlayerName = data.players[ data.context.currentPlayer ].name.toUpperCase();
 
-	const lastClaim = shared.state.claimHistory[ 0 ];
-	const canTransfer = shared.state.lastMoveType === "claim"
+	const lastClaim = data.view.claimHistory[ 0 ];
+	const canTransfer = data.view.lastMoveType === "claim"
 		&& lastClaim?.success
 		&& lastClaim.playerId === player.playerId;
 

@@ -1,20 +1,14 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { CardIdSchema } from "@s2h/callbreak/schema";
+import { toPlayerInfo } from "@s2h/contract/client";
+import type { CallbreakSnapshot, CardIdSchema } from "@s2h/schema/callbreak";
+import type { CardId } from "@s2h/utils/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
-import {
-	addBotsFn,
-	type CallbreakGame,
-	declareWinsFn,
-	playCardFn,
-	toPlayerInfo
-} from "./client";
+import { addBotsFn, declareWinsFn, playCardFn } from "./client";
 
-type CardId = CallbreakGame[ "player" ][ "hand" ][ number ];
 
 type CallbreakContextValue = {
-	shared: CallbreakGame[ "shared" ];
-	player: CallbreakGame[ "player" ];
+	data: CallbreakSnapshot;
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
@@ -41,10 +35,9 @@ export function useCallbreak() {
 	return ctx;
 }
 
-type CallbreakProviderProps = { data: CallbreakGame; gameId: string; children: ReactNode; };
+type CallbreakProviderProps = { data: CallbreakSnapshot; gameId: string; children: ReactNode; };
 
 export function CallbreakProvider( { data, gameId, children }: CallbreakProviderProps ) {
-	const { shared, player } = data;
 	const queryClient = useQueryClient();
 	const { authInfo } = useAuth();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
@@ -70,8 +63,8 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 		onSuccess: () => invalidate()
 	} );
 
-	const isMyTurn = shared.status === "IN_PROGRESS"
-		&& shared.context.currentPlayer === player.playerId;
+	const isMyTurn = data.status === "IN_PROGRESS"
+		&& data.context.currentPlayer === data.view.playerId;
 
 	const selectCard = useCallback(
 		( cardId: CardId ) => {
@@ -86,8 +79,7 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 
 	return (
 		<CallbreakContext value={ {
-			shared,
-			player,
+			data,
 			isMyTurn,
 			selectCard,
 			selectedCard,

@@ -1,8 +1,9 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
+import { toPlayerInfo } from "@s2h/contract/client";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
-import { joinFishGameFn, toPlayerInfo } from "./client";
+import { joinFishGameFn } from "./client";
 import { FishCreateGame as CreateGame } from "./create-game";
 
 export function FishHomePage( props: { isLoggedIn?: boolean } ) {

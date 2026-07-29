@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { Book } from "@s2h/fish/schema";
 import {
 	getBookDisplayString,
 	getBooksInHand,
@@ -9,6 +8,8 @@ import {
 	getMissingCards,
 	getTeammates
 } from "@s2h/fish/utils";
+import type { Book } from "@s2h/schema/fish";
+import type { PlayerId } from "@s2h/swish/schema";
 import { RCard } from "@s2h/ui/components/card";
 import { RPlayerInfoStrip } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
@@ -20,7 +21,6 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@s2h/ui/primitives/drawer";
-import type { PlayerId } from "@s2h/swish/schema";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { type CardId } from "@s2h/utils/cards";
@@ -32,24 +32,24 @@ import { claimBookFn, toPlayerInfo } from "./client";
 import { useFish } from "./context";
 
 export function ClaimBook() {
-	const { shared, player } = useFish();
+	const { data } = useFish();
 	const { authInfo } = useAuth();
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );
 	const [ open, setOpen ] = useState( false );
 
-	const teamMates = getTeammates( shared.state.teams, player.playerId );
+	const teamMates = getTeammates( data.state.teams, player.playerId );
 	const selectedBookDisplayString = selectedBook
-		? getBookDisplayString( selectedBook, shared.config.type )
+		? getBookDisplayString( selectedBook, data.config.type )
 		: "";
 
 	const missingCards = selectedBook
-		? getMissingCards( player.hand, selectedBook, shared.config.type )
+		? getMissingCards( player.hand, selectedBook, data.config.type )
 		: [];
 
 	const allAssigned = selectedBook
-		&& claim.size === getCardsOfBook( selectedBook, shared.config.type ).length;
+		&& claim.size === getCardsOfBook( selectedBook, data.config.type ).length;
 
 	const openDrawer = () => {
 		setOpen( true );
@@ -69,7 +69,7 @@ export function ClaimBook() {
 		} else {
 			setSelectedBook( book );
 			const newClaim = new Map<CardId, PlayerId>();
-			getCardsOfBook( book, shared.config.type, player.hand ).forEach( cardId => {
+			getCardsOfBook( book, data.config.type, player.hand ).forEach( cardId => {
 				newClaim.set( cardId, player.playerId );
 			} );
 			setClaim( newClaim );
@@ -93,9 +93,9 @@ export function ClaimBook() {
 
 	const claimBook = useMutation( {
 		mutationFn: ( claimInput: Record<string, PlayerId> ) =>
-			claimBookFn( shared.id, toPlayerInfo( authInfo! ), { claim: claimInput } ),
+			claimBookFn( data.id, toPlayerInfo( authInfo! ), { claim: claimInput } ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "fish", "getState", shared.id ]
+			queryKey: [ "fish", "getState", data.id ]
 		} )
 	} );
 
@@ -132,13 +132,13 @@ export function ClaimBook() {
 				<div className={ "px-4 overflow-y-auto" }>
 					{ currentStep === 1 && (
 						<RadioSelect
-							options={ Array.from( getBooksInHand( player.hand, shared.config.type ) ) }
+							options={ Array.from( getBooksInHand( player.hand, data.config.type ) ) }
 							value={ selectedBook }
 							onChange={ handleBookSelect }
 							className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }
 							renderOption={ ( book ) => (
 								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
-									{ getBookDisplayString( book, shared.config.type ) }
+									{ getBookDisplayString( book, data.config.type ) }
 								</h1>
 							) }
 						/>
@@ -154,7 +154,7 @@ export function ClaimBook() {
 										value={ claim.get( cardId ) }
 										onChange={ handleAssignCard( cardId ) }
 										className={ "flex flex-col gap-2 flex-wrap child-b-0" }
-										renderOption={ pid => <RPlayerInfoStrip player={ shared.players[ pid ] }/> }
+										renderOption={ pid => <RPlayerInfoStrip player={ data.players[ pid ] }/> }
 									/>
 								</div>
 							) ) }
@@ -174,7 +174,7 @@ export function ClaimBook() {
 									key={ cardId }
 									className={ "flex flex-col items-center rounded-md gap-1 md:gap-2" }
 								>
-									<RPlayerInfoStrip player={ shared.players[ playerId ] } noAvatar/>
+									<RPlayerInfoStrip player={ data.players[ playerId ] } noAvatar/>
 									<RCard cardId={ cardId } small/>
 								</div>
 							) ) }

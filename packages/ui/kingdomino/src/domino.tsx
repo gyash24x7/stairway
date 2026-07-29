@@ -1,4 +1,4 @@
-import type { Domino, DominoId, Terrain } from "@s2h/kingdomino/utils";
+import type { Domino, Terrain } from "@s2h/schema/kingdomino";
 import { cn } from "@s2h/ui/utils/cn";
 import { motion } from "framer-motion";
 import { CrownIndicator } from "./board";
@@ -17,7 +17,7 @@ type RDominoProps = {
 	domino: Domino;
 	isSelected?: boolean;
 	enabled?: boolean;
-	onClick?: ( dominoId: DominoId ) => void;
+	onClick?: ( dominoId: number ) => void;
 }
 
 function RSmallTerrain( props: { terrain: Terrain; crowns: number } ) {

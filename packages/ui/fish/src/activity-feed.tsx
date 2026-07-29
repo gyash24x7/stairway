@@ -21,27 +21,27 @@ type FeedEntry = {
 };
 
 export function ActivityFeed() {
-	const { shared } = useFish();
+	const { data } = useFish();
 	const [ showDialog, setShowDialog ] = useState( false );
 
 	const entries: FeedEntry[] = [
-		...shared.state.askHistory.map( ask => ( {
+		...data.view.askHistory.map( ask => ( {
 			type: "ask" as const,
-			description: getAskDescription( ask, shared.players ),
+			description: getAskDescription( ask, data.players ),
 			success: ask.success,
 			timestamp: ask.timestamp
 		} ) ),
 
-		...shared.state.claimHistory.map( claim => ( {
+		...data.view.claimHistory.map( claim => ( {
 			type: "claim" as const,
-			description: getClaimDescription( claim, shared.players, shared.config.type ),
+			description: getClaimDescription( claim, data.players, data.config.type ),
 			success: claim.success,
 			timestamp: claim.timestamp
 		} ) ),
 
-		...shared.state.transferHistory.map( transfer => ( {
+		...data.view.transferHistory.map( transfer => ( {
 			type: "transfer" as const,
-			description: getTransferDescription( transfer, shared.players ),
+			description: getTransferDescription( transfer, data.players ),
 			timestamp: transfer.timestamp
 		} ) )
 

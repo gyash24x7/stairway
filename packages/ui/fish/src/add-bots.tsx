@@ -7,13 +7,13 @@ import { addBotsFn } from "./client";
 import { useFish } from "./context";
 
 export function AddBots() {
-	const { shared } = useFish();
+	const { data } = useFish();
 	const queryClient = useQueryClient();
 
 	const addBots = useMutation( {
-		mutationFn: () => addBotsFn( shared.id ),
+		mutationFn: () => addBotsFn( data.id ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "fish", "getState", shared.id ]
+			queryKey: [ "fish", "getState", data.id ]
 		} )
 	} );
 

@@ -1,7 +1,8 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
+import { toPlayerInfo } from "@s2h/contract/client";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
-import { getKingdominoStateFn, toPlayerInfo } from "./client";
+import { getKingdominoStateFn } from "./client";
 import { KingdominoProvider } from "./context";
 import { GameView } from "./game-view";
 
@@ -19,7 +20,7 @@ export function KingdominoGamePage( { gameId }: { gameId: string } ) {
 	}
 
 	return (
-		<KingdominoProvider data={ data } >
+		<KingdominoProvider data={ data }>
 			<GameView/>
 		</KingdominoProvider>
 	);

@@ -4,10 +4,10 @@ import { cn } from "@s2h/ui/utils/cn";
 import { useFish } from "./context";
 
 function PlayerWithCardCount( props: { playerId: PlayerId } ) {
-	const { shared } = useFish();
-	const player = shared.players[ props.playerId ];
-	const cardCount = shared.state.cardCounts[ player.id ];
-	const isActive = player.id === shared.context.currentPlayer;
+	const { data } = useFish();
+	const player = data.players[ props.playerId ];
+	const cardCount = data.view.cardCounts[ player.id ];
+	const isActive = player.id === data.context.currentPlayer;
 
 	return (
 		<div
@@ -32,10 +32,10 @@ function PlayerWithCardCount( props: { playerId: PlayerId } ) {
 }
 
 export function TeamsView() {
-	const { shared } = useFish();
+	const { data } = useFish();
 	return (
 		<div className={ "grid grid-cols-1 gap-2 w-full" }>
-			{ Object.values( shared.state.teams ).map( team => (
+			{ Object.values( data.view.teams ).map( team => (
 				<div
 					key={ team.id }
 					className={ "bg-background rounded-md p-2 md:p-3 flex flex-col gap-3" }

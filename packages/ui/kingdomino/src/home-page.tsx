@@ -1,8 +1,9 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
+import { toPlayerInfo } from "@s2h/contract/client";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
-import { joinKingdominoGameFn, toPlayerInfo } from "./client";
+import { joinKingdominoGameFn } from "./client";
 import { KingdominoCreateGame as CreateGame } from "./create-game";
 
 export function KingdominoHomePage( props: { isLoggedIn?: boolean } ) {

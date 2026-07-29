@@ -1,33 +1,18 @@
-// Data-access layer for the Fish (Literature) UI.
-//
-// Thin, typed helpers over the Effect v4 `HttpApiClient` returned by
-// `getClient()` (`@s2h/api/client`). Every helper builds the endpoint's
-// `{ params, payload }` request, bridges the returned `Effect` to a Promise
-// with `run(...)`, and hands the decoded success value back to TanStack Query.
-// Components never touch `getClient` or `Effect` directly.
-//
-// Call convention (mirrors the reference `@s2h-ui/wordle` client):
-//   - params + payload endpoints: client.fish.<ep>( { params, payload } )
-//   - payload-only endpoints:     client.fish.<ep>( { payload } )
-//   - each call returns Effect<Success, …>; `run(...)` yields Success.
-
-import { getClient, run } from "@s2h/api/client";
+import { getClient, run } from "@s2h/contract/client";
 import type {
 	AskCardInput,
 	ClaimBookInput,
 	CreateTeamsInput,
 	FishConfig,
 	TransferTurnInput
-} from "@s2h/fish/schema";
+} from "@s2h/schema/fish";
 import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
 	playerAudience,
-	PlayerId,
 	PlayerInfo
 } from "@s2h/swish/schema";
-import type { AuthInfo } from "@s2h/utils/auth";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -46,9 +31,6 @@ export const joinFishGameFn = ( code: string, playerInfo: PlayerInfo ) =>
 	run( client.join( {
 		payload: JoinGameInput.make( { code: GameCode.make( code ), playerInfo } )
 	} ) );
-
-export const startFishFn = ( gameId: string ) =>
-	run( client.start( { params: gameIdParams( gameId ) } ) );
 
 export const addBotsFn = ( gameId: string ) =>
 	run( client.addBots( { params: gameIdParams( gameId ) } ) );
@@ -75,12 +57,6 @@ export const transferTurnFn = (
 ) =>
 	run( client.transferTurn( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
 
-export const undoFn = ( gameId: string, playerInfo: PlayerInfo ) =>
-	run( client.undo( { params: gameIdParams( gameId ), payload: playerInfo } ) );
-
-export const redoFn = ( gameId: string, playerInfo: PlayerInfo ) =>
-	run( client.redo( { params: gameIdParams( gameId ), payload: playerInfo } ) );
-
 // --- Queries ---------------------------------------------------------------
 
 export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
@@ -88,14 +64,3 @@ export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: Abo
 		params: gameIdParams( gameId ),
 		payload: playerAudience( playerInfo.id )
 	} ), signal );
-
-// --- Adapters --------------------------------------------------------------
-
-/** Turn the logged-in `AuthInfo` into the `PlayerInfo` payload the API expects. */
-export const toPlayerInfo = ( authInfo: AuthInfo ): PlayerInfo =>
-	PlayerInfo.make( {
-		id: PlayerId.make( authInfo.id ),
-		name: authInfo.name,
-		avatar: authInfo.avatar,
-		isBot: false
-	} );

@@ -1,7 +1,7 @@
 "use client";
 
-import type { BookType } from "@s2h/fish/schema";
 import { buildConfig } from "@s2h/fish/utils";
+import type { BookType } from "@s2h/schema/fish";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { useState } from "react";

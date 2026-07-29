@@ -1,5 +1,4 @@
-import type { DraftEntry } from "@s2h/kingdomino/schema";
-import type { DominoId } from "@s2h/kingdomino/utils";
+import type { DraftEntry } from "@s2h/schema/kingdomino";
 import type { Players } from "@s2h/swish/schema";
 import { cn } from "@s2h/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
@@ -9,7 +8,7 @@ export type RDraftProps = {
 	draft: readonly DraftEntry[];
 	active?: boolean;
 	players: Players;
-	onSelect?: ( dominoId: DominoId ) => void;
+	onSelect?: ( dominoId: number ) => void;
 }
 
 export function RDraft( props: RDraftProps ) {

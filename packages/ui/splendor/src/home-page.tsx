@@ -1,9 +1,10 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
+import { toPlayerInfo } from "@s2h/contract/client";
 import type { GameCode } from "@s2h/swish/schema";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
-import { joinSplendorGameFn, toPlayerInfo } from "./client";
+import { joinSplendorGameFn } from "./client";
 import { SplendorCreateGame as CreateGame } from "./create-game";
 
 export function SplendorHomePage( props: { isLoggedIn?: boolean } ) {

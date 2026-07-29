@@ -1,7 +1,8 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
+import { toPlayerInfo } from "@s2h/contract/client";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
-import { getStateFn, toPlayerInfo } from "./client";
+import { getStateFn } from "./client";
 import { FishProvider } from "./context";
 import { GameView } from "./game-view";
 

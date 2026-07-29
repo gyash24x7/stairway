@@ -8,7 +8,7 @@ import { GameCardBack } from "./game-card";
 import { Noble, NobleBack } from "./noble";
 
 export function Board() {
-	const { shared } = useSplendor();
+	const { data } = useSplendor();
 	return (
 		<div className={ "flex flex-col gap-3 w-full" }>
 			<div
@@ -20,7 +20,7 @@ export function Board() {
 					<NobleBack/>
 				</div>
 				<AnimatePresence mode={ "popLayout" } initial={ false }>
-					{ shared.state.nobles.map( noble => (
+					{ data.view.nobles.map( noble => (
 						<motion.div
 							key={ noble.id }
 							layout
@@ -41,7 +41,7 @@ export function Board() {
 						</motion.div>
 					) ) }
 				</AnimatePresence>
-				{ new Array( shared.config.playerCount + 1 - shared.state.nobles.length ).fill( 0 )
+				{ new Array( data.config.playerCount + 1 - data.view.nobles.length ).fill( 0 )
 					.map( ( _, i ) => (
 						<div
 							key={ `empty-noble-${ i }` }
@@ -62,7 +62,7 @@ export function Board() {
 							<GameCardBack level={ level }/>
 						</div>
 						<AnimatePresence mode={ "popLayout" } initial={ false }>
-							{ shared.state.cards[ level ].map( card => (
+							{ data.view.cards[ level ].map( card => (
 								<motion.div
 									key={ card.id }
 									layout
@@ -83,7 +83,7 @@ export function Board() {
 								</motion.div>
 							) ) }
 						</AnimatePresence>
-						{ Array.from( { length: 4 - shared.state.cards[ level ].length } )
+						{ Array.from( { length: 4 - data.view.cards[ level ].length } )
 							.map( ( _, i ) => (
 								<div
 									key={ `empty-${ level }-${ i }` }

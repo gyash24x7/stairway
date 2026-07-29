@@ -1,5 +1,6 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { Card, Gem, Tokens } from "@s2h/splendor/schema";
+import { toPlayerInfo } from "@s2h/contract/client";
+import type { Card, Gem, Tokens } from "@s2h/schema/splendor";
 import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
@@ -13,7 +14,7 @@ import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
-import { reserveCardFn, toPlayerInfo } from "./client";
+import { reserveCardFn } from "./client";
 import { TokenPicker } from "./token-picker";
 
 type ReserveCardProps = {

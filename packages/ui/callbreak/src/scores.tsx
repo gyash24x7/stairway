@@ -13,8 +13,8 @@ import {
 import { useCallbreak } from "./context";
 
 export function Scores() {
-	const { shared } = useCallbreak();
-	const deal = shared.state.activeDeal;
+	const { data } = useCallbreak();
+	const deal = data.view.activeDeal;
 	return (
 		<div className={ "flex flex-col rounded-md bg-background overflow-hidden" }>
 			<Table>
@@ -22,13 +22,13 @@ export function Scores() {
 					<TableRow className={ "text-md" }>
 						<TableHead>PLAYER</TableHead>
 						<TableHead className={ "text-center" }>SCORE</TableHead>
-						{ shared.status !== "COMPLETED" && (
+						{ data.status !== "COMPLETED" && (
 							<TableHead className={ "text-center" }>ACTIVE&nbsp;DEAL</TableHead>
 						) }
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{ shared.context.players.map( pid => shared.players[ pid ] ).map( ( player ) => (
+					{ data.context.players.map( pid => data.players[ pid ] ).map( ( player ) => (
 						<TableRow key={ player.id }>
 							<TableCell className={ "flex gap-2 items-center" }>
 								<Avatar className={ "rounded-full w-7 h-7 hidden sm:block" }>
@@ -41,9 +41,9 @@ export function Scores() {
 								<h2 className={ "font-semibold" }>{ player.name.toUpperCase() }</h2>
 							</TableCell>
 							<TableCell className={ "text-center" }>
-								<CounterTween value={ shared.state.scores[ player.id ] ?? 0 }/>
+								<CounterTween value={ data.view.scores[ player.id ] ?? 0 }/>
 							</TableCell>
-							{ shared.status !== "COMPLETED" && (
+							{ data.status !== "COMPLETED" && (
 								<TableCell className={ "text-center" }>
 									<CounterTween value={ deal?.wins[ player.id ] ?? 0 }/>
 									/{ deal?.declarations[ player.id ] ?? 0 }

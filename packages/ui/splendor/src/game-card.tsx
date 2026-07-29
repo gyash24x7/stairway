@@ -1,4 +1,4 @@
-import type { Card, CardLevel, Cost } from "@s2h/splendor/schema";
+import type { Card, CardLevel, Cost } from "@s2h/schema/splendor";
 import { cn } from "@s2h/ui/utils/cn";
 import { gemColors } from "./utils";
 

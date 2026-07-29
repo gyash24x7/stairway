@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { Board } from "@s2h/kingdomino/schema";
 import type {
 	Board as MutableBoard,
 	Coord,
@@ -14,6 +13,7 @@ import {
 	getValidPlacements,
 	getValidRotations
 } from "@s2h/kingdomino/utils";
+import type { Board } from "@s2h/schema/kingdomino";
 import { Button } from "@s2h/ui/primitives/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";

@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { Book } from "@s2h/fish/schema";
 import {
 	getBookDisplayString,
 	getBooksInHand,
@@ -9,6 +8,8 @@ import {
 	getMissingCards,
 	getOpponents
 } from "@s2h/fish/utils";
+import type { Book } from "@s2h/schema/fish";
+import type { PlayerId } from "@s2h/swish/schema";
 import { RCard } from "@s2h/ui/components/card";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
@@ -20,7 +21,6 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@s2h/ui/primitives/drawer";
-import type { PlayerId } from "@s2h/swish/schema";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { type CardId, getCardDisplayString } from "@s2h/utils/cards";
@@ -31,9 +31,9 @@ import { askCardFn, toPlayerInfo } from "./client";
 import { useFish } from "./context";
 
 export function AskCard() {
-	const { shared, player } = useFish();
+	const { data } = useFish();
 	const { authInfo } = useAuth();
-	const playerInfo = shared.players[ player.playerId ];
+	const playerInfo = data.players[ data.view.playerId ];
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
@@ -41,18 +41,18 @@ export function AskCard() {
 	const [ open, setOpen ] = useState( false );
 	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
 
-	const askableBooks = Array.from( getBooksInHand( player.hand, shared.config.type ) )
+	const askableBooks = Array.from( getBooksInHand( player.hand, data.config.type ) )
 		.filter( book => {
-			const cards = getCardsOfBook( book, shared.config.type, player.hand );
+			const cards = getCardsOfBook( book, data.config.type, player.hand );
 			return cards.length !== 6;
 		} );
 
-	const opponentsWithCards = getOpponents( shared.state.teams, playerInfo.id )
-		.map( memberId => ( { ...shared.players[ memberId ], ...shared.state.playerData[ memberId ] } ) )
-		.filter( member => !!shared.state.cardCounts[ member.id ] );
+	const opponentsWithCards = getOpponents( data.state.teams, playerInfo.id )
+		.map( memberId => ( { ...data.players[ memberId ], ...data.state.playerData[ memberId ] } ) )
+		.filter( member => !!data.state.cardCounts[ member.id ] );
 
 	const confirmAskDialogTitle = selectedPlayer && selectedCard
-		? `Ask ${ shared.players[ selectedPlayer ].name } for ${ getCardDisplayString( selectedCard ) }`
+		? `Ask ${ data.players[ selectedPlayer ].name } for ${ getCardDisplayString( selectedCard ) }`
 		: "";
 
 	const openDialog = () => setOpen( true );
@@ -90,9 +90,9 @@ export function AskCard() {
 
 	const askCard = useMutation( {
 		mutationFn: ( input: { from: PlayerId; cardId: CardId } ) =>
-			askCardFn( shared.id, toPlayerInfo( authInfo! ), input ),
+			askCardFn( data.id, toPlayerInfo( authInfo! ), input ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "fish", "getState", shared.id ]
+			queryKey: [ "fish", "getState", data.id ]
 		} )
 	} );
 
@@ -125,14 +125,14 @@ export function AskCard() {
 							className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }
 							renderOption={ ( book ) => (
 								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
-									{ getBookDisplayString( book, shared.config.type ) }
+									{ getBookDisplayString( book, data.config.type ) }
 								</h1>
 							) }
 						/>
 					) }
 					{ currentStep === 2 && (
 						<RadioSelect
-							options={ getMissingCards( player.hand, selectedBook!, shared.config.type ) }
+							options={ getMissingCards( player.hand, selectedBook!, data.config.type ) }
 							value={ selectedCard }
 							onChange={ handleCardSelect }
 							className={ "justify-center" }
@@ -145,7 +145,7 @@ export function AskCard() {
 							value={ selectedPlayer }
 							onChange={ handlePlayerSelect }
 							className={ "grid gap-3 grid-cols-3" }
-							renderOption={ pid => <RPlayerInfo player={ shared.players[ pid ] }/> }
+							renderOption={ pid => <RPlayerInfo player={ data.players[ pid ] }/> }
 						/>
 					) }
 				</div>

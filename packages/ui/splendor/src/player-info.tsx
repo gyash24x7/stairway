@@ -1,6 +1,6 @@
 "use client";
 
-import type { Gem } from "@s2h/splendor/schema";
+import type { Gem } from "@s2h/schema/splendor";
 import { GEMS_WITH_GOLD } from "@s2h/splendor/utils";
 import type { PlayerId } from "@s2h/swish/schema";
 import { CounterTween } from "@s2h/ui/components/counter-tween";
@@ -24,8 +24,8 @@ import { PurchaseCard } from "./purchase-card";
 import { gemColors, gemLightColors } from "./utils";
 
 function PlayerTokenCount( props: { gem: Gem; playerId: PlayerId } ) {
-	const { shared } = useSplendor();
-	const count = shared.state.playerData[ props.playerId ].tokens[ props.gem ];
+	const { data } = useSplendor();
+	const count = data.view.playerData[ props.playerId ].tokens[ props.gem ];
 
 	return (
 		<motion.div
@@ -45,9 +45,9 @@ function PlayerTokenCount( props: { gem: Gem; playerId: PlayerId } ) {
 }
 
 function ReservedCards( props: { playerId: PlayerId } ) {
-	const { shared, player } = useSplendor();
-	const playerData = shared.state.playerData[ props.playerId ];
-	const playerName = shared.players[ props.playerId ].name.toUpperCase();
+	const { data } = useSplendor();
+	const playerData = data.view.playerData[ props.playerId ];
+	const playerName = data.players[ props.playerId ].name.toUpperCase();
 	const reserved = playerData?.reserved ?? [];
 
 	const [ open, setOpen ] = useState( false );
@@ -56,13 +56,13 @@ function ReservedCards( props: { playerId: PlayerId } ) {
 	const selectedCard = reserved.find( c => c.id === selectedCardId );
 
 	const isOwnCards = props.playerId === player.playerId;
-	const isMyTurn = shared.status === "IN_PROGRESS"
-		&& shared.context.currentPlayer === player.playerId;
+	const isMyTurn = data.status === "IN_PROGRESS"
+		&& data.context.currentPlayer === player.playerId;
 
 	const canSelect = isOwnCards && isMyTurn;
 
-	const discounts = shared.state.playerData[ player.playerId ].cards;
-	const tokens = shared.state.playerData[ player.playerId ].tokens;
+	const discounts = data.view.playerData[ player.playerId ].cards;
+	const tokens = data.view.playerData[ player.playerId ].tokens;
 
 	const handleOpenChange = ( isOpen: boolean ) => {
 		setOpen( isOpen );
@@ -112,7 +112,7 @@ function ReservedCards( props: { playerId: PlayerId } ) {
 				<DrawerFooter>
 					{ canSelect && selectedCard && (
 						<PurchaseCard
-							gameId={ shared.id }
+							gameId={ data.id }
 							card={ selectedCard }
 							tokens={ tokens }
 							discounts={ discounts }
@@ -125,8 +125,8 @@ function ReservedCards( props: { playerId: PlayerId } ) {
 }
 
 function PurchasedCards( props: { gem: Exclude<Gem, "gold">; playerId: PlayerId; } ) {
-	const { shared } = useSplendor();
-	const cards = shared.state.playerData[ props.playerId ].cards;
+	const { data } = useSplendor();
+	const cards = data.view.playerData[ props.playerId ].cards;
 	const count = cards.filter( c => c.bonus === props.gem ).length;
 	return (
 		<motion.div
@@ -161,11 +161,11 @@ function PlayerGemInfo( props: { playerId: PlayerId } ) {
 }
 
 export function PlayerInfo( { playerId, bg }: { playerId: PlayerId; bg?: boolean; } ) {
-	const { shared } = useSplendor();
-	const baseInfo = shared.players[ playerId ];
-	const gameInfo = shared.state.playerData[ playerId ];
-	const isCurrentTurn = shared.status === "IN_PROGRESS"
-		&& shared.context.currentPlayer === playerId;
+	const { data } = useSplendor();
+	const baseInfo = data.players[ playerId ];
+	const gameInfo = data.view.playerData[ playerId ];
+	const isCurrentTurn = data.status === "IN_PROGRESS"
+		&& data.context.currentPlayer === playerId;
 
 	return (
 		<motion.div

@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { Gem, Tokens } from "@s2h/splendor/schema";
+import { toPlayerInfo } from "@s2h/contract/client";
+import type { Gem, Tokens } from "@s2h/schema/splendor";
 import { GEMS_WITH_GOLD } from "@s2h/splendor/utils";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -16,27 +17,27 @@ import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
-import { pickTokensFn, toPlayerInfo } from "./client";
+import { pickTokensFn } from "./client";
 import { useSplendor } from "./context";
 import { TokenPicker } from "./token-picker";
 
 export function PickTokens() {
-	const { shared, player, gameId } = useSplendor();
+	const { data } = useSplendor();
 	const { authInfo } = useAuth();
 	const queryClient = useQueryClient();
 
 	const pickTokens = useMutation( {
 		mutationFn: ( input: { tokens: Partial<Tokens>; returned?: Partial<Tokens> } ) =>
-			pickTokensFn( gameId, toPlayerInfo( authInfo! ), input ),
+			pickTokensFn( data.id, toPlayerInfo( authInfo! ), input ),
 		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "splendor", "getState", gameId ]
+			queryKey: [ "splendor", "getState", data.id ]
 		} )
 	} );
 
-	const availableTokens = shared.state.tokens;
-	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
-	const isMyTurn = shared.status === "IN_PROGRESS"
-		&& shared.context.currentPlayer === player.playerId;
+	const availableTokens = data.view.tokens;
+	const playerTokens = data.view.playerData[ player.playerId ].tokens;
+	const isMyTurn = data.status === "IN_PROGRESS"
+		&& data.context.currentPlayer === player.playerId;
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );

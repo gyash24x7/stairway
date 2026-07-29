@@ -21,42 +21,42 @@ import { PickTokens } from "./pick-tokens";
 import { PlayerInfo } from "./player-info";
 
 export function GameView() {
-	const { shared, player } = useSplendor();
+	const { data } = useSplendor();
 	const [ playersOpen, setPlayersOpen ] = useState( false );
 
-	const isLastRound = shared.status === "IN_PROGRESS" && Object.values( shared.state.playerData )
-		.some( p => p.points >= shared.config.winningPoints );
+	const isLastRound = data.status === "IN_PROGRESS" && Object.values( data.view.playerData )
+		.some( p => p.points >= data.config.winningPoints );
 
-	const otherPlayers = shared.context.players.filter( p => p !== player.playerId );
+	const otherPlayers = data.context.players.filter( p => p !== player.playerId );
 
 	return (
 		<div className={ "flex flex-col gap-3 items-center max-w-6xl w-full mb-80 lg:mb-0" }>
 			<GameInfo
-				code={ shared.code }
+				code={ data.code }
 				name={ "splendor" }
-				completed={ shared.status === "COMPLETED" }
+				completed={ data.status === "COMPLETED" }
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>WINNING POINTS</p>
 						<h2 className={ cn( "text-2xl md:text-4xl font-heading" ) }>
-							{ shared.config.winningPoints }
+							{ data.config.winningPoints }
 						</h2>
 					</div>
 				}
 			/>
-			{ shared.status === "COMPLETED" && shared.state.winner && (
+			{ data.status === "COMPLETED" && data.view.winner && (
 				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
 					<p className={ "text-lg font-heading" }>
-						{ shared.state.winner === player.playerId ? "You won!" : "You lost!" }
+						{ data.view.winner === player.playerId ? "You won!" : "You lost!" }
 					</p>
 				</div>
 			) }
-			{ shared.status !== "IN_PROGRESS" && (
+			{ data.status !== "IN_PROGRESS" && (
 				<PlayerLobbyGrid
-					players={ shared.context.players.map( id => shared.players[ id ] ) }
+					players={ data.context.players.map( id => data.players[ id ] ) }
 				/>
 			) }
-			{ shared.status === "CREATED" && (
+			{ data.status === "CREATED" && (
 				<div
 					className={ cn(
 						"p-2 md:p-3 rounded-md w-full bg-background",
@@ -69,7 +69,7 @@ export function GameView() {
 					</p>
 				</div>
 			) }
-			{ shared.status === "IN_PROGRESS" && (
+			{ data.status === "IN_PROGRESS" && (
 				<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full justify-items-center" }>
 					<div className={ "flex flex-col gap-3 w-full max-w-lg md:max-w-xl items-center" }>
 						<Board/>
@@ -90,11 +90,11 @@ export function GameView() {
 						) }
 					</div>
 					<div className={ "hidden lg:flex flex-col gap-3 w-full max-w-lg md:max-w-xl" }>
-						{ shared.context.players.map( p => <PlayerInfo playerId={ p } key={ p }/> ) }
+						{ data.context.players.map( p => <PlayerInfo playerId={ p } key={ p }/> ) }
 					</div>
 				</div>
 			) }
-			{ shared.status === "IN_PROGRESS" && (
+			{ data.status === "IN_PROGRESS" && (
 				<Drawer open={ playersOpen } onOpenChange={ setPlayersOpen }>
 					<DrawerContent>
 						<DrawerHeader>
@@ -108,7 +108,7 @@ export function GameView() {
 					</DrawerContent>
 				</Drawer>
 			) }
-			{ shared.status === "IN_PROGRESS" && (
+			{ data.status === "IN_PROGRESS" && (
 				<div
 					className={ cn(
 						"fixed left-0 right-0 bottom-0 bg-surface lg:hidden",

@@ -8,8 +8,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallbreak } from "./context";
 
 export function HandView() {
-	const { shared, player, isMyTurn, selectCard, selectedCard } = useCallbreak();
-	const deal = shared.state.activeDeal;
+	const { data, isMyTurn, selectCard, selectedCard } = useCallbreak();
+	const deal = data.view.activeDeal;
 	const trick = deal?.tricks[ 0 ];
 
 	const isTrickComplete = !!trick?.winner;
@@ -22,7 +22,11 @@ export function HandView() {
 		if ( isTrickComplete ) {
 			return true;
 		}
-		const playableCards = getPlayableCards( [ ...player.hand ], shared.config.trumpSuit, trick! );
+		const playableCards = getPlayableCards(
+			[ ...( data.view.hand ?? [] ) ],
+			data.config.trumpSuit,
+			trick!
+		);
 		return playableCards.includes( cardId );
 	};
 
@@ -47,7 +51,7 @@ export function HandView() {
 			) }
 		>
 			<AnimatePresence mode={ "popLayout" }>
-				{ getSortedHand( [ ...player.hand ] ).map( ( cardId ) => (
+				{ getSortedHand( [ ...( data.view.hand ?? [] ) ] ).map( ( cardId ) => (
 					<motion.div
 						key={ cardId }
 						layoutId={ `card-${ cardId }` }
@@ -77,7 +81,7 @@ export function HandView() {
 					</motion.div>
 				) ) }
 			</AnimatePresence>
-			{ player.hand.length === 0 && <h2>NO CARDS LEFT</h2> }
+			{ data.view.hand?.length === 0 && <h2>NO CARDS LEFT</h2> }
 		</motion.div>
 	);
 }

@@ -1,5 +1,6 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type { Card, Gem, Tokens } from "@s2h/splendor/schema";
+import { toPlayerInfo } from "@s2h/contract/client";
+import type { Card, Gem, Tokens } from "@s2h/schema/splendor";
 import { canPurchaseCard, isValidPayment } from "@s2h/splendor/utils";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -15,7 +16,7 @@ import { cn } from "@s2h/ui/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
-import { purchaseCardFn, toPlayerInfo } from "./client";
+import { purchaseCardFn } from "./client";
 import { GameCard } from "./game-card";
 import { TokenPicker } from "./token-picker";
 import { gemLightColors } from "./utils";

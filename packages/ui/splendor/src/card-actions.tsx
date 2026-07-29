@@ -1,6 +1,6 @@
 "use client";
 
-import type { Card } from "@s2h/splendor/schema";
+import type { Card } from "@s2h/schema/splendor";
 import {
 	Drawer,
 	DrawerContent,
@@ -21,14 +21,14 @@ type CardActionsMenuProps = {
 
 export function CardActions( props: CardActionsMenuProps ) {
 	const { value, toggle, setTrue } = useBoolean();
-	const { shared, player } = useSplendor();
+	const { data } = useSplendor();
 
-	const isMyTurn = shared.status === "IN_PROGRESS"
-		&& shared.context.currentPlayer === player.playerId;
+	const isMyTurn = data.status === "IN_PROGRESS"
+		&& data.context.currentPlayer === player.playerId;
 
-	const discounts = shared.state.playerData[ player.playerId ].cards;
-	const reserved = shared.state.playerData[ player.playerId ].reserved;
-	const playerTokens = shared.state.playerData[ player.playerId ].tokens;
+	const discounts = data.view.playerData[ player.playerId ].cards;
+	const reserved = data.view.playerData[ player.playerId ].reserved;
+	const playerTokens = data.view.playerData[ player.playerId ].tokens;
 
 
 	return (
@@ -45,17 +45,17 @@ export function CardActions( props: CardActionsMenuProps ) {
 				<DrawerFooter>
 					<div className={ "w-full flex gap-3" }>
 						<PurchaseCard
-							gameId={ shared.id }
+							gameId={ data.id }
 							card={ props.card }
 							tokens={ playerTokens }
 							discounts={ discounts }
 						/>
 						<ReserveCard
-							gameId={ shared.id }
+							gameId={ data.id }
 							card={ props.card }
 							tokens={ playerTokens }
 							availableSlots={ 3 - reserved.length }
-							isGoldAvailable={ shared.state.tokens.gold > 0 }
+							isGoldAvailable={ data.view.tokens.gold > 0 }
 						/>
 					</div>
 				</DrawerFooter>

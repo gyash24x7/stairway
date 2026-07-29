@@ -1,5 +1,4 @@
 import type { PlayerId } from "@s2h/swish/schema";
-import { useFish } from "./context";
 import {
 	Table,
 	TableBody,
@@ -8,9 +7,10 @@ import {
 	TableHeader,
 	TableRow
 } from "@s2h/ui/primitives/table";
+import { useFish } from "./context";
 
 export function GameMetrics() {
-	const { shared } = useFish();
+	const { data } = useFish();
 	return (
 		<div className={ "w-full overflow-scroll" }>
 			<Table>
@@ -27,9 +27,9 @@ export function GameMetrics() {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{ Object.entries( shared.state.playerData ).map( ( [ id, { metrics } ] ) => (
+					{ Object.entries( data.view.playerData ).map( ( [ id, { metrics } ] ) => (
 						<TableRow key={ id } className={ "font-semibold" }>
-							<TableCell>{ shared.players[ id as PlayerId ].name }</TableCell>
+							<TableCell>{ data.players[ id as PlayerId ].name }</TableCell>
 							<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>
 							<TableCell className={ "text-center" }>{ metrics.cardsTaken }</TableCell>
 							<TableCell className={ "text-center" }>{ metrics.cardsGiven }</TableCell>

@@ -19,13 +19,13 @@ import { useCallbreak } from "./context";
 export function DeclareWins() {
 	const [ open, setOpen ] = useState( false );
 	const { count: wins, increment, decrement, reset } = useCounter( 2 );
-	const { shared, declareWins } = useCallbreak();
+	const { data, declareWins } = useCallbreak();
 	const isPending = declareWins.isPending;
 
 	const handleClick = async () => {
 		await declareWins.mutateAsync( {
-			dealId: shared.state.activeDeal?.id!,
-			gameId: shared.id,
+			dealId: data.view.activeDeal?.id!,
+			gameId: data.id,
 			wins
 		} );
 

@@ -1,4 +1,4 @@
-import type { BoardSize } from "@s2h/kingdomino/schema";
+import type { BoardSize } from "@s2h/schema/kingdomino";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { useState } from "react";

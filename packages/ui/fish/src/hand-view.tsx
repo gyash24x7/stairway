@@ -8,14 +8,14 @@ import { useMemo } from "react";
 import { useFish } from "./context";
 
 export function HandView() {
-	const { shared, player } = useFish();
+	const { data } = useFish();
 	const hand = player.hand;
 
 	const groupedCards = useMemo(
-		() => getBooksInHand( hand, shared.config.type ).map(
-			book => ( { book, cards: getCardsOfBook( book, shared.config.type, hand ) } )
+		() => getBooksInHand( hand, data.config.type ).map(
+			book => ( { book, cards: getCardsOfBook( book, data.config.type, hand ) } )
 		),
-		[ hand, shared.config.type ]
+		[ hand, data.config.type ]
 	);
 
 	if ( hand.length === 0 ) {
@@ -47,7 +47,7 @@ export function HandView() {
 						className={ "flex flex-col items-center gap-1" }
 					>
 						<span className={ "text-xs md:text-sm font-semibold opacity-60" }>
-							{ getBookDisplayString( book, shared.config.type ) }
+							{ getBookDisplayString( book, data.config.type ) }
 						</span>
 						<motion.div
 							layout

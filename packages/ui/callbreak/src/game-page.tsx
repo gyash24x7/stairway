@@ -1,7 +1,8 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
+import { toPlayerInfo } from "@s2h/contract/client";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
-import { getStateFn, snapshotToCallbreakGame, toPlayerInfo } from "./client";
+import { getStateFn } from "./client";
 import { CallbreakProvider } from "./context";
 import { GameView } from "./game-view";
 
@@ -19,7 +20,7 @@ export function CallbreakGamePage( { gameId }: { gameId: string } ) {
 	}
 
 	return (
-		<CallbreakProvider data={ snapshotToCallbreakGame( data ) } gameId={ gameId }>
+		<CallbreakProvider data={ data } gameId={ gameId }>
 			<GameView/>
 		</CallbreakProvider>
 	);

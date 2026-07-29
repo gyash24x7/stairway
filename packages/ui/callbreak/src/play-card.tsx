@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallbreak } from "./context";
 import { Button } from "@s2h/ui/primitives/button";
 import { Spinner } from "@s2h/ui/primitives/spinner";
+import { useCallbreak } from "./context";
 
 export function PlayCard() {
-	const { shared, selectedCard, selectCard, playCard } = useCallbreak();
+	const { data, selectedCard, selectCard, playCard } = useCallbreak();
 	const isPending = playCard.isPending;
 
 	const handleClick = async () => {
 		if ( selectedCard ) {
 			await playCard.mutateAsync( {
-				dealId: shared.state.activeDeal?.id!,
-				gameId: shared.id,
+				dealId: data.view.activeDeal?.id!,
+				gameId: data.id,
 				cardId: selectedCard
 			} );
 
