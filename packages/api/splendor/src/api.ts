@@ -46,7 +46,7 @@ export const SplendorApiLive = ( ns: Cloudflare.DurableObject<SplendorEngineDO> 
 					const { user } = yield* AuthContext;
 					const game = yield* Effect.promise(
 						() => db.insert( games )
-							.values( { game: "tic-tac-toe" } )
+							.values( { game: "splendor" } )
 							.returning()
 							.then( g => g[ 0 ] )
 					);
@@ -69,7 +69,7 @@ export const SplendorApiLive = ( ns: Cloudflare.DurableObject<SplendorEngineDO> 
 					const game = yield* Effect.promise(
 						() => db.select().from( games )
 							.where( ops.and(
-								ops.eq( games.game, "tic-tac-toe" ),
+								ops.eq( games.game, "splendor" ),
 								ops.eq( games.code, payload.code )
 							) )
 							.then( g => g[ 0 ] )

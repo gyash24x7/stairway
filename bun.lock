@@ -12,7 +12,7 @@
         "typescript": "6.0.3",
       },
     },
-    "packages/core/auth": {
+    "packages/api/auth": {
       "name": "@s2h/auth",
       "version": "1.0.0",
       "dependencies": {
@@ -25,7 +25,7 @@
         "effect": "catalog:",
       },
     },
-    "packages/core/callbreak": {
+    "packages/api/callbreak": {
       "name": "@s2h/callbreak",
       "version": "1.0.0",
       "dependencies": {
@@ -38,7 +38,7 @@
         "effect": "catalog:",
       },
     },
-    "packages/core/fish": {
+    "packages/api/fish": {
       "name": "@s2h/fish",
       "version": "1.0.0",
       "dependencies": {
@@ -51,7 +51,7 @@
         "effect": "catalog:",
       },
     },
-    "packages/core/kingdomino": {
+    "packages/api/kingdomino": {
       "name": "@s2h/kingdomino",
       "version": "1.0.0",
       "dependencies": {
@@ -64,7 +64,7 @@
         "effect": "catalog:",
       },
     },
-    "packages/core/splendor": {
+    "packages/api/splendor": {
       "name": "@s2h/splendor",
       "version": "1.0.0",
       "dependencies": {
@@ -77,7 +77,7 @@
         "effect": "catalog:",
       },
     },
-    "packages/core/tictactoe": {
+    "packages/api/tictactoe": {
       "name": "@s2h/tictactoe",
       "version": "1.0.0",
       "dependencies": {
@@ -89,7 +89,7 @@
         "effect": "catalog:",
       },
     },
-    "packages/core/wordle": {
+    "packages/api/wordle": {
       "name": "@s2h/wordle",
       "version": "1.0.0",
       "dependencies": {
@@ -557,31 +557,31 @@
 
     "@s2h-ui/wordle": ["@s2h-ui/wordle@workspace:packages/ui/wordle"],
 
-    "@s2h/auth": ["@s2h/auth@workspace:packages/core/auth"],
+    "@s2h/auth": ["@s2h/auth@workspace:packages/api/auth"],
 
-    "@s2h/callbreak": ["@s2h/callbreak@workspace:packages/core/callbreak"],
+    "@s2h/callbreak": ["@s2h/callbreak@workspace:packages/api/callbreak"],
 
     "@s2h/contract": ["@s2h/contract@workspace:packages/shared/contract"],
 
-    "@s2h/fish": ["@s2h/fish@workspace:packages/core/fish"],
+    "@s2h/fish": ["@s2h/fish@workspace:packages/api/fish"],
 
-    "@s2h/kingdomino": ["@s2h/kingdomino@workspace:packages/core/kingdomino"],
+    "@s2h/kingdomino": ["@s2h/kingdomino@workspace:packages/api/kingdomino"],
 
     "@s2h/platform": ["@s2h/platform@workspace:packages/shared/platform"],
 
     "@s2h/schema": ["@s2h/schema@workspace:packages/shared/schema"],
 
-    "@s2h/splendor": ["@s2h/splendor@workspace:packages/core/splendor"],
+    "@s2h/splendor": ["@s2h/splendor@workspace:packages/api/splendor"],
 
     "@s2h/swish": ["@s2h/swish@workspace:packages/shared/swish"],
 
-    "@s2h/tictactoe": ["@s2h/tictactoe@workspace:packages/core/tictactoe"],
+    "@s2h/tictactoe": ["@s2h/tictactoe@workspace:packages/api/tictactoe"],
 
     "@s2h/ui": ["@s2h/ui@workspace:packages/shared/ui"],
 
     "@s2h/utils": ["@s2h/utils@workspace:packages/shared/utils"],
 
-    "@s2h/wordle": ["@s2h/wordle@workspace:packages/core/wordle"],
+    "@s2h/wordle": ["@s2h/wordle@workspace:packages/api/wordle"],
 
     "@simplewebauthn/browser": ["@simplewebauthn/browser@13.3.0", "", {}, "sha512-BE/UWv6FOToAdVk0EokzkqQQDOWtNydYlY6+OrmiZ5SCNmb41VehttboTetUM3T/fr6EAFYVXjz4My2wg230rQ=="],
 

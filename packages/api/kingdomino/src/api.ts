@@ -6,23 +6,23 @@ import { Database, ops } from "@s2h/platform/database/service";
 import { DurableSchedulerLive } from "@s2h/platform/do/scheduler";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@s2h/platform/do/stores";
 import { DurableSyncLive, GameChannel } from "@s2h/platform/do/sync";
-import { CallbreakInitializeInput } from "@s2h/schema/callbreak";
+import { KingdominoInitializeInput } from "@s2h/schema/kingdomino";
 import { GameNotFound } from "@s2h/swish/errors";
 import { GameCode, GameId } from "@s2h/swish/schema";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import { callbreak } from "./engine.ts";
+import { kingdomino } from "./engine.ts";
 
 // --- Durable Object ----------------------------------------------------------
 
-export class CallbreakEngineDO extends Cloudflare.DurableObject<CallbreakEngineDO>()(
-	"CallbreakEngineDO",
+export class KingdominoEngineDO extends Cloudflare.DurableObject<KingdominoEngineDO>()(
+	"KingdominoEngineDO",
 	Effect.gen( function* () {
 		const channels = yield* GameChannel;
 		const state = yield* Cloudflare.DurableObjectState;
-		return callbreak.pipe(
+		return kingdomino.pipe(
 			Effect.provide(
 				Layer.mergeAll(
 					DurableGameStoreLive( state ),
@@ -37,8 +37,8 @@ export class CallbreakEngineDO extends Cloudflare.DurableObject<CallbreakEngineD
 
 // --- HTTP Api implementation -------------------------------------------------
 
-export const CallbreakApiLive = ( ns: Cloudflare.DurableObject<CallbreakEngineDO> ) =>
-	HttpApiBuilder.group( StairwayAPI, "callbreak", handlers =>
+export const KingdominoApiLive = ( ns: Cloudflare.DurableObject<KingdominoEngineDO> ) =>
+	HttpApiBuilder.group( StairwayAPI, "kingdomino", handlers =>
 		Effect.gen( function* () {
 			const db = yield* Database;
 			return handlers
@@ -46,12 +46,12 @@ export const CallbreakApiLive = ( ns: Cloudflare.DurableObject<CallbreakEngineDO
 					const { user } = yield* AuthContext;
 					const game = yield* Effect.promise(
 						() => db.insert( games )
-							.values( { game: "tic-tac-toe" } )
+							.values( { game: "kingdomino" } )
 							.returning()
 							.then( g => g[ 0 ] )
 					);
 
-					const input = CallbreakInitializeInput.make( {
+					const input = KingdominoInitializeInput.make( {
 						id: GameId.make( game.id ),
 						code: GameCode.make( game.code ),
 						config: payload
@@ -69,7 +69,7 @@ export const CallbreakApiLive = ( ns: Cloudflare.DurableObject<CallbreakEngineDO
 					const game = yield* Effect.promise(
 						() => db.select().from( games )
 							.where( ops.and(
-								ops.eq( games.game, "tic-tac-toe" ),
+								ops.eq( games.game, "kingdomino" ),
 								ops.eq( games.code, payload.code )
 							) )
 							.then( g => g[ 0 ] )
@@ -83,24 +83,24 @@ export const CallbreakApiLive = ( ns: Cloudflare.DurableObject<CallbreakEngineDO
 					return yield* client.join( toPlayerInfo( user ) );
 				} ) )
 
-				.handle( "addBots", ( { params } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.addBots();
-				} ) )
-
 				.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
 					const client = ns.getByName( params.gameId );
 					return yield* client.getState( payload );
 				} ) )
 
-				.handle( "declareWins", ( { params, payload } ) => Effect.gen( function* () {
+				.handle( "selectDomino", ( { params, payload } ) => Effect.gen( function* () {
 					const client = ns.getByName( params.gameId );
-					return yield* client.declareWins( payload );
+					return yield* client.selectDomino( payload );
 				} ) )
 
-				.handle( "playCard", ( { params, payload } ) => Effect.gen( function* () {
+				.handle( "placeDomino", ( { params, payload } ) => Effect.gen( function* () {
 					const client = ns.getByName( params.gameId );
-					return yield* client.playCard( payload );
+					return yield* client.placeDomino( payload );
+				} ) )
+
+				.handle( "discardDomino", ( { params, payload } ) => Effect.gen( function* () {
+					const client = ns.getByName( params.gameId );
+					return yield* client.discardDomino( payload );
 				} ) );
 		} )
 	);
