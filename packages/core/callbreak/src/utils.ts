@@ -1,3 +1,5 @@
+import type { CallbreakEvent, CallbreakState, Trick } from "@s2h/schema/callbreak";
+import { Deal } from "@s2h/schema/callbreak";
 import { PlayerId } from "@s2h/swish/schema";
 import {
 	type CardId,
@@ -10,7 +12,6 @@ import {
 } from "@s2h/utils/cards";
 import { generateId } from "@s2h/utils/generator";
 import * as Match from "effect/Match";
-import type { CallbreakEvent, CallbreakState, Deal, Trick } from "./schema";
 
 export const PLAYER_COUNT = 4;
 export const TRICKS_PER_DEAL = 13;
@@ -71,27 +72,26 @@ export function determineTrickWinner( trick: Trick, trump: CardSuit, players: Pl
 export function createNewDeal( players: PlayerId[], startingPlayer?: PlayerId ): Deal {
 	const deck = generateDeck();
 	const generatedHands = generateHands( deck, PLAYER_COUNT );
-
-	const deal = {
+	return Deal.make( {
 		id: generateId(),
 		startingPlayer: startingPlayer ?? players[ 0 ]!,
-		tricks: [] as Trick[],
-		declarations: {} as Record<PlayerId, number>,
-		wins: {} as Record<PlayerId, number>,
-		scores: {} as Record<PlayerId, number>,
-		hands: {} as Record<PlayerId, CardId[]>
-	};
-
-	return players.reduce(
-		( acc, pid, idx ) => {
-			acc.hands[ pid ] = generatedHands[ idx ]!;
-			acc.declarations[ pid ] = 0;
-			acc.wins[ pid ] = 0;
-			acc.scores[ pid ] = 0;
-			return acc;
-		},
-		deal
-	) as Deal;
+		tricks: [],
+		...players.reduce(
+			( acc, pid, idx ) => {
+				acc.hands[ pid ] = generatedHands[ idx ]!;
+				acc.declarations[ pid ] = 0;
+				acc.wins[ pid ] = 0;
+				acc.scores[ pid ] = 0;
+				return acc;
+			},
+			{
+				declarations: {} as Record<PlayerId, number>,
+				wins: {} as Record<PlayerId, number>,
+				scores: {} as Record<PlayerId, number>,
+				hands: {} as Record<PlayerId, CardId[]>
+			}
+		)
+	} );
 }
 
 export function emptyTrick( leadPlayer: PlayerId = PlayerId.make( "" ) ): Trick {
@@ -187,13 +187,23 @@ export const apply = ( state: CallbreakState, event: CallbreakEvent ): Callbreak
 	Match.value( event ).pipe(
 		Match.tag( "callbreak/ScoreInitialized", ( e ) =>
 			( { ...state, scores: { ...state.scores, [ e.playerId ]: 0 } } ) ),
-		Match.tag( "callbreak/DealDealt", ( e ) => ( { ...state, deals: [ e.deal, ...state.deals ] } ) ),
+
+		Match.tag(
+			"callbreak/DealDealt",
+			( e ) => ( { ...state, deals: [ e.deal, ...state.deals ] } )
+		),
+
 		Match.tag( "callbreak/WinsDeclared", ( e ) =>
 			patchActiveDeal( state, ( deal ) =>
 				( { ...deal, declarations: { ...deal.declarations, [ e.playerId ]: e.wins } } ) ) ),
+
 		Match.tag( "callbreak/TrickStarted", ( e ) =>
 			patchActiveDeal( state, ( deal ) =>
-				( { ...deal, tricks: [ { leadPlayer: e.leadPlayer, cards: {} } as Trick, ...deal.tricks ] } ) ) ),
+				( {
+					...deal,
+					tricks: [ { leadPlayer: e.leadPlayer, cards: {} } as Trick, ...deal.tricks ]
+				} ) ) ),
+
 		Match.tag( "callbreak/CardPlayed", ( e ) =>
 			patchActiveDeal( state, ( deal ) => {
 				const hand = ( deal.hands[ e.playerId ] ?? [] ).filter( ( c ) => c !== e.cardId );
@@ -209,11 +219,13 @@ export const apply = ( state: CallbreakState, event: CallbreakEvent ): Callbreak
 				};
 				return { ...deal, hands, tricks: [ trick, ...rest ] };
 			} ) ),
+
 		Match.tag( "callbreak/TrickWon", ( e ) => {
 			const withWinner = patchActiveTrick( state, ( trick ) => ( { ...trick, winner: e.winner } ) );
 			return patchActiveDeal( withWinner, ( deal ) =>
 				( { ...deal, wins: { ...deal.wins, [ e.winner ]: ( deal.wins[ e.winner ] ?? 0 ) + 1 } } ) );
 		} ),
+
 		Match.tag( "callbreak/DealScored", ( e ) => {
 			const withDealScores = patchActiveDeal( state, ( deal ) =>
 				( { ...deal, scores: { ...deal.scores, ...e.scores } } ) );
@@ -223,9 +235,8 @@ export const apply = ( state: CallbreakState, event: CallbreakEvent ): Callbreak
 			}
 			return { ...withDealScores, scores };
 		} ),
+
 		Match.tag( "callbreak/WinnerDecided", ( e ) => ( { ...state, winner: e.winner } ) ),
+
 		Match.exhaustive
 	);
-
-/** Registry slug for this game (also the DO name prefix). */
-export const GAME_NAME = "callbreak";

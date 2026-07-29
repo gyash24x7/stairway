@@ -1,28 +1,7 @@
-// @s2h/callbreak/engine — Callbreak as an event-sourced swish game.
-//
-// The swish port of the old phased `AbstractGameEngine` DO. Same rules,
-// re-expressed under event sourcing: moves/hooks/phase-transitions EMIT domain
-// events and a pure `apply` reducer (in ./utils) folds them onto `state` (the
-// only place state changes). The pure helpers in ./utils and the bot in ./bot
-// are reused as-is.
-//
-// Callbreak is PHASED: each round cycles DECLARING -> PLAYING, repeated for
-// `config.dealCount` rounds, with per-round + cumulative scoring. The
-// nondeterministic event (dealing a round's hands) is computed once in the
-// DECLARING phase `onEnter` (via `createNewDeal`, which shuffles) and the exact
-// dealt deal is captured in the emitted `DealDealt` event so replay is exact.
-
-import { makeEngine } from "@s2h/swish/engine";
-import { InvalidMove } from "@s2h/swish/errors";
-import { EngineRpcs, MoveRpc } from "@s2h/swish/rpc";
-import { PlayerId } from "@s2h/swish/schema";
-import { type CardId, getCardSuit } from "@s2h/utils/cards";
-import { botDeclare, botPlayCard } from "./bot";
 import {
 	CallbreakBotView,
 	CallbreakConfig,
 	CallbreakEvent,
-	CallbreakSnapshot,
 	CallbreakState,
 	CallbreakView,
 	CardPlayedEvent,
@@ -35,7 +14,12 @@ import {
 	TrickWonEvent,
 	WinnerDecidedEvent,
 	WinsDeclaredEvent
-} from "./schema";
+} from "@s2h/schema/callbreak";
+import { makeEngine } from "@s2h/swish/engine";
+import { InvalidMove } from "@s2h/swish/errors";
+import { PlayerId } from "@s2h/swish/schema";
+import { type CardId, getCardSuit } from "@s2h/utils/cards";
+import { botDeclare, botPlayCard } from "./bot";
 import {
 	apply,
 	calculateRoundScore,
@@ -48,18 +32,16 @@ import {
 
 // --- Engine ----------------------------------------------------------------
 
-const callbreak = makeEngine( {
+export const callbreak = makeEngine( {
 	name: "callbreak",
 	schemas: {
 		state: CallbreakState,
 		config: CallbreakConfig,
 		events: CallbreakEvent,
+		view: CallbreakView,
 		moves: {
 			declareWins: DeclareWinsInput,
 			playCard: PlayCardInput
-		},
-		views: {
-			view: CallbreakView
 		}
 	},
 	apply,
@@ -68,28 +50,49 @@ const callbreak = makeEngine( {
 
 	// A game ends once `dealCount` rounds have been scored. A deal is scored
 	// when any player's per-deal score is non-zero (matches the old engine).
-	endIf: ( { state, config } ) =>
-		state.deals.filter( ( d ) => Object.values( d.scores ).some( ( s ) => s !== 0 ) ).length
-		>= config.dealCount,
+	endIf: ( { state, config } ) => {
+		const completedDeals = state.deals.filter(
+			d => Object.values( d.scores ).some( ( s ) => s !== 0 )
+		);
+
+		return completedDeals.length >= config.dealCount;
+	},
 
 	view: ( { state }, audience ): CallbreakView => {
 		const activeDeal = state.deals[ 0 ];
 		const previousDeal = state.deals[ 1 ];
 		const lastCompletedTrick = previousDeal?.tricks[ 0 ];
-		const table = activeDeal
-			? ( () => {
-				const { hands: _hands, ...deal } = activeDeal;
-				return { activeDeal: deal, scores: state.scores, lastCompletedTrick, winner: state.winner };
-			} )()
-			: { scores: state.scores, winner: state.winner };
-		return audience._tag === "swish/Table"
-			? table
-			: { ...table, playerId: audience.id, hand: state.deals[ 0 ]?.hands[ audience.id ] ?? [] };
+
+		if ( !activeDeal ) {
+			return audience._tag === "swish/Table"
+				? { scores: state.scores, winner: state.winner }
+				: {
+					scores: state.scores,
+					winner: state.winner,
+					playerId: audience.id,
+					hand: []
+				};
+		}
+
+		const { hands, ...deal } = activeDeal;
+		const view = {
+			activeDeal: deal,
+			scores: state.scores,
+			lastCompletedTrick,
+			winner: state.winner
+		};
+
+		return audience._tag === "swish/Table" ? view : {
+			...view,
+			playerId: audience.id,
+			hand: hands[ audience.id ]
+		};
 	},
 
 	hooks: {
 		// Seed each joining player's cumulative score at 0.
 		onJoin: ( _data, playerId ) => [ ScoreInitializedEvent.make( { playerId } ) ],
+
 		// The winner is the player with the highest cumulative score.
 		onEnd: ( { state, context } ) => {
 			const winner = context.players.reduce( ( best, pid ) =>
@@ -97,6 +100,7 @@ const callbreak = makeEngine( {
 			);
 			return [ WinnerDecidedEvent.make( { winner } ) ];
 		},
+
 		// If the previous trick has been won, open a new trick led by the winner
 		// before the next card is played. Naturally no-ops outside PLAYING since
 		// `state.deals[ 0 ]?.tricks[ 0 ]?.winner` is falsy while DECLARING.
@@ -113,6 +117,7 @@ const callbreak = makeEngine( {
 	moves: {
 		declareWins: {
 			phase: "DECLARING",
+
 			validate: ( { state }, playerId, input ) => {
 				const activeDeal = state.deals[ 0 ];
 				if ( !activeDeal || activeDeal.id !== input.dealId ) {
@@ -125,35 +130,53 @@ const callbreak = makeEngine( {
 
 				return;
 			},
-			execute: ( _data, playerId, input ) =>
-				[ WinsDeclaredEvent.make( { playerId, wins: input.wins } ) ]
+
+			execute: ( _data, playerId, input ) => [
+				WinsDeclaredEvent.make( { playerId, wins: input.wins } )
+			]
 		},
 
 		playCard: {
 			phase: "PLAYING",
+
 			validate: ( { state, config }, playerId, input ) => {
 				const activeDeal = state.deals[ 0 ];
 				if ( !activeDeal || activeDeal.id !== input.dealId ) {
-					return new InvalidMove( { move: "playCard", reason: "Active Deal Not Found!" } );
+					return new InvalidMove( {
+						move: "playCard",
+						reason: "Active Deal Not Found!"
+					} );
 				}
 
 				const activeTrick = activeDeal.tricks[ 0 ];
 				if ( !activeTrick ) {
-					return new InvalidMove( { move: "playCard", reason: "Active Trick Not Found!" } );
+					return new InvalidMove( {
+						move: "playCard",
+						reason: "Active Trick Not Found!"
+					} );
 				}
 
 				if ( activeTrick.cards[ playerId ] ) {
-					return new InvalidMove( { move: "playCard", reason: "Already played card!" } );
+					return new InvalidMove( {
+						move: "playCard",
+						reason: "Already played card!"
+					} );
 				}
 
 				const hand = activeDeal.hands[ playerId ] ?? [];
 				if ( !hand.includes( input.cardId ) ) {
-					return new InvalidMove( { move: "playCard", reason: "Card not in hand!" } );
+					return new InvalidMove( {
+						move: "playCard",
+						reason: "Card not in hand!"
+					} );
 				}
 
 				const playable = getPlayableCards( [ ...hand ], config.trumpSuit, activeTrick );
 				if ( !playable.includes( input.cardId ) ) {
-					return new InvalidMove( { move: "playCard", reason: "Card cannot be played!" } );
+					return new InvalidMove( {
+						move: "playCard",
+						reason: "Card cannot be played!"
+					} );
 				}
 
 				return;
@@ -183,6 +206,7 @@ const callbreak = makeEngine( {
 
 					events.push( TrickWonEvent.make( { winner } ) );
 				}
+
 				return events;
 			}
 		}
@@ -234,6 +258,7 @@ const callbreak = makeEngine( {
 				} else {
 					startingPlayer = context.players[ 0 ]!;
 				}
+
 				const deal = createNewDeal( [ ...context.players ], startingPlayer );
 				return [ DealDealtEvent.make( { deal } ) ];
 			},
@@ -249,6 +274,7 @@ const callbreak = makeEngine( {
 						return pid;
 					}
 				}
+
 				return activeDeal.startingPlayer;
 			},
 
@@ -264,8 +290,9 @@ const callbreak = makeEngine( {
 			moves: [ "playCard" ],
 
 			// Start the first trick of the round, led by the deal's starter.
-			onEnter: ( { state } ) =>
-				[ TrickStartedEvent.make( { leadPlayer: state.deals[ 0 ]!.startingPlayer } ) ],
+			onEnter: ( { state } ) => [
+				TrickStartedEvent.make( { leadPlayer: state.deals[ 0 ]!.startingPlayer } )
+			],
 
 			resolveStartingPlayer: ( { state } ) => state.deals[ 0 ]!.startingPlayer,
 
@@ -313,13 +340,3 @@ const callbreak = makeEngine( {
 		}
 	}
 } );
-
-// --- RPC surface -----------------------------------------------------------
-
-export class CallbreakRpcs extends EngineRpcs( CallbreakConfig, CallbreakSnapshot, [
-	MoveRpc( "declareWins", DeclareWinsInput ),
-	MoveRpc( "playCard", PlayCardInput )
-] ) {
-
-	public static layer = CallbreakRpcs.toLayer( callbreak );
-}

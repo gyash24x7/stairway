@@ -25,6 +25,19 @@
         "effect": "catalog:",
       },
     },
+    "packages/core/callbreak": {
+      "name": "@s2h/callbreak",
+      "version": "1.0.0",
+      "dependencies": {
+        "@s2h/contract": "workspace:",
+        "@s2h/platform": "workspace:",
+        "@s2h/schema": "workspace:",
+        "@s2h/swish": "workspace:",
+        "@s2h/utils": "workspace:",
+        "alchemy": "catalog:",
+        "effect": "catalog:",
+      },
+    },
     "packages/core/fish": {
       "name": "@s2h/fish",
       "version": "1.0.0",
@@ -545,6 +558,8 @@
     "@s2h-ui/wordle": ["@s2h-ui/wordle@workspace:packages/ui/wordle"],
 
     "@s2h/auth": ["@s2h/auth@workspace:packages/core/auth"],
+
+    "@s2h/callbreak": ["@s2h/callbreak@workspace:packages/core/callbreak"],
 
     "@s2h/contract": ["@s2h/contract@workspace:packages/shared/contract"],
 

@@ -1,5 +1,5 @@
+import type { CallbreakBotView, CallbreakConfig, Trick } from "@s2h/schema/callbreak";
 import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@s2h/utils/cards";
-import type { CallbreakBotView, CallbreakConfig, Trick } from "./schema";
 import { getCardValue, getPlayableCards } from "./utils";
 
 /**
