@@ -2,8 +2,10 @@
 	"name": "@s2h/contract",
 	"version": "1.0.0",
 	"type": "module",
-	"module": "src/index.ts",
 	"private": true,
+	"exports": {
+		"./*": "./src/*.ts"
+	},
 	"scripts": {
 		"typecheck": "tsc --noEmit"
 	},

@@ -19,7 +19,7 @@
 		"typescript": "6.0.3"
 	},
 	"workspaces": {
-		"packages": [ "apps/*", "packages/shared/*", "packages/*" ],
+		"packages": [ "apps/*", "packages/shared/*", "packages/*", "packages/core/*" ],
 		"catalog": {
 			"@base-ui/react": "1.6.0",
 			"@better-auth/passkey": "1.6.25",

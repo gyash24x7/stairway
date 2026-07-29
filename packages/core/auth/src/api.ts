@@ -1,50 +1,25 @@
-// @s2h/auth/api — the auth API *definition* (browser-safe).
-//
-// The seven WebAuthn/session endpoints as an Effect v4 `HttpApiGroup`. This
-// module is endpoint definitions ONLY — no handlers, no `db`, no
-// `@simplewebauthn/server`, no sessions. That keeps it importable from the
-// browser client (via the composed `StairwayAPI`) without dragging server-only
-// code into the SPA's type graph. The handler implementations live in the
-// serving app (`apps/api/src/auth.ts`), built against the merged root api.
+import { StairwayAPI } from "@s2h/contract/api";
+import * as Effect from "effect/Effect";
+import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+import { BetterAuth } from "./services.ts";
 
-import * as Schema from "effect/Schema";
-import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
-import { UserNotFound, VerifyLoginErrors, VerifyRegistrationErrors } from "./errors";
-import {
-	AuthInfo,
-	type LoginOptions,
-	type RegisterOptions,
-	RegisterOptionsInput,
-	UsernameInput,
-	VerifyLoginInput,
-	VerifyRegistrationInput
-} from "./schema";
+// --- HTTP Api implementation -------------------------------------------------
 
-// --- API definition --------------------------------------------------------
-
-export const AuthApiGroup = HttpApiGroup.make( "auth" ).prefix( "/auth" ).add(
-	HttpApiEndpoint.get( "me", "/me", { success: Schema.NullOr( AuthInfo ) } ),
-	HttpApiEndpoint.post( "checkIfUserExists", "/checkIfUserExists", {
-		payload: UsernameInput,
-		success: Schema.Boolean
-	} ),
-	HttpApiEndpoint.post( "getLoginOptions", "/getLoginOptions", {
-		payload: UsernameInput,
-		success: Schema.Any as Schema.Schema<LoginOptions>,
-		error: UserNotFound
-	} ),
-	HttpApiEndpoint.post( "verifyLogin", "/verifyLogin", {
-		payload: VerifyLoginInput,
-		error: VerifyLoginErrors
-	} ),
-	HttpApiEndpoint.post( "getRegisterOptions", "/getRegisterOptions", {
-		payload: RegisterOptionsInput,
-		success: Schema.Any as Schema.Schema<RegisterOptions>
-	} ),
-	HttpApiEndpoint.post( "verifyRegistration", "/verifyRegistration", {
-		payload: VerifyRegistrationInput,
-		error: VerifyRegistrationErrors
-	} ),
-	HttpApiEndpoint.post( "logout", "/logout" )
+/**
+ * Delegates every `/api/auth/*` request to better-auth. `handleRaw` skips
+ * payload decoding, and returning `BetterAuth.fetch` (an `HttpEffect` that reads
+ * the ambient `HttpServerRequest`, runs `auth.handler`, and wraps the raw
+ * `Response` back) passes the response through unencoded. `fetch` already turns
+ * its own failures into a 500 response, so the residual `HttpEffect` error
+ * channel is unexpected here — `orDie` absorbs it since the endpoints declare no
+ * error type.
+ */
+export const AuthApiLive = HttpApiBuilder.group( StairwayAPI, "auth", handlers =>
+	Effect.gen( function* () {
+		const { fetch } = yield* BetterAuth;
+		const passthrough = () => Effect.orDie( fetch );
+		return handlers
+			.handleRaw( "authGet", passthrough )
+			.handleRaw( "authPost", passthrough );
+	} )
 );
