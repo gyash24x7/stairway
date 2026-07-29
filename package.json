@@ -5,20 +5,21 @@
 	"private": true,
 	"packageManager": "pnpm@11.0.7",
 	"scripts": {
-		"dev": "turbo run dev",
+		"dev": "alchemy dev",
 		"build": "turbo run build",
-		"preview": "pnpm --filter @s2h/web preview",
-		"clean": "rm -rf apps/web/node_modules/.vite",
 		"typecheck": "turbo run typecheck --force",
 		"test": "turbo run test",
-		"generate": "pnpm --filter @s2h/web generate"
+		"generate": "drizzle-kit generate"
 	},
 	"devDependencies": {
 		"@tsconfig/node24": "catalog:",
 		"@tsconfig/strictest": "catalog:",
+		"@types/node": "catalog:",
 		"turbo": "^2.10.4",
 		"typescript": "catalog:",
 		"alchemy": "catalog:",
+		"drizzle-kit": "catalog:",
+		"drizzle-orm": "catalog:",
 		"effect": "catalog:",
 		"vite": "catalog:"
 	}

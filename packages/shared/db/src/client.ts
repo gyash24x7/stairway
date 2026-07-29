@@ -1,8 +1,14 @@
-import { games, passkeys, sessions, users, webauthnOptions } from "./schema";
-import { env } from "cloudflare:workers";
-import { drizzle } from "drizzle-orm/d1";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
+import * as Context from "effect/Context";
 
-const schema = { users, passkeys, games, webauthnOptions, sessions };
 
-/** The Drizzle ORM client connected to Cloudflare D1 with the application schema. */
-export const db = drizzle( env.DB, { schema } );
+/** The application's Drizzle ORM client, bound to a Cloudflare D1 database. */
+export type Db = DrizzleD1Database;
+
+/**
+ * Effect service holding the Drizzle-over-D1 client. The live layer is built by the
+ * host (`apps/api`) from alchemy's raw D1 binding — see `makeDrizzle`. Consumers
+ * `yield* Database` and wrap the (promise-returning) drizzle calls in `Effect.promise`.
+ */
+export class Database extends Context.Service<Database, Db>()( "s2h/Database" ) {}
+

@@ -9,56 +9,42 @@
 
 import * as Schema from "effect/Schema";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
-
-// --- DTO schemas -----------------------------------------------------------
-// WebAuthn option/response objects are opaque JSON at the boundary: `Schema.Unknown`
-// + a cast in the handler (the `@simplewebauthn/server` types are the source of truth).
-
-export const AuthInfoSchema = Schema.Struct( {
-	id: Schema.String,
-	name: Schema.String,
-	username: Schema.String,
-	avatar: Schema.String
-} );
-
-export const UsernameInput = Schema.Struct( { username: Schema.String } );
-export const RegisterOptionsInput = Schema.Struct( {
-	username: Schema.String,
-	name: Schema.String
-} );
-export const LoginInput = Schema.Struct( { username: Schema.String, response: Schema.Unknown } );
-export const RegisterInput = Schema.Struct( {
-	username: Schema.String,
-	name: Schema.String,
-	response: Schema.Unknown
-} );
+import { UserNotFound, VerifyLoginErrors, VerifyRegistrationErrors } from "./errors";
+import {
+	AuthInfo,
+	type LoginOptions,
+	type RegisterOptions,
+	RegisterOptionsInput,
+	UsernameInput,
+	VerifyLoginInput,
+	VerifyRegistrationInput
+} from "./schema";
 
 // --- API definition --------------------------------------------------------
 
 export const AuthApiGroup = HttpApiGroup.make( "auth" ).prefix( "/auth" ).add(
-	HttpApiEndpoint.get( "me", "/me", { success: Schema.NullOr( AuthInfoSchema ) } ),
-	HttpApiEndpoint.post( "checkIfUserExists", "/auth/checkIfUserExists", {
+	HttpApiEndpoint.get( "me", "/me", { success: Schema.NullOr( AuthInfo ) } ),
+	HttpApiEndpoint.post( "checkIfUserExists", "/checkIfUserExists", {
 		payload: UsernameInput,
 		success: Schema.Boolean
 	} ),
 	HttpApiEndpoint.post( "getLoginOptions", "/getLoginOptions", {
 		payload: UsernameInput,
-		success: Schema.Unknown,
-		error: HttpApiError.BadRequest
+		success: Schema.Any as Schema.Schema<LoginOptions>,
+		error: UserNotFound
 	} ),
 	HttpApiEndpoint.post( "verifyLogin", "/verifyLogin", {
-		payload: LoginInput,
-		error: HttpApiError.BadRequest
+		payload: VerifyLoginInput,
+		error: VerifyLoginErrors
 	} ),
 	HttpApiEndpoint.post( "getRegisterOptions", "/getRegisterOptions", {
 		payload: RegisterOptionsInput,
-		success: Schema.Unknown
+		success: Schema.Any as Schema.Schema<RegisterOptions>
 	} ),
 	HttpApiEndpoint.post( "verifyRegistration", "/verifyRegistration", {
-		payload: RegisterInput,
-		error: HttpApiError.BadRequest
+		payload: VerifyRegistrationInput,
+		error: VerifyRegistrationErrors
 	} ),
 	HttpApiEndpoint.post( "logout", "/logout" )
 );

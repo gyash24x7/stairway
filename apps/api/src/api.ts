@@ -9,7 +9,6 @@
 // The handler implementations live in `./handlers` (games + health) and
 // `./auth` (the WebAuthn/session flows), and are wired up by `./worker`.
 
-import { AuthApiGroup } from "@s2h/auth/api";
 import { CallbreakApiGroup } from "@s2h/callbreak/api";
 import { FishApiGroup } from "@s2h/fish/api";
 import { KingdominoApiGroup } from "@s2h/kingdomino/api";
@@ -22,7 +21,7 @@ import { HealthApiGroup } from "./health";
 export class StairwayAPI extends HttpApi.make( "api" )
 	.prefix( "/auth" )
 	.add( HealthApiGroup )
-	.add( AuthApiGroup )
+	// .add( AuthApiGroup )
 	.add( WordleApiGroup )
 	.add( TicTacToeApiGroup )
 	.add( SplendorApiGroup )

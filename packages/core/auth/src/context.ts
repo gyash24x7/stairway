@@ -11,15 +11,28 @@
 // requirement is this service.
 
 import * as Context from "effect/Context";
-import type { AuthInfo } from "@s2h/utils/auth";
+import type { AuthInfo } from "./schema";
 
 export class AuthHttpContext extends Context.Service<AuthHttpContext, {
-	/** Absolute request URL — handlers derive `hostname` (rpID) / `origin` from it. */
+
+	/**
+	 * Absolute request URL — handlers derive `hostname` (rpID) / `origin` from it.
+	 */
 	readonly url: string;
-	/** Raw `Cookie` request header (empty string when absent). */
+
+	/**
+	 * Raw `Cookie` request header (empty string when absent).
+	 */
 	readonly cookieHeader: string;
-	/** The authenticated user for this request, or `null` when unauthenticated. */
+
+	/**
+	 * The authenticated user for this request, or `null` when unauthenticated.
+	 */
 	readonly user: AuthInfo | null;
-	/** Mutable collector: handlers push `Set-Cookie` values; the Worker drains them onto the response. */
+
+	/**
+	 * Mutable collector: handlers push `Set-Cookie` values;
+	 * the Worker drains them onto the response.
+	 */
 	readonly setCookies: string[];
 }>()( "auth/HttpContext" ) {}

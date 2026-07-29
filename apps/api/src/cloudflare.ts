@@ -1,18 +1,27 @@
 import { CallbreakRpcs } from "@s2h/callbreak/engine";
+import { Database } from "@s2h/db";
 import { FishRpcs } from "@s2h/fish/engine";
 import { KingdominoRpcs } from "@s2h/kingdomino/engine";
 import { SplendorRpcs } from "@s2h/splendor/engine";
-import { type AlarmKind, EventStore, GameArchive, GameStore, Scheduler, Sync } from "@s2h/swish/services";
+import {
+	type AlarmKind,
+	EventStore,
+	GameArchive,
+	GameStore,
+	Scheduler,
+	Sync
+} from "@s2h/swish/services";
 import { TicTacToeRpcs } from "@s2h/tictactoe/engine";
 import { WordleRpcs } from "@s2h/wordle/engine";
 import { RuntimeContext } from "alchemy";
-import { GameChannel } from "./sync";
 import * as Cloudflare from "alchemy/Cloudflare";
+import { drizzle } from "drizzle-orm/d1";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as RpcSerialization from "effect/unstable/rpc/RpcSerialization";
 import * as RpcServer from "effect/unstable/rpc/RpcServer";
+import { GameChannel } from "./sync";
 
 const KEY_GAME = "gameData";
 const KEY_LOG_BASE = "log:base";
@@ -159,6 +168,30 @@ export const KVArchiveLive = Layer.effect( GameArchive, Effect.gen( function* ()
 		} ).pipe( Effect.provideService( RuntimeContext, rc ), Effect.orDie )
 	} );
 } ) ).pipe( Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding ) );
+
+// The application's D1 database. `migrationsDir` points at the drizzle-kit output,
+// so alchemy applies the SQL on deploy/dev; `migrationsTable` matches drizzle-kit's
+// default tracking table. Attached to the Worker under the `DB` binding (see
+// `./worker`'s `env`), and provisioned in `alchemy.run.ts`.
+export const StairwayDb = Cloudflare.D1.Database( "stairway-db", {
+	migrationsDir: "packages/shared/db/migrations",
+	migrationsTable: "drizzle_migrations"
+} );
+
+/** The Worker `env` key the D1 database is bound to (see `./worker`). */
+export const DB_BINDING = "DB";
+
+// Effect service holding the Drizzle-over-D1 client, read from the Worker's runtime
+// bindings (`WorkerEnvironment`). We deliberately DON'T use `Cloudflare.D1.QueryDatabase`
+// here: its `.raw`/`host.bind` chain requires `RuntimeContext`/`Providers`, which the
+// alchemy DO runtime supplies but the main Worker's fetch type forbids. Reading the
+// native `D1Database` straight off `WorkerEnvironment` (a `WorkerServices` member) keeps
+// this layer's only dependency in the Worker's allowed service set — and preserves every
+// existing drizzle query. `env[DB_BINDING]` is the binding declared on the Worker.
+export const DatabaseLive = Layer.effect( Database, Effect.gen( function* () {
+	const d1 = yield* Cloudflare.D1.Database( StairwayDb );
+	return Database.of( drizzle( d1, {} ) );
+} ) );
 
 // Realtime fan-out: resolve the local `GameChannel` namespace and, on each
 // broadcast, hand the per-audience snapshots to that game's channel DO

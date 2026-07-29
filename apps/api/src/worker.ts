@@ -8,7 +8,6 @@ import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { StairwayAPI } from "./api";
-import { AuthApiLive, AuthHttpContextLive } from "./auth";
 import {
 	CallbreakApiLive,
 	FishApiLive,
@@ -31,29 +30,6 @@ export default class StairwayApiWorker extends Cloudflare.Worker<StairwayApiWork
 	{ main: import.meta.url },
 	Effect.gen( function* () {
 		const channels = yield* GameChannel;
-
-		const api = yield* HttpRouter.toHttpEffect(
-			HttpApiBuilder.layer( StairwayAPI ).pipe(
-				Layer.provide( HealthApiLive ),
-				Layer.provide( AuthApiLive ),
-				Layer.provide( WordleApiLive ),
-				Layer.provide( TicTacToeApiLive ),
-				Layer.provide( SplendorApiLive ),
-				Layer.provide( FishApiLive ),
-				Layer.provide( CallbreakApiLive ),
-				Layer.provide( KingdominoApiLive ),
-				Layer.provide( AuthHttpContextLive ),
-				Layer.provide( [ Etag.layer, HttpPlatform.layer, Path.layer ] ),
-				Layer.provide(
-					HttpRouter.cors( {
-						allowedOrigins: [ "*" ],
-						allowedMethods: [ "GET", "POST", "OPTIONS" ],
-						allowedHeaders: [ "Content-Type" ]
-					} )
-				)
-			)
-		);
-
 		return {
 			fetch: Effect.gen( function* () {
 				const request = yield* HttpServerRequest.HttpServerRequest;
@@ -62,7 +38,29 @@ export default class StairwayApiWorker extends Cloudflare.Worker<StairwayApiWork
 					const [ , gameName, gameId ] = match;
 					return yield* channels.getByName( `${ gameName }:${ gameId }` ).fetch( request );
 				}
-				return yield* api;
+
+				return yield* HttpRouter.toHttpEffect(
+					HttpApiBuilder.layer( StairwayAPI ).pipe(
+						Layer.provide( HealthApiLive ),
+						// Layer.provide( AuthApiLive ),
+						Layer.provide( WordleApiLive ),
+						Layer.provide( TicTacToeApiLive ),
+						Layer.provide( SplendorApiLive ),
+						Layer.provide( FishApiLive ),
+						Layer.provide( CallbreakApiLive ),
+						Layer.provide( KingdominoApiLive ),
+						// Layer.provide( AuthService.layer ),
+						// Layer.provide( DatabaseLive ),
+						Layer.provide( [ Etag.layer, HttpPlatform.layer, Path.layer ] ),
+						Layer.provide(
+							HttpRouter.cors( {
+								allowedOrigins: [ "*" ],
+								allowedMethods: [ "GET", "POST", "OPTIONS" ],
+								allowedHeaders: [ "Content-Type" ]
+							} )
+						)
+					)
+				);
 			} )
 		};
 	} )

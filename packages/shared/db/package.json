@@ -12,10 +12,10 @@
 	},
 	"dependencies": {
 		"@s2h/utils": "workspace:*",
-		"drizzle-orm": "catalog:"
+		"drizzle-orm": "catalog:",
+		"effect": "catalog:"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "catalog:",
 		"typescript": "catalog:"
 	}
 }

@@ -6,11 +6,8 @@
 // it for secrets or anything an adversary must not predict.
 
 export type Rng = {
-	/** Next float in [0, 1). */
 	readonly next: () => number;
-	/** Next integer in [0, max). */
 	readonly int: ( max: number ) => number;
-	/** A new array shuffled with this stream (seeded Fisher-Yates). */
 	readonly shuffle: <T>( arr: readonly T[] ) => T[];
 };
 
@@ -18,6 +15,7 @@ export type Rng = {
  * Fold arbitrary parts (a seed plus salts like turn / decider role) into a
  * uint32 seed via the xmur3 string hash. Distinct part tuples give distinct
  * streams, which is how the engine keeps same-turn deciders from colliding.
+ * @param parts
  */
 export const hashSeed = ( ...parts: ReadonlyArray<string | number> ): number => {
 	const str = parts.join( "|" );
@@ -31,7 +29,10 @@ export const hashSeed = ( ...parts: ReadonlyArray<string | number> ): number => 
 	return ( h ^ ( h >>> 16 ) ) >>> 0;
 };
 
-/** mulberry32: a fast 32-bit PRNG. Returns a fn producing floats in [0, 1). */
+/**
+ * mulberry32: a fast 32-bit PRNG. Returns a fn producing floats in [0, 1).
+ * @param seed - A numeric seed
+ */
 export const mulberry32 = ( seed: number ): ( () => number ) => {
 	let a = seed >>> 0;
 	return () => {
@@ -42,7 +43,10 @@ export const mulberry32 = ( seed: number ): ( () => number ) => {
 	};
 };
 
-/** Build an `Rng` from a numeric seed. */
+/**
+ * Build an `Rng` from a numeric seed.
+ * @param seed - A numeric seed
+ */
 export const makeRng = ( seed: number ): Rng => {
 	const next = mulberry32( seed );
 	const int = ( max: number ) => Math.floor( next() * max );
