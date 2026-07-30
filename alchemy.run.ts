@@ -1,6 +1,6 @@
-import { default as ApiWorker } from "@s2h/api/worker";
-import { StairwayDatabase } from "@s2h/platform/database/service";
-import { SessionKV } from "@s2h/platform/kv/session";
+import { default as ApiWorker } from "./src/worker.ts";
+import { StairwayDatabase } from "./src/platform/database/service.ts";
+import { SessionKV } from "./src/platform/kv/session.ts";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
