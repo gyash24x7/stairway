@@ -1,8 +1,9 @@
-import { Scheduler } from "@/shared/swish/services";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+
+import { Scheduler } from "@/shared/swish/services.ts";
 
 /** The kinds of deferred wake-up the engine schedules. */
 export type AlarmKind = "auto-start" | "bot" | "interaction-timeout" | "move-timeout";

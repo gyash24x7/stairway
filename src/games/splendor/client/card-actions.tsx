@@ -1,6 +1,8 @@
 "use client";
 
-import type { Card } from "@/games/splendor/shared/schema";
+import { useBoolean } from "usehooks-ts";
+
+import type { Card } from "@/games/splendor/shared/schema.ts";
 import {
 	Drawer,
 	DrawerContent,
@@ -8,12 +10,11 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { useBoolean } from "usehooks-ts";
-import { useSplendor } from "./context";
-import { GameCard } from "./game-card";
-import { PurchaseCard } from "./purchase-card";
-import { ReserveCard } from "./reserve-card";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { GameCard } from "@/games/splendor/client/game-card.tsx";
+import { PurchaseCard } from "@/games/splendor/client/purchase-card.tsx";
+import { ReserveCard } from "@/games/splendor/client/reserve-card.tsx";
 
 type CardActionsMenuProps = {
 	card: Card;

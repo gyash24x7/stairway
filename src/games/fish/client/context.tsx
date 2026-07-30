@@ -1,7 +1,8 @@
 "use client";
 
-import type { FishPlayerView, FishSnapshot } from "@/games/fish/shared/schema";
 import { createContext, type ReactNode, useContext } from "react";
+
+import type { FishPlayerView, FishSnapshot } from "@/games/fish/shared/schema.ts";
 
 /** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
 export type FishPlayerSnapshot = Omit<FishSnapshot, "view"> & { view: FishPlayerView };

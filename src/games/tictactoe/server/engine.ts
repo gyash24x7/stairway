@@ -9,12 +9,12 @@ import {
 	TicTacToeTableView,
 	TicTacToeView,
 	WinnerDecided
-} from "@/games/tictactoe/shared/schema";
-import { makeEngine } from "@/shared/swish/engine";
-import { InvalidMove } from "@/shared/swish/errors";
-import { PlayerId } from "@/shared/swish/schema";
-import { defineView } from "@/shared/swish/views";
-import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "./utils";
+} from "@/games/tictactoe/shared/schema.ts";
+import { makeEngine } from "@/shared/swish/engine.ts";
+import { InvalidMove } from "@/shared/swish/errors.ts";
+import { PlayerId } from "@/shared/swish/schema.ts";
+import { defineView } from "@/shared/swish/views.ts";
+import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "@/games/tictactoe/server/utils.ts";
 
 // --- Engine ----------------------------------------------------------------
 

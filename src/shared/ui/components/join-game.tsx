@@ -1,8 +1,9 @@
-import { GameCode } from "@/shared/swish/schema.ts";
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useTransition } from "react";
-import { Button } from "../primitives/button.tsx";
-import { Input } from "../primitives/input.tsx";
+
+import { GameCode } from "@/shared/swish/schema.ts";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { Input } from "@/shared/ui/primitives/input.tsx";
 
 type JoinGameProps = {
 	game: string;

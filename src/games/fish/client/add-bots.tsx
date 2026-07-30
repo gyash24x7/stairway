@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/shared/ui/primitives/button";
-import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addBotsFn } from "./client";
-import { useFish } from "./context";
+
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { addBotsFn } from "@/games/fish/client/client.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function AddBots() {
 	const { data } = useFish();

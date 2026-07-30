@@ -1,6 +1,10 @@
-import type { Card, Gem, PurchaseCardInput, Tokens } from "@/games/splendor/shared/schema";
-import { canPurchaseCard, isValidPayment } from "@/games/splendor/shared/utils";
-import { Button } from "@/shared/ui/primitives/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { startTransition, useState, useTransition } from "react";
+import { useBoolean } from "usehooks-ts";
+
+import type { Card, Gem, PurchaseCardInput, Tokens } from "@/games/splendor/shared/schema.ts";
+import { canPurchaseCard, isValidPayment } from "@/games/splendor/shared/utils.ts";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -8,16 +12,13 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useState, useTransition } from "react";
-import { useBoolean } from "usehooks-ts";
-import { purchaseCardFn } from "./client";
-import { GameCard } from "./game-card";
-import { TokenPicker } from "./token-picker";
-import { gemLightColors } from "./utils";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { purchaseCardFn } from "@/games/splendor/client/client.ts";
+import { GameCard } from "@/games/splendor/client/game-card.tsx";
+import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
+import { gemLightColors } from "@/games/splendor/client/utils.tsx";
 
 type PurchaseCardProps = {
 	gameId: string;

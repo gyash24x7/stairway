@@ -1,11 +1,12 @@
 "use client";
 
-import type { BookType } from "@/games/fish/shared/schema";
-import { buildConfig } from "@/games/fish/shared/utils";
-import { CreateGame } from "@/shared/ui/components/create-game";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
 import { useState } from "react";
-import { createFishGameFn } from "./client";
+
+import type { BookType } from "@/games/fish/shared/schema.ts";
+import { buildConfig } from "@/games/fish/shared/utils.ts";
+import { CreateGame } from "@/shared/ui/components/create-game.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { createFishGameFn } from "@/games/fish/client/client.ts";
 
 export function FishCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<4 | 6 | 8>();

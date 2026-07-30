@@ -1,7 +1,7 @@
-import type { PlayerId } from "@/shared/swish/schema";
-import { RPlayerInfoStrip } from "@/shared/ui/components/player-info";
-import { cn } from "@/shared/ui/utils/cn";
-import { useFish } from "./context";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { RPlayerInfoStrip } from "@/shared/ui/components/player-info.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 function PlayerWithCardCount( props: { playerId: PlayerId } ) {
 	const { data } = useFish();

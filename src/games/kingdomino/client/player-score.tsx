@@ -1,11 +1,12 @@
-import type { PlayerData } from "@/games/kingdomino/shared/schema";
-import type { PlayerInfo } from "@/shared/swish/schema";
-import { CounterTween } from "@/shared/ui/components/counter-tween";
-import { FloatPlusN } from "@/shared/ui/components/float-plus-n";
-import { RPlayerInfo } from "@/shared/ui/components/player-info";
-import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
-import { RSmallBoard } from "./board";
+
+import type { PlayerData } from "@/games/kingdomino/shared/schema.ts";
+import type { PlayerInfo } from "@/shared/swish/schema.ts";
+import { CounterTween } from "@/shared/ui/components/counter-tween.tsx";
+import { FloatPlusN } from "@/shared/ui/components/float-plus-n.tsx";
+import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { RSmallBoard } from "@/games/kingdomino/client/board.tsx";
 
 type PlayerScoreProps = {
 	player: PlayerData & PlayerInfo;

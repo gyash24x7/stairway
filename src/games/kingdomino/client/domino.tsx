@@ -1,7 +1,8 @@
-import type { Domino, Terrain } from "@/games/kingdomino/shared/schema";
-import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
-import { CrownIndicator } from "./board";
+
+import type { Domino, Terrain } from "@/games/kingdomino/shared/schema.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { CrownIndicator } from "@/games/kingdomino/client/board.tsx";
 
 const TERRAIN_CLASS: Record<string, string> = {
 	desert: "bg-amber-200 text-amber-900",

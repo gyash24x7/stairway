@@ -5,14 +5,14 @@ import type {
 	CreateTeamsInput,
 	FishConfig,
 	TransferTurnInput
-} from "@/games/fish/shared/schema";
+} from "@/games/fish/shared/schema.ts";
 import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
 	playerAudience,
 	PlayerId
-} from "@/shared/swish/schema";
+} from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

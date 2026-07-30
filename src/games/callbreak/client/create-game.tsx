@@ -1,10 +1,11 @@
-import type { CardSuit } from "@/shared/cards/schema";
-import { CARD_SUITS } from "@/shared/cards/utils.ts";
-import { RCardSuit } from "@/shared/ui/components/card";
-import { CreateGame } from "@/shared/ui/components/create-game";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
 import { useState } from "react";
-import { createCallbreakGameFn } from "./client";
+
+import type { CardSuit } from "@/shared/cards/schema.ts";
+import { CARD_SUITS } from "@/shared/cards/utils.ts";
+import { RCardSuit } from "@/shared/ui/components/card.tsx";
+import { CreateGame } from "@/shared/ui/components/create-game.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { createCallbreakGameFn } from "@/games/callbreak/client/client.ts";
 
 export function CallbreakCreateGame() {
 	const [ trumpSuit, setTrumpSuit ] = useState<CardSuit>();

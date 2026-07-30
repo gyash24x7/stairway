@@ -1,13 +1,14 @@
+import * as Match from "effect/Match";
+import type * as Types from "effect/Types";
+import { produce } from "immer";
+
+import type { PlayerId } from "@/shared/swish/schema.ts";
 import type {
 	Board,
 	CellValue,
 	TicTacToeEvent,
 	TicTacToeState
-} from "@/games/tictactoe/shared/schema";
-import type { PlayerId } from "@/shared/swish/schema";
-import * as Match from "effect/Match";
-import * as Types from "effect/Types";
-import { produce } from "immer";
+} from "@/games/tictactoe/shared/schema.ts";
 
 /** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
 export const apply = ( state: TicTacToeState, event: TicTacToeEvent ): TicTacToeState =>

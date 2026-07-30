@@ -15,7 +15,7 @@ import {
 	TrickWonEvent,
 	WinnerDecidedEvent,
 	WinsDeclaredEvent
-} from "@/games/callbreak/shared/schema";
+} from "@/games/callbreak/shared/schema.ts";
 import {
 	calculateRoundScore,
 	createNewDeal,
@@ -23,15 +23,15 @@ import {
 	getPlayableCards,
 	PLAYER_COUNT,
 	TRICKS_PER_DEAL
-} from "@/games/callbreak/shared/utils";
+} from "@/games/callbreak/shared/utils.ts";
 import { getCardSuit } from "@/shared/cards/utils.ts";
-import { makeEngine } from "@/shared/swish/engine";
-import { InvalidMove } from "@/shared/swish/errors";
-import { PlayerId } from "@/shared/swish/schema";
-import type { ReadonlyGameData } from "@/shared/swish/structure";
-import { defineView } from "@/shared/swish/views";
-import { botDeclare, botPlayCard } from "./bot";
-import { apply } from "./utils.ts";
+import { makeEngine } from "@/shared/swish/engine.ts";
+import { InvalidMove } from "@/shared/swish/errors.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
+import { defineView } from "@/shared/swish/views.ts";
+import { botDeclare, botPlayCard } from "@/games/callbreak/server/bot.ts";
+import { apply } from "@/games/callbreak/server/utils.ts";
 
 /**
  * The public board both audiences see: cumulative `scores`, the `winner`, the

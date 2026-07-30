@@ -1,6 +1,6 @@
 import type { PlayerInfo } from "@/shared/swish/schema.ts";
-import { cn } from "../utils/cn.ts";
-import { RPlayerInfo } from "./player-info.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
 
 export type PlayerLobbyGridProps = {
 	players: PlayerInfo[];

@@ -1,5 +1,6 @@
-import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator.ts";
 
 const now = () => new Date();
 

@@ -1,6 +1,6 @@
 import { getClient, run } from "@/client.ts";
-import type { WordleConfig } from "@/games/wordle/shared/schema";
-import { GameIdParams, playerAudience, PlayerId } from "@/shared/swish/schema";
+import type { WordleConfig } from "@/games/wordle/shared/schema.ts";
+import { GameIdParams, playerAudience, PlayerId } from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

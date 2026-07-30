@@ -1,5 +1,5 @@
-import { CreateGame } from "@/shared/ui/components/create-game";
-import { createTicTacToeGameFn } from "./client";
+import { CreateGame } from "@/shared/ui/components/create-game.tsx";
+import { createTicTacToeGameFn } from "@/games/tictactoe/client/client.ts";
 
 export function TicTacToeCreateGame() {
 	// Tic-Tac-Toe is a fixed two-seat game; it starts once both seats are filled

@@ -1,9 +1,12 @@
 "use client";
 
-import { useAuth } from "@/auth/client/use-auth";
-import type { PlayerId } from "@/shared/swish/schema";
-import { RPlayerInfo } from "@/shared/ui/components/player-info";
-import { Button } from "@/shared/ui/primitives/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Fragment, useState } from "react";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -11,15 +14,13 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { Input } from "@/shared/ui/primitives/input";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
-import { chunk, shuffle } from "@/shared/utils/array";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Fragment, useState } from "react";
-import { createTeamsFn } from "./client";
-import { useFish } from "./context";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { Input } from "@/shared/ui/primitives/input.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { chunk, shuffle } from "@/shared/utils/array.ts";
+import { createTeamsFn } from "@/games/fish/client/client.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function CreateTeams() {
 	const { data } = useFish();

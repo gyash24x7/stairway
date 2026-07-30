@@ -1,8 +1,11 @@
 "use client";
 
-import { GameInfo } from "@/shared/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
-import { Button } from "@/shared/ui/primitives/button";
+import { UsersIcon } from "lucide-react";
+import { useState } from "react";
+
+import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -10,15 +13,13 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
-import { UsersIcon } from "lucide-react";
-import { useState } from "react";
-import { Board } from "./board";
-import { useSplendor } from "./context";
-import { PickTokens } from "./pick-tokens";
-import { PlayerInfo } from "./player-info";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { Board } from "@/games/splendor/client/board.tsx";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { PickTokens } from "@/games/splendor/client/pick-tokens.tsx";
+import { PlayerInfo } from "@/games/splendor/client/player-info.tsx";
 
 export function GameView() {
 	const { data } = useSplendor();

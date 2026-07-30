@@ -1,10 +1,13 @@
 "use client";
 
-import { useAuth } from "@/auth/client/use-auth";
-import { getTeammates } from "@/games/fish/shared/utils";
-import type { PlayerId } from "@/shared/swish/schema";
-import { RPlayerInfo } from "@/shared/ui/components/player-info";
-import { Button } from "@/shared/ui/primitives/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { getTeammates } from "@/games/fish/shared/utils.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -12,13 +15,11 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { transferTurnFn } from "./client";
-import { useFish } from "./context";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { transferTurnFn } from "@/games/fish/client/client.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function TransferTurn() {
 	const { data } = useFish();

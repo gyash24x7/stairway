@@ -1,12 +1,13 @@
-import type { BookType, FishEvent, FishState } from "@/games/fish/shared/schema";
-import { BookClaimed, CardAsked } from "@/games/fish/shared/schema";
-import { getCardsOfBook } from "@/games/fish/shared/utils";
-import type { CardId } from "@/shared/cards/schema";
-import { CARD_RANKS, getCardRank } from "@/shared/cards/utils.ts";
-import { PlayerId } from "@/shared/swish/schema";
-import { remove } from "@/shared/utils/array";
 import * as Match from "effect/Match";
 import { castDraft, type Draft, produce } from "immer";
+
+import type { BookType, FishEvent, FishState } from "@/games/fish/shared/schema.ts";
+import type { BookClaimed, CardAsked } from "@/games/fish/shared/schema.ts";
+import { getCardsOfBook } from "@/games/fish/shared/utils.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
+import { CARD_RANKS, getCardRank } from "@/shared/cards/utils.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { remove } from "@/shared/utils/array.ts";
 
 // --- Reducer ---------------------------------------------------------------
 // The ONLY place `state` changes. Pure, synchronous — no Effect, no Random. The

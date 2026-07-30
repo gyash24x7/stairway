@@ -1,11 +1,12 @@
-import type { AuthInfo } from "@/auth/shared/schema.ts";
-import { PlayerId, PlayerInfo } from "@/shared/swish/schema.ts";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import * as HttpApiClient from "effect/unstable/httpapi/HttpApiClient";
-import { StairwayAPI } from "./api.ts";
+
+import { PlayerId, PlayerInfo } from "@/shared/swish/schema.ts";
+import type { AuthInfo } from "@/auth/shared/schema.ts";
+import { StairwayAPI } from "@/api.ts";
 
 const build = ( baseUrl: string ) =>
 	Effect.runSync(

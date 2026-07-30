@@ -1,11 +1,12 @@
 "use client";
 
-import { GameInfo } from "@/shared/ui/components/game-info";
-import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
-import { Board } from "./board";
-import { useWordle } from "./context";
-import { Keyboard } from "./keyboard";
+
+import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { Board } from "@/games/wordle/client/board.tsx";
+import { useWordle } from "@/games/wordle/client/context.tsx";
+import { Keyboard } from "@/games/wordle/client/keyboard.tsx";
 
 export function GameView() {
 	const { data } = useWordle();

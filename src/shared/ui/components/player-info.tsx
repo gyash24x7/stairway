@@ -1,6 +1,6 @@
 import type { PlayerInfo } from "@/shared/swish/schema.ts";
-import { Avatar, AvatarImage } from "../primitives/avatar.tsx";
-import { cn } from "../utils/cn.ts";
+import { Avatar, AvatarImage } from "@/shared/ui/primitives/avatar.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 export type PlayerInfoProps = {
 	player: PlayerInfo;

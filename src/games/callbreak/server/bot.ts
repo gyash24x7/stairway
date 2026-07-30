@@ -1,6 +1,6 @@
-import type { CallbreakConfig, CallbreakPlayerView, Trick } from "@/games/callbreak/shared/schema";
-import { getCardValue, getPlayableCards } from "@/games/callbreak/shared/utils";
-import type { CardId, CardSuit } from "@/shared/cards/schema";
+import type { CallbreakConfig, CallbreakPlayerView, Trick } from "@/games/callbreak/shared/schema.ts";
+import { getCardValue, getPlayableCards } from "@/games/callbreak/shared/utils.ts";
+import type { CardId, CardSuit } from "@/shared/cards/schema.ts";
 import { getCardRank, getCardSuit } from "@/shared/cards/utils.ts";
 
 /**

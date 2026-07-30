@@ -1,10 +1,11 @@
 "use client";
 
-import type { Book } from "@/games/fish/shared/schema";
-import { getBookDisplayString } from "@/games/fish/shared/utils";
-import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
-import { useFish } from "./context";
+
+import type { Book } from "@/games/fish/shared/schema.ts";
+import { getBookDisplayString } from "@/games/fish/shared/utils.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function BooksTracker() {
 	const { data } = useFish();

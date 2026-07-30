@@ -1,5 +1,9 @@
-import type { Card, Gem, ReserveCardInput, Tokens } from "@/games/splendor/shared/schema";
-import { Button } from "@/shared/ui/primitives/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { startTransition, useState, useTransition } from "react";
+import { useBoolean } from "usehooks-ts";
+
+import type { Card, Gem, ReserveCardInput, Tokens } from "@/games/splendor/shared/schema.ts";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -7,13 +11,10 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useState, useTransition } from "react";
-import { useBoolean } from "usehooks-ts";
-import { reserveCardFn } from "./client";
-import { TokenPicker } from "./token-picker";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { reserveCardFn } from "@/games/splendor/client/client.ts";
+import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
 
 type ReserveCardProps = {
 	gameId: string;

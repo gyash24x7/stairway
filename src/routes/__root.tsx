@@ -1,10 +1,11 @@
+import type { QueryClient } from "@tanstack/react-query";
+import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
+
 import { RAuthInfo } from "@/auth/client/auth-info.tsx";
 import { Login } from "@/auth/client/login.tsx";
 import { useAuth } from "@/auth/client/use-auth.tsx";
 import { Navbar } from "@/shared/ui/components/navbar.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
 
 /** Root route: carries the QueryClient in router context and wraps pages in the app layout. */
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()( {

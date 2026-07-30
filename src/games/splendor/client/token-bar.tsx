@@ -1,8 +1,9 @@
-import type { Gem, Tokens } from "@/games/splendor/shared/schema";
-import { Button } from "@/shared/ui/primitives/button";
-import { cn } from "@/shared/ui/utils/cn";
 import type { ReactNode } from "react";
-import { gemColors } from "./utils";
+
+import type { Gem, Tokens } from "@/games/splendor/shared/schema.ts";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { gemColors } from "@/games/splendor/client/utils.tsx";
 
 export type TokenBarProps = {
 	tokens: Partial<Tokens>;

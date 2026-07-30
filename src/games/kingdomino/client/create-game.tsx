@@ -1,8 +1,9 @@
-import type { BoardSize } from "@/games/kingdomino/shared/schema";
-import { CreateGame } from "@/shared/ui/components/create-game";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
 import { useState } from "react";
-import { createKingdominoGameFn } from "./client";
+
+import type { BoardSize } from "@/games/kingdomino/shared/schema.ts";
+import { CreateGame } from "@/shared/ui/components/create-game.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { createKingdominoGameFn } from "@/games/kingdomino/client/client.ts";
 
 export function KingdominoCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();

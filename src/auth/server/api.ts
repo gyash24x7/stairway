@@ -1,7 +1,8 @@
-import { StairwayAPI } from "@/api.ts";
 import * as Effect from "effect/Effect";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import { BetterAuth } from "./services.ts";
+
+import { StairwayAPI } from "@/api.ts";
+import { BetterAuth } from "@/auth/server/services.ts";
 
 // --- HTTP Api implementation -------------------------------------------------
 

@@ -3,16 +3,17 @@
 import { CheckIcon, CopyIcon, MenuIcon } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { useCopyToClipboard } from "usehooks-ts";
-import { Button } from "../primitives/button.tsx";
+
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerDescription,
 	DrawerHeader,
 	DrawerTitle
-} from "../primitives/drawer.tsx";
-import { cn } from "../utils/cn.ts";
-import { Logo } from "./logo.tsx";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { Logo } from "@/shared/ui/components/logo.tsx";
 
 type GameInfoProps = {
 	code?: string;

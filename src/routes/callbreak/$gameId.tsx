@@ -1,7 +1,8 @@
-import { useAuth } from "@/auth/client/use-auth.tsx";
-import { CallbreakGamePage } from "@/games/callbreak/client";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { createFileRoute } from "@tanstack/react-router";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { CallbreakGamePage } from "@/games/callbreak/client/index.ts";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 
 export const Route = createFileRoute( "/callbreak/$gameId" )( {
 	component: GameRoute

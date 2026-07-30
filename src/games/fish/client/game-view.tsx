@@ -1,21 +1,21 @@
 "use client";
 
-import { GameInfo } from "@/shared/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
-import { ActivityFeed } from "./activity-feed";
-import { AddBots } from "./add-bots";
-import { AskCard } from "./ask-card";
-import { BooksTracker } from "./books-tracker";
-import { ClaimBook } from "./claim-book";
-import { useFish } from "./context";
-import { CreateTeams } from "./create-teams";
-import { HandView } from "./hand-view";
-import { GameMetrics } from "./metrics";
-import { TeamsView } from "./teams-view";
-import { TransferTurn } from "./transfer-turn";
-import { TurnIndicator } from "./turn-indicator";
+import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { ActivityFeed } from "@/games/fish/client/activity-feed.tsx";
+import { AddBots } from "@/games/fish/client/add-bots.tsx";
+import { AskCard } from "@/games/fish/client/ask-card.tsx";
+import { BooksTracker } from "@/games/fish/client/books-tracker.tsx";
+import { ClaimBook } from "@/games/fish/client/claim-book.tsx";
+import { useFish } from "@/games/fish/client/context.tsx";
+import { CreateTeams } from "@/games/fish/client/create-teams.tsx";
+import { HandView } from "@/games/fish/client/hand-view.tsx";
+import { GameMetrics } from "@/games/fish/client/metrics.tsx";
+import { TeamsView } from "@/games/fish/client/teams-view.tsx";
+import { TransferTurn } from "@/games/fish/client/transfer-turn.tsx";
+import { TurnIndicator } from "@/games/fish/client/turn-indicator.tsx";
 
 export function GameView() {
 	const { data } = useFish();

@@ -1,6 +1,10 @@
 "use client";
 
-import { Button } from "@/shared/ui/primitives/button";
+import { MinusIcon, PlusIcon } from "lucide-react";
+import { useState } from "react";
+import { useCounter } from "usehooks-ts";
+
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -8,13 +12,10 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
-import { MinusIcon, PlusIcon } from "lucide-react";
-import { useState } from "react";
-import { useCounter } from "usehooks-ts";
-import { useCallbreak } from "./context";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 
 export function DeclareWins() {
 	const [ open, setOpen ] = useState( false );

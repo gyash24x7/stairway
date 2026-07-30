@@ -1,14 +1,3 @@
-import { StairwayAPI } from "@/api.ts";
-import { AuthApiLive } from "@/auth/server/api";
-import { AuthMiddlewareLive } from "@/auth/server/middleware";
-import { BetterAuthLive } from "@/auth/server/services";
-import { CallbreakApiLive, CallbreakEngineDO } from "@/games/callbreak/server/api";
-import { FishApiLive, FishEngineDO } from "@/games/fish/server/api";
-import { KingdominoApiLive, KingdominoEngineDO } from "@/games/kingdomino/server/api";
-import { SplendorApiLive, SplendorEngineDO } from "@/games/splendor/server/api";
-import { TicTacToeApiLive, TicTacToeEngineDO } from "@/games/tictactoe/server/api";
-import { WordleApiLive, WordleEngineDO } from "@/games/wordle/server/api";
-import { DatabaseLive } from "@/platform/database/service";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
@@ -18,6 +7,18 @@ import * as Etag from "effect/unstable/http/Etag";
 import * as HttpPlatform from "effect/unstable/http/HttpPlatform";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+
+import { StairwayAPI } from "@/api.ts";
+import { AuthApiLive } from "@/auth/server/api.ts";
+import { AuthMiddlewareLive } from "@/auth/server/middleware.ts";
+import { BetterAuthLive } from "@/auth/server/services.ts";
+import { CallbreakApiLive, CallbreakEngineDO } from "@/games/callbreak/server/api.ts";
+import { FishApiLive, FishEngineDO } from "@/games/fish/server/api.ts";
+import { KingdominoApiLive, KingdominoEngineDO } from "@/games/kingdomino/server/api.ts";
+import { SplendorApiLive, SplendorEngineDO } from "@/games/splendor/server/api.ts";
+import { TicTacToeApiLive, TicTacToeEngineDO } from "@/games/tictactoe/server/api.ts";
+import { WordleApiLive, WordleEngineDO } from "@/games/wordle/server/api.ts";
+import { DatabaseLive } from "@/platform/database/service.ts";
 
 const HttpPlatformStub = Layer.succeed( HttpPlatform.HttpPlatform, {
 	fileResponse: () => Effect.die( "HttpPlatform.fileResponse not supported" ),

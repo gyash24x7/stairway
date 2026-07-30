@@ -1,5 +1,6 @@
-import type { SplendorPlayerView, SplendorSnapshot } from "@/games/splendor/shared/schema";
 import { createContext, type ReactNode, useContext } from "react";
+
+import type { SplendorPlayerView, SplendorSnapshot } from "@/games/splendor/shared/schema.ts";
 
 /** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
 export type SplendorPlayerSnapshot = Omit<SplendorSnapshot, "view"> & { view: SplendorPlayerView };

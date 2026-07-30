@@ -1,21 +1,22 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import { useState } from "react";
+
 import {
 	getAskDescription,
 	getClaimDescription,
 	getTransferDescription
-} from "@/games/fish/shared/utils";
+} from "@/games/fish/shared/utils.ts";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { cn } from "@/shared/ui/utils/cn";
-import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
-import { useFish } from "./context";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 type FeedEntry = {
 	type: "ask" | "claim" | "transfer";

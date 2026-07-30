@@ -1,8 +1,8 @@
-import { JoinGame } from "@/shared/ui/components/join-game";
-import { Separator } from "@/shared/ui/primitives/separator";
-import { cn } from "@/shared/ui/utils/cn";
-import { joinKingdominoGameFn } from "./client";
-import { KingdominoCreateGame as CreateGame } from "./create-game";
+import { JoinGame } from "@/shared/ui/components/join-game.tsx";
+import { Separator } from "@/shared/ui/primitives/separator.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { joinKingdominoGameFn } from "@/games/kingdomino/client/client.ts";
+import { KingdominoCreateGame as CreateGame } from "@/games/kingdomino/client/create-game.tsx";
 
 export function KingdominoHomePage( props: { isLoggedIn?: boolean } ) {
 	return (

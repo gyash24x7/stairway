@@ -1,7 +1,8 @@
-import { AuthMiddleware } from "@/auth/shared/middleware";
-import { CreateGameApiEndpoint, GetStateApiEndpoint, MoveApiEndpoint } from "@/shared/swish/api";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
-import { GuessInput, WordleConfig, WordleSnapshot } from "./schema";
+
+import { AuthMiddleware } from "@/auth/shared/middleware.ts";
+import { CreateGameApiEndpoint, GetStateApiEndpoint, MoveApiEndpoint } from "@/shared/swish/api.ts";
+import { GuessInput, WordleConfig, WordleSnapshot } from "@/games/wordle/shared/schema.ts";
 
 export const WordleApiGroup = HttpApiGroup.make( "wordle" )
 	.add(

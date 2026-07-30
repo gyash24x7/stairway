@@ -1,4 +1,4 @@
-import type { Gem } from "@/games/splendor/shared/schema";
+import type { Gem } from "@/games/splendor/shared/schema.ts";
 
 export const gemColors: Record<Gem, string> = {
 	diamond: "bg-gray-100 text-gray-600",

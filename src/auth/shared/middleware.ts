@@ -1,6 +1,7 @@
-import { type AuthInfo, Unauthorized } from "@/auth/shared/schema.ts";
 import * as Context from "effect/Context";
 import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
+
+import { type AuthInfo, Unauthorized } from "@/auth/shared/schema.ts";
 
 
 // --- Context -------------------------------------------------------------

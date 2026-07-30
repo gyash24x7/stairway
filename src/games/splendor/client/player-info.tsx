@@ -1,11 +1,14 @@
 "use client";
 
-import type { Gem } from "@/games/splendor/shared/schema";
-import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils";
-import type { PlayerId } from "@/shared/swish/schema";
-import { CounterTween } from "@/shared/ui/components/counter-tween";
-import { FloatPlusN } from "@/shared/ui/components/float-plus-n";
-import { Avatar, AvatarImage } from "@/shared/ui/primitives/avatar";
+import { motion } from "framer-motion";
+import { useState } from "react";
+
+import type { Gem } from "@/games/splendor/shared/schema.ts";
+import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { CounterTween } from "@/shared/ui/components/counter-tween.tsx";
+import { FloatPlusN } from "@/shared/ui/components/float-plus-n.tsx";
+import { Avatar, AvatarImage } from "@/shared/ui/primitives/avatar.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -13,15 +16,13 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
-import { cn } from "@/shared/ui/utils/cn";
-import { motion } from "framer-motion";
-import { useState } from "react";
-import { useSplendor } from "./context";
-import { GameCard } from "./game-card";
-import { PurchaseCard } from "./purchase-card";
-import { gemColors, gemLightColors } from "./utils";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { GameCard } from "@/games/splendor/client/game-card.tsx";
+import { PurchaseCard } from "@/games/splendor/client/purchase-card.tsx";
+import { gemColors, gemLightColors } from "@/games/splendor/client/utils.tsx";
 
 function PlayerTokenCount( props: { gem: Gem; playerId: PlayerId } ) {
 	const { data } = useSplendor();

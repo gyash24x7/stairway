@@ -1,13 +1,13 @@
-import type { Book, FishConfig, FishPlayerView } from "@/games/fish/shared/schema";
+import type { Book, FishConfig, FishPlayerView } from "@/games/fish/shared/schema.ts";
 import {
 	getBookForCard,
 	getBooksInHand,
 	getCardsOfBook,
 	getMissingCards,
 	getTeammates
-} from "@/games/fish/shared/utils";
-import type { CardId } from "@/shared/cards/schema";
-import { PlayerId } from "@/shared/swish/schema";
+} from "@/games/fish/shared/utils.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
 
 /** A book with a calculated priority weight for bot decision-making. */
 type WeightedBook = {

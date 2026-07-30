@@ -18,7 +18,7 @@ import {
 	SelectionOrderRecomputed,
 	SelectionOrderSet,
 	WinnerDecided
-} from "@/games/kingdomino/shared/schema";
+} from "@/games/kingdomino/shared/schema.ts";
 import {
 	applyPlacement,
 	calculateScore,
@@ -34,14 +34,14 @@ import {
 	getSelectionsPerPlayer,
 	getShiftedTiles,
 	getValidPlacements
-} from "@/games/kingdomino/shared/utils";
-import { makeEngine } from "@/shared/swish/engine";
-import { InvalidMove } from "@/shared/swish/errors";
-import type { PlayerId } from "@/shared/swish/schema";
-import type { ReadonlyGameData } from "@/shared/swish/structure";
-import { defineView } from "@/shared/swish/views";
-import { shuffle } from "@/shared/utils/array";
-import { apply } from "./utils.ts";
+} from "@/games/kingdomino/shared/utils.ts";
+import { makeEngine } from "@/shared/swish/engine.ts";
+import { InvalidMove } from "@/shared/swish/errors.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
+import { defineView } from "@/shared/swish/views.ts";
+import { shuffle } from "@/shared/utils/array.ts";
+import { apply } from "@/games/kingdomino/server/utils.ts";
 
 /** The public board both audiences see: the full state minus the hidden `deck`. */
 const publicBoard = ( { state }: ReadonlyGameData<KingdominoState, KingdominoConfig> ) => {

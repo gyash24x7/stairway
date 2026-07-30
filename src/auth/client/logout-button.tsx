@@ -1,10 +1,11 @@
-import { Button } from "@/shared/ui/primitives/button";
-import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useNavigate } from "@tanstack/react-router";
 import { LogOutIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";
-import { logoutFn } from "./client.ts";
-import { useRefreshAuth } from "./use-auth.tsx";
+
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { logoutFn } from "@/auth/client/client.ts";
+import { useRefreshAuth } from "@/auth/client/use-auth.tsx";
 
 export function LogoutButton() {
 	const navigate = useNavigate();

@@ -1,6 +1,6 @@
-import type { Cost, Noble as NobleType } from "@/games/splendor/shared/schema";
-import { cn } from "@/shared/ui/utils/cn";
-import { gemColors } from "./utils";
+import type { Cost, Noble as NobleType } from "@/games/splendor/shared/schema.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { gemColors } from "@/games/splendor/client/utils.tsx";
 
 export function Noble( { noble }: { noble: NobleType } ) {
 	return (

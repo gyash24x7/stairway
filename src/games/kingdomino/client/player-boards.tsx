@@ -1,15 +1,16 @@
-import { Button } from "@/shared/ui/primitives/button";
+import { LayoutDashboardIcon } from "lucide-react";
+import { useBoolean } from "usehooks-ts";
+
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerDescription,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { LayoutDashboardIcon } from "lucide-react";
-import { useBoolean } from "usehooks-ts";
-import { RSmallBoard } from "./board";
-import { useKingdomino } from "./context";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { RSmallBoard } from "@/games/kingdomino/client/board.tsx";
+import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
 
 export function PlayerBoards() {
 	const { value, setTrue, toggle } = useBoolean();

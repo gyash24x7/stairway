@@ -1,12 +1,12 @@
 "use client";
 
-import { DOMINO_DECK } from "@/games/kingdomino/shared/utils";
-import type { PlayerId } from "@/shared/swish/schema";
-import { RPlayerInfoSmall } from "@/shared/ui/components/player-info";
-import { cn } from "@/shared/ui/utils/cn";
-import { RSmallBoard } from "./board";
-import { useKingdomino } from "./context";
-import { RSmallDomino } from "./domino";
+import { DOMINO_DECK } from "@/games/kingdomino/shared/utils.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { RPlayerInfoSmall } from "@/shared/ui/components/player-info.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { RSmallBoard } from "@/games/kingdomino/client/board.tsx";
+import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
+import { RSmallDomino } from "@/games/kingdomino/client/domino.tsx";
 
 export function ROpponent( { playerId }: { playerId: PlayerId } ) {
 	const { data } = useKingdomino();

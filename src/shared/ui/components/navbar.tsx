@@ -1,11 +1,12 @@
 import { useNavigate } from "@tanstack/react-router";
 import { HomeIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button } from "../primitives/button.tsx";
-import { Separator } from "../primitives/separator.tsx";
-import { cn } from "../utils/cn.ts";
-import { Logo } from "./logo.tsx";
-import { ThemeSwitcher } from "./theme-switcher.tsx";
+
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { Separator } from "@/shared/ui/primitives/separator.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { Logo } from "@/shared/ui/components/logo.tsx";
+import { ThemeSwitcher } from "@/shared/ui/components/theme-switcher.tsx";
 
 export function Navbar( props: { children: ReactNode; } ) {
 	const navigate = useNavigate();

@@ -1,19 +1,24 @@
 "use client";
 
-import { useAuth } from "@/auth/client/use-auth";
-import type { Book, ClaimBookInput } from "@/games/fish/shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowBigRightDashIcon } from "lucide-react";
+import { useState } from "react";
+import { useStep } from "usehooks-ts";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import type { Book, ClaimBookInput } from "@/games/fish/shared/schema.ts";
 import {
 	getBookDisplayString,
 	getBooksInHand,
 	getCardsOfBook,
 	getMissingCards,
 	getTeammates
-} from "@/games/fish/shared/utils";
-import type { CardId } from "@/shared/cards/schema";
-import type { PlayerId } from "@/shared/swish/schema";
-import { RCard } from "@/shared/ui/components/card";
-import { RPlayerInfoStrip } from "@/shared/ui/components/player-info";
-import { Button } from "@/shared/ui/primitives/button";
+} from "@/games/fish/shared/utils.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { RCard } from "@/shared/ui/components/card.tsx";
+import { RPlayerInfoStrip } from "@/shared/ui/components/player-info.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -21,15 +26,11 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowBigRightDashIcon } from "lucide-react";
-import { useState } from "react";
-import { useStep } from "usehooks-ts";
-import { claimBookFn } from "./client";
-import { useFish } from "./context";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { claimBookFn } from "@/games/fish/client/client.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function ClaimBook() {
 	const { data } = useFish();

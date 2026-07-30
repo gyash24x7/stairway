@@ -1,21 +1,22 @@
 "use client";
 
-import { DOMINO_DECK } from "@/games/kingdomino/shared/utils";
-import { GameInfo } from "@/shared/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
-import { Button } from "@/shared/ui/primitives/button";
-import { cn } from "@/shared/ui/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useState } from "react";
-import { RBoard } from "./board";
-import { selectDominoFn } from "./client";
-import { useKingdomino } from "./context";
-import { RDomino } from "./domino";
-import { RDraft } from "./draft";
-import { PlayerBoards } from "./player-boards";
-import { PlayerScore } from "./player-score";
-import { usePlacement } from "./use-placement";
+
+import { DOMINO_DECK } from "@/games/kingdomino/shared/utils.ts";
+import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { RBoard } from "@/games/kingdomino/client/board.tsx";
+import { selectDominoFn } from "@/games/kingdomino/client/client.ts";
+import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
+import { RDomino } from "@/games/kingdomino/client/domino.tsx";
+import { RDraft } from "@/games/kingdomino/client/draft.tsx";
+import { PlayerBoards } from "@/games/kingdomino/client/player-boards.tsx";
+import { PlayerScore } from "@/games/kingdomino/client/player-score.tsx";
+import { usePlacement } from "@/games/kingdomino/client/use-placement.tsx";
 
 export function GameView() {
 	const { data } = useKingdomino();

@@ -4,13 +4,15 @@ import type {
 	KingdominoConfig,
 	PlaceDominoInput,
 	SelectDominoInput
-} from "@/games/kingdomino/shared/schema";
+} from "@/games/kingdomino/shared/schema.ts";
+import type {
+	PlayerInfo
+} from "@/shared/swish/schema.ts";
 import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
-	playerAudience,
-	PlayerInfo
+	playerAudience
 } from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";

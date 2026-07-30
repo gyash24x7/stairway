@@ -1,9 +1,10 @@
 "use client";
 
-import type { Gem, Tokens } from "@/games/splendor/shared/schema";
-import { DEFAULT_TOKENS } from "@/games/splendor/shared/utils";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
-import { TokenBar } from "./token-bar";
+
+import type { Gem, Tokens } from "@/games/splendor/shared/schema.ts";
+import { DEFAULT_TOKENS } from "@/games/splendor/shared/utils.ts";
+import { TokenBar } from "@/games/splendor/client/token-bar.tsx";
 
 type TokenPickerProps = {
 	initialTokens: Partial<Tokens>;

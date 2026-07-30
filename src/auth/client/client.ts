@@ -1,6 +1,7 @@
-import { AuthInfo, type RegisterInput } from "@/auth/shared/schema";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { createAuthClient } from "better-auth/client";
+
+import { AuthInfo, type RegisterInput } from "@/auth/shared/schema.ts";
 
 const authClient = createAuthClient( {
 	baseURL: import.meta.env[ "VITE_API_URL" ],

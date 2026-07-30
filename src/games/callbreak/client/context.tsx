@@ -1,13 +1,14 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
+
 import type {
 	CallbreakPlayerView,
 	CallbreakSnapshot,
 	DeclareWinsInput,
 	PlayCardInput
-} from "@/games/callbreak/shared/schema";
-import { CardId } from "@/shared/cards/schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
-import { addBotsFn, declareWinsFn, playCardFn } from "./client";
+} from "@/games/callbreak/shared/schema.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
+import { addBotsFn, declareWinsFn, playCardFn } from "@/games/callbreak/client/client.ts";
 
 /** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
 export type CallbreakPlayerSnapshot = Omit<CallbreakSnapshot, "view"> & {

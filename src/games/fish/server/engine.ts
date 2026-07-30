@@ -1,3 +1,5 @@
+import type {
+	FishSnapshot} from "@/games/fish/shared/schema.ts";
 import {
 	AskCardInput,
 	BookClaimed,
@@ -7,7 +9,6 @@ import {
 	FishConfig,
 	FishEvent,
 	FishPlayerView,
-	FishSnapshot,
 	FishState,
 	FishTableView,
 	FishView,
@@ -17,30 +18,30 @@ import {
 	TransferTurnInput,
 	TurnTransferred,
 	WinningTeamDecided
-} from "@/games/fish/shared/schema";
+} from "@/games/fish/shared/schema.ts";
 import {
 	getBookForCard,
 	getCardsOfBook,
 	getClaimedBooks,
 	getOpponents,
 	getTeammates
-} from "@/games/fish/shared/utils";
-import type { CardId } from "@/shared/cards/schema";
+} from "@/games/fish/shared/utils.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
 import { CARD_RANKS, generateDeck, generateHands, getCardRank } from "@/shared/cards/utils.ts";
-import { makeEngine } from "@/shared/swish/engine";
-import { InvalidMove } from "@/shared/swish/errors";
-import { PlayerId } from "@/shared/swish/schema";
-import { defineView } from "@/shared/swish/views";
-import { remove } from "@/shared/utils/array";
-import { generateId } from "@/shared/utils/generator";
+import { makeEngine } from "@/shared/swish/engine.ts";
+import { InvalidMove } from "@/shared/swish/errors.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { defineView } from "@/shared/swish/views.ts";
+import { remove } from "@/shared/utils/array.ts";
+import { generateId } from "@/shared/utils/generator.ts";
 import {
 	detectTeammateSignals,
 	suggestAsks,
 	suggestBooks,
 	suggestClaims,
 	suggestTransfers
-} from "./bot";
-import { apply } from "./utils.ts";
+} from "@/games/fish/server/bot.ts";
+import { apply } from "@/games/fish/server/utils.ts";
 
 /** Whether a player has been seated (has playerData). */
 const playerSeated = ( state: typeof FishState.Type, pid: PlayerId ): boolean =>

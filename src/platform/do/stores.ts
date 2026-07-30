@@ -1,9 +1,10 @@
-import { EventStore, GameStore } from "@/shared/swish/services";
 import * as Alchemy from "alchemy";
-import * as Cloudflare from "alchemy/Cloudflare";
+import type * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
+
+import { EventStore, GameStore } from "@/shared/swish/services.ts";
 
 const KEY_GAME = "gameData";
 const KEY_LOG_BASE = "log:base";

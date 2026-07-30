@@ -1,6 +1,7 @@
-import type { AuthInfo } from "@/auth/shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchMeFn } from "./client.ts";
+
+import type { AuthInfo } from "@/auth/shared/schema.ts";
+import { fetchMeFn } from "@/auth/client/client.ts";
 
 const AUTH_ME_KEY = [ "auth", "me" ] as const;
 

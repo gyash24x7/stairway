@@ -8,8 +8,8 @@ import type {
 	ScoreBreakdown,
 	Terrain,
 	Tile
-} from "@/games/kingdomino/shared/schema";
-import { Coord, DraftEntry, Region } from "@/games/kingdomino/shared/schema";
+} from "@/games/kingdomino/shared/schema.ts";
+import { Coord, DraftEntry, Region } from "@/games/kingdomino/shared/schema.ts";
 
 /** Rectangular bounding box defined by min/max coordinates. */
 type Bounds = { minX: number; maxX: number; minY: number; maxY: number };

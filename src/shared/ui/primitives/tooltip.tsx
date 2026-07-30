@@ -1,6 +1,7 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import type { ComponentProps } from "react";
-import { cn } from "../utils/cn.ts";
+
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 const { Provider, Root, Trigger, Popup } = TooltipPrimitive;
 

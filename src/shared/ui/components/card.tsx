@@ -1,5 +1,5 @@
 import type { CardId, CardSuit } from "@/shared/cards/schema.ts";
-import { cn } from "../utils/cn.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 function isRed( suit: CardSuit ) {
 	return suit === "H" || suit === "D";

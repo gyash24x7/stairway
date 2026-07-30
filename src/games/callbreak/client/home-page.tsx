@@ -1,8 +1,8 @@
-import { JoinGame } from "@/shared/ui/components/join-game";
-import { Separator } from "@/shared/ui/primitives/separator";
-import { cn } from "@/shared/ui/utils/cn";
-import { joinCallbreakGameFn } from "./client";
-import { CallbreakCreateGame as CreateGame } from "./create-game";
+import { JoinGame } from "@/shared/ui/components/join-game.tsx";
+import { Separator } from "@/shared/ui/primitives/separator.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { joinCallbreakGameFn } from "@/games/callbreak/client/client.ts";
+import { CallbreakCreateGame as CreateGame } from "@/games/callbreak/client/create-game.tsx";
 
 export function CallbreakHomePage( props: { isLoggedIn?: boolean } ) {
 	return (

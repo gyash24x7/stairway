@@ -1,7 +1,3 @@
-import { RegisterInput } from "@/auth/shared/schema";
-import * as schema from "@/platform/database/schema";
-import { Database, DatabaseLive } from "@/platform/database/service";
-import { SessionStore, SessionStoreLive } from "@/platform/kv/session";
 import { passkey } from "@better-auth/passkey";
 import type { HttpEffect } from "alchemy/Http";
 import { betterAuth } from "better-auth";
@@ -15,6 +11,11 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+
+import { SessionStore, SessionStoreLive } from "@/platform/kv/session.ts";
+import { Database, DatabaseLive } from "@/platform/database/service.ts";
+import * as schema from "@/platform/database/schema.ts";
+import { RegisterInput } from "@/auth/shared/schema.ts";
 
 /**
  * Parse and validate the client-supplied registration `context` string.

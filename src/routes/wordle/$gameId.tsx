@@ -1,7 +1,8 @@
-import { useAuth } from "@/auth/client/use-auth.tsx";
-import { WordleGamePage } from "@/games/wordle/client";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { createFileRoute } from "@tanstack/react-router";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { WordleGamePage } from "@/games/wordle/client/index.ts";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 
 export const Route = createFileRoute( "/wordle/$gameId" )( {
 	component: GameRoute

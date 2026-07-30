@@ -1,6 +1,7 @@
-import type { KingdominoEvent, KingdominoState } from "@/games/kingdomino/shared/schema";
 import * as Match from "effect/Match";
 import { castDraft, produce } from "immer";
+
+import type { KingdominoEvent, KingdominoState } from "@/games/kingdomino/shared/schema.ts";
 
 // --- Pure reducer ----------------------------------------------------------
 

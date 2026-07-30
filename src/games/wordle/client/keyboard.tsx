@@ -1,7 +1,8 @@
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
 import { DeleteIcon, LogOutIcon } from "lucide-react";
-import { useWordle } from "./context";
+
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useWordle } from "@/games/wordle/client/context.tsx";
 
 const LINES = [
 	[ "q", "w", "e", "r", "t", "y", "u", "i", "o", "p" ],

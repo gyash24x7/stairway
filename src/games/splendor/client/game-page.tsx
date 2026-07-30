@@ -1,9 +1,10 @@
-import { useAuth } from "@/auth/client/use-auth";
-import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
-import { getStateFn } from "./client";
-import { SplendorProvider } from "./context";
-import { GameView } from "./game-view";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { getStateFn } from "@/games/splendor/client/client.ts";
+import { SplendorProvider } from "@/games/splendor/client/context.tsx";
+import { GameView } from "@/games/splendor/client/game-view.tsx";
 
 export function SplendorGamePage( { gameId }: { gameId: string } ) {
 	const { authInfo } = useAuth();

@@ -1,8 +1,8 @@
-import { JoinGame } from "@/shared/ui/components/join-game";
-import { Separator } from "@/shared/ui/primitives/separator";
-import { cn } from "@/shared/ui/utils/cn";
-import { joinTicTacToeGameFn } from "./client";
-import { TicTacToeCreateGame } from "./create-game";
+import { JoinGame } from "@/shared/ui/components/join-game.tsx";
+import { Separator } from "@/shared/ui/primitives/separator.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { joinTicTacToeGameFn } from "@/games/tictactoe/client/client.ts";
+import { TicTacToeCreateGame } from "@/games/tictactoe/client/create-game.tsx";
 
 export function TicTacToeHomePage( props: { isLoggedIn?: boolean } ) {
 	const joinTicTacToeGame = async ( input: { code: string } ): Promise<string> => {

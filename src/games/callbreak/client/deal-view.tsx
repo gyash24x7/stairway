@@ -1,13 +1,14 @@
 "use client";
 
-import { RCard } from "@/shared/ui/components/card";
-import { RPlayerInfo } from "@/shared/ui/components/player-info";
-import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fragment } from "react";
-import { useCallbreak } from "./context";
-import { HandView } from "./hand-view";
-import { Scores } from "./scores";
+
+import { RCard } from "@/shared/ui/components/card.tsx";
+import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
+import { HandView } from "@/games/callbreak/client/hand-view.tsx";
+import { Scores } from "@/games/callbreak/client/scores.tsx";
 
 export function DealView() {
 	const { data } = useCallbreak();

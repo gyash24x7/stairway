@@ -1,5 +1,9 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { CrownIcon } from "lucide-react";
+import { Fragment, type ReactNode, useState } from "react";
+
 import type {
 	Board,
 	BoardSize,
@@ -7,7 +11,7 @@ import type {
 	Coord,
 	Rotation,
 	Tile
-} from "@/games/kingdomino/shared/schema";
+} from "@/games/kingdomino/shared/schema.ts";
 import {
 	canDominoBePlaced,
 	coordKey,
@@ -16,12 +20,9 @@ import {
 	getExpandedBoardBounds,
 	getPotentialCells,
 	getRowsAndCols
-} from "@/games/kingdomino/shared/utils";
-import { Popover, PopoverContent } from "@/shared/ui/primitives/popover";
-import { cn } from "@/shared/ui/utils/cn";
-import { motion } from "framer-motion";
-import { CrownIcon } from "lucide-react";
-import { Fragment, type ReactNode, useState } from "react";
+} from "@/games/kingdomino/shared/utils.ts";
+import { Popover, PopoverContent } from "@/shared/ui/primitives/popover.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 export function CrownIndicator( { count, size = 12 }: { count: number; size?: number } ) {
 	if ( count <= 0 ) {

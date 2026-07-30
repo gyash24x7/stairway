@@ -2,7 +2,8 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { cn } from "../utils/cn.ts";
+
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 type FloatPlusNProps = {
 	value: number;

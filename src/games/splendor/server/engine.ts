@@ -16,11 +16,11 @@ import {
 	type Tokens,
 	TokensPickedEvent,
 	WinnerDecidedEvent
-} from "@/games/splendor/shared/schema";
-import { makeEngine } from "@/shared/swish/engine";
-import { InvalidMove } from "@/shared/swish/errors";
-import type { ReadonlyGameData } from "@/shared/swish/structure";
-import { defineView } from "@/shared/swish/views";
+} from "@/games/splendor/shared/schema.ts";
+import { makeEngine } from "@/shared/swish/engine.ts";
+import { InvalidMove } from "@/shared/swish/errors.ts";
+import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
+import { defineView } from "@/shared/swish/views.ts";
 import {
 	apply,
 	DEFAULT_TOKENS,
@@ -30,7 +30,7 @@ import {
 	generateDecks,
 	generateNobles,
 	sumTokens
-} from "./utils";
+} from "@/games/splendor/server/utils.ts";
 
 const MAX_TOKENS_IN_HAND = 10;
 const MAX_RESERVED = 3;

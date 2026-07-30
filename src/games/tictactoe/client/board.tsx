@@ -1,9 +1,10 @@
 "use client";
 
-import { popIn } from "@/shared/ui/utils/animation";
-import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
-import { useTicTacToe } from "./context";
+
+import { popIn } from "@/shared/ui/utils/animation.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useTicTacToe } from "@/games/tictactoe/client/context.tsx";
 
 export const WINNING_LINES = [
 	[ 0, 1, 2 ], [ 3, 4, 5 ], [ 6, 7, 8 ], // rows

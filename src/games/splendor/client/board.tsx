@@ -1,11 +1,12 @@
 "use client";
 
-import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
-import { CardActions } from "./card-actions";
-import { useSplendor } from "./context";
-import { GameCardBack } from "./game-card";
-import { Noble, NobleBack } from "./noble";
+
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { CardActions } from "@/games/splendor/client/card-actions.tsx";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { GameCardBack } from "@/games/splendor/client/game-card.tsx";
+import { Noble, NobleBack } from "@/games/splendor/client/noble.tsx";
 
 export function Board() {
 	const { data } = useSplendor();

@@ -1,10 +1,11 @@
 "use client";
 
-import type { AuthInfo } from "@/auth/shared/schema";
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/primitives/avatar";
-import { Dialog, DialogContent, DialogTrigger } from "@/shared/ui/primitives/dialog";
 import { useState } from "react";
-import { LogoutButton } from "./logout-button.tsx";
+
+import type { AuthInfo } from "@/auth/shared/schema.ts";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/primitives/avatar.tsx";
+import { Dialog, DialogContent, DialogTrigger } from "@/shared/ui/primitives/dialog.tsx";
+import { LogoutButton } from "@/auth/client/logout-button.tsx";
 
 export function RAuthInfo( { authInfo }: { authInfo: AuthInfo } ) {
 	const [ open, setOpen ] = useState( false );

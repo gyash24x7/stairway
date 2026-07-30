@@ -1,12 +1,13 @@
-import { AuthMiddleware } from "@/auth/shared/middleware";
+import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
+
+import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
 	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
 	MoveApiEndpoint
-} from "@/shared/swish/api";
-import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
+} from "@/shared/swish/api.ts";
 import {
 	AskCardInput,
 	ClaimBookInput,
@@ -14,7 +15,7 @@ import {
 	FishConfig,
 	FishSnapshot,
 	TransferTurnInput
-} from "./schema";
+} from "@/games/fish/shared/schema.ts";
 
 export const FishApiGroup = HttpApiGroup.make( "fish" )
 	.add(

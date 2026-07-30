@@ -1,8 +1,12 @@
 "use client";
 
-import type { Gem, PickTokensInput, Tokens } from "@/games/splendor/shared/schema";
-import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils";
-import { Button } from "@/shared/ui/primitives/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState, useTransition } from "react";
+import { useBoolean } from "usehooks-ts";
+
+import type { Gem, PickTokensInput, Tokens } from "@/games/splendor/shared/schema.ts";
+import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils.ts";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -10,14 +14,11 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useTransition } from "react";
-import { useBoolean } from "usehooks-ts";
-import { pickTokensFn } from "./client";
-import { useSplendor } from "./context";
-import { TokenPicker } from "./token-picker";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { pickTokensFn } from "@/games/splendor/client/client.ts";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
 
 export function PickTokens() {
 	const { data } = useSplendor();

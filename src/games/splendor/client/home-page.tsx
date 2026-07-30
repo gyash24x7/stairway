@@ -1,9 +1,9 @@
-import type { GameCode } from "@/shared/swish/schema";
-import { JoinGame } from "@/shared/ui/components/join-game";
-import { Separator } from "@/shared/ui/primitives/separator";
-import { cn } from "@/shared/ui/utils/cn";
-import { joinSplendorGameFn } from "./client";
-import { SplendorCreateGame as CreateGame } from "./create-game";
+import type { GameCode } from "@/shared/swish/schema.ts";
+import { JoinGame } from "@/shared/ui/components/join-game.tsx";
+import { Separator } from "@/shared/ui/primitives/separator.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { joinSplendorGameFn } from "@/games/splendor/client/client.ts";
+import { SplendorCreateGame as CreateGame } from "@/games/splendor/client/create-game.tsx";
 
 export function SplendorHomePage( props: { isLoggedIn?: boolean } ) {
 	const joinGame = async ( input: { code: GameCode } ): Promise<string> => {

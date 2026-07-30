@@ -1,6 +1,6 @@
-import { Separator } from "@/shared/ui/primitives/separator";
-import { cn } from "@/shared/ui/utils/cn";
-import { WordleCreateGame } from "./create-game";
+import { Separator } from "@/shared/ui/primitives/separator.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { WordleCreateGame } from "@/games/wordle/client/create-game.tsx";
 
 export function WordleHomePage( props: { isLoggedIn?: boolean } ) {
 	return (

@@ -1,9 +1,10 @@
 "use client";
 
-import type { TicTacToePlayerView, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext } from "react";
-import { addBotsFn, placeFn } from "./client";
+
+import type { TicTacToePlayerView, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema.ts";
+import { addBotsFn, placeFn } from "@/games/tictactoe/client/client.ts";
 
 /** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
 export type TicTacToePlayerSnapshot = Omit<TicTacToeSnapshot, "view"> & {

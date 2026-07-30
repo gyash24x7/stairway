@@ -1,8 +1,9 @@
-import type { DraftEntry } from "@/games/kingdomino/shared/schema";
-import type { Players } from "@/shared/swish/schema";
-import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
-import { RDomino } from "./domino";
+
+import type { DraftEntry } from "@/games/kingdomino/shared/schema.ts";
+import type { Players } from "@/shared/swish/schema.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { RDomino } from "@/games/kingdomino/client/domino.tsx";
 
 export type RDraftProps = {
 	draft: readonly DraftEntry[];

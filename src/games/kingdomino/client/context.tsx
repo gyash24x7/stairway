@@ -1,7 +1,8 @@
 "use client";
 
-import type { KingdominoPlayerView, KingdominoSnapshot } from "@/games/kingdomino/shared/schema";
 import { createContext, type ReactNode, useContext } from "react";
+
+import type { KingdominoPlayerView, KingdominoSnapshot } from "@/games/kingdomino/shared/schema.ts";
 
 /** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
 export type KingdominoPlayerSnapshot = Omit<KingdominoSnapshot, "view"> & { view: KingdominoPlayerView };

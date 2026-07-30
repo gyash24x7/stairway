@@ -1,2 +1,2 @@
-export { KingdominoHomePage } from "./home-page";
-export { KingdominoGamePage } from "./game-page";
+export { KingdominoHomePage } from "@/games/kingdomino/client/home-page.tsx";
+export { KingdominoGamePage } from "@/games/kingdomino/client/game-page.tsx";

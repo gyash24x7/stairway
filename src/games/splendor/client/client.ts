@@ -4,7 +4,7 @@ import type {
 	PurchaseCardInput,
 	ReserveCardInput,
 	SplendorConfig
-} from "@/games/splendor/shared/schema";
+} from "@/games/splendor/shared/schema.ts";
 import {
 	GameCode,
 	GameId,
@@ -12,7 +12,7 @@ import {
 	JoinGameInput,
 	playerAudience,
 	PlayerId
-} from "@/shared/swish/schema";
+} from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

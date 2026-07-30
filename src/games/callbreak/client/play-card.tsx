@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/shared/ui/primitives/button";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { useCallbreak } from "./context";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 
 export function PlayCard() {
 	const { data, selectedCard, selectCard, playCard } = useCallbreak();

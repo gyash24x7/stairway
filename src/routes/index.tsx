@@ -1,7 +1,8 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+
 import { Logo } from "@/shared/ui/components/logo.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const GAME_NAMES = [
 	"fish",

@@ -1,7 +1,8 @@
+import type {
+	GuessRow} from "@/games/wordle/shared/schema.ts";
 import {
 	GuessedEvent,
 	GuessInput,
-	GuessRow,
 	VictoryDecidedEvent,
 	WordleConfig,
 	WordleEvents,
@@ -9,13 +10,13 @@ import {
 	WordleState,
 	WordleTableView,
 	WordleView
-} from "@/games/wordle/shared/schema";
-import { makeEngine } from "@/shared/swish/engine";
-import { InvalidMove } from "@/shared/swish/errors";
-import type { ReadonlyGameData } from "@/shared/swish/structure";
-import { defineView } from "@/shared/swish/views";
-import { dictionaries } from "./dictionary.ts";
-import { allWordsGuessed, apply, computeRow } from "./utils.ts";
+} from "@/games/wordle/shared/schema.ts";
+import { makeEngine } from "@/shared/swish/engine.ts";
+import { InvalidMove } from "@/shared/swish/errors.ts";
+import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
+import { defineView } from "@/shared/swish/views.ts";
+import { dictionaries } from "@/games/wordle/server/dictionary.ts";
+import { allWordsGuessed, apply, computeRow } from "@/games/wordle/server/utils.ts";
 
 
 // --- View projection (shared board, per-audience wrappers via defineView) ---

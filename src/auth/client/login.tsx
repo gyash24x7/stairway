@@ -1,19 +1,20 @@
-import { Button } from "@/shared/ui/primitives/button";
+import { useNavigate } from "@tanstack/react-router";
+import { LogInIcon } from "lucide-react";
+import { Fragment, useState, useTransition } from "react";
+
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle
-} from "@/shared/ui/primitives/dialog";
-import { Input } from "@/shared/ui/primitives/input";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
-import { useNavigate } from "@tanstack/react-router";
-import { LogInIcon } from "lucide-react";
-import { Fragment, useState, useTransition } from "react";
-import { loginPasskeyFn, registerPasskeyFn } from "./client.ts";
-import { useRefreshAuth } from "./use-auth.tsx";
+} from "@/shared/ui/primitives/dialog.tsx";
+import { Input } from "@/shared/ui/primitives/input.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { loginPasskeyFn, registerPasskeyFn } from "@/auth/client/client.ts";
+import { useRefreshAuth } from "@/auth/client/use-auth.tsx";
 
 export function Login() {
 	const navigate = useNavigate();

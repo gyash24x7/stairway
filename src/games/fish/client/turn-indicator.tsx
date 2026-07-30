@@ -1,8 +1,9 @@
 "use client";
 
-import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
-import { useFish } from "./context";
+
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function TurnIndicator() {
 	const { data } = useFish();

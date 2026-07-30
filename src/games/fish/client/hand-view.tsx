@@ -1,11 +1,12 @@
 "use client";
 
-import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@/games/fish/shared/utils";
-import { RCard } from "@/shared/ui/components/card";
-import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo } from "react";
-import { useFish } from "./context";
+
+import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@/games/fish/shared/utils.ts";
+import { RCard } from "@/shared/ui/components/card.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function HandView() {
 	const { data } = useFish();

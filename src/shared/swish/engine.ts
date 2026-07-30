@@ -1,28 +1,30 @@
+import * as Clock from "effect/Clock";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
+
+import { hashSeed, makeRng } from "@/shared/utils/rng.ts";
 import {
-	Audience,
-	BaseGameConfig,
 	type CommitMeta,
 	GameContext,
 	GameId,
 	GameSnapshot,
-	InitializeInput,
 	InitializeResponse,
 	InteractionFrame,
 	JoinGameResponse,
 	LogEntry,
-	MovePayload,
 	PersistedGameData,
 	playerAudience,
 	PlayerId,
 	PlayerInfo,
 	tableAudience
 } from "@/shared/swish/schema.ts";
+import type {
+	Audience,
+	BaseGameConfig,
+	InitializeInput,
+	MovePayload} from "@/shared/swish/schema.ts";
 import { generateBotInfo, generateId } from "@/shared/utils/generator.ts";
-import { hashSeed, makeRng } from "@/shared/utils/rng.ts";
-import * as Clock from "effect/Clock";
-import * as Effect from "effect/Effect";
-import * as Option from "effect/Option";
-import * as Schema from "effect/Schema";
 import {
 	CannotStart,
 	CorruptState,
@@ -35,11 +37,12 @@ import {
 	NotYourTurn,
 	PhaseNotFound,
 	StaleCommand
-} from "./errors.ts";
+} from "@/shared/swish/errors.ts";
+import type {
+	EngineEvent} from "@/shared/swish/events.ts";
 import {
 	activeInteraction,
 	CurrentPlayerSet,
-	EngineEvent,
 	EventsCommit,
 	foldEvents,
 	GameCompleted,
@@ -52,9 +55,9 @@ import {
 	PlayerJoined,
 	StatusChanged,
 	TurnAdvanced
-} from "./events.ts";
-import { EventStore, GameStore, Scheduler, Sync } from "./services.ts";
-import type { BaseMoveInputs, GameStructure } from "./structure.ts";
+} from "@/shared/swish/events.ts";
+import { EventStore, GameStore, Scheduler, Sync } from "@/shared/swish/services.ts";
+import type { BaseMoveInputs, GameStructure } from "@/shared/swish/structure.ts";
 
 const BOT_DELAY_MS = 5000;
 const AUTO_START_DELAY_MS = 5000;

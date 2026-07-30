@@ -1,17 +1,18 @@
 "use client";
 
-import type { Board, Coord, Placement, Rotation } from "@/games/kingdomino/shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";
+import { useState } from "react";
+
+import type { Board, Coord, Placement, Rotation } from "@/games/kingdomino/shared/schema.ts";
 import {
 	getPlacementCoordinates,
 	getValidPlacements,
 	getValidRotations
-} from "@/games/kingdomino/shared/utils";
-import { Button } from "@/shared/ui/primitives/button";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";
-import { useState } from "react";
-import type { Tentative } from "./board";
-import { discardDominoFn, placeDominoFn } from "./client";
+} from "@/games/kingdomino/shared/utils.ts";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import type { Tentative } from "@/games/kingdomino/client/board.tsx";
+import { discardDominoFn, placeDominoFn } from "@/games/kingdomino/client/client.ts";
 
 type UsePlacementParams = {
 	gameId: string;

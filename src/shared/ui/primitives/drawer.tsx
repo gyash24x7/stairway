@@ -2,7 +2,8 @@
 
 import type { ComponentProps } from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
-import { cn } from "../utils/cn.ts";
+
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 const { Root, Trigger, Portal, Description, Close, Title, Overlay, Content } = DrawerPrimitive;
 

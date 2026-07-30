@@ -1,3 +1,5 @@
+import type * as Schema from "effect/Schema";
+
 import type {
 	Audience,
 	BaseGameConfig,
@@ -9,9 +11,8 @@ import type {
 	Standings
 } from "@/shared/swish/schema.ts";
 import type { Rng } from "@/shared/utils/rng.ts";
-import type * as Schema from "effect/Schema";
-import type { InvalidMove } from "./errors.ts";
-import type { InteractionOpened, SeatStatusChanged } from "./events.ts";
+import type { InvalidMove } from "@/shared/swish/errors.ts";
+import type { InteractionOpened, SeatStatusChanged } from "@/shared/swish/events.ts";
 
 /**
  * The read-only snapshot passed into every game function. Game code reads from it

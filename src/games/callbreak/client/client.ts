@@ -3,14 +3,14 @@ import type {
 	CallbreakConfig,
 	DeclareWinsInput,
 	PlayCardInput
-} from "@/games/callbreak/shared/schema";
+} from "@/games/callbreak/shared/schema.ts";
 import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
 	playerAudience,
 	PlayerId
-} from "@/shared/swish/schema";
+} from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

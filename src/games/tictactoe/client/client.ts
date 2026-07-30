@@ -1,12 +1,12 @@
 import { getClient, run } from "@/client.ts";
-import type { TicTacToeConfig } from "@/games/tictactoe/shared/schema";
+import type { TicTacToeConfig } from "@/games/tictactoe/shared/schema.ts";
 import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
 	playerAudience,
 	PlayerId
-} from "@/shared/swish/schema";
+} from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

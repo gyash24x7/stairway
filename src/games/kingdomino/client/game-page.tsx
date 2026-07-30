@@ -1,10 +1,11 @@
-import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/client.ts";
-import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
-import { getKingdominoStateFn } from "./client";
-import { KingdominoProvider } from "./context";
-import { GameView } from "./game-view";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { toPlayerInfo } from "@/client.ts";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { getKingdominoStateFn } from "@/games/kingdomino/client/client.ts";
+import { KingdominoProvider } from "@/games/kingdomino/client/context.tsx";
+import { GameView } from "@/games/kingdomino/client/game-view.tsx";
 
 export function KingdominoGamePage( { gameId }: { gameId: string } ) {
 	const { authInfo } = useAuth();

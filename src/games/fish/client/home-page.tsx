@@ -1,9 +1,9 @@
-import { useAuth } from "@/auth/client/use-auth";
-import { JoinGame } from "@/shared/ui/components/join-game";
-import { Separator } from "@/shared/ui/primitives/separator";
-import { cn } from "@/shared/ui/utils/cn";
-import { joinFishGameFn } from "./client";
-import { FishCreateGame as CreateGame } from "./create-game";
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { JoinGame } from "@/shared/ui/components/join-game.tsx";
+import { Separator } from "@/shared/ui/primitives/separator.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { joinFishGameFn } from "@/games/fish/client/client.ts";
+import { FishCreateGame as CreateGame } from "@/games/fish/client/create-game.tsx";
 
 export function FishHomePage( props: { isLoggedIn?: boolean } ) {
 	const { authInfo } = useAuth();

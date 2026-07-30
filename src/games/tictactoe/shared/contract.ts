@@ -1,13 +1,14 @@
-import { AuthMiddleware } from "@/auth/shared/middleware";
+import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
+
+import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
 	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
 	MoveApiEndpoint
-} from "@/shared/swish/api";
-import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
-import { PlaceInput, TicTacToeConfig, TicTacToeSnapshot } from "./schema";
+} from "@/shared/swish/api.ts";
+import { PlaceInput, TicTacToeConfig, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema.ts";
 
 export const TicTacToeApiGroup = HttpApiGroup.make( "tictactoe" )
 	.add(

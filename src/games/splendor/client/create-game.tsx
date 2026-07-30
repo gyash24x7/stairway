@@ -1,9 +1,10 @@
 "use client";
 
-import { CreateGame } from "@/shared/ui/components/create-game";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
 import { useState } from "react";
-import { createSplendorGameFn } from "./client";
+
+import { CreateGame } from "@/shared/ui/components/create-game.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { createSplendorGameFn } from "@/games/splendor/client/client.ts";
 
 export function SplendorCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();

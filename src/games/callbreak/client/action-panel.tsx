@@ -1,9 +1,9 @@
 "use client";
 
-import { cn } from "@/shared/ui/utils/cn";
-import { useCallbreak } from "./context";
-import { DeclareWins } from "./declare-wins";
-import { PlayCard } from "./play-card";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
+import { DeclareWins } from "@/games/callbreak/client/declare-wins.tsx";
+import { PlayCard } from "@/games/callbreak/client/play-card.tsx";
 
 export function ActionPanel() {
 	const { isMyTurn, data } = useCallbreak();

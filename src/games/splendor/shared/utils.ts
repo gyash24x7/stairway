@@ -1,4 +1,4 @@
-import type { Card, Cost, Tokens } from "@/games/splendor/shared/schema";
+import type { Card, Cost, Tokens } from "@/games/splendor/shared/schema.ts";
 
 export const GEMS: Array<keyof Cost> = [ "diamond", "sapphire", "emerald", "ruby", "onyx" ];
 export const GEMS_WITH_GOLD: Array<keyof Tokens> = [ ...GEMS, "gold" ];

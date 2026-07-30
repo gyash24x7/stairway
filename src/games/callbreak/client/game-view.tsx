@@ -1,15 +1,16 @@
 "use client";
 
-import { RCardSuit } from "@/shared/ui/components/card";
-import { GameInfo } from "@/shared/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
-import { Button } from "@/shared/ui/primitives/button";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { cn } from "@/shared/ui/utils/cn";
 import { Fragment } from "react";
-import { ActionPanel } from "./action-panel";
-import { useCallbreak } from "./context";
-import { DealView } from "./deal-view";
+
+import { RCardSuit } from "@/shared/ui/components/card.tsx";
+import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { ActionPanel } from "@/games/callbreak/client/action-panel.tsx";
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
+import { DealView } from "@/games/callbreak/client/deal-view.tsx";
 
 export function GameView() {
 	const { data, addBots } = useCallbreak();

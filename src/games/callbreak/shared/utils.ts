@@ -1,9 +1,9 @@
-import type { Trick } from "@/games/callbreak/shared/schema";
-import { Deal } from "@/games/callbreak/shared/schema";
-import type { CardId, CardRank, CardSuit } from "@/shared/cards/schema";
+import type { Trick } from "@/games/callbreak/shared/schema.ts";
+import { Deal } from "@/games/callbreak/shared/schema.ts";
+import type { CardId, CardRank, CardSuit } from "@/shared/cards/schema.ts";
 import { generateDeck, generateHands, getCardRank, getCardSuit } from "@/shared/cards/utils.ts";
-import { PlayerId } from "@/shared/swish/schema";
-import { generateId } from "@/shared/utils/generator";
+import { PlayerId } from "@/shared/swish/schema.ts";
+import { generateId } from "@/shared/utils/generator.ts";
 
 
 export const PLAYER_COUNT = 4;

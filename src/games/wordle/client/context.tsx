@@ -1,5 +1,3 @@
-import { useAuth } from "@/auth/client/use-auth";
-import type { WordleSnapshot } from "@/games/wordle/shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
 	createContext,
@@ -10,7 +8,10 @@ import {
 	useRef,
 	useState
 } from "react";
-import { submitGuessFn } from "./client";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import type { WordleSnapshot } from "@/games/wordle/shared/schema.ts";
+import { submitGuessFn } from "@/games/wordle/client/client.ts";
 
 type WordleContextValue = {
 	data: WordleSnapshot;

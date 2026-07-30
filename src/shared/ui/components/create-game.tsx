@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { type ReactNode, useTransition } from "react";
-import { Button } from "../primitives/button.tsx";
+
+import { Button } from "@/shared/ui/primitives/button.tsx";
 
 type CreateGameProps = {
 	game: string;

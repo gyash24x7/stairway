@@ -1,3 +1,6 @@
+import * as Match from "effect/Match";
+import { castDraft, produce } from "immer";
+
 import type {
 	Card,
 	CardLevel,
@@ -9,10 +12,8 @@ import type {
 	SplendorEvent,
 	SplendorState,
 	Tokens
-} from "@/games/splendor/shared/schema";
-import { shuffle } from "@/shared/utils/array";
-import * as Match from "effect/Match";
-import { castDraft, produce } from "immer";
+} from "@/games/splendor/shared/schema.ts";
+import { shuffle } from "@/shared/utils/array.ts";
 
 type MutableCost = Record<GemNoGold, number>;
 type MutableTokens = Record<Gem, number>;

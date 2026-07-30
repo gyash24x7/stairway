@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { cn } from "../utils/cn.ts";
+
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 export type RadioSelectProps<T> = {
 	options: readonly T[];

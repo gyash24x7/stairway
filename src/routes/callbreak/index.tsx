@@ -1,6 +1,7 @@
-import { useAuth } from "@/auth/client/use-auth.tsx";
-import { CallbreakHomePage } from "@/games/callbreak/client";
 import { createFileRoute } from "@tanstack/react-router";
+
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { CallbreakHomePage } from "@/games/callbreak/client/index.ts";
 
 export const Route = createFileRoute( "/callbreak/" )( {
 	component: GameHomeRoute

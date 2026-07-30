@@ -1,6 +1,7 @@
-import type { GuessResult, WordleEvents, WordleState } from "@/games/wordle/shared/schema";
 import * as Match from "effect/Match";
 import { castDraft, produce } from "immer";
+
+import type { GuessResult, WordleEvents, WordleState } from "@/games/wordle/shared/schema.ts";
 
 // --- Guess-result computation (pure) ---------------------------------------
 

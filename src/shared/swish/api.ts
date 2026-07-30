@@ -1,3 +1,6 @@
+import type * as Schema from "effect/Schema";
+import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
+
 import {
 	Audience,
 	GameIdParams,
@@ -8,9 +11,7 @@ import {
 	MovePayload,
 	PlayerInfo
 } from "@/shared/swish/schema.ts";
-import * as Schema from "effect/Schema";
-import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "./errors.ts";
+import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "@/shared/swish/errors.ts";
 
 /**
  * Builds a first-class move endpoint: `POST /:gameId/<name>` whose payload is

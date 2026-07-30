@@ -1,9 +1,10 @@
-import { AuthContext, AuthMiddleware } from "@/auth/shared/middleware";
-import { AuthInfo, Unauthorized } from "@/auth/shared/schema";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import { BetterAuth } from "./services.ts";
+
+import { AuthInfo, Unauthorized } from "@/auth/shared/schema.ts";
+import { AuthContext, AuthMiddleware } from "@/auth/shared/middleware.ts";
+import { BetterAuth } from "@/auth/server/services.ts";
 
 export const AuthMiddlewareLive = Layer.effect(
 	AuthMiddleware,

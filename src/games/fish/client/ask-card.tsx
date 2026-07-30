@@ -1,19 +1,23 @@
 "use client";
 
-import type { AskCardInput, Book } from "@/games/fish/shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useStep } from "usehooks-ts";
+
+import type { AskCardInput, Book } from "@/games/fish/shared/schema.ts";
 import {
 	getBookDisplayString,
 	getBooksInHand,
 	getCardsOfBook,
 	getMissingCards,
 	getOpponents
-} from "@/games/fish/shared/utils";
-import type { CardId } from "@/shared/cards/schema";
+} from "@/games/fish/shared/utils.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
 import { getCardDisplayString } from "@/shared/cards/utils.ts";
-import type { PlayerId } from "@/shared/swish/schema";
-import { RCard } from "@/shared/ui/components/card";
-import { RPlayerInfo } from "@/shared/ui/components/player-info";
-import { Button } from "@/shared/ui/primitives/button";
+import type { PlayerId } from "@/shared/swish/schema.ts";
+import { RCard } from "@/shared/ui/components/card.tsx";
+import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -21,14 +25,11 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/shared/ui/primitives/drawer";
-import { RadioSelect } from "@/shared/ui/primitives/radio-select";
-import { Spinner } from "@/shared/ui/primitives/spinner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { useStep } from "usehooks-ts";
-import { askCardFn } from "./client";
-import { useFish } from "./context";
+} from "@/shared/ui/primitives/drawer.tsx";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { askCardFn } from "@/games/fish/client/client.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 
 export function AskCard() {
 	const { data } = useFish();
