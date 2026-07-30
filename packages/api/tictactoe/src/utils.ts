@@ -2,20 +2,18 @@ import type { PlayerId } from "@s2h/schema/swish";
 import type { Board, CellValue, TicTacToeEvent, TicTacToeState } from "@s2h/schema/tictactoe";
 import * as Match from "effect/Match";
 import * as Types from "effect/Types";
+import { produce } from "immer";
 
-/** Pure reducer — the ONLY place `state` changes. */
-export const apply = ( state: TicTacToeState, event: TicTacToeEvent ) =>
-	Match.value( event ).pipe(
-		Match.tag( "tictactoe/SymbolAssigned", ( e ) =>
-			( { ...state, symbols: { ...state.symbols, [ e.symbol ]: e.playerId } } ) ),
-		Match.tag( "tictactoe/Placed", ( e ) => {
-			const board = [ ...state.board ];
-			board[ e.position ] = e.symbol;
-			return { ...state, board };
-		} ),
-		Match.tag( "tictactoe/WinnerDecided", ( e ) => ( { ...state, winner: e.winner } ) ),
-		Match.exhaustive
-	);
+/** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
+export const apply = ( state: TicTacToeState, event: TicTacToeEvent ): TicTacToeState =>
+	produce( state, ( draft ) => {
+		Match.value( event ).pipe(
+			Match.tag( "tictactoe/SymbolAssigned", ( e ) => { draft.symbols[ e.symbol ] = e.playerId; } ),
+			Match.tag( "tictactoe/Placed", ( e ) => { draft.board[ e.position ] = e.symbol; } ),
+			Match.tag( "tictactoe/WinnerDecided", ( e ) => { draft.winner = e.winner; } ),
+			Match.exhaustive
+		);
+	} );
 
 /** The X/O symbol assigned to a player. */
 export const symbolOf = ( symbols: TicTacToeState[ "symbols" ], playerId: PlayerId ) =>

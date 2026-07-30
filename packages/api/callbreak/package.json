@@ -16,6 +16,7 @@
 		"@s2h/swish": "workspace:",
 		"@s2h/utils": "workspace:",
 		"alchemy": "catalog:",
-		"effect": "catalog:"
+		"effect": "catalog:",
+		"immer": "catalog:"
 	}
 }

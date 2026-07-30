@@ -63,6 +63,7 @@
         "@s2h/utils": "workspace:",
         "alchemy": "catalog:",
         "effect": "catalog:",
+        "immer": "catalog:",
       },
     },
     "packages/api/fish": {
@@ -76,6 +77,7 @@
         "@s2h/utils": "workspace:",
         "alchemy": "catalog:",
         "effect": "catalog:",
+        "immer": "catalog:",
       },
     },
     "packages/api/kingdomino": {
@@ -89,6 +91,7 @@
         "@s2h/utils": "workspace:",
         "alchemy": "catalog:",
         "effect": "catalog:",
+        "immer": "catalog:",
       },
     },
     "packages/api/splendor": {
@@ -102,6 +105,7 @@
         "@s2h/utils": "workspace:",
         "alchemy": "catalog:",
         "effect": "catalog:",
+        "immer": "catalog:",
       },
     },
     "packages/api/tictactoe": {
@@ -114,6 +118,7 @@
         "@s2h/swish": "workspace:",
         "alchemy": "catalog:",
         "effect": "catalog:",
+        "immer": "catalog:",
       },
     },
     "packages/api/wordle": {
@@ -126,6 +131,7 @@
         "@s2h/swish": "workspace:",
         "alchemy": "catalog:",
         "effect": "catalog:",
+        "immer": "catalog:",
       },
     },
     "packages/shared/contract": {
@@ -141,6 +147,7 @@
       "name": "@s2h/platform",
       "version": "1.0.0",
       "dependencies": {
+        "@s2h/schema": "workspace:*",
         "@s2h/swish": "workspace:*",
         "@s2h/utils": "workspace:*",
         "alchemy": "catalog:",
@@ -363,6 +370,7 @@
     "drizzle-orm": "1.0.0-rc.4",
     "effect": "4.0.0-beta.102",
     "framer-motion": "12.43.0",
+    "immer": "11.1.15",
     "lucide-react": "1.27.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -1020,6 +1028,8 @@
     "iconv-lite": ["iconv-lite@0.7.3", "", { "dependencies": { "safer-buffer": ">= 2.1.2 < 3.0.0" } }, "sha512-IKXpvIzjnC9XTAUbVBcMfGS0EPaIXtW6v+zr+RRp+hqULEpo0owZax6wyRwPOJbWbzjYspQwusTsfVr0ifh4uQ=="],
 
     "immediate": ["immediate@3.0.6", "", {}, "sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ=="],
+
+    "immer": ["immer@11.1.15", "", {}, "sha512-VrNANlmnWQnh5COXIIOQXM9oOJw7naGKlBT74ZOOR6lpVXc3gFEu9FJLDFcpCJ2j+NWr8TIwtWD//T6ZX6TKiQ=="],
 
     "indent-string": ["indent-string@5.0.0", "", {}, "sha512-m6FAo/spmsW2Ab2fU35JTYwtOKa2yAwXSwgjSv1TJzh4Mh7mC3lzAOVLBprb72XsTrgkEIsl7YrFNAiDiRhIGg=="],
 

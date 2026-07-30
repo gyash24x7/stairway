@@ -1,5 +1,6 @@
 import type { GuessResult, WordleEvents, WordleState } from "@s2h/schema/wordle";
 import * as Match from "effect/Match";
+import { castDraft, produce } from "immer";
 
 // --- Guess-result computation (pure) ---------------------------------------
 
@@ -36,17 +37,17 @@ export const computeRow = ( guess: string, word: string ) => {
 export const allWordsGuessed = ( state: WordleState ) =>
 	state.words.every( ( word ) => state.guesses.includes( word ) );
 
-/** Pure reducer — the ONLY place `state` changes. */
-export const apply = ( state: WordleState, event: WordleEvents ) =>
-	Match.value( event ).pipe(
-		Match.tag( "wordle/evt/Guessed", ( e ) => {
-			const guesses = [ ...state.guesses, e.guess ];
-			const guessResults = { ...state.guessResults };
-			state.words.forEach( ( word, i ) => {
-				guessResults[ word ] = [ ...( guessResults[ word ] ?? [] ), e.rows[ i ]! ];
-			} );
-			return { ...state, guesses, guessResults };
-		} ),
-		Match.tag( "wordle/evt/VictoryDecided", ( e ) => ( { ...state, victory: e.victory } ) ),
-		Match.exhaustive
-	);
+/** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
+export const apply = ( state: WordleState, event: WordleEvents ): WordleState =>
+	produce( state, ( draft ) => {
+		Match.value( event ).pipe(
+			Match.tag( "wordle/evt/Guessed", ( e ) => {
+				draft.guesses.push( e.guess );
+				state.words.forEach( ( word, i ) => {
+					( draft.guessResults[ word ] ??= [] ).push( castDraft( e.rows[ i ]! ) );
+				} );
+			} ),
+			Match.tag( "wordle/evt/VictoryDecided", ( e ) => { draft.victory = e.victory; } ),
+			Match.exhaustive
+		);
+	} );
