@@ -5,8 +5,18 @@
 		"exactOptionalPropertyTypes": false,
 		"noUncheckedIndexedAccess": false,
 		"allowImportingTsExtensions": true,
-		"types": [ "bun" ]
+		"ignoreDeprecations": "6.0",
+		"moduleResolution": "bundler",
+		"module": "esnext",
+		"target": "esnext",
+		"isolatedModules": true,
+		"noEmit": true,
+		"jsx": "react-jsx",
+		"lib": [ "dom", "dom.iterable", "esnext" ],
+		"types": [ "bun", "vite/client" ],
+		"baseUrl": ".",
+		"paths": { "@/*": [ "./src/*" ] }
 	},
-	"include": [ "alchemy.run.ts", "drizzle.config.ts" ],
+	"include": [ "src", "alchemy.run.ts", "drizzle.config.ts", "vite.config.ts" ],
 	"exclude": [ "node_modules" ]
 }
