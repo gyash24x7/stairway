@@ -29,11 +29,21 @@ export const TicTacToeState = Schema.Struct( {
 	winner: Schema.optional( Winner )
 } );
 
-export type TicTacToeView = typeof TicTacToeView.Type;
-export const TicTacToeView = Schema.Struct( {
+// A player's view adds its own (required) id; the table view is the board only.
+// `TicTacToeView` is the discriminated union — clients narrow once on `_tag`.
+export type TicTacToePlayerView = typeof TicTacToePlayerView.Type;
+export const TicTacToePlayerView = Schema.TaggedStruct( "tictactoe/PlayerView", {
 	...TicTacToeState.fields,
-	playerId: Schema.optional( PlayerId )
+	playerId: PlayerId
 } );
+
+export type TicTacToeTableView = typeof TicTacToeTableView.Type;
+export const TicTacToeTableView = Schema.TaggedStruct( "tictactoe/TableView", {
+	...TicTacToeState.fields
+} );
+
+export type TicTacToeView = typeof TicTacToeView.Type;
+export const TicTacToeView = Schema.Union( [ TicTacToePlayerView, TicTacToeTableView ] );
 
 export type TicTacToeSnapshot = typeof TicTacToeSnapshot.Type;
 export const TicTacToeSnapshot = GameSnapshot( TicTacToeView, TicTacToeConfig );

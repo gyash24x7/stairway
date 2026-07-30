@@ -5,11 +5,12 @@ import {
 	CardAsked,
 	ClaimBookInput,
 	CreateTeamsInput,
-	FishBotView,
 	FishConfig,
 	FishEvent,
+	FishPlayerView,
 	FishSnapshot,
 	FishState,
+	FishTableView,
 	FishView,
 	HandsDealt,
 	PlayerSeated,
@@ -21,6 +22,7 @@ import {
 import { PlayerId } from "@s2h/schema/swish";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
+import { defineView } from "@s2h/swish/views";
 import { remove } from "@s2h/utils/array";
 import { CARD_RANKS, generateDeck, generateHands, getCardRank } from "@s2h/utils/cards";
 import {
@@ -87,12 +89,16 @@ export const fish = makeEngine( {
 
 	endIf: ( { state, config } ) => getClaimedBooks( state ).length === config.books.length,
 
-	view: ( { state }, audience ): FishView => {
-		const { hands: _hands, ...rest } = state;
-		return audience._tag === "swish/Table"
-			? rest
-			: { ...rest, playerId: audience.id, hand: [ ...( state.hands[ audience.id ] ?? [] ) ] };
-	},
+	view: defineView( {
+		table: ( { state } ) => {
+			const { hands: _hands, ...rest } = state;
+			return FishTableView.make( rest );
+		},
+		player: ( { state }, id ) => {
+			const { hands: _hands, ...rest } = state;
+			return FishPlayerView.make( { ...rest, playerId: id, hand: [ ...( state.hands[ id ] ?? [] ) ] } );
+		}
+	} ),
 
 	hooks: {
 		// A joining player's `playerData` seat is created here (mirrors old onJoin).
@@ -462,12 +468,16 @@ export const fish = makeEngine( {
  * `context.phase`, rebuilds a `FishBotView` for the AI helpers, and returns the
  * same move shapes the old per-phase `botMove` produced (now plain values).
  */
-function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove {
+function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove | undefined {
 	const phase = snapshot.context.phase;
 	const config = snapshot.config;
 
+	if ( snapshot.view._tag !== "fish/PlayerView" ) {
+		return undefined;
+	}
+
 	if ( phase === "PLAY" ) {
-		const view = snapshot.view as unknown as FishBotView;
+		const view = snapshot.view;
 
 		const signals = detectTeammateSignals( view, config );
 		const weightedBooks = suggestBooks( view, config, signals );

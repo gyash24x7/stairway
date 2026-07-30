@@ -46,11 +46,22 @@ export const WordleSharedView = Schema.Struct( {
 	guessResults: Schema.Array( GuessResultsForWord )
 } );
 
-export type WordleView = typeof WordleView.Type;
-export const WordleView = Schema.Struct( {
+// A player's view carries the public board PLUS its own (required) private slice;
+// the table/spectator view carries only the public board. `WordleView` is the
+// discriminated union of the two — clients narrow once on `_tag`.
+export type WordlePlayerView = typeof WordlePlayerView.Type;
+export const WordlePlayerView = Schema.TaggedStruct( "wordle/PlayerView", {
 	...WordleSharedView.fields,
-	playerId: Schema.optional( PlayerId )
+	playerId: PlayerId
 } );
+
+export type WordleTableView = typeof WordleTableView.Type;
+export const WordleTableView = Schema.TaggedStruct( "wordle/TableView", {
+	...WordleSharedView.fields
+} );
+
+export type WordleView = typeof WordleView.Type;
+export const WordleView = Schema.Union( [ WordlePlayerView, WordleTableView ] );
 
 export type WordleSnapshot = typeof WordleSnapshot.Type;
 export const WordleSnapshot = GameSnapshot( WordleView, WordleConfig );

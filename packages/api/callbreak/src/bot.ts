@@ -1,4 +1,4 @@
-import type { CallbreakBotView, CallbreakConfig, Trick } from "@s2h/schema/callbreak";
+import type { CallbreakPlayerView, CallbreakConfig, Trick } from "@s2h/schema/callbreak";
 import type { CardId, CardSuit } from "@s2h/schema/cards";
 import { getCardValue, getPlayableCards } from "@s2h/utils/callbreak";
 import { getCardRank, getCardSuit } from "@s2h/utils/cards";
@@ -77,7 +77,7 @@ function getSuitCards( hand: CardId[], suit: string ) {
  * @param config - The game configuration including trump suit.
  * @returns The number of tricks the bot declares it will win (minimum 1).
  */
-export function botDeclare( state: CallbreakBotView, config: CallbreakConfig ) {
+export function botDeclare( state: CallbreakPlayerView, config: CallbreakConfig ) {
 	let score = 0;
 
 	const hand = [ ...state.hand ];
@@ -126,7 +126,7 @@ export function botDeclare( state: CallbreakBotView, config: CallbreakConfig ) {
  * @param config - The game configuration including trump suit.
  * @returns The card ID the bot chooses to play.
  */
-export function botPlayCard( state: CallbreakBotView, config: CallbreakConfig ) {
+export function botPlayCard( state: CallbreakPlayerView, config: CallbreakConfig ) {
 	const activeDeal = state.activeDeal!;
 	const activeTrick = activeDeal.tricks[ 0 ]!;
 	const playable = getPlayableCards( [ ...state.hand ], config.trumpSuit, activeTrick );

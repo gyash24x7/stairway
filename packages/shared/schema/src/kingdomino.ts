@@ -102,14 +102,30 @@ export const KingdominoState = Schema.Struct( {
 	winner: Schema.optional( PlayerId )
 } );
 
-export type KingdominoView = typeof KingdominoView.Type;
-export const KingdominoView = Schema.Struct( {
+// Everything except the hidden `deck` is public; the only private field is the
+// viewer's own `playerId`. `KingdominoView` is the discriminated union of the
+// player and table variants — clients narrow once on `_tag`.
+export type KingdominoSharedView = typeof KingdominoSharedView.Type;
+export const KingdominoSharedView = Schema.Struct( {
 	playerData: Schema.Record( PlayerId, PlayerData ),
 	draft: Schema.Array( DraftEntry ),
 	selectionOrder: Schema.Array( PlayerId ),
-	winner: Schema.optional( PlayerId ),
-	playerId: Schema.optionalKey( PlayerId )
+	winner: Schema.optional( PlayerId )
 } );
+
+export type KingdominoPlayerView = typeof KingdominoPlayerView.Type;
+export const KingdominoPlayerView = Schema.TaggedStruct( "kingdomino/PlayerView", {
+	...KingdominoSharedView.fields,
+	playerId: PlayerId
+} );
+
+export type KingdominoTableView = typeof KingdominoTableView.Type;
+export const KingdominoTableView = Schema.TaggedStruct( "kingdomino/TableView", {
+	...KingdominoSharedView.fields
+} );
+
+export type KingdominoView = typeof KingdominoView.Type;
+export const KingdominoView = Schema.Union( [ KingdominoPlayerView, KingdominoTableView ] );
 
 export type KingdominoSnapshot = typeof KingdominoSnapshot.Type;
 export const KingdominoSnapshot = GameSnapshot( KingdominoView, KingdominoConfig );

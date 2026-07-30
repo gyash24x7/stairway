@@ -92,28 +92,29 @@ export const FishState = Schema.Struct( {
 	winningTeam: Schema.optional( Schema.String )
 } );
 
+// The table view hides every hand; a player's view adds its own (required) id and
+// hand. `FishView` is the discriminated union — clients (and bots) narrow once on
+// `_tag` instead of null-checking the private slice. The player variant doubles as
+// the bot's input (it carries the full `shared & private` shape).
 export type FishSharedView = typeof FishSharedView.Type;
 export const FishSharedView = Schema.Struct( {
 	...FishState.mapFields( Struct.omit( [ "hands" ] ) ).fields
 } );
 
 export type FishPlayerView = typeof FishPlayerView.Type;
-export const FishPlayerView = Schema.Struct( {
+export const FishPlayerView = Schema.TaggedStruct( "fish/PlayerView", {
+	...FishSharedView.fields,
 	playerId: PlayerId,
 	hand: Schema.Array( CardId )
 } );
 
-export type FishView = typeof FishView.Type;
-export const FishView = Schema.Struct( {
-	...FishSharedView.fields,
-	...FishPlayerView.mapFields( Struct.map( Schema.optionalKey ) ).fields
+export type FishTableView = typeof FishTableView.Type;
+export const FishTableView = Schema.TaggedStruct( "fish/TableView", {
+	...FishSharedView.fields
 } );
 
-export type FishBotView = typeof FishBotView.Type;
-export const FishBotView = Schema.Struct( {
-	...FishSharedView.fields,
-	...FishPlayerView.fields
-} );
+export type FishView = typeof FishView.Type;
+export const FishView = Schema.Union( [ FishPlayerView, FishTableView ] );
 
 export type FishSnapshot = typeof FishSnapshot.Type;
 export const FishSnapshot = GameSnapshot( FishView, FishConfig );

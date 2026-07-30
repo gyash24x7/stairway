@@ -8,7 +8,9 @@ import {
 	DraftPruned,
 	KingdominoConfig,
 	KingdominoEvent,
+	KingdominoPlayerView,
 	KingdominoState,
+	KingdominoTableView,
 	KingdominoView,
 	PlaceDominoInput,
 	PlayerBoardCreated,
@@ -20,6 +22,8 @@ import {
 import type { PlayerId } from "@s2h/schema/swish";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
+import type { ReadonlyGameData } from "@s2h/swish/structure";
+import { defineView } from "@s2h/swish/views";
 import { shuffle } from "@s2h/utils/array";
 import {
 	applyPlacement,
@@ -38,6 +42,12 @@ import {
 	getValidPlacements
 } from "@s2h/utils/kingdomino";
 import { apply } from "./utils.ts";
+
+/** The public board both audiences see: the full state minus the hidden `deck`. */
+const publicBoard = ( { state }: ReadonlyGameData<KingdominoState, KingdominoConfig> ) => {
+	const { deck: _deck, ...rest } = state;
+	return rest;
+};
 
 // --- Engine ----------------------------------------------------------------
 
@@ -74,10 +84,10 @@ export const kingdomino = makeEngine( {
 		return allQueuesEmpty && state.deck.length === 0 && allDraftResolved;
 	},
 
-	view: ( { state }, audience ): KingdominoView => {
-		const { deck: _deck, ...rest } = state;
-		return audience._tag === "swish/Table" ? rest : { ...rest, playerId: audience.id };
-	},
+	view: defineView( {
+		table: ( data ) => KingdominoTableView.make( publicBoard( data ) ),
+		player: ( data, id ) => KingdominoPlayerView.make( { ...publicBoard( data ), playerId: id } )
+	} ),
 
 	hooks: {
 		// Seed each joiner's board (castle by join index). Config supplies boardSize.
