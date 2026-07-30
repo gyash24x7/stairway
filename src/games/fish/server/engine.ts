@@ -44,19 +44,8 @@ import {
 import { apply } from "@/games/fish/server/utils.ts";
 
 /** Whether a player has been seated (has playerData). */
-const playerSeated = ( state: typeof FishState.Type, pid: PlayerId ): boolean =>
+const playerSeated = ( state: typeof FishState.Type, pid: PlayerId ) =>
 	state.playerData[ pid ] !== undefined;
-
-/**
- * A bot's decision — the discriminated union of every move Fish can make. This
- * matches the structure's `botMove` return (one `{ moveType, input }` variant per
- * declared move), so it feeds `botMove` directly with no cast.
- */
-type FishBotMove =
-	| { readonly moveType: "createTeams"; readonly input: typeof CreateTeamsInput.Type }
-	| { readonly moveType: "askCard"; readonly input: typeof AskCardInput.Type }
-	| { readonly moveType: "claimBook"; readonly input: typeof ClaimBookInput.Type }
-	| { readonly moveType: "transferTurn"; readonly input: typeof TransferTurnInput.Type };
 
 // --- Engine ----------------------------------------------------------------
 
@@ -473,7 +462,7 @@ export const fish = makeEngine( {
  * `context.phase`, rebuilds a `FishBotView` for the AI helpers, and returns the
  * same move shapes the old per-phase `botMove` produced (now plain values).
  */
-function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove | undefined {
+function fishBotMove( snapshot: typeof FishSnapshot.Type ) {
 	const phase = snapshot.context.phase;
 	const config = snapshot.config;
 

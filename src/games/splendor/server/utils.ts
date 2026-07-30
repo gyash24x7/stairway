@@ -37,7 +37,7 @@ export function costToString( cost: Cost ) {
 	return GEMS.map( gem => `${ gem[ 0 ] }${ cost[ gem ] }` ).join( "-" );
 }
 
-export function generateNobles( playerCount: number ): Noble[] {
+export function generateNobles( playerCount: number ) {
 	const costs: MutableCost[] = [];
 
 	for ( let i = 0; i < GEMS.length; i++ ) {
@@ -180,7 +180,7 @@ const level1MatrixPointMap = {
 	]
 };
 
-function buildCost( gems: typeof GEMS, costArray: number[] ): MutableCost {
+function buildCost( gems: typeof GEMS, costArray: number[] ) {
 	return gems.reduce( ( acc, gem, idx ) => {
 		acc[ gem ] = costArray[ idx ];
 		return acc;
@@ -191,7 +191,7 @@ function generateDeckForMatrixPointMap(
 	gems: typeof GEMS,
 	level: CardLevel,
 	map: Record<number, number[][]>
-): Card[] {
+) {
 	return Object.keys( map )
 		.map( p => parseInt( p ) )
 		.flatMap( ( points ) => map[ points ].map( ( costArray, idx ) => {
@@ -202,7 +202,7 @@ function generateDeckForMatrixPointMap(
 		} ) );
 }
 
-export function generateDecks(): Record<CardLevel, Card[]> {
+export function generateDecks() {
 	const gems = shuffle( GEMS );
 	return {
 		3: shuffle( generateDeckForMatrixPointMap( gems, 3, level3MatrixPointMap ) ),
@@ -211,7 +211,7 @@ export function generateDecks(): Record<CardLevel, Card[]> {
 	};
 }
 
-function getPlayerBonuses( player: PlayerData ): MutableCost {
+function getPlayerBonuses( player: PlayerData ) {
 	const bonuses: MutableCost = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 };
 	for ( const card of player.cards ) {
 		bonuses[ card.bonus ]++;
@@ -222,7 +222,7 @@ function getPlayerBonuses( player: PlayerData ): MutableCost {
 export function checkNobleVisit(
 	player: PlayerData,
 	nobles: ReadonlyArray<Noble>
-): string | undefined {
+) {
 	const bonuses = getPlayerBonuses( player );
 
 	for ( const noble of nobles ) {
@@ -238,11 +238,11 @@ export function checkNobleVisit(
 // --- Decider-side pure helpers ---------------------------------------------
 
 /** Sum every value of a (partial) token map. */
-export const sumTokens = ( t: Partial<Record<Gem, number>> ): number =>
+export const sumTokens = ( t: Partial<Record<Gem, number>> ) =>
 	Object.values( t ).reduce( ( acc, v ) => acc + ( v ?? 0 ), 0 );
 
 /** Find an open card by id across all three levels (readonly-safe). */
-export const findOpenCard = ( cardId: string, cards: CardsByLevel ): Card | undefined => {
+export const findOpenCard = ( cardId: string, cards: CardsByLevel ) => {
 	for ( const level of [ 1, 2, 3 ] as const ) {
 		const card = cards[ level ].find( c => c.id === cardId );
 		if ( card ) {
@@ -253,7 +253,7 @@ export const findOpenCard = ( cardId: string, cards: CardsByLevel ): Card | unde
 };
 
 /** Discounted cost of a card given the buyer's owned bonus cards. */
-export const discountedCost = ( card: Card, owned: ReadonlyArray<Card> ): MutableCost => {
+export const discountedCost = ( card: Card, owned: ReadonlyArray<Card> ) => {
 	const result: MutableCost = { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 };
 	for ( const gem of GEMS ) {
 		const discount = owned.filter( c => c.bonus === gem ).length;
@@ -266,7 +266,7 @@ export const discountedCost = ( card: Card, owned: ReadonlyArray<Card> ): Mutabl
 export const findNobleVisit = (
 	owned: ReadonlyArray<Card>,
 	nobles: ReadonlyArray<Noble>
-): Noble | null => {
+) => {
 	for ( const noble of nobles ) {
 		const qualifies = GEMS.every( gem =>
 			owned.filter( c => c.bonus === gem ).length >= noble.cost[ gem ] );
@@ -278,7 +278,7 @@ export const findNobleVisit = (
 };
 
 /** Remove one card by id from a level's deck in place (immer draft array). */
-const dropDeckCard = ( deck: Card[], card: Card | null ): void => {
+const dropDeckCard = ( deck: Card[], card: Card | null ) => {
 	if ( card === null ) {
 		return;
 	}
@@ -289,7 +289,7 @@ const dropDeckCard = ( deck: Card[], card: Card | null ): void => {
 };
 
 /** Replace an open slot (by removed card id) with `replacement`, or drop it, in place. */
-const refillOpenCard = ( open: Card[], removed: Card, replacement: Card | null ): void => {
+const refillOpenCard = ( open: Card[], removed: Card, replacement: Card | null ) => {
 	const idx = open.findIndex( c => c.id === removed.id );
 	if ( idx < 0 ) {
 		return;
@@ -304,7 +304,7 @@ const refillOpenCard = ( open: Card[], removed: Card, replacement: Card | null )
 // --- Reducer ---------------------------------------------------------------
 
 /** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
-export const apply = ( state: SplendorState, event: SplendorEvent ): SplendorState =>
+export const apply = ( state: SplendorState, event: SplendorEvent ) =>
 	produce( state, ( draft ) => {
 		Match.value( event ).pipe(
 			Match.tag( "splendor/evt/PlayerDataInitialized", ( e ) => {

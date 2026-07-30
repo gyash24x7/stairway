@@ -11,7 +11,7 @@ import type {
 } from "@/games/tictactoe/shared/schema.ts";
 
 /** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
-export const apply = ( state: TicTacToeState, event: TicTacToeEvent ): TicTacToeState =>
+export const apply = ( state: TicTacToeState, event: TicTacToeEvent ) =>
 	produce( state, ( draft ) => {
 		Match.value( event ).pipe(
 			Match.tag( "tictactoe/SymbolAssigned", ( e ) => { draft.symbols[ e.symbol ] = e.playerId; } ),

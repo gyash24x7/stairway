@@ -23,14 +23,14 @@ export const fetchMeFn = async () => {
 	} );
 };
 
-export const loginPasskeyFn = async (): Promise<void> => {
+export const loginPasskeyFn = async () => {
 	const { error } = await authClient.signIn.passkey();
 	if ( error ) {
 		throw new Error( error.message ?? "Passkey sign-in failed." );
 	}
 };
 
-export const registerPasskeyFn = async ( input: RegisterInput ): Promise<void> => {
+export const registerPasskeyFn = async ( input: RegisterInput ) => {
 	const { error } = await authClient.passkey.addPasskey( {
 		name: input.email,
 		context: JSON.stringify( input )
@@ -43,6 +43,6 @@ export const registerPasskeyFn = async ( input: RegisterInput ): Promise<void> =
 	await loginPasskeyFn();
 };
 
-export const logoutFn = async (): Promise<void> => {
+export const logoutFn = async () => {
 	await authClient.signOut();
 };

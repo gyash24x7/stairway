@@ -39,7 +39,7 @@ export const allWordsGuessed = ( state: WordleState ) =>
 	state.words.every( ( word ) => state.guesses.includes( word ) );
 
 /** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
-export const apply = ( state: WordleState, event: WordleEvents ): WordleState =>
+export const apply = ( state: WordleState, event: WordleEvents ) =>
 	produce( state, ( draft ) => {
 		Match.value( event ).pipe(
 			Match.tag( "wordle/evt/Guessed", ( e ) => {

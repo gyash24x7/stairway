@@ -62,7 +62,7 @@ export function determineTrickWinner( trick: Trick, trump: CardSuit, players: Pl
 	return winningPlayer;
 }
 
-export function createNewDeal( players: PlayerId[], startingPlayer?: PlayerId ): Deal {
+export function createNewDeal( players: PlayerId[], startingPlayer?: PlayerId ) {
 	const deck = generateDeck();
 	const generatedHands = generateHands( deck, PLAYER_COUNT );
 	return Deal.make( {
@@ -87,17 +87,17 @@ export function createNewDeal( players: PlayerId[], startingPlayer?: PlayerId ):
 	} );
 }
 
-export function emptyTrick( leadPlayer: PlayerId = PlayerId.make( "" ) ): Trick {
+export function emptyTrick( leadPlayer: PlayerId = PlayerId.make( "" ) ) {
 	return { leadPlayer, cards: {} };
 }
 
-function getHighestCardValue( cards: CardId[], suit: string ): number {
+function getHighestCardValue( cards: CardId[], suit: string ) {
 	return cards
 		.filter( c => getCardSuit( c ) === suit )
 		.reduce( ( max, c ) => Math.max( max, getCardValue( c ) ), -1 );
 }
 
-export function getPlayableCards( hand: CardId[], trump: CardSuit, trick: Trick ): CardId[] {
+export function getPlayableCards( hand: CardId[], trump: CardSuit, trick: Trick ) {
 	const trickCards = Object.values( trick.cards );
 
 	// Leading the trick — any card
@@ -139,7 +139,7 @@ export function getPlayableCards( hand: CardId[], trump: CardSuit, trick: Trick 
 	return hand;
 }
 
-export function calculateRoundScore( call: number, won: number ): number {
+export function calculateRoundScore( call: number, won: number ) {
 	if ( won >= call ) {
 		return call * 10 + ( won - call ) * 2;
 	}

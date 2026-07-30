@@ -1,7 +1,7 @@
 import * as Match from "effect/Match";
 import { castDraft, type Draft, produce } from "immer";
 
-import type { BookType, FishEvent, FishState } from "@/games/fish/shared/schema.ts";
+import type { FishEvent, FishState } from "@/games/fish/shared/schema.ts";
 import type { BookClaimed, CardAsked } from "@/games/fish/shared/schema.ts";
 import { getCardsOfBook } from "@/games/fish/shared/utils.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
@@ -26,13 +26,13 @@ const DEFAULT_METRICS = {
 // infer from the presence of 7s in the tracked deck (Canadian removes 7s). When
 // the deck is fully claimed this is ambiguous, but claims resolve before that
 // point; fall back to NORMAL only when no cards remain.
-const bookTypeOf = ( state: FishState ): BookType => {
+const bookTypeOf = ( state: FishState ) => {
 	const cards = Object.keys( state.cardLocations );
 	const hasSeven = cards.some( c => getCardRank( c as CardId ) === CARD_RANKS.SEVEN );
 	return hasSeven ? "NORMAL" : ( cards.length > 0 ? "CANADIAN" : "NORMAL" );
 };
 
-const applyAsk = ( draft: Draft<FishState>, e: CardAsked ): void => {
+const applyAsk = ( draft: Draft<FishState>, e: CardAsked ) => {
 	const asker = draft.playerData[ e.playerId ]!;
 
 	if ( e.success ) {
@@ -72,7 +72,7 @@ const applyAsk = ( draft: Draft<FishState>, e: CardAsked ): void => {
 	draft.lastMoveType = "ask";
 };
 
-const applyClaim = ( draft: Draft<FishState>, e: BookClaimed ): void => {
+const applyClaim = ( draft: Draft<FishState>, e: BookClaimed ) => {
 	const allBookCards = getCardsOfBook( e.book, bookTypeOf( draft ) );
 	for ( const [ pid, hand ] of Object.entries( draft.hands ) ) {
 		draft.hands[ pid as PlayerId ] = hand.filter( c => !allBookCards.includes( c ) );
@@ -126,7 +126,7 @@ const applyClaim = ( draft: Draft<FishState>, e: BookClaimed ): void => {
 };
 
 /** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
-export const apply = ( state: FishState, event: FishEvent ): FishState =>
+export const apply = ( state: FishState, event: FishEvent ) =>
 	produce( state, ( draft ) => {
 		Match.value( event ).pipe(
 			Match.tag( "fish/PlayerSeated", ( e ) => {

@@ -10,7 +10,7 @@ export function SplendorCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();
 	const [ winningPoints, setWinningPoints ] = useState<10 | 15 | 20>( 15 );
 
-	const createSplendorGame = async (): Promise<string> => {
+	const createSplendorGame = async () => {
 		if ( !playerCount || !winningPoints ) {
 			return "";
 		}

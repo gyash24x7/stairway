@@ -5,7 +5,7 @@ import { joinTicTacToeGameFn } from "@/games/tictactoe/client/client.ts";
 import { TicTacToeCreateGame } from "@/games/tictactoe/client/create-game.tsx";
 
 export function TicTacToeHomePage( props: { isLoggedIn?: boolean } ) {
-	const joinTicTacToeGame = async ( input: { code: string } ): Promise<string> => {
+	const joinTicTacToeGame = async ( input: { code: string } ) => {
 		const { id } = await joinTicTacToeGameFn( input.code );
 		return id;
 	};

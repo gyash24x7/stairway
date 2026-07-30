@@ -48,6 +48,24 @@ export default [
 			"import-x/internal-regex": "^@/"
 		},
 		rules: {
+			// No explicit return type annotations on function implementations — let TypeScript infer.
+			// Type predicates / assertion signatures (`x is T`, `asserts x`) are exempt: they cannot
+			// be inferred. Type-level declarations (interface method signatures) are also not matched.
+			"no-restricted-syntax": [
+				"error",
+				{
+					selector: "FunctionDeclaration[returnType][returnType.typeAnnotation.type!='TSTypePredicate']",
+					message: "Explicit return type annotations are not allowed; let TypeScript infer the return type."
+				},
+				{
+					selector: "FunctionExpression[returnType][returnType.typeAnnotation.type!='TSTypePredicate']",
+					message: "Explicit return type annotations are not allowed; let TypeScript infer the return type."
+				},
+				{
+					selector: "ArrowFunctionExpression[returnType][returnType.typeAnnotation.type!='TSTypePredicate']",
+					message: "Explicit return type annotations are not allowed; let TypeScript infer the return type."
+				}
+			],
 			// All local ts/tsx imports must carry their file extension (npm packages are exempt).
 			"import-x/extensions": [ "error", "ignorePackages", { checkTypeImports: true } ],
 			// Ban relative imports — use the "@/" alias instead.

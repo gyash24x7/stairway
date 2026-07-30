@@ -8,7 +8,7 @@ import { FishCreateGame as CreateGame } from "@/games/fish/client/create-game.ts
 export function FishHomePage( props: { isLoggedIn?: boolean } ) {
 	const { authInfo } = useAuth();
 
-	const joinFishGame = async ( input: { code: string } ): Promise<string> => {
+	const joinFishGame = async ( input: { code: string } ) => {
 		if ( !authInfo ) {
 			return "";
 		}

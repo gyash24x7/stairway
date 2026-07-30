@@ -9,7 +9,7 @@ import type { KingdominoEvent, KingdominoState } from "@/games/kingdomino/shared
 export const apply = (
 	state: KingdominoState,
 	event: KingdominoEvent
-): KingdominoState =>
+) =>
 	produce( state, ( draft ) => {
 		Match.value( event ).pipe(
 			Match.tag( "kingdomino/DeckShuffled", ( e ) => { draft.deck = castDraft( e.deck ); } ),

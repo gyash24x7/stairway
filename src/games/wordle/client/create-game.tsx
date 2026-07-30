@@ -16,7 +16,7 @@ export function WordleCreateGame() {
 	const decrement = () => setWordCount( wordCount - 1 );
 
 	// Wordle is effectively single-player: one seat, auto-started on create.
-	const createWordleGame = async (): Promise<string> => {
+	const createWordleGame = async () => {
 		const { id } = await createWordleGameFn( {
 			playerCount: 1,
 			autoStart: true,

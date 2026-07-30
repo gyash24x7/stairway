@@ -11,7 +11,7 @@ export function CallbreakCreateGame() {
 	const [ trumpSuit, setTrumpSuit ] = useState<CardSuit>();
 	const [ dealCount, setDealCount ] = useState<5 | 9 | 13>();
 
-	const createCallbreakGame = async (): Promise<string> => {
+	const createCallbreakGame = async () => {
 		if ( !dealCount || !trumpSuit ) {
 			return "";
 		}

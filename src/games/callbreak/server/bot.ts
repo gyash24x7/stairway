@@ -29,7 +29,7 @@ function lowest( cards: CardId[] ) {
  * @param cards - The cards to choose from.
  * @returns The card with the highest rank value.
  */
-function highest( cards: CardId[] ): CardId {
+function highest( cards: CardId[] ) {
 	return sortByValue( cards )[ cards.length - 1 ];
 }
 

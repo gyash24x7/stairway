@@ -9,7 +9,7 @@ export function KingdominoCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();
 	const [ boardSize, setBoardSize ] = useState<BoardSize>();
 
-	const createKingdominoGame = async (): Promise<string> => {
+	const createKingdominoGame = async () => {
 		if ( !playerCount || !boardSize ) {
 			return "";
 		}

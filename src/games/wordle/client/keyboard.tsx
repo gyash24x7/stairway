@@ -10,7 +10,7 @@ const LINES = [
 	[ "enter", "z", "x", "c", "v", "b", "n", "m", "back" ]
 ];
 
-function getAvailableLetters( guesses: ReadonlyArray<string> ): string[] {
+function getAvailableLetters( guesses: ReadonlyArray<string> ) {
 	let letters = "abcdefghijklmnopqrstuvwxyz".split( "" );
 	for ( const guess of guesses ) {
 		for ( const letter of guess.toLowerCase().split( "" ) ) {

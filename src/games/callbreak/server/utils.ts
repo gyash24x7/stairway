@@ -10,7 +10,7 @@ import type { PlayerId } from "@/shared/swish/schema.ts";
 // on an immer draft; the active deal/trick are always `deals[0]`/`tricks[0]`.
 
 /** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
-export const apply = ( state: CallbreakState, event: CallbreakEvent ): CallbreakState =>
+export const apply = ( state: CallbreakState, event: CallbreakEvent ) =>
 	produce( state, ( draft ) => {
 		Match.value( event ).pipe(
 			Match.tag( "callbreak/ScoreInitialized", ( e ) => { draft.scores[ e.playerId ] = 0; } ),

@@ -5,7 +5,7 @@ import { adjectives, names, uniqueNamesGenerator } from "unique-names-generator"
  * Generates a unique identifier using ULID.
  * @returns {string} A unique identifier in ULID format.
  */
-export function generateId(): string {
+export function generateId() {
 	return ulid();
 }
 
@@ -13,7 +13,7 @@ export function generateId(): string {
  * Generates a unique name using the unique-names-generator package.
  * @returns {string} A unique name.
  */
-export function generateName(): string {
+export function generateName() {
 	return uniqueNamesGenerator( {
 		dictionaries: [ names ],
 		separator: " ",
@@ -25,7 +25,7 @@ export function generateName(): string {
  * Generates a unique teams name using the unique-names-generator package.
  * @returns {string} A unique name.
  */
-export function generateTeamName(): string {
+export function generateTeamName() {
 	return uniqueNamesGenerator( {
 		dictionaries: [ adjectives, names ],
 		separator: " ",
@@ -38,7 +38,7 @@ export function generateTeamName(): string {
  * @param {string} [seed] - Optional seed for generating a consistent avatar.
  * @returns {string} A URL to a randomly generated avatar image.
  */
-export function generateAvatar( seed?: string ): string {
+export function generateAvatar( seed?: string ) {
 	return `https://api.dicebear.com/7.x/open-peeps/png?seed=${ seed ?? generateId() }&r=50`;
 }
 
@@ -59,7 +59,7 @@ export function generateBotInfo() {
  * @param {number} [length=6] - The length of the game code to generate.
  * @returns {string} A randomly generated game code.
  */
-export function generateGameCode( length: number = 6 ): string {
+export function generateGameCode( length: number = 6 ) {
 	const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	let result = "";
 	for ( let i = 0; i < length; i++ ) {

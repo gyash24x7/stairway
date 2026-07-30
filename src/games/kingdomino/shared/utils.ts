@@ -5,7 +5,6 @@ import type {
 	Domino,
 	Placement,
 	Rotation,
-	ScoreBreakdown,
 	Terrain,
 	Tile
 } from "@/games/kingdomino/shared/schema.ts";
@@ -346,7 +345,7 @@ export function getCandidateCells( board: Board ) {
  * @param board - The current state of the board, including existing placements and tiles.
  * @returns An coordintes representing potential cells that can be occupied.
  */
-export function getPotentialCells( board: Board ): Coord[] {
+export function getPotentialCells( board: Board ) {
 	const occupied = new Set<string>();
 	const candidates = getCandidateCells( board );
 	const rotations: Rotation[] = [ 0, 90, 180, 270 ];
@@ -377,7 +376,7 @@ export function getPotentialCells( board: Board ): Coord[] {
  * @param dominoId - The ID of the domino to consider for potential placements.
  * @returns An coordintes representing potential cells that can be occupied by the domino.
  */
-export function getPotentialCellsForDomino( board: Board, dominoId: number ): Coord[] {
+export function getPotentialCellsForDomino( board: Board, dominoId: number ) {
 	const occupied = new Set<string>();
 	const candidates = getPotentialCells( board );
 	const rotations: Rotation[] = [ 0, 90, 180, 270 ];
@@ -549,7 +548,7 @@ export function getValidPlacements( board: Board, dominoId: number ) {
  * @param placement - The placement to apply to the board.
  * @returns Updated board after applying the placement.
  */
-export function applyPlacement( board: Board, placement: Placement ): Board {
+export function applyPlacement( board: Board, placement: Placement ) {
 	const domino = DOMINO_DECK[ placement.dominoId - 1 ];
 	const [ p1, p2 ] = getPlacementCoordinates( placement );
 
@@ -645,7 +644,7 @@ function exploreRegion(
  * @param board - The current state of the board, including existing placements and tiles.
  * @returns A ScoreBreakdown object containing the list of regions and the total points scored.
  */
-export function calculateScore( board: Board ): ScoreBreakdown {
+export function calculateScore( board: Board ) {
 
 	const visited = new Set<string>();
 	const regions: Region[] = [];

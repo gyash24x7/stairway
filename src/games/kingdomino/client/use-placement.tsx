@@ -22,16 +22,7 @@ type UsePlacementParams = {
 	onClear?: () => void;
 };
 
-type UsePlacementResult = {
-	handleCellClick: ( coord: Coord ) => void;
-	getPreviewCoords: ( coord: Coord ) => Coord[] | null;
-	canDiscard: boolean;
-	handleDiscard: () => void;
-	tentativeProp: Tentative | undefined;
-	isPending: boolean;
-};
-
-export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
+export function usePlacement( params: UsePlacementParams ) {
 	const { gameId, activeDominoId, canPlace, onClear } = params;
 	const [ tentative, setTentative ] = useState<{ coord: Coord; rotation: Rotation } | null>( null );
 
@@ -114,7 +105,7 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 		} )();
 	};
 
-	const getPreviewCoords = ( coord: Coord ): Coord[] | null => {
+	const getPreviewCoords = ( coord: Coord ) => {
 		if ( !activeDominoId ) {
 			return null;
 		}

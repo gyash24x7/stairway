@@ -6,7 +6,7 @@ import { joinSplendorGameFn } from "@/games/splendor/client/client.ts";
 import { SplendorCreateGame as CreateGame } from "@/games/splendor/client/create-game.tsx";
 
 export function SplendorHomePage( props: { isLoggedIn?: boolean } ) {
-	const joinGame = async ( input: { code: GameCode } ): Promise<string> => {
+	const joinGame = async ( input: { code: GameCode } ) => {
 		const { id } = await joinSplendorGameFn( input.code );
 		return id;
 	};

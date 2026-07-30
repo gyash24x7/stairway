@@ -7,7 +7,7 @@
  *   deterministic, reproducible shuffle.
  * @returns {T[]} A new array with the elements shuffled.
  */
-export function shuffle<T>( arr: T[], rng: () => number = Math.random ): T[] {
+export function shuffle<T>( arr: T[], rng: () => number = Math.random ) {
 	return arr
 		.map( value => ( { value, sort: rng() } ) )
 		.sort( ( a, b ) => a.sort - b.sort )
@@ -21,7 +21,7 @@ export function shuffle<T>( arr: T[], rng: () => number = Math.random ): T[] {
  * @param {number} size - The size of each chunk.
  * @returns {T[][]} An array of chunks, each containing up to `size` elements.
  */
-export function chunk<T>( arr: T[], size: number ): T[][] {
+export function chunk<T>( arr: T[], size: number ) {
 	const chunks: T[][] = [];
 
 	for ( let i = 0; i < arr.length; i += size ) {
@@ -39,7 +39,7 @@ export function chunk<T>( arr: T[], size: number ): T[][] {
  * @param {T[]} arr - The array to filter.
  * @returns {T[]} A new array with elements that do not match the predicate.
  */
-export function remove<T>( predicate: ( elem: T ) => boolean, arr: T[] ): T[] {
+export function remove<T>( predicate: ( elem: T ) => boolean, arr: T[] ) {
 	return arr.filter( elem => !predicate( elem ) );
 }
 
@@ -49,6 +49,6 @@ export function remove<T>( predicate: ( elem: T ) => boolean, arr: T[] ): T[] {
  * @param {T} obj - The object whose keys are to be retrieved.
  * @returns {(keyof T)[]} An array of the object's keys.
  */
-export function objectKeys<T extends Record<any, any>>( obj: T ): ( keyof T )[] {
+export function objectKeys<T extends Record<any, any>>( obj: T ) {
 	return Object.keys( obj ) as ( keyof T )[];
 }

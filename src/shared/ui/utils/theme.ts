@@ -5,7 +5,7 @@ const DEFAULT_THEME: Theme = "apple";
 const DEFAULT_MODE: ThemeMode = "light";
 
 /** Reads the persisted theme/mode from localStorage, falling back to the defaults. */
-export function readTheme(): { theme: Theme; mode: ThemeMode } {
+export function readTheme() {
 	if ( typeof localStorage === "undefined" ) {
 		return { theme: DEFAULT_THEME, mode: DEFAULT_MODE };
 	}

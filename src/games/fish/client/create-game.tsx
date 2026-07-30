@@ -13,7 +13,7 @@ export function FishCreateGame() {
 	const [ teamCount, setTeamCount ] = useState<2 | 3 | 4>();
 	const [ bookType, setBookType ] = useState<BookType>( "NORMAL" );
 
-	const createFishGame = async (): Promise<string> => {
+	const createFishGame = async () => {
 		if ( !playerCount || !teamCount ) {
 			return "";
 		}

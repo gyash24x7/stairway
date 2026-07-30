@@ -278,7 +278,7 @@ export const openInteraction = ( frame: InteractionFrame ) => InteractionOpened.
  * @param {InteractionFrame} frame - The sequential frame to inspect.
  * @returns The pending responder, or `undefined` if all have answered.
  */
-export const nextSequentialResponder = ( frame: InteractionFrame ): PlayerId | undefined =>
+export const nextSequentialResponder = ( frame: InteractionFrame ) =>
 	frame.responders.find( ( id ) => !( id in frame.responses ) );
 
 // --- Seat helpers ----------------------------------------------------------
@@ -309,7 +309,7 @@ export const isActiveSeat = ( ctx: GameContext, id: PlayerId ) =>
  * @param {GameContext} ctx - The game context holding the roster and seat statuses.
  * @returns The active seats, in order.
  */
-export const activeSeats = ( ctx: GameContext ): ReadonlyArray<PlayerId> =>
+export const activeSeats = ( ctx: GameContext ) =>
 	ctx.players.filter( ( id ) => isActiveSeat( ctx, id ) );
 
 // --- Commit ----------------------------------------------------------------

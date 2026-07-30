@@ -15,7 +15,7 @@ import { type Audience, type PlayerId } from "@/shared/swish/schema.ts";
 export const defineView = <Data, P, T>( projections: {
 	readonly table: ( data: Data ) => T;
 	readonly player: ( data: Data, id: PlayerId ) => P;
-} ) => ( data: Data, audience: Audience ): P | T =>
+} ) => ( data: Data, audience: Audience ) =>
 	audience._tag === "swish/Player"
 		? projections.player( data, audience.id )
 		: projections.table( data );

@@ -151,7 +151,7 @@ export function getCardsOfBook( book: Book, bookType: BookType, hand?: readonly 
  * @param playerId - The player to look up.
  * @returns The team ID the player belongs to.
  */
-export function getTeamForPlayer( teams: TeamData, playerId: PlayerId ): TeamId {
+export function getTeamForPlayer( teams: TeamData, playerId: PlayerId ) {
 	return Object.keys( teams )
 		.find( tid => ( teams[ tid ]?.members ?? [] ).includes( playerId ) )!;
 }
@@ -163,7 +163,7 @@ export function getTeamForPlayer( teams: TeamData, playerId: PlayerId ): TeamId 
  * @param playerId - The player whose opponents to find.
  * @returns An array of opponent player IDs.
  */
-export function getOpponents( teams: TeamData, playerId: PlayerId ): PlayerId[] {
+export function getOpponents( teams: TeamData, playerId: PlayerId ) {
 	const teamId = getTeamForPlayer( teams, playerId );
 	return Object.keys( teams )
 		.filter( tid => tid !== teamId )
@@ -177,7 +177,7 @@ export function getOpponents( teams: TeamData, playerId: PlayerId ): PlayerId[] 
  * @param playerId - The player whose teammates to find.
  * @returns An array of teammate player IDs.
  */
-export function getTeammates( teams: TeamData, playerId: PlayerId ): PlayerId[] {
+export function getTeammates( teams: TeamData, playerId: PlayerId ) {
 	const teamId = getTeamForPlayer( teams, playerId );
 	return ( teams[ teamId ]?.members ?? [] ).filter( pid => pid !== playerId );
 }
@@ -202,7 +202,7 @@ const CANADIAN_BOOK_DISPLAY: Record<CanadianBook, { label: string; suit: string 
  * @param bookType - The book type variant.
  * @returns A display string (e.g., "ACES" or "LOW ♣").
  */
-export function getBookDisplayString( book: Book, bookType: BookType ): string {
+export function getBookDisplayString( book: Book, bookType: BookType ) {
 	if ( bookType === "NORMAL" ) {
 		return book;
 	}
@@ -218,7 +218,7 @@ export function getBookDisplayString( book: Book, bookType: BookType ): string {
  * @param bookType - The book type variant.
  * @returns The suit character (e.g., "C"), or undefined.
  */
-export function getBookSuit( book: Book, bookType: BookType ): string | undefined {
+export function getBookSuit( book: Book, bookType: BookType ) {
 	if ( bookType !== "CANADIAN" ) {
 		return undefined;
 	}
@@ -280,7 +280,7 @@ export function getTransferDescription(
  * @param state - The game state.
  * @returns An array of claimed book names.
  */
-export function getClaimedBooks( state: FishState ): Book[] {
+export function getClaimedBooks( state: FishState ) {
 	return Object.values( state.teams ).flatMap( s => s.booksWon );
 }
 

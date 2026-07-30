@@ -306,7 +306,7 @@ export function suggestAsks(
  * The bot should signal back by asking from the same book on its turn.
  * Only considers the most recent few asks to keep signals timely.
  */
-function detectBooksToSignal( state: FishPlayerView, config: FishConfig ): Set<Book> {
+function detectBooksToSignal( state: FishPlayerView, config: FishConfig ) {
 	const teammates = getTeammates( state.teams, state.playerId );
 	const booksToSignal = new Set<Book>();
 
@@ -332,7 +332,7 @@ function getActiveBook(
 	state: FishPlayerView,
 	config: FishConfig,
 	teamMates: PlayerId[]
-): Book | undefined {
+) {
 	// Find the bot's most recent ask
 	const lastAsk = state.askHistory.find( a => a.playerId === state.playerId );
 	if ( !lastAsk ) {

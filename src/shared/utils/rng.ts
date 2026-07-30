@@ -10,7 +10,7 @@ export type Rng = {
  * streams, which is how the engine keeps same-turn deciders from colliding.
  * @param parts
  */
-export const hashSeed = ( ...parts: ReadonlyArray<string | number> ): number => {
+export const hashSeed = ( ...parts: ReadonlyArray<string | number> ) => {
 	const str = parts.join( "|" );
 	let h = 1779033703 ^ str.length;
 	for ( let i = 0; i < str.length; i++ ) {
@@ -26,7 +26,7 @@ export const hashSeed = ( ...parts: ReadonlyArray<string | number> ): number => 
  * mulberry32: a fast 32-bit PRNG. Returns a fn producing floats in [0, 1).
  * @param seed - A numeric seed
  */
-export const mulberry32 = ( seed: number ): ( () => number ) => {
+export const mulberry32 = ( seed: number ) => {
 	let a = seed >>> 0;
 	return () => {
 		a = ( a + 0x6d2b79f5 ) | 0;
@@ -40,10 +40,10 @@ export const mulberry32 = ( seed: number ): ( () => number ) => {
  * Build an `Rng` from a numeric seed.
  * @param seed - A numeric seed
  */
-export const makeRng = ( seed: number ): Rng => {
+export const makeRng = ( seed: number ) => {
 	const next = mulberry32( seed );
 	const int = ( max: number ) => Math.floor( next() * max );
-	const shuffle = <T>( arr: readonly T[] ): T[] => {
+	const shuffle = <T>( arr: readonly T[] ) => {
 		const out = [ ...arr ];
 		for ( let i = out.length - 1; i > 0; i-- ) {
 			const j = int( i + 1 );
