@@ -190,7 +190,7 @@ export const InitializeResponse = Schema.TaggedStruct(
 export type JoinGameInput = typeof JoinGameInput.Type;
 export const JoinGameInput = Schema.TaggedStruct(
 	"swish/JoinGameInput",
-	{ code: GameCode, playerInfo: PlayerInfo }
+	{ code: GameCode }
 );
 
 /** The response to `join`: the joined game's id and code. */
@@ -341,7 +341,6 @@ export const CommitMeta = Schema.Struct( {
  * and the optional `requestId`/`expectedTurn` guards.
  */
 export type MovePayload<In extends Schema.Top> = {
-	readonly playerInfo: PlayerInfo;
 	readonly input: In[ "Type" ];
 	readonly requestId?: string;
 	readonly expectedTurn?: number;
@@ -356,7 +355,6 @@ export type MovePayload<In extends Schema.Top> = {
  */
 export const MovePayload = <In extends Schema.Top>( input: In ) =>
 	Schema.Struct( {
-		playerInfo: PlayerInfo,
 		input,
 		requestId: Schema.optionalKey( Schema.String ),
 		expectedTurn: Schema.optionalKey( Schema.Number )

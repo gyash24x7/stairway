@@ -1,5 +1,4 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import { toPlayerInfo } from "@s2h/contract/client";
 import { JoinGame } from "@s2h/ui/components/join-game";
 import { Separator } from "@s2h/ui/primitives/separator";
 import { cn } from "@s2h/ui/utils/cn";
@@ -13,7 +12,7 @@ export function FishHomePage( props: { isLoggedIn?: boolean } ) {
 		if ( !authInfo ) {
 			return "";
 		}
-		const { id } = await joinFishGameFn( input.code, toPlayerInfo( authInfo ) );
+		const { id } = await joinFishGameFn( input.code );
 		return id;
 	};
 

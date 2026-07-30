@@ -6,8 +6,8 @@ import { DeclareWins } from "./declare-wins";
 import { PlayCard } from "./play-card";
 
 export function ActionPanel() {
-	const { isMyTurn, shared } = useCallbreak();
-	const phase = shared.context.phase;
+	const { isMyTurn, data } = useCallbreak();
+	const phase = data.context.phase;
 
 	return (
 		<div

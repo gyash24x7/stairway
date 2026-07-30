@@ -1,15 +1,9 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import {
-	getBookDisplayString,
-	getBooksInHand,
-	getCardsOfBook,
-	getMissingCards,
-	getTeammates
-} from "@s2h/fish/utils";
-import type { Book } from "@s2h/schema/fish";
-import type { PlayerId } from "@s2h/swish/schema";
+import type { CardId } from "@s2h/schema/cards";
+import type { Book, ClaimBookInput } from "@s2h/schema/fish";
+import type { PlayerId } from "@s2h/schema/swish";
 import { RCard } from "@s2h/ui/components/card";
 import { RPlayerInfoStrip } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
@@ -23,12 +17,18 @@ import {
 } from "@s2h/ui/primitives/drawer";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
-import { type CardId } from "@s2h/utils/cards";
+import {
+	getBookDisplayString,
+	getBooksInHand,
+	getCardsOfBook,
+	getMissingCards,
+	getTeammates
+} from "@s2h/utils/fish";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowBigRightDashIcon } from "lucide-react";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
-import { claimBookFn, toPlayerInfo } from "./client";
+import { claimBookFn } from "./client";
 import { useFish } from "./context";
 
 export function ClaimBook() {
@@ -39,7 +39,7 @@ export function ClaimBook() {
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );
 	const [ open, setOpen ] = useState( false );
 
-	const teamMates = getTeammates( data.state.teams, player.playerId );
+	const teamMates = getTeammates( data.view.teams, player.playerId );
 	const selectedBookDisplayString = selectedBook
 		? getBookDisplayString( selectedBook, data.config.type )
 		: "";
@@ -92,8 +92,7 @@ export function ClaimBook() {
 	const queryClient = useQueryClient();
 
 	const claimBook = useMutation( {
-		mutationFn: ( claimInput: Record<string, PlayerId> ) =>
-			claimBookFn( data.id, toPlayerInfo( authInfo! ), { claim: claimInput } ),
+		mutationFn: ( input: ClaimBookInput ) => claimBookFn( data.id, input ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "fish", "getState", data.id ]
 		} )
@@ -101,15 +100,15 @@ export function ClaimBook() {
 
 	const handleClick = async () => {
 		if ( selectedBook && allAssigned && authInfo ) {
-			await claimBook.mutateAsync(
-				claim.entries().reduce(
+			await claimBook.mutateAsync( {
+				claim: claim.entries().reduce(
 					( acc, [ cardId, playerId ] ) => {
 						acc[ cardId ] = playerId;
 						return acc;
 					},
 					{} as Record<string, PlayerId>
 				)
-			);
+			} );
 
 			closeDrawer();
 		}

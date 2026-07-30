@@ -1,5 +1,5 @@
+import { GameCode, GameId, PlayerId } from "@s2h/schema/swish";
 import * as Schema from "effect/Schema";
-import { GameCode, GameId, PlayerId } from "./schema.ts";
 
 /**
  * The game is already at capacity; a further `Join` is rejected.

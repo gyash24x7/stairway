@@ -1,20 +1,20 @@
 "use client";
 
-import type { PlayerId } from "@s2h/swish/schema";
-import { DOMINO_DECK } from "@s2h/kingdomino/utils";
+import type { PlayerId } from "@s2h/schema/swish";
 import { RPlayerInfoSmall } from "@s2h/ui/components/player-info";
 import { cn } from "@s2h/ui/utils/cn";
+import { DOMINO_DECK } from "@s2h/utils/kingdomino";
 import { RSmallBoard } from "./board";
 import { useKingdomino } from "./context";
 import { RSmallDomino } from "./domino";
 
 export function ROpponent( { playerId }: { playerId: PlayerId } ) {
-	const { shared } = useKingdomino();
-	const playerData = shared.state.playerData[ playerId ];
+	const { data } = useKingdomino();
+	const playerData = data.view.playerData[ playerId ];
 	return (
 		<div className={ "flex flex-col bg-background rounded-md overflow-hidden" }>
 			<div className={ "flex gap-2 items-center bg-accent" }>
-				<RPlayerInfoSmall player={ shared.players[ playerId ] }/>
+				<RPlayerInfoSmall player={ data.players[ playerId ] }/>
 				<div className={ "flex flex-col gap-2 flex-1" }>
 					<div className={ "mt-2 flex gap-2" }>
 						{ playerData.queue.toSorted().map( dominoId => (

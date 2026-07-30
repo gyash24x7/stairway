@@ -1,28 +1,16 @@
-import {
-	BaseGameConfig,
-	GameSnapshot,
-	InitializeInput,
-	MovePayload,
-	PlayerId
-} from "@s2h/swish/schema";
-import { CARD_SUITS, SORTED_DECK } from "@s2h/utils/cards";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
+import { CardId, CardSuit } from "./cards.ts";
+import { BaseGameConfig, GameSnapshot, InitializeInput, MovePayload, PlayerId } from "./swish.ts";
 
 
 // --- Primitives ----------------------------------------------
 
-export type CardIdSchema = typeof CardIdSchema.Type;
-export const CardIdSchema = Schema.Literals( SORTED_DECK );
-
-export type CardSuitSchema = typeof CardSuitSchema.Type;
-export const CardSuitSchema = Schema.Literals( Object.values( CARD_SUITS ) );
-
 export type Trick = typeof Trick.Type;
 export const Trick = Schema.Struct( {
 	leadPlayer: PlayerId,
-	suit: Schema.optional( CardSuitSchema ),
-	cards: Schema.Record( PlayerId, CardIdSchema ),
+	suit: Schema.optional( CardSuit ),
+	cards: Schema.Record( PlayerId, CardId ),
 	winner: Schema.optional( PlayerId )
 } );
 
@@ -30,7 +18,7 @@ export type Deal = typeof Deal.Type;
 export const Deal = Schema.Struct( {
 	id: Schema.String,
 	startingPlayer: PlayerId,
-	hands: Schema.Record( PlayerId, Schema.Array( CardIdSchema ) ),
+	hands: Schema.Record( PlayerId, Schema.Array( CardId ) ),
 	declarations: Schema.Record( PlayerId, Schema.Number ),
 	wins: Schema.Record( PlayerId, Schema.Number ),
 	scores: Schema.Record( PlayerId, Schema.Number ),
@@ -49,7 +37,7 @@ export type CallbreakConfig = typeof CallbreakConfig.Type;
 export const CallbreakConfig = Schema.Struct( {
 	...BaseGameConfig.fields,
 	dealCount: Schema.Number,
-	trumpSuit: CardSuitSchema
+	trumpSuit: CardSuit
 } );
 
 export type CallbreakState = typeof CallbreakState.Type;
@@ -69,7 +57,7 @@ export const CallbreakSharedView = Schema.Struct( {
 export type CallbreakPlayerView = typeof CallbreakPlayerView.Type;
 export const CallbreakPlayerView = Schema.Struct( {
 	playerId: PlayerId,
-	hand: Schema.Array( CardIdSchema )
+	hand: Schema.Array( CardId )
 } );
 
 export type CallbreakBotView = typeof CallbreakBotView.Type;
@@ -101,7 +89,7 @@ export const DeclareWinsMovePayload = MovePayload( DeclareWinsInput );
 
 export type PlayCardInput = typeof PlayCardInput.Type;
 export const PlayCardInput = Schema.Struct( {
-	cardId: CardIdSchema,
+	cardId: CardId,
 	dealId: Schema.String
 } );
 
@@ -136,7 +124,7 @@ export const TrickStartedEvent = Schema.TaggedStruct( "callbreak/TrickStarted", 
 export type CardPlayedEvent = typeof CardPlayedEvent.Type;
 export const CardPlayedEvent = Schema.TaggedStruct( "callbreak/CardPlayed", {
 	playerId: PlayerId,
-	cardId: CardIdSchema
+	cardId: CardId
 } );
 
 export type TrickWonEvent = typeof TrickWonEvent.Type;

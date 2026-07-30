@@ -20,7 +20,8 @@
 		"@tanstack/react-router": "catalog:",
 		"framer-motion": "catalog:",
 		"react": "catalog:",
-		"lucide-react": "catalog:"
+		"lucide-react": "catalog:",
+		"usehooks-ts": "catalog:"
 	},
 	"devDependencies": {
 		"@types/react": "catalog:"

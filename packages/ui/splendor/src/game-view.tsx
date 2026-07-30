@@ -27,7 +27,7 @@ export function GameView() {
 	const isLastRound = data.status === "IN_PROGRESS" && Object.values( data.view.playerData )
 		.some( p => p.points >= data.config.winningPoints );
 
-	const otherPlayers = data.context.players.filter( p => p !== player.playerId );
+	const otherPlayers = data.context.players.filter( p => p !== data.view.playerId );
 
 	return (
 		<div className={ "flex flex-col gap-3 items-center max-w-6xl w-full mb-80 lg:mb-0" }>
@@ -47,7 +47,7 @@ export function GameView() {
 			{ data.status === "COMPLETED" && data.view.winner && (
 				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
 					<p className={ "text-lg font-heading" }>
-						{ data.view.winner === player.playerId ? "You won!" : "You lost!" }
+						{ data.view.winner === data.view.playerId ? "You won!" : "You lost!" }
 					</p>
 				</div>
 			) }
@@ -116,7 +116,7 @@ export function GameView() {
 					) }
 				>
 					<div className={ "w-full max-w-lg md:max-w-xl" }>
-						<PlayerInfo playerId={ player.playerId }/>
+						<PlayerInfo playerId={ data.view.playerId }/>
 					</div>
 				</div>
 			) }

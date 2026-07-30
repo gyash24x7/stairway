@@ -1,6 +1,6 @@
 import { getClient, run } from "@s2h/contract/client";
+import { GameIdParams, playerAudience, type PlayerInfo } from "@s2h/schema/swish";
 import type { WordleConfig } from "@s2h/schema/wordle";
-import { GameIdParams, playerAudience, type PlayerInfo } from "@s2h/swish/schema";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

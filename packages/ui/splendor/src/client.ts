@@ -1,11 +1,9 @@
 import { getClient, run } from "@s2h/contract/client";
 import type {
-	Gem,
 	PickTokensInput,
 	PurchaseCardInput,
 	ReserveCardInput,
-	SplendorConfig,
-	Tokens
+	SplendorConfig
 } from "@s2h/schema/splendor";
 import {
 	GameCode,
@@ -13,16 +11,8 @@ import {
 	GameIdParams,
 	JoinGameInput,
 	playerAudience,
-	PlayerInfo
-} from "@s2h/swish/schema";
-
-// The wire `PickTokensInput`/`PurchaseCardInput` model their token maps as a
-// full `Record<Gem, number>`, but the UI only ever fills the picked/paid gems.
-// These accept the `Partial<Tokens>` the components build and cast to the wire
-// shape at the boundary (the engine reads the present keys and ignores the rest).
-type PickTokensArg = { tokens: Partial<Tokens>; returned?: Partial<Tokens> };
-type ReserveCardArg = { cardId: string; withGold: boolean; returnedToken?: Gem };
-type PurchaseCardArg = { cardId: string; payment: Partial<Tokens> };
+	PlayerId
+} from "@s2h/schema/swish";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -36,36 +26,36 @@ const gameIdParams = ( gameId: string ) => GameIdParams.make( { gameId: GameId.m
 export const createSplendorGameFn = ( config: SplendorConfig ) =>
 	run( client.createGame( { payload: config } ) );
 
-export const joinSplendorGameFn = ( code: string, playerInfo: PlayerInfo ) =>
+export const joinSplendorGameFn = ( code: string ) =>
 	run( client.join( {
-		payload: JoinGameInput.make( { code: GameCode.make( code ), playerInfo } )
+		payload: JoinGameInput.make( { code: GameCode.make( code ) } )
 	} ) );
 
 export const addBotsFn = ( gameId: string ) =>
 	run( client.addBots( { params: gameIdParams( gameId ) } ) );
 
-export const pickTokensFn = ( gameId: string, playerInfo: PlayerInfo, input: PickTokensArg ) =>
+export const pickTokensFn = ( gameId: string, input: PickTokensInput ) =>
 	run( client.pickTokens( {
 		params: gameIdParams( gameId ),
-		payload: { playerInfo, input: input as PickTokensInput }
+		payload: { input }
 	} ) );
 
-export const reserveCardFn = ( gameId: string, playerInfo: PlayerInfo, input: ReserveCardArg ) =>
+export const reserveCardFn = ( gameId: string, input: ReserveCardInput ) =>
 	run( client.reserveCard( {
 		params: gameIdParams( gameId ),
-		payload: { playerInfo, input: input as ReserveCardInput }
+		payload: { input }
 	} ) );
 
-export const purchaseCardFn = ( gameId: string, playerInfo: PlayerInfo, input: PurchaseCardArg ) =>
+export const purchaseCardFn = ( gameId: string, input: PurchaseCardInput ) =>
 	run( client.purchaseCard( {
 		params: gameIdParams( gameId ),
-		payload: { playerInfo, input: input as PurchaseCardInput }
+		payload: { input }
 	} ) );
 
 // --- Queries ---------------------------------------------------------------
 
-export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
+export const getStateFn = ( gameId: string, playerId: string, signal?: AbortSignal ) =>
 	run( client.getState( {
 		params: gameIdParams( gameId ),
-		payload: playerAudience( playerInfo.id )
+		payload: playerAudience( PlayerId.make( playerId ) )
 	} ), signal );

@@ -7,8 +7,8 @@ import { DurableSchedulerLive } from "@s2h/platform/do/scheduler";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@s2h/platform/do/stores";
 import { DurableSyncLive, GameChannel } from "@s2h/platform/do/sync";
 import { FishInitializeInput } from "@s2h/schema/fish";
+import { GameCode, GameId } from "@s2h/schema/swish";
 import { GameNotFound } from "@s2h/swish/errors";
-import { GameCode, GameId } from "@s2h/swish/schema";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -94,23 +94,27 @@ export const FishApiLive = ( ns: Cloudflare.DurableObject<FishEngineDO> ) =>
 				} ) )
 
 				.handle( "createTeams", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.createTeams( payload );
+					return yield* client.createTeams( payload, toPlayerInfo( user ) );
 				} ) )
 
 				.handle( "askCard", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.askCard( payload );
+					return yield* client.askCard( payload, toPlayerInfo( user ) );
 				} ) )
 
 				.handle( "claimBook", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.claimBook( payload );
+					return yield* client.claimBook( payload, toPlayerInfo( user ) );
 				} ) )
 
 				.handle( "transferTurn", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.transferTurn( payload );
+					return yield* client.transferTurn( payload, toPlayerInfo( user ) );
 				} ) );
 		} )
 	);

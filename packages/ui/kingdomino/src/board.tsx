@@ -1,5 +1,8 @@
 "use client";
 
+import type { Board, BoardSize, Castle, Coord, Rotation, Tile } from "@s2h/schema/kingdomino";
+import { Popover, PopoverContent } from "@s2h/ui/primitives/popover";
+import { cn } from "@s2h/ui/utils/cn";
 import {
 	canDominoBePlaced,
 	coordKey,
@@ -8,10 +11,7 @@ import {
 	getExpandedBoardBounds,
 	getPotentialCells,
 	getRowsAndCols
-} from "@s2h/kingdomino/utils";
-import type { Board, BoardSize, Castle, Coord, Rotation, Tile } from "@s2h/schema/kingdomino";
-import { Popover, PopoverContent } from "@s2h/ui/primitives/popover";
-import { cn } from "@s2h/ui/utils/cn";
+} from "@s2h/utils/kingdomino";
 import { motion } from "framer-motion";
 import { CrownIcon } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";

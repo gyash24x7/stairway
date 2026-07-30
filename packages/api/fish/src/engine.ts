@@ -1,7 +1,7 @@
+import type { CardId } from "@s2h/schema/cards";
 import {
 	AskCardInput,
 	BookClaimed,
-	Card,
 	CardAsked,
 	ClaimBookInput,
 	CreateTeamsInput,
@@ -18,17 +18,18 @@ import {
 	TurnTransferred,
 	WinningTeamDecided
 } from "@s2h/schema/fish";
+import { PlayerId } from "@s2h/schema/swish";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
-import { PlayerId } from "@s2h/swish/schema";
 import { remove } from "@s2h/utils/array";
+import { CARD_RANKS, generateDeck, generateHands, getCardRank } from "@s2h/utils/cards";
 import {
-	CARD_RANKS,
-	type CardId,
-	generateDeck,
-	generateHands,
-	getCardRank
-} from "@s2h/utils/cards";
+	getBookForCard,
+	getCardsOfBook,
+	getClaimedBooks,
+	getOpponents,
+	getTeammates
+} from "@s2h/utils/fish";
 import { generateId } from "@s2h/utils/generator";
 import {
 	detectTeammateSignals,
@@ -37,16 +38,7 @@ import {
 	suggestClaims,
 	suggestTransfers
 } from "./bot";
-import {
-	apply,
-	getBookForCard,
-	getCardsOfBook,
-	getClaimedBooks,
-	getOpponents,
-	getTeammates
-} from "./utils";
-
-type CardT = typeof Card.Type;
+import { apply } from "./utils.ts";
 
 /** Whether a player has been seated (has playerData). */
 const playerSeated = ( state: typeof FishState.Type, pid: PlayerId ): boolean =>
@@ -516,7 +508,7 @@ function fishBotMove( snapshot: typeof FishSnapshot.Type ): FishBotMove {
 			const { playerId, cardId } = weightedAsks[ 0 ];
 			return {
 				moveType: "askCard" as const,
-				input: { from: playerId as PlayerId, cardId: cardId as CardT }
+				input: { from: playerId, cardId }
 			};
 		}
 

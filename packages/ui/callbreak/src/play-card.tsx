@@ -10,12 +10,7 @@ export function PlayCard() {
 
 	const handleClick = async () => {
 		if ( selectedCard ) {
-			await playCard.mutateAsync( {
-				dealId: data.view.activeDeal?.id!,
-				gameId: data.id,
-				cardId: selectedCard
-			} );
-
+			await playCard.mutateAsync( { dealId: data.view.activeDeal?.id!, cardId: selectedCard } );
 			selectCard( selectedCard );
 		}
 	};

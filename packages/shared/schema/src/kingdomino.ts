@@ -1,11 +1,5 @@
-import {
-	BaseGameConfig,
-	GameSnapshot,
-	InitializeInput,
-	MovePayload,
-	PlayerId
-} from "@s2h/swish/schema";
 import * as Schema from "effect/Schema";
+import { BaseGameConfig, GameSnapshot, InitializeInput, MovePayload, PlayerId } from "./swish.ts";
 
 
 // --- Primitives ------------------------------------------------------

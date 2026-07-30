@@ -1,6 +1,4 @@
-import { useAuth } from "@s2h-ui/auth/use-auth";
-import { toPlayerInfo } from "@s2h/contract/client";
-import type { Card, Gem, Tokens } from "@s2h/schema/splendor";
+import type { Card, Gem, ReserveCardInput, Tokens } from "@s2h/schema/splendor";
 import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
@@ -27,14 +25,12 @@ type ReserveCardProps = {
 
 export function ReserveCard( props: ReserveCardProps ) {
 	const [ isPending ] = useTransition();
-	const { authInfo } = useAuth();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ returned, setReturned ] = useState<Partial<Tokens>>( {} );
 	const queryClient = useQueryClient();
 
 	const reserveCard = useMutation( {
-		mutationFn: ( input: { cardId: string; withGold: boolean; returnedToken?: Gem } ) =>
-			reserveCardFn( props.gameId, toPlayerInfo( authInfo! ), input ),
+		mutationFn: ( input: ReserveCardInput ) => reserveCardFn( props.gameId, input ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "splendor", "getState", props.gameId ]
 		} )

@@ -1,7 +1,8 @@
+import type { CardSuit } from "@s2h/schema/cards";
 import { RCardSuit } from "@s2h/ui/components/card";
 import { CreateGame } from "@s2h/ui/components/create-game";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
-import { CARD_SUITS, type CardSuit } from "@s2h/utils/cards";
+import { CARD_SUITS } from "@s2h/utils/cards";
 import { useState } from "react";
 import { createCallbreakGameFn } from "./client";
 
@@ -19,7 +20,7 @@ export function CallbreakCreateGame() {
 			dealCount,
 			trumpSuit
 		} );
-		
+
 		return id;
 	};
 

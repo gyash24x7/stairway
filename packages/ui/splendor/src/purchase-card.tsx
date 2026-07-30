@@ -1,7 +1,4 @@
-import { useAuth } from "@s2h-ui/auth/use-auth";
-import { toPlayerInfo } from "@s2h/contract/client";
-import type { Card, Gem, Tokens } from "@s2h/schema/splendor";
-import { canPurchaseCard, isValidPayment } from "@s2h/splendor/utils";
+import type { Card, Gem, PurchaseCardInput, Tokens } from "@s2h/schema/splendor";
 import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
@@ -13,6 +10,7 @@ import {
 } from "@s2h/ui/primitives/drawer";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { cn } from "@s2h/ui/utils/cn";
+import { canPurchaseCard, isValidPayment } from "@s2h/utils/splendor";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
@@ -30,14 +28,12 @@ type PurchaseCardProps = {
 
 export function PurchaseCard( props: PurchaseCardProps ) {
 	const [ isPending ] = useTransition();
-	const { authInfo } = useAuth();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ payment, setPayment ] = useState<Partial<Tokens>>( {} );
 	const queryClient = useQueryClient();
 
 	const purchaseCard = useMutation( {
-		mutationFn: ( input: { cardId: string; payment: Partial<Tokens> } ) =>
-			purchaseCardFn( props.gameId, toPlayerInfo( authInfo! ), input ),
+		mutationFn: ( input: PurchaseCardInput ) => purchaseCardFn( props.gameId, input ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "splendor", "getState", props.gameId ]
 		} )
@@ -57,11 +53,7 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 	};
 
 	const handlePurchaseClick = () => startTransition( async () => {
-		await purchaseCard.mutateAsync( {
-			cardId: props.card.id,
-			payment
-		} );
-
+		await purchaseCard.mutateAsync( { cardId: props.card.id, payment } );
 		closeDrawer();
 	} );
 

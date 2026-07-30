@@ -10,6 +10,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@s2h/schema": "workspace:*",
 		"ulid": "catalog:",
 		"unique-names-generator": "catalog:"
 	}

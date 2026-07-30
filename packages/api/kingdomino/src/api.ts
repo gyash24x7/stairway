@@ -7,8 +7,8 @@ import { DurableSchedulerLive } from "@s2h/platform/do/scheduler";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@s2h/platform/do/stores";
 import { DurableSyncLive, GameChannel } from "@s2h/platform/do/sync";
 import { KingdominoInitializeInput } from "@s2h/schema/kingdomino";
+import { GameCode, GameId } from "@s2h/schema/swish";
 import { GameNotFound } from "@s2h/swish/errors";
-import { GameCode, GameId } from "@s2h/swish/schema";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -89,18 +89,21 @@ export const KingdominoApiLive = ( ns: Cloudflare.DurableObject<KingdominoEngine
 				} ) )
 
 				.handle( "selectDomino", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.selectDomino( payload );
+					return yield* client.selectDomino( payload, toPlayerInfo( user ) );
 				} ) )
 
 				.handle( "placeDomino", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.placeDomino( payload );
+					return yield* client.placeDomino( payload, toPlayerInfo( user ) );
 				} ) )
 
 				.handle( "discardDomino", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.discardDomino( payload );
+					return yield* client.discardDomino( payload, toPlayerInfo( user ) );
 				} ) );
 		} )
 	);

@@ -1,4 +1,4 @@
-import type { PlayerId } from "@s2h/swish/schema";
+import type { PlayerId } from "@s2h/schema/swish";
 import {
 	Table,
 	TableBody,

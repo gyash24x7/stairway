@@ -1,3 +1,4 @@
+import type { CardId, CardRank, CardSuit } from "@s2h/schema/cards";
 import { chunk, shuffle } from "./array.ts";
 
 export const CARD_RANKS = {
@@ -17,11 +18,6 @@ export const CARD_RANKS = {
 } as const;
 
 export const CARD_SUITS = { CLUBS: "C", SPADES: "S", HEARTS: "H", DIAMONDS: "D" } as const;
-
-export type CardRank = typeof CARD_RANKS[keyof typeof CARD_RANKS];
-export type CardSuit = typeof CARD_SUITS[keyof typeof CARD_SUITS];
-
-export type CardId = `${ CardRank }${ CardSuit }`;
 
 export const SORTED_DECK: CardId[] = Object.values( CARD_SUITS ).flatMap(
 	suit => Object.values( CARD_RANKS ).map( rank => ( rank + suit ) as CardId )

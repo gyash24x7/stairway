@@ -1,4 +1,4 @@
-import { GameCode } from "@s2h/swish/schema";
+import { GameCode } from "@s2h/schema/swish";
 import { useNavigate } from "@tanstack/react-router";
 import { useState, useTransition } from "react";
 import { Button } from "../primitives/button.tsx";

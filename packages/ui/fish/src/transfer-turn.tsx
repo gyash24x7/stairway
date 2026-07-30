@@ -1,9 +1,7 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import { toPlayerInfo } from "@s2h/contract/client";
-import { getTeammates } from "@s2h/fish/utils";
-import type { PlayerId } from "@s2h/swish/schema";
+import type { PlayerId } from "@s2h/schema/swish";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -16,6 +14,7 @@ import {
 } from "@s2h/ui/primitives/drawer";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
+import { getTeammates } from "@s2h/utils/fish";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { transferTurnFn } from "./client";
@@ -40,8 +39,7 @@ export function TransferTurn() {
 	const queryClient = useQueryClient();
 
 	const transferTurn = useMutation( {
-		mutationFn: ( transferTo: PlayerId ) =>
-			transferTurnFn( data.id, toPlayerInfo( authInfo! ), { transferTo } ),
+		mutationFn: ( transferTo: PlayerId ) => transferTurnFn( data.id, { transferTo } ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "fish", "getState", data.id ]
 		} )

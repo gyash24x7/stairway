@@ -1,12 +1,6 @@
-import {
-	BaseGameConfig,
-	GameSnapshot,
-	InitializeInput,
-	MovePayload,
-	PlayerId
-} from "@s2h/swish/schema";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
+import { BaseGameConfig, GameSnapshot, InitializeInput, MovePayload, PlayerId } from "./swish.ts";
 
 // --- Primitives ---------------------------------------------------------------
 
@@ -126,7 +120,7 @@ export const ReserveCardMovePayload = MovePayload( ReserveCardInput );
 export type PurchaseCardInput = typeof PurchaseCardInput.Type;
 export const PurchaseCardInput = Schema.Struct( {
 	cardId: Schema.String,
-	payment: PartialTokens
+	payment: Tokens.mapFields( Struct.map( Schema.optional ) )
 } );
 
 export type PurchaseCardMovePayload = typeof PurchaseCardMovePayload.Type;

@@ -6,13 +6,7 @@ import type {
 	FishConfig,
 	TransferTurnInput
 } from "@s2h/schema/fish";
-import {
-	GameCode,
-	GameIdParams,
-	JoinGameInput,
-	playerAudience,
-	PlayerInfo
-} from "@s2h/swish/schema";
+import { GameCode, GameIdParams, JoinGameInput, playerAudience, PlayerId } from "@s2h/schema/swish";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -27,9 +21,9 @@ const gameIdParams = ( gameId: string ) =>
 export const createFishGameFn = ( config: FishConfig ) =>
 	run( client.createGame( { payload: config } ) );
 
-export const joinFishGameFn = ( code: string, playerInfo: PlayerInfo ) =>
+export const joinFishGameFn = ( code: string ) =>
 	run( client.join( {
-		payload: JoinGameInput.make( { code: GameCode.make( code ), playerInfo } )
+		payload: JoinGameInput.make( { code: GameCode.make( code ) } )
 	} ) );
 
 export const addBotsFn = ( gameId: string ) =>
@@ -37,30 +31,22 @@ export const addBotsFn = ( gameId: string ) =>
 
 // --- Moves -----------------------------------------------------------------
 
-export const createTeamsFn = (
-	gameId: string,
-	playerInfo: PlayerInfo,
-	input: CreateTeamsInput
-) =>
-	run( client.createTeams( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
+export const createTeamsFn = ( gameId: string, input: CreateTeamsInput ) =>
+	run( client.createTeams( { params: gameIdParams( gameId ), payload: { input } } ) );
 
-export const askCardFn = ( gameId: string, playerInfo: PlayerInfo, input: AskCardInput ) =>
-	run( client.askCard( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
+export const askCardFn = ( gameId: string, input: AskCardInput ) =>
+	run( client.askCard( { params: gameIdParams( gameId ), payload: { input } } ) );
 
-export const claimBookFn = ( gameId: string, playerInfo: PlayerInfo, input: ClaimBookInput ) =>
-	run( client.claimBook( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
+export const claimBookFn = ( gameId: string, input: ClaimBookInput ) =>
+	run( client.claimBook( { params: gameIdParams( gameId ), payload: { input } } ) );
 
-export const transferTurnFn = (
-	gameId: string,
-	playerInfo: PlayerInfo,
-	input: TransferTurnInput
-) =>
-	run( client.transferTurn( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
+export const transferTurnFn = ( gameId: string, input: TransferTurnInput ) =>
+	run( client.transferTurn( { params: gameIdParams( gameId ), payload: { input } } ) );
 
 // --- Queries ---------------------------------------------------------------
 
-export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
+export const getStateFn = ( gameId: string, playerId: string, signal?: AbortSignal ) =>
 	run( client.getState( {
 		params: gameIdParams( gameId ),
-		payload: playerAudience( playerInfo.id )
+		payload: playerAudience( PlayerId.make( playerId ) )
 	} ), signal );

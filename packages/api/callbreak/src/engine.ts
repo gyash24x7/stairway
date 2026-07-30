@@ -15,20 +15,20 @@ import {
 	WinnerDecidedEvent,
 	WinsDeclaredEvent
 } from "@s2h/schema/callbreak";
+import { PlayerId } from "@s2h/schema/swish";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
-import { PlayerId } from "@s2h/swish/schema";
-import { type CardId, getCardSuit } from "@s2h/utils/cards";
-import { botDeclare, botPlayCard } from "./bot";
 import {
-	apply,
 	calculateRoundScore,
 	createNewDeal,
 	determineTrickWinner,
 	getPlayableCards,
 	PLAYER_COUNT,
 	TRICKS_PER_DEAL
-} from "./utils";
+} from "@s2h/utils/callbreak";
+import { getCardSuit } from "@s2h/utils/cards";
+import { botDeclare, botPlayCard } from "./bot";
+import { apply } from "./utils.ts";
 
 // --- Engine ----------------------------------------------------------------
 
@@ -44,6 +44,7 @@ export const callbreak = makeEngine( {
 			playCard: PlayCardInput
 		}
 	},
+
 	apply,
 
 	setup: () => ( { deals: [], scores: {} } ),
@@ -235,7 +236,7 @@ export const callbreak = makeEngine( {
 		return {
 			moveType: "playCard",
 			input: {
-				cardId: botPlayCard( view, snapshot.config ) as CardId,
+				cardId: botPlayCard( view, snapshot.config ),
 				dealId: view.activeDeal!.id
 			}
 		};

@@ -1,5 +1,3 @@
-import * as Match from "effect/Match";
-import * as Schema from "effect/Schema";
 import {
 	GameContext,
 	GameStatus,
@@ -8,7 +6,9 @@ import {
 	PlayerId,
 	PlayerInfo,
 	SeatStatus
-} from "./schema.ts";
+} from "@s2h/schema/swish";
+import * as Match from "effect/Match";
+import * as Schema from "effect/Schema";
 
 // --- Engine events ---------------------------------------------------------
 // The built-in events (`swish/ev/*`) the engine emits to patch the envelope.

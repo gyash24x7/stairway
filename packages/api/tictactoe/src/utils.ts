@@ -1,5 +1,5 @@
+import type { PlayerId } from "@s2h/schema/swish";
 import type { Board, CellValue, TicTacToeEvent, TicTacToeState } from "@s2h/schema/tictactoe";
-import type { PlayerId } from "@s2h/swish/schema";
 import * as Match from "effect/Match";
 import * as Types from "effect/Types";
 

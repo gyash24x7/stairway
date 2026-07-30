@@ -1,5 +1,5 @@
 import type { AuthInfo } from "@s2h/schema/auth";
-import { PlayerId, PlayerInfo } from "@s2h/swish/schema";
+import { PlayerId, PlayerInfo } from "@s2h/schema/swish";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";

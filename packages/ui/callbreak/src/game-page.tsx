@@ -1,5 +1,4 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import { toPlayerInfo } from "@s2h/contract/client";
 import { Spinner } from "@s2h/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
 import { getStateFn } from "./client";
@@ -12,7 +11,7 @@ export function CallbreakGamePage( { gameId }: { gameId: string } ) {
 	const { data, isLoading } = useQuery( {
 		queryKey: [ "callbreak", "getState", gameId ],
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+		queryFn: ( { signal } ) => getStateFn( gameId, authInfo!.id, signal )
 	} );
 
 	if ( isLoading || !data ) {

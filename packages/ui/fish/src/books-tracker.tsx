@@ -1,8 +1,8 @@
 "use client";
 
-import { getBookDisplayString } from "@s2h/fish/utils";
 import type { Book } from "@s2h/schema/fish";
 import { cn } from "@s2h/ui/utils/cn";
+import { getBookDisplayString } from "@s2h/utils/fish";
 import { motion } from "framer-motion";
 import { useFish } from "./context";
 

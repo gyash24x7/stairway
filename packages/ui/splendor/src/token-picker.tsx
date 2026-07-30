@@ -1,7 +1,7 @@
 "use client";
 
 import type { Gem, Tokens } from "@s2h/schema/splendor";
-import { DEFAULT_TOKENS } from "@s2h/splendor/utils";
+import { DEFAULT_TOKENS } from "@s2h/utils/splendor";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
 import { TokenBar } from "./token-bar";
 

@@ -1,8 +1,8 @@
 "use client";
 
-import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@s2h/fish/utils";
 import { RCard } from "@s2h/ui/components/card";
 import { cn } from "@s2h/ui/utils/cn";
+import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@s2h/utils/fish";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo } from "react";
 import { useFish } from "./context";

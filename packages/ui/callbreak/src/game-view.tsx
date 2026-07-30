@@ -15,7 +15,7 @@ export function GameView() {
 	const { data, addBots } = useCallbreak();
 	const isPending = addBots.isPending;
 
-	const handleAddBots = () => addBots.mutate( { gameId: data.id } );
+	const handleAddBots = () => addBots.mutate();
 
 	return (
 		<div className={ `flex flex-col gap-3 w-full max-w-6xl mb-20` }>

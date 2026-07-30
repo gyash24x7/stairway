@@ -7,8 +7,8 @@ import { DurableSchedulerLive } from "@s2h/platform/do/scheduler";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@s2h/platform/do/stores";
 import { DurableSyncLive, GameChannel } from "@s2h/platform/do/sync";
 import { SplendorInitializeInput } from "@s2h/schema/splendor";
+import { GameCode, GameId } from "@s2h/schema/swish";
 import { GameNotFound } from "@s2h/swish/errors";
-import { GameCode, GameId } from "@s2h/swish/schema";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -94,18 +94,21 @@ export const SplendorApiLive = ( ns: Cloudflare.DurableObject<SplendorEngineDO> 
 				} ) )
 
 				.handle( "pickTokens", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.pickTokens( payload );
+					return yield* client.pickTokens( payload, toPlayerInfo( user ) );
 				} ) )
 
 				.handle( "reserveCard", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.reserveCard( payload );
+					return yield* client.reserveCard( payload, toPlayerInfo( user ) );
 				} ) )
 
 				.handle( "purchaseCard", ( { params, payload } ) => Effect.gen( function* () {
+					const { user } = yield* AuthContext;
 					const client = ns.getByName( params.gameId );
-					return yield* client.purchaseCard( payload );
+					return yield* client.purchaseCard( payload, toPlayerInfo( user ) );
 				} ) );
 		} )
 	);

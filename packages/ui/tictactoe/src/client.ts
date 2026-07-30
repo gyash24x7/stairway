@@ -1,12 +1,12 @@
 import { getClient, run } from "@s2h/contract/client";
-import type { TicTacToeConfig } from "@s2h/schema/tictactoe";
 import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
 	playerAudience,
 	PlayerInfo
-} from "@s2h/swish/schema";
+} from "@s2h/schema/swish";
+import type { TicTacToeConfig } from "@s2h/schema/tictactoe";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

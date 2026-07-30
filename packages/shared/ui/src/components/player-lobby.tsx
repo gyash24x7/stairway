@@ -1,4 +1,4 @@
-import type { PlayerInfo } from "@s2h/swish/schema";
+import type { PlayerInfo } from "@s2h/schema/swish";
 import { cn } from "../utils/cn.ts";
 import { RPlayerInfo } from "./player-info.tsx";
 

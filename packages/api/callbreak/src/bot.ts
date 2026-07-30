@@ -1,6 +1,7 @@
 import type { CallbreakBotView, CallbreakConfig, Trick } from "@s2h/schema/callbreak";
-import { type CardId, type CardSuit, getCardRank, getCardSuit } from "@s2h/utils/cards";
-import { getCardValue, getPlayableCards } from "./utils";
+import type { CardId, CardSuit } from "@s2h/schema/cards";
+import { getCardValue, getPlayableCards } from "@s2h/utils/callbreak";
+import { getCardRank, getCardSuit } from "@s2h/utils/cards";
 
 /**
  * Sort cards by their rank value in ascending order.
@@ -8,7 +9,7 @@ import { getCardValue, getPlayableCards } from "./utils";
  * @param cards - The cards to sort.
  * @returns A new sorted array of cards.
  */
-function sortByValue( cards: CardId[] ): CardId[] {
+function sortByValue( cards: CardId[] ) {
 	return [ ...cards ].sort( ( a, b ) => getCardValue( a ) - getCardValue( b ) );
 }
 
@@ -18,7 +19,7 @@ function sortByValue( cards: CardId[] ): CardId[] {
  * @param cards - The cards to choose from.
  * @returns The card with the lowest rank value.
  */
-function lowest( cards: CardId[] ): CardId {
+function lowest( cards: CardId[] ) {
 	return sortByValue( cards )[ 0 ];
 }
 

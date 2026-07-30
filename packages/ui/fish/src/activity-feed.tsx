@@ -1,6 +1,5 @@
 "use client";
 
-import { getAskDescription, getClaimDescription, getTransferDescription } from "@s2h/fish/utils";
 import {
 	Drawer,
 	DrawerContent,
@@ -9,6 +8,7 @@ import {
 	DrawerTitle
 } from "@s2h/ui/primitives/drawer";
 import { cn } from "@s2h/ui/utils/cn";
+import { getAskDescription, getClaimDescription, getTransferDescription } from "@s2h/utils/fish";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useFish } from "./context";

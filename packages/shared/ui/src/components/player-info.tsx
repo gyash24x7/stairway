@@ -1,4 +1,4 @@
-import type { PlayerInfo } from "@s2h/swish/schema";
+import type { PlayerInfo } from "@s2h/schema/swish";
 import { Avatar, AvatarImage } from "../primitives/avatar.tsx";
 import { cn } from "../utils/cn.ts";
 

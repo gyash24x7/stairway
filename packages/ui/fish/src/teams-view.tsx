@@ -1,4 +1,4 @@
-import type { PlayerId } from "@s2h/swish/schema";
+import type { PlayerId } from "@s2h/schema/swish";
 import { RPlayerInfoStrip } from "@s2h/ui/components/player-info";
 import { cn } from "@s2h/ui/utils/cn";
 import { useFish } from "./context";

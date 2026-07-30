@@ -1,4 +1,4 @@
-import { type Audience, PlayerAudience, PlayerId, TableAudience } from "@s2h/swish/schema";
+import { type Audience, PlayerAudience, PlayerId, TableAudience } from "@s2h/schema/swish";
 import { Sync } from "@s2h/swish/services";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";

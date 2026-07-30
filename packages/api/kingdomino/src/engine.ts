@@ -17,12 +17,11 @@ import {
 	SelectionOrderSet,
 	WinnerDecided
 } from "@s2h/schema/kingdomino";
+import type { PlayerId } from "@s2h/schema/swish";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
-import { type PlayerId } from "@s2h/swish/schema";
 import { shuffle } from "@s2h/utils/array";
 import {
-	apply,
 	applyPlacement,
 	calculateScore,
 	calculateShift,
@@ -37,7 +36,8 @@ import {
 	getSelectionsPerPlayer,
 	getShiftedTiles,
 	getValidPlacements
-} from "./utils";
+} from "@s2h/utils/kingdomino";
+import { apply } from "./utils.ts";
 
 // --- Engine ----------------------------------------------------------------
 

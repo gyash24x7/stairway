@@ -1,8 +1,7 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import { toPlayerInfo } from "@s2h/contract/client";
-import type { PlayerId } from "@s2h/swish/schema";
+import type { PlayerId } from "@s2h/schema/swish";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
 import {
@@ -51,11 +50,7 @@ export function CreateTeams() {
 	const queryClient = useQueryClient();
 
 	const createTeams = useMutation( {
-		mutationFn: () => createTeamsFn(
-			data.id,
-			toPlayerInfo( authInfo! ),
-			{ teams: teamMemberData }
-		),
+		mutationFn: () => createTeamsFn( data.id, { teams: teamMemberData } ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "fish", "getState", data.id ]
 		} )

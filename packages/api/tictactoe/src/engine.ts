@@ -1,3 +1,4 @@
+import { PlayerId } from "@s2h/schema/swish";
 import {
 	Placed,
 	PlaceInput,
@@ -10,7 +11,6 @@ import {
 } from "@s2h/schema/tictactoe";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
-import { PlayerId } from "@s2h/swish/schema";
 import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "./utils";
 
 // --- Engine ----------------------------------------------------------------

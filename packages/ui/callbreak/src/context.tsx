@@ -1,28 +1,17 @@
-import { useAuth } from "@s2h-ui/auth/use-auth";
-import { toPlayerInfo } from "@s2h/contract/client";
-import type { CallbreakSnapshot, CardIdSchema } from "@s2h/schema/callbreak";
-import type { CardId } from "@s2h/utils/cards";
+import type { CallbreakSnapshot, DeclareWinsInput, PlayCardInput } from "@s2h/schema/callbreak";
+import { CardId } from "@s2h/schema/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
 import { addBotsFn, declareWinsFn, playCardFn } from "./client";
-
 
 type CallbreakContextValue = {
 	data: CallbreakSnapshot;
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
-	declareWins: ReturnType<typeof useMutation<unknown, Error, {
-		gameId: string;
-		dealId: string;
-		wins: number
-	}>>;
-	playCard: ReturnType<typeof useMutation<unknown, Error, {
-		gameId: string;
-		dealId: string;
-		cardId: CardIdSchema
-	}>>;
-	addBots: ReturnType<typeof useMutation<unknown, Error, { gameId: string }>>;
+	declareWins: ReturnType<typeof useMutation<unknown, Error, DeclareWinsInput>>;
+	playCard: ReturnType<typeof useMutation<unknown, Error, PlayCardInput>>;
+	addBots: ReturnType<typeof useMutation<unknown, Error>>;
 };
 
 const CallbreakContext = createContext<CallbreakContextValue | null>( null );
@@ -39,7 +28,6 @@ type CallbreakProviderProps = { data: CallbreakSnapshot; gameId: string; childre
 
 export function CallbreakProvider( { data, gameId, children }: CallbreakProviderProps ) {
 	const queryClient = useQueryClient();
-	const { authInfo } = useAuth();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
 
 	const invalidate = () => queryClient.invalidateQueries( {
@@ -47,19 +35,17 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 	} );
 
 	const declareWins = useMutation( {
-		mutationFn: ( { dealId, wins }: { gameId: string; dealId: string; wins: number } ) =>
-			declareWinsFn( gameId, toPlayerInfo( authInfo! ), { wins, dealId } ),
+		mutationFn: ( input: DeclareWinsInput ) => declareWinsFn( gameId, input ),
 		onSuccess: () => invalidate()
 	} );
 
 	const playCard = useMutation( {
-		mutationFn: ( { dealId, cardId }: { gameId: string; dealId: string; cardId: CardIdSchema } ) =>
-			playCardFn( gameId, toPlayerInfo( authInfo! ), { cardId, dealId } ),
+		mutationFn: ( input: PlayCardInput ) => playCardFn( gameId, input ),
 		onSuccess: () => invalidate()
 	} );
 
 	const addBots = useMutation( {
-		mutationFn: ( _vars: { gameId: string } ) => addBotsFn( gameId ),
+		mutationFn: () => addBotsFn( gameId ),
 		onSuccess: () => invalidate()
 	} );
 

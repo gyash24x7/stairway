@@ -24,12 +24,13 @@ export function CardActions( props: CardActionsMenuProps ) {
 	const { data } = useSplendor();
 
 	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === player.playerId;
+		&& data.context.currentPlayer === data.view.playerId;
 
-	const discounts = data.view.playerData[ player.playerId ].cards;
-	const reserved = data.view.playerData[ player.playerId ].reserved;
-	const playerTokens = data.view.playerData[ player.playerId ].tokens;
-
+	const {
+		cards: discounts,
+		reserved,
+		tokens: playerTokens
+	} = data.view.playerData[ data.view.playerId ];
 
 	return (
 		<Drawer open={ value } onOpenChange={ toggle }>

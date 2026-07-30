@@ -1,22 +1,13 @@
-import {
-	BaseGameConfig,
-	GameSnapshot,
-	InitializeInput,
-	MovePayload,
-	PlayerId
-} from "@s2h/swish/schema";
-import { SORTED_DECK } from "@s2h/utils/cards";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
+import { CardId } from "./cards.ts";
+import { BaseGameConfig, GameSnapshot, InitializeInput, MovePayload, PlayerId } from "./swish.ts";
 
 
 // --- Primitives ---------------------------------------------
 
 export type BookType = typeof BookType.Type;
 export const BookType = Schema.Literals( [ "NORMAL", "CANADIAN" ] );
-
-export type Card = typeof Card.Type;
-export const Card = Schema.Literals( SORTED_DECK );
 
 export type Book = typeof Book.Type;
 export const Book = Schema.String;
@@ -53,7 +44,7 @@ export const Ask = Schema.Struct( {
 	success: Schema.Boolean,
 	playerId: PlayerId,
 	from: PlayerId,
-	cardId: Card,
+	cardId: CardId,
 	timestamp: Schema.Number
 } );
 
@@ -91,7 +82,7 @@ export type FishState = typeof FishState.Type;
 export const FishState = Schema.Struct( {
 	playerData: Schema.Record( PlayerId, PlayerInfoData ),
 	teams: Schema.Record( Schema.String, Team ),
-	hands: Schema.Record( PlayerId, Schema.Array( Card ) ),
+	hands: Schema.Record( PlayerId, Schema.Array( CardId ) ),
 	cardCounts: Schema.Record( PlayerId, Schema.Number ),
 	cardLocations: Schema.Record( Schema.String, Schema.Array( PlayerId ) ),
 	lastMoveType: Schema.optional( MoveType ),
@@ -109,7 +100,7 @@ export const FishSharedView = Schema.Struct( {
 export type FishPlayerView = typeof FishPlayerView.Type;
 export const FishPlayerView = Schema.Struct( {
 	playerId: PlayerId,
-	hand: Schema.Array( Card )
+	hand: Schema.Array( CardId )
 } );
 
 export type FishView = typeof FishView.Type;
@@ -141,7 +132,7 @@ export const CreateTeamsMovePayload = MovePayload( CreateTeamsInput );
 export type AskCardInput = typeof AskCardInput.Type;
 export const AskCardInput = Schema.Struct( {
 	from: PlayerId,
-	cardId: Card
+	cardId: CardId
 } );
 
 export type AskCardMovePayload = typeof AskCardMovePayload.Type;
@@ -184,7 +175,7 @@ export const TeamsCreated = Schema.TaggedStruct( "fish/TeamsCreated", {
 
 export type HandsDealt = typeof HandsDealt.Type;
 export const HandsDealt = Schema.TaggedStruct( "fish/HandsDealt", {
-	hands: Schema.Record( PlayerId, Schema.Array( Card ) ),
+	hands: Schema.Record( PlayerId, Schema.Array( CardId ) ),
 	cardCounts: Schema.Record( PlayerId, Schema.Number ),
 	cardLocations: Schema.Record( Schema.String, Schema.Array( PlayerId ) )
 } );
@@ -194,7 +185,7 @@ export const CardAsked = Schema.TaggedStruct( "fish/CardAsked", {
 	success: Schema.Boolean,
 	playerId: PlayerId,
 	from: PlayerId,
-	cardId: Card,
+	cardId: CardId,
 	timestamp: Schema.Number
 } );
 

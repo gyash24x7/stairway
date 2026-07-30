@@ -1,30 +1,24 @@
 "use client";
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
-import type {
-	Board as MutableBoard,
-	Coord,
-	DominoId,
-	Placement,
-	Rotation
-} from "@s2h/kingdomino/utils";
+import { toPlayerInfo } from "@s2h/contract/client";
+import type { Board, Coord, Placement, Rotation } from "@s2h/schema/kingdomino";
+import { Button } from "@s2h/ui/primitives/button";
 import {
 	getPlacementCoordinates,
 	getValidPlacements,
 	getValidRotations
-} from "@s2h/kingdomino/utils";
-import type { Board } from "@s2h/schema/kingdomino";
-import { Button } from "@s2h/ui/primitives/button";
+} from "@s2h/utils/kingdomino";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import type { Tentative } from "./board";
-import { discardDominoFn, placeDominoFn, toPlayerInfo } from "./client";
+import { discardDominoFn, placeDominoFn } from "./client";
 
 type UsePlacementParams = {
 	gameId: string;
 	board: Board;
-	activeDominoId: DominoId | null;
+	activeDominoId: number | null;
 	canPlace: boolean;
 	onClear?: () => void;
 };
@@ -40,9 +34,7 @@ type UsePlacementResult = {
 
 export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 	const { gameId, activeDominoId, canPlace, onClear } = params;
-	// The pure placement helpers only read the board; the wire snapshot delivers a
-	// readonly `Board` while the helpers declare the mutable structural one.
-	const board = params.board as unknown as MutableBoard;
+	const board = params.board;
 
 	const { authInfo } = useAuth();
 	const [ tentative, setTentative ] = useState<{ coord: Coord; rotation: Rotation } | null>( null );
@@ -58,7 +50,7 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 		onSuccess: invalidate
 	} );
 	const discardDomino = useMutation( {
-		mutationFn: ( dominoId: DominoId ) =>
+		mutationFn: ( dominoId: number ) =>
 			discardDominoFn( gameId, toPlayerInfo( authInfo! ), { dominoId } ),
 		onSuccess: invalidate
 	} );

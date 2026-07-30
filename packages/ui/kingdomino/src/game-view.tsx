@@ -2,11 +2,11 @@
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
 import { toPlayerInfo } from "@s2h/contract/client";
-import { DOMINO_DECK } from "@s2h/kingdomino/utils";
 import { GameInfo } from "@s2h/ui/components/game-info";
 import { PlayerLobbyGrid } from "@s2h/ui/components/player-lobby";
 import { Button } from "@s2h/ui/primitives/button";
 import { cn } from "@s2h/ui/utils/cn";
+import { DOMINO_DECK } from "@s2h/utils/kingdomino";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useState } from "react";

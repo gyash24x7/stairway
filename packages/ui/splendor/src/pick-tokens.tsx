@@ -3,7 +3,6 @@
 import { useAuth } from "@s2h-ui/auth/use-auth";
 import { toPlayerInfo } from "@s2h/contract/client";
 import type { Gem, Tokens } from "@s2h/schema/splendor";
-import { GEMS_WITH_GOLD } from "@s2h/splendor/utils";
 import { Button } from "@s2h/ui/primitives/button";
 import {
 	Drawer,
@@ -14,6 +13,7 @@ import {
 	DrawerTitle
 } from "@s2h/ui/primitives/drawer";
 import { Spinner } from "@s2h/ui/primitives/spinner";
+import { GEMS_WITH_GOLD } from "@s2h/utils/splendor";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
@@ -35,9 +35,9 @@ export function PickTokens() {
 	} );
 
 	const availableTokens = data.view.tokens;
-	const playerTokens = data.view.playerData[ player.playerId ].tokens;
+	const playerTokens = data.view.playerData[ data.view.playerId ].tokens;
 	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === player.playerId;
+		&& data.context.currentPlayer === data.view.playerId;
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );

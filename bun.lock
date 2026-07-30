@@ -152,8 +152,6 @@
       "name": "@s2h/schema",
       "version": "1.0.0",
       "dependencies": {
-        "@s2h/swish": "workspace:*",
-        "@s2h/utils": "workspace:*",
         "effect": "catalog:",
       },
     },
@@ -161,6 +159,7 @@
       "name": "@s2h/swish",
       "version": "1.0.0",
       "dependencies": {
+        "@s2h/schema": "workspace:*",
         "@s2h/utils": "workspace:*",
         "effect": "catalog:",
       },
@@ -191,6 +190,7 @@
       "name": "@s2h/utils",
       "version": "1.0.0",
       "dependencies": {
+        "@s2h/schema": "workspace:*",
         "ulid": "catalog:",
         "unique-names-generator": "catalog:",
       },
@@ -270,6 +270,7 @@
         "framer-motion": "catalog:",
         "lucide-react": "catalog:",
         "react": "catalog:",
+        "usehooks-ts": "catalog:",
       },
       "devDependencies": {
         "@types/react": "catalog:",

@@ -1,4 +1,5 @@
-import type { KingdominoPlayerInfo } from "./context";
+import type { PlayerData } from "@s2h/schema/kingdomino";
+import type { PlayerInfo } from "@s2h/schema/swish";
 import { CounterTween } from "@s2h/ui/components/counter-tween";
 import { FloatPlusN } from "@s2h/ui/components/float-plus-n";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
@@ -7,7 +8,7 @@ import { motion } from "framer-motion";
 import { RSmallBoard } from "./board";
 
 type PlayerScoreProps = {
-	player: KingdominoPlayerInfo;
+	player: PlayerData & PlayerInfo;
 	showBoard?: boolean;
 	isWinner?: boolean;
 }

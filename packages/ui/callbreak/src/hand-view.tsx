@@ -1,9 +1,10 @@
 "use client";
 
-import { getPlayableCards } from "@s2h/callbreak/utils";
+import type { CardId } from "@s2h/schema/cards";
 import { RCard } from "@s2h/ui/components/card";
 import { cn } from "@s2h/ui/utils/cn";
-import { type CardId, getSortedHand } from "@s2h/utils/cards";
+import { getPlayableCards } from "@s2h/utils/callbreak";
+import { getSortedHand } from "@s2h/utils/cards";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallbreak } from "./context";
 
@@ -22,11 +23,8 @@ export function HandView() {
 		if ( isTrickComplete ) {
 			return true;
 		}
-		const playableCards = getPlayableCards(
-			[ ...( data.view.hand ?? [] ) ],
-			data.config.trumpSuit,
-			trick!
-		);
+
+		const playableCards = getPlayableCards( data.view.hand, data.config.trumpSuit, trick );
 		return playableCards.includes( cardId );
 	};
 
@@ -51,7 +49,7 @@ export function HandView() {
 			) }
 		>
 			<AnimatePresence mode={ "popLayout" }>
-				{ getSortedHand( [ ...( data.view.hand ?? [] ) ] ).map( ( cardId ) => (
+				{ getSortedHand( data.view.hand ).map( ( cardId ) => (
 					<motion.div
 						key={ cardId }
 						layoutId={ `card-${ cardId }` }

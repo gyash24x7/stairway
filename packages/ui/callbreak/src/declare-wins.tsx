@@ -23,12 +23,7 @@ export function DeclareWins() {
 	const isPending = declareWins.isPending;
 
 	const handleClick = async () => {
-		await declareWins.mutateAsync( {
-			dealId: data.view.activeDeal?.id!,
-			gameId: data.id,
-			wins
-		} );
-
+		await declareWins.mutateAsync( { dealId: data.view.activeDeal?.id!, wins } );
 		reset();
 		setOpen( false );
 	};

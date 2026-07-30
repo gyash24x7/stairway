@@ -1,13 +1,13 @@
+import type { CardId } from "@s2h/schema/cards";
 import type { Book, FishBotView, FishConfig } from "@s2h/schema/fish";
-import { PlayerId } from "@s2h/swish/schema";
-import type { CardId } from "@s2h/utils/cards";
+import { PlayerId } from "@s2h/schema/swish";
 import {
 	getBookForCard,
 	getBooksInHand,
 	getCardsOfBook,
 	getMissingCards,
 	getTeammates
-} from "./utils";
+} from "@s2h/utils/fish";
 
 /** A book with a calculated priority weight for bot decision-making. */
 type WeightedBook = {

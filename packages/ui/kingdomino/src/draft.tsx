@@ -1,5 +1,5 @@
 import type { DraftEntry } from "@s2h/schema/kingdomino";
-import type { Players } from "@s2h/swish/schema";
+import type { Players } from "@s2h/schema/swish";
 import { cn } from "@s2h/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { RDomino } from "./domino";

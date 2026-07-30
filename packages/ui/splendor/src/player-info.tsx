@@ -1,8 +1,7 @@
 "use client";
 
 import type { Gem } from "@s2h/schema/splendor";
-import { GEMS_WITH_GOLD } from "@s2h/splendor/utils";
-import type { PlayerId } from "@s2h/swish/schema";
+import type { PlayerId } from "@s2h/schema/swish";
 import { CounterTween } from "@s2h/ui/components/counter-tween";
 import { FloatPlusN } from "@s2h/ui/components/float-plus-n";
 import { Avatar, AvatarImage } from "@s2h/ui/primitives/avatar";
@@ -16,6 +15,7 @@ import {
 } from "@s2h/ui/primitives/drawer";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { cn } from "@s2h/ui/utils/cn";
+import { GEMS_WITH_GOLD } from "@s2h/utils/splendor";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useSplendor } from "./context";
@@ -55,14 +55,14 @@ function ReservedCards( props: { playerId: PlayerId } ) {
 
 	const selectedCard = reserved.find( c => c.id === selectedCardId );
 
-	const isOwnCards = props.playerId === player.playerId;
+	const isOwnCards = props.playerId === data.view.playerId;
 	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === player.playerId;
+		&& data.context.currentPlayer === data.view.playerId;
 
 	const canSelect = isOwnCards && isMyTurn;
 
-	const discounts = data.view.playerData[ player.playerId ].cards;
-	const tokens = data.view.playerData[ player.playerId ].tokens;
+	const discounts = data.view.playerData[ data.view.playerId ].cards;
+	const tokens = data.view.playerData[ data.view.playerId ].tokens;
 
 	const handleOpenChange = ( isOpen: boolean ) => {
 		setOpen( isOpen );

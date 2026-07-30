@@ -1,3 +1,22 @@
+import {
+	Audience,
+	BaseGameConfig,
+	type CommitMeta,
+	GameContext,
+	GameId,
+	GameSnapshot,
+	InitializeInput,
+	InitializeResponse,
+	InteractionFrame,
+	JoinGameResponse,
+	LogEntry,
+	MovePayload,
+	PersistedGameData,
+	playerAudience,
+	PlayerId,
+	PlayerInfo,
+	tableAudience
+} from "@s2h/schema/swish";
 import { generateBotInfo, generateId } from "@s2h/utils/generator";
 import { hashSeed, makeRng } from "@s2h/utils/rng";
 import * as Clock from "effect/Clock";
@@ -34,25 +53,6 @@ import {
 	StatusChanged,
 	TurnAdvanced
 } from "./events.ts";
-import {
-	Audience,
-	BaseGameConfig,
-	type CommitMeta,
-	GameContext,
-	GameId,
-	GameSnapshot,
-	InitializeInput,
-	InitializeResponse,
-	InteractionFrame,
-	JoinGameResponse,
-	LogEntry,
-	MovePayload,
-	PersistedGameData,
-	playerAudience,
-	PlayerId,
-	PlayerInfo,
-	tableAudience
-} from "./schema.ts";
 import { EventStore, GameStore, Scheduler, Sync } from "./services.ts";
 import type { BaseMoveInputs, GameStructure } from "./structure.ts";
 
@@ -129,14 +129,16 @@ export const makeEngine = <
 	 * cast restores the precise per-move handler shape `Object.fromEntries` widens
 	 * away, which `toLayer` needs to match the generated move RPCs.
 	 */
-	type MoveHandler<K extends keyof MoveInputs> = ( payload: MovePayload<MoveInputs[K]> ) =>
-		ReturnType<typeof submitMove<K>>;
+	type MoveHandler<K extends keyof MoveInputs> = (
+		payload: MovePayload<MoveInputs[K]>,
+		playerInfo: PlayerInfo
+	) => ReturnType<typeof submitMove<K>>;
 
 	type MoveHandlers = { [K in keyof MoveInputs]: MoveHandler<K>; };
 
 	const moves = moveNames().reduce(
 		( acc, name ) => {
-			acc[ name ] = ( payload ) => submitMove( name, payload );
+			acc[ name ] = ( payload, playerInfo ) => submitMove( name, payload, playerInfo );
 			return acc;
 		},
 		{} as MoveHandlers
@@ -685,7 +687,8 @@ export const makeEngine = <
 	 */
 	const submitMove = <MoveType extends keyof MoveInputs>(
 		moveType: MoveType,
-		payload: MovePayload<MoveInputs[MoveType]>
+		payload: MovePayload<MoveInputs[MoveType]>,
+		playerInfo: PlayerInfo
 	) => Effect.gen( function* () {
 
 		const move = String( moveType );
@@ -740,46 +743,39 @@ export const makeEngine = <
 			}
 
 			const allowed = idef.canRespond
-				? idef.canRespond( readonly( data ), active, payload.playerInfo.id )
+				? idef.canRespond( readonly( data ), active, playerInfo.id )
 				: active.mode === "sequential"
-					? nextSequentialResponder( active ) === payload.playerInfo.id
-					: active.responders.includes( payload.playerInfo.id ) &&
-					!( payload.playerInfo.id in active.responses );
+					? nextSequentialResponder( active ) === playerInfo.id
+					: active.responders.includes( playerInfo.id ) &&
+					!( playerInfo.id in active.responses );
 
 			if ( !allowed ) {
 				return yield* new NotYourTurn( {
-					playerId: payload.playerInfo.id,
+					playerId: playerInfo.id,
 					currentPlayer: data.context.currentPlayer
 				} );
 			}
 
-			const error = moveDef.validate( readonly( data ), payload.playerInfo.id, payload.input );
+			const error = moveDef.validate( readonly( data ), playerInfo.id, payload.input );
 			if ( error ) {
 				return yield* error;
 			}
 
 			emit( acc, [
 				InteractionResponded.make( {
-					playerId: payload.playerInfo.id,
+					playerId: playerInfo.id,
 					response: payload.input
 				} )
 			] );
 
-			emit(
-				acc,
-				moveDef.execute(
-					readonly( acc.work, "execute" ),
-					payload.playerInfo.id,
-					payload.input
-				)
-			);
+			emit( acc, moveDef.execute( readonly( acc.work, "execute" ), playerInfo.id, payload.input ) );
 
 			yield* runResolveLoop( acc );
 
 			// The whole stack drained → resume normal flow from the original actor
 			// (the bottom frame's initiator = the move that opened the window).
 			if ( !activeInteraction( acc.work.context ) ) {
-				const originalActor = data.context.interactions?.[ 0 ]?.initiator ?? payload.playerInfo.id;
+				const originalActor = data.context.interactions?.[ 0 ]?.initiator ?? playerInfo.id;
 				yield* advanceTail( acc, originalActor, move, data );
 			}
 
@@ -798,17 +794,17 @@ export const makeEngine = <
 			}
 
 			const allowed = moveDef.canMove
-				? moveDef.canMove( readonly( data ), payload.playerInfo.id )
-				: data.context.currentPlayer === payload.playerInfo.id;
+				? moveDef.canMove( readonly( data ), playerInfo.id )
+				: data.context.currentPlayer === playerInfo.id;
 
 			if ( !allowed ) {
 				return yield* new NotYourTurn( {
-					playerId: payload.playerInfo.id,
+					playerId: playerInfo.id,
 					currentPlayer: data.context.currentPlayer
 				} );
 			}
 
-			const error = moveDef.validate( readonly( data ), payload.playerInfo.id, payload.input );
+			const error = moveDef.validate( readonly( data ), playerInfo.id, payload.input );
 			if ( error ) {
 				return yield* error;
 			}
@@ -817,11 +813,7 @@ export const makeEngine = <
 			if ( structure.hooks?.beforeMove ) {
 				emit(
 					acc,
-					structure.hooks.beforeMove(
-						readonly( acc.work, "beforeMove" ),
-						payload.playerInfo.id,
-						move
-					)
+					structure.hooks.beforeMove( readonly( acc.work, "beforeMove" ), playerInfo.id, move )
 				);
 			}
 
@@ -829,7 +821,7 @@ export const makeEngine = <
 				acc,
 				moveDef.execute(
 					readonly( acc.work, "execute" ),
-					payload.playerInfo.id,
+					playerInfo.id,
 					payload.input
 				)
 			);
@@ -839,7 +831,7 @@ export const makeEngine = <
 					acc,
 					structure.hooks.afterMove(
 						readonly( acc.work, "afterMove" ),
-						payload.playerInfo.id,
+						playerInfo.id,
 						move
 					)
 				);
@@ -850,16 +842,16 @@ export const makeEngine = <
 			// only when the move ends it (`endsTurn`, default true).
 			if ( !activeInteraction( acc.work.context ) ) {
 				const endsTurn = typeof moveDef.endsTurn === "function"
-					? moveDef.endsTurn( readonly( acc.work ), payload.playerInfo.id, payload.input )
+					? moveDef.endsTurn( readonly( acc.work ), playerInfo.id, payload.input )
 					: moveDef.endsTurn ?? true;
 
-				yield* advanceTail( acc, payload.playerInfo.id, move, data, endsTurn );
+				yield* advanceTail( acc, playerInfo.id, move, data, endsTurn );
 			}
 		}
 
 		const commitMeta = {
 			command: "submitMove",
-			actor: payload.playerInfo.id,
+			actor: playerInfo.id,
 			moveType: move,
 			requestId: payload?.requestId
 		};
@@ -1031,12 +1023,7 @@ export const makeEngine = <
 			return;
 		}
 
-		const payload: MovePayload<MoveInputs[typeof move.moveType]> = {
-			input: move.input,
-			playerInfo: current
-		};
-
-		yield* submitMove( move.moveType, payload ).pipe(
+		yield* submitMove( move.moveType, { input: move.input }, current ).pipe(
 			Effect.catchCause( ( cause ) => Effect.logError(
 				"engine.runBotTurn: bot move failed",
 				cause

@@ -1,15 +1,8 @@
 "use client";
 
-import { useAuth } from "@s2h-ui/auth/use-auth";
-import {
-	getBookDisplayString,
-	getBooksInHand,
-	getCardsOfBook,
-	getMissingCards,
-	getOpponents
-} from "@s2h/fish/utils";
-import type { Book } from "@s2h/schema/fish";
-import type { PlayerId } from "@s2h/swish/schema";
+import type { CardId } from "@s2h/schema/cards";
+import type { AskCardInput, Book } from "@s2h/schema/fish";
+import type { PlayerId } from "@s2h/schema/swish";
 import { RCard } from "@s2h/ui/components/card";
 import { RPlayerInfo } from "@s2h/ui/components/player-info";
 import { Button } from "@s2h/ui/primitives/button";
@@ -23,17 +16,22 @@ import {
 } from "@s2h/ui/primitives/drawer";
 import { RadioSelect } from "@s2h/ui/primitives/radio-select";
 import { Spinner } from "@s2h/ui/primitives/spinner";
-import { type CardId, getCardDisplayString } from "@s2h/utils/cards";
+import { getCardDisplayString } from "@s2h/utils/cards";
+import {
+	getBookDisplayString,
+	getBooksInHand,
+	getCardsOfBook,
+	getMissingCards,
+	getOpponents
+} from "@s2h/utils/fish";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
-import { askCardFn, toPlayerInfo } from "./client";
+import { askCardFn } from "./client";
 import { useFish } from "./context";
 
 export function AskCard() {
 	const { data } = useFish();
-	const { authInfo } = useAuth();
-	const playerInfo = data.players[ data.view.playerId ];
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
@@ -47,9 +45,9 @@ export function AskCard() {
 			return cards.length !== 6;
 		} );
 
-	const opponentsWithCards = getOpponents( data.state.teams, playerInfo.id )
-		.map( memberId => ( { ...data.players[ memberId ], ...data.state.playerData[ memberId ] } ) )
-		.filter( member => !!data.state.cardCounts[ member.id ] );
+	const opponentsWithCards = getOpponents( data.view.teams, player.id )
+		.map( memberId => ( { ...data.players[ memberId ], ...data.view.playerData[ memberId ] } ) )
+		.filter( member => !!data.view.cardCounts[ member.id ] );
 
 	const confirmAskDialogTitle = selectedPlayer && selectedCard
 		? `Ask ${ data.players[ selectedPlayer ].name } for ${ getCardDisplayString( selectedCard ) }`
@@ -89,15 +87,14 @@ export function AskCard() {
 	const queryClient = useQueryClient();
 
 	const askCard = useMutation( {
-		mutationFn: ( input: { from: PlayerId; cardId: CardId } ) =>
-			askCardFn( data.id, toPlayerInfo( authInfo! ), input ),
+		mutationFn: ( input: AskCardInput ) => askCardFn( data.id, input ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "fish", "getState", data.id ]
 		} )
 	} );
 
 	const handleClick = async () => {
-		if ( selectedCard && selectedPlayer && authInfo ) {
+		if ( selectedCard && selectedPlayer ) {
 			await askCard.mutateAsync( { cardId: selectedCard, from: selectedPlayer } );
 			closeDialog();
 		}

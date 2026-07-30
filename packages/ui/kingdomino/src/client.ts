@@ -11,7 +11,7 @@ import {
 	JoinGameInput,
 	playerAudience,
 	PlayerInfo
-} from "@s2h/swish/schema";
+} from "@s2h/schema/swish";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
