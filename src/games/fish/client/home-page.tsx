@@ -1,7 +1,7 @@
 import { useAuth } from "@/auth/client/use-auth";
-import { JoinGame } from "@/ui/components/join-game";
-import { Separator } from "@/ui/primitives/separator";
-import { cn } from "@/ui/utils/cn";
+import { JoinGame } from "@/shared/ui/components/join-game";
+import { Separator } from "@/shared/ui/primitives/separator";
+import { cn } from "@/shared/ui/utils/cn";
 import { joinFishGameFn } from "./client";
 import { FishCreateGame as CreateGame } from "./create-game";
 

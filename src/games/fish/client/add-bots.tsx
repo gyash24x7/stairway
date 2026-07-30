@@ -1,7 +1,7 @@
 "use client";
 
-import { Button } from "@/ui/primitives/button";
-import { Spinner } from "@/ui/primitives/spinner";
+import { Button } from "@/shared/ui/primitives/button";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addBotsFn } from "./client";
 import { useFish } from "./context";

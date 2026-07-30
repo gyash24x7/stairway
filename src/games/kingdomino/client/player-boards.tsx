@@ -1,11 +1,11 @@
-import { Button } from "@/ui/primitives/button";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
 	DrawerDescription,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
+} from "@/shared/ui/primitives/drawer";
 import { LayoutDashboardIcon } from "lucide-react";
 import { useBoolean } from "usehooks-ts";
 import { RSmallBoard } from "./board";

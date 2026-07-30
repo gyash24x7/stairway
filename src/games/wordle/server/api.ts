@@ -1,13 +1,13 @@
-import { StairwayAPI } from "@/contract/api";
-import { toPlayerInfo } from "@/contract/client";
-import { AuthContext } from "@/contract/middleware";
+import { StairwayAPI } from "@/api.ts";
+import { AuthContext } from "@/auth/shared/middleware";
+import { toPlayerInfo } from "@/client.ts";
+import { WordleInitializeInput } from "@/games/wordle/shared/schema";
 import { games } from "@/platform/database/schema";
 import { Database } from "@/platform/database/service";
 import { DurableSchedulerLive } from "@/platform/do/scheduler";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores";
 import { DurableSyncLive, GameChannel } from "@/platform/do/sync";
-import { GameCode, GameId, PlayerId, PlayerInfo } from "@/schema/swish";
-import { WordleInitializeInput } from "@/games/wordle/shared/schema";
+import { GameCode, GameId, PlayerId, PlayerInfo } from "@/shared/swish/schema";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

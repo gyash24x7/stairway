@@ -1,5 +1,5 @@
+import { AuthInfo, type RegisterInput } from "@/auth/shared/schema";
 import { passkeyClient } from "@better-auth/passkey/client";
-import { AuthInfo, type RegisterInput } from "@/schema/auth";
 import { createAuthClient } from "better-auth/client";
 
 const authClient = createAuthClient( {

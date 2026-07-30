@@ -1,8 +1,8 @@
-import { passkey } from "@better-auth/passkey";
+import { RegisterInput } from "@/auth/shared/schema";
 import * as schema from "@/platform/database/schema";
 import { Database, DatabaseLive } from "@/platform/database/service";
 import { SessionStore, SessionStoreLive } from "@/platform/kv/session";
-import { RegisterInput } from "@/schema/auth";
+import { passkey } from "@better-auth/passkey";
 import type { HttpEffect } from "alchemy/Http";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";

@@ -10,10 +10,10 @@ import {
 	WordleTableView,
 	WordleView
 } from "@/games/wordle/shared/schema";
-import { makeEngine } from "@/engine/engine";
-import { InvalidMove } from "@/engine/errors";
-import type { ReadonlyGameData } from "@/engine/structure";
-import { defineView } from "@/engine/views";
+import { makeEngine } from "@/shared/swish/engine";
+import { InvalidMove } from "@/shared/swish/errors";
+import type { ReadonlyGameData } from "@/shared/swish/structure";
+import { defineView } from "@/shared/swish/views";
 import { dictionaries } from "./dictionary.ts";
 import { allWordsGuessed, apply, computeRow } from "./utils.ts";
 

@@ -1,5 +1,5 @@
-import { Spinner } from "@/ui/primitives/spinner";
-import { cn } from "@/ui/utils/cn";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { cn } from "@/shared/ui/utils/cn";
 import { DeleteIcon, LogOutIcon } from "lucide-react";
 import { useWordle } from "./context";
 

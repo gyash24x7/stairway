@@ -1,9 +1,9 @@
 "use client";
 
-import { GameInfo } from "@/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/ui/components/player-lobby";
-import { Spinner } from "@/ui/primitives/spinner";
-import { cn } from "@/ui/utils/cn";
+import { GameInfo } from "@/shared/ui/components/game-info";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { cn } from "@/shared/ui/utils/cn";
 import { ActivityFeed } from "./activity-feed";
 import { AddBots } from "./add-bots";
 import { AskCard } from "./ask-card";

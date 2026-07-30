@@ -1,9 +1,5 @@
-import { AuthMiddleware } from "@/contract/middleware";
-import {
-	CreateGameApiEndpoint,
-	GetStateApiEndpoint,
-	MoveApiEndpoint
-} from "@/engine/api";
+import { AuthMiddleware } from "@/auth/shared/middleware";
+import { CreateGameApiEndpoint, GetStateApiEndpoint, MoveApiEndpoint } from "@/shared/swish/api";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 import { GuessInput, WordleConfig, WordleSnapshot } from "./schema";
 

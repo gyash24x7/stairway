@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/ui/utils/cn";
+import { cn } from "@/shared/ui/utils/cn";
 import { useCallbreak } from "./context";
 import { DeclareWins } from "./declare-wins";
 import { PlayCard } from "./play-card";

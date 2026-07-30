@@ -1,5 +1,11 @@
+import {
+	BaseGameConfig,
+	GameSnapshot,
+	InitializeInput,
+	MovePayload,
+	PlayerId
+} from "@/shared/swish/schema";
 import * as Schema from "effect/Schema";
-import { BaseGameConfig, GameSnapshot, InitializeInput, MovePayload, PlayerId } from "@/schema/swish";
 
 
 // --- Primitives ------------------------------------------------------

@@ -1,6 +1,6 @@
 import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/contract/client";
-import { Spinner } from "@/ui/primitives/spinner";
+import { toPlayerInfo } from "@/client.ts";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
 import { getKingdominoStateFn } from "./client";
 import { KingdominoProvider } from "./context";

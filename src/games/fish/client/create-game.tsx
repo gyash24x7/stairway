@@ -1,9 +1,9 @@
 "use client";
 
 import type { BookType } from "@/games/fish/shared/schema";
-import { CreateGame } from "@/ui/components/create-game";
-import { RadioSelect } from "@/ui/primitives/radio-select";
 import { buildConfig } from "@/games/fish/shared/utils";
+import { CreateGame } from "@/shared/ui/components/create-game";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select";
 import { useState } from "react";
 import { createFishGameFn } from "./client";
 

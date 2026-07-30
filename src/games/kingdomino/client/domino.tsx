@@ -1,5 +1,5 @@
 import type { Domino, Terrain } from "@/games/kingdomino/shared/schema";
-import { cn } from "@/ui/utils/cn";
+import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
 import { CrownIndicator } from "./board";
 

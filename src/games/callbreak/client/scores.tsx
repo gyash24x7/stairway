@@ -1,7 +1,7 @@
 "use client";
 
-import { CounterTween } from "@/ui/components/counter-tween";
-import { Avatar, AvatarImage } from "@/ui/primitives/avatar";
+import { CounterTween } from "@/shared/ui/components/counter-tween";
+import { Avatar, AvatarImage } from "@/shared/ui/primitives/avatar";
 import {
 	Table,
 	TableBody,
@@ -9,7 +9,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow
-} from "@/ui/primitives/table";
+} from "@/shared/ui/primitives/table";
 import { useCallbreak } from "./context";
 
 export function Scores() {

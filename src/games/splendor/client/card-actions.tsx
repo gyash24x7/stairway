@@ -8,7 +8,7 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
+} from "@/shared/ui/primitives/drawer";
 import { useBoolean } from "usehooks-ts";
 import { useSplendor } from "./context";
 import { GameCard } from "./game-card";

@@ -1,6 +1,12 @@
+import {
+	BaseGameConfig,
+	GameSnapshot,
+	InitializeInput,
+	MovePayload,
+	PlayerId
+} from "@/shared/swish/schema";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
-import { BaseGameConfig, GameSnapshot, InitializeInput, MovePayload, PlayerId } from "@/schema/swish";
 
 // --- Primitives ---------------------------------------------------------------
 
@@ -112,7 +118,7 @@ export const SplendorSnapshot = GameSnapshot( SplendorView, SplendorConfig );
 // --- Move Inputs ------------------------------------------------------
 
 export type PartialTokens = typeof PartialTokens.Type;
-export const PartialTokens = Schema.Record( Gem, Schema.Number );
+export const PartialTokens = Tokens.mapFields( Struct.map( Schema.optional ) );
 
 export type PickTokensInput = typeof PickTokensInput.Type;
 export const PickTokensInput = Schema.Struct( {

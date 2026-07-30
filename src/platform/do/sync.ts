@@ -1,5 +1,5 @@
-import { type Audience, PlayerAudience, PlayerId, TableAudience } from "@/schema/swish";
-import { Sync } from "@/engine/services";
+import { type Audience, PlayerAudience, PlayerId, TableAudience } from "@/shared/swish/schema";
+import { Sync } from "@/shared/swish/services";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";

@@ -1,4 +1,4 @@
-import { getClient, run } from "@/contract/client";
+import { getClient, run } from "@/client.ts";
 import type {
 	DiscardDominoInput,
 	KingdominoConfig,
@@ -11,7 +11,7 @@ import {
 	JoinGameInput,
 	playerAudience,
 	PlayerInfo
-} from "@/schema/swish";
+} from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -26,31 +26,17 @@ const gameIdParams = ( gameId: string ) =>
 export const createKingdominoGameFn = ( config: KingdominoConfig ) =>
 	run( client.createGame( { payload: config } ) );
 
-export const joinKingdominoGameFn = ( code: string, playerInfo: PlayerInfo ) =>
-	run( client.join( {
-		payload: JoinGameInput.make( { code: GameCode.make( code ), playerInfo } )
-	} ) );
+export const joinKingdominoGameFn = ( code: string ) =>
+	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
 
-export const selectDominoFn = (
-	gameId: string,
-	playerInfo: PlayerInfo,
-	input: SelectDominoInput
-) =>
-	run( client.selectDomino( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
+export const selectDominoFn = ( gameId: string, input: SelectDominoInput ) =>
+	run( client.selectDomino( { params: gameIdParams( gameId ), payload: { input } } ) );
 
-export const placeDominoFn = (
-	gameId: string,
-	playerInfo: PlayerInfo,
-	input: PlaceDominoInput
-) =>
-	run( client.placeDomino( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
+export const placeDominoFn = ( gameId: string, input: PlaceDominoInput ) =>
+	run( client.placeDomino( { params: gameIdParams( gameId ), payload: { input } } ) );
 
-export const discardDominoFn = (
-	gameId: string,
-	playerInfo: PlayerInfo,
-	input: DiscardDominoInput
-) =>
-	run( client.discardDomino( { params: gameIdParams( gameId ), payload: { playerInfo, input } } ) );
+export const discardDominoFn = ( gameId: string, input: DiscardDominoInput ) =>
+	run( client.discardDomino( { params: gameIdParams( gameId ), payload: { input } } ) );
 
 // --- Queries ---------------------------------------------------------------
 

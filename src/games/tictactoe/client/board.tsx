@@ -1,7 +1,7 @@
 "use client";
 
-import { popIn } from "@/ui/utils/animation";
-import { cn } from "@/ui/utils/cn";
+import { popIn } from "@/shared/ui/utils/animation";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTicTacToe } from "./context";
 

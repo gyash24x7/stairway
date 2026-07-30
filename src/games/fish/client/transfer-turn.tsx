@@ -1,9 +1,10 @@
 "use client";
 
 import { useAuth } from "@/auth/client/use-auth";
-import type { PlayerId } from "@/schema/swish";
-import { RPlayerInfo } from "@/ui/components/player-info";
-import { Button } from "@/ui/primitives/button";
+import { getTeammates } from "@/games/fish/shared/utils";
+import type { PlayerId } from "@/shared/swish/schema";
+import { RPlayerInfo } from "@/shared/ui/components/player-info";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -11,10 +12,9 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { RadioSelect } from "@/ui/primitives/radio-select";
-import { Spinner } from "@/ui/primitives/spinner";
-import { getTeammates } from "@/games/fish/shared/utils";
+} from "@/shared/ui/primitives/drawer";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { transferTurnFn } from "./client";

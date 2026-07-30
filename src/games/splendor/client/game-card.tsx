@@ -1,5 +1,5 @@
 import type { Card, CardLevel, Cost } from "@/games/splendor/shared/schema";
-import { cn } from "@/ui/utils/cn";
+import { cn } from "@/shared/ui/utils/cn";
 import { gemColors } from "./utils";
 
 type GameCardProps = {

@@ -1,10 +1,10 @@
 "use client";
 
-import type { CardId } from "@/schema/cards";
-import { RCard } from "@/ui/components/card";
-import { cn } from "@/ui/utils/cn";
 import { getPlayableCards } from "@/games/callbreak/shared/utils";
-import { getSortedHand } from "@/utils/cards";
+import type { CardId } from "@/shared/cards/schema";
+import { getSortedHand } from "@/shared/cards/utils.ts";
+import { RCard } from "@/shared/ui/components/card";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallbreak } from "./context";
 

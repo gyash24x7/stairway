@@ -1,4 +1,4 @@
-import type { PlayerId } from "@/schema/swish";
+import type { PlayerId } from "@/shared/swish/schema";
 import {
 	Table,
 	TableBody,
@@ -6,7 +6,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow
-} from "@/ui/primitives/table";
+} from "@/shared/ui/primitives/table";
 import { useFish } from "./context";
 
 export function GameMetrics() {

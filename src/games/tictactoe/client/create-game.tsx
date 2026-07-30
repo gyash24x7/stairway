@@ -1,4 +1,4 @@
-import { CreateGame } from "@/ui/components/create-game";
+import { CreateGame } from "@/shared/ui/components/create-game";
 import { createTicTacToeGameFn } from "./client";
 
 export function TicTacToeCreateGame() {

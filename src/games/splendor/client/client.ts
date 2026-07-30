@@ -1,4 +1,4 @@
-import { getClient, run } from "@/contract/client";
+import { getClient, run } from "@/client.ts";
 import type {
 	PickTokensInput,
 	PurchaseCardInput,
@@ -12,7 +12,7 @@ import {
 	JoinGameInput,
 	playerAudience,
 	PlayerId
-} from "@/schema/swish";
+} from "@/shared/swish/schema";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -27,30 +27,16 @@ export const createSplendorGameFn = ( config: SplendorConfig ) =>
 	run( client.createGame( { payload: config } ) );
 
 export const joinSplendorGameFn = ( code: string ) =>
-	run( client.join( {
-		payload: JoinGameInput.make( { code: GameCode.make( code ) } )
-	} ) );
-
-export const addBotsFn = ( gameId: string ) =>
-	run( client.addBots( { params: gameIdParams( gameId ) } ) );
+	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
 
 export const pickTokensFn = ( gameId: string, input: PickTokensInput ) =>
-	run( client.pickTokens( {
-		params: gameIdParams( gameId ),
-		payload: { input }
-	} ) );
+	run( client.pickTokens( { params: gameIdParams( gameId ), payload: { input } } ) );
 
 export const reserveCardFn = ( gameId: string, input: ReserveCardInput ) =>
-	run( client.reserveCard( {
-		params: gameIdParams( gameId ),
-		payload: { input }
-	} ) );
+	run( client.reserveCard( { params: gameIdParams( gameId ), payload: { input } } ) );
 
 export const purchaseCardFn = ( gameId: string, input: PurchaseCardInput ) =>
-	run( client.purchaseCard( {
-		params: gameIdParams( gameId ),
-		payload: { input }
-	} ) );
+	run( client.purchaseCard( { params: gameIdParams( gameId ), payload: { input } } ) );
 
 // --- Queries ---------------------------------------------------------------
 

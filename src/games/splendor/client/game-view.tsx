@@ -1,8 +1,8 @@
 "use client";
 
-import { GameInfo } from "@/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/ui/components/player-lobby";
-import { Button } from "@/ui/primitives/button";
+import { GameInfo } from "@/shared/ui/components/game-info";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -10,9 +10,9 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { Spinner } from "@/ui/primitives/spinner";
-import { cn } from "@/ui/utils/cn";
+} from "@/shared/ui/primitives/drawer";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { cn } from "@/shared/ui/utils/cn";
 import { UsersIcon } from "lucide-react";
 import { useState } from "react";
 import { Board } from "./board";

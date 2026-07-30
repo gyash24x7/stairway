@@ -1,10 +1,11 @@
 "use client";
 
 import type { Gem } from "@/games/splendor/shared/schema";
-import type { PlayerId } from "@/schema/swish";
-import { CounterTween } from "@/ui/components/counter-tween";
-import { FloatPlusN } from "@/ui/components/float-plus-n";
-import { Avatar, AvatarImage } from "@/ui/primitives/avatar";
+import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils";
+import type { PlayerId } from "@/shared/swish/schema";
+import { CounterTween } from "@/shared/ui/components/counter-tween";
+import { FloatPlusN } from "@/shared/ui/components/float-plus-n";
+import { Avatar, AvatarImage } from "@/shared/ui/primitives/avatar";
 import {
 	Drawer,
 	DrawerContent,
@@ -12,10 +13,9 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { RadioSelect } from "@/ui/primitives/radio-select";
-import { cn } from "@/ui/utils/cn";
-import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils";
+} from "@/shared/ui/primitives/drawer";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select";
+import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useSplendor } from "./context";

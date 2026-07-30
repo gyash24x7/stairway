@@ -1,8 +1,13 @@
 "use client";
 
-import type { Board, BoardSize, Castle, Coord, Rotation, Tile } from "@/games/kingdomino/shared/schema";
-import { Popover, PopoverContent } from "@/ui/primitives/popover";
-import { cn } from "@/ui/utils/cn";
+import type {
+	Board,
+	BoardSize,
+	Castle,
+	Coord,
+	Rotation,
+	Tile
+} from "@/games/kingdomino/shared/schema";
 import {
 	canDominoBePlaced,
 	coordKey,
@@ -12,6 +17,8 @@ import {
 	getPotentialCells,
 	getRowsAndCols
 } from "@/games/kingdomino/shared/utils";
+import { Popover, PopoverContent } from "@/shared/ui/primitives/popover";
+import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
 import { CrownIcon } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";

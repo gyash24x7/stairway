@@ -1,7 +1,15 @@
-import type { CardId } from "@/schema/cards";
-import type { Ask, Book, BookType, Claim, FishState, Team, Transfer } from "@/games/fish/shared/schema";
-import type { PlayerId, PlayerInfo } from "@/schema/swish";
-import { getCardDisplayString } from "@/utils/cards";
+import type {
+	Ask,
+	Book,
+	BookType,
+	Claim,
+	FishState,
+	Team,
+	Transfer
+} from "@/games/fish/shared/schema";
+import type { CardId } from "@/shared/cards/schema";
+import { getCardDisplayString } from "@/shared/cards/utils.ts";
+import type { PlayerId, PlayerInfo } from "@/shared/swish/schema";
 
 /** Normal book names representing card ranks (all four suits per rank). */
 export type NormalBook =

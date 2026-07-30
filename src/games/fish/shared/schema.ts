@@ -1,7 +1,13 @@
+import { CardId } from "@/shared/cards/schema";
+import {
+	BaseGameConfig,
+	GameSnapshot,
+	InitializeInput,
+	MovePayload,
+	PlayerId
+} from "@/shared/swish/schema";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
-import { CardId } from "@/schema/cards";
-import { BaseGameConfig, GameSnapshot, InitializeInput, MovePayload, PlayerId } from "@/schema/swish";
 
 
 // --- Primitives ---------------------------------------------

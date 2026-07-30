@@ -1,9 +1,9 @@
 "use client";
 
 import { useAuth } from "@/auth/client/use-auth";
-import type { PlayerId } from "@/schema/swish";
-import { RPlayerInfo } from "@/ui/components/player-info";
-import { Button } from "@/ui/primitives/button";
+import type { PlayerId } from "@/shared/swish/schema";
+import { RPlayerInfo } from "@/shared/ui/components/player-info";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -11,11 +11,11 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { Input } from "@/ui/primitives/input";
-import { Spinner } from "@/ui/primitives/spinner";
-import { cn } from "@/ui/utils/cn";
-import { chunk, shuffle } from "@/utils/array";
+} from "@/shared/ui/primitives/drawer";
+import { Input } from "@/shared/ui/primitives/input";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { cn } from "@/shared/ui/utils/cn";
+import { chunk, shuffle } from "@/shared/utils/array";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Fragment, useState } from "react";
 import { createTeamsFn } from "./client";

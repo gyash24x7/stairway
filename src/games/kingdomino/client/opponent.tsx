@@ -1,9 +1,9 @@
 "use client";
 
-import type { PlayerId } from "@/schema/swish";
-import { RPlayerInfoSmall } from "@/ui/components/player-info";
-import { cn } from "@/ui/utils/cn";
 import { DOMINO_DECK } from "@/games/kingdomino/shared/utils";
+import type { PlayerId } from "@/shared/swish/schema";
+import { RPlayerInfoSmall } from "@/shared/ui/components/player-info";
+import { cn } from "@/shared/ui/utils/cn";
 import { RSmallBoard } from "./board";
 import { useKingdomino } from "./context";
 import { RSmallDomino } from "./domino";

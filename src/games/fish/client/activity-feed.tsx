@@ -1,14 +1,18 @@
 "use client";
 
 import {
+	getAskDescription,
+	getClaimDescription,
+	getTransferDescription
+} from "@/games/fish/shared/utils";
+import {
 	Drawer,
 	DrawerContent,
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { cn } from "@/ui/utils/cn";
-import { getAskDescription, getClaimDescription, getTransferDescription } from "@/games/fish/shared/utils";
+} from "@/shared/ui/primitives/drawer";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useFish } from "./context";

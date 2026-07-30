@@ -1,6 +1,6 @@
 import type { DraftEntry } from "@/games/kingdomino/shared/schema";
-import type { Players } from "@/schema/swish";
-import { cn } from "@/ui/utils/cn";
+import type { Players } from "@/shared/swish/schema";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { RDomino } from "./domino";
 

@@ -1,18 +1,13 @@
-import { AuthMiddleware } from "@/contract/middleware";
+import { AuthMiddleware } from "@/auth/shared/middleware";
 import {
 	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
 	MoveApiEndpoint
-} from "@/engine/api";
+} from "@/shared/swish/api";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
-import {
-	CallbreakConfig,
-	CallbreakSnapshot,
-	DeclareWinsInput,
-	PlayCardInput
-} from "./schema";
+import { CallbreakConfig, CallbreakSnapshot, DeclareWinsInput, PlayCardInput } from "./schema";
 
 export const CallbreakApiGroup = HttpApiGroup.make( "callbreak" )
 	.add(

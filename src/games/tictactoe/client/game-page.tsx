@@ -1,7 +1,7 @@
 import { useAuth } from "@/auth/client/use-auth";
-import { Spinner } from "@/ui/primitives/spinner";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
-import { getStateFn, snapshotToData, toPlayerInfo } from "./client";
+import { getStateFn } from "./client";
 import { TicTacToeProvider } from "./context";
 import { GameView } from "./game-view";
 
@@ -11,7 +11,7 @@ export function TicTacToeGamePage( { gameId }: { gameId: string } ) {
 	const { data, isLoading } = useQuery( {
 		queryKey: [ "tic-tac-toe", "getState", gameId ],
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+		queryFn: ( { signal } ) => getStateFn( gameId, authInfo!.id, signal )
 	} );
 
 	if ( isLoading || !data ) {
@@ -19,7 +19,7 @@ export function TicTacToeGamePage( { gameId }: { gameId: string } ) {
 	}
 
 	return (
-		<TicTacToeProvider data={ snapshotToData( data ) } gameId={ gameId }>
+		<TicTacToeProvider data={ data } gameId={ gameId }>
 			<GameView/>
 		</TicTacToeProvider>
 	);

@@ -1,8 +1,8 @@
 "use client";
 
 import type { Book } from "@/games/fish/shared/schema";
-import { cn } from "@/ui/utils/cn";
 import { getBookDisplayString } from "@/games/fish/shared/utils";
+import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
 import { useFish } from "./context";
 

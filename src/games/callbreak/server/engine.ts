@@ -16,11 +16,6 @@ import {
 	WinnerDecidedEvent,
 	WinsDeclaredEvent
 } from "@/games/callbreak/shared/schema";
-import { PlayerId } from "@/schema/swish";
-import { makeEngine } from "@/engine/engine";
-import { InvalidMove } from "@/engine/errors";
-import type { ReadonlyGameData } from "@/engine/structure";
-import { defineView } from "@/engine/views";
 import {
 	calculateRoundScore,
 	createNewDeal,
@@ -29,7 +24,12 @@ import {
 	PLAYER_COUNT,
 	TRICKS_PER_DEAL
 } from "@/games/callbreak/shared/utils";
-import { getCardSuit } from "@/utils/cards";
+import { getCardSuit } from "@/shared/cards/utils.ts";
+import { makeEngine } from "@/shared/swish/engine";
+import { InvalidMove } from "@/shared/swish/errors";
+import { PlayerId } from "@/shared/swish/schema";
+import type { ReadonlyGameData } from "@/shared/swish/structure";
+import { defineView } from "@/shared/swish/views";
 import { botDeclare, botPlayCard } from "./bot";
 import { apply } from "./utils.ts";
 

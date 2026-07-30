@@ -11,12 +11,9 @@ export default defineConfig( {
 		}
 	},
 	plugins: [
-		// Must be listed before the react plugin.
 		tanstackRouter( {
 			target: "react",
-			autoCodeSplitting: true,
-			routesDirectory: "src/web/routes",
-			generatedRouteTree: "src/web/routeTree.gen.ts"
+			autoCodeSplitting: true
 		} ),
 		react(),
 		tailwindcss()

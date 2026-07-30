@@ -1,15 +1,12 @@
-import { useAuth } from "@/auth/client/use-auth";
-import { JoinGame } from "@/ui/components/join-game";
-import { Separator } from "@/ui/primitives/separator";
-import { cn } from "@/ui/utils/cn";
-import { joinTicTacToeGameFn, toPlayerInfo } from "./client";
+import { JoinGame } from "@/shared/ui/components/join-game";
+import { Separator } from "@/shared/ui/primitives/separator";
+import { cn } from "@/shared/ui/utils/cn";
+import { joinTicTacToeGameFn } from "./client";
 import { TicTacToeCreateGame } from "./create-game";
 
 export function TicTacToeHomePage( props: { isLoggedIn?: boolean } ) {
-	const { authInfo } = useAuth();
-
 	const joinTicTacToeGame = async ( input: { code: string } ): Promise<string> => {
-		const { id } = await joinTicTacToeGameFn( input.code, toPlayerInfo( authInfo! ) );
+		const { id } = await joinTicTacToeGameFn( input.code );
 		return id;
 	};
 

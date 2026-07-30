@@ -1,14 +1,14 @@
 "use client";
 
-import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/contract/client";
 import type { TicTacToePlayerView, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext } from "react";
 import { addBotsFn, placeFn } from "./client";
 
 /** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
-export type TicTacToePlayerSnapshot = Omit<TicTacToeSnapshot, "view"> & { view: TicTacToePlayerView };
+export type TicTacToePlayerSnapshot = Omit<TicTacToeSnapshot, "view"> & {
+	view: TicTacToePlayerView
+};
 
 type TicTacToeContextValue = {
 	data: TicTacToePlayerSnapshot;
@@ -35,15 +35,12 @@ type TicTacToeProviderProps = {
 
 export function TicTacToeProvider( { data, gameId, children }: TicTacToeProviderProps ) {
 	const queryClient = useQueryClient();
-	const { authInfo } = useAuth();
-
 	const invalidate = () => queryClient.invalidateQueries( {
 		queryKey: [ "tic-tac-toe", "getState", gameId ]
 	} );
 
 	const place = useMutation( {
-		mutationFn: ( position: number ) =>
-			placeFn( gameId, toPlayerInfo( authInfo! ), position ),
+		mutationFn: ( position: number ) => placeFn( gameId, position ),
 		onSuccess: invalidate
 	} );
 

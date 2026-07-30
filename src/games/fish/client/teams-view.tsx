@@ -1,6 +1,6 @@
-import type { PlayerId } from "@/schema/swish";
-import { RPlayerInfoStrip } from "@/ui/components/player-info";
-import { cn } from "@/ui/utils/cn";
+import type { PlayerId } from "@/shared/swish/schema";
+import { RPlayerInfoStrip } from "@/shared/ui/components/player-info";
+import { cn } from "@/shared/ui/utils/cn";
 import { useFish } from "./context";
 
 function PlayerWithCardCount( props: { playerId: PlayerId } ) {

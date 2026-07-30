@@ -19,12 +19,6 @@ import {
 	SelectionOrderSet,
 	WinnerDecided
 } from "@/games/kingdomino/shared/schema";
-import type { PlayerId } from "@/schema/swish";
-import { makeEngine } from "@/engine/engine";
-import { InvalidMove } from "@/engine/errors";
-import type { ReadonlyGameData } from "@/engine/structure";
-import { defineView } from "@/engine/views";
-import { shuffle } from "@/utils/array";
 import {
 	applyPlacement,
 	calculateScore,
@@ -41,6 +35,12 @@ import {
 	getShiftedTiles,
 	getValidPlacements
 } from "@/games/kingdomino/shared/utils";
+import { makeEngine } from "@/shared/swish/engine";
+import { InvalidMove } from "@/shared/swish/errors";
+import type { PlayerId } from "@/shared/swish/schema";
+import type { ReadonlyGameData } from "@/shared/swish/structure";
+import { defineView } from "@/shared/swish/views";
+import { shuffle } from "@/shared/utils/array";
 import { apply } from "./utils.ts";
 
 /** The public board both audiences see: the full state minus the hidden `deck`. */

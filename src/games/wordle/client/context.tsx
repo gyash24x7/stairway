@@ -1,5 +1,4 @@
 import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/contract/client";
 import type { WordleSnapshot } from "@/games/wordle/shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -45,7 +44,7 @@ export function WordleProvider( { data, gameId, children }: WordleProviderProps 
 	const prevGuessCountRef = useRef( data.view.guesses.length );
 
 	const submitGuess = useMutation( {
-		mutationFn: ( guess: string ) => submitGuessFn( gameId, toPlayerInfo( authInfo! ), guess ),
+		mutationFn: ( guess: string ) => submitGuessFn( gameId, guess ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "wordle", "getState", gameId ]
 		} )

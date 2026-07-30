@@ -1,6 +1,6 @@
 import type { Gem, Tokens } from "@/games/splendor/shared/schema";
-import { Button } from "@/ui/primitives/button";
-import { cn } from "@/ui/utils/cn";
+import { Button } from "@/shared/ui/primitives/button";
+import { cn } from "@/shared/ui/utils/cn";
 import type { ReactNode } from "react";
 import { gemColors } from "./utils";
 

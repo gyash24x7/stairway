@@ -3,7 +3,6 @@ import {
 	CardReservedEvent,
 	GameDealtEvent,
 	type Gem,
-	type Noble,
 	PickTokensInput,
 	PlayerDataInitializedEvent,
 	PurchaseCardInput,
@@ -18,10 +17,10 @@ import {
 	TokensPickedEvent,
 	WinnerDecidedEvent
 } from "@/games/splendor/shared/schema";
-import { makeEngine } from "@/engine/engine";
-import { InvalidMove } from "@/engine/errors";
-import type { ReadonlyGameData } from "@/engine/structure";
-import { defineView } from "@/engine/views";
+import { makeEngine } from "@/shared/swish/engine";
+import { InvalidMove } from "@/shared/swish/errors";
+import type { ReadonlyGameData } from "@/shared/swish/structure";
+import { defineView } from "@/shared/swish/views";
 import {
 	apply,
 	DEFAULT_TOKENS,
@@ -324,9 +323,8 @@ export const splendor = makeEngine( {
 					card = player.reserved.find( c => c.id === input.cardId )!;
 				}
 				const replacement = fromReserved ? null : ( state.decks[ card.level ][ 0 ] ?? null );
-				// Nobles are checked against the buyer's card set AFTER this purchase.
-				const ownedAfter: ReadonlyArray<typeof card> = [ ...player.cards, card ];
-				const noble: Noble | null = findNobleVisit( ownedAfter, state.nobles );
+				const noble = findNobleVisit( [ ...player.cards, card ], state.nobles );
+
 				return [
 					CardPurchasedEvent.make( {
 						playerId,

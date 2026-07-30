@@ -1,6 +1,6 @@
 import type { CallbreakEvent, CallbreakState } from "@/games/callbreak/shared/schema";
-import { getCardSuit } from "@/utils/cards";
-import { PlayerId } from "@/schema/swish";
+import { getCardSuit } from "@/shared/cards/utils.ts";
+import { PlayerId } from "@/shared/swish/schema";
 import * as Match from "effect/Match";
 import { castDraft, produce } from "immer";
 
@@ -35,7 +35,8 @@ export const apply = ( state: CallbreakState, event: CallbreakEvent ): Callbreak
 				if ( !deal ) {
 					return;
 				}
-				deal.hands[ e.playerId ] = ( deal.hands[ e.playerId ] ?? [] ).filter( ( c ) => c !== e.cardId );
+				deal.hands[ e.playerId ] =
+					( deal.hands[ e.playerId ] ?? [] ).filter( ( c ) => c !== e.cardId );
 				const trick = deal.tricks[ 0 ];
 				if ( !trick ) {
 					return;

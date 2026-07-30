@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@/ui/primitives/button";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -8,9 +8,9 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { Spinner } from "@/ui/primitives/spinner";
-import { cn } from "@/ui/utils/cn";
+} from "@/shared/ui/primitives/drawer";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { cn } from "@/shared/ui/utils/cn";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { useCounter } from "usehooks-ts";

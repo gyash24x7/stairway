@@ -1,4 +1,4 @@
-import type { AuthInfo } from "@/schema/auth";
+import type { AuthInfo } from "@/auth/shared/schema";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMeFn } from "./client.ts";
 

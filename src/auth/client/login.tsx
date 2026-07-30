@@ -1,14 +1,14 @@
-import { Button } from "@/ui/primitives/button";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Dialog,
 	DialogContent,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle
-} from "@/ui/primitives/dialog";
-import { Input } from "@/ui/primitives/input";
-import { Spinner } from "@/ui/primitives/spinner";
-import { cn } from "@/ui/utils/cn";
+} from "@/shared/ui/primitives/dialog";
+import { Input } from "@/shared/ui/primitives/input";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { cn } from "@/shared/ui/utils/cn";
 import { useNavigate } from "@tanstack/react-router";
 import { LogInIcon } from "lucide-react";
 import { Fragment, useState, useTransition } from "react";

@@ -1,12 +1,12 @@
-import { getClient, run } from "@/contract/client";
+import { getClient, run } from "@/client.ts";
+import type { TicTacToeConfig } from "@/games/tictactoe/shared/schema";
 import {
 	GameCode,
 	GameIdParams,
 	JoinGameInput,
 	playerAudience,
-	PlayerInfo
-} from "@/schema/swish";
-import type { TicTacToeConfig } from "@/games/tictactoe/shared/schema";
+	PlayerId
+} from "@/shared/swish/schema";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -21,24 +21,19 @@ const gameIdParams = ( gameId: string ) =>
 export const createTicTacToeGameFn = ( config: TicTacToeConfig ) =>
 	run( client.createGame( { payload: config } ) );
 
-export const joinTicTacToeGameFn = ( code: string, playerInfo: PlayerInfo ) =>
-	run( client.join( {
-		payload: JoinGameInput.make( { code: GameCode.make( code ), playerInfo } )
-	} ) );
+export const joinTicTacToeGameFn = ( code: string ) =>
+	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
 
 export const addBotsFn = ( gameId: string ) =>
 	run( client.addBots( { params: gameIdParams( gameId ) } ) );
 
-export const placeFn = ( gameId: string, playerInfo: PlayerInfo, position: number ) =>
-	run( client.place( {
-		params: gameIdParams( gameId ),
-		payload: { playerInfo, input: { position } }
-	} ) );
+export const placeFn = ( gameId: string, position: number ) =>
+	run( client.place( { params: gameIdParams( gameId ), payload: { input: { position } } } ) );
 
 // --- Queries ---------------------------------------------------------------
 
-export const getStateFn = ( gameId: string, playerInfo: PlayerInfo, signal?: AbortSignal ) =>
+export const getStateFn = ( gameId: string, playerId: string, signal?: AbortSignal ) =>
 	run( client.getState( {
 		params: gameIdParams( gameId ),
-		payload: playerAudience( playerInfo.id )
+		payload: playerAudience( PlayerId.make( playerId ) )
 	} ), signal );

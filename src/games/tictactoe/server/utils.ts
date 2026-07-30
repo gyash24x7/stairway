@@ -1,5 +1,10 @@
-import type { PlayerId } from "@/schema/swish";
-import type { Board, CellValue, TicTacToeEvent, TicTacToeState } from "@/games/tictactoe/shared/schema";
+import type {
+	Board,
+	CellValue,
+	TicTacToeEvent,
+	TicTacToeState
+} from "@/games/tictactoe/shared/schema";
+import type { PlayerId } from "@/shared/swish/schema";
 import * as Match from "effect/Match";
 import * as Types from "effect/Types";
 import { produce } from "immer";

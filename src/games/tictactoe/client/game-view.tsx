@@ -1,11 +1,11 @@
 "use client";
 
-import { GameInfo } from "@/ui/components/game-info";
-import { RPlayerInfoSmall } from "@/ui/components/player-info";
-import { Button } from "@/ui/primitives/button";
-import { Spinner } from "@/ui/primitives/spinner";
-import { popIn, slideInUp } from "@/ui/utils/animation";
-import { cn } from "@/ui/utils/cn";
+import { GameInfo } from "@/shared/ui/components/game-info";
+import { RPlayerInfoSmall } from "@/shared/ui/components/player-info";
+import { Button } from "@/shared/ui/primitives/button";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { popIn, slideInUp } from "@/shared/ui/utils/animation";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { Board } from "./board";
 import { useTicTacToe } from "./context";

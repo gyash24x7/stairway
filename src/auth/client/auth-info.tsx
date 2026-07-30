@@ -1,8 +1,8 @@
 "use client";
 
-import type { AuthInfo } from "@/schema/auth";
-import { Avatar, AvatarFallback, AvatarImage } from "@/ui/primitives/avatar";
-import { Dialog, DialogContent, DialogTrigger } from "@/ui/primitives/dialog";
+import type { AuthInfo } from "@/auth/shared/schema";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/primitives/avatar";
+import { Dialog, DialogContent, DialogTrigger } from "@/shared/ui/primitives/dialog";
 import { useState } from "react";
 import { LogoutButton } from "./logout-button.tsx";
 

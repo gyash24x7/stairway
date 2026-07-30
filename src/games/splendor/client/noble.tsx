@@ -1,5 +1,5 @@
 import type { Cost, Noble as NobleType } from "@/games/splendor/shared/schema";
-import { cn } from "@/ui/utils/cn";
+import { cn } from "@/shared/ui/utils/cn";
 import { gemColors } from "./utils";
 
 export function Noble( { noble }: { noble: NobleType } ) {

@@ -1,10 +1,10 @@
-import { AuthMiddleware } from "@/contract/middleware";
+import { AuthMiddleware } from "@/auth/shared/middleware";
 import {
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
 	MoveApiEndpoint
-} from "@/engine/api";
+} from "@/shared/swish/api";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 import {
 	DiscardDominoInput,

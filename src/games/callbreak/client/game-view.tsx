@@ -1,11 +1,11 @@
 "use client";
 
-import { RCardSuit } from "@/ui/components/card";
-import { GameInfo } from "@/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/ui/components/player-lobby";
-import { Button } from "@/ui/primitives/button";
-import { Spinner } from "@/ui/primitives/spinner";
-import { cn } from "@/ui/utils/cn";
+import { RCardSuit } from "@/shared/ui/components/card";
+import { GameInfo } from "@/shared/ui/components/game-info";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
+import { Button } from "@/shared/ui/primitives/button";
+import { Spinner } from "@/shared/ui/primitives/spinner";
+import { cn } from "@/shared/ui/utils/cn";
 import { Fragment } from "react";
 import { ActionPanel } from "./action-panel";
 import { useCallbreak } from "./context";

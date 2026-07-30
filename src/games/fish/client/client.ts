@@ -1,4 +1,4 @@
-import { getClient, run } from "@/contract/client";
+import { getClient, run } from "@/client.ts";
 import type {
 	AskCardInput,
 	ClaimBookInput,
@@ -6,7 +6,13 @@ import type {
 	FishConfig,
 	TransferTurnInput
 } from "@/games/fish/shared/schema";
-import { GameCode, GameIdParams, JoinGameInput, playerAudience, PlayerId } from "@/schema/swish";
+import {
+	GameCode,
+	GameIdParams,
+	JoinGameInput,
+	playerAudience,
+	PlayerId
+} from "@/shared/swish/schema";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

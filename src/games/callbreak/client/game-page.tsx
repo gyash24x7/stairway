@@ -1,5 +1,5 @@
 import { useAuth } from "@/auth/client/use-auth";
-import { Spinner } from "@/ui/primitives/spinner";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
 import { getStateFn } from "./client";
 import { CallbreakProvider } from "./context";

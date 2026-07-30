@@ -1,4 +1,3 @@
-import type { CardId } from "@/schema/cards";
 import {
 	AskCardInput,
 	BookClaimed,
@@ -19,12 +18,6 @@ import {
 	TurnTransferred,
 	WinningTeamDecided
 } from "@/games/fish/shared/schema";
-import { PlayerId } from "@/schema/swish";
-import { makeEngine } from "@/engine/engine";
-import { InvalidMove } from "@/engine/errors";
-import { defineView } from "@/engine/views";
-import { remove } from "@/utils/array";
-import { CARD_RANKS, generateDeck, generateHands, getCardRank } from "@/utils/cards";
 import {
 	getBookForCard,
 	getCardsOfBook,
@@ -32,7 +25,14 @@ import {
 	getOpponents,
 	getTeammates
 } from "@/games/fish/shared/utils";
-import { generateId } from "@/utils/generator";
+import type { CardId } from "@/shared/cards/schema";
+import { CARD_RANKS, generateDeck, generateHands, getCardRank } from "@/shared/cards/utils.ts";
+import { makeEngine } from "@/shared/swish/engine";
+import { InvalidMove } from "@/shared/swish/errors";
+import { PlayerId } from "@/shared/swish/schema";
+import { defineView } from "@/shared/swish/views";
+import { remove } from "@/shared/utils/array";
+import { generateId } from "@/shared/utils/generator";
 import {
 	detectTeammateSignals,
 	suggestAsks,
@@ -96,7 +96,11 @@ export const fish = makeEngine( {
 		},
 		player: ( { state }, id ) => {
 			const { hands: _hands, ...rest } = state;
-			return FishPlayerView.make( { ...rest, playerId: id, hand: [ ...( state.hands[ id ] ?? [] ) ] } );
+			return FishPlayerView.make( {
+				...rest,
+				playerId: id,
+				hand: [ ...( state.hands[ id ] ?? [] ) ]
+			} );
 		}
 	} ),
 

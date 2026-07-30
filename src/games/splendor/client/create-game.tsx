@@ -1,7 +1,7 @@
 "use client";
 
-import { CreateGame } from "@/ui/components/create-game";
-import { RadioSelect } from "@/ui/primitives/radio-select";
+import { CreateGame } from "@/shared/ui/components/create-game";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select";
 import { useState } from "react";
 import { createSplendorGameFn } from "./client";
 

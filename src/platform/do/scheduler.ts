@@ -1,4 +1,4 @@
-import { Scheduler } from "@/engine/services";
+import { Scheduler } from "@/shared/swish/services";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";

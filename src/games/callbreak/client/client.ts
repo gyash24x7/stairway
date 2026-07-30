@@ -1,6 +1,16 @@
-import { getClient, run } from "@/contract/client";
-import type { CallbreakConfig, DeclareWinsInput, PlayCardInput } from "@/games/callbreak/shared/schema";
-import { GameCode, GameIdParams, JoinGameInput, playerAudience, PlayerId } from "@/schema/swish";
+import { getClient, run } from "@/client.ts";
+import type {
+	CallbreakConfig,
+	DeclareWinsInput,
+	PlayCardInput
+} from "@/games/callbreak/shared/schema";
+import {
+	GameCode,
+	GameIdParams,
+	JoinGameInput,
+	playerAudience,
+	PlayerId
+} from "@/shared/swish/schema";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 

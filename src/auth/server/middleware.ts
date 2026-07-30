@@ -1,5 +1,5 @@
-import { AuthContext, AuthMiddleware } from "@/contract/middleware";
-import { AuthInfo, Unauthorized } from "@/schema/auth";
+import { AuthContext, AuthMiddleware } from "@/auth/shared/middleware";
+import { AuthInfo, Unauthorized } from "@/auth/shared/schema";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";

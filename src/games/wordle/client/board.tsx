@@ -1,5 +1,5 @@
 import type { GuessResult, GuessResultsForWord, LetterStatus } from "@/games/wordle/shared/schema";
-import { cn } from "@/ui/utils/cn";
+import { cn } from "@/shared/ui/utils/cn";
 import { motion } from "framer-motion";
 import { useWordle } from "./context";
 

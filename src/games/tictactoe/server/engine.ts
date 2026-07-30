@@ -1,4 +1,3 @@
-import { PlayerId } from "@/schema/swish";
 import {
 	Placed,
 	PlaceInput,
@@ -11,9 +10,10 @@ import {
 	TicTacToeView,
 	WinnerDecided
 } from "@/games/tictactoe/shared/schema";
-import { makeEngine } from "@/engine/engine";
-import { InvalidMove } from "@/engine/errors";
-import { defineView } from "@/engine/views";
+import { makeEngine } from "@/shared/swish/engine";
+import { InvalidMove } from "@/shared/swish/errors";
+import { PlayerId } from "@/shared/swish/schema";
+import { defineView } from "@/shared/swish/views";
 import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "./utils";
 
 // --- Engine ----------------------------------------------------------------

@@ -1,14 +1,14 @@
+import { StairwayAPI } from "@/api.ts";
 import { AuthApiLive } from "@/auth/server/api";
 import { AuthMiddlewareLive } from "@/auth/server/middleware";
 import { BetterAuthLive } from "@/auth/server/services";
 import { CallbreakApiLive, CallbreakEngineDO } from "@/games/callbreak/server/api";
-import { StairwayAPI } from "@/contract/api";
 import { FishApiLive, FishEngineDO } from "@/games/fish/server/api";
 import { KingdominoApiLive, KingdominoEngineDO } from "@/games/kingdomino/server/api";
-import { DatabaseLive } from "@/platform/database/service";
 import { SplendorApiLive, SplendorEngineDO } from "@/games/splendor/server/api";
 import { TicTacToeApiLive, TicTacToeEngineDO } from "@/games/tictactoe/server/api";
 import { WordleApiLive, WordleEngineDO } from "@/games/wordle/server/api";
+import { DatabaseLive } from "@/platform/database/service";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
@@ -23,10 +23,6 @@ const HttpPlatformStub = Layer.succeed( HttpPlatform.HttpPlatform, {
 	fileResponse: () => Effect.die( "HttpPlatform.fileResponse not supported" ),
 	fileWebResponse: () => Effect.die( "HttpPlatform.fileWebResponse not supported" )
 } );
-
-const HealthApiLive = HttpApiBuilder.group( StairwayAPI, "health", handlers => handlers
-	.handle( "healthCheck", () => Effect.succeed( { healthy: true } ) )
-);
 
 const ApiWorker = Cloudflare.Worker(
 	"ApiWorker",
@@ -43,7 +39,6 @@ const ApiWorker = Cloudflare.Worker(
 		return {
 			fetch: yield* HttpRouter.toHttpEffect(
 				HttpApiBuilder.layer( StairwayAPI ).pipe(
-					Layer.provide( HealthApiLive ),
 					Layer.provide( CallbreakApiLive( callbreakEngine ) ),
 					Layer.provide( FishApiLive( fishEngine ) ),
 					Layer.provide( KingdominoApiLive( kingdominoEngine ) ),

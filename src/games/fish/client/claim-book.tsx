@@ -1,22 +1,7 @@
 "use client";
 
 import { useAuth } from "@/auth/client/use-auth";
-import type { CardId } from "@/schema/cards";
 import type { Book, ClaimBookInput } from "@/games/fish/shared/schema";
-import type { PlayerId } from "@/schema/swish";
-import { RCard } from "@/ui/components/card";
-import { RPlayerInfoStrip } from "@/ui/components/player-info";
-import { Button } from "@/ui/primitives/button";
-import {
-	Drawer,
-	DrawerContent,
-	DrawerDescription,
-	DrawerFooter,
-	DrawerHeader,
-	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { RadioSelect } from "@/ui/primitives/radio-select";
-import { Spinner } from "@/ui/primitives/spinner";
 import {
 	getBookDisplayString,
 	getBooksInHand,
@@ -24,6 +9,21 @@ import {
 	getMissingCards,
 	getTeammates
 } from "@/games/fish/shared/utils";
+import type { CardId } from "@/shared/cards/schema";
+import type { PlayerId } from "@/shared/swish/schema";
+import { RCard } from "@/shared/ui/components/card";
+import { RPlayerInfoStrip } from "@/shared/ui/components/player-info";
+import { Button } from "@/shared/ui/primitives/button";
+import {
+	Drawer,
+	DrawerContent,
+	DrawerDescription,
+	DrawerFooter,
+	DrawerHeader,
+	DrawerTitle
+} from "@/shared/ui/primitives/drawer";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowBigRightDashIcon } from "lucide-react";
 import { useState } from "react";

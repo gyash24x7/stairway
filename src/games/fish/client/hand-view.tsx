@@ -1,8 +1,8 @@
 "use client";
 
-import { RCard } from "@/ui/components/card";
-import { cn } from "@/ui/utils/cn";
 import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@/games/fish/shared/utils";
+import { RCard } from "@/shared/ui/components/card";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo } from "react";
 import { useFish } from "./context";

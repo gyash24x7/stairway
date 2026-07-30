@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/ui/utils/cn";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { CardActions } from "./card-actions";
 import { useSplendor } from "./context";

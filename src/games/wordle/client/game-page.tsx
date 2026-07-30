@@ -1,6 +1,5 @@
 import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/contract/client";
-import { Spinner } from "@/ui/primitives/spinner";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useQuery } from "@tanstack/react-query";
 import { getWordleStateFn } from "./client";
 import { WordleProvider } from "./context";
@@ -12,7 +11,7 @@ export function WordleGamePage( { gameId }: { gameId: string } ) {
 	const { data, isLoading } = useQuery( {
 		queryKey: [ "wordle", "getState", gameId ],
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getWordleStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+		queryFn: ( { signal } ) => getWordleStateFn( gameId, authInfo!.id, signal )
 	} );
 
 	if ( isLoading || !data ) {

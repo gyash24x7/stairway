@@ -1,10 +1,10 @@
-import type { CardId } from "@/schema/cards";
 import type { BookType, FishEvent, FishState } from "@/games/fish/shared/schema";
 import { BookClaimed, CardAsked } from "@/games/fish/shared/schema";
-import { PlayerId } from "@/schema/swish";
-import { remove } from "@/utils/array";
-import { CARD_RANKS, getCardRank } from "@/utils/cards";
 import { getCardsOfBook } from "@/games/fish/shared/utils";
+import type { CardId } from "@/shared/cards/schema";
+import { CARD_RANKS, getCardRank } from "@/shared/cards/utils.ts";
+import { PlayerId } from "@/shared/swish/schema";
+import { remove } from "@/shared/utils/array";
 import * as Match from "effect/Match";
 import { castDraft, type Draft, produce } from "immer";
 
@@ -87,7 +87,8 @@ const applyClaim = ( draft: Draft<FishState>, e: BookClaimed ): void => {
 	}
 
 	const emptyPlayers = new Set(
-		Object.keys( draft.cardCounts ).filter( pid => ( draft.cardCounts[ pid as PlayerId ] ?? 0 ) <= 0 )
+		Object.keys( draft.cardCounts )
+			.filter( pid => ( draft.cardCounts[ pid as PlayerId ] ?? 0 ) <= 0 )
 	);
 	if ( emptyPlayers.size > 0 ) {
 		for ( const cardId of Object.keys( draft.cardLocations ) as CardId[] ) {

@@ -10,7 +10,7 @@ import type {
 	SplendorState,
 	Tokens
 } from "@/games/splendor/shared/schema";
-import { shuffle } from "@/utils/array";
+import { shuffle } from "@/shared/utils/array";
 import * as Match from "effect/Match";
 import { castDraft, produce } from "immer";
 

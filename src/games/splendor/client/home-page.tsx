@@ -1,7 +1,7 @@
-import type { GameCode } from "@/schema/swish";
-import { JoinGame } from "@/ui/components/join-game";
-import { Separator } from "@/ui/primitives/separator";
-import { cn } from "@/ui/utils/cn";
+import type { GameCode } from "@/shared/swish/schema";
+import { JoinGame } from "@/shared/ui/components/join-game";
+import { Separator } from "@/shared/ui/primitives/separator";
+import { cn } from "@/shared/ui/utils/cn";
 import { joinSplendorGameFn } from "./client";
 import { SplendorCreateGame as CreateGame } from "./create-game";
 

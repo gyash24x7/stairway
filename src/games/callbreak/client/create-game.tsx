@@ -1,8 +1,8 @@
-import type { CardSuit } from "@/schema/cards";
-import { RCardSuit } from "@/ui/components/card";
-import { CreateGame } from "@/ui/components/create-game";
-import { RadioSelect } from "@/ui/primitives/radio-select";
-import { CARD_SUITS } from "@/utils/cards";
+import type { CardSuit } from "@/shared/cards/schema";
+import { CARD_SUITS } from "@/shared/cards/utils.ts";
+import { RCardSuit } from "@/shared/ui/components/card";
+import { CreateGame } from "@/shared/ui/components/create-game";
+import { RadioSelect } from "@/shared/ui/primitives/radio-select";
 import { useState } from "react";
 import { createCallbreakGameFn } from "./client";
 

@@ -1,12 +1,10 @@
 "use client";
 
-import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/contract/client";
-import { GameInfo } from "@/ui/components/game-info";
-import { PlayerLobbyGrid } from "@/ui/components/player-lobby";
-import { Button } from "@/ui/primitives/button";
-import { cn } from "@/ui/utils/cn";
 import { DOMINO_DECK } from "@/games/kingdomino/shared/utils";
+import { GameInfo } from "@/shared/ui/components/game-info";
+import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby";
+import { Button } from "@/shared/ui/primitives/button";
+import { cn } from "@/shared/ui/utils/cn";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useState } from "react";
@@ -21,7 +19,6 @@ import { usePlacement } from "./use-placement";
 
 export function GameView() {
 	const { data } = useKingdomino();
-	const { authInfo } = useAuth();
 	const player = data.view;
 
 	const isMyTurn = data.status === "IN_PROGRESS"
@@ -35,12 +32,12 @@ export function GameView() {
 
 	const queryClient = useQueryClient();
 	const selectDomino = useMutation( {
-		mutationFn: ( dominoId: number ) =>
-			selectDominoFn( data.id, toPlayerInfo( authInfo! ), { dominoId } ),
+		mutationFn: ( dominoId: number ) => selectDominoFn( data.id, { dominoId } ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "kingdomino", "getState", data.id ]
 		} )
 	} );
+
 	const isSelectPending = selectDomino.isPending;
 	const [ selectednumber, setSelectednumber ] = useState<number | null>( null );
 

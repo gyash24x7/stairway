@@ -1,9 +1,8 @@
 "use client";
 
-import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/contract/client";
-import type { Gem, Tokens } from "@/games/splendor/shared/schema";
-import { Button } from "@/ui/primitives/button";
+import type { Gem, PickTokensInput, Tokens } from "@/games/splendor/shared/schema";
+import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -11,9 +10,8 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { Spinner } from "@/ui/primitives/spinner";
-import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils";
+} from "@/shared/ui/primitives/drawer";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";
@@ -23,12 +21,10 @@ import { TokenPicker } from "./token-picker";
 
 export function PickTokens() {
 	const { data } = useSplendor();
-	const { authInfo } = useAuth();
 	const queryClient = useQueryClient();
 
 	const pickTokens = useMutation( {
-		mutationFn: ( input: { tokens: Partial<Tokens>; returned?: Partial<Tokens> } ) =>
-			pickTokensFn( data.id, toPlayerInfo( authInfo! ), input ),
+		mutationFn: ( input: PickTokensInput ) => pickTokensFn( data.id, input ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "splendor", "getState", data.id ]
 		} )

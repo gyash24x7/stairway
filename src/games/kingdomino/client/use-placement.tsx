@@ -1,14 +1,12 @@
 "use client";
 
-import { useAuth } from "@/auth/client/use-auth";
-import { toPlayerInfo } from "@/contract/client";
 import type { Board, Coord, Placement, Rotation } from "@/games/kingdomino/shared/schema";
-import { Button } from "@/ui/primitives/button";
 import {
 	getPlacementCoordinates,
 	getValidPlacements,
 	getValidRotations
 } from "@/games/kingdomino/shared/utils";
+import { Button } from "@/shared/ui/primitives/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { useState } from "react";
@@ -34,9 +32,6 @@ type UsePlacementResult = {
 
 export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 	const { gameId, activeDominoId, canPlace, onClear } = params;
-	const board = params.board;
-
-	const { authInfo } = useAuth();
 	const [ tentative, setTentative ] = useState<{ coord: Coord; rotation: Rotation } | null>( null );
 
 	const queryClient = useQueryClient();
@@ -45,13 +40,12 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 	} );
 
 	const placeDomino = useMutation( {
-		mutationFn: ( placement: Placement ) =>
-			placeDominoFn( gameId, toPlayerInfo( authInfo! ), { placement } ),
+		mutationFn: ( placement: Placement ) => placeDominoFn( gameId, { placement } ),
 		onSuccess: invalidate
 	} );
+
 	const discardDomino = useMutation( {
-		mutationFn: ( dominoId: number ) =>
-			discardDominoFn( gameId, toPlayerInfo( authInfo! ), { dominoId } ),
+		mutationFn: ( dominoId: number ) => discardDominoFn( gameId, { dominoId } ),
 		onSuccess: invalidate
 	} );
 
@@ -62,7 +56,7 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 			return;
 		}
 
-		const valid = getValidRotations( board, activeDominoId, coord );
+		const valid = getValidRotations( params.board, activeDominoId, coord );
 		if ( valid.length === 0 ) {
 			return;
 		}
@@ -94,7 +88,7 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 			return;
 		}
 
-		const valid = getValidRotations( board, activeDominoId, tentative.coord );
+		const valid = getValidRotations( params.board, activeDominoId, tentative.coord );
 		if ( valid.length === 0 ) {
 			return;
 		}
@@ -104,7 +98,7 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 	};
 
 	const canDiscard = canPlace && activeDominoId !== null
-		? getValidPlacements( board, activeDominoId ).length === 0
+		? getValidPlacements( params.board, activeDominoId ).length === 0
 		: false;
 
 	const handleDiscard = () => {
@@ -124,7 +118,7 @@ export function usePlacement( params: UsePlacementParams ): UsePlacementResult {
 			return null;
 		}
 
-		const valid = getValidRotations( board, activeDominoId, coord );
+		const valid = getValidRotations( params.board, activeDominoId, coord );
 		if ( valid.length === 0 ) {
 			return null;
 		}

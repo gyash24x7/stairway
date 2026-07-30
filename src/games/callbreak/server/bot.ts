@@ -1,7 +1,7 @@
-import type { CallbreakPlayerView, CallbreakConfig, Trick } from "@/games/callbreak/shared/schema";
-import type { CardId, CardSuit } from "@/schema/cards";
+import type { CallbreakConfig, CallbreakPlayerView, Trick } from "@/games/callbreak/shared/schema";
 import { getCardValue, getPlayableCards } from "@/games/callbreak/shared/utils";
-import { getCardRank, getCardSuit } from "@/utils/cards";
+import type { CardId, CardSuit } from "@/shared/cards/schema";
+import { getCardRank, getCardSuit } from "@/shared/cards/utils.ts";
 
 /**
  * Sort cards by their rank value in ascending order.

@@ -1,5 +1,5 @@
 import type { Card, Gem, ReserveCardInput, Tokens } from "@/games/splendor/shared/schema";
-import { Button } from "@/ui/primitives/button";
+import { Button } from "@/shared/ui/primitives/button";
 import {
 	Drawer,
 	DrawerContent,
@@ -7,8 +7,8 @@ import {
 	DrawerFooter,
 	DrawerHeader,
 	DrawerTitle
-} from "@/ui/primitives/drawer";
-import { Spinner } from "@/ui/primitives/spinner";
+} from "@/shared/ui/primitives/drawer";
+import { Spinner } from "@/shared/ui/primitives/spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startTransition, useState, useTransition } from "react";
 import { useBoolean } from "usehooks-ts";

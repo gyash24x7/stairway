@@ -1,4 +1,4 @@
-import { EventStore, GameStore } from "@/engine/services";
+import { EventStore, GameStore } from "@/shared/swish/services";
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";

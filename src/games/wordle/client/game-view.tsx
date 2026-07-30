@@ -1,7 +1,7 @@
 "use client";
 
-import { GameInfo } from "@/ui/components/game-info";
-import { cn } from "@/ui/utils/cn";
+import { GameInfo } from "@/shared/ui/components/game-info";
+import { cn } from "@/shared/ui/utils/cn";
 import { AnimatePresence, motion } from "framer-motion";
 import { Board } from "./board";
 import { useWordle } from "./context";
