@@ -1,4 +1,4 @@
-import type { CardId, CardSuit } from "@s2h/utils/cards";
+import type { CardId, CardSuit } from "@s2h/schema/cards";
 import { cn } from "../utils/cn.ts";
 
 function isRed( suit: CardSuit ) {

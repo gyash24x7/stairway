@@ -10,7 +10,9 @@ import {
 	ReserveCardInput,
 	SplendorConfig,
 	SplendorEvent,
+	SplendorPlayerView,
 	SplendorState,
+	SplendorTableView,
 	SplendorView,
 	type Tokens,
 	TokensPickedEvent,
@@ -18,6 +20,8 @@ import {
 } from "@s2h/schema/splendor";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
+import type { ReadonlyGameData } from "@s2h/swish/structure";
+import { defineView } from "@s2h/swish/views";
 import {
 	apply,
 	DEFAULT_TOKENS,
@@ -38,6 +42,12 @@ const ALL_GEMS: ReadonlyArray<Gem> = [ ...GEMS, "gold" ];
 
 const fail = ( move: string, reason: string ) =>
 	new InvalidMove( { move, reason } );
+
+/** The public board both audiences see: the full state minus the hidden `decks`. */
+const publicBoard = ( { state }: ReadonlyGameData<SplendorState, SplendorConfig> ) => {
+	const { decks: _decks, ...rest } = state;
+	return rest;
+};
 
 // --- Engine ----------------------------------------------------------------
 
@@ -75,10 +85,10 @@ export const splendor = makeEngine( {
 		return roundComplete && someoneWon;
 	},
 
-	view: ( { state }, audience ) => {
-		const { decks: _decks, ...rest } = state;
-		return audience._tag === "swish/Table" ? rest : { ...rest, playerId: audience.id };
-	},
+	view: defineView( {
+		table: ( data ) => SplendorTableView.make( publicBoard( data ) ),
+		player: ( data, id ) => SplendorPlayerView.make( { ...publicBoard( data ), playerId: id } )
+	} ),
 	resolveNextPlayer: ( { context } ) =>
 		context.players[ context.turn % context.players.length ]!,
 

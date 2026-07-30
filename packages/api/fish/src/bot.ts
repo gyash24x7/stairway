@@ -1,5 +1,5 @@
 import type { CardId } from "@s2h/schema/cards";
-import type { Book, FishBotView, FishConfig } from "@s2h/schema/fish";
+import type { Book, FishPlayerView, FishConfig } from "@s2h/schema/fish";
 import { PlayerId } from "@s2h/schema/swish";
 import {
 	getBookForCard,
@@ -59,7 +59,7 @@ const SIGNAL_WINDOW = 30;
  * @returns list of detected teammate signals
  * @public
  */
-export function detectTeammateSignals( state: FishBotView, config: FishConfig ) {
+export function detectTeammateSignals( state: FishPlayerView, config: FishConfig ) {
 	const teammates = getTeammates( state.teams, state.playerId );
 	if ( teammates.length === 0 ) {
 		return [];
@@ -152,7 +152,7 @@ export function detectTeammateSignals( state: FishBotView, config: FishConfig ) 
  * @public
  */
 export function suggestBooks(
-	state: FishBotView,
+	state: FishPlayerView,
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
@@ -225,7 +225,7 @@ export function suggestBooks(
  */
 export function suggestAsks(
 	books: WeightedBook[],
-	state: FishBotView,
+	state: FishPlayerView,
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
@@ -306,7 +306,7 @@ export function suggestAsks(
  * The bot should signal back by asking from the same book on its turn.
  * Only considers the most recent few asks to keep signals timely.
  */
-function detectBooksToSignal( state: FishBotView, config: FishConfig ): Set<Book> {
+function detectBooksToSignal( state: FishPlayerView, config: FishConfig ): Set<Book> {
 	const teammates = getTeammates( state.teams, state.playerId );
 	const booksToSignal = new Set<Book>();
 
@@ -329,7 +329,7 @@ function detectBooksToSignal( state: FishBotView, config: FishConfig ): Set<Book
  * Returns undefined if the bot should move on to a different book.
  */
 function getActiveBook(
-	state: FishBotView,
+	state: FishPlayerView,
 	config: FishConfig,
 	teamMates: PlayerId[]
 ): Book | undefined {
@@ -363,7 +363,7 @@ function getActiveBook(
  * inferred from ask history. A player who asked for a card from book B
  * must hold at least one other card from book B (game rule).
  */
-function getKnownBookHolders( state: FishBotView, config: FishConfig ) {
+function getKnownBookHolders( state: FishPlayerView, config: FishConfig ) {
 	const holders = new Map<PlayerId, Set<Book>>();
 
 	for ( const ask of state.askHistory ) {
@@ -395,7 +395,7 @@ function getKnownBookHolders( state: FishBotView, config: FishConfig ) {
  */
 export function suggestClaims(
 	books: WeightedBook[],
-	state: FishBotView,
+	state: FishPlayerView,
 	config: FishConfig,
 	signals: TeammateSignal[] = []
 ) {
@@ -467,7 +467,7 @@ export function suggestClaims(
  * @returns sorted list of transfer recommendations.
  * @public
  */
-export function suggestTransfers( state: FishBotView, config: FishConfig ) {
+export function suggestTransfers( state: FishPlayerView, config: FishConfig ) {
 
 	const teamMates = getTeammates( state.teams, state.playerId );
 	const validBooks = new Set( Object.keys( state.cardLocations )

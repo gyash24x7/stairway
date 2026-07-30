@@ -52,6 +52,7 @@
 			"drizzle-orm": "1.0.0-rc.4",
 			"effect": "4.0.0-beta.102",
 			"framer-motion": "12.43.0",
+			"immer": "11.1.15",
 			"lucide-react": "1.27.0",
 			"react": "19.2.8",
 			"react-dom": "19.2.8",

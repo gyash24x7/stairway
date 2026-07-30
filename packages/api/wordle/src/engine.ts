@@ -5,13 +5,45 @@ import {
 	VictoryDecidedEvent,
 	WordleConfig,
 	WordleEvents,
+	WordlePlayerView,
 	WordleState,
+	WordleTableView,
 	WordleView
 } from "@s2h/schema/wordle";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
+import type { ReadonlyGameData } from "@s2h/swish/structure";
+import { defineView } from "@s2h/swish/views";
 import { dictionaries } from "./dictionary.ts";
 import { allWordsGuessed, apply, computeRow } from "./utils.ts";
+
+
+// --- View projection (shared board, per-audience wrappers via defineView) ---
+
+/** The public board fields both audiences see, with unsolved rows padded to `maxGuesses`. */
+const sharedView = ( { state, config }: ReadonlyGameData<WordleState, WordleConfig> ) => {
+	const emptyRow: typeof GuessRow.Type = Array.from(
+		{ length: config.wordLength },
+		() => ( { letter: "", status: "absent" as const } )
+	);
+
+	return {
+		guesses: state.guesses,
+		maxGuesses: state.maxGuesses,
+		victory: state.victory,
+		guessResults: state.words.map( ( word ) => {
+			const results = state.guessResults[ word ] ?? [];
+			const solvedAt = results.findIndex(
+				( row ) => row.every( ( r ) => r.status === "correct" )
+			);
+			const truncated = solvedAt !== -1 ? results.slice( 0, solvedAt + 1 ) : results;
+			return [
+				...truncated,
+				...Array.from( { length: state.maxGuesses - truncated.length }, () => emptyRow )
+			];
+		} )
+	};
+};
 
 
 // --- Engine ----------------------------------------------------------------
@@ -62,31 +94,10 @@ export const wordle = makeEngine<
 
 	endIf: ( { state } ) => allWordsGuessed( state ) || state.guesses.length === state.maxGuesses,
 
-	view: ( { state, config }, audience ): WordleView => {
-		const emptyRow: typeof GuessRow.Type = Array.from(
-			{ length: config.wordLength },
-			() => ( { letter: "", status: "absent" as const } )
-		);
-
-		const shared = {
-			guesses: state.guesses,
-			maxGuesses: state.maxGuesses,
-			victory: state.victory,
-			guessResults: state.words.map( ( word ) => {
-				const results = state.guessResults[ word ] ?? [];
-				const solvedAt = results.findIndex(
-					( row ) => row.every( ( r ) => r.status === "correct" )
-				);
-				const truncated = solvedAt !== -1 ? results.slice( 0, solvedAt + 1 ) : results;
-				return [
-					...truncated,
-					...Array.from( { length: state.maxGuesses - truncated.length }, () => emptyRow )
-				];
-			} )
-		};
-
-		return audience._tag === "swish/Table" ? shared : { ...shared, playerId: audience.id };
-	},
+	view: defineView( {
+		table: ( data ) => WordleTableView.make( sharedView( data ) ),
+		player: ( data, id ) => WordlePlayerView.make( { ...sharedView( data ), playerId: id } )
+	} ),
 
 	hooks: {
 		onEnd: ( { state } ) => [ VictoryDecidedEvent.make( { victory: allWordsGuessed( state ) } ) ]

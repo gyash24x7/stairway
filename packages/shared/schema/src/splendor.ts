@@ -83,11 +83,27 @@ export const SplendorState = Schema.Struct( {
 	winner: Schema.optional( PlayerId )
 } );
 
-export type SplendorView = typeof SplendorView.Type;
-export const SplendorView = Schema.Struct( {
-	...SplendorState.mapFields( Struct.omit( [ "decks" ] ) ).fields,
-	playerId: Schema.optional( PlayerId )
+// Everything except the hidden `decks` is public (the tableau is shared); the only
+// private field is the viewer's own `playerId`. `SplendorView` is the discriminated
+// union of the player and table variants — clients narrow once on `_tag`.
+export type SplendorSharedView = typeof SplendorSharedView.Type;
+export const SplendorSharedView = Schema.Struct( {
+	...SplendorState.mapFields( Struct.omit( [ "decks" ] ) ).fields
 } );
+
+export type SplendorPlayerView = typeof SplendorPlayerView.Type;
+export const SplendorPlayerView = Schema.TaggedStruct( "splendor/PlayerView", {
+	...SplendorSharedView.fields,
+	playerId: PlayerId
+} );
+
+export type SplendorTableView = typeof SplendorTableView.Type;
+export const SplendorTableView = Schema.TaggedStruct( "splendor/TableView", {
+	...SplendorSharedView.fields
+} );
+
+export type SplendorView = typeof SplendorView.Type;
+export const SplendorView = Schema.Union( [ SplendorPlayerView, SplendorTableView ] );
 
 export type SplendorSnapshot = typeof SplendorSnapshot.Type;
 export const SplendorSnapshot = GameSnapshot( SplendorView, SplendorConfig );

@@ -54,23 +54,23 @@ export const CallbreakSharedView = Schema.Struct( {
 	lastCompletedTrick: Schema.optional( Trick )
 } );
 
+// A player's view adds its own (required) id and hand; the table view is the
+// public board only. `CallbreakView` is the discriminated union — clients (and
+// bots) narrow once on `_tag`. The player variant doubles as the bot's input.
 export type CallbreakPlayerView = typeof CallbreakPlayerView.Type;
-export const CallbreakPlayerView = Schema.Struct( {
+export const CallbreakPlayerView = Schema.TaggedStruct( "callbreak/PlayerView", {
+	...CallbreakSharedView.fields,
 	playerId: PlayerId,
 	hand: Schema.Array( CardId )
 } );
 
-export type CallbreakBotView = typeof CallbreakBotView.Type;
-export const CallbreakBotView = Schema.Struct( {
-	...CallbreakSharedView.fields,
-	...CallbreakPlayerView.fields
+export type CallbreakTableView = typeof CallbreakTableView.Type;
+export const CallbreakTableView = Schema.TaggedStruct( "callbreak/TableView", {
+	...CallbreakSharedView.fields
 } );
 
 export type CallbreakView = typeof CallbreakView.Type;
-export const CallbreakView = Schema.Struct( {
-	...CallbreakSharedView.fields,
-	...CallbreakPlayerView.mapFields( Struct.map( Schema.optionalKey ) ).fields
-} );
+export const CallbreakView = Schema.Union( [ CallbreakPlayerView, CallbreakTableView ] );
 
 export type CallbreakSnapshot = typeof CallbreakSnapshot.Type;
 export const CallbreakSnapshot = GameSnapshot( CallbreakView, CallbreakConfig );

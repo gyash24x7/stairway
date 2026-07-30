@@ -1,8 +1,9 @@
 import {
-	CallbreakBotView,
 	CallbreakConfig,
 	CallbreakEvent,
+	CallbreakPlayerView,
 	CallbreakState,
+	CallbreakTableView,
 	CallbreakView,
 	CardPlayedEvent,
 	DealDealtEvent,
@@ -18,6 +19,8 @@ import {
 import { PlayerId } from "@s2h/schema/swish";
 import { makeEngine } from "@s2h/swish/engine";
 import { InvalidMove } from "@s2h/swish/errors";
+import type { ReadonlyGameData } from "@s2h/swish/structure";
+import { defineView } from "@s2h/swish/views";
 import {
 	calculateRoundScore,
 	createNewDeal,
@@ -29,6 +32,27 @@ import {
 import { getCardSuit } from "@s2h/utils/cards";
 import { botDeclare, botPlayCard } from "./bot";
 import { apply } from "./utils.ts";
+
+/**
+ * The public board both audiences see: cumulative `scores`, the `winner`, the
+ * active deal with hands stripped (`PublicDeal`), and the last completed trick.
+ */
+const publicBoard = ( { state }: ReadonlyGameData<CallbreakState, CallbreakConfig> ) => {
+	const activeDeal = state.deals[ 0 ];
+	const lastCompletedTrick = state.deals[ 1 ]?.tricks[ 0 ];
+
+	if ( !activeDeal ) {
+		return { scores: state.scores, winner: state.winner };
+	}
+
+	const { hands: _hands, ...deal } = activeDeal;
+	return {
+		activeDeal: deal,
+		scores: state.scores,
+		lastCompletedTrick,
+		winner: state.winner
+	};
+};
 
 // --- Engine ----------------------------------------------------------------
 
@@ -59,36 +83,14 @@ export const callbreak = makeEngine( {
 		return completedDeals.length >= config.dealCount;
 	},
 
-	view: ( { state }, audience ): CallbreakView => {
-		const activeDeal = state.deals[ 0 ];
-		const previousDeal = state.deals[ 1 ];
-		const lastCompletedTrick = previousDeal?.tricks[ 0 ];
-
-		if ( !activeDeal ) {
-			return audience._tag === "swish/Table"
-				? { scores: state.scores, winner: state.winner }
-				: {
-					scores: state.scores,
-					winner: state.winner,
-					playerId: audience.id,
-					hand: []
-				};
-		}
-
-		const { hands, ...deal } = activeDeal;
-		const view = {
-			activeDeal: deal,
-			scores: state.scores,
-			lastCompletedTrick,
-			winner: state.winner
-		};
-
-		return audience._tag === "swish/Table" ? view : {
-			...view,
-			playerId: audience.id,
-			hand: hands[ audience.id ]
-		};
-	},
+	view: defineView( {
+		table: ( data ) => CallbreakTableView.make( publicBoard( data ) ),
+		player: ( data, id ) => CallbreakPlayerView.make( {
+			...publicBoard( data ),
+			playerId: id,
+			hand: [ ...( data.state.deals[ 0 ]?.hands[ id ] ?? [] ) ]
+		} )
+	} ),
 
 	hooks: {
 		// Seed each joining player's cumulative score at 0.
@@ -220,12 +222,11 @@ export const callbreak = makeEngine( {
 	 * for the AI helpers in ./bot.
 	 */
 	botMove: ( snapshot ) => {
-		const { playerId, hand } = snapshot.view;
-		if ( !playerId || !hand ) {
+		if ( snapshot.view._tag !== "callbreak/PlayerView" ) {
 			return;
 		}
 
-		const view = CallbreakBotView.make( { ...snapshot.view, playerId, hand } );
+		const view = snapshot.view;
 		if ( snapshot.context.phase === "DECLARING" ) {
 			return {
 				moveType: "declareWins",

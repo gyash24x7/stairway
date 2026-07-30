@@ -32,6 +32,7 @@ import { useFish } from "./context";
 
 export function AskCard() {
 	const { data } = useFish();
+	const player = data.view;
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
@@ -45,7 +46,7 @@ export function AskCard() {
 			return cards.length !== 6;
 		} );
 
-	const opponentsWithCards = getOpponents( data.view.teams, player.id )
+	const opponentsWithCards = getOpponents( data.view.teams, player.playerId )
 		.map( memberId => ( { ...data.players[ memberId ], ...data.view.playerData[ memberId ] } ) )
 		.filter( member => !!data.view.cardCounts[ member.id ] );
 

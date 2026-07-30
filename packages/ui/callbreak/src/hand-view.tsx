@@ -24,7 +24,7 @@ export function HandView() {
 			return true;
 		}
 
-		const playableCards = getPlayableCards( data.view.hand, data.config.trumpSuit, trick );
+		const playableCards = getPlayableCards( [ ...data.view.hand ], data.config.trumpSuit, trick );
 		return playableCards.includes( cardId );
 	};
 
@@ -49,7 +49,7 @@ export function HandView() {
 			) }
 		>
 			<AnimatePresence mode={ "popLayout" }>
-				{ getSortedHand( data.view.hand ).map( ( cardId ) => (
+				{ getSortedHand( [ ...data.view.hand ] ).map( ( cardId ) => (
 					<motion.div
 						key={ cardId }
 						layoutId={ `card-${ cardId }` }

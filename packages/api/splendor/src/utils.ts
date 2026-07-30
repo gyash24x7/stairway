@@ -12,6 +12,7 @@ import type {
 } from "@s2h/schema/splendor";
 import { shuffle } from "@s2h/utils/array";
 import * as Match from "effect/Match";
+import { castDraft, produce } from "immer";
 
 type MutableCost = Record<GemNoGold, number>;
 type MutableTokens = Record<Gem, number>;
@@ -275,157 +276,119 @@ export const findNobleVisit = (
 	return null;
 };
 
-/** Remove one card by id from a level's deck (pure). */
-const dropFromDeck = ( deck: ReadonlyArray<Card>, card: Card | null ): ReadonlyArray<Card> =>
-	card === null ? deck : deck.filter( c => c.id !== card.id );
+/** Remove one card by id from a level's deck in place (immer draft array). */
+const dropDeckCard = ( deck: Card[], card: Card | null ): void => {
+	if ( card === null ) {
+		return;
+	}
+	const idx = deck.findIndex( c => c.id === card.id );
+	if ( idx >= 0 ) {
+		deck.splice( idx, 1 );
+	}
+};
 
-/** Replace an open slot (by removed card id) with `replacement` (or drop it). */
-const refillOpen = (
-	open: ReadonlyArray<Card>,
-	removed: Card,
-	replacement: Card | null
-): ReadonlyArray<Card> => {
+/** Replace an open slot (by removed card id) with `replacement`, or drop it, in place. */
+const refillOpenCard = ( open: Card[], removed: Card, replacement: Card | null ): void => {
 	const idx = open.findIndex( c => c.id === removed.id );
 	if ( idx < 0 ) {
-		return open;
+		return;
 	}
-	const next = [ ...open ];
 	if ( replacement === null ) {
-		next.splice( idx, 1 );
+		open.splice( idx, 1 );
 	} else {
-		next[ idx ] = replacement;
+		open[ idx ] = replacement;
 	}
-	return next;
 };
 
 // --- Reducer ---------------------------------------------------------------
 
-/** Pure reducer — the ONLY place `state` changes. No Effect, no Random. */
+/** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
 export const apply = ( state: SplendorState, event: SplendorEvent ): SplendorState =>
-	Match.value( event ).pipe(
-		Match.tag( "splendor/evt/PlayerDataInitialized", ( e ) => ( {
-			...state,
-			playerData: {
-				...state.playerData,
-				[ e.playerId ]: {
+	produce( state, ( draft ) => {
+		Match.value( event ).pipe(
+			Match.tag( "splendor/evt/PlayerDataInitialized", ( e ) => {
+				draft.playerData[ e.playerId ] = {
 					tokens: { ...DEFAULT_TOKENS },
 					cards: [],
 					nobles: [],
 					reserved: [],
 					points: 0
-				}
-			}
-		} ) ),
-		Match.tag( "splendor/evt/GameDealt", ( e ) => ( {
-			...state,
-			tokens: e.tokens,
-			nobles: e.nobles,
-			cards: e.cards,
-			decks: e.decks
-		} ) ),
-		Match.tag( "splendor/evt/TokensPicked", ( e ) => {
-			const player = state.playerData[ e.playerId ]!;
-			const tokens: MutableTokens = { ...state.tokens };
-			const playerTokens: MutableTokens = { ...player.tokens };
-			for ( const gem of ALL_GEMS ) {
-				const take = e.tokens[ gem ] ?? 0;
-				if ( take > 0 ) {
-					playerTokens[ gem ] += take;
-					tokens[ gem ] -= take;
-				}
-			}
-			if ( e.returned ) {
+				};
+			} ),
+			Match.tag( "splendor/evt/GameDealt", ( e ) => {
+				draft.tokens = castDraft( e.tokens );
+				draft.nobles = castDraft( e.nobles );
+				draft.cards = castDraft( e.cards );
+				draft.decks = castDraft( e.decks );
+			} ),
+			Match.tag( "splendor/evt/TokensPicked", ( e ) => {
+				const player = draft.playerData[ e.playerId ]!;
 				for ( const gem of ALL_GEMS ) {
-					const ret = e.returned[ gem ] ?? 0;
-					if ( ret > 0 ) {
-						playerTokens[ gem ] -= ret;
-						tokens[ gem ] += ret;
+					const take = e.tokens[ gem ] ?? 0;
+					if ( take > 0 ) {
+						player.tokens[ gem ] += take;
+						draft.tokens[ gem ] -= take;
 					}
 				}
-			}
-			return {
-				...state,
-				tokens,
-				playerData: { ...state.playerData, [ e.playerId ]: { ...player, tokens: playerTokens } }
-			};
-		} ),
-		Match.tag( "splendor/evt/CardReserved", ( e ) => {
-			const player = state.playerData[ e.playerId ]!;
-			const level = e.card.level;
-			const tokens: MutableTokens = { ...state.tokens };
-			const playerTokens: MutableTokens = { ...player.tokens };
-			if ( e.withGold ) {
-				playerTokens.gold += 1;
-				tokens.gold -= 1;
-			}
-			if ( e.returnedToken ) {
-				playerTokens[ e.returnedToken ] -= 1;
-				tokens[ e.returnedToken ] += 1;
-			}
-			return {
-				...state,
-				tokens,
-				cards: {
-					...state.cards,
-					[ level ]: refillOpen( state.cards[ level ], e.card, e.replacement )
-				},
-				decks: { ...state.decks, [ level ]: dropFromDeck( state.decks[ level ], e.replacement ) },
-				playerData: {
-					...state.playerData,
-					[ e.playerId ]: {
-						...player,
-						tokens: playerTokens,
-						reserved: [ ...player.reserved, e.card ]
+				if ( e.returned ) {
+					for ( const gem of ALL_GEMS ) {
+						const ret = e.returned[ gem ] ?? 0;
+						if ( ret > 0 ) {
+							player.tokens[ gem ] -= ret;
+							draft.tokens[ gem ] += ret;
+						}
 					}
 				}
-			};
-		} ),
-		Match.tag( "splendor/evt/CardPurchased", ( e ) => {
-			const player = state.playerData[ e.playerId ]!;
-			const level = e.card.level;
-			const tokens: MutableTokens = { ...state.tokens };
-			const playerTokens: MutableTokens = { ...player.tokens };
-			for ( const gem of ALL_GEMS ) {
-				const pay = e.payment[ gem ] ?? 0;
-				if ( pay > 0 ) {
-					playerTokens[ gem ] -= pay;
-					tokens[ gem ] += pay;
+			} ),
+			Match.tag( "splendor/evt/CardReserved", ( e ) => {
+				const player = draft.playerData[ e.playerId ]!;
+				const level = e.card.level;
+				if ( e.withGold ) {
+					player.tokens.gold += 1;
+					draft.tokens.gold -= 1;
 				}
-			}
-			const reserved = e.fromReserved
-				? player.reserved.filter( c => c.id !== e.card.id )
-				: player.reserved;
-			const cards = e.fromReserved
-				? state.cards
-				: { ...state.cards, [ level ]: refillOpen( state.cards[ level ], e.card, e.replacement ) };
-			const decks = e.fromReserved
-				? state.decks
-				: { ...state.decks, [ level ]: dropFromDeck( state.decks[ level ], e.replacement ) };
-			const nobles = e.noble ? state.nobles.filter( n => n.id !== e.noble!.id ) : state.nobles;
-			const playerNobles = e.noble ? [ ...player.nobles, e.noble ] : player.nobles;
-			const points = player.points + e.card.points + ( e.noble ? e.noble.points : 0 );
-			return {
-				...state,
-				tokens,
-				cards,
-				decks,
-				nobles,
-				playerData: {
-					...state.playerData,
-					[ e.playerId ]: {
-						...player,
-						tokens: playerTokens,
-						cards: [ ...player.cards, e.card ],
-						reserved,
-						nobles: playerNobles,
-						points
+				if ( e.returnedToken ) {
+					player.tokens[ e.returnedToken ] -= 1;
+					draft.tokens[ e.returnedToken ] += 1;
+				}
+				refillOpenCard( draft.cards[ level ], castDraft( e.card ), castDraft( e.replacement ) );
+				dropDeckCard( draft.decks[ level ], castDraft( e.replacement ) );
+				player.reserved.push( castDraft( e.card ) );
+			} ),
+			Match.tag( "splendor/evt/CardPurchased", ( e ) => {
+				const player = draft.playerData[ e.playerId ]!;
+				const level = e.card.level;
+				for ( const gem of ALL_GEMS ) {
+					const pay = e.payment[ gem ] ?? 0;
+					if ( pay > 0 ) {
+						player.tokens[ gem ] -= pay;
+						draft.tokens[ gem ] += pay;
 					}
 				}
-			};
-		} ),
-		Match.tag( "splendor/evt/WinnerDecided", ( e ) => ( { ...state, winner: e.winner } ) ),
-		Match.exhaustive
-	);
+				if ( e.fromReserved ) {
+					const idx = player.reserved.findIndex( c => c.id === e.card.id );
+					if ( idx >= 0 ) {
+						player.reserved.splice( idx, 1 );
+					}
+				} else {
+					refillOpenCard( draft.cards[ level ], castDraft( e.card ), castDraft( e.replacement ) );
+					dropDeckCard( draft.decks[ level ], castDraft( e.replacement ) );
+				}
+				if ( e.noble ) {
+					const nidx = draft.nobles.findIndex( n => n.id === e.noble!.id );
+					if ( nidx >= 0 ) {
+						draft.nobles.splice( nidx, 1 );
+					}
+					player.nobles.push( castDraft( e.noble ) );
+					player.points += e.noble.points;
+				}
+				player.cards.push( castDraft( e.card ) );
+				player.points += e.card.points;
+			} ),
+			Match.tag( "splendor/evt/WinnerDecided", ( e ) => { draft.winner = e.winner; } ),
+			Match.exhaustive
+		);
+	} );
 
 /** Registry slug for this game (also the DO name prefix). */
 export const GAME_NAME = "splendor";

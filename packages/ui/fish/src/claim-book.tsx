@@ -34,6 +34,7 @@ import { useFish } from "./context";
 export function ClaimBook() {
 	const { data } = useFish();
 	const { authInfo } = useAuth();
+	const player = data.view;
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );

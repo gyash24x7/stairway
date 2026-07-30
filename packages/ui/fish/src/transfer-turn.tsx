@@ -23,6 +23,7 @@ import { useFish } from "./context";
 export function TransferTurn() {
 	const { data } = useFish();
 	const { authInfo } = useAuth();
+	const player = data.view;
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<PlayerId>();
 	const [ open, setOpen ] = useState( false );

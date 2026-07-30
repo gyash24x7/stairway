@@ -9,6 +9,7 @@ import { useFish } from "./context";
 
 export function HandView() {
 	const { data } = useFish();
+	const player = data.view;
 	const hand = player.hand;
 
 	const groupedCards = useMemo(
