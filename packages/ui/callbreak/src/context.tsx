@@ -1,11 +1,19 @@
-import type { CallbreakSnapshot, DeclareWinsInput, PlayCardInput } from "@s2h/schema/callbreak";
+import type {
+	CallbreakPlayerView,
+	CallbreakSnapshot,
+	DeclareWinsInput,
+	PlayCardInput
+} from "@s2h/schema/callbreak";
 import { CardId } from "@s2h/schema/cards";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
 import { addBotsFn, declareWinsFn, playCardFn } from "./client";
 
+/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
+export type CallbreakPlayerSnapshot = Omit<CallbreakSnapshot, "view"> & { view: CallbreakPlayerView };
+
 type CallbreakContextValue = {
-	data: CallbreakSnapshot;
+	data: CallbreakPlayerSnapshot;
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
@@ -49,9 +57,6 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 		onSuccess: () => invalidate()
 	} );
 
-	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === data.view.playerId;
-
 	const selectCard = useCallback(
 		( cardId: CardId ) => {
 			if ( cardId === selectedCard ) {
@@ -63,9 +68,19 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 		[ selectedCard ]
 	);
 
+	// The SPA always plays as a seated player; the table/spectator view is not rendered.
+	if ( data.view._tag !== "callbreak/PlayerView" ) {
+		return null;
+	}
+
+	const playerData: CallbreakPlayerSnapshot = { ...data, view: data.view };
+
+	const isMyTurn = playerData.status === "IN_PROGRESS"
+		&& playerData.context.currentPlayer === playerData.view.playerId;
+
 	return (
 		<CallbreakContext value={ {
-			data,
+			data: playerData,
 			isMyTurn,
 			selectCard,
 			selectedCard,

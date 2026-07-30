@@ -13,6 +13,7 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "catalog:",
+		"@s2h/schema": "workspace:*",
 		"@s2h/swish": "workspace:*",
 		"@s2h/utils": "workspace:*",
 		"@tanstack/react-router": "catalog:",

@@ -1,10 +1,13 @@
 "use client";
 
-import type { FishSnapshot } from "@s2h/schema/fish";
+import type { FishPlayerView, FishSnapshot } from "@s2h/schema/fish";
 import { createContext, type ReactNode, useContext } from "react";
 
+/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
+export type FishPlayerSnapshot = Omit<FishSnapshot, "view"> & { view: FishPlayerView };
+
 type FishContextValue = {
-	data: FishSnapshot
+	data: FishPlayerSnapshot
 };
 
 const FishContext = createContext<FishContextValue | null>( null );
@@ -20,8 +23,15 @@ export function useFish() {
 type FishProviderProps = { data: FishSnapshot; children: ReactNode; };
 
 export function FishProvider( { data, children }: FishProviderProps ) {
+	// The SPA always plays as a seated player; the table/spectator view is not rendered.
+	if ( data.view._tag !== "fish/PlayerView" ) {
+		return null;
+	}
+
+	const playerData: FishPlayerSnapshot = { ...data, view: data.view };
+
 	return (
-		<FishContext value={ { data } }>
+		<FishContext value={ { data: playerData } }>
 			{ children }
 		</FishContext>
 	);

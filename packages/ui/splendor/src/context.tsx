@@ -1,8 +1,11 @@
-import type { SplendorSnapshot } from "@s2h/schema/splendor";
+import type { SplendorPlayerView, SplendorSnapshot } from "@s2h/schema/splendor";
 import { createContext, type ReactNode, useContext } from "react";
 
+/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
+export type SplendorPlayerSnapshot = Omit<SplendorSnapshot, "view"> & { view: SplendorPlayerView };
+
 type SplendorContextValue = {
-	data: SplendorSnapshot
+	data: SplendorPlayerSnapshot
 };
 
 const SplendorContext = createContext<SplendorContextValue | null>( null );
@@ -21,9 +24,15 @@ type SplendorProviderProps = {
 };
 
 export function SplendorProvider( { data, children }: SplendorProviderProps ) {
+	// The SPA always plays as a seated player; the table/spectator view is not rendered.
+	if ( data.view._tag !== "splendor/PlayerView" ) {
+		return null;
+	}
+
+	const playerData: SplendorPlayerSnapshot = { ...data, view: data.view };
 
 	return (
-		<SplendorContext value={ { data } }>
+		<SplendorContext value={ { data: playerData } }>
 			{ children }
 		</SplendorContext>
 	);

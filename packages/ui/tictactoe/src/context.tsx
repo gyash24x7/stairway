@@ -2,13 +2,16 @@
 
 import { useAuth } from "@s2h-ui/auth/use-auth";
 import { toPlayerInfo } from "@s2h/contract/client";
-import type { TicTacToeSnapshot } from "@s2h/schema/tictactoe";
+import type { TicTacToePlayerView, TicTacToeSnapshot } from "@s2h/schema/tictactoe";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, type ReactNode, useContext } from "react";
 import { addBotsFn, placeFn } from "./client";
 
+/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
+export type TicTacToePlayerSnapshot = Omit<TicTacToeSnapshot, "view"> & { view: TicTacToePlayerView };
+
 type TicTacToeContextValue = {
-	data: TicTacToeSnapshot;
+	data: TicTacToePlayerSnapshot;
 	placeMove: ( position: number ) => void;
 	addBots: () => void;
 	isPending: boolean;
@@ -49,9 +52,16 @@ export function TicTacToeProvider( { data, gameId, children }: TicTacToeProvider
 		onSuccess: invalidate
 	} );
 
+	// The SPA always plays as a seated player; the table/spectator view is not rendered.
+	if ( data.view._tag !== "tictactoe/PlayerView" ) {
+		return null;
+	}
+
+	const playerData: TicTacToePlayerSnapshot = { ...data, view: data.view };
+
 	return (
 		<TicTacToeContext value={ {
-			data,
+			data: playerData,
 			placeMove: ( position: number ) => place.mutate( position ),
 			addBots: () => bots.mutate(),
 			isPending: place.isPending || bots.isPending

@@ -22,6 +22,7 @@ import { usePlacement } from "./use-placement";
 export function GameView() {
 	const { data } = useKingdomino();
 	const { authInfo } = useAuth();
+	const player = data.view;
 
 	const isMyTurn = data.status === "IN_PROGRESS"
 		&& data.context.currentPlayer === player.playerId;

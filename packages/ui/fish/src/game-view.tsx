@@ -19,6 +19,7 @@ import { TurnIndicator } from "./turn-indicator";
 
 export function GameView() {
 	const { data } = useFish();
+	const player = data.view;
 
 	const isMyTurn = data.status === "IN_PROGRESS"
 		&& data.context.currentPlayer === player.playerId;
