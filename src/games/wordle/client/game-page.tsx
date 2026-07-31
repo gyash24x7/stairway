@@ -5,15 +5,19 @@ import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { getWordleStateFn } from "@/games/wordle/client/client.ts";
 import { WordleProvider } from "@/games/wordle/client/context.tsx";
 import { GameView } from "@/games/wordle/client/game-view.tsx";
+import { useGameSync } from "@/sync.ts";
 
 export function WordleGamePage( { gameId }: { gameId: string } ) {
 	const { authInfo } = useAuth();
 
+	const queryKey = [ "wordle", "getState", gameId ];
 	const { data, isLoading } = useQuery( {
-		queryKey: [ "wordle", "getState", gameId ],
+		queryKey,
 		enabled: !!authInfo,
 		queryFn: ( { signal } ) => getWordleStateFn( gameId, authInfo!.id, signal )
 	} );
+
+	useGameSync( { gameName: "wordle", gameId, playerId: authInfo!.id, queryKey } );
 
 	if ( isLoading || !data ) {
 		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;

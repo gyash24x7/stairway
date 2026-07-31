@@ -8,6 +8,8 @@ import * as Etag from "effect/unstable/http/Etag";
 import * as HttpPlatform from "effect/unstable/http/HttpPlatform";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { StairwayAPI } from "@/api.ts";
 import { AuthApiLive } from "@/auth/server/api.ts";
@@ -22,6 +24,7 @@ import { WebAuthnStoreLive } from "@/platform/kv/webauthn.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { SessionServiceLive } from "@/auth/server/session.ts";
 import { WebAuthnServiceLive } from "@/auth/server/webauthn.ts";
+import { GameChannel } from "@/platform/do/sync.ts";
 
 const HttpPlatformStub = Layer.succeed( HttpPlatform.HttpPlatform, {
 	fileResponse: () => Effect.die( "HttpPlatform.fileResponse not supported" ),
@@ -40,35 +43,62 @@ const ApiWorker = Cloudflare.Worker(
 		const fishEngine = yield* FishEngineDO;
 		const callbreakEngine = yield* CallbreakEngineDO;
 
-		return {
-			fetch: yield* HttpRouter.toHttpEffect(
-				HttpApiBuilder.layer( StairwayAPI ).pipe(
-					Layer.provide( CallbreakApiLive( callbreakEngine ) ),
-					Layer.provide( FishApiLive( fishEngine ) ),
-					Layer.provide( KingdominoApiLive( kingdominoEngine ) ),
-					Layer.provide( SplendorApiLive( splendorEngine ) ),
-					Layer.provide( TicTacToeApiLive( ticTacToeEngine ) ),
-					Layer.provide( WordleApiLive( wordleEngine ) ),
-					Layer.provide( AuthApiLive ),
-					Layer.provide( AuthMiddlewareLive ),
-					Layer.provide( SessionServiceLive ),
-					Layer.provide( WebAuthnServiceLive ),
-					Layer.provide( SessionStoreLive ),
-					Layer.provide( WebAuthnStoreLive ),
-					Layer.provide( Cloudflare.D1.QueryDatabaseBinding ),
-					Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding ),
-					Layer.provide( Alchemy.RuntimeContext.phantom ),
-					Layer.provide( [ Etag.layer, HttpPlatformStub, Path.layer ] ),
-					Layer.provide(
-						HttpRouter.cors( {
-							allowedOrigins: [ webOrigin ],
-							allowedMethods: [ "GET", "POST", "OPTIONS" ],
-							allowedHeaders: [ "Content-Type", "traceparent", "tracestate", "b3" ],
-							credentials: true
-						} )
-					)
+		const gameChannels = yield* GameChannel;
+
+		const ApiFetch = yield* HttpRouter.toHttpEffect(
+			HttpApiBuilder.layer( StairwayAPI ).pipe(
+				Layer.provide( CallbreakApiLive( callbreakEngine ) ),
+				Layer.provide( FishApiLive( fishEngine ) ),
+				Layer.provide( KingdominoApiLive( kingdominoEngine ) ),
+				Layer.provide( SplendorApiLive( splendorEngine ) ),
+				Layer.provide( TicTacToeApiLive( ticTacToeEngine ) ),
+				Layer.provide( WordleApiLive( wordleEngine ) ),
+				Layer.provide( AuthApiLive ),
+				Layer.provide( AuthMiddlewareLive ),
+				Layer.provide( SessionServiceLive ),
+				Layer.provide( WebAuthnServiceLive ),
+				Layer.provide( SessionStoreLive ),
+				Layer.provide( WebAuthnStoreLive ),
+				Layer.provide( Cloudflare.D1.QueryDatabaseBinding ),
+				Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding ),
+				Layer.provide( Alchemy.RuntimeContext.phantom ),
+				Layer.provide( [ Etag.layer, HttpPlatformStub, Path.layer ] ),
+				Layer.provide(
+					HttpRouter.cors( {
+						allowedOrigins: [ webOrigin ],
+						allowedMethods: [ "GET", "POST", "OPTIONS" ],
+						allowedHeaders: [ "Content-Type", "traceparent", "tracestate", "b3" ],
+						credentials: true
+					} )
 				)
 			)
+		);
+
+		return {
+			fetch: Effect.gen( function* () {
+				const request = yield* HttpServerRequest.HttpServerRequest;
+				const url = new URL( request.url, "http://sync" );
+
+				if ( url.pathname.startsWith( "/sync/" ) ) {
+					if ( request.headers[ "upgrade" ] !== "websocket" ) {
+						return HttpServerResponse.text(
+							"Expected Upgrade: websocket",
+							{ status: 426 }
+						);
+					}
+
+					// /sync/{gameName}/{gameId}?playerId={playerId}
+					const [ _, _sync, gameName, gameId ] = url.pathname.split( "/" );
+					if ( !gameName || !gameId ) {
+						return HttpServerResponse.text( "Bad sync path", { status: 400 } );
+					}
+
+					const channel = `${ gameName }:${ gameId }`;
+					return yield* gameChannels.getByName( channel ).fetch( request );
+				}
+
+				return yield* ApiFetch;
+			} )
 		};
 	} )
 );
