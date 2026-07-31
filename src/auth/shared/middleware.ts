@@ -1,3 +1,4 @@
+import type * as Alchemy from "alchemy";
 import * as Context from "effect/Context";
 import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
 
@@ -15,5 +16,5 @@ export class AuthContext extends Context.Service<AuthContext, {
 
 export class AuthMiddleware extends HttpApiMiddleware.Service<
 	AuthMiddleware,
-	{ provides: AuthContext }
+	{ provides: AuthContext, requires: Alchemy.RuntimeContext }
 >()( "auth/Authorization", { error: Unauthorized } ) {}

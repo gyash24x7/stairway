@@ -44,12 +44,8 @@ export const WordleApiLive = ( ns: Cloudflare.DurableObject<WordleEngineDO> ) =>
 			return handlers
 				.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
 					const { user } = yield* AuthContext;
-					const game = yield* Effect.promise(
-						() => db.insert( games )
-							.values( { game: "wordle" } )
-							.returning()
-							.then( g => g[ 0 ] )
-					);
+					const game = yield* db.insert( games ).values( { game: "wordle" } ).returning()
+						.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
 					const input = WordleInitializeInput.make( {
 						id: GameId.make( game.id ),

@@ -1,3 +1,4 @@
+import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
@@ -11,14 +12,16 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { StairwayAPI } from "@/api.ts";
 import { AuthApiLive } from "@/auth/server/api.ts";
 import { AuthMiddlewareLive } from "@/auth/server/middleware.ts";
-import { BetterAuthLive } from "@/auth/server/services.ts";
 import { CallbreakApiLive, CallbreakEngineDO } from "@/games/callbreak/server/api.ts";
 import { FishApiLive, FishEngineDO } from "@/games/fish/server/api.ts";
 import { KingdominoApiLive, KingdominoEngineDO } from "@/games/kingdomino/server/api.ts";
 import { SplendorApiLive, SplendorEngineDO } from "@/games/splendor/server/api.ts";
 import { TicTacToeApiLive, TicTacToeEngineDO } from "@/games/tictactoe/server/api.ts";
 import { WordleApiLive, WordleEngineDO } from "@/games/wordle/server/api.ts";
-import { DatabaseLive } from "@/platform/database/service.ts";
+import { WebAuthnStoreLive } from "@/platform/kv/webauthn.ts";
+import { SessionStoreLive } from "@/platform/kv/session.ts";
+import { SessionServiceLive } from "@/auth/server/session.ts";
+import { WebAuthnServiceLive } from "@/auth/server/webauthn.ts";
 
 const HttpPlatformStub = Layer.succeed( HttpPlatform.HttpPlatform, {
 	fileResponse: () => Effect.die( "HttpPlatform.fileResponse not supported" ),
@@ -48,8 +51,13 @@ const ApiWorker = Cloudflare.Worker(
 					Layer.provide( WordleApiLive( wordleEngine ) ),
 					Layer.provide( AuthApiLive ),
 					Layer.provide( AuthMiddlewareLive ),
-					Layer.provide( BetterAuthLive ),
-					Layer.provide( DatabaseLive ),
+					Layer.provide( SessionServiceLive ),
+					Layer.provide( WebAuthnServiceLive ),
+					Layer.provide( SessionStoreLive ),
+					Layer.provide( WebAuthnStoreLive ),
+					Layer.provide( Cloudflare.D1.QueryDatabaseBinding ),
+					Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding ),
+					Layer.provide( Alchemy.RuntimeContext.phantom ),
 					Layer.provide( [ Etag.layer, HttpPlatformStub, Path.layer ] ),
 					Layer.provide(
 						HttpRouter.cors( {

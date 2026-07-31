@@ -8,7 +8,7 @@ import { AuthContext } from "@/auth/shared/middleware.ts";
 import { toPlayerInfo } from "@/client.ts";
 import { TicTacToeInitializeInput } from "@/games/tictactoe/shared/schema.ts";
 import { games } from "@/platform/database/schema.ts";
-import { Database, ops } from "@/platform/database/service.ts";
+import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
 import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
@@ -45,12 +45,8 @@ export const TicTacToeApiLive = ( ns: Cloudflare.DurableObject<TicTacToeEngineDO
 			return handlers
 				.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
 					const { user } = yield* AuthContext;
-					const game = yield* Effect.promise(
-						() => db.insert( games )
-							.values( { game: "tic-tac-toe" } )
-							.returning()
-							.then( g => g[ 0 ] )
-					);
+					const game = yield* db.insert( games ).values( { game: "tic-tac-toe" } ).returning()
+						.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
 					const input = TicTacToeInitializeInput.make( {
 						id: GameId.make( game.id ),
@@ -67,14 +63,10 @@ export const TicTacToeApiLive = ( ns: Cloudflare.DurableObject<TicTacToeEngineDO
 
 				.handle( "join", ( { payload } ) => Effect.gen( function* () {
 					const { user } = yield* AuthContext;
-					const game = yield* Effect.promise(
-						() => db.select().from( games )
-							.where( ops.and(
-								ops.eq( games.game, "tic-tac-toe" ),
-								ops.eq( games.code, payload.code )
-							) )
-							.then( g => g[ 0 ] )
-					);
+
+					const game = yield* db.query.games
+						.findFirst( { where: { game: "tic-tac-toe", code: payload.code } } )
+						.pipe( Effect.orDie );
 
 					if ( !game ) {
 						return yield* new GameNotFound( { code: payload.code } );

@@ -1,4 +1,3 @@
-import * as Alchemy from "alchemy";
 import type * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -17,10 +16,9 @@ export const DurableGameStoreLive = ( ctx: Cloudflare.DurableObjectState[ "Servi
 		GameStore.of( {
 			load: <T>() => ctx.storage.get<T>( KEY_GAME ).pipe(
 				Effect.map( ( value ) => Option.fromNullishOr( value ) )
-			).pipe( Effect.provide( Alchemy.RuntimeContext.phantom ) ),
-			save: ( encoded ) => ctx.storage.put( KEY_GAME, encoded )
-				.pipe( Effect.provide( Alchemy.RuntimeContext.phantom ) ),
-			clear: () => ctx.storage.deleteAll().pipe( Effect.provide( Alchemy.RuntimeContext.phantom ) )
+			),
+			save: ( encoded ) => ctx.storage.put( KEY_GAME, encoded ),
+			clear: () => ctx.storage.deleteAll()
 		} )
 	);
 
@@ -36,10 +34,7 @@ export const DurableEventStoreLive = ( ctx: Cloudflare.DurableObjectState[ "Serv
 			yield* ctx.storage.put( KEY_LOG_BASE, encoded );
 			yield* ctx.storage.put( KEY_LOG_COMMITS, [] );
 			yield* ctx.storage.put( KEY_LOG_CURSOR, -1 );
-
-		} ).pipe(
-			Effect.provide( Alchemy.RuntimeContext.phantom )
-		),
+		} ),
 
 		append: ( commit ) => Effect.gen( function* () {
 			const commits = yield* readCommits;
@@ -48,10 +43,7 @@ export const DurableEventStoreLive = ( ctx: Cloudflare.DurableObjectState[ "Serv
 
 			yield* ctx.storage.put( KEY_LOG_COMMITS, kept );
 			yield* ctx.storage.put( KEY_LOG_CURSOR, kept.length - 1 );
-
-		} ).pipe(
-			Effect.provide( Alchemy.RuntimeContext.phantom )
-		),
+		} ),
 
 		moveCursor: ( delta ) => Effect.gen( function* () {
 			const commits = yield* readCommits;
@@ -66,9 +58,7 @@ export const DurableEventStoreLive = ( ctx: Cloudflare.DurableObjectState[ "Serv
 			const movedOver = delta === -1 ? commits[ cursor ] : commits[ next ];
 			return Option.fromNullishOr( movedOver );
 
-		} ).pipe(
-			Effect.provide( Alchemy.RuntimeContext.phantom )
-		),
+		} ),
 
 		read: () => Effect.gen( function* () {
 			const base = yield* ctx.storage.get<unknown>( KEY_LOG_BASE );
@@ -76,8 +66,6 @@ export const DurableEventStoreLive = ( ctx: Cloudflare.DurableObjectState[ "Serv
 			const cursor = yield* readCursor;
 			return { base, commits, cursor };
 
-		} ).pipe(
-			Effect.provide( Alchemy.RuntimeContext.phantom )
-		)
+		} )
 	} ) );
 };

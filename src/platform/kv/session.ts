@@ -1,37 +1,24 @@
-import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Context from "effect/Context";
-import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Effect from "effect/Effect";
+
+import type { AuthInfo } from "@/auth/shared/schema.ts";
+import { SessionStore } from "@/auth/server/session.ts";
 
 export const SessionKV = Cloudflare.KV.Namespace( "SessionKV" );
 
-export class SessionStore extends Context.Service<SessionStore, {
-	get: ( key: string ) => Promise<string | null>;
-	set: ( key: string, value: string, expirationTtl?: number ) => Promise<void>;
-	delete: ( key: string ) => Promise<void>;
-}>()( "stairway/SessionStore" ) {}
+const TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 export const SessionStoreLive = Layer.effect(
 	SessionStore,
 	Effect.gen( function* () {
 		const kv = yield* Cloudflare.KV.ReadWriteNamespace( SessionKV );
 		return SessionStore.of( {
-			get: key => Effect.runPromise(
-				kv.get( key ).pipe(
-					Effect.provide( Alchemy.RuntimeContext.phantom )
-				)
+			get: key => Effect.orDie( kv.get<AuthInfo>( key, "json" ) ),
+			set: ( key, value ) => Effect.orDie(
+				kv.put( key, JSON.stringify( value ), { expirationTtl: TTL_SECONDS } )
 			),
-			set: ( key, value, expirationTtl = 1 ) => Effect.runPromise(
-				kv.put( key, value, { expirationTtl: expirationTtl * 60 } ).pipe(
-					Effect.provide( Alchemy.RuntimeContext.phantom )
-				)
-			),
-			delete: key => Effect.runPromise(
-				kv.delete( key ).pipe(
-					Effect.provide( Alchemy.RuntimeContext.phantom )
-				)
-			)
+			delete: key => Effect.orDie( kv.delete( key ) )
 		} );
 	} )
-).pipe( Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding ) );
+);

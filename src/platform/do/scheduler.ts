@@ -1,4 +1,3 @@
-import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -19,10 +18,7 @@ export const DurableSchedulerLive = ( ctx: Cloudflare.DurableObjectState[ "Servi
 	// The scheduled-events helpers resolve `DurableObjectState` from context;
 	// supply the one we hold so callers only need `RuntimeContext`.
 	const withState = <A, E, R>( effect: Effect.Effect<A, E, R> ) =>
-		effect.pipe(
-			Effect.provideService( Cloudflare.DurableObjectState, ctx ),
-			Effect.provide( Alchemy.RuntimeContext.phantom )
-		);
+		effect.pipe( Effect.provideService( Cloudflare.DurableObjectState, ctx ) );
 
 	return Layer.succeed( Scheduler, Scheduler.of( {
 		schedule: ( key, delayMillis, alarm ) => withState(

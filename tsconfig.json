@@ -15,6 +15,6 @@
 		"types": [ "bun", "vite/client" ],
 		"paths": { "@/*": [ "./src/*" ] }
 	},
-	"include": [ "src", "alchemy.run.ts", "drizzle.config.ts", "vite.config.ts", "eslint.config.ts" ],
+	"include": [ "src", "alchemy.run.ts", "vite.config.ts", "eslint.config.ts" ],
 	"exclude": [ "node_modules" ]
 }

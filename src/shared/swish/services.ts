@@ -1,4 +1,5 @@
 import * as Context from "effect/Context";
+import type * as Alchemy from "alchemy";
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
 
@@ -11,9 +12,9 @@ export type AlarmKind = "auto-start" | "bot" | "interaction-timeout" | "move-tim
  * stays game-agnostic.
  */
 export class GameStore extends Context.Service<GameStore, {
-	readonly load: <T, R = never>() => Effect.Effect<Option.Option<T>, never, R>;
-	readonly save: <T, R = never>( encoded: T ) => Effect.Effect<void, never, R>;
-	readonly clear: <R = never>() => Effect.Effect<void, never, R>;
+	readonly load: <T>() => Effect.Effect<Option.Option<T>, never, Alchemy.RuntimeContext>;
+	readonly save: <T>( encoded: T ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly clear: () => Effect.Effect<void, never, Alchemy.RuntimeContext>;
 }>()( "swish/GameStore" ) {}
 
 /**
@@ -24,10 +25,11 @@ export class GameStore extends Context.Service<GameStore, {
  * concurrently. `cancel(key)` drops one timer; `cancelAll` drops them all.
  */
 export class Scheduler extends Context.Service<Scheduler, {
-	readonly schedule: ( key: string, delayMillis: number, alarm: AlarmKind ) => Effect.Effect<void>;
-	readonly cancel: ( key: string ) => Effect.Effect<void>;
-	readonly cancelAll: () => Effect.Effect<void>;
-	readonly due: () => Effect.Effect<ReadonlyArray<AlarmKind>>;
+	readonly schedule: ( key: string, delayMillis: number, alarm: AlarmKind ) =>
+		Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly cancel: ( key: string ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly cancelAll: () => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly due: () => Effect.Effect<ReadonlyArray<AlarmKind>, never, Alchemy.RuntimeContext>;
 }>()( "swish/Scheduler" ) {}
 
 /**
@@ -59,9 +61,9 @@ export interface EventLog {
  * host; an in-memory layer backs tests.
  */
 export class EventStore extends Context.Service<EventStore, {
-	readonly setBase: ( encoded: unknown ) => Effect.Effect<void>;
-	readonly append: ( commit: unknown ) => Effect.Effect<void>;
-	readonly moveCursor: ( delta: 1 | -1 ) => Effect.Effect<Option.Option<unknown>>;
-	readonly read: () => Effect.Effect<EventLog>;
+	readonly setBase: ( encoded: unknown ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly append: ( commit: unknown ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly moveCursor: ( delta: 1 | -1 ) => Effect.Effect<Option.Option<unknown>, never, Alchemy.RuntimeContext>;
+	readonly read: () => Effect.Effect<EventLog, never, Alchemy.RuntimeContext>;
 }>()( "swish/EventStore" ) {}
 

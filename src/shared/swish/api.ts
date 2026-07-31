@@ -11,7 +11,14 @@ import {
 	MovePayload,
 	PlayerInfo
 } from "@/shared/swish/schema.ts";
-import { GetStateError, JoinError, MoveError, RedoError, StartError, UndoError } from "@/shared/swish/errors.ts";
+import {
+	GetStateError,
+	JoinError,
+	MoveError,
+	RedoError,
+	StartError,
+	UndoError
+} from "@/shared/swish/errors.ts";
 
 /**
  * Builds a first-class move endpoint: `POST /:gameId/<name>` whose payload is
