@@ -31,36 +31,42 @@ const HttpPlatformStub = Layer.succeed( HttpPlatform.HttpPlatform, {
 	fileWebResponse: () => Effect.die( "HttpPlatform.fileWebResponse not supported" )
 } );
 
+const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
+	Layer.provide( CallbreakApiLive ),
+	Layer.provide( FishApiLive ),
+	Layer.provide( KingdominoApiLive ),
+	Layer.provide( SplendorApiLive ),
+	Layer.provide( TicTacToeApiLive ),
+	Layer.provide( WordleApiLive ),
+	Layer.provide( AuthApiLive ),
+	Layer.provide( AuthMiddlewareLive ),
+	Layer.provide( SessionServiceLive ),
+	Layer.provide( WebAuthnServiceLive ),
+	Layer.provide( SessionStoreLive ),
+	Layer.provide( WebAuthnStoreLive ),
+	Layer.provide( Cloudflare.D1.QueryDatabaseBinding ),
+	Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding )
+);
+
 const ApiWorker = Cloudflare.Worker(
 	"ApiWorker",
 	{ main: import.meta.url, compatibility: { flags: [ "nodejs_compat" ] } },
 	Effect.gen( function* () {
 		const webOrigin = yield* Config.string( "WEBAUTHN_RP_ORIGIN" );
-		const wordleEngine = yield* WordleEngineDO;
-		const ticTacToeEngine = yield* TicTacToeEngineDO;
-		const splendorEngine = yield* SplendorEngineDO;
-		const kingdominoEngine = yield* KingdominoEngineDO;
-		const fishEngine = yield* FishEngineDO;
-		const callbreakEngine = yield* CallbreakEngineDO;
 
-		const gameChannels = yield* GameChannel;
+		yield* Effect.all( [
+			WordleEngineDO,
+			TicTacToeEngineDO,
+			SplendorEngineDO,
+			KingdominoEngineDO,
+			FishEngineDO,
+			CallbreakEngineDO
+		] );
+
+		const channels = yield* GameChannel;
 
 		const ApiFetch = yield* HttpRouter.toHttpEffect(
-			HttpApiBuilder.layer( StairwayAPI ).pipe(
-				Layer.provide( CallbreakApiLive( callbreakEngine ) ),
-				Layer.provide( FishApiLive( fishEngine ) ),
-				Layer.provide( KingdominoApiLive( kingdominoEngine ) ),
-				Layer.provide( SplendorApiLive( splendorEngine ) ),
-				Layer.provide( TicTacToeApiLive( ticTacToeEngine ) ),
-				Layer.provide( WordleApiLive( wordleEngine ) ),
-				Layer.provide( AuthApiLive ),
-				Layer.provide( AuthMiddlewareLive ),
-				Layer.provide( SessionServiceLive ),
-				Layer.provide( WebAuthnServiceLive ),
-				Layer.provide( SessionStoreLive ),
-				Layer.provide( WebAuthnStoreLive ),
-				Layer.provide( Cloudflare.D1.QueryDatabaseBinding ),
-				Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding ),
+			ApiLive.pipe(
 				Layer.provide( Alchemy.RuntimeContext.phantom ),
 				Layer.provide( [ Etag.layer, HttpPlatformStub, Path.layer ] ),
 				Layer.provide(
@@ -94,7 +100,7 @@ const ApiWorker = Cloudflare.Worker(
 					}
 
 					const channel = `${ gameName }:${ gameId }`;
-					return yield* gameChannels.getByName( channel ).fetch( request );
+					return yield* channels.getByName( channel ).fetch( request );
 				}
 
 				return yield* ApiFetch;

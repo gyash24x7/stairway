@@ -38,63 +38,63 @@ export class CallbreakEngineDO extends Cloudflare.DurableObject<CallbreakEngineD
 
 // --- HTTP Api implementation -------------------------------------------------
 
-export const CallbreakApiLive = ( ns: Cloudflare.DurableObject<CallbreakEngineDO> ) =>
-	HttpApiBuilder.group( StairwayAPI, "callbreak", handlers =>
-		Effect.gen( function* () {
-			const db = yield* Database;
-			return handlers
-				.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.insert( games ).values( { game: "callbreak" } ).returning()
-						.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", handlers =>
+	Effect.gen( function* () {
+		const db = yield* Database;
+		const ns = yield* CallbreakEngineDO;
+		return handlers
+			.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.insert( games ).values( { game: "callbreak" } ).returning()
+					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
-					const input = CallbreakInitializeInput.make( {
-						id: GameId.make( game.id ),
-						code: GameCode.make( game.code ),
-						config: payload
-					} );
+				const input = CallbreakInitializeInput.make( {
+					id: GameId.make( game.id ),
+					code: GameCode.make( game.code ),
+					config: payload
+				} );
 
-					const client = ns.getByName( game.id );
-					const response = yield* client.initialize( input );
-					yield* client.join( toPlayerInfo( user ) );
+				const client = ns.getByName( game.id );
+				const response = yield* client.initialize( input );
+				yield* client.join( toPlayerInfo( user ) );
 
-					return response;
-				} ) )
+				return response;
+			} ) )
 
-				.handle( "join", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.query.games
-						.findFirst( { where: { game: "callbreak", code: payload.code } } )
-						.pipe( Effect.orDie );
+			.handle( "join", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.query.games
+					.findFirst( { where: { game: "callbreak", code: payload.code } } )
+					.pipe( Effect.orDie );
 
-					if ( !game ) {
-						return yield* new GameNotFound( { code: payload.code } );
-					}
+				if ( !game ) {
+					return yield* new GameNotFound( { code: payload.code } );
+				}
 
-					const client = ns.getByName( game.id );
-					return yield* client.join( toPlayerInfo( user ) );
-				} ) )
+				const client = ns.getByName( game.id );
+				return yield* client.join( toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "addBots", ( { params } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.addBots();
-				} ) )
+			.handle( "addBots", ( { params } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.addBots();
+			} ) )
 
-				.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.getState( payload );
-				} ) )
+			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.getState( payload );
+			} ) )
 
-				.handle( "declareWins", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.declareWins( payload, toPlayerInfo( user ) );
-				} ) )
+			.handle( "declareWins", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.declareWins( payload, toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "playCard", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.playCard( payload, toPlayerInfo( user ) );
-				} ) );
-		} )
-	);
+			.handle( "playCard", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.playCard( payload, toPlayerInfo( user ) );
+			} ) );
+	} )
+);

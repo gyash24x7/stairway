@@ -37,44 +37,44 @@ export class WordleEngineDO extends Cloudflare.DurableObject<WordleEngineDO>()(
 
 // --- HTTP Api implementation -------------------------------------------------
 
-export const WordleApiLive = ( ns: Cloudflare.DurableObject<WordleEngineDO> ) =>
-	HttpApiBuilder.group( StairwayAPI, "wordle", handlers =>
-		Effect.gen( function* () {
-			const db = yield* Database;
-			return handlers
-				.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.insert( games ).values( { game: "wordle" } ).returning()
-						.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handlers =>
+	Effect.gen( function* () {
+		const db = yield* Database;
+		const ns = yield* WordleEngineDO;
+		return handlers
+			.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.insert( games ).values( { game: "wordle" } ).returning()
+					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
-					const input = WordleInitializeInput.make( {
-						id: GameId.make( game.id ),
-						code: GameCode.make( game.code ),
-						config: payload
-					} );
+				const input = WordleInitializeInput.make( {
+					id: GameId.make( game.id ),
+					code: GameCode.make( game.code ),
+					config: payload
+				} );
 
-					const client = ns.getByName( game.id );
-					const response = yield* client.initialize( input );
-					yield* client.join(
-						PlayerInfo.make( {
-							id: PlayerId.make( user.id ),
-							name: user.name,
-							avatar: user.avatar
-						} )
-					);
+				const client = ns.getByName( game.id );
+				const response = yield* client.initialize( input );
+				yield* client.join(
+					PlayerInfo.make( {
+						id: PlayerId.make( user.id ),
+						name: user.name,
+						avatar: user.avatar
+					} )
+				);
 
-					return response;
-				} ) )
+				return response;
+			} ) )
 
-				.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.getState( payload );
-				} ) )
+			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.getState( payload );
+			} ) )
 
-				.handle( "guess", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.guess( payload, toPlayerInfo( user ) );
-				} ) );
-		} )
-	);
+			.handle( "guess", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.guess( payload, toPlayerInfo( user ) );
+			} ) );
+	} )
+);

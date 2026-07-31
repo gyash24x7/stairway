@@ -38,58 +38,58 @@ export class TicTacToeEngineDO extends Cloudflare.DurableObject<TicTacToeEngineD
 
 // --- HTTP Api implementation -------------------------------------------------
 
-export const TicTacToeApiLive = ( ns: Cloudflare.DurableObject<TicTacToeEngineDO> ) =>
-	HttpApiBuilder.group( StairwayAPI, "tictactoe", handlers =>
-		Effect.gen( function* () {
-			const db = yield* Database;
-			return handlers
-				.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.insert( games ).values( { game: "tic-tac-toe" } ).returning()
-						.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+export const TicTacToeApiLive = HttpApiBuilder.group( StairwayAPI, "tictactoe", handlers =>
+	Effect.gen( function* () {
+		const db = yield* Database;
+		const ns = yield* TicTacToeEngineDO;
+		return handlers
+			.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.insert( games ).values( { game: "tic-tac-toe" } ).returning()
+					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
-					const input = TicTacToeInitializeInput.make( {
-						id: GameId.make( game.id ),
-						code: GameCode.make( game.code ),
-						config: payload
-					} );
+				const input = TicTacToeInitializeInput.make( {
+					id: GameId.make( game.id ),
+					code: GameCode.make( game.code ),
+					config: payload
+				} );
 
-					const client = ns.getByName( game.id );
-					const response = yield* client.initialize( input );
-					yield* client.join( toPlayerInfo( user ) );
+				const client = ns.getByName( game.id );
+				const response = yield* client.initialize( input );
+				yield* client.join( toPlayerInfo( user ) );
 
-					return response;
-				} ) )
+				return response;
+			} ) )
 
-				.handle( "join", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
+			.handle( "join", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
 
-					const game = yield* db.query.games
-						.findFirst( { where: { game: "tic-tac-toe", code: payload.code } } )
-						.pipe( Effect.orDie );
+				const game = yield* db.query.games
+					.findFirst( { where: { game: "tic-tac-toe", code: payload.code } } )
+					.pipe( Effect.orDie );
 
-					if ( !game ) {
-						return yield* new GameNotFound( { code: payload.code } );
-					}
+				if ( !game ) {
+					return yield* new GameNotFound( { code: payload.code } );
+				}
 
-					const client = ns.getByName( game.id );
-					return yield* client.join( toPlayerInfo( user ) );
-				} ) )
+				const client = ns.getByName( game.id );
+				return yield* client.join( toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "addBots", ( { params } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.addBots();
-				} ) )
+			.handle( "addBots", ( { params } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.addBots();
+			} ) )
 
-				.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.getState( payload );
-				} ) )
+			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.getState( payload );
+			} ) )
 
-				.handle( "place", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.place( payload, toPlayerInfo( user ) );
-				} ) );
-		} )
-	);
+			.handle( "place", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.place( payload, toPlayerInfo( user ) );
+			} ) );
+	} )
+);

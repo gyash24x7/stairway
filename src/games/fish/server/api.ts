@@ -38,75 +38,75 @@ export class FishEngineDO extends Cloudflare.DurableObject<FishEngineDO>()(
 
 // --- HTTP Api implementation -------------------------------------------------
 
-export const FishApiLive = ( ns: Cloudflare.DurableObject<FishEngineDO> ) =>
-	HttpApiBuilder.group( StairwayAPI, "fish", handlers =>
-		Effect.gen( function* () {
-			const db = yield* Database;
-			return handlers
-				.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.insert( games ).values( { game: "fish" } ).returning()
-						.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+export const FishApiLive = HttpApiBuilder.group( StairwayAPI, "fish", handlers =>
+	Effect.gen( function* () {
+		const db = yield* Database;
+		const ns = yield* FishEngineDO;
+		return handlers
+			.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.insert( games ).values( { game: "fish" } ).returning()
+					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
-					const input = FishInitializeInput.make( {
-						id: GameId.make( game.id ),
-						code: GameCode.make( game.code ),
-						config: payload
-					} );
+				const input = FishInitializeInput.make( {
+					id: GameId.make( game.id ),
+					code: GameCode.make( game.code ),
+					config: payload
+				} );
 
-					const client = ns.getByName( game.id );
-					const response = yield* client.initialize( input );
-					yield* client.join( toPlayerInfo( user ) );
+				const client = ns.getByName( game.id );
+				const response = yield* client.initialize( input );
+				yield* client.join( toPlayerInfo( user ) );
 
-					return response;
-				} ) )
+				return response;
+			} ) )
 
-				.handle( "join", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.query.games
-						.findFirst( { where: { game: "fish", code: payload.code } } )
-						.pipe( Effect.orDie );
+			.handle( "join", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.query.games
+					.findFirst( { where: { game: "fish", code: payload.code } } )
+					.pipe( Effect.orDie );
 
-					if ( !game ) {
-						return yield* new GameNotFound( { code: payload.code } );
-					}
+				if ( !game ) {
+					return yield* new GameNotFound( { code: payload.code } );
+				}
 
-					const client = ns.getByName( game.id );
-					return yield* client.join( toPlayerInfo( user ) );
-				} ) )
+				const client = ns.getByName( game.id );
+				return yield* client.join( toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "addBots", ( { params } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.addBots();
-				} ) )
+			.handle( "addBots", ( { params } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.addBots();
+			} ) )
 
-				.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.getState( payload );
-				} ) )
+			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.getState( payload );
+			} ) )
 
-				.handle( "createTeams", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.createTeams( payload, toPlayerInfo( user ) );
-				} ) )
+			.handle( "createTeams", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.createTeams( payload, toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "askCard", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.askCard( payload, toPlayerInfo( user ) );
-				} ) )
+			.handle( "askCard", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.askCard( payload, toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "claimBook", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.claimBook( payload, toPlayerInfo( user ) );
-				} ) )
+			.handle( "claimBook", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.claimBook( payload, toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "transferTurn", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.transferTurn( payload, toPlayerInfo( user ) );
-				} ) );
-		} )
-	);
+			.handle( "transferTurn", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.transferTurn( payload, toPlayerInfo( user ) );
+			} ) );
+	} )
+);

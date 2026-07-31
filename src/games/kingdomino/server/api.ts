@@ -38,64 +38,64 @@ export class KingdominoEngineDO extends Cloudflare.DurableObject<KingdominoEngin
 
 // --- HTTP Api implementation -------------------------------------------------
 
-export const KingdominoApiLive = ( ns: Cloudflare.DurableObject<KingdominoEngineDO> ) =>
-	HttpApiBuilder.group( StairwayAPI, "kingdomino", handlers =>
-		Effect.gen( function* () {
-			const db = yield* Database;
-			return handlers
-				.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.insert( games ).values( { game: "kingdomino" } ).returning()
-						.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+export const KingdominoApiLive = HttpApiBuilder.group( StairwayAPI, "kingdomino", handlers =>
+	Effect.gen( function* () {
+		const db = yield* Database;
+		const ns = yield* KingdominoEngineDO;
+		return handlers
+			.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.insert( games ).values( { game: "kingdomino" } ).returning()
+					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
-					const input = KingdominoInitializeInput.make( {
-						id: GameId.make( game.id ),
-						code: GameCode.make( game.code ),
-						config: payload
-					} );
+				const input = KingdominoInitializeInput.make( {
+					id: GameId.make( game.id ),
+					code: GameCode.make( game.code ),
+					config: payload
+				} );
 
-					const client = ns.getByName( game.id );
-					const response = yield* client.initialize( input );
-					yield* client.join( toPlayerInfo( user ) );
+				const client = ns.getByName( game.id );
+				const response = yield* client.initialize( input );
+				yield* client.join( toPlayerInfo( user ) );
 
-					return response;
-				} ) )
+				return response;
+			} ) )
 
-				.handle( "join", ( { payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const game = yield* db.query.games
-						.findFirst( { where: { game: "kingdomino", code: payload.code } } )
-						.pipe( Effect.orDie );
+			.handle( "join", ( { payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const game = yield* db.query.games
+					.findFirst( { where: { game: "kingdomino", code: payload.code } } )
+					.pipe( Effect.orDie );
 
-					if ( !game ) {
-						return yield* new GameNotFound( { code: payload.code } );
-					}
+				if ( !game ) {
+					return yield* new GameNotFound( { code: payload.code } );
+				}
 
-					const client = ns.getByName( game.id );
-					return yield* client.join( toPlayerInfo( user ) );
-				} ) )
+				const client = ns.getByName( game.id );
+				return yield* client.join( toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
-					const client = ns.getByName( params.gameId );
-					return yield* client.getState( payload );
-				} ) )
+			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+				const client = ns.getByName( params.gameId );
+				return yield* client.getState( payload );
+			} ) )
 
-				.handle( "selectDomino", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.selectDomino( payload, toPlayerInfo( user ) );
-				} ) )
+			.handle( "selectDomino", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.selectDomino( payload, toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "placeDomino", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.placeDomino( payload, toPlayerInfo( user ) );
-				} ) )
+			.handle( "placeDomino", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.placeDomino( payload, toPlayerInfo( user ) );
+			} ) )
 
-				.handle( "discardDomino", ( { params, payload } ) => Effect.gen( function* () {
-					const { user } = yield* AuthContext;
-					const client = ns.getByName( params.gameId );
-					return yield* client.discardDomino( payload, toPlayerInfo( user ) );
-				} ) );
-		} )
-	);
+			.handle( "discardDomino", ( { params, payload } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.discardDomino( payload, toPlayerInfo( user ) );
+			} ) );
+	} )
+);
