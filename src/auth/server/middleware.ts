@@ -1,5 +1,7 @@
+import * as Alchemy from "alchemy";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 
 import { Unauthorized } from "@/auth/shared/schema.ts";
 import { AuthContext, AuthMiddleware } from "@/auth/shared/middleware.ts";
@@ -11,7 +13,15 @@ export const AuthMiddlewareLive = Layer.effect(
 		const sessions = yield* SessionService;
 
 		return httpEffect => Effect.gen( function* () {
-			const user = yield* sessions.load();
+			const runtime = yield* Effect.serviceOption( Alchemy.RuntimeContext );
+			if ( Option.isNone( runtime ) ) {
+				return yield* Effect.die( "RuntimeContext missing from request scope" );
+			}
+
+			const user = yield* sessions.load().pipe(
+				Effect.provideService( Alchemy.RuntimeContext, runtime.value )
+			);
+			
 			if ( !user ) {
 				return yield* new Unauthorized();
 			}

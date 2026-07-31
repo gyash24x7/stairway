@@ -1,4 +1,3 @@
-import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
@@ -67,7 +66,6 @@ const ApiWorker = Cloudflare.Worker(
 
 		const ApiFetch = yield* HttpRouter.toHttpEffect(
 			ApiLive.pipe(
-				Layer.provide( Alchemy.RuntimeContext.phantom ),
 				Layer.provide( [ Etag.layer, HttpPlatformStub, Path.layer ] ),
 				Layer.provide(
 					HttpRouter.cors( {
