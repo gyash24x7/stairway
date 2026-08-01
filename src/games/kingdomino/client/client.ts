@@ -28,13 +28,13 @@ export const joinKingdominoGameFn = ( code: string ) =>
 	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
 
 export const selectDominoFn = ( gameId: string, input: SelectDominoInput ) =>
-	run( client.selectDomino( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.selectDomino( { params: gameIdParams( gameId ), payload: input } ) );
 
 export const placeDominoFn = ( gameId: string, input: PlaceDominoInput ) =>
-	run( client.placeDomino( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.placeDomino( { params: gameIdParams( gameId ), payload: input } ) );
 
 export const discardDominoFn = ( gameId: string, input: DiscardDominoInput ) =>
-	run( client.discardDomino( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.discardDomino( { params: gameIdParams( gameId ), payload: input } ) );
 
 // --- Queries ---------------------------------------------------------------
 

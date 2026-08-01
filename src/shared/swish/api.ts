@@ -7,7 +7,6 @@ import {
 	InitializeResponse,
 	JoinGameInput,
 	JoinGameResponse,
-	MovePayload,
 	PlayerInfo
 } from "@/shared/swish/schema.ts";
 import {
@@ -21,7 +20,7 @@ import {
 
 /**
  * Builds a first-class move endpoint: `POST /:gameId/<name>` whose payload is
- * `{ playerInfo, input }` and whose error is the shared `MoveError`. `const Name`
+ * the move's own `input` and whose error is the shared `MoveError`. `const Name`
  * keeps the move name a literal so it flows into the generated client type.
  *
  * @param name - The move name (becomes the path segment and endpoint id).
@@ -34,7 +33,7 @@ export const MoveApiEndpoint = <const Name extends string, Input extends Schema.
 ) =>
 	HttpApiEndpoint.post( name, `/:gameId/${ name }`, {
 		params: GameIdParams,
-		payload: MovePayload( input ),
+		payload: input,
 		error: MoveError
 	} );
 

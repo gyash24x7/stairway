@@ -326,7 +326,7 @@ export const makeEventSchema = <Ev extends Schema.Top>( gameEvent: Ev ) =>
 
 /**
  * Builds the schema of a commit — one command's batch of events plus its metadata
- * (id, command name, actor, moveType, requestId, timestamp). Commits are stored
+ * (id, command name, actor, moveType, timestamp). Commits are stored
  * encoded in the append-only `EventStore`.
  *
  * @param gameEvent - The game's event schema, woven into the commit's event array.
@@ -338,7 +338,6 @@ export const EventsCommit = <Ev extends Schema.Top>( gameEvent: Ev ) =>
 		command: Schema.String,
 		actor: Schema.optional( PlayerId ),
 		moveType: Schema.optional( Schema.String ),
-		requestId: Schema.optional( Schema.String ),
 		at: Schema.Number,
 		events: Schema.Array( makeEventSchema( gameEvent ) )
 	} );

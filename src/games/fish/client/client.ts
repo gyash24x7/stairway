@@ -36,16 +36,16 @@ export const addBotsFn = ( gameId: string ) =>
 // --- Moves -----------------------------------------------------------------
 
 export const createTeamsFn = ( gameId: string, input: CreateTeamsInput ) =>
-	run( client.createTeams( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.createTeams( { params: gameIdParams( gameId ), payload: input } ) );
 
 export const askCardFn = ( gameId: string, input: AskCardInput ) =>
-	run( client.askCard( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.askCard( { params: gameIdParams( gameId ), payload: input } ) );
 
 export const claimBookFn = ( gameId: string, input: ClaimBookInput ) =>
-	run( client.claimBook( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.claimBook( { params: gameIdParams( gameId ), payload: input } ) );
 
 export const transferTurnFn = ( gameId: string, input: TransferTurnInput ) =>
-	run( client.transferTurn( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.transferTurn( { params: gameIdParams( gameId ), payload: input } ) );
 
 // --- Queries ---------------------------------------------------------------
 

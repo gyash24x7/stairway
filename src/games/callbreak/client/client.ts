@@ -40,7 +40,7 @@ export const declareWinsFn = ( gameId: string, input: DeclareWinsInput, signal?:
 	run(
 		client.callbreak.declareWins( {
 			params: gameIdParams( gameId ),
-			payload: { input }
+			payload: input
 		} ),
 		signal
 	);
@@ -49,7 +49,7 @@ export const playCardFn = ( gameId: string, input: PlayCardInput, signal?: Abort
 	run(
 		client.callbreak.playCard( {
 			params: gameIdParams( gameId ),
-			payload: { input }
+			payload: input
 		} ),
 		signal
 	);

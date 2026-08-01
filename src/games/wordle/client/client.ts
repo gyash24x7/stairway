@@ -16,7 +16,7 @@ export const createWordleGameFn = ( config: WordleConfig ) =>
 	run( client.createGame( { payload: config } ) );
 
 export const submitGuessFn = ( gameId: string, guess: string ) =>
-	run( client.guess( { params: gameIdParams( gameId ), payload: { input: { guess } } } ) );
+	run( client.guess( { params: gameIdParams( gameId ), payload: { guess } } ) );
 
 // --- Queries ---------------------------------------------------------------
 

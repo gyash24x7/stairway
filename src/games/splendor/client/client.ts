@@ -28,13 +28,13 @@ export const joinSplendorGameFn = ( code: string ) =>
 	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
 
 export const pickTokensFn = ( gameId: string, input: PickTokensInput ) =>
-	run( client.pickTokens( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.pickTokens( { params: gameIdParams( gameId ), payload: input } ) );
 
 export const reserveCardFn = ( gameId: string, input: ReserveCardInput ) =>
-	run( client.reserveCard( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.reserveCard( { params: gameIdParams( gameId ), payload: input } ) );
 
 export const purchaseCardFn = ( gameId: string, input: PurchaseCardInput ) =>
-	run( client.purchaseCard( { params: gameIdParams( gameId ), payload: { input } } ) );
+	run( client.purchaseCard( { params: gameIdParams( gameId ), payload: input } ) );
 
 // --- Queries ---------------------------------------------------------------
 

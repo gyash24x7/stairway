@@ -326,39 +326,14 @@ export const GameLog = Schema.Array( LogEntry );
 
 /**
  * The metadata recorded on each commit: the originating `command`, and the optional
- * `actor`, `moveType`, and idempotency `requestId`.
+ * `actor` and `moveType`.
  */
 export type CommitMeta = typeof CommitMeta.Type;
 export const CommitMeta = Schema.Struct( {
 	command: Schema.String,
 	actor: Schema.optionalKey( PlayerId ),
-	moveType: Schema.optionalKey( Schema.String ),
-	requestId: Schema.optionalKey( Schema.String )
+	moveType: Schema.optionalKey( Schema.String )
 } );
-
-/**
- * The decoded shape of a move request: the acting `playerInfo`, the move's `input`,
- * and the optional `requestId`/`expectedTurn` guards.
- */
-export type MovePayload<In extends Schema.Top> = {
-	readonly input: In[ "Type" ];
-	readonly requestId?: string;
-	readonly expectedTurn?: number;
-};
-
-/**
- * Builds the payload schema of a move request: the acting `playerInfo`, the move's
- * `input`, and the optional `requestId` (idempotency) / `expectedTurn` (optimistic
- * concurrency) guards the engine reads in `submitMove`.
- * @param input - The move's input payload schema.
- * @returns The move payload schema.
- */
-export const MovePayload = <In extends Schema.Top>( input: In ) =>
-	Schema.Struct( {
-		input,
-		requestId: Schema.optionalKey( Schema.String ),
-		expectedTurn: Schema.optionalKey( Schema.Number )
-	} );
 
 /**
  * Builds the schema archived to KV when a game completes: the shared table view,

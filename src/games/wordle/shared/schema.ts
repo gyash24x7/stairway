@@ -4,7 +4,6 @@ import {
 	BaseGameConfig,
 	GameSnapshot,
 	InitializeInput,
-	MovePayload,
 	PlayerId
 } from "@/shared/swish/schema.ts";
 
@@ -78,9 +77,6 @@ export const WordleSnapshot = GameSnapshot( WordleView, WordleConfig );
 
 export type GuessInput = typeof GuessInput.Type;
 export const GuessInput = Schema.Struct( { guess: Schema.String } );
-
-export type GuessMovePayload = typeof GuessMovePayload.Type;
-export const GuessMovePayload = MovePayload( GuessInput );
 
 export type WordleInitializeInput = typeof WordleInitializeInput.Type;
 export const WordleInitializeInput = InitializeInput( WordleConfig );

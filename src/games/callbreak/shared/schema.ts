@@ -6,7 +6,6 @@ import {
 	BaseGameConfig,
 	GameSnapshot,
 	InitializeInput,
-	MovePayload,
 	PlayerId
 } from "@/shared/swish/schema.ts";
 
@@ -91,17 +90,11 @@ export const DeclareWinsInput = Schema.Struct( {
 	dealId: Schema.String
 } );
 
-export type DeclareWinsMovePayload = typeof DeclareWinsMovePayload.Type;
-export const DeclareWinsMovePayload = MovePayload( DeclareWinsInput );
-
 export type PlayCardInput = typeof PlayCardInput.Type;
 export const PlayCardInput = Schema.Struct( {
 	cardId: CardId,
 	dealId: Schema.String
 } );
-
-export type PlayCardMovePayload = typeof PlayCardMovePayload.Type;
-export const PlayCardMovePayload = MovePayload( PlayCardInput );
 
 export type CallbreakInitializeInput = typeof CallbreakInitializeInput.Type;
 export const CallbreakInitializeInput = InitializeInput( CallbreakConfig );

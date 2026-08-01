@@ -6,7 +6,6 @@ import {
 	BaseGameConfig,
 	GameSnapshot,
 	InitializeInput,
-	MovePayload,
 	PlayerId
 } from "@/shared/swish/schema.ts";
 
@@ -134,33 +133,21 @@ export const CreateTeamsInput = Schema.Struct( {
 	teams: Schema.Record( Schema.String, Schema.Array( PlayerId ) )
 } );
 
-export type CreateTeamsMovePayload = typeof CreateTeamsMovePayload.Type;
-export const CreateTeamsMovePayload = MovePayload( CreateTeamsInput );
-
 export type AskCardInput = typeof AskCardInput.Type;
 export const AskCardInput = Schema.Struct( {
 	from: PlayerId,
 	cardId: CardId
 } );
 
-export type AskCardMovePayload = typeof AskCardMovePayload.Type;
-export const AskCardMovePayload = MovePayload( AskCardInput );
-
 export type ClaimBookInput = typeof ClaimBookInput.Type;
 export const ClaimBookInput = Schema.Struct( {
 	claim: Schema.Record( Schema.String, PlayerId )
 } );
 
-export type ClaimBookMovePayload = typeof ClaimBookMovePayload.Type;
-export const ClaimBookMovePayload = MovePayload( ClaimBookInput );
-
 export type TransferTurnInput = typeof TransferTurnInput.Type;
 export const TransferTurnInput = Schema.Struct( {
 	transferTo: PlayerId
 } );
-
-export type TransferTurnMovePayload = typeof TransferTurnMovePayload.Type;
-export const TransferTurnMovePayload = MovePayload( TransferTurnInput );
 
 export type FishInitializeInput = typeof FishInitializeInput.Type;
 export const FishInitializeInput = InitializeInput( FishConfig );

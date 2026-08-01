@@ -4,7 +4,6 @@ import {
 	BaseGameConfig,
 	GameSnapshot,
 	InitializeInput,
-	MovePayload,
 	PlayerId
 } from "@/shared/swish/schema.ts";
 
@@ -143,20 +142,11 @@ export const KingdominoSnapshot = GameSnapshot( KingdominoView, KingdominoConfig
 export type SelectDominoInput = typeof SelectDominoInput.Type;
 export const SelectDominoInput = Schema.Struct( { dominoId: Schema.Number } );
 
-export type SelectDominoMovePayload = typeof SelectDominoMovePayload.Type;
-export const SelectDominoMovePayload = MovePayload( SelectDominoInput );
-
 export type PlaceDominoInput = typeof PlaceDominoInput.Type;
 export const PlaceDominoInput = Schema.Struct( { placement: Placement } );
 
-export type PlaceDominoMovePayload = typeof PlaceDominoMovePayload.Type;
-export const PlaceDominoMovePayload = MovePayload( PlaceDominoInput );
-
 export type DiscardDominoInput = typeof DiscardDominoInput.Type;
 export const DiscardDominoInput = Schema.Struct( { dominoId: Schema.Number } );
-
-export type DiscardDominoMovePayload = typeof DiscardDominoMovePayload.Type;
-export const DiscardDominoMovePayload = MovePayload( DiscardDominoInput );
 
 export type KingdominoInitializeInput = typeof KingdominoInitializeInput.Type;
 export const KingdominoInitializeInput = InitializeInput( KingdominoConfig );

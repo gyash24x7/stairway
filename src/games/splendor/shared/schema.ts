@@ -5,7 +5,6 @@ import {
 	BaseGameConfig,
 	GameSnapshot,
 	InitializeInput,
-	MovePayload,
 	PlayerId
 } from "@/shared/swish/schema.ts";
 
@@ -127,9 +126,6 @@ export const PickTokensInput = Schema.Struct( {
 	returned: Schema.optional( PartialTokens )
 } );
 
-export type PickTokensMovePayload = typeof PickTokensMovePayload.Type;
-export const PickTokensMovePayload = MovePayload( PickTokensInput );
-
 export type ReserveCardInput = typeof ReserveCardInput.Type;
 export const ReserveCardInput = Schema.Struct( {
 	cardId: Schema.String,
@@ -137,17 +133,11 @@ export const ReserveCardInput = Schema.Struct( {
 	returnedToken: Schema.optional( Gem )
 } );
 
-export type ReserveCardMovePayload = typeof ReserveCardMovePayload.Type;
-export const ReserveCardMovePayload = MovePayload( ReserveCardInput );
-
 export type PurchaseCardInput = typeof PurchaseCardInput.Type;
 export const PurchaseCardInput = Schema.Struct( {
 	cardId: Schema.String,
 	payment: Tokens.mapFields( Struct.map( Schema.optional ) )
 } );
-
-export type PurchaseCardMovePayload = typeof PurchaseCardMovePayload.Type;
-export const PurchaseCardMovePayload = MovePayload( PurchaseCardInput );
 
 export type SplendorInitializeInput = typeof SplendorInitializeInput.Type;
 export const SplendorInitializeInput = InitializeInput( SplendorConfig );

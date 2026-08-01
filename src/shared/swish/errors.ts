@@ -78,14 +78,6 @@ export class NotAMember extends Schema.TaggedErrorClass<NotAMember>()(
 ) {}
 
 /**
- * Optimistic-concurrency guard: the client acted on a stale turn; it should refetch.
- */
-export class StaleCommand extends Schema.TaggedErrorClass<StaleCommand>()(
-	"swish/StaleCommand",
-	{ expected: Schema.Number, actual: Schema.Number }
-) {}
-
-/**
  * A phased structure referenced a phase name that does not exist.
  */
 export class PhaseNotFound extends Schema.TaggedErrorClass<PhaseNotFound>()(
@@ -160,8 +152,7 @@ export const MoveError = Schema.Union( [
 	GameNotInProgress,
 	PhaseNotFound,
 	GameNotFound,
-	CorruptState,
-	StaleCommand
+	CorruptState
 ] );
 
 /**

@@ -4,7 +4,6 @@ import {
 	BaseGameConfig,
 	GameSnapshot,
 	InitializeInput,
-	MovePayload,
 	PlayerId
 } from "@/shared/swish/schema.ts";
 
@@ -60,9 +59,6 @@ export const TicTacToeSnapshot = GameSnapshot( TicTacToeView, TicTacToeConfig );
 
 export type PlaceInput = typeof PlaceInput.Type;
 export const PlaceInput = Schema.Struct( { position: Schema.Number } );
-
-export type PlaceMovePayload = typeof PlaceMovePayload.Type;
-export const PlaceMovePayload = MovePayload( PlaceInput );
 
 export type TicTacToeInitializeInput = typeof TicTacToeInitializeInput.Type;
 export const TicTacToeInitializeInput = InitializeInput( TicTacToeConfig );

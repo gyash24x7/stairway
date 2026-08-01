@@ -22,9 +22,7 @@ import {
 import type {
 	Audience,
 	BaseGameConfig,
-	InitializeInput,
-	MovePayload
-} from "@/shared/swish/schema.ts";
+	InitializeInput} from "@/shared/swish/schema.ts";
 import { generateBotInfo, generateId } from "@/shared/utils/generator.ts";
 import {
 	CannotStart,
@@ -37,8 +35,7 @@ import {
 	NothingToRedo,
 	NothingToUndo,
 	NotYourTurn,
-	PhaseNotFound,
-	StaleCommand
+	PhaseNotFound
 } from "@/shared/swish/errors.ts";
 import type { EngineEvent } from "@/shared/swish/events.ts";
 import {
@@ -127,14 +124,14 @@ export const makeEngine = <
 
 	/**
 	 * One handler per declared move, shaped like its RPC/HttpApi payload
-	 * (`{ playerInfo, input }`) so a game can hand the whole engine to `toLayer`.
+	 * (the move's own `input`) so a game can hand the whole engine to `toLayer`.
 	 * Each key's `input` is typed to that move's own schema; move-name resolution
 	 * (incl. the current phase) still happens inside `submitMove`. The mapped-type
 	 * cast restores the precise per-move handler shape `Object.fromEntries` widens
 	 * away, which `toLayer` needs to match the generated move RPCs.
 	 */
 	type MoveHandler<K extends keyof MoveInputs> = (
-		payload: MovePayload<MoveInputs[K]>,
+		input: MoveInputs[K][ "Type" ],
 		playerInfo: PlayerInfo
 	) => ReturnType<typeof submitMove<K>>;
 
@@ -142,7 +139,7 @@ export const makeEngine = <
 
 	const moves = moveNames().reduce(
 		( acc, name ) => {
-			acc[ name ] = ( payload, playerInfo ) => submitMove( name, payload, playerInfo );
+			acc[ name ] = ( input, playerInfo ) => submitMove( name, input, playerInfo );
 			return acc;
 		},
 		{} as MoveHandlers
@@ -309,7 +306,6 @@ export const makeEngine = <
 			command: meta.command,
 			actor: meta.actor,
 			moveType: meta.moveType,
-			requestId: meta.requestId,
 			at: yield* Clock.currentTimeMillis,
 			events
 		} );
@@ -711,23 +707,22 @@ export const makeEngine = <
 
 	/**
 	 * The generic move pipeline for every declared move. Loads the game, applies the
-	 * central guards (in-progress, move exists, `enabledWhen`, optimistic-concurrency
-	 * `expectedTurn`, idempotent `requestId`), then routes to one of two branches:
-	 * an open reaction window (validate → `InteractionResponded` → `execute` →
-	 * `runResolveLoop`, suppressing turn advancement until the stack drains) or the
-	 * normal branch (phase/turn gate → `validate` → `beforeMove` → `execute` →
-	 * `afterMove` → `advanceTail`, unless the move opened a window). Finally commits,
-	 * then archives a completed game or schedules the next bot.
+	 * central guards (in-progress, move exists, `enabledWhen`), then routes to one of
+	 * two branches: an open reaction window (validate → `InteractionResponded` →
+	 * `execute` → `runResolveLoop`, suppressing turn advancement until the stack
+	 * drains) or the normal branch (phase/turn gate → `validate` → `beforeMove` →
+	 * `execute` → `afterMove` → `advanceTail`, unless the move opened a window).
+	 * Finally commits, then archives a completed game or schedules the next bot.
 	 *
 	 * @param moveType - The move name being submitted.
-	 * @param payload - Move payload containing input and playerInfo
-	 * @param playerInfo
+	 * @param input - The move's decoded input.
+	 * @param playerInfo - The acting player.
 	 * @returns Completes once committed, or fails with a `MoveError`
-	 * (e.g. `NotYourTurn`, `InvalidMove`, `StaleCommand`).
+	 * (e.g. `NotYourTurn`, `InvalidMove`).
 	 */
 	const submitMove = <MoveType extends keyof MoveInputs>(
 		moveType: MoveType,
-		payload: MovePayload<MoveInputs[MoveType]>,
+		input: MoveInputs[MoveType][ "Type" ],
 		playerInfo: PlayerInfo
 	) => Effect.gen( function* () {
 
@@ -747,27 +742,6 @@ export const makeEngine = <
 		// config-driven capability gate — a variant/house-rule may disable a move.
 		if ( moveDef.enabledWhen && !moveDef.enabledWhen( data.config ) ) {
 			return yield* new MoveNotAllowed( { move } );
-		}
-
-		// optimistic concurrency — reject a move made against a stale turn.
-		if ( payload?.expectedTurn !== undefined && payload.expectedTurn !== data.context.turn ) {
-			return yield* new StaleCommand( {
-				expected: payload.expectedTurn,
-				actual: data.context.turn
-			} );
-		}
-
-		// idempotency — if this requestId was already committed, no-op. The DO
-		// serializes writes, so a scan of the append-only log is race-free.
-		if ( payload?.requestId ) {
-			const { commits } = yield* log.read();
-			const seen = commits.some(
-				( c ) => ( c as { requestId?: string } | null )?.requestId === payload.requestId
-			);
-
-			if ( seen ) {
-				return;
-			}
 		}
 
 		const acc: Acc = { events: [], work: data };
@@ -797,7 +771,7 @@ export const makeEngine = <
 				} );
 			}
 
-			const error = moveDef.validate( readonly( data ), playerInfo.id, payload.input );
+			const error = moveDef.validate( readonly( data ), playerInfo.id, input );
 			if ( error ) {
 				return yield* error;
 			}
@@ -805,11 +779,11 @@ export const makeEngine = <
 			emit( acc, [
 				InteractionResponded.make( {
 					playerId: playerInfo.id,
-					response: payload.input
+					response: input
 				} )
 			] );
 
-			emit( acc, moveDef.execute( readonly( acc.work, "execute" ), playerInfo.id, payload.input ) );
+			emit( acc, moveDef.execute( readonly( acc.work, "execute" ), playerInfo.id, input ) );
 
 			yield* runResolveLoop( acc );
 
@@ -845,7 +819,7 @@ export const makeEngine = <
 				} );
 			}
 
-			const error = moveDef.validate( readonly( data ), playerInfo.id, payload.input );
+			const error = moveDef.validate( readonly( data ), playerInfo.id, input );
 			if ( error ) {
 				return yield* error;
 			}
@@ -863,7 +837,7 @@ export const makeEngine = <
 				moveDef.execute(
 					readonly( acc.work, "execute" ),
 					playerInfo.id,
-					payload.input
+					input
 				)
 			);
 
@@ -883,7 +857,7 @@ export const makeEngine = <
 			// only when the move ends it (`endsTurn`, default true).
 			if ( !activeInteraction( acc.work.context ) ) {
 				const endsTurn = typeof moveDef.endsTurn === "function"
-					? moveDef.endsTurn( readonly( acc.work ), playerInfo.id, payload.input )
+					? moveDef.endsTurn( readonly( acc.work ), playerInfo.id, input )
 					: moveDef.endsTurn ?? true;
 
 				yield* advanceTail( acc, playerInfo.id, move, data, endsTurn );
@@ -893,8 +867,7 @@ export const makeEngine = <
 		const commitMeta = {
 			command: "submitMove",
 			actor: playerInfo.id,
-			moveType: move,
-			requestId: payload?.requestId
+			moveType: move
 		};
 
 		yield* commitAndSave( acc.work, commitMeta, acc.events );
@@ -1066,7 +1039,7 @@ export const makeEngine = <
 			return;
 		}
 
-		yield* submitMove( move.moveType, { input: move.input }, current ).pipe(
+		yield* submitMove( move.moveType, move.input, current ).pipe(
 			Effect.catchCause( ( cause ) => Effect.logError(
 				"engine.runBotTurn: bot move failed",
 				cause

@@ -26,7 +26,7 @@ export const addBotsFn = ( gameId: string ) =>
 	run( client.addBots( { params: gameIdParams( gameId ) } ) );
 
 export const placeFn = ( gameId: string, position: number ) =>
-	run( client.place( { params: gameIdParams( gameId ), payload: { input: { position } } } ) );
+	run( client.place( { params: gameIdParams( gameId ), payload: { position } } ) );
 
 // --- Queries ---------------------------------------------------------------
 
