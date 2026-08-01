@@ -13,7 +13,7 @@ import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
 import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
 import { GameNotFound } from "@/shared/swish/errors.ts";
-import { GameCode, GameId } from "@/shared/swish/schema.ts";
+import { GameCode, GameId, PlayerId } from "@/shared/swish/schema.ts";
 import { splendor } from "@/games/splendor/server/engine.ts";
 
 // --- Durable Object ----------------------------------------------------------
@@ -76,13 +76,15 @@ export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", ha
 			} ) )
 
 			.handle( "addBots", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );
-				return yield* client.addBots();
+				return yield* client.addBots( PlayerId.make( user.id ) );
 			} ) )
 
-			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+			.handle( "getState", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );
-				return yield* client.getState( payload );
+				return yield* client.getState( PlayerId.make( user.id ) );
 			} ) )
 
 			.handle( "pickTokens", ( { params, payload } ) => Effect.gen( function* () {

@@ -106,7 +106,7 @@ export const EngineEvent = Schema.Union( [
  * Determines whether an event is a built-in engine event rather than a game
  * domain event, by testing for the `swish/ev/` tag prefix.
  *
- * @param {{ _tag: string }} event - The event to classify.
+ * @param event - The event to classify.
  * @returns `true` if the event is an engine event (narrows to `EngineEvent`).
  */
 export const isEngineEvent = ( event: { readonly _tag: string } ): event is EngineEvent =>
@@ -118,8 +118,8 @@ export const isEngineEvent = ( event: { readonly _tag: string } ): event is Engi
  * explicit `undefined` can clear them), while scalar fields fall back to the
  * current value when omitted.
  *
- * @param {GameContext} ctx - The context to derive from.
- * @param {Partial<Omit<GameContext, "_tag">>} patch - The fields to override.
+ * @param ctx - The context to derive from.
+ * @param patch - The fields to override.
  * @returns A new context with the patch applied.
  */
 const patchContext = ( ctx: GameContext, patch: Partial<Omit<GameContext, "_tag">> ) =>
@@ -137,8 +137,8 @@ const patchContext = ( ctx: GameContext, patch: Partial<Omit<GameContext, "_tag"
  * context). Pure — the game's `state` is never touched here; game events change
  * state via the game's own `apply`.
  *
- * @param {PersistedGameData} data - The record to derive the next record from.
- * @param {EngineEvent} event - The engine event to apply.
+ * @param data - The record to derive the next record from.
+ * @param event - The engine event to apply.
  * @returns A new record with the envelope patched.
  */
 export const engineApply = <State, Config>(
@@ -231,9 +231,9 @@ export const engineApply = <State, Config>(
  * go through the game's `apply` on `state`. This is the only function that
  * produces new state.
  *
- * @param {(state, event) => State} apply - The game's pure state reducer.
- * @param {PersistedGameData} data - The starting record.
- * @param {ReadonlyArray<EngineEvent | Ev>} events - The events to fold, in order.
+ * @param apply - The game's pure state reducer.
+ * @param data - The starting record.
+ * @param events - The events to fold, in order.
  * @returns The record after applying every event.
  */
 export const foldEvents = <State, Config, Ev extends { readonly _tag: string }>(
@@ -254,7 +254,7 @@ export const foldEvents = <State, Config, Ev extends { readonly _tag: string }>(
  * Returns the active (top-of-stack) interaction frame — the one the engine is
  * currently routing responses to.
  *
- * @param {GameContext} ctx - The game context holding the interaction stack.
+ * @param ctx - The game context holding the interaction stack.
  * @returns The top frame, or `undefined` if no window is open.
  */
 export const activeInteraction = ( ctx: GameContext ) => {
@@ -266,7 +266,7 @@ export const activeInteraction = ( ctx: GameContext ) => {
  * Builds an `InteractionOpened` event from a frame. Games call this in a move's
  * `execute` (or an interaction's `resolve`) to open/nest a reaction window.
  *
- * @param {InteractionFrame} frame - The reaction window to open.
+ * @param frame - The reaction window to open.
  * @returns The event that pushes the frame onto the stack.
  */
 export const openInteraction = ( frame: InteractionFrame ) => InteractionOpened.make( { frame } );
@@ -275,7 +275,7 @@ export const openInteraction = ( frame: InteractionFrame ) => InteractionOpened.
  * Finds the next responder to act in a sequential frame: the first responder, in
  * order, who has not yet answered.
  *
- * @param {InteractionFrame} frame - The sequential frame to inspect.
+ * @param frame - The sequential frame to inspect.
  * @returns The pending responder, or `undefined` if all have answered.
  */
 export const nextSequentialResponder = ( frame: InteractionFrame ) =>
@@ -286,8 +286,8 @@ export const nextSequentialResponder = ( frame: InteractionFrame ) =>
 /**
  * Reads a seat's status, treating an absent entry as `"active"`.
  *
- * @param {GameContext} ctx - The game context holding seat statuses.
- * @param {PlayerId} id - The seat to read.
+ * @param ctx - The game context holding seat statuses.
+ * @param id - The seat to read.
  * @returns The seat's status (`"active"` when unset).
  */
 export const seatStatus = ( ctx: GameContext, id: PlayerId ) => ctx.seats?.[ id ] ?? "active";
@@ -295,8 +295,8 @@ export const seatStatus = ( ctx: GameContext, id: PlayerId ) => ctx.seats?.[ id 
 /**
  * Determines whether a seat is still in play (has not folded/been eliminated).
  *
- * @param {GameContext} ctx - The game context holding seat statuses.
- * @param {PlayerId} id - The seat to test.
+ * @param ctx - The game context holding seat statuses.
+ * @param id - The seat to test.
  * @returns `true` if the seat's status is `"active"`.
  */
 export const isActiveSeat = ( ctx: GameContext, id: PlayerId ) =>
@@ -306,7 +306,7 @@ export const isActiveSeat = ( ctx: GameContext, id: PlayerId ) =>
  * Returns the roster in seating order, filtered to seats still in play — the
  * order games walk to skip folded/eliminated players when advancing turns.
  *
- * @param {GameContext} ctx - The game context holding the roster and seat statuses.
+ * @param ctx - The game context holding the roster and seat statuses.
  * @returns The active seats, in order.
  */
 export const activeSeats = ( ctx: GameContext ) =>
@@ -318,7 +318,7 @@ export const activeSeats = ( ctx: GameContext ) =>
  * Builds the combined event schema for a game: the union of engine events and
  * the game's own events, used to encode/decode everything in the log.
  *
- * @param {Schema.Top} gameEvent - The game's event schema (typically a union).
+ * @param gameEvent - The game's event schema (typically a union).
  * @returns The `EngineEvent ⊕ gameEvent` union schema.
  */
 export const makeEventSchema = <Ev extends Schema.Top>( gameEvent: Ev ) =>
@@ -329,7 +329,7 @@ export const makeEventSchema = <Ev extends Schema.Top>( gameEvent: Ev ) =>
  * (id, command name, actor, moveType, requestId, timestamp). Commits are stored
  * encoded in the append-only `EventStore`.
  *
- * @param {Schema.Top} gameEvent - The game's event schema, woven into the commit's event array.
+ * @param gameEvent - The game's event schema, woven into the commit's event array.
  * @returns The commit schema for this game.
  */
 export const EventsCommit = <Ev extends Schema.Top>( gameEvent: Ev ) =>

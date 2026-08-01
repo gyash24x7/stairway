@@ -1,6 +1,6 @@
 import { getClient, run } from "@/client.ts";
 import type { WordleConfig } from "@/games/wordle/shared/schema.ts";
-import { GameIdParams, playerAudience, PlayerId } from "@/shared/swish/schema.ts";
+import { GameIdParams } from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -20,8 +20,7 @@ export const submitGuessFn = ( gameId: string, guess: string ) =>
 
 // --- Queries ---------------------------------------------------------------
 
-export const getWordleStateFn = ( gameId: string, playerId: string, signal?: AbortSignal ) =>
+export const getWordleStateFn = ( gameId: string, signal?: AbortSignal ) =>
 	run( client.getState( {
-		params: gameIdParams( gameId ),
-		payload: playerAudience( PlayerId.make( playerId ) )
+		params: gameIdParams( gameId )
 	} ), signal );

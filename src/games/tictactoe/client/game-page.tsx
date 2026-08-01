@@ -14,7 +14,7 @@ export function TicTacToeGamePage( { gameId }: { gameId: string } ) {
 	const { data, isLoading } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getStateFn( gameId, authInfo!.id, signal )
+		queryFn: ( { signal } ) => getStateFn( gameId, signal )
 	} );
 
 	useGameSync( { gameName: "tic-tac-toe", gameId, playerId: authInfo!.id, queryKey } );

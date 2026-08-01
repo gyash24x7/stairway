@@ -7,9 +7,7 @@ import type {
 import {
 	GameCode,
 	GameIdParams,
-	JoinGameInput,
-	playerAudience,
-	PlayerId
+	JoinGameInput
 } from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
@@ -58,11 +56,10 @@ export const playCardFn = ( gameId: string, input: PlayCardInput, signal?: Abort
 
 // --- Queries ---------------------------------------------------------------
 
-export const getStateFn = ( gameId: string, playerId: string, signal?: AbortSignal ) =>
+export const getStateFn = ( gameId: string, signal?: AbortSignal ) =>
 	run(
 		client.callbreak.getState( {
-			params: gameIdParams( gameId ),
-			payload: playerAudience( PlayerId.make( playerId ) )
+			params: gameIdParams( gameId )
 		} ),
 		signal
 	);

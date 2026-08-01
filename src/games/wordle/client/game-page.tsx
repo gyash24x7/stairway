@@ -14,7 +14,7 @@ export function WordleGamePage( { gameId }: { gameId: string } ) {
 	const { data, isLoading } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getWordleStateFn( gameId, authInfo!.id, signal )
+		queryFn: ( { signal } ) => getWordleStateFn( gameId, signal )
 	} );
 
 	useGameSync( { gameName: "wordle", gameId, playerId: authInfo!.id, queryKey } );

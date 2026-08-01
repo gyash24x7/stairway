@@ -5,14 +5,10 @@ import type {
 	PlaceDominoInput,
 	SelectDominoInput
 } from "@/games/kingdomino/shared/schema.ts";
-import type {
-	PlayerInfo
-} from "@/shared/swish/schema.ts";
 import {
 	GameCode,
 	GameIdParams,
-	JoinGameInput,
-	playerAudience
+	JoinGameInput
 } from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
@@ -42,12 +38,7 @@ export const discardDominoFn = ( gameId: string, input: DiscardDominoInput ) =>
 
 // --- Queries ---------------------------------------------------------------
 
-export const getKingdominoStateFn = (
-	gameId: string,
-	playerInfo: PlayerInfo,
-	signal?: AbortSignal
-) =>
+export const getKingdominoStateFn = ( gameId: string, signal?: AbortSignal ) =>
 	run( client.getState( {
-		params: gameIdParams( gameId ),
-		payload: playerAudience( playerInfo.id )
+		params: gameIdParams( gameId )
 	} ), signal );

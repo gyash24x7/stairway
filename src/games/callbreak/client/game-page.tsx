@@ -14,7 +14,7 @@ export function CallbreakGamePage( { gameId }: { gameId: string } ) {
 	const { data, isLoading } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getStateFn( gameId, authInfo!.id, signal )
+		queryFn: ( { signal } ) => getStateFn( gameId, signal )
 	} );
 
 	useGameSync( { gameName: "callbreak", gameId, playerId: authInfo!.id, queryKey } );

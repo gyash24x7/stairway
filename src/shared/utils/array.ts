@@ -1,8 +1,8 @@
 /**
  * Shuffles an array by decorating each element with a random sort key.
  * @template T - The type of elements in the array.
- * @param {T[]} arr - The array to shuffle.
- * @param {() => number} rng - Randomness source in [0, 1); defaults to
+ * @param arr - The array to shuffle.
+ * @param rng - Randomness source in [0, 1); defaults to
  *   `Math.random`. Pass a seeded generator (e.g. `@/utils/rng`) for a
  *   deterministic, reproducible shuffle.
  * @returns {T[]} A new array with the elements shuffled.
@@ -17,8 +17,8 @@ export function shuffle<T>( arr: T[], rng: () => number = Math.random ) {
 /**
  * Splits an array into chunks of a specified size.
  * @template T - The type of elements in the array.
- * @param {T[]} arr - The array to split into chunks.
- * @param {number} size - The size of each chunk.
+ * @param arr - The array to split into chunks.
+ * @param size - The size of each chunk.
  * @returns {T[][]} An array of chunks, each containing up to `size` elements.
  */
 export function chunk<T>( arr: T[], size: number ) {
@@ -35,8 +35,8 @@ export function chunk<T>( arr: T[], size: number ) {
 /**
  * Removes elements from an array based on a predicate function.
  * @template T - The type of elements in the array.
- * @param {function} predicate - A Predicate to check if element is to be removed.
- * @param {T[]} arr - The array to filter.
+ * @param predicate - A Predicate to check if element is to be removed.
+ * @param arr - The array to filter.
  * @returns {T[]} A new array with elements that do not match the predicate.
  */
 export function remove<T>( predicate: ( elem: T ) => boolean, arr: T[] ) {
@@ -46,7 +46,7 @@ export function remove<T>( predicate: ( elem: T ) => boolean, arr: T[] ) {
 /**
  * Returns the keys of an object as an array, with proper typing.
  * @template T - The type of the object.
- * @param {T} obj - The object whose keys are to be retrieved.
+ * @param obj - The object whose keys are to be retrieved.
  * @returns {(keyof T)[]} An array of the object's keys.
  */
 export function objectKeys<T extends Record<any, any>>( obj: T ) {

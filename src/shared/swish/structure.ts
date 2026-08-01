@@ -33,7 +33,7 @@ export type ReadonlyGameData<State, Config> = {
 	 * site's role, and the given `salt` into an independent stream, so two draws in
 	 * the same turn never collide.
 	 *
-	 * @param {string} [salt] - Disambiguates this draw from others in the same turn/role.
+	 * @param [salt] - Disambiguates this draw from others in the same turn/role.
 	 * @returns The seeded RNG.
 	 */
 	readonly rng: ( salt?: string ) => Rng;
@@ -114,7 +114,7 @@ export type GameStructure<
 	/**
 	 * Builds the genesis state for a fresh game from its config. Pure.
 	 *
-	 * @param {Config} config - The game config supplied at creation.
+	 * @param config - The game config supplied at creation.
 	 * @returns The initial game state.
 	 */
 	readonly setup: ( config: Config ) => State;
@@ -123,8 +123,8 @@ export type GameStructure<
 	 * The pure reducer for game (domain) events — the only function that changes
 	 * `state`. Engine events never reach it; they patch the envelope instead.
 	 *
-	 * @param {State} state - The current state.
-	 * @param {Events} event - The game event to apply.
+	 * @param state - The current state.
+	 * @param event - The game event to apply.
 	 * @returns The next state.
 	 */
 	readonly apply: ( state: State, event: Events ) => State;
@@ -133,7 +133,7 @@ export type GameStructure<
 	 * Whether the game is over. Evaluated after every move's tail; when `true` the
 	 * engine runs `onEnd`, emits `GameCompleted`, and archives.
 	 *
-	 * @param {ReadonlyGameData} data - The current read-only snapshot.
+	 * @param data - The current read-only snapshot.
 	 * @returns `true` when the game has ended.
 	 */
 	readonly endIf: ( data: ReadonlyGameData<State, Config> ) => boolean;
@@ -142,7 +142,7 @@ export type GameStructure<
 	 * Canonical standings computed on completion and stored on the archived
 	 * `CompletedGameData` so UIs render placement without re-deriving it. Optional.
 	 *
-	 * @param {ReadonlyGameData} data - The completed game's read-only snapshot.
+	 * @param data - The completed game's read-only snapshot.
 	 * @returns The final ranking (and optional winner).
 	 */
 	readonly resolveResults?: ( data: ReadonlyGameData<State, Config> ) => Standings;
@@ -153,10 +153,10 @@ export type GameStructure<
 	 * the text. Receives the `audience` so hidden info can be redacted per recipient
 	 * (never name a card an opponent should not see).
 	 *
-	 * @param {Events} event - The domain event to describe.
-	 * @param {Players} players - The roster, for resolving names.
-	 * @param {Config} config - The game config.
-	 * @param {Audience} audience - Who the line is rendered for (drives redaction).
+	 * @param event - The domain event to describe.
+	 * @param players - The roster, for resolving names.
+	 * @param config - The game config.
+	 * @param audience - Who the line is rendered for (drives redaction).
 	 * @returns The feed line, or `undefined` to omit this event.
 	 */
 	readonly describe?: (
@@ -171,8 +171,8 @@ export type GameStructure<
 	 * returns the public board; for a `Player` audience it returns the public board
 	 * plus that player's private slice. Replaces the old sharedView + playerView pair.
 	 *
-	 * @param {ReadonlyGameData} data - The current read-only snapshot.
-	 * @param {Audience} audience - Who the view is for.
+	 * @param data - The current read-only snapshot.
+	 * @param audience - Who the view is for.
 	 * @returns The projected view for that audience.
 	 */
 	readonly view: ( data: ReadonlyGameData<State, Config>, audience: Audience ) => View;
@@ -186,8 +186,8 @@ export type GameStructure<
 		/**
 		 * Runs when a player joins, before the `PlayerJoined` event.
 		 *
-		 * @param {ReadonlyGameData} data - The pre-join read-only snapshot.
-		 * @param {PlayerId} playerId - The joining player.
+		 * @param data - The pre-join read-only snapshot.
+		 * @param playerId - The joining player.
 		 * @returns Events to accumulate for the join command.
 		 */
 		readonly onJoin?: (
@@ -198,7 +198,7 @@ export type GameStructure<
 		/**
 		 * Runs on `start`, before entering the initial phase (deal cards, seed the board).
 		 *
-		 * @param {ReadonlyGameData} data - The read-only snapshot at start.
+		 * @param data - The read-only snapshot at start.
 		 * @returns Events to accumulate for the start command.
 		 */
 		readonly onStart?: ( data: ReadonlyGameData<State, Config> ) =>
@@ -207,9 +207,9 @@ export type GameStructure<
 		/**
 		 * Runs after a move's guards pass but before its `execute`.
 		 *
-		 * @param {ReadonlyGameData} data - The read-only snapshot before the move.
-		 * @param {PlayerId} playerId - The acting player.
-		 * @param {string} moveType - The move name.
+		 * @param data - The read-only snapshot before the move.
+		 * @param playerId - The acting player.
+		 * @param moveType - The move name.
 		 * @returns Events to accumulate before the move executes.
 		 */
 		readonly beforeMove?: (
@@ -221,9 +221,9 @@ export type GameStructure<
 		/**
 		 * Runs after a move's `execute`, before the turn tail.
 		 *
-		 * @param {ReadonlyGameData} data - The read-only snapshot after the move executed.
-		 * @param {PlayerId} playerId - The acting player.
-		 * @param {string} moveType - The move name.
+		 * @param data - The read-only snapshot after the move executed.
+		 * @param playerId - The acting player.
+		 * @param moveType - The move name.
 		 * @returns Events to accumulate after the move executes.
 		 */
 		readonly afterMove?: (
@@ -235,7 +235,7 @@ export type GameStructure<
 		/**
 		 * Runs when `endIf` first returns `true`, before `GameCompleted` (final scoring).
 		 *
-		 * @param {ReadonlyGameData} data - The read-only snapshot at completion.
+		 * @param data - The read-only snapshot at completion.
 		 * @returns Events to accumulate at end of game.
 		 */
 		readonly onEnd?: ( data: ReadonlyGameData<State, Config> ) =>
@@ -252,8 +252,8 @@ export type GameStructure<
 			 * Whether this player may make the move now. Defaults to "is the current
 			 * player"; override for out-of-turn moves.
 			 *
-			 * @param {ReadonlyGameData} data - The current read-only snapshot.
-			 * @param {PlayerId} playerId - The player attempting the move.
+			 * @param data - The current read-only snapshot.
+			 * @param playerId - The player attempting the move.
 			 * @returns `true` if the player is allowed to act.
 			 */
 			readonly canMove?: ( data: ReadonlyGameData<State, Config>, playerId: PlayerId ) => boolean;
@@ -262,9 +262,9 @@ export type GameStructure<
 			 * Validates the move input against the rules. Pure; returns an `InvalidMove`
 			 * to reject, or `undefined` to accept. Must not emit events.
 			 *
-			 * @param {ReadonlyGameData} data - The current read-only snapshot.
-			 * @param {PlayerId} playerId - The acting player.
-			 * @param {MoveInputs[K]["Type"]} input - The move's decoded input.
+			 * @param data - The current read-only snapshot.
+			 * @param playerId - The acting player.
+			 * @param input - The move's decoded input.
 			 * @returns An `InvalidMove` rejection, or `undefined` when valid.
 			 */
 			readonly validate: (
@@ -277,9 +277,9 @@ export type GameStructure<
 			 * Produces the events the move effects (the only way a move changes state).
 			 * May emit game events, open an interaction, or change a seat's status.
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot (already folded with any `beforeMove` events).
-			 * @param {PlayerId} playerId - The acting player.
-			 * @param {MoveInputs[K]["Type"]} input - The move's decoded input.
+			 * @param data - The read-only snapshot (already folded with any `beforeMove` events).
+			 * @param playerId - The acting player.
+			 * @param input - The move's decoded input.
 			 * @returns The events to accumulate for this move.
 			 */
 			readonly execute: (
@@ -295,9 +295,9 @@ export type GameStructure<
 			 * (Monopoly: roll → move → buy → … → end turn). `endIf`/game-completion
 			 * still runs. May be a boolean or a predicate of the post-move state.
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot after the move (predicate form).
-			 * @param {PlayerId} playerId - The acting player.
-			 * @param {MoveInputs[K]["Type"]} input - The move's decoded input.
+			 * @param data - The read-only snapshot after the move (predicate form).
+			 * @param playerId - The acting player.
+			 * @param input - The move's decoded input.
 			 * @returns `true` if the move ends the turn.
 			 */
 			readonly endsTurn?: boolean | ( (
@@ -312,7 +312,7 @@ export type GameStructure<
 			 * variant/house-rule toggle (e.g. Uno `stacking`, `jumpIn`) disables a
 			 * move without each `validate` re-checking. Absent ⇒ always enabled.
 			 *
-			 * @param {Config} config - The game config.
+			 * @param config - The game config.
 			 * @returns `true` if the move is enabled for this config.
 			 */
 			readonly enabledWhen?: ( config: Config ) => boolean;
@@ -337,9 +337,9 @@ export type GameStructure<
 			 * Whether this player may respond now. Defaults per `mode` (sequential: the
 			 * next responder in order; simultaneous: any responder not yet answered).
 			 *
-			 * @param {ReadonlyGameData} data - The current read-only snapshot.
-			 * @param {InteractionFrame} frame - The active frame.
-			 * @param {PlayerId} playerId - The player attempting to respond.
+			 * @param data - The current read-only snapshot.
+			 * @param frame - The active frame.
+			 * @param playerId - The player attempting to respond.
 			 * @returns `true` if the player may respond.
 			 */
 			readonly canRespond?: (
@@ -352,8 +352,8 @@ export type GameStructure<
 			 * Whether enough responses are in to resolve the frame. Defaults to "all
 			 * responders answered".
 			 *
-			 * @param {ReadonlyGameData} data - The current read-only snapshot.
-			 * @param {InteractionFrame} frame - The active frame.
+			 * @param data - The current read-only snapshot.
+			 * @param frame - The active frame.
 			 * @returns `true` when the frame is ready to resolve.
 			 */
 			readonly isComplete?: (
@@ -365,8 +365,8 @@ export type GameStructure<
 			 * Resolves the window: emits the game effects the responses dictate, and may
 			 * open a nested interaction (which suspends resolution until it completes).
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot at resolution.
-			 * @param {InteractionFrame} frame - The frame being resolved.
+			 * @param data - The read-only snapshot at resolution.
+			 * @param frame - The frame being resolved.
 			 * @returns The events to accumulate (optionally a nested `openInteraction`).
 			 */
 			readonly resolve: (
@@ -380,7 +380,7 @@ export type GameStructure<
 	 * The bot policy: chooses a move for the player to act, given their snapshot.
 	 * Scheduled automatically when the pending actor is a bot. Optional.
 	 *
-	 * @param {GameSnapshot} data - The acting bot's snapshot (its own audience).
+	 * @param data - The acting bot's snapshot (its own audience).
 	 * @returns The move to submit, or `undefined` to pass/skip.
 	 */
 	readonly botMove?: ( data: GameSnapshot<View, Config> ) => BotMove<MoveInputs> | undefined;
@@ -389,9 +389,9 @@ export type GameStructure<
 	 * Chooses the next player after a turn-ending move (flat games; phased games use
 	 * the per-phase resolver). Defaults to round-robin over the roster when absent.
 	 *
-	 * @param {ReadonlyGameData} data - The read-only snapshot after the move.
-	 * @param {PlayerId} playerId - The player who just acted.
-	 * @param {string} moveType - The move that ended the turn.
+	 * @param data - The read-only snapshot after the move.
+	 * @param playerId - The player who just acted.
+	 * @param moveType - The move that ended the turn.
 	 * @returns The next current player.
 	 */
 	readonly resolveNextPlayer?: (
@@ -413,7 +413,7 @@ export type GameStructure<
 			 * Whether this phase is over. Checked in the move tail; when `true` the
 			 * engine runs `onExit`, emits `PhaseExited`, and enters `resolveNextPhase`.
 			 *
-			 * @param {ReadonlyGameData} data - The current read-only snapshot.
+			 * @param data - The current read-only snapshot.
 			 * @returns `true` when the phase should end.
 			 */
 			readonly endIf: ( data: ReadonlyGameData<State, Config> ) => boolean;
@@ -422,7 +422,7 @@ export type GameStructure<
 			 * Chooses the player who acts first when this phase is entered. Absent ⇒ the
 			 * current player carries over.
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot on phase entry.
+			 * @param data - The read-only snapshot on phase entry.
 			 * @returns The starting player for the phase.
 			 */
 			readonly resolveStartingPlayer?: ( data: ReadonlyGameData<State, Config> ) => PlayerId;
@@ -430,7 +430,7 @@ export type GameStructure<
 			/**
 			 * Runs on phase entry, after `PhaseEntered`, before the starting player is set.
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot on phase entry.
+			 * @param data - The read-only snapshot on phase entry.
 			 * @returns Events to accumulate on entering the phase.
 			 */
 			readonly onEnter?: ( data: ReadonlyGameData<State, Config> ) => ReadonlyArray<Events | InteractionOpened | SeatStatusChanged>;
@@ -438,7 +438,7 @@ export type GameStructure<
 			/**
 			 * Runs on phase exit, before `PhaseExited` (e.g. score the trick/round).
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot on phase exit.
+			 * @param data - The read-only snapshot on phase exit.
 			 * @returns Events to accumulate on leaving the phase.
 			 */
 			readonly onExit?: ( data: ReadonlyGameData<State, Config> ) => ReadonlyArray<Events | InteractionOpened | SeatStatusChanged>;
@@ -446,7 +446,7 @@ export type GameStructure<
 			/**
 			 * Chooses the next phase when this one ends (may return the same phase to loop).
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot at phase end.
+			 * @param data - The read-only snapshot at phase end.
 			 * @returns The next phase to enter.
 			 */
 			readonly resolveNextPhase: ( data: ReadonlyGameData<State, Config> ) => keyof PhaseMoves;
@@ -455,9 +455,9 @@ export type GameStructure<
 			 * Chooses the next player within this phase after a turn-ending move. Absent
 			 * ⇒ the current player is left unchanged.
 			 *
-			 * @param {ReadonlyGameData} data - The read-only snapshot after the move.
-			 * @param {PlayerId} playerId - The player who just acted.
-			 * @param {string} moveType - The move that ended the turn.
+			 * @param data - The read-only snapshot after the move.
+			 * @param playerId - The player who just acted.
+			 * @param moveType - The move that ended the turn.
 			 * @returns The next current player within the phase.
 			 */
 			readonly resolveNextPlayer?: (

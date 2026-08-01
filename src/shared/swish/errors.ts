@@ -67,6 +67,17 @@ export class GameNotFound extends Schema.TaggedErrorClass<GameNotFound>()(
 ) {}
 
 /**
+ * The caller is not a seated player in this game. Every command except
+ * `initialize`/`join` asserts membership from the authenticated identity, so a
+ * non-member can neither read a private view nor act on a game they haven't joined.
+ */
+export class NotAMember extends Schema.TaggedErrorClass<NotAMember>()(
+	"swish/NotAMember",
+	{ playerId: PlayerId },
+	{ httpApiStatus: 403 }
+) {}
+
+/**
  * Optimistic-concurrency guard: the client acted on a stale turn; it should refetch.
  */
 export class StaleCommand extends Schema.TaggedErrorClass<StaleCommand>()(
@@ -110,19 +121,26 @@ export class NothingToRedo extends Schema.TaggedErrorClass<NothingToRedo>()(
  * Union of the errors a `getState` can surface to the client.
  */
 export type GetStateError = typeof GetStateError.Type;
-export const GetStateError = Schema.Union( [ GameNotFound, CorruptState ] );
+export const GetStateError = Schema.Union( [ NotAMember, GameNotFound, CorruptState ] );
 
 /**
  * Union of the errors a `join` can surface to the client.
  */
 export type JoinError = typeof JoinError.Type;
-export const JoinError = Schema.Union( [ GameFull, AlreadyJoined, GameNotFound, CorruptState ] );
+export const JoinError = Schema.Union( [
+	NotAMember,
+	GameFull,
+	AlreadyJoined,
+	GameNotFound,
+	CorruptState
+] );
 
 /**
  * Union of the errors a `start` can surface to the client.
  */
 export type StartError = typeof StartError.Type;
 export const StartError = Schema.Union( [
+	NotAMember,
 	CannotStart,
 	AlreadyJoined,
 	GameNotFound,
@@ -135,6 +153,7 @@ export const StartError = Schema.Union( [
  */
 export type MoveError = typeof MoveError.Type;
 export const MoveError = Schema.Union( [
+	NotAMember,
 	InvalidMove,
 	NotYourTurn,
 	MoveNotAllowed,

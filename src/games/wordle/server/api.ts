@@ -66,9 +66,10 @@ export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handle
 				return response;
 			} ) )
 
-			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+			.handle( "getState", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );
-				return yield* client.getState( payload );
+				return yield* client.getState( PlayerId.make( user.id ) );
 			} ) )
 
 			.handle( "guess", ( { params, payload } ) => Effect.gen( function* () {

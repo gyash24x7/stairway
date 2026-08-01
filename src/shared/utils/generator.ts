@@ -35,7 +35,7 @@ export function generateTeamName() {
 
 /**
  * Generates a random avatar URL using the DiceBear Open Peeps API.
- * @param {string} [seed] - Optional seed for generating a consistent avatar.
+ * @param [seed] - Optional seed for generating a consistent avatar.
  * @returns {string} A URL to a randomly generated avatar image.
  */
 export function generateAvatar( seed?: string ) {
@@ -56,7 +56,7 @@ export function generateBotInfo() {
 
 /**
  * Generates a game code consisting of alphanumeric characters.
- * @param {number} [length=6] - The length of the game code to generate.
+ * @param [length=6] - The length of the game code to generate.
  * @returns {string} A randomly generated game code.
  */
 export function generateGameCode( length: number = 6 ) {

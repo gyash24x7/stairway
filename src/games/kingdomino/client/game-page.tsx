@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/auth/client/use-auth.tsx";
-import { toPlayerInfo } from "@/client.ts";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { getKingdominoStateFn } from "@/games/kingdomino/client/client.ts";
 import { KingdominoProvider } from "@/games/kingdomino/client/context.tsx";
@@ -15,7 +14,7 @@ export function KingdominoGamePage( { gameId }: { gameId: string } ) {
 	const { data, isLoading } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getKingdominoStateFn( gameId, toPlayerInfo( authInfo! ), signal )
+		queryFn: ( { signal } ) => getKingdominoStateFn( gameId, signal )
 	} );
 
 	useGameSync( { gameName: "kingdomino", gameId, playerId: authInfo!.id, queryKey } );

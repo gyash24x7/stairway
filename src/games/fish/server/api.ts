@@ -13,7 +13,7 @@ import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
 import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
 import { GameNotFound } from "@/shared/swish/errors.ts";
-import { GameCode, GameId } from "@/shared/swish/schema.ts";
+import { GameCode, GameId, PlayerId } from "@/shared/swish/schema.ts";
 import { fish } from "@/games/fish/server/engine.ts";
 
 // --- Durable Object ----------------------------------------------------------
@@ -76,13 +76,15 @@ export const FishApiLive = HttpApiBuilder.group( StairwayAPI, "fish", handlers =
 			} ) )
 
 			.handle( "addBots", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );
-				return yield* client.addBots();
+				return yield* client.addBots( PlayerId.make( user.id ) );
 			} ) )
 
-			.handle( "getState", ( { params, payload } ) => Effect.gen( function* () {
+			.handle( "getState", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );
-				return yield* client.getState( payload );
+				return yield* client.getState( PlayerId.make( user.id ) );
 			} ) )
 
 			.handle( "createTeams", ( { params, payload } ) => Effect.gen( function* () {

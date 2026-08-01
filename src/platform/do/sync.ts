@@ -2,9 +2,13 @@ import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { Sync } from "@/shared/swish/services.ts";
 import { type Audience, PlayerAudience, PlayerId, TableAudience } from "@/shared/swish/schema.ts";
+import { SessionService } from "@/auth/server/session.ts";
+import { SessionServiceLive } from "@/auth/server/session.ts";
+import { SessionStoreLive } from "@/platform/kv/session.ts";
 
 /** The per-audience payload the engine hands `broadcast` (already JSON-plain). */
 interface BroadcastSnapshot {
@@ -20,6 +24,7 @@ export class GameChannel extends Cloudflare.DurableObject<GameChannel>()(
 	"GameChannel",
 	Effect.gen( function* () {
 		const state = yield* Cloudflare.DurableObjectState;
+		const sessionService = yield* SessionService;
 
 		return Effect.gen( function* () {
 			const sessions = new Map<Attachment, Cloudflare.WebSocket>();
@@ -35,6 +40,18 @@ export class GameChannel extends Cloudflare.DurableObject<GameChannel>()(
 				fetch: Effect.gen( function* () {
 					const request = yield* HttpServerRequest.HttpServerRequest;
 					const playerId = new URL( request.url, "http://sync" ).searchParams.get( "playerId" );
+					const authInfo = yield* sessionService.load();
+
+					if ( !!playerId ) {
+						if ( !authInfo ) {
+							return HttpServerResponse.text( "Unauthorized", { status: 401 } );
+						}
+
+						if ( authInfo.id !== playerId ) {
+							return HttpServerResponse.text( "Forbidden", { status: 403 } );
+						}
+					}
+
 					const audience = playerId
 						? PlayerAudience.make( { id: PlayerId.make( playerId ) } )
 						: TableAudience.make( {} );
@@ -71,7 +88,11 @@ export class GameChannel extends Cloudflare.DurableObject<GameChannel>()(
 				} )
 			};
 		} );
-	} )
+	} ).pipe(
+		Effect.provide( SessionServiceLive ),
+		Effect.provide( SessionStoreLive ),
+		Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding )
+	)
 ) {}
 
 export type GameChannelNamespace = Cloudflare.DurableObject<GameChannel>;

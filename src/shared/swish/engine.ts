@@ -23,7 +23,8 @@ import type {
 	Audience,
 	BaseGameConfig,
 	InitializeInput,
-	MovePayload} from "@/shared/swish/schema.ts";
+	MovePayload
+} from "@/shared/swish/schema.ts";
 import { generateBotInfo, generateId } from "@/shared/utils/generator.ts";
 import {
 	CannotStart,
@@ -32,14 +33,14 @@ import {
 	GameNotFound,
 	GameNotInProgress,
 	MoveNotAllowed,
+	NotAMember,
 	NothingToRedo,
 	NothingToUndo,
 	NotYourTurn,
 	PhaseNotFound,
 	StaleCommand
 } from "@/shared/swish/errors.ts";
-import type {
-	EngineEvent} from "@/shared/swish/events.ts";
+import type { EngineEvent } from "@/shared/swish/events.ts";
 import {
 	activeInteraction,
 	CurrentPlayerSet,
@@ -70,7 +71,7 @@ const AUTO_START_DELAY_MS = 5000;
  * entry point `runBotTurn`, and one typed handler per declared move. Games wire
  * these onto their RPCs/HttpApi in `toLayer`.
  *
- * @param {GameStructure} structure - The game's schemas, rules, views, hooks, and bot policy.
+ * @param structure - The game's schemas, rules, views, hooks, and bot policy.
  * @returns An effect that resolved the engine methods plus a handler per move.
  */
 export const makeEngine = <
@@ -105,8 +106,8 @@ export const makeEngine = <
 	 * caller's `role`, and an optional `salt` into a deterministic stream, so
 	 * distinct call sites in the same turn never share a sequence.
 	 *
-	 * @param {PersistedGameData} data - The record to expose read-only.
-	 * @param {string} [role] - A label for the call site, salting its rng stream (e.g. "execute", "view").
+	 * @param data - The record to expose read-only.
+	 * @param [role] - A label for the call site, salting its rng stream (e.g. "execute", "view").
 	 * @returns The read-only snapshot (`state`, `config`, `context`, `rng`).
 	 */
 	const readonly = ( data: PersistedGameData<State, Config>, role: string = "" ) => ( {
@@ -174,12 +175,27 @@ export const makeEngine = <
 	 * Persists the snapshot (the fold cache) to `GameStore`. The append-only log
 	 * remains the source of truth; this snapshot is what `load` reads back.
 	 *
-	 * @param {PersistedGameData} data - The record to persist.
+	 * @param data - The record to persist.
 	 * @returns Completes once the snapshot is saved.
 	 */
 	const save = Effect.fn( function* ( data: PersistedGameData<State, Config> ) {
 		yield* store.save( data );
 	} );
+
+	/**
+	 * Asserts the caller is a seated player in this game. Every command except
+	 * `initialize`/`join` runs this against the authenticated identity, so a
+	 * non-member can neither read a private view nor act on a game they never
+	 * joined. Takes already-loaded `data` so callers don't re-read the store.
+	 *
+	 * @param data - The loaded record whose roster to check.
+	 * @param userId - The authenticated caller's id.
+	 * @returns Void, or fails with `NotAMember` when the id holds no seat.
+	 */
+	const assertMember = ( data: PersistedGameData<State, Config>, userId: PlayerId ) =>
+		data.players[ userId ]
+			? Effect.void
+			: Effect.fail( new NotAMember( { playerId: userId } ) );
 
 	/**
 	 * Redacts the interaction stack for one audience so an unresolved SIMULTANEOUS
@@ -188,8 +204,8 @@ export const makeEngine = <
 	 * the requesting player's own response (a Table/spectator audience sees none).
 	 * Sequential frames are public in order and pass through untouched.
 	 *
-	 * @param {GameContext} ctx - The context whose interaction stack to redact.
-	 * @param {Audience} audience - Who the view is for (a `Player` sees their own response).
+	 * @param ctx - The context whose interaction stack to redact.
+	 * @param audience - Who the view is for (a `Player` sees their own response).
 	 * @returns The context with simultaneous responses redacted (or `ctx` unchanged
 	 * when no window is open).
 	 */
@@ -238,8 +254,8 @@ export const makeEngine = <
 	 * interaction stack redacted. This is the exact shape `getState` returns and
 	 * `broadcastState` pushes.
 	 *
-	 * @param {PersistedGameData} data - The record to project.
-	 * @param {Audience} audience - Who the snapshot is for.
+	 * @param data - The record to project.
+	 * @param audience - Who the snapshot is for.
 	 * @returns The redacted, view-bearing snapshot for that audience.
 	 */
 	const snapshot = ( data: PersistedGameData<State, Config>, audience: Audience ) => {
@@ -258,7 +274,7 @@ export const makeEngine = <
 	 * Broadcast failures are swallowed (`Effect.ignore`) so a delivery problem never
 	 * fails the command that produced the state.
 	 *
-	 * @param {PersistedGameData} data - The record to broadcast.
+	 * @param data - The record to broadcast.
 	 * @returns Completes after attempting the broadcast; never fails.
 	 */
 	const broadcastState = Effect.fn( function* ( data: PersistedGameData<State, Config> ) {
@@ -278,9 +294,9 @@ export const makeEngine = <
 	 * to the log (dropping any redo tail), saves the new snapshot, and broadcasts.
 	 * This is a command's single commit point.
 	 *
-	 * @param {PersistedGameData} work - The already-folded record to persist.
-	 * @param {CommitMeta} meta - Commit metadata.
-	 * @param {ReadonlyArray<EngineEvent | Events>} events - The events this command produced.
+	 * @param work - The already-folded record to persist.
+	 * @param meta - Commit metadata.
+	 * @param events - The events this command produced.
 	 * @returns Completes once the commit is appended, saved, and broadcast.
 	 */
 	const commitAndSave = Effect.fn( function* (
@@ -308,8 +324,8 @@ export const makeEngine = <
 	 * pending event list and folds them onto the working record so subsequent steps
 	 * in the same command see the updated state. Mutates and returns `acc`.
 	 *
-	 * @param {Acc} acc - The command accumulator (`events` + working `work` record).
-	 * @param {ReadonlyArray<EngineEvent | Events>} es - The events to record and fold.
+	 * @param acc - The command accumulator (`events` + working `work` record).
+	 * @param es - The events to record and fold.
 	 * @returns The same accumulator, with `es` appended and folded in.
 	 */
 	const emit = ( acc: Acc, es: ReadonlyArray<EngineEvent | Events> ) => {
@@ -323,8 +339,8 @@ export const makeEngine = <
 	 * `onEnter` effects, and a `CurrentPlayerSet` from `resolveStartingPlayer` when
 	 * defined. Does not commit — the caller merges the returned accumulator.
 	 *
-	 * @param {PersistedGameData} from - The record to transition from.
-	 * @param {keyof PhaseMoves} phaseName - The phase to enter.
+	 * @param from - The record to transition from.
+	 * @param phaseName - The phase to enter.
 	 * @returns The accumulator with entry events folded in, or fails with `PhaseNotFound`.
 	 */
 	const enterPhase = Effect.fn( function* (
@@ -355,8 +371,8 @@ export const makeEngine = <
 	 * Folds events onto a record, routing game events through the game's `apply`
 	 * (the only state-changer) and engine events through `engineApply`.
 	 *
-	 * @param {PersistedGameData} data - The record to fold onto.
-	 * @param {ReadonlyArray<EngineEvent | Events>} events - The events to apply, in order.
+	 * @param data - The record to fold onto.
+	 * @param events - The events to apply, in order.
 	 * @returns The record after folding.
 	 */
 	const fold = (
@@ -394,14 +410,17 @@ export const makeEngine = <
 	// --- Get Game State For Player ----------------------------------------------------
 
 	/**
-	 * Reads the current state as a redacted snapshot for one audience.
+	 * Reads the current state as a snapshot redacted for the authenticated caller.
+	 * The audience is derived server-side from `userId` (never client-supplied), so a
+	 * member only ever sees their own private slice.
 	 *
-	 * @param {Audience} audience - Who the snapshot is for.
-	 * @returns The snapshot, or fails with `GameNotFound`/`CorruptState`.
+	 * @param userId - The authenticated caller's id.
+	 * @returns The snapshot, or fails with `NotAMember`/`GameNotFound`/`CorruptState`.
 	 */
-	const getState = Effect.fn( function* ( audience: Audience ) {
+	const getState = Effect.fn( function* ( userId: PlayerId ) {
 		const data = yield* load();
-		return snapshot( data, audience );
+		yield* assertMember( data, userId );
+		return snapshot( data, playerAudience( userId ) );
 	} );
 
 	/**
@@ -410,11 +429,13 @@ export const makeEngine = <
 	 * stamps it with the commit's time/actor. Empty when the game defines no
 	 * `describe`.
 	 *
-	 * @param {Audience} audience - Who the feed is rendered for (drives redaction).
+	 * @param userId - The authenticated caller's id (drives redaction).
 	 * @returns The ordered, human-readable feed entries.
 	 */
-	const getLog = Effect.fn( function* ( audience: Audience ) {
+	const getLog = Effect.fn( function* ( userId: PlayerId ) {
 		const data = yield* load();
+		yield* assertMember( data, userId );
+		const audience = playerAudience( userId );
 		const entries: Array<typeof LogEntry.Type> = [];
 		if ( !structure.describe ) {
 			return entries;
@@ -450,7 +471,7 @@ export const makeEngine = <
 	 * Creates a fresh game: runs the game's `setup`, writes the genesis snapshot as
 	 * the log's base, and persists it in `CREATED` status with no players.
 	 *
-	 * @param {InitializeInput} payload - The new game's id, code, config, and optional seed.
+	 * @param payload - The new game's id, code, config, and optional seed.
 	 * @returns The created game's id.
 	 */
 	const initialize = Effect.fn( function* ( payload: InitializeInput<Config> ) {
@@ -478,7 +499,7 @@ export const makeEngine = <
 	 * schedules an auto-start alarm. Re-joining an existing seat is an idempotent
 	 * no-op.
 	 *
-	 * @param {PlayerInfo} playerInfo - The joining player (human or bot).
+	 * @param playerInfo - The joining player (human or bot).
 	 * @returns The game id/code, or fails with `GameFull`/`GameNotFound`/`CorruptState`.
 	 */
 	const join = Effect.fn( function* ( playerInfo: PlayerInfo ) {
@@ -521,12 +542,14 @@ export const makeEngine = <
 
 	/**
 	 * Fills every empty seat with a generated bot by `join`-ing bot players until
-	 * the game is at capacity.
+	 * the game is at capacity. Only a seated player may add bots to their game.
 	 *
-	 * @returns Completes once the roster is full.
+	 * @param userId - The authenticated caller's id.
+	 * @returns Completes once the roster is full, or fails with `NotAMember`.
 	 */
-	const addBots = Effect.fn( function* () {
+	const addBots = Effect.fn( function* ( userId: PlayerId ) {
 		const data = yield* load();
+		yield* assertMember( data, userId );
 		const remaining = data.config.playerCount - Object.keys( data.players ).length;
 		for ( let i = 0; i < remaining; i++ ) {
 			const bot = generateBotInfo();
@@ -544,11 +567,12 @@ export const makeEngine = <
 	/**
 	 * Starts a full game: runs the `onStart` hook, enters the initial phase (for a
 	 * phased structure), flips status to `IN_PROGRESS`, and schedules the first bot
-	 * turn if the opening actor is a bot.
+	 * turn if the opening actor is a bot. Internal — no membership check, so it can
+	 * be driven by the system `auto-start` alarm. The public `start` gates on it.
 	 *
 	 * @returns Completes once the game is started, or fails with `CannotStart`/`PhaseNotFound`.
 	 */
-	const start = Effect.fn( function* () {
+	const startInternal = Effect.fn( function* () {
 		const data = yield* load();
 		const count = Object.keys( data.players ).length;
 		const cannotStart = data.status === "IN_PROGRESS"
@@ -577,15 +601,27 @@ export const makeEngine = <
 	} );
 
 	/**
+	 * Starts a full game on behalf of a seated player. Only a member may start their
+	 * game; otherwise defers to `startInternal`.
+	 *
+	 * @param userId - The authenticated caller's id.
+	 * @returns Completes once started, or fails with `NotAMember`/`CannotStart`/`PhaseNotFound`.
+	 */
+	const start = Effect.fn( function* ( userId: PlayerId ) {
+		yield* assertMember( yield* load(), userId );
+		yield* startInternal();
+	} );
+
+	/**
 	 * Runs the standard end-of-move tail, accumulating its events: advance the turn,
 	 * resolve the next player or phase transition, and — when `endIf` is met — run
 	 * `onEnd` and emit `GameCompleted`. Shared by a normal move and by an
 	 * interaction stack draining back to normal flow.
-	 * @param {Acc} acc - The command accumulator to extend.
-	 * @param {PlayerId} actorId - The player whose action triggered the tail.
-	 * @param {string} move - The move name (passed to `resolveNextPlayer`).
-	 * @param {PersistedGameData} fromData - The record before the move, supplying the phase it was made in.
-	 * @param {boolean} [advance] - Whether to advance the turn/next-player (`false` for `endsTurn: false`); completion is still evaluated.
+	 * @param acc - The command accumulator to extend.
+	 * @param actorId - The player whose action triggered the tail.
+	 * @param move - The move name (passed to `resolveNextPlayer`).
+	 * @param fromData - The record before the move, supplying the phase it was made in.
+	 * @param [advance] - Whether to advance the turn/next-player (`false` for `endsTurn: false`); completion is still evaluated.
 	 * @returns Completes once the tail events are accumulated.
 	 */
 	const advanceTail = (
@@ -644,7 +680,7 @@ export const makeEngine = <
 	 * fresh incomplete frame and the loop halts awaiting its responses rather than
 	 * spinning. Halts on the first incomplete or unknown-kind top frame.
 	 *
-	 * @param {Acc} acc - The command accumulator to extend with resolve effects.
+	 * @param acc - The command accumulator to extend with resolve effects.
 	 * @returns Completes when the top frame is incomplete or the stack is empty.
 	 */
 	const runResolveLoop = Effect.fn( function* ( acc: Acc ) {
@@ -683,8 +719,9 @@ export const makeEngine = <
 	 * `afterMove` → `advanceTail`, unless the move opened a window). Finally commits,
 	 * then archives a completed game or schedules the next bot.
 	 *
-	 * @param {keyof MoveInputs} moveType - The move name being submitted.
-	 * @param {MovePayload<MoveInputs[moveType]>} payload - Move payload containing input and playerInfo
+	 * @param moveType - The move name being submitted.
+	 * @param payload - Move payload containing input and playerInfo
+	 * @param playerInfo
 	 * @returns Completes once committed, or fails with a `MoveError`
 	 * (e.g. `NotYourTurn`, `InvalidMove`, `StaleCommand`).
 	 */
@@ -696,6 +733,7 @@ export const makeEngine = <
 
 		const move = String( moveType );
 		const data = yield* load();
+		yield* assertMember( data, playerInfo.id );
 
 		if ( data.status !== "IN_PROGRESS" ) {
 			return yield* new GameNotInProgress( { status: data.status } );
@@ -872,10 +910,11 @@ export const makeEngine = <
 	 * Steps the log cursor back one commit and rebuilds state from it: `refold`,
 	 * save the snapshot, `reconcile` scheduled work, and broadcast.
 	 *
-	 * @param {PlayerInfo} playerInfo - The requesting player (audience for the returned snapshot).
+	 * @param playerInfo - The requesting player (audience for the returned snapshot).
 	 * @returns The rebuilt snapshot, or fails with `NothingToUndo` at genesis.
 	 */
 	const undo = Effect.fn( function* ( playerInfo: PlayerInfo ) {
+		yield* assertMember( yield* load(), playerInfo.id );
 		const moved = yield* log.moveCursor( -1 );
 		if ( Option.isNone( moved ) ) {
 			return yield* new NothingToUndo();
@@ -893,10 +932,11 @@ export const makeEngine = <
 	 * Steps the log cursor forward one commit and rebuilds state from it (available
 	 * until a new command drops the redo tail): `refold`, save, `reconcile`, broadcast.
 	 *
-	 * @param {PlayerInfo} playerInfo - The requesting player (audience for the returned snapshot).
+	 * @param playerInfo - The requesting player (audience for the returned snapshot).
 	 * @returns The rebuilt snapshot, or fails with `NothingToRedo` at the newest commit.
 	 */
 	const redo = Effect.fn( function* ( playerInfo: PlayerInfo ) {
+		yield* assertMember( yield* load(), playerInfo.id );
 		const moved = yield* log.moveCursor( 1 );
 		if ( Option.isNone( moved ) ) {
 			return yield* new NothingToRedo();
@@ -914,7 +954,7 @@ export const makeEngine = <
 	 * Re-derives scheduled work after a time-travel (undo/redo): cancels every timer,
 	 * then reschedules a bot turn if the (possibly changed) actor is a bot.
 	 *
-	 * @param {PersistedGameData} data - The rebuilt record to reconcile timers against.
+	 * @param data - The rebuilt record to reconcile timers against.
 	 * @returns Completes once timers are reconciled.
 	 */
 	const reconcile = Effect.fn( function* ( data: PersistedGameData<State, Config> ) {
@@ -928,7 +968,7 @@ export const makeEngine = <
 	 * who still owes an answer); otherwise the normal `currentPlayer`. Used to decide
 	 * whether — and for whom — to schedule a bot turn.
 	 *
-	 * @param {PersistedGameData} data - The current record.
+	 * @param data - The current record.
 	 * @returns The player to act, or `undefined` if none is pending.
 	 */
 	const whoBotShouldAct = ( data: PersistedGameData<State, Config> ) => {
@@ -946,7 +986,7 @@ export const makeEngine = <
 	 * Schedules a delayed `bot` alarm when the game is in progress and the player to
 	 * act (`whoBotShouldAct`) is a bot; otherwise does nothing.
 	 *
-	 * @param {PersistedGameData} data - The current record.
+	 * @param data - The current record.
 	 * @returns Completes once the alarm is (or is not) scheduled.
 	 */
 	const scheduleBotIfNeeded = Effect.fn( function* ( data: PersistedGameData<State, Config> ) {
@@ -990,7 +1030,7 @@ export const makeEngine = <
 		}
 
 		if ( due.includes( "auto-start" ) ) {
-			yield* start().pipe(
+			yield* startInternal().pipe(
 				Effect.catchCause( ( cause ) => Effect.logError(
 					"engine.runBotTurn: auto-start failed",
 					cause

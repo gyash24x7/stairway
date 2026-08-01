@@ -121,7 +121,7 @@ export const Audience = Schema.Union( [ PlayerAudience, TableAudience ] );
 
 /**
  * Constructs a `Player` audience — the public board plus that player's private slice.
- * @param {PlayerId} id - The player the view is rendered for.
+ * @param id - The player the view is rendered for.
  * @returns A `swish/Player` audience.
  */
 export const playerAudience = ( id: PlayerId ) => PlayerAudience.make( { id } );
@@ -170,7 +170,7 @@ export type InitializeInput<Config extends BaseGameConfig> = {
 /**
  * Builds the `initialize` payload schema, weaving the game's `config` schema into
  * the fixed fields (id, code, optional seed).
- * @param {Schema.Top} config - The game's config schema.
+ * @param config - The game's config schema.
  * @returns The `swish/InitializeInput` schema for this game.
  */
 export const InitializeInput = <Config extends Schema.Top>( config: Config ) =>
@@ -213,8 +213,8 @@ export const GameIdParams = Schema.Struct( { gameId: GameId } );
  * Builds the schema of the full record persisted to Durable Object storage under
  * one key, weaving the game's `state` and `config` schemas into the fixed envelope
  * (seed, id, code, status, context, players).
- * @param {Schema.Top} state - The game's state schema.
- * @param {Schema.Top} config - The game's config schema.
+ * @param state - The game's state schema.
+ * @param config - The game's config schema.
  * @returns The `swish/PersistedGameData` schema for this game.
  */
 export const PersistedGameData = <State extends Schema.Top, Config extends Schema.Top>(
@@ -249,8 +249,8 @@ export type PersistedGameData<State, Config> = {
  * Builds the schema of what a client receives from `getState` / after a move: the
  * envelope (id, code, status, context, players) plus the game's `config` and the
  * audience-appropriate `view`.
- * @param {Schema.Top} view - The game's view schema.
- * @param {Schema.Top} config - The game's config schema.
+ * @param view - The game's view schema.
+ * @param config - The game's config schema.
  * @returns The `swish/GameSnapshot` schema for this game.
  */
 export const GameSnapshot = <
@@ -350,7 +350,7 @@ export type MovePayload<In extends Schema.Top> = {
  * Builds the payload schema of a move request: the acting `playerInfo`, the move's
  * `input`, and the optional `requestId` (idempotency) / `expectedTurn` (optimistic
  * concurrency) guards the engine reads in `submitMove`.
- * @param {Schema.Top} input - The move's input payload schema.
+ * @param input - The move's input payload schema.
  * @returns The move payload schema.
  */
 export const MovePayload = <In extends Schema.Top>( input: In ) =>
@@ -363,7 +363,7 @@ export const MovePayload = <In extends Schema.Top>( input: In ) =>
 /**
  * Builds the schema archived to KV when a game completes: the shared table view,
  * every player's view, and optional end-of-game `results` (standings).
- * @param {Schema.Top} view - The game's view schema (reused for table and per-player views).
+ * @param view - The game's view schema (reused for table and per-player views).
  * @returns The `swish/CompletedGameData` schema for this game.
  */
 export const CompletedGameData = <View extends Schema.Top>( view: View ) =>
