@@ -5,7 +5,6 @@ import type { FishEvent, FishState } from "@/games/fish/shared/schema.ts";
 import type { BookClaimed, CardAsked } from "@/games/fish/shared/schema.ts";
 import { getCardsOfBook } from "@/games/fish/shared/utils.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
-import { CARD_RANKS, getCardRank } from "@/shared/cards/utils.ts";
 import type { PlayerId } from "@/shared/swish/schema.ts";
 import { remove } from "@/shared/utils/array.ts";
 
@@ -20,16 +19,6 @@ const DEFAULT_METRICS = {
 	cardsTaken: 0,
 	totalClaims: 0,
 	successfulClaims: 0
-};
-
-// The book variant is derivable from any team's booksWon or the deck; simpler to
-// infer from the presence of 7s in the tracked deck (Canadian removes 7s). When
-// the deck is fully claimed this is ambiguous, but claims resolve before that
-// point; fall back to NORMAL only when no cards remain.
-const bookTypeOf = ( state: FishState ) => {
-	const cards = Object.keys( state.cardLocations );
-	const hasSeven = cards.some( c => getCardRank( c as CardId ) === CARD_RANKS.SEVEN );
-	return hasSeven ? "NORMAL" : ( cards.length > 0 ? "CANADIAN" : "NORMAL" );
 };
 
 const applyAsk = ( draft: Draft<FishState>, e: CardAsked ) => {
@@ -73,7 +62,7 @@ const applyAsk = ( draft: Draft<FishState>, e: CardAsked ) => {
 };
 
 const applyClaim = ( draft: Draft<FishState>, e: BookClaimed ) => {
-	const allBookCards = getCardsOfBook( e.book, bookTypeOf( draft ) );
+	const allBookCards = getCardsOfBook( e.book );
 	for ( const [ pid, hand ] of Object.entries( draft.hands ) ) {
 		draft.hands[ pid as PlayerId ] = hand.filter( c => !allBookCards.includes( c ) );
 	}

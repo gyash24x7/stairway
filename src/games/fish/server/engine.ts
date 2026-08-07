@@ -1,5 +1,4 @@
-import type {
-	FishSnapshot} from "@/games/fish/shared/schema.ts";
+import type { FishSnapshot } from "@/games/fish/shared/schema.ts";
 import {
 	AskCardInput,
 	BookClaimed,
@@ -197,6 +196,13 @@ export const fish = makeEngine( {
 				}
 
 				const book = getBookForCard( input.cardId, config.type );
+				if ( !book ) {
+					return new InvalidMove( {
+						move: "askCard",
+						reason: "That card is not in this game's deck!"
+					} );
+				}
+
 				const hasCardFromBook = hand.some( c => getBookForCard( c, config.type ) === book );
 				if ( !hasCardFromBook ) {
 					return new InvalidMove( {
@@ -241,6 +247,16 @@ export const fish = makeEngine( {
 					} );
 				}
 
+				// A card outside this variant's deck (a 7 in a CANADIAN game) belongs to
+				// no book. Reject it up front: a `Set` of `undefined` would otherwise
+				// pass the same-book check below and crash on the lookup.
+				if ( claimedCards.some( c => !getBookForCard( c, config.type ) ) ) {
+					return new InvalidMove( {
+						move: "claimBook",
+						reason: "Claim contains a card that is not in this game's deck!"
+					} );
+				}
+
 				const books = new Set( claimedCards.map( c => getBookForCard( c, config.type ) ) );
 				if ( books.size !== 1 ) {
 					return new InvalidMove( {
@@ -249,7 +265,7 @@ export const fish = makeEngine( {
 					} );
 				}
 
-				const book = [ ...books ][ 0 ];
+				const book = [ ...books ][ 0 ]!;
 				if ( getClaimedBooks( state ).includes( book ) ) {
 					return new InvalidMove( {
 						move: "claimBook",
@@ -257,7 +273,7 @@ export const fish = makeEngine( {
 					} );
 				}
 
-				const allBookCards = getCardsOfBook( book, config.type );
+				const allBookCards = getCardsOfBook( book );
 				if ( claimedCards.length !== allBookCards.length ) {
 					return new InvalidMove( {
 						move: "claimBook",
@@ -289,8 +305,9 @@ export const fish = makeEngine( {
 			execute: ( { state, config }, playerId, input ) => {
 				const timestamp = Date.now();
 				const claimedCards = Object.keys( input.claim ) as CardId[];
-				const book = getBookForCard( claimedCards[ 0 ], config.type );
-				const allBookCards = getCardsOfBook( book, config.type );
+				// `validate` has already rejected any card without a book in this variant.
+				const book = getBookForCard( claimedCards[ 0 ], config.type )!;
+				const allBookCards = getCardsOfBook( book );
 				const playerTeamId = state.playerData[ playerId ].teamId;
 
 				const correctClaim: Record<string, PlayerId> = {};
@@ -518,7 +535,7 @@ function fishBotMove( snapshot: typeof FishSnapshot.Type ) {
 
 		const fallbackBook = weightedBooks[ 0 ];
 		if ( fallbackBook ) {
-			const cardsInBook = getCardsOfBook( fallbackBook.book, config.type );
+			const cardsInBook = getCardsOfBook( fallbackBook.book );
 			const claim: Record<string, PlayerId> = {};
 			for ( const cardId of cardsInBook ) {
 				const owners = view.cardLocations[ cardId ] ?? snapshot.context.players;

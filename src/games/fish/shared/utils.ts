@@ -72,21 +72,25 @@ export const CANADIAN_BOOKS = {
 } as const;
 
 /**
- * Returns the book for a given card based on the book type.
+ * Returns the book for a given card in this variant, or `undefined` when the card
+ * belongs to no book of that variant — a 7 in a CANADIAN game, whose deck has
+ * none. Callers taking a card from client input MUST handle `undefined`; an
+ * earlier `!` here turned a hostile `claimBook` into an uncaught throw.
+ *
  * @param card - The card to find the book for
  * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
- * @returns The book that contains the card
+ * @returns The book containing the card, or `undefined` if this variant has none
  * @public
  */
 export function getBookForCard( card: CardId, bookType: BookType ) {
 	switch ( bookType ) {
 		case "NORMAL":
 			return Object.keys( NORMAL_BOOKS ).map( book => book as keyof typeof NORMAL_BOOKS )
-				.find( book => NORMAL_BOOKS[ book ].includes( card ) )!;
+				.find( book => NORMAL_BOOKS[ book ].includes( card ) );
 
 		case "CANADIAN":
 			return Object.keys( CANADIAN_BOOKS ).map( book => book as keyof typeof CANADIAN_BOOKS )
-				.find( book => CANADIAN_BOOKS[ book ].includes( card ) )!;
+				.find( book => CANADIAN_BOOKS[ book ].includes( card ) );
 	}
 }
 
@@ -98,7 +102,9 @@ export function getBookForCard( card: CardId, bookType: BookType ) {
  * @public
  */
 export function getBooksInHand( hand: readonly CardId[], bookType: BookType ) {
-	const books = new Set<Book>( hand.map( cardId => getBookForCard( cardId, bookType ) ) );
+	const books = new Set<Book>(
+		hand.map( cardId => getBookForCard( cardId, bookType ) ).filter( ( b ): b is NonNullable<typeof b> => !!b )
+	);
 	return Array.from( books );
 }
 
@@ -130,16 +136,19 @@ export function getMissingCards( hand: readonly CardId[], book: Book, bookType: 
 
 /**
  * Returns the cards of a specific book, optionally filtered by the player's hand.
+ * The two variants' book names are disjoint (`ACES`/`TWOS`... vs `LC`/`UD`...),
+ * so the book itself identifies the variant — no `bookType` is needed, and none
+ * has to be inferred from the cards still in play.
+ *
  * @param book - The book to get cards from
- * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
  * @param hand - Optional player's hand of cards to filter the results
- * @returns An array of PlayingCards from the specified book, filtered by the hand if provided
+ * @returns The book's cards, filtered by the hand if provided; empty for an unknown book
  * @public
  */
-export function getCardsOfBook( book: Book, bookType: BookType, hand?: readonly CardId[] ) {
-	const cards = bookType === "NORMAL"
-		? NORMAL_BOOKS[ book as NormalBook ]
-		: CANADIAN_BOOKS[ book as CanadianBook ];
+export function getCardsOfBook( book: Book, hand?: readonly CardId[] ) {
+	const cards: readonly CardId[] = NORMAL_BOOKS[ book as NormalBook ]
+		?? CANADIAN_BOOKS[ book as CanadianBook ]
+		?? [];
 
 	return cards.filter( card => !hand || hand.includes( card ) );
 }

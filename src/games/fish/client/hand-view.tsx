@@ -15,7 +15,7 @@ export function HandView() {
 
 	const groupedCards = useMemo(
 		() => getBooksInHand( hand, data.config.type ).map(
-			book => ( { book, cards: getCardsOfBook( book, data.config.type, hand ) } )
+			book => ( { book, cards: getCardsOfBook( book, hand ) } )
 		),
 		[ hand, data.config.type ]
 	);

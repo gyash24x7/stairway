@@ -51,7 +51,7 @@ export function ClaimBook() {
 		: [];
 
 	const allAssigned = selectedBook
-		&& claim.size === getCardsOfBook( selectedBook, data.config.type ).length;
+		&& claim.size === getCardsOfBook( selectedBook ).length;
 
 	const openDrawer = () => {
 		setOpen( true );
@@ -71,7 +71,7 @@ export function ClaimBook() {
 		} else {
 			setSelectedBook( book );
 			const newClaim = new Map<CardId, PlayerId>();
-			getCardsOfBook( book, data.config.type, player.hand ).forEach( cardId => {
+			getCardsOfBook( book, player.hand ).forEach( cardId => {
 				newClaim.set( cardId, player.playerId );
 			} );
 			setClaim( newClaim );

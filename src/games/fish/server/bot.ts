@@ -78,6 +78,9 @@ export function detectTeammateSignals( state: FishPlayerView, config: FishConfig
 		}
 
 		const book = getBookForCard( a1.cardId, config.type );
+		if ( !book ) {
+			continue;
+		}
 
 		// Find each other teammate's first ask after A1 (scanning newer entries: i-1 down to 0)
 		const seen = new Set<PlayerId>();
@@ -158,7 +161,8 @@ export function suggestBooks(
 ) {
 
 	const booksInGame = new Set( Object.keys( state.cardLocations )
-		.map( k => getBookForCard( k as CardId, config.type ) ) );
+		.map( k => getBookForCard( k as CardId, config.type ) )
+		.filter( ( b ): b is NonNullable<typeof b> => !!b ) );
 	const validBooks = Array.from( booksInGame );
 	const teamMates = getTeammates( state.teams, state.playerId );
 	const signalMap = new Map( signals.map( s => [ s.cardId, s ] ) );
@@ -173,7 +177,7 @@ export function suggestBooks(
 			isClaimable: true,
 			isKnown: true
 		};
-		const cardsInBook = getCardsOfBook( book, config.type );
+		const cardsInBook = getCardsOfBook( book );
 
 		for ( const cardId of cardsInBook ) {
 			const possibleOwners = state.cardLocations[ cardId ]!;
@@ -316,7 +320,10 @@ function detectBooksToSignal( state: FishPlayerView, config: FishConfig ) {
 	for ( const ask of recentAsks ) {
 		// Teammate failed to get a card that the bot currently holds
 		if ( !ask.success && teammates.includes( ask.playerId ) && state.hand.includes( ask.cardId ) ) {
-			booksToSignal.add( getBookForCard( ask.cardId, config.type ) );
+			const askedBook = getBookForCard( ask.cardId, config.type );
+			if ( askedBook ) {
+				booksToSignal.add( askedBook );
+			}
 		}
 	}
 
@@ -340,6 +347,10 @@ function getActiveBook(
 	}
 
 	const book = getBookForCard( lastAsk.cardId, config.type );
+	if ( !book ) {
+		return undefined;
+	}
+
 	const missingCards = getMissingCards( state.hand, book, config.type );
 
 	// Check if any opponent could still hold a missing card from this book
@@ -370,6 +381,10 @@ function getKnownBookHolders( state: FishPlayerView, config: FishConfig ) {
 		// The asker must hold at least one card from this book
 		if ( state.cardCounts[ ask.playerId ] > 0 ) {
 			const book = getBookForCard( ask.cardId, config.type );
+			if ( !book ) {
+				continue;
+			}
+
 			if ( !holders.has( ask.playerId ) ) {
 				holders.set( ask.playerId, new Set() );
 			}
@@ -410,7 +425,7 @@ export function suggestClaims(
 		let weight = 0;
 		let allAssigned = true;
 		const claim = {} as Record<CardId, PlayerId>;
-		const cardsInBook = getCardsOfBook( book, config.type );
+		const cardsInBook = getCardsOfBook( book );
 
 		for ( const cardId of cardsInBook ) {
 			const possibleOwners = state.cardLocations[ cardId ]!;
@@ -471,12 +486,13 @@ export function suggestTransfers( state: FishPlayerView, config: FishConfig ) {
 
 	const teamMates = getTeammates( state.teams, state.playerId );
 	const validBooks = new Set( Object.keys( state.cardLocations )
-		.map( k => getBookForCard( k as CardId, config.type ) ) );
+		.map( k => getBookForCard( k as CardId, config.type ) )
+		.filter( ( b ): b is NonNullable<typeof b> => !!b ) );
 
 	const weightedTransfers = {} as Record<PlayerId, number>;
 
 	for ( const book of validBooks ) {
-		const cardsInBook = getCardsOfBook( book, config.type );
+		const cardsInBook = getCardsOfBook( book );
 		for ( const cardId of cardsInBook ) {
 			const possibleOwners = state.cardLocations[ cardId ];
 			if ( !possibleOwners ) {

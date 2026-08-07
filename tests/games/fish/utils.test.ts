@@ -301,9 +301,9 @@ describe( "fish/utils — books", () => {
 	} );
 
 	test( "getCardsOfBook optionally intersects with a hand", () => {
-		expect( getCardsOfBook( "ACES", "NORMAL" ) ).toHaveLength( 4 );
-		expect( getCardsOfBook( "LC", "CANADIAN" ) ).toHaveLength( 6 );
-		expect( getCardsOfBook( "ACES", "NORMAL", [ "AC", "2C" ] as CardId[] ) )
+		expect( getCardsOfBook( "ACES" ) ).toHaveLength( 4 );
+		expect( getCardsOfBook( "LC" ) ).toHaveLength( 6 );
+		expect( getCardsOfBook( "ACES", [ "AC", "2C" ] as CardId[] ) )
 			.toEqual( [ "AC" ] as CardId[] );
 	} );
 

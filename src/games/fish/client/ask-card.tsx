@@ -43,8 +43,8 @@ export function AskCard() {
 
 	const askableBooks = Array.from( getBooksInHand( player.hand, data.config.type ) )
 		.filter( book => {
-			const cards = getCardsOfBook( book, data.config.type, player.hand );
-			return cards.length !== 6;
+			const cards = getCardsOfBook( book, player.hand );
+			return cards.length !== data.config.bookSize;
 		} );
 
 	const opponentsWithCards = getOpponents( data.view.teams, player.playerId )

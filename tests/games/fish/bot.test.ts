@@ -218,9 +218,9 @@ describe( "fish — bot self-play", () => {
 			.view as typeof FishPlayerView.Type ).hand;
 
 		const book = config.books.find(
-			b => getCardsOfBook( b, config.type ).some( c => view.hand.includes( c ) )
+			b => getCardsOfBook( b ).some( c => view.hand.includes( c ) )
 		)!;
-		const cardId = getCardsOfBook( book, config.type ).find(
+		const cardId = getCardsOfBook( book ).find(
 			c => !view.hand.includes( c ) && !botHand.includes( c )
 		)!;
 

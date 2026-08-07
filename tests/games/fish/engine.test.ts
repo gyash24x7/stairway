@@ -161,12 +161,11 @@ async function correctClaim(
 	memory: Memory,
 	engine: Engine,
 	players: PlayerInfo[],
-	book: string,
-	config: FishConfig
+	book: string
 ) {
 	const hands = await allHands( memory, engine, players );
 	const claim: Record<string, PlayerId> = {};
-	for ( const card of getCardsOfBook( book, config.type ) ) {
+	for ( const card of getCardsOfBook( book ) ) {
 		const owner = players.find( p => hands[ p.id ]!.includes( card ) );
 		if ( owner ) {
 			claim[ card ] = owner.id;
@@ -183,7 +182,7 @@ const bookInHand = async ( memory: Memory, engine: Engine, p: PlayerInfo, config
 };
 
 const getBookOf = ( card: CardId, config: FishConfig ) =>
-	config.books.find( b => getCardsOfBook( b, config.type ).includes( card ) )!;
+	config.books.find( b => getCardsOfBook( b ).includes( card ) )!;
 
 /**
  * A legal ask for `asker`: a card from a book they hold, held by an opponent.
@@ -202,7 +201,7 @@ async function legalAsk(
 
 	for ( const card of hand ) {
 		const book = getBookOf( card, config );
-		for ( const cardId of getCardsOfBook( book, config.type ) ) {
+		for ( const cardId of getCardsOfBook( book ) ) {
 			if ( hand.includes( cardId ) ) {
 				continue;
 			}
@@ -217,7 +216,7 @@ async function legalAsk(
 	// Every missing card of every book in hand sits with a teammate.
 	for ( const card of hand ) {
 		const book = getBookOf( card, config );
-		const missing = getCardsOfBook( book, config.type ).find( c => !hand.includes( c ) );
+		const missing = getCardsOfBook( book ).find( c => !hand.includes( c ) );
 		if ( missing ) {
 			return { from: opponents[ 0 ]!.id, cardId: missing, success: false };
 		}
@@ -601,7 +600,7 @@ describe( "fish — askCard validation", () => {
 
 		const error = await runFail( memory, engine.askCard( {
 			from: P2.id,
-			cardId: getCardsOfBook( foreignBook, config.type )[ 0 ]!
+			cardId: getCardsOfBook( foreignBook )[ 0 ]!
 		}, P1 ) ) as InvalidMoveError;
 
 		expect( error._tag ).toBe( "swish/InvalidMove" );
@@ -640,10 +639,10 @@ describe( "fish — askCard validation", () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		const book = await bookInHand( memory, engine, P1, config );
-		const cards = getCardsOfBook( book, config.type );
+		const cards = getCardsOfBook( book );
 
 		await run( memory, engine.claimBook(
-			{ claim: await correctClaim( memory, engine, FOUR, book, config ) },
+			{ claim: await correctClaim( memory, engine, FOUR, book ) },
 			P1
 		) );
 
@@ -740,7 +739,7 @@ describe( "fish — ask resolution", () => {
 
 		// A card from a book p1 holds that p2 does NOT have.
 		const book = getBookOf( hand[ 0 ]!, config );
-		const cardId = getCardsOfBook( book, config.type ).find(
+		const cardId = getCardsOfBook( book ).find(
 			c => !hand.includes( c ) && !hands[ P2.id ]!.includes( c )
 		)!;
 
@@ -762,7 +761,7 @@ describe( "fish — ask resolution", () => {
 		const hands = await allHands( memory, engine, FOUR );
 		const hand = hands[ P1.id ]!;
 		const book = getBookOf( hand[ 0 ]!, config );
-		const cardId = getCardsOfBook( book, config.type ).find(
+		const cardId = getCardsOfBook( book ).find(
 			c => !hand.includes( c ) && !hands[ P2.id ]!.includes( c )
 		)!;
 
@@ -796,6 +795,18 @@ describe( "fish — claimBook validation", () => {
 		expect( error.reason ).toContain( "cannot be empty" );
 	} );
 
+	test( "a card outside this variant's deck is rejected, not a crash", async () => {
+		// CANADIAN removes the 7s, so no 7 belongs to any book. This used to pass
+		// the same-book check (a Set of one `undefined`) and then throw inside the
+		// book lookup — an uncaught error reachable straight from the API.
+		const engine = await bootPlay( memory, { config: canadianConfig() } );
+		const error = await rejectClaim( engine, {
+			"7C": P1.id, "7D": P1.id, "7H": P1.id, "7S": P1.id
+		} );
+
+		expect( error.reason ).toContain( "not in this game's deck" );
+	} );
+
 	test( "every claimed card must belong to the same book", async () => {
 		const engine = await bootPlay( memory );
 		const error = await rejectClaim( engine, {
@@ -824,7 +835,7 @@ describe( "fish — claimBook validation", () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		const book = await bookInHand( memory, engine, P1, config );
-		const claim = await correctClaim( memory, engine, FOUR, book, config );
+		const claim = await correctClaim( memory, engine, FOUR, book );
 
 		await run( memory, engine.claimBook( { claim }, P1 ) );
 		const error = await rejectClaim( engine, claim );
@@ -843,7 +854,7 @@ describe( "fish — claim resolution", () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		const book = await bookInHand( memory, engine, P1, config );
-		const claim = await correctClaim( memory, engine, FOUR, book, config );
+		const claim = await correctClaim( memory, engine, FOUR, book );
 
 		await run( memory, engine.claimBook( { claim }, P1 ) );
 
@@ -867,7 +878,7 @@ describe( "fish — claim resolution", () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		const book = await bookInHand( memory, engine, P1, config );
-		const claim = await correctClaim( memory, engine, FOUR, book, config );
+		const claim = await correctClaim( memory, engine, FOUR, book );
 
 		// Swap two owners so the claim is complete but wrong.
 		const cards = Object.keys( claim );
@@ -896,8 +907,8 @@ describe( "fish — claim resolution", () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		const book = await bookInHand( memory, engine, P1, config );
-		const cards = getCardsOfBook( book, config.type );
-		const claim = await correctClaim( memory, engine, FOUR, book, config );
+		const cards = getCardsOfBook( book );
+		const claim = await correctClaim( memory, engine, FOUR, book );
 
 		await run( memory, engine.claimBook( { claim }, P1 ) );
 
@@ -917,7 +928,7 @@ describe( "fish — claim resolution", () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		const book = await bookInHand( memory, engine, P1, config );
-		const cards = getCardsOfBook( book, config.type );
+		const cards = getCardsOfBook( book );
 		const hand = await handOf( memory, engine, P1 );
 
 		// Leave p1 holding nothing but their share of the book being claimed, so
@@ -926,7 +937,7 @@ describe( "fish — claim resolution", () => {
 			hands: { [ P1.id ]: hand.filter( c => cards.includes( c ) ) }
 		} );
 
-		const claim = await correctClaim( memory, engine, FOUR, book, config );
+		const claim = await correctClaim( memory, engine, FOUR, book );
 		await run( memory, engine.claimBook( { claim }, P1 ) );
 
 		const state = await stateOf( memory, engine, P1 );
@@ -938,7 +949,7 @@ describe( "fish — claim resolution", () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		const book = await bookInHand( memory, engine, P1, config );
-		const claim = await correctClaim( memory, engine, FOUR, book, config );
+		const claim = await correctClaim( memory, engine, FOUR, book );
 		const cards = Object.keys( claim );
 		const wrong = { ...claim, [ cards[ 0 ]! ]: claim[ cards[ 1 ]! ]! };
 		wrong[ cards[ 1 ]! ] = claim[ cards[ 0 ]! ]!;
@@ -962,7 +973,7 @@ describe( "fish — transferTurn", () => {
 	/** A successful claim by p1, which is the only thing that unlocks a transfer. */
 	async function claimFirstBook( engine: Engine, config: FishConfig ) {
 		const book = await bookInHand( memory, engine, P1, config );
-		const claim = await correctClaim( memory, engine, FOUR, book, config );
+		const claim = await correctClaim( memory, engine, FOUR, book );
 		await run( memory, engine.claimBook( { claim }, P1 ) );
 		return book;
 	}
@@ -1077,7 +1088,7 @@ describe( "fish — completion & log", () => {
 	// pass: claiming SEVENS makes `bookTypeOf` flip the game to CANADIAN, and the
 	// next claim throws `undefined is not an object` out of `getCardsOfBook`.
 	// Left here (rather than asserting the throw) so the fix has a target.
-	test.skip( "a NORMAL game can also be played to completion", async () => {
+	test( "a NORMAL game can also be played to completion", async () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
 		await claimEveryBook( memory, engine, FOUR, config );
@@ -1194,7 +1205,7 @@ async function claimEveryBook(
 		const claimer = players.find( p => p.id === state.context.currentPlayer )!;
 		const claimed = new Set( Object.values( view.teams ).flatMap( t => t.booksWon ) );
 		const book = config.books.find( b => !claimed.has( b ) )!;
-		const claim = await correctClaim( memory, engine, players, book, config );
+		const claim = await correctClaim( memory, engine, players, book );
 
 		await run( memory, engine.claimBook( { claim }, claimer ) );
 	}
