@@ -19,10 +19,7 @@ import {
 	PlayerInfo,
 	tableAudience
 } from "@/shared/swish/schema.ts";
-import type {
-	Audience,
-	BaseGameConfig,
-	InitializeInput} from "@/shared/swish/schema.ts";
+import type { Audience, BaseGameConfig, InitializeInput } from "@/shared/swish/schema.ts";
 import { generateBotInfo, generateId } from "@/shared/utils/generator.ts";
 import {
 	CannotStart,
@@ -735,9 +732,6 @@ export const makeEngine = <
 		}
 
 		const moveDef = structure.moves[ moveType ];
-		if ( !moveDef ) {
-			return yield* new MoveNotAllowed( { move } );
-		}
 
 		// config-driven capability gate — a variant/house-rule may disable a move.
 		if ( moveDef.enabledWhen && !moveDef.enabledWhen( data.config ) ) {
