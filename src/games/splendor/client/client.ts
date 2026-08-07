@@ -27,6 +27,10 @@ export const createSplendorGameFn = ( config: SplendorConfig ) =>
 export const joinSplendorGameFn = ( code: string ) =>
 	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
 
+/** Start a filled game sitting at `PLAYERS_READY`. */
+export const startGameFn = ( gameId: string ) =>
+	run( client.start( { params: gameIdParams( gameId ) } ) );
+
 export const pickTokensFn = ( gameId: string, input: PickTokensInput ) =>
 	run( client.pickTokens( { params: gameIdParams( gameId ), payload: input } ) );
 

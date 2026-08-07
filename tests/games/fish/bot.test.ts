@@ -196,7 +196,9 @@ describe( "fish — bot self-play", () => {
 			expect( Object.values( view.teams ).flatMap( t => t.booksWon ).sort() )
 				.toEqual( [ ...config.books ].sort() );
 			expect( view.winningTeam ).toBeDefined();
-		} );
+		// A whole game is hundreds of engine commands, so it needs more than bun's
+		// 5s default — it passes alone but tips over under full-suite load.
+		}, 30_000 );
 	}
 
 	test( "a bot seated mid-game plays a legal move when its alarm fires", async () => {

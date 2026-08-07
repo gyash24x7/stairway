@@ -2,10 +2,10 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
-	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
+	StartApiEndpoint,
 	MoveApiEndpoint
 } from "@/shared/swish/api.ts";
 import {
@@ -21,7 +21,7 @@ export const SplendorApiGroup = HttpApiGroup.make( "splendor" )
 		CreateGameApiEndpoint( SplendorConfig ),
 		GetStateApiEndpoint( SplendorSnapshot ),
 		JoinApiEndpoint(),
-		AddBotsApiEndpoint(),
+		StartApiEndpoint(),
 		MoveApiEndpoint( "pickTokens", PickTokensInput ),
 		MoveApiEndpoint( "reserveCard", ReserveCardInput ),
 		MoveApiEndpoint( "purchaseCard", PurchaseCardInput )

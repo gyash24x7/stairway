@@ -91,6 +91,12 @@ export const TicTacToeApiLive = HttpApiBuilder.group( StairwayAPI, "tictactoe", 
 				return yield* client.addBots( PlayerId.make( user.id ) );
 			} ) )
 
+			.handle( "start", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.start( PlayerId.make( user.id ) );
+			} ) )
+
 			.handle( "getState", ( { params } ) => Effect.gen( function* () {
 				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );

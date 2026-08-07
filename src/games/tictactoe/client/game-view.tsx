@@ -10,6 +10,8 @@ import { popIn, slideInUp } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { Board } from "@/games/tictactoe/client/board.tsx";
 import { useTicTacToe } from "@/games/tictactoe/client/context.tsx";
+import { startGameFn } from "@/games/tictactoe/client/client.ts";
+import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
 export function GameView() {
 	const { data, addBots, isPending } = useTicTacToe();
@@ -41,6 +43,22 @@ export function GameView() {
 					<Button onClick={ handleAddBots }>
 						{ isPending ? <Spinner/> : "Add Bots" }
 					</Button>
+				</div>
+			) }
+
+			{ data.status === "PLAYERS_READY" && (
+				<div
+					className={ cn(
+						"rounded-md bg-background p-8 text-center",
+						"w-full flex flex-col gap-2 items-center"
+					) }
+				>
+					<p className={ "text-lg font-heading" }>Both seats filled</p>
+					<StartGame
+						gameId={ data.id }
+						queryKey={ [ "tic-tac-toe", "getState", data.id ] }
+						startGame={ startGameFn }
+					/>
 				</div>
 			) }
 

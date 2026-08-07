@@ -20,6 +20,8 @@ import { Board } from "@/games/splendor/client/board.tsx";
 import { useSplendor } from "@/games/splendor/client/context.tsx";
 import { PickTokens } from "@/games/splendor/client/pick-tokens.tsx";
 import { PlayerInfo } from "@/games/splendor/client/player-info.tsx";
+import { startGameFn } from "@/games/splendor/client/client.ts";
+import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
 export function GameView() {
 	const { data } = useSplendor();
@@ -68,6 +70,23 @@ export function GameView() {
 					<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
 						WAITING FOR PLAYERS
 					</p>
+				</div>
+			) }
+			{ data.status === "PLAYERS_READY" && (
+				<div
+					className={ cn(
+						"p-2 md:p-3 rounded-md w-full bg-background",
+						"flex flex-col gap-2 items-center"
+					) }
+				>
+					<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
+						ALL PLAYERS JOINED
+					</p>
+					<StartGame
+						gameId={ data.id }
+						queryKey={ [ "splendor", "getState", data.id ] }
+						startGame={ startGameFn }
+					/>
 				</div>
 			) }
 			{ data.status === "IN_PROGRESS" && (

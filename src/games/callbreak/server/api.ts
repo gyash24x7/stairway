@@ -60,7 +60,7 @@ export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", 
 					config: CallbreakConfig.make( {
 						...payload,
 						playerCount: CALLBREAK_PLAYER_COUNT,
-						autoStart: false
+						autoStart: true
 					} )
 				} );
 
@@ -89,6 +89,12 @@ export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", 
 				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );
 				return yield* client.addBots( PlayerId.make( user.id ) );
+			} ) )
+
+			.handle( "start", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.start( PlayerId.make( user.id ) );
 			} ) )
 
 			.handle( "getState", ( { params } ) => Effect.gen( function* () {

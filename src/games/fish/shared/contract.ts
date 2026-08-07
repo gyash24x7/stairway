@@ -6,6 +6,7 @@ import {
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
+	StartApiEndpoint,
 	MoveApiEndpoint
 } from "@/shared/swish/api.ts";
 import {
@@ -22,6 +23,7 @@ export const FishApiGroup = HttpApiGroup.make( "fish" )
 		CreateGameApiEndpoint( FishConfig ),
 		GetStateApiEndpoint( FishSnapshot ),
 		JoinApiEndpoint(),
+		StartApiEndpoint(),
 		AddBotsApiEndpoint(),
 		MoveApiEndpoint( "createTeams", CreateTeamsInput ),
 		MoveApiEndpoint( "askCard", AskCardInput ),

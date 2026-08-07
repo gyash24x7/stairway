@@ -6,6 +6,7 @@ import {
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
+	StartApiEndpoint,
 	MoveApiEndpoint
 } from "@/shared/swish/api.ts";
 import {
@@ -20,6 +21,7 @@ export const CallbreakApiGroup = HttpApiGroup.make( "callbreak" )
 		CreateGameApiEndpoint( CallbreakCreateInput ),
 		GetStateApiEndpoint( CallbreakSnapshot ),
 		JoinApiEndpoint(),
+		StartApiEndpoint(),
 		AddBotsApiEndpoint(),
 		MoveApiEndpoint( "declareWins", DeclareWinsInput ),
 		MoveApiEndpoint( "playCard", PlayCardInput )

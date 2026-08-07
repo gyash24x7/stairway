@@ -17,6 +17,8 @@ import { RDraft } from "@/games/kingdomino/client/draft.tsx";
 import { PlayerBoards } from "@/games/kingdomino/client/player-boards.tsx";
 import { PlayerScore } from "@/games/kingdomino/client/player-score.tsx";
 import { usePlacement } from "@/games/kingdomino/client/use-placement.tsx";
+import { startGameFn } from "@/games/kingdomino/client/client.ts";
+import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
 export function GameView() {
 	const { data } = useKingdomino();
@@ -115,6 +117,15 @@ export function GameView() {
 					<div className={ "p-2 w-full rounded-md bg-accent text-center" }>
 						<span className={ "text-2xl font-heading" }>{ getStatusMsg() }</span>
 					</div>
+					{ data.status === "PLAYERS_READY" && (
+						<div className={ "flex justify-center w-full" }>
+							<StartGame
+								gameId={ data.id }
+								queryKey={ [ "kingdomino", "getState", data.id ] }
+								startGame={ startGameFn }
+							/>
+						</div>
+					) }
 				</Fragment>
 			) : (
 				<div

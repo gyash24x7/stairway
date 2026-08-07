@@ -75,6 +75,12 @@ export const KingdominoApiLive = HttpApiBuilder.group( StairwayAPI, "kingdomino"
 				return yield* client.join( toPlayerInfo( user ) );
 			} ) )
 
+			.handle( "start", ( { params } ) => Effect.gen( function* () {
+				const { user } = yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.start( PlayerId.make( user.id ) );
+			} ) )
+
 			.handle( "getState", ( { params } ) => Effect.gen( function* () {
 				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );

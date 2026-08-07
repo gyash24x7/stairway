@@ -11,6 +11,8 @@ import { cn } from "@/shared/ui/utils/cn.ts";
 import { ActionPanel } from "@/games/callbreak/client/action-panel.tsx";
 import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 import { DealView } from "@/games/callbreak/client/deal-view.tsx";
+import { startGameFn } from "@/games/callbreak/client/client.ts";
+import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
 export function GameView() {
 	const { data, addBots } = useCallbreak();
@@ -60,6 +62,23 @@ export function GameView() {
 						<Button onClick={ handleAddBots } disabled={ isPending }>
 							{ isPending ? <Spinner/> : "ADD BOTS" }
 						</Button>
+					</div>
+				) }
+				{ data.status === "PLAYERS_READY" && (
+					<div
+						className={ cn(
+							"p-2 md:p-3 rounded-md w-full bg-background",
+							"flex flex-col gap-2 items-center"
+						) }
+					>
+						<p className={ "text-sm md:text-lg xl:text-xl font-semibold" }>
+							ALL PLAYERS JOINED
+						</p>
+						<StartGame
+							gameId={ data.id }
+							queryKey={ [ "callbreak", "getState", data.id ] }
+							startGame={ startGameFn }
+						/>
 					</div>
 				) }
 			</div>

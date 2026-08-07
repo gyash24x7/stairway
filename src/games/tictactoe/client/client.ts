@@ -21,6 +21,10 @@ export const createTicTacToeGameFn = () =>
 export const joinTicTacToeGameFn = ( code: string ) =>
 	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
 
+/** Start a filled game sitting at `PLAYERS_READY`. */
+export const startGameFn = ( gameId: string ) =>
+	run( client.start( { params: gameIdParams( gameId ) } ) );
+
 export const addBotsFn = ( gameId: string ) =>
 	run( client.addBots( { params: gameIdParams( gameId ) } ) );
 

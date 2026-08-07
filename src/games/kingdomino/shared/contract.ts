@@ -5,6 +5,7 @@ import {
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
 	JoinApiEndpoint,
+	StartApiEndpoint,
 	MoveApiEndpoint
 } from "@/shared/swish/api.ts";
 import {
@@ -20,6 +21,7 @@ export const KingdominoApiGroup = HttpApiGroup.make( "kingdomino" )
 		CreateGameApiEndpoint( KingdominoConfig ),
 		GetStateApiEndpoint( KingdominoSnapshot ),
 		JoinApiEndpoint(),
+		StartApiEndpoint(),
 		MoveApiEndpoint( "selectDomino", SelectDominoInput ),
 		MoveApiEndpoint( "placeDomino", PlaceDominoInput ),
 		MoveApiEndpoint( "discardDomino", DiscardDominoInput )

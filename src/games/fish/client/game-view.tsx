@@ -16,6 +16,8 @@ import { GameMetrics } from "@/games/fish/client/metrics.tsx";
 import { TeamsView } from "@/games/fish/client/teams-view.tsx";
 import { TransferTurn } from "@/games/fish/client/transfer-turn.tsx";
 import { TurnIndicator } from "@/games/fish/client/turn-indicator.tsx";
+import { startGameFn } from "@/games/fish/client/client.ts";
+import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
 export function GameView() {
 	const { data } = useFish();
@@ -110,6 +112,13 @@ export function GameView() {
 				) }
 			>
 				{ data.status === "CREATED" && <AddBots/> }
+				{ data.status === "PLAYERS_READY" && (
+					<StartGame
+						gameId={ data.id }
+						queryKey={ [ "fish", "getState", data.id ] }
+						startGame={ startGameFn }
+					/>
+				) }
 				{ isTeamConfig && <CreateTeams/> }
 				{ isPlaying && isMyTurn && hasCards && <AskCard/> }
 				{ isPlaying && isMyTurn && <ClaimBook/> }

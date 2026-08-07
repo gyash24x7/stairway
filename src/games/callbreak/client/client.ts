@@ -33,6 +33,10 @@ export const joinCallbreakGameFn = ( code: string, signal?: AbortSignal ) =>
 		signal
 	);
 
+/** Start a filled game sitting at `PLAYERS_READY`. */
+export const startGameFn = ( gameId: string ) =>
+	run( client.callbreak.start( { params: gameIdParams( gameId ) } ) );
+
 export const addBotsFn = ( gameId: string, signal?: AbortSignal ) =>
 	run( client.callbreak.addBots( { params: gameIdParams( gameId ) } ), signal );
 

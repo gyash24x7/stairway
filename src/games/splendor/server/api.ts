@@ -75,10 +75,10 @@ export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", ha
 				return yield* client.join( toPlayerInfo( user ) );
 			} ) )
 
-			.handle( "addBots", ( { params } ) => Effect.gen( function* () {
+			.handle( "start", ( { params } ) => Effect.gen( function* () {
 				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );
-				return yield* client.addBots( PlayerId.make( user.id ) );
+				return yield* client.start( PlayerId.make( user.id ) );
 			} ) )
 
 			.handle( "getState", ( { params } ) => Effect.gen( function* () {

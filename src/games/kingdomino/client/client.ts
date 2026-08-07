@@ -38,6 +38,10 @@ export const discardDominoFn = ( gameId: string, input: DiscardDominoInput ) =>
 
 // --- Queries ---------------------------------------------------------------
 
+/** Start a filled game sitting at `PLAYERS_READY`. */
+export const startGameFn = ( gameId: string ) =>
+	run( client.start( { params: gameIdParams( gameId ) } ) );
+
 export const getKingdominoStateFn = ( gameId: string, signal?: AbortSignal ) =>
 	run( client.getState( {
 		params: gameIdParams( gameId )
