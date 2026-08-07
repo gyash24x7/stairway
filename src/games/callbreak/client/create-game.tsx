@@ -15,12 +15,8 @@ export function CallbreakCreateGame() {
 		if ( !dealCount || !trumpSuit ) {
 			return "";
 		}
-		const { id } = await createCallbreakGameFn( {
-			playerCount: 4,
-			autoStart: false,
-			dealCount,
-			trumpSuit
-		} );
+		// Four seats and `autoStart` are fixed server-side.
+		const { id } = await createCallbreakGameFn( { dealCount, trumpSuit } );
 
 		return id;
 	};

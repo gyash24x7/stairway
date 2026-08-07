@@ -1,6 +1,6 @@
 import { getClient, run } from "@/client.ts";
 import type {
-	CallbreakConfig,
+	CallbreakCreateInput,
 	DeclareWinsInput,
 	PlayCardInput
 } from "@/games/callbreak/shared/schema.ts";
@@ -20,8 +20,8 @@ const gameIdParams = ( gameId: string ) =>
 
 // --- Mutations -------------------------------------------------------------
 
-export const createCallbreakGameFn = ( config: CallbreakConfig, signal?: AbortSignal ) =>
-	run( client.callbreak.createGame( { payload: config } ), signal );
+export const createCallbreakGameFn = ( input: CallbreakCreateInput, signal?: AbortSignal ) =>
+	run( client.callbreak.createGame( { payload: input } ), signal );
 
 export const joinCallbreakGameFn = ( code: string, signal?: AbortSignal ) =>
 	run(

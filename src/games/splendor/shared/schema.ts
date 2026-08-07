@@ -73,9 +73,17 @@ export const CardsByLevel = Schema.Struct( {
 
 // --- Config / State / Views ------------------------------------------------------
 
+/**
+ * Splendor seats 2-4. The token pool is sized off this (`playerCount === 4 ? 7 : 5`)
+ * and the noble row is `playerCount + 1`, so anything outside the range deals a
+ * board the rules don't define.
+ */
+export const SPLENDOR_PLAYER_COUNTS = [ 2, 3, 4 ] as const;
+
 export type SplendorConfig = typeof SplendorConfig.Type;
 export const SplendorConfig = Schema.Struct( {
 	...BaseGameConfig.fields,
+	playerCount: Schema.Literals( SPLENDOR_PLAYER_COUNTS ),
 	winningPoints: Schema.Number
 } );
 

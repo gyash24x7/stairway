@@ -2,13 +2,10 @@ import { CreateGame } from "@/shared/ui/components/create-game.tsx";
 import { createTicTacToeGameFn } from "@/games/tictactoe/client/client.ts";
 
 export function TicTacToeCreateGame() {
-	// Tic-Tac-Toe is a fixed two-seat game; it starts once both seats are filled
-	// (a second player joins, or bots are added), so `autoStart` stays on.
+	// Tic-Tac-Toe has nothing to configure: the two seats and `autoStart` are
+	// fixed server-side, so create takes an empty body.
 	const createTicTacToeGame = async () => {
-		const { id } = await createTicTacToeGameFn( {
-			playerCount: 2,
-			autoStart: true
-		} );
+		const { id } = await createTicTacToeGameFn();
 		return id;
 	};
 

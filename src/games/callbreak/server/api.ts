@@ -6,7 +6,11 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { StairwayAPI } from "@/api.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
 import { toPlayerInfo } from "@/client.ts";
-import { CallbreakInitializeInput } from "@/games/callbreak/shared/schema.ts";
+import {
+	CALLBREAK_PLAYER_COUNT,
+	CallbreakConfig,
+	CallbreakInitializeInput
+} from "@/games/callbreak/shared/schema.ts";
 import { games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
@@ -48,10 +52,16 @@ export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", 
 				const game = yield* db.insert( games ).values( { game: "callbreak" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
+				// The round shape comes from the client; the four seats and
+				// `autoStart` are fixed server-side.
 				const input = CallbreakInitializeInput.make( {
 					id: GameId.make( game.id ),
 					code: GameCode.make( game.code ),
-					config: payload
+					config: CallbreakConfig.make( {
+						...payload,
+						playerCount: CALLBREAK_PLAYER_COUNT,
+						autoStart: false
+					} )
 				} );
 
 				const client = ns.getByName( game.id );

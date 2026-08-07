@@ -6,7 +6,11 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { StairwayAPI } from "@/api.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
 import { toPlayerInfo } from "@/client.ts";
-import { WordleInitializeInput } from "@/games/wordle/shared/schema.ts";
+import {
+	WORDLE_PLAYER_COUNT,
+	WordleConfig,
+	WordleInitializeInput
+} from "@/games/wordle/shared/schema.ts";
 import { games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
@@ -47,10 +51,16 @@ export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handle
 				const game = yield* db.insert( games ).values( { game: "wordle" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
+				// The puzzle shape comes from the client; the single seat and
+				// `autoStart` are fixed server-side.
 				const input = WordleInitializeInput.make( {
 					id: GameId.make( game.id ),
 					code: GameCode.make( game.code ),
-					config: payload
+					config: WordleConfig.make( {
+						...payload,
+						playerCount: WORDLE_PLAYER_COUNT,
+						autoStart: true
+					} )
 				} );
 
 				const client = ns.getByName( game.id );

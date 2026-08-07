@@ -15,14 +15,10 @@ export function WordleCreateGame() {
 	const increment = () => setWordCount( wordCount + 1 );
 	const decrement = () => setWordCount( wordCount - 1 );
 
-	// Wordle is effectively single-player: one seat, auto-started on create.
+	// The single seat and `autoStart` are fixed server-side; only the puzzle
+	// shape is the player's to pick.
 	const createWordleGame = async () => {
-		const { id } = await createWordleGameFn( {
-			playerCount: 1,
-			autoStart: true,
-			wordCount,
-			wordLength
-		} );
+		const { id } = await createWordleGameFn( { wordCount, wordLength } );
 		return id;
 	};
 

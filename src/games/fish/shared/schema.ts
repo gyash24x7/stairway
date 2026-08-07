@@ -74,11 +74,21 @@ export const Transfer = Schema.Struct( {
 
 // --- Config / State / Views ------------------------------------------------------
 
+/**
+ * Fish seats 4, 6 or 8 across 2-4 teams — the values `PlayerCount`/`TeamCount` in
+ * `./utils.ts` already documented as types, now enforced by the schema too. The
+ * *combination* still has to divide evenly into teams; `createTeams` validates
+ * that, since it is a cross-field rule.
+ */
+export const FISH_PLAYER_COUNTS = [ 4, 6, 8 ] as const;
+export const FISH_TEAM_COUNTS = [ 2, 3, 4 ] as const;
+
 export type FishConfig = typeof FishConfig.Type;
 export const FishConfig = Schema.Struct( {
 	...BaseGameConfig.fields,
+	playerCount: Schema.Literals( FISH_PLAYER_COUNTS ),
 	type: BookType,
-	teamCount: Schema.Number,
+	teamCount: Schema.Literals( FISH_TEAM_COUNTS ),
 	deckType: Schema.Literals( [ 48, 52 ] ),
 	books: Schema.Array( Book ),
 	bookSize: Schema.Literals( [ 4, 6 ] )

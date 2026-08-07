@@ -93,9 +93,17 @@ export const DraftEntry = Schema.Struct( {
 
 // --- Config / State / Views ------------------------------------------------------
 
+/**
+ * Kingdomino seats 2-4: there are exactly four castle colours (`CASTLES`), and
+ * the draft rhythm is derived from the count (`getSelectionsPerPlayer`). A fifth
+ * seat would index past the castle list.
+ */
+export const KINGDOMINO_PLAYER_COUNTS = [ 2, 3, 4 ] as const;
+
 export type KingdominoConfig = typeof KingdominoConfig.Type;
 export const KingdominoConfig = Schema.Struct( {
 	...BaseGameConfig.fields,
+	playerCount: Schema.Literals( KINGDOMINO_PLAYER_COUNTS ),
 	boardSize: BoardSize
 } );
 

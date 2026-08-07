@@ -101,7 +101,13 @@ async function bootSplendor(
 ) {
 	const engine = await run( memory, splendor );
 	const players = opts.players ?? [ P1, P2 ];
-	const config = { ...CONFIG, playerCount: players.length, ...opts.config };
+	// The roster drives the seat count; the schema pins it to the game's legal
+	// set, so narrow the derived length to it.
+	const config = {
+		...CONFIG,
+		playerCount: players.length as SplendorConfig[ "playerCount" ],
+		...opts.config
+	};
 
 	await run( memory, engine.initialize( {
 		id: GID, code: CODE, config, seed: opts.seed ?? "seed"

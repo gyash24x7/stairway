@@ -28,9 +28,23 @@ export const WordLength = Schema.Literals( [ 4, 5, 6 ] );
 
 // --- Config / State / Views ------------------------------------------------------
 
+/** Wordle is single-player: one seat, fixed here rather than taken from the client. */
+export const WORDLE_PLAYER_COUNT = 1;
+
 export type WordleConfig = typeof WordleConfig.Type;
 export const WordleConfig = Schema.Struct( {
 	...BaseGameConfig.fields,
+	playerCount: Schema.Literal( WORDLE_PLAYER_COUNT ),
+	wordCount: Schema.Number,
+	wordLength: WordLength
+} );
+
+/**
+ * The `POST /create` payload: only the puzzle shape is the player's to choose.
+ * The seat count and `autoStart` are filled in server-side.
+ */
+export type WordleCreateInput = typeof WordleCreateInput.Type;
+export const WordleCreateInput = Schema.Struct( {
 	wordCount: Schema.Number,
 	wordLength: WordLength
 } );

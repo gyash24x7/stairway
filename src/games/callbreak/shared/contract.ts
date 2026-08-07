@@ -8,11 +8,16 @@ import {
 	JoinApiEndpoint,
 	MoveApiEndpoint
 } from "@/shared/swish/api.ts";
-import { CallbreakConfig, CallbreakSnapshot, DeclareWinsInput, PlayCardInput } from "@/games/callbreak/shared/schema.ts";
+import {
+	CallbreakCreateInput,
+	CallbreakSnapshot,
+	DeclareWinsInput,
+	PlayCardInput
+} from "@/games/callbreak/shared/schema.ts";
 
 export const CallbreakApiGroup = HttpApiGroup.make( "callbreak" )
 	.add(
-		CreateGameApiEndpoint( CallbreakConfig ),
+		CreateGameApiEndpoint( CallbreakCreateInput ),
 		GetStateApiEndpoint( CallbreakSnapshot ),
 		JoinApiEndpoint(),
 		AddBotsApiEndpoint(),

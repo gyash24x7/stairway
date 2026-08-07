@@ -2,11 +2,11 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import { CreateGameApiEndpoint, GetStateApiEndpoint, MoveApiEndpoint } from "@/shared/swish/api.ts";
-import { GuessInput, WordleConfig, WordleSnapshot } from "@/games/wordle/shared/schema.ts";
+import { GuessInput, WordleCreateInput, WordleSnapshot } from "@/games/wordle/shared/schema.ts";
 
 export const WordleApiGroup = HttpApiGroup.make( "wordle" )
 	.add(
-		CreateGameApiEndpoint( WordleConfig ),
+		CreateGameApiEndpoint( WordleCreateInput ),
 		GetStateApiEndpoint( WordleSnapshot ),
 		MoveApiEndpoint( "guess", GuessInput )
 	)

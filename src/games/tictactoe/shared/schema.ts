@@ -25,8 +25,26 @@ export const Winner = Schema.Union( [ Schema.Literal( "draw" ), PlayerId ] );
 
 // --- Config / State / Views ------------------------------------------------------
 
+/**
+ * Tic-tac-toe is always exactly two seats. The count is fixed here rather than
+ * taken from the client: `onJoin` assigns X to the first joiner and O to every
+ * later one, so a third seat would overwrite O and leave two players sharing a
+ * mark.
+ */
+export const TICTACTOE_PLAYER_COUNT = 2;
+
 export type TicTacToeConfig = typeof TicTacToeConfig.Type;
-export const TicTacToeConfig = BaseGameConfig;
+export const TicTacToeConfig = Schema.Struct( {
+	...BaseGameConfig.fields,
+	playerCount: Schema.Literal( TICTACTOE_PLAYER_COUNT )
+} );
+
+/**
+ * The `POST /create` payload. Tic-tac-toe has nothing to configure — the seat
+ * count and `autoStart` are server-side constants — so the body is empty.
+ */
+export type TicTacToeCreateInput = typeof TicTacToeCreateInput.Type;
+export const TicTacToeCreateInput = Schema.Struct( {} );
 
 export type TicTacToeState = typeof TicTacToeState.Type;
 export const TicTacToeState = Schema.Struct( {

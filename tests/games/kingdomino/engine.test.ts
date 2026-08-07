@@ -98,7 +98,13 @@ async function boot(
 ) {
 	const engine = await run( memory, kingdomino );
 	const roster = opts.players ?? [ P1, P2 ];
-	const config = { ...CONFIG, playerCount: roster.length, ...opts.config };
+	// The roster drives the seat count; the schema pins it to the game's legal
+	// set, so narrow the derived length to it.
+	const config = {
+		...CONFIG,
+		playerCount: roster.length as KingdominoConfig[ "playerCount" ],
+		...opts.config
+	};
 
 	await run( memory, engine.initialize( {
 		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
@@ -194,7 +200,9 @@ describe( "kingdomino — setup", () => {
 	beforeEach( () => { memory = makeMemory(); } );
 
 	test( "initialize seeds an empty table: no deck, no draft, no players", async () => {
-		await boot( memory, { start: false, players: [] } );
+		// Nobody joins, but the config still declares a legal seat count — the
+		// schema pins `playerCount` to 2-4, so a roster-derived 0 is rejected.
+		await boot( memory, { start: false, players: [], config: { playerCount: 2 } } );
 
 		const { status, state } = stored( memory );
 		expect( status ).toBe( "CREATED" );

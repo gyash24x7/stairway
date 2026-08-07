@@ -6,7 +6,11 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { StairwayAPI } from "@/api.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
 import { toPlayerInfo } from "@/client.ts";
-import { TicTacToeInitializeInput } from "@/games/tictactoe/shared/schema.ts";
+import {
+	TICTACTOE_PLAYER_COUNT,
+	TicTacToeConfig,
+	TicTacToeInitializeInput
+} from "@/games/tictactoe/shared/schema.ts";
 import { games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
@@ -43,15 +47,20 @@ export const TicTacToeApiLive = HttpApiBuilder.group( StairwayAPI, "tictactoe", 
 		const db = yield* Database;
 		const ns = yield* TicTacToeEngineDO;
 		return handlers
-			.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
+			.handle( "createGame", () => Effect.gen( function* () {
 				const { user } = yield* AuthContext;
 				const game = yield* db.insert( games ).values( { game: "tic-tac-toe" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
 
+				// Both seats and `autoStart` are fixed server-side — the client has
+				// no say in the roster size.
 				const input = TicTacToeInitializeInput.make( {
 					id: GameId.make( game.id ),
 					code: GameCode.make( game.code ),
-					config: payload
+					config: TicTacToeConfig.make( {
+						playerCount: TICTACTOE_PLAYER_COUNT,
+						autoStart: true
+					} )
 				} );
 
 				const client = ns.getByName( game.id );

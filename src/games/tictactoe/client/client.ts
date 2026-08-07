@@ -1,5 +1,4 @@
 import { getClient, run } from "@/client.ts";
-import type { TicTacToeConfig } from "@/games/tictactoe/shared/schema.ts";
 import {
 	GameCode,
 	GameIdParams,
@@ -16,8 +15,8 @@ const gameIdParams = ( gameId: string ) =>
 
 // --- Mutations -------------------------------------------------------------
 
-export const createTicTacToeGameFn = ( config: TicTacToeConfig ) =>
-	run( client.createGame( { payload: config } ) );
+export const createTicTacToeGameFn = () =>
+	run( client.createGame( { payload: {} } ) );
 
 export const joinTicTacToeGameFn = ( code: string ) =>
 	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );

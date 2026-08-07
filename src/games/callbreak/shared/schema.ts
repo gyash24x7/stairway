@@ -39,9 +39,31 @@ export const PublicDeal = Schema.Struct( {
 
 // --- Config / State / Views ------------------------------------------------------
 
+/**
+ * Callbreak is a fixed four-hand game: the deck deals 13 cards to exactly four
+ * seats and every trick rule assumes that. Pinned in the schema so an invalid
+ * count is rejected at the API boundary rather than dealing a broken game.
+ * `PLAYER_COUNT` in `./utils.ts` re-exports this.
+ */
+export const CALLBREAK_PLAYER_COUNT = 4;
+
+/**
+ * The `POST /create` payload: only the round shape is the player's to choose.
+ * The four seats and `autoStart` are server-side constants, so they are absent
+ * here and filled in by the handler. `dealCount` is pinned to the three lengths
+ * the lobby offers, so a game can't be created with 0 deals (which would never
+ * finish a round) or an absurd one.
+ */
+export type CallbreakCreateInput = typeof CallbreakCreateInput.Type;
+export const CallbreakCreateInput = Schema.Struct( {
+	dealCount: Schema.Literals( [ 5, 9, 13 ] ),
+	trumpSuit: CardSuit
+} );
+
 export type CallbreakConfig = typeof CallbreakConfig.Type;
 export const CallbreakConfig = Schema.Struct( {
 	...BaseGameConfig.fields,
+	playerCount: Schema.Literal( CALLBREAK_PLAYER_COUNT ),
 	dealCount: Schema.Number,
 	trumpSuit: CardSuit
 } );

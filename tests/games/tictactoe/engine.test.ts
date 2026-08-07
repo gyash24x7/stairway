@@ -2,7 +2,8 @@ import { beforeEach, describe, expect, test } from "bun:test";
 
 import { tictactoe } from "@/games/tictactoe/server/engine.ts";
 import { WINNING_LINES } from "@/games/tictactoe/server/utils.ts";
-import type { CellValue } from "@/games/tictactoe/shared/schema.ts";
+import { TICTACTOE_PLAYER_COUNT } from "@/games/tictactoe/shared/schema.ts";
+import type { CellValue, TicTacToeConfig } from "@/games/tictactoe/shared/schema.ts";
 import { GameCode, GameId, type PlayerId, type PlayerInfo } from "@/shared/swish/schema.ts";
 import { makeMemory, type Memory, player, run, runFail } from "@tests/_helpers/swish.ts";
 
@@ -17,7 +18,9 @@ const P2 = player( "p2" );
 const STRANGER = player( "p9" );
 const BOT = player( "bot", true );
 
-const CONFIG = { playerCount: 2, autoStart: false };
+// `playerCount` is pinned to the literal 2 by `TicTacToeConfig` — the seat count
+// is a server-side constant, not a client-supplied number.
+const CONFIG: TicTacToeConfig = { playerCount: TICTACTOE_PLAYER_COUNT, autoStart: false };
 const EMPTY_BOARD = Array.from( { length: 9 }, () => null as CellValue );
 
 /** Builds the engine over a fresh in-memory host. */

@@ -8,11 +8,11 @@ import {
 	JoinApiEndpoint,
 	MoveApiEndpoint
 } from "@/shared/swish/api.ts";
-import { PlaceInput, TicTacToeConfig, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema.ts";
+import { PlaceInput, TicTacToeCreateInput, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema.ts";
 
 export const TicTacToeApiGroup = HttpApiGroup.make( "tictactoe" )
 	.add(
-		CreateGameApiEndpoint( TicTacToeConfig ),
+		CreateGameApiEndpoint( TicTacToeCreateInput ),
 		GetStateApiEndpoint( TicTacToeSnapshot ),
 		JoinApiEndpoint(),
 		AddBotsApiEndpoint(),
