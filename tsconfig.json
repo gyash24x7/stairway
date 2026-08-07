@@ -13,8 +13,11 @@
 		"jsx": "react-jsx",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
 		"types": [ "bun", "vite/client" ],
-		"paths": { "@/*": [ "./src/*" ] }
+		"paths": {
+			"@tests/*": [ "./tests/*" ],
+			"@/*": [ "./src/*" ]
+		}
 	},
-	"include": [ "src", "alchemy.run.ts", "vite.config.ts", "eslint.config.ts" ],
+	"include": [ "src", "tests", "alchemy.run.ts", "vite.config.ts", "eslint.config.ts" ],
 	"exclude": [ "node_modules" ]
 }

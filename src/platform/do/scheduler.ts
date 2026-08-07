@@ -3,9 +3,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { Scheduler } from "@/shared/swish/services.ts";
-
-/** The kinds of deferred wake-up the engine schedules. */
-export type AlarmKind = "auto-start" | "bot" | "interaction-timeout" | "move-timeout";
+import type { AlarmKind } from "@/shared/swish/services.ts";
 
 /**
  * Backs {@link Scheduler} with Alchemy's SQLite-backed scheduled-events API

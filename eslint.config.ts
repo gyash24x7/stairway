@@ -34,7 +34,7 @@ export default [
 		ignores: [ "src/routeTree.gen.ts" ]
 	},
 	{
-		files: [ "src/**/*.ts", "src/**/*.tsx" ],
+		files: [ "**/*.ts", "**/*.tsx" ],
 		languageOptions: {
 			parser: tsParser,
 			parserOptions: { ecmaFeatures: { jsx: true } }

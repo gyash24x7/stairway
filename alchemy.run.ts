@@ -1,13 +1,13 @@
-import { StairwayDatabase } from "@/platform/database/service.ts";
-import { SessionKV } from "@/platform/kv/session.ts";
-import { WebAuthnKV } from "@/platform/kv/webauthn.ts";
-import { default as ApiWorker } from "@/worker.ts";
-
 import * as Alchemy from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Drizzle from "alchemy/Drizzle";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+
+import { default as ApiWorker } from "@/worker.ts";
+import { WebAuthnKV } from "@/platform/kv/webauthn.ts";
+import { SessionKV } from "@/platform/kv/session.ts";
+import { StairwayDatabase } from "@/platform/database/service.ts";
 
 const StairwayStack = Alchemy.Stack(
 	"Stairway",
