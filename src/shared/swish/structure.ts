@@ -209,12 +209,17 @@ export type GameStructure<
 			ReadonlyArray<Events | InteractionOpened | SeatStatusChanged>;
 
 		/**
-		 * Runs after a move's guards pass but before its `execute`.
+		 * Runs after the phase/turn guards pass, but **before** the move's own
+		 * `validate` — so `validate` and `execute` both judge the post-hook state.
+		 * Use it to roll the board forward into the position the move acts on (e.g.
+		 * opening the next trick once the previous one is won). It therefore also
+		 * runs for a move `validate` goes on to reject; that is harmless, since a
+		 * failed command commits nothing.
 		 *
 		 * @param data - The read-only snapshot before the move.
 		 * @param playerId - The acting player.
 		 * @param moveType - The move name.
-		 * @returns Events to accumulate before the move executes.
+		 * @returns Events to accumulate before the move is validated and executed.
 		 */
 		readonly beforeMove?: (
 			data: ReadonlyGameData<State, Config>,
@@ -266,7 +271,8 @@ export type GameStructure<
 			 * Validates the move input against the rules. Pure; returns an `InvalidMove`
 			 * to reject, or `undefined` to accept. Must not emit events.
 			 *
-			 * @param data - The current read-only snapshot.
+			 * @param data - The read-only snapshot **after** `hooks.beforeMove` — the
+			 * same state `execute` will see.
 			 * @param playerId - The acting player.
 			 * @param input - The move's decoded input.
 			 * @returns An `InvalidMove` rejection, or `undefined` when valid.

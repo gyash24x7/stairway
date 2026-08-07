@@ -388,17 +388,14 @@ describe( "callbreak/bot — driven by the engine", () => {
 		expect( steps ).toBeGreaterThanOrEqual( 8 );
 	} );
 
-	// KNOWN BUG — see `engine.test.ts` ("the trick winner leads the next trick"):
-	// `playCard.validate` runs against the pre-move snapshot, where the just-won
-	// trick is still the active one, so the winner is rejected with
-	// "Already played card!". Self-play therefore wedges after trick 1: the alarm
-	// swallows the failed bot move and no further alarm is armed.
-	test.skip( "a bot-vs-bot game runs to completion", async () => {
+	// ~270 engine commands (5 deals x 56 moves), so it needs more than bun's 5s
+	// default — it passes alone at ~5s but tips over under full-suite load.
+	test( "a bot-vs-bot game runs to completion", async () => {
 		const engine = await bootBots( 5 );
 		// 5 deals x (4 declarations + 52 cards), with headroom.
 		const steps = await drive( engine, 1000 );
 
 		expect( steps ).toBeLessThan( 1000 );
 		expect( stored().status ).toBe( "COMPLETED" );
-	} );
+	}, 30_000 );
 } );

@@ -820,17 +820,22 @@ export const makeEngine = <
 				} );
 			}
 
-			const error = moveDef.validate( readonly( data ), playerInfo.id, input );
-			if ( error ) {
-				return yield* error;
-			}
-
-			// decide — emit events, fold onto the working copy as we go
+			// `beforeMove` runs BEFORE `validate` so both it and `execute` judge the
+			// same state. A hook that rolls the board forward (callbreak opening the
+			// next trick once the previous one is won) would otherwise leave
+			// `validate` reading a snapshot `execute` never sees, and it would reject
+			// legal moves. Nothing is committed unless the whole command succeeds, so
+			// emitting here and then failing validation is a no-op.
 			if ( structure.hooks?.beforeMove ) {
 				emit(
 					acc,
 					structure.hooks.beforeMove( readonly( acc.work, "beforeMove" ), playerInfo.id, move )
 				);
+			}
+
+			const error = moveDef.validate( readonly( acc.work ), playerInfo.id, input );
+			if ( error ) {
+				return yield* error;
 			}
 
 			emit(

@@ -727,13 +727,9 @@ describe( "callbreak — trick resolution", () => {
 		expect( SEATED.map( ( p ) => deal.hands[ p.id ]! ) ).toEqual( [ [], [], [], [] ] );
 	} );
 
-	// KNOWN BUG — `submitMove` runs `validate` against the pre-move snapshot, so
-	// `playCard.validate` (src/games/callbreak/server/engine.ts:145) still sees the
-	// COMPLETED trick that `hooks.beforeMove` is about to replace. The winner's own
-	// card is on that trick, so the winner is rejected with "Already played card!"
-	// and can never lead the next one: the deal wedges after trick 1. (The client
-	// already special-cases a finished trick — src/games/callbreak/client/hand-view.tsx:24.)
-	test.skip( "the trick winner leads the next trick", async () => {
+	// `hooks.beforeMove` opens the next trick before `validate` runs, so the winner
+	// is judged against the fresh trick rather than the one they just took.
+	test( "the trick winner leads the next trick", async () => {
 		const engine = await bootPlaying( memory );
 		setHands( memory, {
 			p1: [ "5H", "2C" ],
