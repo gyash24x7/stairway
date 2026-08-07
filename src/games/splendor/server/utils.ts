@@ -37,7 +37,7 @@ export function costToString( cost: Cost ) {
 	return GEMS.map( gem => `${ gem[ 0 ] }${ cost[ gem ] }` ).join( "-" );
 }
 
-export function generateNobles( playerCount: number ) {
+export function generateNobles( playerCount: number, rng?: () => number ) {
 	const costs: MutableCost[] = [];
 
 	for ( let i = 0; i < GEMS.length; i++ ) {
@@ -62,7 +62,7 @@ export function generateNobles( playerCount: number ) {
 	}
 
 	const allNobles = costs.map( cost => ( { id: costToString( cost ), points: 3, cost } ) );
-	return shuffle( allNobles ).slice( 0, playerCount + 1 );
+	return shuffle( allNobles, rng ).slice( 0, playerCount + 1 );
 }
 
 const level3MatrixPointMap = {
@@ -202,12 +202,12 @@ function generateDeckForMatrixPointMap(
 		} ) );
 }
 
-export function generateDecks() {
-	const gems = shuffle( GEMS );
+export function generateDecks( rng?: () => number ) {
+	const gems = shuffle( GEMS, rng );
 	return {
-		3: shuffle( generateDeckForMatrixPointMap( gems, 3, level3MatrixPointMap ) ),
-		2: shuffle( generateDeckForMatrixPointMap( gems, 2, level2MatrixPointMap ) ),
-		1: shuffle( generateDeckForMatrixPointMap( gems, 1, level1MatrixPointMap ) )
+		3: shuffle( generateDeckForMatrixPointMap( gems, 3, level3MatrixPointMap ), rng ),
+		2: shuffle( generateDeckForMatrixPointMap( gems, 2, level2MatrixPointMap ), rng ),
+		1: shuffle( generateDeckForMatrixPointMap( gems, 1, level1MatrixPointMap ), rng )
 	};
 }
 

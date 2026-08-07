@@ -62,8 +62,12 @@ export function determineTrickWinner( trick: Trick, trump: CardSuit, players: Pl
 	return winningPlayer;
 }
 
-export function createNewDeal( players: PlayerId[], startingPlayer?: PlayerId ) {
-	const deck = generateDeck();
+export function createNewDeal(
+	players: PlayerId[],
+	startingPlayer?: PlayerId,
+	rng?: () => number
+) {
+	const deck = generateDeck( rng );
 	const generatedHands = generateHands( deck, PLAYER_COUNT );
 	return Deal.make( {
 		id: generateId(),

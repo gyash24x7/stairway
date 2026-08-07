@@ -96,13 +96,16 @@ async function bootSplendor(
 		config?: Partial<SplendorConfig>;
 		players?: ReturnType<typeof player>[];
 		start?: boolean;
+		seed?: string;
 	} = {}
 ) {
 	const engine = await run( memory, splendor );
 	const players = opts.players ?? [ P1, P2 ];
 	const config = { ...CONFIG, playerCount: players.length, ...opts.config };
 
-	await run( memory, engine.initialize( { id: GID, code: CODE, config, seed: "seed" } ) );
+	await run( memory, engine.initialize( {
+		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
+	} ) );
 	for ( const p of players ) {
 		await run( memory, engine.join( p ) );
 	}
@@ -244,12 +247,9 @@ describe( "splendor — determinism & replay", () => {
 		expect( persisted( memory ).state ).toEqual( played );
 	} );
 
-	// `setup`/`onStart` call `generateDecks`/`generateNobles`
-	// (src/games/splendor/server/utils.ts:205 and :40), which shuffle with the
-	// default `Math.random` rather than the engine's seeded `rng`. Two games with
-	// the same seed therefore deal differently. Skipped rather than asserted: a
-	// fixed seed producing a fixed deal is the intended behaviour.
-	test.skip( "a fixed seed always deals the same board", async () => {
+	// `generateDecks`/`generateNobles` draw from the engine's seeded `rng`, so the
+	// seed fixes both the shuffled decks and the noble row.
+	test( "a fixed seed always deals the same board", async () => {
 		const a = makeMemory();
 		const b = makeMemory();
 		await bootSplendor( a );
@@ -257,6 +257,12 @@ describe( "splendor — determinism & replay", () => {
 
 		expect( persisted( a ).state.cards ).toEqual( persisted( b ).state.cards );
 		expect( persisted( a ).state.nobles ).toEqual( persisted( b ).state.nobles );
+
+		// ...and a different seed deals a different board, so the assertions above
+		// are about the seed rather than a constant.
+		const c = makeMemory();
+		await bootSplendor( c, { seed: "another-seed" } );
+		expect( persisted( c ).state.cards ).not.toEqual( persisted( a ).state.cards );
 	} );
 } );
 

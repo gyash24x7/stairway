@@ -99,11 +99,11 @@ export const kingdomino = makeEngine( {
 
 		// At start: shuffle the deck (captured) and shuffle the first-round
 		// selection order (captured). Deterministic replay via the events.
-		onStart: ( { context } ) => {
-			const deck = shuffle( [ ...DOMINO_DECK ] );
+		onStart: ( { context, rng } ) => {
+			const deck = shuffle( [ ...DOMINO_DECK ], rng( "deck" ).next );
 			const selections = getSelectionsPerPlayer( context.players.length );
 			const slots = context.players.flatMap( ( pid ) => Array( selections ).fill( pid ) );
-			const order = shuffle( slots ) as ReadonlyArray<PlayerId>;
+			const order = shuffle( slots, rng( "order" ).next ) as ReadonlyArray<PlayerId>;
 			return [
 				DeckShuffled.make( { deck } ),
 				SelectionOrderSet.make( { order } )

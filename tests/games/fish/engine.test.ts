@@ -356,22 +356,22 @@ describe( "fish — setup & config", () => {
 		expect( view.cardCounts ).toEqual( byPlayer( { p1: 13, p2: 13, p3: 13, p4: 13 } ) );
 	} );
 
-	test( "the same rng stream deals the same hands (the deal is reproducible)", async () => {
+	test( "the same game seed deals the same hands (the deal is reproducible)", async () => {
 		const first = makeMemory();
 		let engine = await bootPlay( first );
 		const handsA = await allHands( first, engine, FOUR );
 
-		// Re-pin the stream to the same seed and deal again from scratch.
-		restore();
-		restore = seedGlobalRandom( 42 );
+		// Deal again from scratch. `PLAY.onEnter` draws from the engine's seeded
+		// stream, so the global `Math.random` pin is irrelevant to the deal — the
+		// game's own `seed` is what makes this reproducible.
 		const second = makeMemory();
 		engine = await bootPlay( second );
 		const handsB = await allHands( second, engine, FOUR );
 
 		expect( handsB ).toEqual( handsA );
-		// Golden: the mulberry32(42) deal, pinned so a change to it is visible.
+		// Golden: the deal for seed "seed", pinned so a change to it is visible.
 		expect( handsA[ P1.id ] ).toEqual( [
-			"6S", "4H", "JS", "JH", "9S", "QH", "KS", "QD", "5H", "5C", "AH", "2S", "9D"
+			"JS", "KD", "6H", "3S", "6C", "QD", "9C", "2H", "KS", "JH", "3H", "5D", "AC"
 		] as CardId[] );
 	} );
 } );

@@ -59,12 +59,14 @@ const patchStoredState = ( memory: Memory, patch: Record<string, unknown> ) => {
 /** initialize → join p1 → (optionally) start. Wordle seats exactly one player. */
 async function bootWordle(
 	memory: Memory,
-	opts: { config?: Partial<WordleConfig>; start?: boolean } = {}
+	opts: { config?: Partial<WordleConfig>; start?: boolean; seed?: string } = {}
 ) {
 	const engine = await run( memory, wordle );
 	const config = { ...WORDLE_CONFIG, ...opts.config };
 
-	await run( memory, engine.initialize( { id: GID, code: CODE, config, seed: "seed" } ) );
+	await run( memory, engine.initialize( {
+		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
+	} ) );
 	await run( memory, engine.join( P1 ) );
 
 	if ( opts.start !== false ) {
@@ -441,17 +443,21 @@ describe( "wordle — event sourcing (replay, undo, redo)", () => {
 		expect( persisted( memory ) ).toEqual( before );
 	} );
 
-	test.skip( "the same seed draws the same answers", async () => {
-		// BUG: `setup` (src/games/wordle/server/engine.ts:79) picks words with
-		// `Math.random()` instead of the seeded `rng`, so two games created with the
-		// same seed get different answers and a genesis replay is not reproducible.
-		// Unskip once setup draws from the engine's deterministic stream.
+	test( "the same seed draws the same answers", async () => {
+		// `setup` draws from the engine's seeded stream, so the same seed always
+		// picks the same answers and a genesis replay is reproducible.
 		const a = makeMemory();
 		const b = makeMemory();
 		await bootWordle( a, { start: false } );
 		await bootWordle( b, { start: false } );
 
 		expect( answers( a ) ).toEqual( answers( b ) );
+
+		// ...and a different seed draws different answers, so the assertion above
+		// is about the seed rather than a constant.
+		const c = makeMemory();
+		await bootWordle( c, { start: false, seed: "another-seed" } );
+		expect( answers( c ) ).not.toEqual( answers( a ) );
 	} );
 
 	test( "undo rewinds the last guess and its scored rows", async () => {

@@ -112,12 +112,16 @@ export type GameStructure<
 	};
 
 	/**
-	 * Builds the genesis state for a fresh game from its config. Pure.
+	 * Builds the genesis state for a fresh game from its config. Pure *given the
+	 * seed*: any shuffling or drawing must go through `rng`, never `Math.random`,
+	 * so the same seed always produces the same genesis state.
 	 *
 	 * @param config - The game config supplied at creation.
+	 * @param rng - Deterministic RNG factory for the game's seed, salted per call
+	 * site exactly like `ReadonlyGameData.rng`.
 	 * @returns The initial game state.
 	 */
-	readonly setup: ( config: Config ) => State;
+	readonly setup: ( config: Config, rng: ( salt?: string ) => Rng ) => State;
 
 	/**
 	 * The pure reducer for game (domain) events — the only function that changes

@@ -65,11 +65,12 @@ export const splendor = makeEngine( {
 	},
 	apply,
 
-	setup: () => ( {
+	setup: ( _config, rng ) => ( {
 		tokens: { ...DEFAULT_TOKENS },
 		cards: { 1: [], 2: [], 3: [] },
 		nobles: [],
-		decks: generateDecks(),
+		// Seeded, so the same seed always shuffles the same decks.
+		decks: generateDecks( rng( "decks" ).next ),
 		playerData: {}
 	} ),
 
@@ -99,7 +100,7 @@ export const splendor = makeEngine( {
 		// Deal the board: token pool sized by player count, nobles, and four
 		// open cards per level drawn off the (already shuffled) decks. Capture
 		// the concrete draw so replay is exact.
-		onStart: ( { state } ) => {
+		onStart: ( { state, rng } ) => {
 			const playerCount = Object.keys( state.playerData ).length;
 			const tokenCount = playerCount === 4 ? 7 : 5;
 			const tokens: Tokens = {
@@ -110,7 +111,7 @@ export const splendor = makeEngine( {
 				onyx: tokenCount,
 				gold: 5
 			};
-			const nobles = generateNobles( playerCount );
+			const nobles = generateNobles( playerCount, rng( "nobles" ).next );
 			const cards = {
 				1: state.decks[ 1 ].slice( 0, 4 ),
 				2: state.decks[ 2 ].slice( 0, 4 ),

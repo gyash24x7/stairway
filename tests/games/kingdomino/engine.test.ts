@@ -89,13 +89,20 @@ const sealedKingdom = () => {
 /** initialize → join every player → (optionally) start a kingdomino game. */
 async function boot(
 	memory: Memory,
-	opts: { config?: Partial<KingdominoConfig>; players?: PlayerInfo[]; start?: boolean } = {}
+	opts: {
+		config?: Partial<KingdominoConfig>;
+		players?: PlayerInfo[];
+		start?: boolean;
+		seed?: string;
+	} = {}
 ) {
 	const engine = await run( memory, kingdomino );
 	const roster = opts.players ?? [ P1, P2 ];
 	const config = { ...CONFIG, playerCount: roster.length, ...opts.config };
 
-	await run( memory, engine.initialize( { id: GID, code: CODE, config, seed: "seed" } ) );
+	await run( memory, engine.initialize( {
+		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
+	} ) );
 	for ( const p of roster ) {
 		await run( memory, engine.join( p ) );
 	}
@@ -294,13 +301,9 @@ describe( "kingdomino — determinism & replay", () => {
 		expect( await run( memory, engine.getState( P1.id ) ) ).toEqual( before );
 	} );
 
-	test.skip( "a fixed seed fixes the deal", async () => {
-		// SKIPPED — `hooks.onStart` (src/games/kingdomino/server/engine.ts:103,106)
-		// calls `shuffle( ... )` without passing `rng()`, so it falls back to
-		// `Math.random` and the game's `seed` never reaches the shuffle. Two games
-		// booted with the same seed deal different decks and different selection
-		// orders. Asserting the current behaviour would enshrine the bug, so this
-		// test stays skipped until `onStart` threads the seeded rng through.
+	test( "a fixed seed fixes the deal", async () => {
+		// `hooks.onStart` shuffles the deck and the selection order through the
+		// engine's seeded `rng()`, so the same seed deals the same game.
 		const a = makeMemory();
 		const b = makeMemory();
 		await boot( a );
@@ -308,6 +311,12 @@ describe( "kingdomino — determinism & replay", () => {
 
 		expect( stored( a ).state.deck ).toEqual( stored( b ).state.deck );
 		expect( stored( a ).state.selectionOrder ).toEqual( stored( b ).state.selectionOrder );
+
+		// ...and a different seed deals a different game, so the assertions above
+		// are about the seed rather than a constant.
+		const c = makeMemory();
+		await boot( c, { seed: "another-seed" } );
+		expect( stored( c ).state.deck ).not.toEqual( stored( a ).state.deck );
 	} );
 } );
 

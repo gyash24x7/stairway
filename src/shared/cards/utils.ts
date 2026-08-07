@@ -80,10 +80,13 @@ export function getSortedHand( hand: CardId[] ) {
  * Generates a shuffled deck of playing cards.
  * The deck is created from the predefined sorted deck and then shuffled.
  *
+ * @param [rng] - Randomness source in [0, 1). Pass the engine's seeded stream
+ * (`rng().next`) so the deal is reproducible from the game's seed; defaults to
+ * `Math.random`.
  * @returns Shuffled array of PlayingCard objects
  */
-export function generateDeck() {
-	return shuffle( SORTED_DECK );
+export function generateDeck( rng?: () => number ) {
+	return shuffle( SORTED_DECK, rng );
 }
 
 /**

@@ -251,7 +251,7 @@ export const callbreak = makeEngine( {
 
 			// Deal a fresh round. Nondeterministic shuffle happens here and the
 			// exact dealt deal is captured in `DealDealt` for exact replay.
-			onEnter: ( { state, context } ) => {
+			onEnter: ( { state, context, rng } ) => {
 				const previousDeal = state.deals[ 0 ];
 				let startingPlayer: PlayerId;
 				if ( previousDeal ) {
@@ -261,7 +261,7 @@ export const callbreak = makeEngine( {
 					startingPlayer = context.players[ 0 ]!;
 				}
 
-				const deal = createNewDeal( [ ...context.players ], startingPlayer );
+				const deal = createNewDeal( [ ...context.players ], startingPlayer, rng( "deal" ).next );
 				return [ DealDealtEvent.make( { deal } ) ];
 			},
 

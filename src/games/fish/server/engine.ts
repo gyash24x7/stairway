@@ -378,8 +378,8 @@ export const fish = makeEngine( {
 
 			// The deck shuffle/deal is nondeterministic — done here and captured in
 			// the HandsDealt event so replay is exact.
-			onEnter: ( { config, context } ) => {
-				let deck = generateDeck();
+			onEnter: ( { config, context, rng } ) => {
+				let deck = generateDeck( rng( "deal" ).next );
 				if ( config.deckType === 48 ) {
 					deck = remove( card => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
 				}

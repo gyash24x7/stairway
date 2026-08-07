@@ -468,9 +468,16 @@ export const makeEngine = <
 	 * @returns The created game's id.
 	 */
 	const initialize = Effect.fn( function* ( payload: InitializeInput<Config> ) {
-		const state = structure.setup( payload.config );
+		// The seed is minted before `setup` runs so the genesis state can be drawn
+		// from it — same seed, same starting board.
+		const seed = payload.seed ?? generateId();
+		const state = structure.setup(
+			payload.config,
+			( salt = "" ) => makeRng( hashSeed( seed, 0, "setup", salt ) )
+		);
+
 		const genesis = PersistedData.make( {
-			seed: payload.seed ?? generateId(),
+			seed,
 			id: payload.id,
 			code: payload.code,
 			status: "CREATED",

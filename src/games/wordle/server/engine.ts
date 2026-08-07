@@ -69,14 +69,16 @@ export const wordle = makeEngine<
 		}
 	},
 
-	setup: ( config ) => {
+	setup: ( config, rng ) => {
 		const wordLength = config.wordLength;
 		const dictionary = dictionaries[ wordLength ];
 		const maxGuesses = config.wordCount + config.wordLength;
 
+		// Drawn from the seeded stream, so the same seed always sets the same words.
+		const random = rng( "words" );
 		const selected = new Set<string>();
 		while ( selected.size < config.wordCount ) {
-			selected.add( dictionary[ Math.floor( Math.random() * dictionary.length ) ]! );
+			selected.add( dictionary[ random.int( dictionary.length ) ]! );
 		}
 
 		const words = [ ...selected ];

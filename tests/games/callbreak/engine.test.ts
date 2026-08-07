@@ -125,13 +125,16 @@ async function boot(
 		config?: Partial<CallbreakConfig>;
 		players?: ReadonlyArray<PlayerInfo>;
 		start?: boolean;
+		seed?: string;
 	} = {}
 ) {
 	const engine = await run( memory, callbreak );
 	const config = { ...CONFIG, ...opts.config };
 	const players = opts.players ?? SEATED;
 
-	await run( memory, engine.initialize( { id: GID, code: CODE, config, seed: "seed" } ) );
+	await run( memory, engine.initialize( {
+		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
+	} ) );
 	for ( const p of players ) {
 		await run( memory, engine.join( p ) );
 	}
@@ -248,17 +251,22 @@ describe( "callbreak — setup & dealing", () => {
 		expect( activeDeal( memory ).hands ).toEqual( before.hands );
 	} );
 
-	// KNOWN BUG — `createNewDeal` (src/games/callbreak/shared/utils.ts:65) shuffles
-	// with the default `Math.random` and mints the deal id with `generateId()`,
-	// ignoring the engine's seeded `rng`. Two games started from the same seed get
-	// different deals, so the seed does NOT determine the deal.
-	test.skip( "a fixed seed yields a fixed deal", async () => {
+	// `createNewDeal` shuffles through the engine's seeded `rng`, so the seed fixes
+	// the hands. (The deal `id` is still a ULID from `generateId()`, so it differs
+	// between two same-seed games — compare hands, not the whole deal.)
+	test( "a fixed seed yields a fixed deal", async () => {
 		const first = makeMemory();
 		const second = makeMemory();
 		await boot( first );
 		await boot( second );
 
 		expect( activeDeal( first ).hands ).toEqual( activeDeal( second ).hands );
+
+		// ...and a different seed deals different hands, so the assertion above is
+		// about the seed rather than a constant.
+		const third = makeMemory();
+		await boot( third, { seed: "another-seed" } );
+		expect( activeDeal( third ).hands ).not.toEqual( activeDeal( first ).hands );
 	} );
 } );
 
@@ -804,6 +812,18 @@ describe( "callbreak — scoring, deals & completion", () => {
 			expect( SEATED.map( ( p ) => next.hands[ p.id ]!.length ) ).toEqual( [ 13, 13, 13, 13 ] );
 			expect( state.context.currentPlayer ).toBe( P2.id );
 		} );
+
+	test( "the next deal is shuffled afresh, not a replay of the first", async () => {
+		const engine = await boot( memory, { config: { dealCount: 5 } } );
+		const first = structuredClone( activeDeal( memory ).hands );
+
+		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
+
+		// The seeded stream is salted with `context.turn`, which strictly increases
+		// across deals, so a fixed seed fixes the whole *game* without dealing the
+		// same 13 cards every round.
+		expect( activeDeal( memory ).hands ).not.toEqual( first );
+	} );
 
 	test( "scores accumulate across deals and the last one completes the game", async () => {
 		const engine = await boot( memory, { config: { dealCount: 2 } } );
