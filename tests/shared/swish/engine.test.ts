@@ -473,6 +473,34 @@ describe( "engine — undo / redo (event sourcing)", () => {
 		expect( error._tag ).toBe( "swish/NothingToRedo" );
 	} );
 
+	test( "undo stops at the newest join and fails with NothingToUndo", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+
+		// The move, then the start. The next commit down is p2's join — the floor.
+		await run( memory, engine.undo( P1 ) );
+		await run( memory, engine.undo( P1 ) );
+
+		const error = await runFail( memory, engine.undo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToUndo" );
+	} );
+
+	test( "a game rewound to the joins keeps every seat (no lockout)", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+		await run( memory, engine.undo( P1 ) );
+		await run( memory, engine.undo( P1 ) );
+		await runFail( memory, engine.undo( P1 ) );
+
+		// Both seats survive the rewind, so no command comes back `NotAMember` and
+		// the game can go forward again — by redo or by starting afresh.
+		for ( const p of [ P1, P2 ] ) {
+			expect( ( await run( memory, engine.getState( p.id ) ) ).status ).toBe( "PLAYERS_READY" );
+		}
+
+		expect( ( await run( memory, engine.redo( P2 ) ) ).status ).toBe( "IN_PROGRESS" );
+	} );
+
 	test( "a new move after an undo drops the redo tail (NothingToRedo)", async () => {
 		const engine = await bootTally( memory );
 		await run( memory, engine.add( { amount: 3 }, P1 ) );

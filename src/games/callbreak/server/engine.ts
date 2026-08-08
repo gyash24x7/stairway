@@ -140,6 +140,17 @@ export const callbreak = makeEngine( {
 					return new InvalidMove( { move: "declareWins", reason: "Active Deal Not Found!" } );
 				}
 
+				// A bid must be a whole number of the tricks actually on offer.
+				// `0` is not merely out of range: `declarations[ pid ] > 0` is the
+				// "has declared" sentinel driving both `resolveCurrentPlayer` and
+				// `DECLARING.endIf`, so accepting it would wedge the phase forever.
+				if ( !Number.isInteger( input.wins ) || input.wins < 1 || input.wins > TRICKS_PER_DEAL ) {
+					return new InvalidMove( {
+						move: "declareWins",
+						reason: `Wins must be a whole number between 1 and ${ TRICKS_PER_DEAL }!`
+					} );
+				}
+
 				if ( ( activeDeal.declarations[ playerId ] ?? 0 ) > 0 ) {
 					return new InvalidMove( { move: "declareWins", reason: "Already declared wins!" } );
 				}

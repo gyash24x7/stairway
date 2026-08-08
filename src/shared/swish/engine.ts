@@ -896,15 +896,40 @@ export const makeEngine = <
 	// --- Undo / Redo ----------------------------------------------------
 
 	/**
+	 * Whether the cursor may step back another commit. Undo rewinds *play*, never
+	 * the seating that precedes it: the floor is the newest `join` commit (bots are
+	 * seated through `join` too, so this covers them). Rewinding past it would refold
+	 * a roster that no longer holds the caller, and since every command — `redo`
+	 * included — runs `assertMember` first, the seated players would be locked out of
+	 * their own game with no way forward or back. At the floor there is genuinely
+	 * nothing left to undo, which is what `NothingToUndo` means.
+	 *
+	 * @returns True when at least one undoable commit sits above the floor.
+	 */
+	const canUndo = Effect.fn( function* () {
+		const { commits, cursor } = yield* log.read();
+		const isJoin = ( raw: unknown ) => typeof raw === "object"
+			&& raw !== null
+			&& ( raw as { readonly command?: unknown } ).command === "join";
+
+		return cursor > commits.findLastIndex( isJoin );
+	} );
+
+	/**
 	 * Steps the log cursor back one commit and rebuilds state from it: `refold`,
-	 * save the snapshot, `reconcile` scheduled work, and broadcast.
+	 * save the snapshot, `reconcile` scheduled work, and broadcast. Stops at the
+	 * newest `join` (see `canUndo`), so the roster is never rewound out from under
+	 * the players.
 	 *
 	 * @param playerInfo - The requesting player (audience for the returned snapshot).
-	 * @returns The rebuilt snapshot, or fails with `NothingToUndo` at genesis.
+	 * @returns The rebuilt snapshot, or fails with `NothingToUndo` at the last join.
 	 */
 	const undo = Effect.fn( function* ( playerInfo: PlayerInfo ) {
 		yield* assertMember( yield* load(), playerInfo.id );
-		const moved = yield* log.moveCursor( -1 );
+		const moved = ( yield* canUndo() )
+			? yield* log.moveCursor( -1 )
+			: Option.none();
+
 		if ( Option.isNone( moved ) ) {
 			return yield* new NothingToUndo();
 		}

@@ -527,18 +527,30 @@ describe( "wordle — event sourcing (replay, undo, redo)", () => {
 		expect( redone.view.victory ).toBe( true );
 	} );
 
-	test.skip( "undo at genesis fails with NothingToUndo", async () => {
-		// BUG (engine-level, src/shared/swish/engine.ts:884): `undo` asserts
-		// membership against the ALREADY-REWOUND snapshot. Wordle's only commits are
-		// join + start, so the second undo rewinds past the join, drops p1 from the
-		// roster, and every later undo/redo/getState fails `NotAMember` — the sole
-		// player is permanently locked out of their own game instead of getting
-		// `NothingToUndo`. Unskip once undo/redo cannot rewind past the join.
+	test( "undo stops at the join and fails with NothingToUndo", async () => {
+		// Wordle's only pre-move commits are join + start. The first undo rewinds
+		// the start; the next would rewind the join itself, refolding a roster p1 is
+		// no longer in — and since every command runs `assertMember` first, that
+		// locked the sole player out of their own game. It is refused instead.
 		const engine = await bootWordle( memory );
-		await run( memory, engine.undo( P1 ) );
 		await run( memory, engine.undo( P1 ) );
 
 		expect( ( await runFail( memory, engine.undo( P1 ) ) )._tag ).toBe( "swish/NothingToUndo" );
+	} );
+
+	test( "a game rewound to the join is still readable, redoable and startable", async () => {
+		const engine = await bootWordle( memory );
+		await run( memory, engine.undo( P1 ) );
+		await runFail( memory, engine.undo( P1 ) );
+
+		// p1 keeps their seat, so nothing after the refused undo fails `NotAMember`.
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).status ).toBe( "PLAYERS_READY" );
+		expect( ( await run( memory, engine.redo( P1 ) ) ).status ).toBe( "IN_PROGRESS" );
+
+		// ...and the un-started game can simply be started again instead.
+		await run( memory, engine.undo( P1 ) );
+		await run( memory, engine.start( P1.id ) );
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).status ).toBe( "IN_PROGRESS" );
 	} );
 
 	test( "a fresh guess after an undo drops the redo tail", async () => {

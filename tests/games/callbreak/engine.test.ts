@@ -464,12 +464,7 @@ describe( "callbreak — declareWins validation", () => {
 		expect( error._tag ).toBe( "swish/NotYourTurn" );
 	} );
 
-	// KNOWN BUG — `declareWins.validate` (src/games/callbreak/server/engine.ts:124)
-	// never bounds `input.wins`. The 2..13 range is enforced only by the client
-	// stepper (src/games/callbreak/client/declare-wins.tsx:53), so the API accepts
-	// a bid of 0 (which also wedges the phase: `DECLARING.endIf` waits for every
-	// declaration to be > 0) or of 99.
-	test.skip( "a bid outside 1..13 is rejected", async () => {
+	test( "a bid outside 1..13 is rejected", async () => {
 		const engine = await boot( memory );
 		const id = dealId( memory );
 
@@ -477,6 +472,27 @@ describe( "callbreak — declareWins validation", () => {
 			.toBe( "swish/InvalidMove" );
 		expect( ( await runFail( memory, engine.declareWins( { wins: 14, dealId: id }, P1 ) ) )._tag )
 			.toBe( "swish/InvalidMove" );
+	} );
+
+	test( "a fractional or negative bid is rejected", async () => {
+		const engine = await boot( memory );
+		const id = dealId( memory );
+
+		for ( const wins of [ -1, 2.5, Number.NaN ] ) {
+			expect( ( await runFail( memory, engine.declareWins( { wins, dealId: id }, P1 ) ) ) )
+				.toMatchObject( { _tag: "swish/InvalidMove", move: "declareWins" } );
+		}
+	} );
+
+	test( "a rejected bid leaves the deal undeclared and playable", async () => {
+		const engine = await boot( memory );
+		const id = dealId( memory );
+		await runFail( memory, engine.declareWins( { wins: 0, dealId: id }, P1 ) );
+
+		// Nothing was committed, so p1 is still on turn and can bid legally.
+		expect( stored( memory ).context.currentPlayer ).toBe( P1.id );
+		await run( memory, engine.declareWins( { wins: 3, dealId: id }, P1 ) );
+		expect( activeDeal( memory ).declarations[ P1.id ] ).toBe( 3 );
 	} );
 } );
 
