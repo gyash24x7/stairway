@@ -1,32 +1,37 @@
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 
 import { GameCode } from "@/shared/swish/schema.ts";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { Input } from "@/shared/ui/primitives/input.tsx";
+import { errorMessage } from "@/shared/ui/utils/errors.ts";
 
 type JoinGameProps = {
 	game: string;
 	joinGame: ( input: { code: GameCode } ) => Promise<string>;
 };
 
-export function JoinGame( { game, joinGame }: JoinGameProps ) {
+export function JoinGame( { game, joinGame: joinGameFn }: JoinGameProps ) {
 	const navigate = useNavigate();
 	const [ joinCode, setJoinCode ] = useState( "" );
 	const [ error, setError ] = useState( "" );
-	const [ isPending, startTransition ] = useTransition();
 
-	const handleJoin = () => startTransition( async () => {
+	const joinGame = useMutation( {
+		mutationFn: ( code: GameCode ) => joinGameFn( { code } ),
+		onSuccess: gameId => navigate( { to: `/${ game }/${ gameId }` } ),
+		onError: e => setError( errorMessage( e ) )
+	} );
+
+	const handleJoin = () => {
 		const code = joinCode.trim().toUpperCase();
 		if ( !code ) {
 			return;
 		}
 
 		setError( "" );
-
-		const gameId = await joinGame( { code: GameCode.make( code ) } );
-		await navigate( { to: `/${ game }/${ gameId }` } );
-	} );
+		joinGame.mutate( GameCode.make( code ) );
+	};
 
 	return (
 		<div className={ "rounded-md bg-background p-6 flex flex-col gap-4 flex-1" }>
@@ -42,9 +47,12 @@ export function JoinGame( { game, joinGame }: JoinGameProps ) {
 					maxLength={ 6 }
 					className={ "uppercase" }
 					onKeyDown={ e => e.key === "Enter" && handleJoin() }
-					disabled={ isPending }
+					disabled={ joinGame.isPending }
 				/>
-				<Button onClick={ handleJoin } disabled={ !joinCode.trim() || isPending }>
+				<Button
+					onClick={ handleJoin }
+					disabled={ !joinCode.trim() || joinGame.isPending }
+				>
 					Join
 				</Button>
 			</div>

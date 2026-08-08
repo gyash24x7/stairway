@@ -1,5 +1,6 @@
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { type ReactNode, useTransition } from "react";
+import type { ReactNode } from "react";
 
 import { Button } from "@/shared/ui/primitives/button.tsx";
 
@@ -10,13 +11,12 @@ type CreateGameProps = {
 	children?: ReactNode;
 };
 
-export function CreateGame( { game, disabled, createGame, children }: CreateGameProps ) {
+export function CreateGame( { game, disabled, createGame: createGameFn, children }: CreateGameProps ) {
 	const navigate = useNavigate();
-	const [ isPending, startTransition ] = useTransition();
 
-	const handleCreate = () => startTransition( async () => {
-		const gameId = await createGame();
-		await navigate( { to: `/${ game }/$gameId`, params: { gameId } } );
+	const createGame = useMutation( {
+		mutationFn: createGameFn,
+		onSuccess: gameId => navigate( { to: `/${ game }/$gameId`, params: { gameId } } )
 	} );
 
 	return (
@@ -26,7 +26,10 @@ export function CreateGame( { game, disabled, createGame, children }: CreateGame
 				Create a game and share the code with a friend
 			</p>
 			{ children }
-			<Button onClick={ handleCreate } disabled={ disabled || isPending }>
+			<Button
+				onClick={ () => createGame.mutate() }
+				disabled={ disabled || createGame.isPending }
+			>
 				Create Game
 			</Button>
 		</div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useBoolean } from "usehooks-ts";
 
 import type { Gem, PickTokensInput, Tokens } from "@/games/splendor/shared/schema.ts";
@@ -39,7 +39,8 @@ export function PickTokens() {
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );
 	const [ returnTokens, setReturnTokens ] = useState<Partial<Tokens>>( {} );
-	const [ isPending, startTransition ] = useTransition();
+
+	const isPending = pickTokens.isPending;
 
 	const projectedTotal = useMemo( () => {
 		const currentTotal = GEMS_WITH_GOLD.reduce( ( sum, gem ) => sum + playerTokens[ gem ], 0 );
@@ -63,22 +64,20 @@ export function PickTokens() {
 		setFalse();
 	};
 
-	const handlePickClick = () => startTransition( async () => {
+	const handlePickClick = () => {
 		if ( projectedTotal <= 10 ) {
-			await pickTokens.mutateAsync( { tokens: selectedTokens } );
-			reset();
+			pickTokens.mutate( { tokens: selectedTokens }, { onSuccess: reset } );
 		} else {
 			setTrue();
 		}
-	} );
+	};
 
-	const handleReturnClick = () => startTransition( async () => {
-		await pickTokens.mutateAsync( {
-			tokens: selectedTokens,
-			returned: returnTokens
-		} );
-		reset();
-	} );
+	const handleReturnClick = () => {
+		pickTokens.mutate(
+			{ tokens: selectedTokens, returned: returnTokens },
+			{ onSuccess: reset }
+		);
+	};
 
 	return (
 		<div className={ "flex flex-col gap-3 w-full" }>

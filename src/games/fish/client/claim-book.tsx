@@ -100,9 +100,9 @@ export function ClaimBook() {
 		} )
 	} );
 
-	const handleClick = async () => {
+	const handleClick = () => {
 		if ( selectedBook && allAssigned && authInfo ) {
-			await claimBook.mutateAsync( {
+			claimBook.mutate( {
 				claim: claim.entries().reduce(
 					( acc, [ cardId, playerId ] ) => {
 						acc[ cardId ] = playerId;
@@ -110,9 +110,7 @@ export function ClaimBook() {
 					},
 					{} as Record<string, PlayerId>
 				)
-			} );
-
-			closeDrawer();
+			}, { onSuccess: closeDrawer } );
 		}
 	};
 
