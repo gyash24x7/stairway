@@ -906,18 +906,69 @@ describe( "splendor — completion & scoring", () => {
 		expect( state.view.winner ).toBe( P2.id );
 	} );
 
-	test( "a tie resolves to the earlier seat", async () => {
+	test( "a tie on points goes to the fewest development cards", async () => {
 		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		patchPlayer( memory, P1.id, { points: 5 } );
-		patchPlayer( memory, P2.id, { points: 5 } );
+		// p1 needed four cards to reach five points; p2 got there on two, so the
+		// later seat takes it despite the fold starting from the earlier one.
+		patchPlayer( memory, P1.id, {
+			points: 5,
+			cards: [ card( "a" ), card( "b" ), card( "c" ), card( "d" ) ]
+		} );
+		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "e" ), card( "f" ) ] } );
 
 		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
 		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
 
 		const state = await run( memory, engine.getState( P1.id ) );
 		expect( state.status ).toBe( "COMPLETED" );
-		// `onEnd` folds with `>`, so the first seat keeps the crown on a draw.
+		expect( state.view.winner ).toBe( P2.id );
+	} );
+
+	test( "nobles and reserved cards do not count toward the card tie-break", async () => {
+		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
+		// Both bought two cards. p1 also holds a noble and three reserves — none
+		// of which are development cards, so the tie stands and the seat decides.
+		patchPlayer( memory, P1.id, {
+			points: 5,
+			cards: [ card( "a" ), card( "b" ) ],
+			nobles: [ noble( "n1" ) ],
+			reserved: [ card( "r1" ), card( "r2" ), card( "r3" ) ]
+		} );
+		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "c" ), card( "d" ) ] } );
+
+		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
+		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
+
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).view.winner ).toBe( P1.id );
+	} );
+
+	test( "a tie on points and cards resolves to the earlier seat", async () => {
+		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
+		patchPlayer( memory, P1.id, { points: 5, cards: [ card( "a" ) ] } );
+		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "b" ) ] } );
+
+		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
+		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.status ).toBe( "COMPLETED" );
+		// The sort is stable, so a dead-even draw keeps the seating order.
 		expect( state.view.winner ).toBe( P1.id );
+	} );
+
+	test( "the card tie-break never overrides a points lead", async () => {
+		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
+		// p2 owns fewer cards but is a point behind — points come first.
+		patchPlayer( memory, P1.id, {
+			points: 6,
+			cards: [ card( "a" ), card( "b" ), card( "c" ) ]
+		} );
+		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "d" ) ] } );
+
+		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
+		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
+
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).view.winner ).toBe( P1.id );
 	} );
 
 	test( "turns rotate round-robin through the seating order", async () => {

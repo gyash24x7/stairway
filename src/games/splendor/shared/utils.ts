@@ -1,4 +1,5 @@
-import type { Card, Cost, Tokens } from "@/games/splendor/shared/schema.ts";
+import type { Card, Cost, PlayerData, SplendorState, Tokens } from "@/games/splendor/shared/schema.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
 
 export const GEMS: Array<keyof Cost> = [ "diamond", "sapphire", "emerald", "ruby", "onyx" ];
 export const GEMS_WITH_GOLD: Array<keyof Tokens> = [ ...GEMS, "gold" ];
@@ -63,4 +64,63 @@ export function isValidPayment( card: Card, payment: Partial<Tokens>, discounts:
 	}
 
 	return ( payment.gold ?? 0 ) === totalShortfall;
+}
+
+// --- Standings -------------------------------------------------------------
+
+/**
+ * How many development cards a player bought. This is the official tie-break
+ * quantity: only purchased cards count — nobles are not development cards, and
+ * a reserved card was never bought.
+ *
+ * @param player The player's data (absent seats count as zero).
+ */
+export function developmentCardCount( player?: PlayerData ) {
+	return player?.cards.length ?? 0;
+}
+
+/**
+ * Order two seats best-first at the end of a game. Most prestige points wins;
+ * on a tie the rules award it to whoever spent *fewer* development cards
+ * getting there. Two seats that are still level compare equal, so a stable
+ * sort leaves them in seating order.
+ *
+ * @param a The first player's data.
+ * @param b The second player's data.
+ * @returns Negative when `a` outranks `b`, positive when `b` outranks `a`.
+ */
+export function compareStandings( a?: PlayerData, b?: PlayerData ) {
+	const byPoints = ( b?.points ?? 0 ) - ( a?.points ?? 0 );
+	if ( byPoints !== 0 ) {
+		return byPoints;
+	}
+
+	return developmentCardCount( a ) - developmentCardCount( b );
+}
+
+/**
+ * Rank the roster best-first, applying the points → fewest-cards tie-break.
+ * `toSorted` is stable, so seats that tie on both keys stay in seating order.
+ *
+ * @param players The roster, in seating order.
+ * @param playerData Every seat's data.
+ */
+export function rankPlayers(
+	players: ReadonlyArray<PlayerId>,
+	playerData: SplendorState[ "playerData" ]
+) {
+	return players.toSorted( ( a, b ) => compareStandings( playerData[ a ], playerData[ b ] ) );
+}
+
+/**
+ * The winner: the top of {@link rankPlayers}, or `undefined` for an empty roster.
+ *
+ * @param players The roster, in seating order.
+ * @param playerData Every seat's data.
+ */
+export function decideWinner(
+	players: ReadonlyArray<PlayerId>,
+	playerData: SplendorState[ "playerData" ]
+) {
+	return rankPlayers( players, playerData )[ 0 ];
 }

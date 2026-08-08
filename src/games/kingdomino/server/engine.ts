@@ -26,6 +26,7 @@ import {
 	canDominoBePlaced,
 	CASTLES,
 	createBoard,
+	decideWinner,
 	DOMINO_DECK,
 	draftPlayerOrder,
 	drawDraftPure,
@@ -110,14 +111,12 @@ export const kingdomino = makeEngine( {
 			];
 		},
 
+		// Most points takes it; the rulebook then breaks a tie on the largest
+		// single property, then on total crowns. A seat still level on all three
+		// keeps its seating order.
 		onEnd: ( { state, context } ) => {
-			const players = context.players;
-			const winner = players.reduce( ( best, pid ) =>
-				( state.playerData[ pid ]?.score.points ?? 0 ) >
-				( state.playerData[ best ]?.score.points ?? 0 )
-					? pid
-					: best );
-			return [ WinnerDecided.make( { winner } ) ];
+			const winner = decideWinner( context.players, state.playerData );
+			return winner ? [ WinnerDecided.make( { winner } ) ] : [];
 		}
 	},
 

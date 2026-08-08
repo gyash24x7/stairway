@@ -7,6 +7,8 @@ import type {
 	Castle,
 	Domino,
 	KingdominoState,
+	PlayerData,
+	Region,
 	Tile
 } from "@/games/kingdomino/shared/schema.ts";
 import {
@@ -27,8 +29,10 @@ import {
 	calculateShift,
 	canDominoBePlaced,
 	CASTLES,
+	compareStandings,
 	coordKey,
 	createBoard,
+	decideWinner,
 	DOMINO_DECK,
 	draftPlayerOrder,
 	drawDraft,
@@ -46,8 +50,11 @@ import {
 	getShiftedTiles,
 	getValidPlacements,
 	getValidRotations,
+	largestProperty,
 	parseCoordKey,
-	TILES
+	rankPlayers,
+	TILES,
+	totalCrowns
 } from "@/games/kingdomino/shared/utils.ts";
 import { PlayerId } from "@/shared/swish/schema.ts";
 
@@ -610,5 +617,88 @@ describe( "kingdomino/apply — the pure reducer", () => {
 		const seeded = withPlayer( base, P1 );
 		apply( seeded, DominoSelected.make( { dominoId: 1, playerId: P1 } ) );
 		expect( seeded.playerData[ P1 ]!.queue ).toEqual( [] );
+	} );
+} );
+
+// ===========================================================================
+describe( "kingdomino/utils — standings", () => {
+
+	const P3 = PlayerId.make( "p3" );
+
+	/** A region worth `tiles * crowns`, which is how `calculateScore` scores one. */
+	const region = ( terrain: Tile["terrain"], tiles: number, crowns: number ) => ( {
+		id: `${ terrain }-0-0`,
+		terrain,
+		tiles,
+		placement: [],
+		crowns,
+		points: tiles * crowns
+	} satisfies Region );
+
+	/** A seat whose kingdom holds the given regions. */
+	const seat = ( ...regions: Region[] ) => ( {
+		board: fresh(),
+		queue: [],
+		score: { regions, points: regions.reduce( ( sum, r ) => sum + r.points, 0 ) }
+	} satisfies PlayerData );
+
+	test( "largestProperty takes the biggest region, crowned or not", () => {
+		expect( largestProperty( seat( region( "forest", 3, 2 ), region( "water", 7, 0 ) ).score ) )
+			.toBe( 7 );
+		expect( largestProperty( { regions: [], points: 0 } ) ).toBe( 0 );
+		expect( largestProperty( undefined ) ).toBe( 0 );
+	} );
+
+	test( "totalCrowns sums every region", () => {
+		expect( totalCrowns( seat( region( "forest", 3, 2 ), region( "mine", 1, 3 ) ).score ) )
+			.toBe( 5 );
+		expect( totalCrowns( undefined ) ).toBe( 0 );
+	} );
+
+	test( "compareStandings ranks on points first", () => {
+		// The runner-up wins both tie-breaks — a larger property (8 to 3) and more
+		// crowns (5 to 4) — and still loses, two points short.
+		const ahead = seat( region( "mine", 3, 4 ) );
+		const behind = seat( region( "water", 2, 5 ), region( "forest", 8, 0 ) );
+		expect( compareStandings( ahead, behind ) ).toBeLessThan( 0 );
+		expect( compareStandings( behind, ahead ) ).toBeGreaterThan( 0 );
+	} );
+
+	test( "compareStandings breaks a points tie on the largest property", () => {
+		const tight = seat( region( "forest", 5, 2 ) );
+		const sprawling = seat( region( "water", 10, 1 ) );
+		expect( compareStandings( sprawling, tight ) ).toBeLessThan( 0 );
+		expect( compareStandings( tight, sprawling ) ).toBeGreaterThan( 0 );
+	} );
+
+	test( "compareStandings falls through to crowns, then calls it even", () => {
+		// Both score 12 off a 6-tile property; p2 carries one more crown.
+		const fewer = seat( region( "forest", 6, 2 ) );
+		const more = seat( region( "mine", 4, 3 ), region( "water", 6, 0 ) );
+		expect( compareStandings( more, fewer ) ).toBeLessThan( 0 );
+		expect( compareStandings( fewer, seat( region( "water", 6, 2 ) ) ) ).toBe( 0 );
+	} );
+
+	test( "rankPlayers orders the roster and keeps seating order on a dead draw", () => {
+		const data = {
+			[ P1 ]: seat( region( "forest", 5, 2 ) ),
+			[ P2 ]: seat( region( "water", 10, 1 ) ),
+			[ P3 ]: seat( region( "mine", 4, 3 ) )
+		};
+		// p3 leads on points (12); p1 and p2 tie on 10, split by property size.
+		expect( rankPlayers( [ P1, P2, P3 ], data ) ).toEqual( [ P3, P2, P1 ] );
+
+		const drawn = { [ P1 ]: seat( region( "forest", 6, 2 ) ), [ P2 ]: seat( region( "water", 6, 2 ) ) };
+		expect( rankPlayers( [ P2, P1 ], drawn ) ).toEqual( [ P2, P1 ] );
+	} );
+
+	test( "decideWinner takes the top of the ranking, and nothing from an empty roster", () => {
+		const data = { [ P1 ]: seat( region( "forest", 5, 2 ) ), [ P2 ]: seat( region( "water", 10, 1 ) ) };
+		expect( decideWinner( [ P1, P2 ], data ) ).toBe( P2 );
+		expect( decideWinner( [], {} ) ).toBeUndefined();
+	} );
+
+	test( "a seat with no data ranks last", () => {
+		expect( decideWinner( [ P1, P2 ], { [ P2 ]: seat( region( "forest", 2, 1 ) ) } ) ).toBe( P2 );
 	} );
 } );

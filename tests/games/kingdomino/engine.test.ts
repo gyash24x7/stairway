@@ -6,6 +6,8 @@ import type {
 	KingdominoConfig,
 	KingdominoState,
 	Placement,
+	Region,
+	ScoreBreakdown,
 	Tile
 } from "@/games/kingdomino/shared/schema.ts";
 import {
@@ -73,6 +75,41 @@ const patchBoard = ( memory: Memory, playerId: PlayerId, board: Board ) => {
 		}
 	};
 };
+
+/** Swap in a hand-built score for one player, leaving the rest of the record alone. */
+const patchScore = ( memory: Memory, playerId: PlayerId, score: ScoreBreakdown ) => {
+	const snap = memory.store.value as { state: KingdominoState };
+	const data = snap.state.playerData[ playerId ]!;
+	memory.store.value = {
+		...snap,
+		state: {
+			...snap.state,
+			playerData: { ...snap.state.playerData, [ playerId ]: { ...data, score } }
+		}
+	};
+};
+
+/** Empty the undrawn deck, so the draft on the table is the game's last. */
+const emptyDeck = ( memory: Memory ) => {
+	const snap = memory.store.value as { state: KingdominoState };
+	memory.store.value = { ...snap, state: { ...snap.state, deck: [] } };
+};
+
+/** A region worth `tiles * crowns`, which is how `calculateScore` scores one. */
+const region = ( terrain: Tile["terrain"], tiles: number, crowns: number ) => ( {
+	id: `${ terrain }-0-0`,
+	terrain,
+	tiles,
+	placement: [],
+	crowns,
+	points: tiles * crowns
+} satisfies Region );
+
+/** A score breakdown over the given regions, totalled the way the reducer stores it. */
+const score = ( ...regions: Region[] ) => ( {
+	regions,
+	points: regions.reduce( ( sum, r ) => sum + r.points, 0 )
+} satisfies ScoreBreakdown );
 
 /** A 5x5 kingdom with every square taken — nothing can ever be placed on it again. */
 const sealedKingdom = () => {
@@ -787,6 +824,74 @@ describe( "kingdomino — completion", () => {
 		const error = await runFail( memory, engine.selectDomino( { dominoId: 1 }, P1 ) );
 		expect( error._tag ).toBe( "swish/GameNotInProgress" );
 	}, 30_000 );
+
+	/**
+	 * Stages a finish with hand-built scores: both kingdoms are sealed so every
+	 * remaining domino is discarded rather than placed (leaving the staged scores
+	 * untouched), and the undrawn deck is emptied so the draft on the table is the
+	 * last one. Playing that draft out ends the game on exactly these numbers.
+	 */
+	const finishWith = async (
+		mem: Memory,
+		scores: ReadonlyArray<[ PlayerId, ScoreBreakdown ]>
+	) => {
+		const engine = await boot( mem );
+		emptyDeck( mem );
+		for ( const [ pid, staged ] of scores ) {
+			patchBoard( mem, pid, sealedKingdom() );
+			patchScore( mem, pid, staged );
+		}
+
+		await playOut( mem, engine, [ P1, P2 ] );
+		return run( mem, engine.getState( P1.id ) );
+	};
+
+	test( "a tie on points goes to the largest single property", async () => {
+		// Both score 10. p2's ten points come off one sprawling lake, p1's off a
+		// tighter forest — the rulebook's first tie-break hands it to p2.
+		const state = await finishWith( memory, [
+			[ P1.id, score( region( "forest", 5, 2 ) ) ],
+			[ P2.id, score( region( "water", 10, 1 ) ) ]
+		] );
+
+		expect( state.status ).toBe( "COMPLETED" );
+		expect( state.view.winner ).toBe( P2.id );
+	} );
+
+	test( "a tie on points and property size goes to the most crowns", async () => {
+		// Level on points (12) and on largest property (6 tiles), so the second
+		// tie-break counts crowns across the whole kingdom: p2 has three to p1's two.
+		const state = await finishWith( memory, [
+			[ P1.id, score( region( "forest", 6, 2 ) ) ],
+			[ P2.id, score( region( "mine", 4, 3 ), region( "water", 6, 0 ) ) ]
+		] );
+
+		expect( state.status ).toBe( "COMPLETED" );
+		expect( state.view.winner ).toBe( P2.id );
+	} );
+
+	test( "a tie on all three resolves to the earlier seat", async () => {
+		const state = await finishWith( memory, [
+			[ P1.id, score( region( "forest", 6, 2 ) ) ],
+			[ P2.id, score( region( "water", 6, 2 ) ) ]
+		] );
+
+		expect( state.status ).toBe( "COMPLETED" );
+		// The rules call this a shared victory; the engine names one winner, and
+		// the sort is stable, so the draw keeps the seating order.
+		expect( state.view.winner ).toBe( P1.id );
+	} );
+
+	test( "the tie-breaks never override a points lead", async () => {
+		// p2 owns both the larger property and more crowns, but is two points down.
+		const state = await finishWith( memory, [
+			[ P1.id, score( region( "forest", 7, 2 ) ) ],
+			[ P2.id, score( region( "water", 12, 1 ) ) ]
+		] );
+
+		expect( state.status ).toBe( "COMPLETED" );
+		expect( state.view.winner ).toBe( P1.id );
+	} );
 } );
 
 // ===========================================================================

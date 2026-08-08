@@ -12,6 +12,7 @@ import type {
 	Card,
 	Cost,
 	Noble,
+	PlayerData,
 	SplendorState,
 	Tokens
 } from "@/games/splendor/shared/schema.ts";
@@ -28,7 +29,14 @@ import {
 	generateNobles,
 	sumTokens
 } from "@/games/splendor/server/utils.ts";
-import { canPurchaseCard, isValidPayment } from "@/games/splendor/shared/utils.ts";
+import {
+	canPurchaseCard,
+	compareStandings,
+	decideWinner,
+	developmentCardCount,
+	isValidPayment,
+	rankPlayers
+} from "@/games/splendor/shared/utils.ts";
 import { PlayerId } from "@/shared/swish/schema.ts";
 
 // --- Fixtures --------------------------------------------------------------
@@ -402,5 +410,65 @@ describe( "splendor/utils — apply (the pure reducer)", () => {
 	test( "WinnerDecided records the winner on the board", () => {
 		const decided = apply( seatedState(), WinnerDecidedEvent.make( { winner: P1 } ) );
 		expect( decided.winner ).toBe( P1 );
+	} );
+} );
+
+// ===========================================================================
+describe( "splendor/utils — standings", () => {
+
+	const P2 = PlayerId.make( "p2" );
+	const P3 = PlayerId.make( "p3" );
+
+	/** A seat holding `points` and `cardCount` bought development cards. */
+	const seat = ( points: number, cardCount: number, over: Partial<PlayerData> = {} ) => {
+		const data: PlayerData = {
+			tokens: tokens(),
+			cards: Array.from( { length: cardCount }, ( _, i ) => card( `c${ i }` ) ),
+			nobles: [],
+			reserved: [],
+			points,
+			...over
+		};
+		return data;
+	};
+
+	test( "developmentCardCount counts only bought cards", () => {
+		expect( developmentCardCount( seat( 5, 3 ) ) ).toBe( 3 );
+		expect( developmentCardCount( seat( 5, 0, {
+			nobles: [ noble( "n1" ) ],
+			reserved: [ card( "r1" ), card( "r2" ) ]
+		} ) ) ).toBe( 0 );
+		expect( developmentCardCount( undefined ) ).toBe( 0 );
+	} );
+
+	test( "compareStandings ranks on points first", () => {
+		// Fewer cards but a point behind: the lead still wins.
+		expect( compareStandings( seat( 6, 9 ), seat( 5, 1 ) ) ).toBeLessThan( 0 );
+		expect( compareStandings( seat( 5, 1 ), seat( 6, 9 ) ) ).toBeGreaterThan( 0 );
+	} );
+
+	test( "compareStandings breaks a points tie on the fewest cards", () => {
+		expect( compareStandings( seat( 15, 8 ), seat( 15, 12 ) ) ).toBeLessThan( 0 );
+		expect( compareStandings( seat( 15, 12 ), seat( 15, 8 ) ) ).toBeGreaterThan( 0 );
+		// Level on both keys — the caller's order decides.
+		expect( compareStandings( seat( 15, 8 ), seat( 15, 8 ) ) ).toBe( 0 );
+	} );
+
+	test( "rankPlayers orders the roster and keeps seating order on a dead draw", () => {
+		const data = { [ P1 ]: seat( 15, 12 ), [ P2 ]: seat( 15, 9 ), [ P3 ]: seat( 16, 14 ) };
+		expect( rankPlayers( [ P1, P2, P3 ], data ) ).toEqual( [ P3, P2, P1 ] );
+
+		const drawn = { [ P1 ]: seat( 15, 9 ), [ P2 ]: seat( 15, 9 ) };
+		expect( rankPlayers( [ P2, P1 ], drawn ) ).toEqual( [ P2, P1 ] );
+	} );
+
+	test( "decideWinner takes the top of the ranking, and nothing from an empty roster", () => {
+		const data = { [ P1 ]: seat( 15, 12 ), [ P2 ]: seat( 15, 9 ) };
+		expect( decideWinner( [ P1, P2 ], data ) ).toBe( P2 );
+		expect( decideWinner( [], {} ) ).toBeUndefined();
+	} );
+
+	test( "a seat with no data ranks last", () => {
+		expect( decideWinner( [ P1, P2 ], { [ P2 ]: seat( 1, 5 ) } ) ).toBe( P2 );
 	} );
 } );

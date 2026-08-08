@@ -3,12 +3,16 @@ import type {
 	BoardSize,
 	Castle,
 	Domino,
+	KingdominoState,
 	Placement,
+	PlayerData,
 	Rotation,
+	ScoreBreakdown,
 	Terrain,
 	Tile
 } from "@/games/kingdomino/shared/schema.ts";
 import { Coord, DraftEntry, Region } from "@/games/kingdomino/shared/schema.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
 
 /** Rectangular bounding box defined by min/max coordinates. */
 type Bounds = { minX: number; maxX: number; minY: number; maxY: number };
@@ -740,6 +744,80 @@ export const draftPlayerOrder = ( draft: readonly DraftEntry[] ) => draft
 	.filter( e => !!e.selectedBy )
 	.toSorted( ( a, b ) => a.domino.id - b.domino.id )
 	.map( e => e.selectedBy! );
+
+// --- Standings -------------------------------------------------------------
+
+/**
+ * Tiles in the player's largest single property — the biggest connected area of
+ * one terrain, crowned or not. The first tie-break at the end of the game.
+ *
+ * @param score The player's score breakdown (an unplayed kingdom scores zero).
+ */
+export function largestProperty( score?: ScoreBreakdown ) {
+	return ( score?.regions ?? [] ).reduce( ( max, region ) => Math.max( max, region.tiles ), 0 );
+}
+
+/**
+ * Every crown in the player's kingdom. The second tie-break. Crowns only ever
+ * sit on scored terrain (the castle carries none), so summing the regions
+ * counts them all.
+ *
+ * @param score The player's score breakdown (an unplayed kingdom scores zero).
+ */
+export function totalCrowns( score?: ScoreBreakdown ) {
+	return ( score?.regions ?? [] ).reduce( ( sum, region ) => sum + region.crowns, 0 );
+}
+
+/**
+ * Order two seats best-first at the end of a game, following the rulebook:
+ * most points, then the largest property, then the most crowns. Seats level on
+ * all three compare equal — the rules call that a shared victory, and a stable
+ * sort leaves them in seating order.
+ *
+ * @param a The first player's data.
+ * @param b The second player's data.
+ * @returns Negative when `a` outranks `b`, positive when `b` outranks `a`.
+ */
+export function compareStandings( a?: PlayerData, b?: PlayerData ) {
+	const byPoints = ( b?.score.points ?? 0 ) - ( a?.score.points ?? 0 );
+	if ( byPoints !== 0 ) {
+		return byPoints;
+	}
+
+	const byProperty = largestProperty( b?.score ) - largestProperty( a?.score );
+	if ( byProperty !== 0 ) {
+		return byProperty;
+	}
+
+	return totalCrowns( b?.score ) - totalCrowns( a?.score );
+}
+
+/**
+ * Rank the roster best-first, applying the full tie-break chain. `toSorted` is
+ * stable, so seats that tie on every key stay in seating order.
+ *
+ * @param players The roster, in seating order.
+ * @param playerData Every seat's data.
+ */
+export function rankPlayers(
+	players: ReadonlyArray<PlayerId>,
+	playerData: KingdominoState[ "playerData" ]
+) {
+	return players.toSorted( ( a, b ) => compareStandings( playerData[ a ], playerData[ b ] ) );
+}
+
+/**
+ * The winner: the top of {@link rankPlayers}, or `undefined` for an empty roster.
+ *
+ * @param players The roster, in seating order.
+ * @param playerData Every seat's data.
+ */
+export function decideWinner(
+	players: ReadonlyArray<PlayerId>,
+	playerData: KingdominoState[ "playerData" ]
+) {
+	return rankPlayers( players, playerData )[ 0 ];
+}
 
 /** Pure, deterministic draft draw from a given deck (no mutation). */
 export const drawDraftPure = ( deck: ReadonlyArray<Domino> ) => {

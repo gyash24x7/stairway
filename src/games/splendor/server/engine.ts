@@ -31,6 +31,7 @@ import {
 	generateNobles,
 	sumTokens
 } from "@/games/splendor/server/utils.ts";
+import { decideWinner } from "@/games/splendor/shared/utils.ts";
 
 const MAX_TOKENS_IN_HAND = 10;
 const MAX_RESERVED = 3;
@@ -125,13 +126,12 @@ export const splendor = makeEngine( {
 			return [ GameDealtEvent.make( { tokens, nobles, cards, decks } ) ];
 		},
 
+		// Most prestige points takes it; a tie goes to whoever bought fewer
+		// development cards (the official tie-break), and a seat still level on
+		// both keeps its seating order.
 		onEnd: ( { state, context } ) => {
-			const winner = context.players.reduce( ( best, id ) => {
-				const points = state.playerData[ id ]?.points ?? 0;
-				const bestPoints = state.playerData[ best ]?.points ?? 0;
-				return points > bestPoints ? id : best;
-			} );
-			return [ WinnerDecidedEvent.make( { winner } ) ];
+			const winner = decideWinner( context.players, state.playerData );
+			return winner ? [ WinnerDecidedEvent.make( { winner } ) ] : [];
 		}
 	},
 
