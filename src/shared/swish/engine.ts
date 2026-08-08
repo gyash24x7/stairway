@@ -92,9 +92,6 @@ export const makeEngine = <
 	const Snapshot = GameSnapshot( structure.schemas.view, structure.schemas.config );
 	const CompletedData = CompletedGameData( structure.schemas.view );
 
-	/** This game's archive key: the game name namespaces the id across games. */
-	const archiveKey = ( id: GameId ) => `${ structure.name }:${ id }`;
-
 	interface Acc {
 		events: Array<EngineEvent | Events>;
 		work: PersistedGameData<State, Config>;
@@ -327,7 +324,7 @@ export const makeEngine = <
 			results: table.results
 		} );
 
-		yield* archive.save( archiveKey( data.id ), completed );
+		yield* archive.save( `${ structure.name }:${ data.id }`, completed );
 	} );
 
 	/**
@@ -338,7 +335,7 @@ export const makeEngine = <
 	 * @returns Completes once the archive is removed.
 	 */
 	const dropArchive = ( data: PersistedGameData<State, Config> ) =>
-		archive.remove( archiveKey( data.id ) );
+		archive.remove( `${ structure.name }:${ data.id }` );
 
 	// --- Event Sourcing Helpers ------------------------------------------------
 

@@ -16,7 +16,8 @@ import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
 import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
-import { archiveNamespace, GameArchiveLive } from "@/platform/kv/archive.ts";
+import { GameArchiveLive } from "@/platform/kv/archive.ts";
+import { ArchiveKV } from "@/platform/kv/archive.ts";
 import { GameNotFound } from "@/shared/swish/errors.ts";
 import { GameCode, GameId, PlayerId } from "@/shared/swish/schema.ts";
 import { callbreak } from "@/games/callbreak/server/engine.ts";
@@ -28,7 +29,7 @@ export class CallbreakEngineDO extends Cloudflare.DurableObject<CallbreakEngineD
 	Effect.gen( function* () {
 		const channels = yield* GameChannel;
 		const state = yield* Cloudflare.DurableObjectState;
-		const archiveKv = yield* archiveNamespace;
+		const kv = yield* Cloudflare.KV.ReadWriteNamespace( ArchiveKV );
 		return callbreak.pipe(
 			Effect.provide(
 				Layer.mergeAll(
@@ -36,11 +37,11 @@ export class CallbreakEngineDO extends Cloudflare.DurableObject<CallbreakEngineD
 					DurableEventStoreLive( state ),
 					DurableSyncLive( channels ),
 					DurableSchedulerLive( state ),
-					GameArchiveLive( archiveKv )
+					GameArchiveLive( kv )
 				)
 			)
 		);
-	} )
+	} ).pipe( Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding ) )
 ) {}
 
 // --- HTTP Api implementation -------------------------------------------------
