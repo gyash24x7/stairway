@@ -16,6 +16,7 @@ import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
 import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
+import { archiveNamespace, GameArchiveLive } from "@/platform/kv/archive.ts";
 import { GameCode, GameId, PlayerId, PlayerInfo } from "@/shared/swish/schema.ts";
 import { wordle } from "@/games/wordle/server/engine.ts";
 
@@ -26,13 +27,15 @@ export class WordleEngineDO extends Cloudflare.DurableObject<WordleEngineDO>()(
 	Effect.gen( function* () {
 		const channels = yield* GameChannel;
 		const state = yield* Cloudflare.DurableObjectState;
+		const archiveKv = yield* archiveNamespace;
 		return wordle.pipe(
 			Effect.provide(
 				Layer.mergeAll(
 					DurableGameStoreLive( state ),
 					DurableEventStoreLive( state ),
 					DurableSyncLive( channels ),
-					DurableSchedulerLive( state )
+					DurableSchedulerLive( state ),
+					GameArchiveLive( archiveKv )
 				)
 			)
 		);

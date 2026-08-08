@@ -67,3 +67,23 @@ export class EventStore extends Context.Service<EventStore, {
 	readonly read: () => Effect.Effect<EventLog, never, Alchemy.RuntimeContext>;
 }>()( "swish/EventStore" ) {}
 
+/**
+ * The cold store for finished games. Once a game completes the engine writes its
+ * `CompletedGameData` here under `${gameName}:${gameId}`, so the final board and
+ * standings outlive the Durable Object that produced them. Game-agnostic: values
+ * crossing this boundary are already schema-*encoded* (plain JSON).
+ *
+ * `remove` exists because completion is derived from the log cursor, not a
+ * one-way door: an `undo` past the finish un-completes the game, and the archive
+ * has to follow it back.
+ */
+export class GameArchive extends Context.Service<GameArchive, {
+	readonly save: ( key: string, encoded: unknown ) =>
+		Effect.Effect<void, never, Alchemy.RuntimeContext>;
+
+	readonly load: ( key: string ) =>
+		Effect.Effect<Option.Option<unknown>, never, Alchemy.RuntimeContext>;
+
+	readonly remove: ( key: string ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+}>()( "swish/GameArchive" ) {}
+

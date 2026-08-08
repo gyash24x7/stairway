@@ -6,6 +6,7 @@ import * as Schema from "effect/Schema";
 import { hashSeed, makeRng } from "@/shared/utils/rng.ts";
 import {
 	type CommitMeta,
+	CompletedGameData,
 	GameContext,
 	GameId,
 	GameSnapshot,
@@ -51,7 +52,7 @@ import {
 	StatusChanged,
 	TurnAdvanced
 } from "@/shared/swish/events.ts";
-import { EventStore, GameStore, Scheduler, Sync } from "@/shared/swish/services.ts";
+import { EventStore, GameArchive, GameStore, Scheduler, Sync } from "@/shared/swish/services.ts";
 import type { BaseMoveInputs, GameStructure } from "@/shared/swish/structure.ts";
 
 const BOT_DELAY_MS = 5000;
@@ -84,10 +85,15 @@ export const makeEngine = <
 	const store = yield* GameStore;
 	const sync = yield* Sync;
 	const log = yield* EventStore;
+	const archive = yield* GameArchive;
 
 	const GameEventsCommit = EventsCommit( structure.schemas.events );
 	const PersistedData = PersistedGameData( structure.schemas.state, structure.schemas.config );
 	const Snapshot = GameSnapshot( structure.schemas.view, structure.schemas.config );
+	const CompletedData = CompletedGameData( structure.schemas.view );
+
+	/** This game's archive key: the game name namespaces the id across games. */
+	const archiveKey = ( id: GameId ) => `${ structure.name }:${ id }`;
 
 	interface Acc {
 		events: Array<EngineEvent | Events>;
@@ -290,6 +296,49 @@ export const makeEngine = <
 
 		yield* sync.broadcast( `${ structure.name }:${ data.id }`, { table, playerViews } );
 	} );
+
+	// --- Archive ---------------------------------------------------------------
+
+	/**
+	 * Writes a finished game to the `GameArchive` under `${name}:${id}`: the table
+	 * view, each player's own (private) view, and the derived `results`. This is the
+	 * record that outlives the Durable Object, so it is projected exactly like a
+	 * live read — through `snapshot`, which owns interaction redaction and the
+	 * `resolveResults` fold — rather than re-derived here.
+	 *
+	 * @param data - The `COMPLETED` record to archive.
+	 * @returns Completes once the archive is written.
+	 */
+	const archiveGame = Effect.fn( function* ( data: PersistedGameData<State, Config> ) {
+		const table = snapshot( data, tableAudience() );
+		const playerViews: Record<PlayerId, View> = {};
+		for ( const player of Object.values( data.players ) ) {
+			playerViews[ player.id ] = snapshot( data, playerAudience( player.id ) ).view;
+		}
+
+		const completed = CompletedData.make( {
+			id: data.id,
+			code: data.code,
+			status: data.status,
+			context: table.context,
+			players: data.players,
+			table: table.view,
+			playerViews,
+			results: table.results
+		} );
+
+		yield* archive.save( archiveKey( data.id ), completed );
+	} );
+
+	/**
+	 * Drops a game's archive. Completion is derived from the log cursor, so an
+	 * `undo` past the finish must not leave a completed record behind.
+	 *
+	 * @param data - The record whose archive to drop.
+	 * @returns Completes once the archive is removed.
+	 */
+	const dropArchive = ( data: PersistedGameData<State, Config> ) =>
+		archive.remove( archiveKey( data.id ) );
 
 	// --- Event Sourcing Helpers ------------------------------------------------
 
@@ -888,7 +937,9 @@ export const makeEngine = <
 
 		yield* commitAndSave( acc.work, commitMeta, acc.events );
 
-		if ( acc.work.status !== "COMPLETED" ) {
+		if ( acc.work.status === "COMPLETED" ) {
+			yield* archiveGame( acc.work );
+		} else {
 			yield* scheduleBotIfNeeded( acc.work );
 		}
 	} );
@@ -940,15 +991,24 @@ export const makeEngine = <
 	} );
 
 	/**
-	 * Re-derives scheduled work after a time-travel (undo/redo): cancels every timer,
-	 * then reschedules a bot turn if the (possibly changed) actor is a bot.
+	 * Re-derives everything downstream of the log cursor after a time-travel
+	 * (undo/redo): cancels every timer, reschedules a bot turn if the (possibly
+	 * changed) actor is a bot, and brings the archive back in step — rewritten while
+	 * the rebuilt game is still `COMPLETED` (its final board may have changed),
+	 * dropped once the rewind has moved past the finish.
 	 *
-	 * @param data - The rebuilt record to reconcile timers against.
-	 * @returns Completes once timers are reconciled.
+	 * @param data - The rebuilt record to reconcile against.
+	 * @returns Completes once timers and the archive are reconciled.
 	 */
 	const reconcile = Effect.fn( function* ( data: PersistedGameData<State, Config> ) {
 		yield* scheduler.cancelAll();
 		yield* scheduleBotIfNeeded( data );
+
+		if ( data.status === "COMPLETED" ) {
+			yield* archiveGame( data );
+		} else {
+			yield* dropArchive( data );
+		}
 	} );
 
 	/**

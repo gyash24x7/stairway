@@ -12,6 +12,7 @@ import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
 import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
+import { archiveNamespace, GameArchiveLive } from "@/platform/kv/archive.ts";
 import { GameNotFound } from "@/shared/swish/errors.ts";
 import { GameCode, GameId, PlayerId } from "@/shared/swish/schema.ts";
 import { fish } from "@/games/fish/server/engine.ts";
@@ -23,13 +24,15 @@ export class FishEngineDO extends Cloudflare.DurableObject<FishEngineDO>()(
 	Effect.gen( function* () {
 		const channels = yield* GameChannel;
 		const state = yield* Cloudflare.DurableObjectState;
+		const archiveKv = yield* archiveNamespace;
 		return fish.pipe(
 			Effect.provide(
 				Layer.mergeAll(
 					DurableGameStoreLive( state ),
 					DurableEventStoreLive( state ),
 					DurableSyncLive( channels ),
-					DurableSchedulerLive( state )
+					DurableSchedulerLive( state ),
+					GameArchiveLive( archiveKv )
 				)
 			)
 		);

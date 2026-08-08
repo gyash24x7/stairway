@@ -440,6 +440,87 @@ describe( "engine — resolveResults", () => {
 } );
 
 // ===========================================================================
+describe( "engine — archive", () => {
+	let memory: Memory;
+	beforeEach( () => { memory = makeMemory(); } );
+
+	const KEY = "tally:g1";
+
+	/** Plays tally to its target, so `endIf` holds and the game completes. */
+	const finish = async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+		await run( memory, engine.add( { amount: 5 }, P2 ) );
+		return engine;
+	};
+
+	type Archived = {
+		id: string;
+		code: string;
+		status: string;
+		table: { scores: Record<string, number>; me?: number };
+		playerViews: Record<string, { scores: Record<string, number>; me?: number }>;
+		results?: { winner?: string };
+	};
+
+	const archived = () => memory.archive.get( KEY ) as Archived;
+
+	test( "an unfinished game is not archived", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+
+		expect( memory.archive.has( KEY ) ).toBe( false );
+	} );
+
+	test( "completing a game archives it under gameName:gameId", async () => {
+		await finish();
+
+		expect( [ ...memory.archive.keys() ] ).toEqual( [ KEY ] );
+		expect( archived().id ).toBe( GID );
+		expect( archived().code ).toBe( CODE );
+		expect( archived().status ).toBe( "COMPLETED" );
+	} );
+
+	test( "the archive carries the table view, every player view, and the results", async () => {
+		await finish();
+
+		const record = archived();
+		expect( record.table ).toEqual( { scores: { p1: 3, p2: 5 } } );
+		expect( Object.keys( record.playerViews ).sort() ).toEqual( [ "p1", "p2" ] );
+		// Each player's slice is their own — the archive keeps the private views apart.
+		expect( record.playerViews[ P1.id ]?.me ).toBe( 3 );
+		expect( record.playerViews[ P2.id ]?.me ).toBe( 5 );
+		expect( record.results?.winner ).toBe( P2.id );
+	} );
+
+	test( "the archive survives JSON — it is what KV round-trips", async () => {
+		await finish();
+
+		expect( JSON.parse( JSON.stringify( archived() ) ) ).toEqual( archived() );
+	} );
+
+	test( "undoing past the finish drops the archive, redoing restores it", async () => {
+		const engine = await finish();
+
+		await run( memory, engine.undo( P1 ) );
+		expect( memory.archive.has( KEY ) ).toBe( false );
+
+		await run( memory, engine.redo( P1 ) );
+		expect( archived().results?.winner ).toBe( P2.id );
+	} );
+
+	test( "a game that declares no resolveResults archives without results", async () => {
+		const engine = await bootPhased( memory );
+		await run( memory, engine.drawCard( {}, P1 ) );
+		await run( memory, engine.playCard( {}, P1 ) );
+
+		const record = memory.archive.get( "phased:g1" ) as Archived;
+		expect( record.status ).toBe( "COMPLETED" );
+		expect( record.results ).toBeUndefined();
+	} );
+} );
+
+// ===========================================================================
 describe( "engine — undo / redo (event sourcing)", () => {
 	let memory: Memory;
 	beforeEach( () => { memory = makeMemory(); } );

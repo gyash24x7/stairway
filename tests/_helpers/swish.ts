@@ -8,7 +8,7 @@ import * as Schema from "effect/Schema";
 import { InvalidMove } from "@/shared/swish/errors.ts";
 import { openInteraction } from "@/shared/swish/events.ts";
 import { InteractionFrame, PlayerId, PlayerInfo } from "@/shared/swish/schema.ts";
-import { EventStore, GameStore, Scheduler, Sync } from "@/shared/swish/services.ts";
+import { EventStore, GameArchive, GameStore, Scheduler, Sync } from "@/shared/swish/services.ts";
 import type { AlarmKind } from "@/shared/swish/services.ts";
 import type { GameStructure } from "@/shared/swish/structure.ts";
 
@@ -25,6 +25,7 @@ export type EngineDeps =
 	| EventStore
 	| Scheduler
 	| Sync
+	| GameArchive
 	| Alchemy.RuntimeContext;
 
 export interface Memory {
@@ -33,6 +34,7 @@ export interface Memory {
 	readonly log: { base: unknown; commits: Array<unknown>; cursor: number };
 	readonly scheduler: { scheduled: Array<{ key: string; alarm: AlarmKind }> };
 	readonly broadcasts: Array<{ channel: string; snapshot: unknown }>;
+	readonly archive: Map<string, unknown>;
 }
 
 export function makeMemory() {
@@ -40,6 +42,7 @@ export function makeMemory() {
 	const log = { base: null as unknown, commits: [] as Array<unknown>, cursor: -1 };
 	const scheduler = { scheduled: [] as Array<{ key: string; alarm: AlarmKind }> };
 	const broadcasts: Array<{ channel: string; snapshot: unknown }> = [];
+	const archive = new Map<string, unknown>();
 
 	const gameStore = GameStore.of( {
 		load: <T>() => Effect.sync( () => Option.fromNullOr( store.value as T ) ),
@@ -104,15 +107,22 @@ export function makeMemory() {
 		} )
 	} );
 
+	const gameArchive = GameArchive.of( {
+		save: ( key, encoded ) => Effect.sync( () => { archive.set( key, encoded ); } ),
+		load: ( key ) => Effect.sync( () => Option.fromNullishOr( archive.get( key ) ) ),
+		remove: ( key ) => Effect.sync( () => { archive.delete( key ); } )
+	} );
+
 	const layer = Layer.mergeAll(
 		Layer.succeed( GameStore, gameStore ),
 		Layer.succeed( EventStore, eventStore ),
 		Layer.succeed( Scheduler, schedulerSvc ),
 		Layer.succeed( Sync, sync ),
+		Layer.succeed( GameArchive, gameArchive ),
 		Alchemy.RuntimeContext.phantom
 	);
 
-	return { layer, store, log, scheduler, broadcasts };
+	return { layer, store, log, scheduler, broadcasts, archive };
 }
 
 /** Run an engine effect against a memory host, surfacing failures as rejections. */
