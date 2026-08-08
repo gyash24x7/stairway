@@ -983,6 +983,68 @@ describe( "splendor — completion & scoring", () => {
 } );
 
 // ===========================================================================
+describe( "splendor — resolveResults", () => {
+	let memory: Memory;
+	beforeEach( () => { memory = makeMemory(); } );
+
+	/** Ends the round both seats are mid-way through, completing the game. */
+	const closeRound = async ( engine: Awaited<ReturnType<typeof bootSplendor>> ) => {
+		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
+		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
+		return run( memory, engine.getState( P1.id ) );
+	};
+
+	test( "ranks by prestige points and carries each seat's score", async () => {
+		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
+		patchPlayer( memory, P1.id, { points: 3 } );
+		patchPlayer( memory, P2.id, { points: 7 } );
+
+		const state = await closeRound( engine );
+		expect( state.results ).toEqual( {
+			winner: P2.id,
+			ranking: [
+				{ playerId: P2.id, rank: 1, score: 7 },
+				{ playerId: P1.id, rank: 2, score: 3 }
+			]
+		} );
+	} );
+
+	test( "the fewest-cards tie-break decides the ranking, not just the winner", async () => {
+		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
+		patchPlayer( memory, P1.id, {
+			points: 5,
+			cards: [ card( "a" ), card( "b" ), card( "c" ), card( "d" ) ]
+		} );
+		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "e" ), card( "f" ) ] } );
+
+		const state = await closeRound( engine );
+		expect( state.results?.winner ).toBe( P2.id );
+		expect( state.results?.ranking.map( ( r ) => r.playerId ) ).toEqual( [ P2.id, P1.id ] );
+		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 2 ] );
+	} );
+
+	test( "seats level on points and cards share rank 1 with no outright winner", async () => {
+		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
+		patchPlayer( memory, P1.id, { points: 5, cards: [ card( "a" ) ] } );
+		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "b" ) ] } );
+
+		const state = await closeRound( engine );
+		// `view.winner` still names the top seat (the fold is stable), but the
+		// standings refuse to crown a winner nobody actually out-ranked.
+		expect( state.view.winner ).toBe( P1.id );
+		expect( state.results?.winner ).toBeUndefined();
+		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 1 ] );
+	} );
+
+	test( "an unfinished game has no results", async () => {
+		const engine = await bootSplendor( memory );
+		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
+
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
+	} );
+} );
+
+// ===========================================================================
 describe( "splendor — undo / redo", () => {
 	let memory: Memory;
 	beforeEach( () => { memory = makeMemory(); } );

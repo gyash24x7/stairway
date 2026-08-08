@@ -97,6 +97,23 @@ export const wordle = makeEngine<
 
 	endIf: ( { state } ) => allWordsGuessed( state ) || state.guesses.length === state.maxGuesses,
 
+	/**
+	 * Wordle seats exactly one player (`WORDLE_PLAYER_COUNT`), so there is
+	 * nobody to out-rank and the standings degenerate to a single entry — built
+	 * directly rather than through `makeStandings`, whose comparator has nothing to
+	 * compare. The `score` is the number of guesses spent (fewer is better), and the
+	 * seat is only crowned when every word actually fell: running out of guesses
+	 * still places first, but wins nothing.
+	 */
+	resolveResults: ( { state, context } ) => ( {
+		ranking: context.players.map( ( playerId ) => ( {
+			playerId,
+			rank: 1,
+			score: state.guesses.length
+		} ) ),
+		winner: allWordsGuessed( state ) ? context.players[ 0 ] : undefined
+	} ),
+
 	view: defineView( {
 		table: ( data ) => WordleTableView.make( sharedView( data ) ),
 		player: ( data, id ) => WordlePlayerView.make( { ...sharedView( data ), playerId: id } )

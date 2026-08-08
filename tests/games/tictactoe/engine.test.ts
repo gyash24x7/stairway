@@ -329,6 +329,52 @@ describe( "tictactoe — endIf: wins & draws", () => {
 } );
 
 // ===========================================================================
+describe( "tictactoe — resolveResults", () => {
+	let memory: Memory;
+	beforeEach( () => { memory = makeMemory(); } );
+
+	test( "a win ranks the winner first and the loser second", async () => {
+		const engine = await boot( memory );
+		await play( memory, engine, winningSequence( [ 0, 1, 2 ] ) );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		// Tic-tac-toe is scoreless, so a standing is placement and nothing else.
+		expect( state.results ).toEqual( {
+			winner: P1.id,
+			ranking: [
+				{ playerId: P1.id, rank: 1 },
+				{ playerId: P2.id, rank: 2 }
+			]
+		} );
+	} );
+
+	test( "O winning flips the ranking", async () => {
+		const engine = await boot( memory );
+		await play( memory, engine, [ 0, 3, 1, 4, 8, 5 ] );
+
+		const state = await run( memory, engine.getState( P2.id ) );
+		expect( state.results?.winner ).toBe( P2.id );
+		expect( state.results?.ranking.map( ( r ) => r.playerId ) ).toEqual( [ P2.id, P1.id ] );
+	} );
+
+	test( "a draw shares rank 1 and crowns nobody", async () => {
+		const engine = await boot( memory );
+		await play( memory, engine, DRAW_SEQUENCE );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.results?.winner ).toBeUndefined();
+		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 1 ] );
+	} );
+
+	test( "an unfinished game has no results", async () => {
+		const engine = await boot( memory );
+		await play( memory, engine, [ 0, 3, 1 ] );
+
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
+	} );
+} );
+
+// ===========================================================================
 describe( "tictactoe — views & broadcasts", () => {
 	let memory: Memory;
 	beforeEach( () => { memory = makeMemory(); } );

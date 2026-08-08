@@ -29,6 +29,7 @@ import { CARD_RANKS, generateDeck, generateHands, getCardRank } from "@/shared/c
 import { makeEngine } from "@/shared/swish/engine.ts";
 import { InvalidMove } from "@/shared/swish/errors.ts";
 import type { PlayerId } from "@/shared/swish/schema.ts";
+import { makeStandings } from "@/shared/swish/standings.ts";
 import { defineView } from "@/shared/swish/views.ts";
 import { remove } from "@/shared/utils/array.ts";
 import { generateId } from "@/shared/utils/generator.ts";
@@ -70,6 +71,27 @@ export const fish = makeEngine( {
 	apply,
 
 	endIf: ( { state, config } ) => getClaimedBooks( state ).length === config.books.length,
+
+	/**
+	 * Fish is played in teams, so a seat's result is its *team's* result: everyone
+	 * ranks on their team's book count and carries the team name. Teammates
+	 * therefore always tie, which is why the ranking is `dense` — with two teams of
+	 * three the losing side places 2nd, not 4th. `winner` is left unset: a fish
+	 * victory belongs to a team, and no single seat is the outright winner (the
+	 * winning team is `state.winningTeam`, decided in `onEnd`).
+	 */
+	resolveResults: ( { state, context } ) => {
+		const teamOf = ( id: PlayerId ) => state.teams[ state.playerData[ id ]?.teamId ?? "" ];
+		const standings = makeStandings( {
+			players: context.players,
+			ties: "dense",
+			compare: ( a, b ) => ( teamOf( b )?.score ?? 0 ) - ( teamOf( a )?.score ?? 0 ),
+			score: ( id ) => teamOf( id )?.score ?? 0,
+			team: ( id ) => teamOf( id )?.name
+		} );
+
+		return { ranking: standings.ranking, winner: undefined };
+	},
 
 	view: defineView( {
 		table: ( { state } ) => {

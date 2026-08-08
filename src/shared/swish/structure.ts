@@ -143,8 +143,15 @@ export type GameStructure<
 	readonly endIf: ( data: ReadonlyGameData<State, Config> ) => boolean;
 
 	/**
-	 * Canonical standings computed on completion and stored on the archived
-	 * `CompletedGameData` so UIs render placement without re-deriving it. Optional.
+	 * Canonical standings, so UIs render placement without re-deriving it.
+	 * Optional — a game that declares none simply has no `results`.
+	 *
+	 * The engine calls this while projecting a snapshot of a `COMPLETED` game and
+	 * puts the answer on `GameSnapshot.results`, so it must be pure and derived
+	 * only from the final state: it is recomputed on every read rather than
+	 * persisted, which is what keeps it honest across `undo`/`redo`. Build it with
+	 * `makeStandings` (`@/shared/swish/standings.ts`) unless the game is degenerate
+	 * enough that a comparator has nothing to compare.
 	 *
 	 * @param data - The completed game's read-only snapshot.
 	 * @returns The final ranking (and optional winner).

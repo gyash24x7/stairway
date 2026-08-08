@@ -28,6 +28,7 @@ import { getCardSuit } from "@/shared/cards/utils.ts";
 import { makeEngine } from "@/shared/swish/engine.ts";
 import { InvalidMove } from "@/shared/swish/errors.ts";
 import type { PlayerId } from "@/shared/swish/schema.ts";
+import { makeStandings } from "@/shared/swish/standings.ts";
 import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
 import { defineView } from "@/shared/swish/views.ts";
 import { botDeclare, botPlayCard } from "@/games/callbreak/server/bot.ts";
@@ -82,6 +83,18 @@ export const callbreak = makeEngine( {
 
 		return completedDeals.length >= config.dealCount;
 	},
+
+	/**
+	 * Final placement by cumulative score across every deal — the same quantity
+	 * `onEnd` crowns the winner with, and the game's only tie-break-free ranking key
+	 * (callbreak awards a tenth of a point per overtrick, so exact ties are rare but
+	 * legal). Two seats finishing level share a rank and leave `winner` unset.
+	 */
+	resolveResults: ( { state, context } ) => makeStandings( {
+		players: context.players,
+		compare: ( a, b ) => ( state.scores[ b ] ?? 0 ) - ( state.scores[ a ] ?? 0 ),
+		score: ( id ) => state.scores[ id ] ?? 0
+	} ),
 
 	view: defineView( {
 		table: ( data ) => CallbreakTableView.make( publicBoard( data ) ),

@@ -25,6 +25,7 @@ import {
 	calculateShift,
 	canDominoBePlaced,
 	CASTLES,
+	compareStandings,
 	createBoard,
 	decideWinner,
 	DOMINO_DECK,
@@ -39,6 +40,7 @@ import {
 import { makeEngine } from "@/shared/swish/engine.ts";
 import { InvalidMove } from "@/shared/swish/errors.ts";
 import type { PlayerId } from "@/shared/swish/schema.ts";
+import { makeStandings } from "@/shared/swish/standings.ts";
 import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
 import { defineView } from "@/shared/swish/views.ts";
 import { shuffle } from "@/shared/utils/array.ts";
@@ -84,6 +86,18 @@ export const kingdomino = makeEngine( {
 		const allDraftResolved = state.draft.every( ( entry ) => !!entry.selectedBy );
 		return allQueuesEmpty && state.deck.length === 0 && allDraftResolved;
 	},
+
+	/**
+	 * Final placement by kingdom points, then the rulebook's tie-breaks — largest
+	 * single property, then total crowns (`compareStandings`). A seat still level on
+	 * all three shares a rank, and a tie at the top is the rulebook's shared
+	 * victory, so `winner` stays unset there.
+	 */
+	resolveResults: ( { state, context } ) => makeStandings( {
+		players: context.players,
+		compare: ( a, b ) => compareStandings( state.playerData[ a ], state.playerData[ b ] ),
+		score: ( id ) => state.playerData[ id ]?.score.points ?? 0
+	} ),
 
 	view: defineView( {
 		table: ( data ) => KingdominoTableView.make( publicBoard( data ) ),

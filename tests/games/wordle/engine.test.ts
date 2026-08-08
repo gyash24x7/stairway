@@ -417,6 +417,42 @@ describe( "wordle — completion", () => {
 } );
 
 // ===========================================================================
+describe( "wordle — resolveResults", () => {
+	let memory: Memory;
+	beforeEach( () => { memory = makeMemory(); } );
+
+	test( "a solved puzzle crowns the only seat and scores the guesses spent", async () => {
+		const engine = await bootWordle( memory );
+		await run( memory, engine.guess( { guess: answers( memory )[ 0 ]! }, P1 ) );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.results ).toEqual( {
+			winner: P1.id,
+			ranking: [ { playerId: P1.id, rank: 1, score: 1 } ]
+		} );
+	} );
+
+	test( "running out of guesses still ranks the seat, but crowns nobody", async () => {
+		const engine = await bootWordle( memory, { config: { wordLength: 4 } } );
+		for ( const guess of wrongGuesses( memory, 5 ) ) {
+			await run( memory, engine.guess( { guess }, P1 ) );
+		}
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.view.victory ).toBe( false );
+		expect( state.results?.winner ).toBeUndefined();
+		expect( state.results?.ranking ).toEqual( [ { playerId: P1.id, rank: 1, score: 5 } ] );
+	} );
+
+	test( "an unfinished puzzle has no results", async () => {
+		const engine = await bootWordle( memory, { config: { wordCount: 3 } } );
+		await run( memory, engine.guess( { guess: answers( memory )[ 0 ]! }, P1 ) );
+
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
+	} );
+} );
+
+// ===========================================================================
 describe( "wordle — event sourcing (replay, undo, redo)", () => {
 	let memory: Memory;
 	beforeEach( () => { memory = makeMemory(); } );

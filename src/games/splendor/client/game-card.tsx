@@ -26,7 +26,7 @@ export function GameCard( { card, disabled, onCardClick }: GameCardProps ) {
 			className={ cn(
 				"flex flex-col rounded-md overflow-hidden justify-between",
 				"w-16 md:w-20 h-24 md:h-30 text-neutral-dark transition",
-				"bg-background border-2 border-inverted-surface shadow-sm md:shadow-md",
+				"bg-background border-3 border-inverted-surface shadow-sm md:shadow-md",
 				!disabled && "cursor-pointer hover:shadow-none",
 				!disabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY"
 			) }
@@ -75,7 +75,7 @@ export function GameCardBack( props: { level: CardLevel } ) {
 			className={ cn(
 				"w-16 md:w-20 h-24 md:h-30 rounded-lg",
 				"flex justify-center items-center",
-				"bg-gray-400 border-4 border-inverted-surface",
+				"bg-gray-400 border-3 border-inverted-surface",
 				"flex items-center justify-center p-1",
 				levelColors[ props.level ],
 				"text-xl font-bold"

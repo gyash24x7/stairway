@@ -1,8 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { Board } from "@/games/wordle/client/board.tsx";
 import { useWordle } from "@/games/wordle/client/context.tsx";
@@ -28,28 +27,12 @@ export function GameView() {
 					</div>
 				}
 			/>
-			<AnimatePresence>
-				{ gameCompleted && (
-					<motion.div
-						key={ "wordle-banner" }
-						initial={ { opacity: 0, scale: 0.7 } }
-						animate={ {
-							opacity: 1,
-							scale: 1,
-							transition: { type: "spring", stiffness: 380, damping: 20, delay: 0.3 }
-						} }
-						exit={ { opacity: 0, scale: 0.7, transition: { duration: 0.2 } } }
-						className={ "rounded-md bg-background p-4 text-center w-full border-2 border-black" }
-					>
-						<p className={ cn(
-							"text-xl md:text-2xl font-heading",
-							data.view.victory ? "text-green-500" : "text-red-500"
-						) }>
-							{ data.view.victory ? "You won!" : "Better luck next time!" }
-						</p>
-					</motion.div>
-				) }
-			</AnimatePresence>
+			<GameStandings
+				results={ data.results }
+				players={ data.players }
+				playerId={ data.view._tag === "wordle/PlayerView" ? data.view.playerId : undefined }
+				scoreLabel={ "GUESSES" }
+			/>
 			<Board/>
 			{ gameInProgress && (
 				<div

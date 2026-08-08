@@ -13,6 +13,7 @@ import {
 import { makeEngine } from "@/shared/swish/engine.ts";
 import { InvalidMove } from "@/shared/swish/errors.ts";
 import { PlayerId } from "@/shared/swish/schema.ts";
+import { makeStandings } from "@/shared/swish/standings.ts";
 import { defineView } from "@/shared/swish/views.ts";
 import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "@/games/tictactoe/server/utils.ts";
 
@@ -45,6 +46,24 @@ export const tictactoe = makeEngine( {
 	} ),
 
 	resolveNextPlayer: ( { context } ) => context.players[ context.turn % context.players.length ],
+
+	/**
+	 * Tic-tac-toe is scoreless: the only result is who holds the winning line. The
+	 * board (not `state.winner`) is the source of truth here, so the standings hold
+	 * even for a snapshot taken before `WinnerDecided` folded in. A full board with
+	 * no line leaves both seats level — a draw, which `makeStandings` renders as a
+	 * shared rank 1 and no outright winner.
+	 */
+	resolveResults: ( { state, context } ) => {
+		const winnerSymbol = checkWinner( [ ...state.board ] );
+		const winner = winnerSymbol ? state.symbols[ winnerSymbol ] : undefined;
+		const placing = ( id: PlayerId ) => id === winner ? 1 : 0;
+
+		return makeStandings( {
+			players: context.players,
+			compare: ( a, b ) => placing( b ) - placing( a )
+		} );
+	},
 
 	hooks: {
 		onJoin: ( { state }, playerId ) => [

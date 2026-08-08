@@ -204,6 +204,27 @@ export const JoinGameResponse = Schema.TaggedStruct(
 export type GameIdParams = typeof GameIdParams.Type;
 export const GameIdParams = Schema.Struct( { gameId: GameId } );
 
+// --- Standings -------------------------------------------------------------
+// Canonical end-of-game result: a ranking + optional winner, computed by
+// a game's `resolveResults` on completion so every UI (and the couch winner
+// screen) renders placement without re-deriving it.
+
+/** One player's placement in the final result: `rank`, optional `score` and `team`. */
+export type Standing = typeof Standing.Type;
+export const Standing = Schema.Struct( {
+	playerId: PlayerId,
+	rank: Schema.Number,
+	score: Schema.optional( Schema.Number ),
+	team: Schema.optional( Schema.String )
+} );
+
+/** The canonical end-of-game result: a `ranking` and an optional outright `winner`. */
+export type Standings = typeof Standings.Type;
+export const Standings = Schema.Struct( {
+	ranking: Schema.Array( Standing ),
+	winner: Schema.optional( PlayerId )
+} );
+
 // --- Generic, game-parameterised schema factories --------------------------
 // The engine never hard-codes a game's state/config/view shapes; a game passes
 // its own schemas and these factories weave them into the persisted record and
@@ -247,8 +268,9 @@ export type PersistedGameData<State, Config> = {
 
 /**
  * Builds the schema of what a client receives from `getState` / after a move: the
- * envelope (id, code, status, context, players) plus the game's `config` and the
- * audience-appropriate `view`.
+ * envelope (id, code, status, context, players) plus the game's `config`, the
+ * audience-appropriate `view`, and — once the game is `COMPLETED` and it defines
+ * `resolveResults` — the final `results`.
  * @param view - The game's view schema.
  * @param config - The game's config schema.
  * @returns The `swish/GameSnapshot` schema for this game.
@@ -267,7 +289,8 @@ export const GameSnapshot = <
 		context: GameContext,
 		players: Players,
 		config,
-		view
+		view,
+		results: Schema.optional( Standings )
 	} );
 
 /** The decoded shape of a client snapshot (the value `GameSnapshot(...)` decodes to). */
@@ -280,28 +303,8 @@ export type GameSnapshot<View, Config> = {
 	readonly players: Players;
 	readonly config: Config;
 	readonly view: View;
+	readonly results?: Standings;
 };
-
-// --- Standings -------------------------------------------------------------
-// Canonical end-of-game result: a ranking + optional winner, computed by
-// a game's `resolveResults` on completion so every UI (and the couch winner
-// screen) renders placement without re-deriving it.
-
-/** One player's placement in the final result: `rank`, optional `score` and `team`. */
-export type Standing = typeof Standing.Type;
-export const Standing = Schema.Struct( {
-	playerId: PlayerId,
-	rank: Schema.Number,
-	score: Schema.optional( Schema.Number ),
-	team: Schema.optional( Schema.String )
-} );
-
-/** The canonical end-of-game result: a `ranking` and an optional outright `winner`. */
-export type Standings = typeof Standings.Type;
-export const Standings = Schema.Struct( {
-	ranking: Schema.Array( Standing ),
-	winner: Schema.optional( PlayerId )
-} );
 
 // --- Action feed -----------------------------------------------------------
 // A structured, human-readable log entry derived from the event stream:

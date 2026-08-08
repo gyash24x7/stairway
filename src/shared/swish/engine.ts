@@ -248,17 +248,27 @@ export const makeEngine = <
 	 * interaction stack redacted. This is the exact shape `getState` returns and
 	 * `broadcastState` pushes.
 	 *
+	 * Once the game is `COMPLETED` the game's `resolveResults` (when it defines one)
+	 * is folded in as `results`. It is derived from the final state rather than
+	 * persisted, so it costs nothing before the end and stays correct after an
+	 * `undo`/`redo` rewinds past the finish.
+	 *
 	 * @param data - The record to project.
 	 * @param audience - Who the snapshot is for.
 	 * @returns The redacted, view-bearing snapshot for that audience.
 	 */
 	const snapshot = ( data: PersistedGameData<State, Config>, audience: Audience ) => {
 		const view = structure.view( readonly( data, "view" ), audience );
+		const results = data.status === "COMPLETED" && structure.resolveResults
+			? structure.resolveResults( readonly( data, "results" ) )
+			: undefined;
+
 		const { _tag, ...rest } = data;
 		return Snapshot.make( {
 			...rest,
 			context: redactInteractions( rest.context, audience ),
-			view
+			view,
+			results
 		} );
 	};
 

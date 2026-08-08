@@ -4,6 +4,7 @@ import { Fragment } from "react";
 
 import { RCardSuit } from "@/shared/ui/components/card.tsx";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
@@ -42,6 +43,12 @@ export function GameView() {
 				}
 			/>
 			<div className={ "flex flex-col gap-3" }>
+				<GameStandings
+					results={ data.results }
+					players={ data.players }
+					playerId={ data.view.playerId }
+					scoreLabel={ "SCORE" }
+				/>
 				{ data.view.activeDeal && <DealView/> }
 				{ !data.view.activeDeal && (
 					<PlayerLobbyGrid

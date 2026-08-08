@@ -368,6 +368,78 @@ describe( "engine — completion & projections", () => {
 } );
 
 // ===========================================================================
+describe( "engine — resolveResults", () => {
+	let memory: Memory;
+	beforeEach( () => { memory = makeMemory(); } );
+
+	/** Plays tally to its target, so `endIf` holds and the game completes. */
+	const finish = async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+		await run( memory, engine.add( { amount: 5 }, P2 ) );
+		return engine;
+	};
+
+	test( "an unfinished game carries no results", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.status ).toBe( "IN_PROGRESS" );
+		expect( state.results ).toBeUndefined();
+	} );
+
+	test( "completion folds the game's standings into the snapshot", async () => {
+		const engine = await finish();
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.results ).toEqual( {
+			winner: P2.id,
+			ranking: [
+				{ playerId: P2.id, rank: 1, score: 5 },
+				{ playerId: P1.id, rank: 2, score: 3 }
+			]
+		} );
+	} );
+
+	test( "every audience sees the same results — placement is public", async () => {
+		const engine = await finish();
+
+		const forP1 = await run( memory, engine.getState( P1.id ) );
+		const forP2 = await run( memory, engine.getState( P2.id ) );
+		expect( forP1.results ).toEqual( forP2.results );
+
+		const broadcast = memory.broadcasts.at( -1 )! as {
+			snapshot: { table: { results?: unknown } };
+		};
+		expect( broadcast.snapshot.table.results ).toEqual( forP1.results! );
+	} );
+
+	test( "undoing past the finish drops the results again", async () => {
+		const engine = await finish();
+		const undone = await run( memory, engine.undo( P1 ) );
+
+		expect( undone.status ).toBe( "IN_PROGRESS" );
+		expect( undone.results ).toBeUndefined();
+
+		// …and redoing back onto the finish recomputes them from the refolded state.
+		const redone = await run( memory, engine.redo( P1 ) );
+		expect( redone.status ).toBe( "COMPLETED" );
+		expect( redone.results?.winner ).toBe( P2.id );
+	} );
+
+	test( "a game that declares no resolveResults completes without results", async () => {
+		const engine = await bootPhased( memory );
+		await run( memory, engine.drawCard( {}, P1 ) );
+		await run( memory, engine.playCard( {}, P1 ) );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.status ).toBe( "COMPLETED" );
+		expect( state.results ).toBeUndefined();
+	} );
+} );
+
+// ===========================================================================
 describe( "engine — undo / redo (event sourcing)", () => {
 	let memory: Memory;
 	beforeEach( () => { memory = makeMemory(); } );

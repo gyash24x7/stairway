@@ -1124,6 +1124,44 @@ describe( "fish — completion & log", () => {
 		expect( error._tag ).toBe( "swish/GameNotInProgress" );
 	} );
 
+	test( "resolveResults ranks every seat by its team's books, labelled by team", async () => {
+		const config = canadianConfig();
+		const engine = await bootPlay( memory, { config } );
+		await claimEveryBook( memory, engine, FOUR, config );
+
+		const state = await stateOf( memory, engine, P1 );
+		const view = asPlayerView( state.view );
+		const results = state.results!;
+
+		// Teammates always tie, so the ranking is `dense`: with two teams there
+		// are exactly two placements, never a gap.
+		expect( new Set( results.ranking.map( r => r.rank ) ) ).toEqual( new Set( [ 1, 2 ] ) );
+		expect( results.ranking ).toHaveLength( FOUR.length );
+
+		for ( const standing of results.ranking ) {
+			const team = view.teams[ view.playerData[ standing.playerId ]!.teamId ]!;
+			expect( standing.team ).toBe( team.name );
+			expect( standing.score ).toBe( team.score );
+			expect( standing.rank ).toBe( team.id === view.winningTeam ? 1 : 2 );
+		}
+	} );
+
+	test( "a fish victory belongs to a team, so no seat is crowned outright", async () => {
+		const config = canadianConfig();
+		const engine = await bootPlay( memory, { config } );
+		await claimEveryBook( memory, engine, FOUR, config );
+
+		const state = await stateOf( memory, engine, P1 );
+		expect( asPlayerView( state.view ).winningTeam ).toBeDefined();
+		expect( state.results?.winner ).toBeUndefined();
+	} );
+
+	test( "an unfinished game has no results", async () => {
+		const engine = await bootPlay( memory );
+
+		expect( ( await stateOf( memory, engine, P1 ) ).results ).toBeUndefined();
+	} );
+
 	test( "getLog is empty — fish declares no `describe`", async () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );

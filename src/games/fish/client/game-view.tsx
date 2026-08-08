@@ -1,6 +1,7 @@
 "use client";
 
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
@@ -49,20 +50,12 @@ export function GameView() {
 					</div>
 				}
 			/>
-			{ data.status === "COMPLETED" && (
-				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					{ data.view.winningTeam ? (
-						<p className={ "text-lg font-heading" }>
-							{ data.view.teams[ data.view.winningTeam ].members.includes( player.playerId )
-								? `${ data.view.teams[ data.view.winningTeam ].name } won!`
-								: "You lost!"
-							}
-						</p>
-					) : (
-						<p className={ "text-lg font-heading" }>It's a draw!</p>
-					) }
-				</div>
-			) }
+			<GameStandings
+				results={ data.results }
+				players={ data.players }
+				playerId={ player.playerId }
+				scoreLabel={ "BOOKS" }
+			/>
 			{ data.status === "COMPLETED" && <BooksTracker/> }
 			{ data.status === "COMPLETED" && <GameMetrics/> }
 			<div className={ "grid grid-cols-1 gap-3 w-full justify-items-center" }>

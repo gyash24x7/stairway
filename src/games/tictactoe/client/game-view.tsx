@@ -1,12 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { RPlayerInfoSmall } from "@/shared/ui/components/player-info.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { popIn, slideInUp } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { Board } from "@/games/tictactoe/client/board.tsx";
 import { useTicTacToe } from "@/games/tictactoe/client/context.tsx";
@@ -62,33 +62,11 @@ export function GameView() {
 				</div>
 			) }
 
-			<AnimatePresence>
-				{ isCompleted && data.view.winner && (
-					<motion.div
-						key={ "winner-banner" }
-						variants={ slideInUp }
-						initial={ "initial" }
-						animate={ "animate" }
-						exit={ "exit" }
-						className={ "rounded-md bg-background p-4 text-center w-full border-2 border-black" }
-					>
-						{ data.view.winner !== "draw" ? (
-							<p className={ "text-lg font-heading" }>
-								{ data.view.winner === data.view.playerId ? "You won!" : "You lost!" }
-							</p>
-						) : (
-							<motion.p
-								className={ "text-lg font-heading" }
-								variants={ popIn }
-								initial={ "initial" }
-								animate={ "animate" }
-							>
-								It's a draw!
-							</motion.p>
-						) }
-					</motion.div>
-				) }
-			</AnimatePresence>
+			<GameStandings
+				results={ data.results }
+				players={ data.players }
+				playerId={ data.view.playerId }
+			/>
 
 			<Board/>
 

@@ -4,6 +4,7 @@ import { UsersIcon } from "lucide-react";
 import { useState } from "react";
 
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
@@ -20,6 +21,7 @@ import { Board } from "@/games/splendor/client/board.tsx";
 import { useSplendor } from "@/games/splendor/client/context.tsx";
 import { PickTokens } from "@/games/splendor/client/pick-tokens.tsx";
 import { PlayerInfo } from "@/games/splendor/client/player-info.tsx";
+import { PlayerTableau } from "@/games/splendor/client/player-tableau.tsx";
 import { startGameFn } from "@/games/splendor/client/client.ts";
 import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
@@ -29,6 +31,11 @@ export function GameView() {
 
 	const isLastRound = data.status === "IN_PROGRESS" && Object.values( data.view.playerData )
 		.some( p => p.points >= data.config.winningPoints );
+
+	// The avatar grid is a "who is here yet" affordance, so it belongs to the two
+	// pre-game states only — once the game is over the standings name everyone and
+	// each tableau carries its own player strip.
+	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
 
 	const otherPlayers = data.context.players.filter( p => p !== data.view.playerId );
 
@@ -47,17 +54,21 @@ export function GameView() {
 					</div>
 				}
 			/>
-			{ data.status === "COMPLETED" && data.view.winner && (
-				<div className={ "rounded-md bg-background p-4 text-center w-full" }>
-					<p className={ "text-lg font-heading" }>
-						{ data.view.winner === data.view.playerId ? "You won!" : "You lost!" }
-					</p>
-				</div>
-			) }
-			{ data.status !== "IN_PROGRESS" && (
+			<GameStandings
+				results={ data.results }
+				players={ data.players }
+				playerId={ data.view.playerId }
+				scoreLabel={ "POINTS" }
+			/>
+			{ isLobby && (
 				<PlayerLobbyGrid
 					players={ data.context.players.map( id => data.players[ id ] ) }
 				/>
+			) }
+			{ data.status === "COMPLETED" && (
+				<div className={ "grid grid-cols-1 md:grid-cols-2 gap-3 w-full" }>
+					{ data.context.players.map( p => <PlayerTableau playerId={ p } key={ p }/> ) }
+				</div>
 			) }
 			{ data.status === "CREATED" && (
 				<div

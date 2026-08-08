@@ -5,7 +5,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Fragment, useState } from "react";
 
 import { DOMINO_DECK } from "@/games/kingdomino/shared/utils.ts";
+import type { PlayerId } from "@/shared/swish/schema.ts";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
+import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
@@ -44,6 +46,12 @@ export function GameView() {
 	const isSelectPending = selectDomino.isPending;
 	const [ selectednumber, setSelectednumber ] = useState<number | null>( null );
 
+	// Placement comes from the engine's standings, so a shared victory (level on
+	// points, largest property and crowns) highlights every seat that tied for it,
+	// not just whichever one the stable sort happened to leave first.
+	const isWinner = ( pid: PlayerId ) =>
+		data.results?.ranking.some( ( s ) => s.playerId === pid && s.rank === 1 ) ?? false;
+
 	const canSelect = isMyTurn && data.context.phase === "SELECT" && !isSelectPending;
 	const canPlace = data.status === "IN_PROGRESS"
 		&& data.context.phase === "PLACE"
@@ -72,10 +80,10 @@ export function GameView() {
 				return "WAITING FOR PLAYERS...";
 			case "PLAYERS_READY":
 				return "WAITING FOR GAME TO START...";
+			// The standings above already name the winner (and report a shared
+			// victory honestly), so the strip only marks the state.
 			case "COMPLETED":
-				return data.view.winner
-					? `WINNER: ${ data.players[ data.view.winner ].name }`
-					: `CHECKING WINNER`;
+				return "GAME OVER";
 			case "IN_PROGRESS": {
 				if ( data.context.phase === "SELECT" ) {
 					const currentName = data.players[ data.context.currentPlayer ]?.name;
@@ -134,10 +142,20 @@ export function GameView() {
 						data.status === "COMPLETED" && "grid-cols-1 md:grid-cols-2"
 					) }
 				>
+					{ data.results && (
+						<div className={ "col-span-2" }>
+							<GameStandings
+								results={ data.results }
+								players={ data.players }
+								playerId={ player.playerId }
+								scoreLabel={ "POINTS" }
+							/>
+						</div>
+					) }
 					<PlayerScore
 						player={ myPlayerInfo }
 						showBoard={ data.status === "COMPLETED" }
-						isWinner={ data.view.winner === myPlayerInfo.id }
+						isWinner={ isWinner( myPlayerInfo.id ) }
 					/>
 					{ data.context.players.filter( pid => pid !== myPlayerInfo.id ).map( pid => (
 						<PlayerScore
@@ -147,7 +165,7 @@ export function GameView() {
 								...data.view.playerData[ pid ]
 							} }
 							showBoard={ data.status === "COMPLETED" }
-							isWinner={ data.view.winner === pid }
+							isWinner={ isWinner( pid ) }
 						/>
 					) ) }
 					{ data.status === "IN_PROGRESS" && (

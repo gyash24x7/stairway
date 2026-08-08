@@ -853,6 +853,46 @@ describe( "callbreak — scoring, deals & completion", () => {
 		) );
 		expect( error._tag ).toBe( "swish/GameNotInProgress" );
 	} );
+
+	test( "resolveResults ranks every seat by cumulative score", async () => {
+		const engine = await boot( memory, { config: { dealCount: 1 } } );
+		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.results ).toEqual( {
+			winner: P2.id,
+			ranking: [
+				{ playerId: P2.id, rank: 1, score: 32 },
+				{ playerId: P1.id, rank: 2, score: 24 },
+				{ playerId: P4.id, rank: 3, score: -40 },
+				{ playerId: P3.id, rank: 4, score: -50 }
+			]
+		} );
+	} );
+
+	test( "seats finishing level share a rank and leave the game uncrowned", async () => {
+		const engine = await boot( memory, { config: { dealCount: 1 } } );
+		// Wins land on p1 4, p2 4, p3 3, p4 2. Bidding 4/4 makes both exactly,
+		// so p1 and p2 tie on 40 while p4 takes 20 and p3 forfeits its bid of 5.
+		await finishDeal(
+			engine,
+			{ p1: 4, p2: 4, p3: 5, p4: 2 },
+			WINS_SO_FAR,
+			LAST_TRICK
+		);
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.view.scores ).toEqual( scoreTable( { p1: 40, p2: 40, p3: -50, p4: 20 } ) );
+		expect( state.results?.winner ).toBeUndefined();
+		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 1, 3, 4 ] );
+	} );
+
+	test( "an unfinished game has no results", async () => {
+		const engine = await boot( memory, { config: { dealCount: 2 } } );
+		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
+
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
+	} );
 } );
 
 // ===========================================================================

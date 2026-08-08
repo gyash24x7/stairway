@@ -6,7 +6,7 @@ export function Noble( { noble }: { noble: NobleType } ) {
 	return (
 		<div
 			className={ cn(
-				"border-2 border-inverted-surface rounded-lg",
+				"border-3 border-inverted-surface rounded-lg",
 				"w-16 md:w-20 h-16 md:h-20 text-neutral-dark",
 				"flex overflow-hidden justify-between gap-1 bg-background"
 			) }
@@ -54,7 +54,7 @@ export function NobleBack() {
 				"w-16 md:w-20 h-16 md:h-20 p-1",
 				"rounded-lg flex justify-center items-center",
 				"text-xl font-bold",
-				"bg-background border-4 border-inverted-surface"
+				"bg-background border-3 border-inverted-surface"
 			) }
 		>
 			<img

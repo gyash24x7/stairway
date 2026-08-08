@@ -19,6 +19,7 @@ import {
 } from "@/games/splendor/shared/schema.ts";
 import { makeEngine } from "@/shared/swish/engine.ts";
 import { InvalidMove } from "@/shared/swish/errors.ts";
+import { makeStandings } from "@/shared/swish/standings.ts";
 import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
 import { defineView } from "@/shared/swish/views.ts";
 import {
@@ -31,7 +32,7 @@ import {
 	generateNobles,
 	sumTokens
 } from "@/games/splendor/server/utils.ts";
-import { decideWinner } from "@/games/splendor/shared/utils.ts";
+import { compareStandings, decideWinner } from "@/games/splendor/shared/utils.ts";
 
 const MAX_TOKENS_IN_HAND = 10;
 const MAX_RESERVED = 3;
@@ -85,6 +86,17 @@ export const splendor = makeEngine( {
 		);
 		return roundComplete && someoneWon;
 	},
+
+	/**
+	 * Final placement by prestige points, with the rulebook's fewest-development-
+	 * cards tie-break (`compareStandings`) — the same order `onEnd` crowns the
+	 * winner with. Seats level on both keys share a rank and leave `winner` unset.
+	 */
+	resolveResults: ( { state, context } ) => makeStandings( {
+		players: context.players,
+		compare: ( a, b ) => compareStandings( state.playerData[ a ], state.playerData[ b ] ),
+		score: ( id ) => state.playerData[ id ]?.points ?? 0
+	} ),
 
 	view: defineView( {
 		table: ( data ) => SplendorTableView.make( publicBoard( data ) ),

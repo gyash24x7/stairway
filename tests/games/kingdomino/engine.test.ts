@@ -892,6 +892,51 @@ describe( "kingdomino — completion", () => {
 		expect( state.status ).toBe( "COMPLETED" );
 		expect( state.view.winner ).toBe( P1.id );
 	} );
+
+	test( "resolveResults ranks by points and carries each kingdom's score", async () => {
+		const state = await finishWith( memory, [
+			[ P1.id, score( region( "forest", 3, 1 ) ) ],
+			[ P2.id, score( region( "water", 5, 2 ) ) ]
+		] );
+
+		expect( state.results ).toEqual( {
+			winner: P2.id,
+			ranking: [
+				{ playerId: P2.id, rank: 1, score: 10 },
+				{ playerId: P1.id, rank: 2, score: 3 }
+			]
+		} );
+	} );
+
+	test( "resolveResults applies the full tie-break chain to the ranking", async () => {
+		// Level on points; p2's single sprawling lake takes the first tie-break.
+		const state = await finishWith( memory, [
+			[ P1.id, score( region( "forest", 5, 2 ) ) ],
+			[ P2.id, score( region( "water", 10, 1 ) ) ]
+		] );
+
+		expect( state.results?.winner ).toBe( P2.id );
+		expect( state.results?.ranking.map( ( r ) => r.playerId ) ).toEqual( [ P2.id, P1.id ] );
+		expect( state.results?.ranking.map( ( r ) => r.score ) ).toEqual( [ 10, 10 ] );
+	} );
+
+	test( "a tie on all three keys is a shared victory — rank 1 each, no winner", async () => {
+		const state = await finishWith( memory, [
+			[ P1.id, score( region( "forest", 6, 2 ) ) ],
+			[ P2.id, score( region( "water", 6, 2 ) ) ]
+		] );
+
+		// `view.winner` names the earlier seat; the standings report the tie honestly.
+		expect( state.view.winner ).toBe( P1.id );
+		expect( state.results?.winner ).toBeUndefined();
+		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 1 ] );
+	} );
+
+	test( "an unfinished game has no results", async () => {
+		const engine = await boot( memory );
+
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
+	} );
 } );
 
 // ===========================================================================
