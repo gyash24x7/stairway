@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useState, useTransition } from "react";
+import { useState } from "react";
 import { useBoolean } from "usehooks-ts";
 
 import type { Card, Gem, ReserveCardInput, Tokens } from "@/games/splendor/shared/schema.ts";
@@ -25,7 +25,6 @@ type ReserveCardProps = {
 }
 
 export function ReserveCard( props: ReserveCardProps ) {
-	const [ isPending ] = useTransition();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ returned, setReturned ] = useState<Partial<Tokens>>( {} );
 	const queryClient = useQueryClient();
@@ -36,6 +35,8 @@ export function ReserveCard( props: ReserveCardProps ) {
 			queryKey: [ "splendor", "getState", props.gameId ]
 		} )
 	} );
+
+	const isPending = reserveCard.isPending;
 
 	const isReturnValid = Object.values( returned ).reduce( ( sum, v ) => sum + v, 0 ) === 1;
 
@@ -55,15 +56,12 @@ export function ReserveCard( props: ReserveCardProps ) {
 			const returnedToken = Object.keys( returned ).map( g => g as Exclude<Gem, "gold"> )
 				.find( g => ( returned[ g ] ?? 0 ) > 0 );
 
-			return startTransition( async () => {
-				await reserveCard.mutateAsync( {
-					cardId: props.card.id,
-					returnedToken,
-					withGold: props.isGoldAvailable
-				} );
-
-				closeDrawer();
-			} );
+			reserveCard.mutate( {
+				cardId: props.card.id,
+				returnedToken,
+				withGold: props.isGoldAvailable
+			}, { onSuccess: closeDrawer } );
+			return;
 		}
 
 		const tokenCount = Object.values( props.tokens ).reduce( ( sum, val ) => sum + val, 0 );
@@ -72,14 +70,10 @@ export function ReserveCard( props: ReserveCardProps ) {
 			return;
 		}
 
-		return startTransition( async () => {
-			await reserveCard.mutateAsync( {
-				cardId: props.card.id,
-				withGold: props.isGoldAvailable
-			} );
-
-			closeDrawer();
-		} );
+		reserveCard.mutate( {
+			cardId: props.card.id,
+			withGold: props.isGoldAvailable
+		}, { onSuccess: closeDrawer } );
 	};
 
 	return (

@@ -57,13 +57,12 @@ export function CreateTeams() {
 		} )
 	} );
 
-	const handleCreateTeams = async () => {
+	const handleCreateTeams = () => {
 		if ( teamsNotCreated || !authInfo ) {
 			return;
 		}
 
-		await createTeams.mutateAsync();
-		closeDrawer();
+		createTeams.mutate( undefined, { onSuccess: closeDrawer } );
 	};
 
 	return (

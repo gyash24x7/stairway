@@ -26,6 +26,8 @@ type WordleContextValue = {
 
 const WordleContext = createContext<WordleContextValue | null>( null );
 
+const SHAKE_DURATION_MS = 600;
+
 export function useWordle() {
 	const ctx = useContext( WordleContext );
 	if ( !ctx ) {
@@ -40,16 +42,26 @@ export function WordleProvider( { data, gameId, children }: WordleProviderProps 
 	const queryClient = useQueryClient();
 	const { authInfo } = useAuth();
 	const [ currentGuess, setCurrentGuess ] = useState( "" );
-	const [ invalidGuess, _setInvalidGuess ] = useState( false );
+	const [ invalidGuess, setInvalidGuess ] = useState( false );
 	const [ lastRevealedRow, setLastRevealedRow ] = useState<number | null>( null );
 	const prevGuessCountRef = useRef( data.view.guesses.length );
+	const shakeTimer = useRef<ReturnType<typeof setTimeout>>( undefined );
 
 	const submitGuess = useMutation( {
 		mutationFn: ( guess: string ) => submitGuessFn( gameId, guess ),
 		onSuccess: () => queryClient.invalidateQueries( {
 			queryKey: [ "wordle", "getState", gameId ]
-		} )
+		} ),
+
+		onError: ( _error, guess ) => {
+			setCurrentGuess( guess );
+			setInvalidGuess( true );
+			clearTimeout( shakeTimer.current );
+			shakeTimer.current = setTimeout( () => setInvalidGuess( false ), SHAKE_DURATION_MS );
+		}
 	} );
+
+	useEffect( () => () => clearTimeout( shakeTimer.current ), [] );
 
 	useEffect( () => {
 		const count = data.view.guesses.length;

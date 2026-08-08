@@ -23,10 +23,13 @@ export function DeclareWins() {
 	const { data, declareWins } = useCallbreak();
 	const isPending = declareWins.isPending;
 
-	const handleClick = async () => {
-		await declareWins.mutateAsync( { dealId: data.view.activeDeal?.id!, wins } );
-		reset();
-		setOpen( false );
+	const handleClick = () => {
+		declareWins.mutate( { dealId: data.view.activeDeal?.id!, wins }, {
+			onSuccess: () => {
+				reset();
+				setOpen( false );
+			}
+		} );
 	};
 
 	return (

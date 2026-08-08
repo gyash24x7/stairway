@@ -47,10 +47,9 @@ export function TransferTurn() {
 		} )
 	} );
 
-	const handleClick = async () => {
+	const handleClick = () => {
 		if ( selectedPlayer && authInfo ) {
-			await transferTurn.mutateAsync( selectedPlayer );
-			closeDrawer();
+			transferTurn.mutate( selectedPlayer, { onSuccess: closeDrawer } );
 		}
 	};
 
