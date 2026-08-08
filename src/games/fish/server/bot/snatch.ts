@@ -97,8 +97,6 @@ export function opponentRisk( beliefs: Beliefs, view: FishPlayerView ) {
  * term collapses to 1 or 0. For anyone else the terms come from the model, and
  * the book's cards are treated as independent — the one approximation here.
  *
- * @param beliefs - The belief model for this turn.
- * @param view - The acting bot's view.
  * Among asks that get equally close to closing a book, the one picked is the one
  * worth most once the downside is counted:
  *

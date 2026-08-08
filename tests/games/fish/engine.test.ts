@@ -831,6 +831,21 @@ describe( "fish — claimBook validation", () => {
 		expect( error.reason ).toContain( "is not in this game" );
 	} );
 
+	test( "you must hold a card from the book you claim", async () => {
+		const config = normalConfig();
+		const engine = await bootPlay( memory, { config } );
+		const hand = await handOf( memory, engine, P1 );
+		const booksHeld = new Set( hand.map( c => getBookOf( c, config ) ) );
+		const foreignBook = config.books.find( b => !booksHeld.has( b ) )!;
+
+		// A perfectly truthful claim is still rejected: calling a book you are not
+		// in is not a thing you may do, however well you have worked it out.
+		const claim = await correctClaim( memory, engine, FOUR, foreignBook );
+		const error = await rejectClaim( engine, claim );
+
+		expect( error.reason ).toContain( "atleast 1 card from the book" );
+	} );
+
 	test( "an already-claimed book cannot be claimed again", async () => {
 		const config = normalConfig();
 		const engine = await bootPlay( memory, { config } );
@@ -1201,10 +1216,15 @@ async function claimEveryBook(
 ) {
 	for ( let i = 0; i < config.books.length; i++ ) {
 		const state = await run( memory, engine.getState( players[ 0 ]!.id ) );
-		const view = state.view as FishPlayerView;
 		const claimer = players.find( p => p.id === state.context.currentPlayer )!;
+		const view = ( await run( memory, engine.getState( claimer.id ) ) ).view as FishPlayerView;
 		const claimed = new Set( Object.values( view.teams ).flatMap( t => t.booksWon ) );
-		const book = config.books.find( b => !claimed.has( b ) )!;
+
+		// A claim is only legal in a book you hold a card of, so pick one the
+		// seated player is actually in.
+		const book = config.books.find(
+			b => !claimed.has( b ) && getCardsOfBook( b ).some( c => view.hand.includes( c ) )
+		)!;
 		const claim = await correctClaim( memory, engine, players, book );
 
 		await run( memory, engine.claimBook( { claim }, claimer ) );

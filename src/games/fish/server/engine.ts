@@ -231,7 +231,7 @@ export const fish = makeEngine( {
 		claimBook: {
 			phase: "PLAY",
 
-			validate: ( { state, config, context }, _playerId, input ) => {
+			validate: ( { state, config, context }, playerId, input ) => {
 				const claimedCards = Object.keys( input.claim ) as CardId[];
 				if ( claimedCards.length === 0 ) {
 					return new InvalidMove( {
@@ -263,6 +263,16 @@ export const fish = makeEngine( {
 					return new InvalidMove( {
 						move: "claimBook",
 						reason: "This book has already been claimed!"
+					} );
+				}
+
+				// You can only call a book you are actually in: the claimer must hold
+				// at least one of its cards, exactly as `askCard` requires.
+				const hand = state.hands[ playerId ] ?? [];
+				if ( !hand.some( c => getBookForCard( c, config.type ) === book ) ) {
+					return new InvalidMove( {
+						move: "claimBook",
+						reason: "You must hold atleast 1 card from the book!"
 					} );
 				}
 

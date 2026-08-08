@@ -532,13 +532,14 @@ describe( "fish — policy", () => {
 		expect( claim[ "AC" ] ).toBe( P1.id );
 	} );
 
-	test( "cashes at once when the book has become publicly provable", () => {
+	test( "keeps a banked book even when its whereabouts are public knowledge", () => {
 		const view = makeView( {
 			playerId: P1.id,
 			hand: [ "AC", "AD", "2C" ] as CardId[],
 			cardLocations: {
-				// Every ace pinned to one player in the public tracker: any opponent
-				// can now claim the book out from under us.
+				// Every ace pinned to one player in the public tracker — and it still
+				// does not matter. Calling a book needs a card of it, and no opponent
+				// has one, so the bank cannot be raided.
 				AC: [ P1.id ], AD: [ P1.id ], AH: [ P3.id ], AS: [ P3.id ],
 				"2C": [ P1.id ], "2D": [ P2.id ], "2H": [ P4.id ], "2S": [ P4.id ]
 			},
@@ -546,7 +547,45 @@ describe( "fish — policy", () => {
 		} );
 
 		const move = decideFishMove( makeSnapshot( view ) )!;
+		expect( move.moveType ).toBe( "askCard" );
+	} );
+
+	test( "does not bank a book that sits entirely in a teammate's hand", () => {
+		const view = makeView( {
+			playerId: P1.id,
+			hand: [ "2C" ] as CardId[],
+			cardLocations: {
+				// The aces are all p3's. Our team owns the book, but calling it is
+				// p3's job — the bot holds no ace and so cannot claim it.
+				AC: [ P3.id ], AD: [ P3.id ], AH: [ P3.id ], AS: [ P3.id ],
+				"2C": [ P1.id ], "2D": [ P2.id ], "2H": [ P4.id ], "2S": [ P4.id ]
+			},
+			cardCounts: { [ P1.id ]: 1, [ P2.id ]: 1, [ P3.id ]: 4, [ P4.id ]: 2 }
+		} );
+
+		const move = decideFishMove( makeSnapshot( view ) )!;
+		expect( move.moveType ).toBe( "askCard" );
+	} );
+
+	test( "a forced claim only ever calls a book the bot is in", () => {
+		const view = makeView( {
+			playerId: P1.id,
+			hand: [ "AC", "AD" ] as CardId[],
+			cardLocations: {
+				// No opponent can hold an ace, so there is no ask; the twos are a
+				// book the bot is not in and must not reach for.
+				AC: [ P1.id, P3.id ], AD: [ P1.id, P3.id ],
+				AH: [ P1.id, P3.id ], AS: [ P1.id, P3.id ],
+				"2C": [ P2.id ], "2D": [ P2.id ], "2H": [ P4.id ], "2S": [ P4.id ]
+			},
+			cardCounts: { [ P1.id ]: 2, [ P2.id ]: 2, [ P3.id ]: 2, [ P4.id ]: 2 }
+		} );
+
+		const move = decideFishMove( makeSnapshot( view ) )!;
 		expect( move.moveType ).toBe( "claimBook" );
+
+		const claim = ( move.input as { claim: Record<string, PlayerId> } ).claim;
+		expect( Object.keys( claim ).sort() ).toEqual( [ ...ACES ].sort() );
 	} );
 
 	test( "cashes when it has no ask left to make", () => {

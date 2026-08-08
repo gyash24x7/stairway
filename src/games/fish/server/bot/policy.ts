@@ -158,8 +158,14 @@ function bestTeammate( beliefs: Beliefs, view: FishPlayerView, teammates: readon
 }
 
 /**
- * Books the bot can prove its own team holds in full. Safe to sit on: an
- * opponent cannot ask in a book they hold no card of.
+ * Books the bot can prove its own team holds in full, *and* holds a card of
+ * itself — both `askCard` and `claimBook` require being in the book, so a book
+ * sitting entirely in a teammate's hand is theirs to call, not ours.
+ *
+ * Completely safe to sit on. Nobody outside the team can ask in the book, and
+ * since the same rule governs claiming, nobody outside the team can call it
+ * either. A banked book cannot be taken; it can only be given away by claiming
+ * it wrong.
  */
 function bankedBooks( beliefs: Beliefs, view: FishPlayerView, teammates: readonly PlayerId[] ) {
 	const ours = new Set<PlayerId>( [ view.playerId, ...teammates ] );
@@ -167,6 +173,10 @@ function bankedBooks( beliefs: Beliefs, view: FishPlayerView, teammates: readonl
 	return beliefs.liveBooks.filter( book => {
 		const cards = beliefs.cardsOf.get( book ) ?? [];
 		if ( cards.length !== getCardsOfBook( book ).length ) {
+			return false;
+		}
+
+		if ( !cards.some( card => view.hand.includes( card ) ) ) {
 			return false;
 		}
 
@@ -178,8 +188,12 @@ function bankedBooks( beliefs: Beliefs, view: FishPlayerView, teammates: readonl
 }
 
 /**
- * Which banked book to cash now, if any. Three reasons to spend one, in order of
- * urgency; absent all three the bank keeps its value by staying unspent.
+ * Which banked book to cash now, if any. Two reasons to spend one; absent both,
+ * the bank keeps its value by staying unspent.
+ *
+ * There is deliberately no "cash it before someone steals it" case. Claiming a
+ * book requires holding one of its cards, and a banked book has none outside the
+ * team — so it cannot be taken, however obvious its whereabouts have become.
  */
 function chooseCashIn(
 	beliefs: Beliefs,
@@ -192,24 +206,14 @@ function chooseCashIn(
 		return undefined;
 	}
 
-	// a. Steal risk. `claimBook` does not require the claimer to hold a card of
-	//    the book, so once every card is publicly pinned down any opponent can
-	//    take it off us. Our proofs usually lean on our own hand, which nobody
-	//    else can see — that asymmetry is what makes holding safe the rest of
-	//    the time, and this is the case where it runs out.
-	const exposed = banked.find( book => isPubliclyProven( view, beliefs, book ) );
-	if ( exposed ) {
-		return exposed;
-	}
-
-	// b. No ask left, or every remaining book is already ours — nobody can move
+	// a. No ask left, or every remaining book is already ours — nobody can move
 	//    the game on. Cash in; this is what keeps the game terminating.
 	const bankedSet = new Set( banked );
 	if ( !ask || beliefs.liveBooks.every( book => bankedSet.has( book ) ) ) {
 		return cheapest( beliefs, view, banked );
 	}
 
-	// c. The handoff. A teammate is better placed than we are, so buy them the
+	// b. The handoff. A teammate is better placed than we are, so buy them the
 	//    turn — but only with a book whose claim leaves them holding cards, or
 	//    the transfer that follows would not be legal.
 	for ( const pid of teammates ) {
@@ -228,12 +232,6 @@ function chooseCashIn(
 	}
 
 	return undefined;
-}
-
-/** Whether every card of a book is pinned to one player in the public state. */
-function isPubliclyProven( view: FishPlayerView, beliefs: Beliefs, book: Book ) {
-	const cards = beliefs.cardsOf.get( book ) ?? [];
-	return cards.every( card => ( view.cardLocations[ card ] ?? [] ).length === 1 );
 }
 
 /** How many of a book's cards are proven to be in a player's hand. */
@@ -267,10 +265,15 @@ function provenClaim( beliefs: Beliefs, book: Book ) {
  */
 function forcedClaim( beliefs: Beliefs, view: FishPlayerView, teammates: readonly PlayerId[] ) {
 	const ours = [ view.playerId, ...teammates ];
-	const books = beliefs.liveBooks.toSorted( ( a, b ) => {
-		const held = cardsHeldIn( beliefs, b, view.playerId ) - cardsHeldIn( beliefs, a, view.playerId );
-		return held !== 0 ? held : a.localeCompare( b );
-	} );
+	// Only a book we are in — `claimBook` requires holding one of its cards. Any
+	// player still holding a card is in that card's book, so this is empty only
+	// when the bot has no cards at all, and then it has no legal move to make.
+	const books = beliefs.liveBooks
+		.filter( book => ( beliefs.cardsOf.get( book ) ?? [] ).some( c => view.hand.includes( c ) ) )
+		.toSorted( ( a, b ) => {
+			const held = cardsHeldIn( beliefs, b, view.playerId ) - cardsHeldIn( beliefs, a, view.playerId );
+			return held !== 0 ? held : a.localeCompare( b );
+		} );
 
 	const book = books[ 0 ];
 	if ( !book ) {
