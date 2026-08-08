@@ -1,5 +1,5 @@
 import type { Trick } from "@/games/callbreak/shared/schema.ts";
-import { CALLBREAK_PLAYER_COUNT, Deal } from "@/games/callbreak/shared/schema.ts";
+import { CALLBREAK_PLAYER_COUNT, CALLBREAK_TRICKS_PER_DEAL, Deal } from "@/games/callbreak/shared/schema.ts";
 import type { CardId, CardRank, CardSuit } from "@/shared/cards/schema.ts";
 import { generateDeck, generateHands, getCardRank, getCardSuit } from "@/shared/cards/utils.ts";
 import { PlayerId } from "@/shared/swish/schema.ts";
@@ -8,7 +8,7 @@ import { generateId } from "@/shared/utils/generator.ts";
 
 /** Re-exported from the schema, which pins the seat count for the API too. */
 export const PLAYER_COUNT = CALLBREAK_PLAYER_COUNT;
-export const TRICKS_PER_DEAL = 13;
+export const TRICKS_PER_DEAL = CALLBREAK_TRICKS_PER_DEAL;
 export const RANK_ORDER: CardRank[] = [
 	"2",
 	"3",

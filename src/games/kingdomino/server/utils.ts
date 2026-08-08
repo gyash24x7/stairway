@@ -29,10 +29,17 @@ export const apply = (
 				draft.draft = draft.draft.filter( ( entry ) => !!entry.selectedBy );
 			} ),
 			Match.tag( "kingdomino/DominoSelected", ( e ) => {
+				// Queue only a domino that is actually in the draft. Queuing one that
+				// isn't used to be the head of a crash chain: `placeDomino.validate`
+				// gates on `queue.includes( dominoId )`, so a phantom id passed that
+				// check and then blew up dereferencing `DOMINO_DECK[ id - 1 ]` in
+				// `canDominoBePlaced`.
 				const entry = draft.draft.find( ( x ) => x.domino.id === e.dominoId );
-				if ( entry ) {
-					entry.selectedBy = e.playerId;
+				if ( !entry ) {
+					return;
 				}
+
+				entry.selectedBy = e.playerId;
 				draft.playerData[ e.playerId ]!.queue.push( e.dominoId );
 			} ),
 			Match.tag( "kingdomino/DominoPlaced", ( e ) => {

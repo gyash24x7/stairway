@@ -40,11 +40,16 @@ import { apply } from "@/games/callbreak/server/utils.ts";
  */
 const publicBoard = ( { state }: ReadonlyGameData<CallbreakState, CallbreakConfig> ) => {
 	const activeDeal = state.deals[ 0 ];
-	const lastCompletedTrick = state.deals[ 1 ]?.tricks[ 0 ];
 
 	if ( !activeDeal ) {
 		return { scores: state.scores, winner: state.winner };
 	}
+
+	// Tricks are `unshift`ed, so `tricks[0]` is the one in play and the first
+	// entry carrying a `winner` is the most recently finished one — which is what
+	// sits beside the active deal. (This used to read `deals[1].tricks[0]`: the
+	// *previous* deal's last trick, a round out of date.)
+	const lastCompletedTrick = activeDeal.tricks.find( ( trick ) => !!trick.winner );
 
 	const { hands: _hands, ...deal } = activeDeal;
 	return {

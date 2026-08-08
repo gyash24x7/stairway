@@ -527,18 +527,17 @@ describe( "wordle — event sourcing (replay, undo, redo)", () => {
 		expect( redone.view.victory ).toBe( true );
 	} );
 
-	test.skip( "undo at genesis fails with NothingToUndo", async () => {
-		// BUG (engine-level, src/shared/swish/engine.ts:884): `undo` asserts
-		// membership against the ALREADY-REWOUND snapshot. Wordle's only commits are
-		// join + start, so the second undo rewinds past the join, drops p1 from the
-		// roster, and every later undo/redo/getState fails `NotAMember` — the sole
-		// player is permanently locked out of their own game instead of getting
-		// `NothingToUndo`. Unskip once undo/redo cannot rewind past the join.
+	test( "undo before the first guess fails with NothingToUndo", async () => {
+		// Wordle's only commits before a guess are `join` + `start`, and the floor
+		// sits at `start` — so the sole player is told there is nothing to undo
+		// rather than being rewound out of their own roster and locked out.
 		const engine = await bootWordle( memory );
-		await run( memory, engine.undo( P1 ) );
-		await run( memory, engine.undo( P1 ) );
 
 		expect( ( await runFail( memory, engine.undo( P1 ) ) )._tag ).toBe( "swish/NothingToUndo" );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.status ).toBe( "IN_PROGRESS" );
+		expect( Object.keys( state.players ) ).toEqual( [ P1.id ] );
 	} );
 
 	test( "a fresh guess after an undo drops the redo tail", async () => {

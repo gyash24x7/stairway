@@ -28,6 +28,7 @@ import {
 	GameFull,
 	GameNotFound,
 	GameNotInProgress,
+	InvalidMove,
 	MoveNotAllowed,
 	NotAMember,
 	NothingToRedo,
@@ -705,9 +706,11 @@ export const makeEngine = <
 
 					emit( acc, [ PhaseExited.make( { phase: phaseName } ) ] );
 
-					const entered = yield* enterPhase( acc.work, nextPhaseName );
-					acc.events.push( ...entered.events );
-					acc.work = entered.work;
+					if ( !structure.endIf( readonly( acc.work ) ) ) {
+						const entered = yield* enterPhase( acc.work, nextPhaseName );
+						acc.events.push( ...entered.events );
+						acc.work = entered.work;
+					}
 
 				} else if ( phase.resolveNextPlayer ) {
 					const next = phase.resolveNextPlayer( readonly( acc.work ), actorId, move );
@@ -775,14 +778,14 @@ export const makeEngine = <
 	 * Finally commits, then archives a completed game or schedules the next bot.
 	 *
 	 * @param moveType - The move name being submitted.
-	 * @param input - The move's decoded input.
+	 * @param raw - The move's input, re-decoded against its schema below.
 	 * @param playerInfo - The acting player.
 	 * @returns Completes once committed, or fails with a `MoveError`
 	 * (e.g. `NotYourTurn`, `InvalidMove`).
 	 */
 	const submitMove = <MoveType extends keyof MoveInputs>(
 		moveType: MoveType,
-		input: MoveInputs[MoveType][ "Type" ],
+		raw: MoveInputs[MoveType][ "Type" ],
 		playerInfo: PlayerInfo
 	) => Effect.gen( function* () {
 
@@ -794,12 +797,17 @@ export const makeEngine = <
 			return yield* new GameNotInProgress( { status: data.status } );
 		}
 
+		const moveInputSchema = structure.schemas.moves[ moveType ];
 		const moveDef = structure.moves[ moveType ];
 
 		// config-driven capability gate — a variant/house-rule may disable a move.
 		if ( moveDef.enabledWhen && !moveDef.enabledWhen( data.config ) ) {
 			return yield* new MoveNotAllowed( { move } );
 		}
+
+		const input = yield* Schema.decodeUnknownEffect( moveInputSchema )( raw ).pipe( Effect.mapError(
+			( issue ) => new InvalidMove( { move, reason: issue.message } )
+		) );
 
 		const acc: Acc = { events: [], work: data };
 		const active = activeInteraction( data.context );

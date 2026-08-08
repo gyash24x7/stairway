@@ -556,14 +556,17 @@ describe( "kingdomino/apply — the pure reducer", () => {
 		expect( next.playerData[ P1 ]!.queue ).toEqual( [ 2 ] );
 	} );
 
-	test( "selecting a domino that left the draft still queues it", () => {
-		// The engine's `validate` rules this out; the reducer stays total regardless.
+	test( "selecting a domino that left the draft queues nothing", () => {
+		// The engine's `validate` rules this out; the reducer stays total regardless
+		// — but it must not queue a phantom id either. `placeDomino.validate` gates on
+		// `queue.includes( dominoId )`, so a queued 99 would pass that check and then
+		// crash dereferencing `DOMINO_DECK[ 98 ]`.
 		const next = apply(
 			withPlayer( base, P1 ),
 			DominoSelected.make( { dominoId: 99, playerId: P1 } )
 		);
 
-		expect( next.playerData[ P1 ]!.queue ).toEqual( [ 99 ] );
+		expect( next.playerData[ P1 ]!.queue ).toEqual( [] );
 	} );
 
 	test( "DraftPruned drops the entries nobody claimed", () => {
@@ -580,10 +583,15 @@ describe( "kingdomino/apply — the pure reducer", () => {
 	} );
 
 	test( "DominoPlaced installs the new kingdom and score and clears the queue slot", () => {
-		const seeded = apply(
-			withPlayer( base, P1 ),
-			DominoSelected.make( { dominoId: 1, playerId: P1 } )
-		);
+		// Seed the draft first: selecting only queues a domino the draft holds, so
+		// without this the queue would start empty and "clears it" would be vacuous.
+		const drafted = apply( withPlayer( base, P1 ), DraftDrawn.make( {
+			draft: [ { domino: DOMINO_DECK[ 0 ]! } ],
+			deck: []
+		} ) );
+
+		const seeded = apply( drafted, DominoSelected.make( { dominoId: 1, playerId: P1 } ) );
+		expect( seeded.playerData[ P1 ]!.queue ).toEqual( [ 1 ] );
 
 		const board = applyPlacement( fresh(), { dominoId: 1, coord: { x: 1, y: 0 }, rotation: 0 } );
 		const next = apply( seeded, DominoPlaced.make( {
@@ -599,10 +607,13 @@ describe( "kingdomino/apply — the pure reducer", () => {
 	} );
 
 	test( "DominoDiscarded clears the queue slot without touching the kingdom", () => {
-		const seeded = apply(
-			withPlayer( base, P1 ),
-			DominoSelected.make( { dominoId: 1, playerId: P1 } )
-		);
+		const drafted = apply( withPlayer( base, P1 ), DraftDrawn.make( {
+			draft: [ { domino: DOMINO_DECK[ 0 ]! } ],
+			deck: []
+		} ) );
+
+		const seeded = apply( drafted, DominoSelected.make( { dominoId: 1, playerId: P1 } ) );
+		expect( seeded.playerData[ P1 ]!.queue ).toEqual( [ 1 ] );
 
 		const next = apply( seeded, DominoDiscarded.make( { playerId: P1, dominoId: 1 } ) );
 		expect( next.playerData[ P1 ]!.queue ).toEqual( [] );

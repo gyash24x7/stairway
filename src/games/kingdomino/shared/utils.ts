@@ -92,6 +92,18 @@ export const DOMINO_DECK: Domino[] = [
 	{ id: 48, left: TILES.mine[ 3 ], right: TILES.desert[ 0 ] }
 ];
 
+/**
+ * Looks a domino up by id. `DOMINO_DECK` is a dense 1-based array, so the id is
+ * the index plus one — but the subtraction is only safe for an id the deck
+ * actually holds, and an out-of-range one yields `undefined` rather than
+ * throwing on the caller's `.left`/`.right`. Every lookup goes through here so
+ * an unknown id degrades instead of crashing.
+ *
+ * @param dominoId - The 1-based domino id.
+ * @returns The domino, or `undefined` if no such id exists.
+ */
+export const getDomino = ( dominoId: number ) => DOMINO_DECK[ dominoId - 1 ];
+
 const neighbors = [
 	{ x: 1, y: 0 },
 	{ x: 0, y: 1 },
@@ -272,7 +284,14 @@ function isPlacementWithinBounds( board: Board, [ p1, p2 ]: Coord[] ) {
  * @returns True if there is a valid adjacency, false otherwise.
  */
 function isAdjacencyValid( board: Board, [ p1, p2 ]: Coord[], dominoId: number ) {
-	const domino = DOMINO_DECK[ dominoId - 1 ];
+	const domino = getDomino( dominoId );
+
+	// An id outside the deck has no terrain to connect, so it is never a legal
+	// adjacency — this is what turns a bad `dominoId` into a rejected move
+	// (`canDominoBePlaced` → `InvalidMove`) instead of a `TypeError`.
+	if ( !domino ) {
+		return false;
+	}
 
 	// Check adjacency: at least one tile must connect to gameing terrain or castle
 	const canLeftConnect = hasConnection( board.tiles, p1, domino.left.terrain );
@@ -553,7 +572,16 @@ export function getValidPlacements( board: Board, dominoId: number ) {
  * @returns Updated board after applying the placement.
  */
 export function applyPlacement( board: Board, placement: Placement ) {
-	const domino = DOMINO_DECK[ placement.dominoId - 1 ];
+	const domino = getDomino( placement.dominoId );
+
+	// Defence in depth: `canDominoBePlaced` already rejects an unknown id, so
+	// reaching here with one means validation was bypassed. Leave the board
+	// untouched rather than throwing — this runs inside `execute`, and a total
+	// function keeps a bad move a no-op instead of a crash.
+	if ( !domino ) {
+		return board;
+	}
+
 	const [ p1, p2 ] = getPlacementCoordinates( placement );
 
 	const newTiles = { ...board.tiles };

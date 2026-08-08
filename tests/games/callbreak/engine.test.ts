@@ -464,19 +464,44 @@ describe( "callbreak — declareWins validation", () => {
 		expect( error._tag ).toBe( "swish/NotYourTurn" );
 	} );
 
-	// KNOWN BUG — `declareWins.validate` (src/games/callbreak/server/engine.ts:124)
-	// never bounds `input.wins`. The 2..13 range is enforced only by the client
-	// stepper (src/games/callbreak/client/declare-wins.tsx:53), so the API accepts
-	// a bid of 0 (which also wedges the phase: `DECLARING.endIf` waits for every
-	// declaration to be > 0) or of 99.
-	test.skip( "a bid outside 1..13 is rejected", async () => {
+	// The `1..13` bound lives on `DeclareWinsInput.wins`, and `submitMove` decodes
+	// every move against its own input schema — so this holds for a direct engine
+	// call like the one below, for a bot, and over HTTP, not just in the client
+	// stepper. A `0` bid matters most: `declarations[ pid ] > 0` is the has-declared
+	// sentinel, so it used to wedge `DECLARING` forever.
+	test( "a bid outside 1..13 is rejected", async () => {
 		const engine = await boot( memory );
 		const id = dealId( memory );
 
-		expect( ( await runFail( memory, engine.declareWins( { wins: 0, dealId: id }, P1 ) ) )._tag )
-			.toBe( "swish/InvalidMove" );
+		const low = await runFail( memory, engine.declareWins( { wins: 0, dealId: id }, P1 ) );
+		expect( low._tag ).toBe( "swish/InvalidMove" );
+		// The reason is player-facing — `errorMessage` toasts it verbatim — so assert
+		// it names the bound rather than falling back to generic copy. Matched loosely:
+		// the rest is Effect's own issue formatting, not a contract of ours.
+		expect( ( low as { reason: string } ).reason ).toContain( "between 1 and 13" );
+
 		expect( ( await runFail( memory, engine.declareWins( { wins: 14, dealId: id }, P1 ) ) )._tag )
 			.toBe( "swish/InvalidMove" );
+	} );
+
+	test( "a fractional bid is rejected", async () => {
+		const engine = await boot( memory );
+		const id = dealId( memory );
+
+		expect( ( await runFail( memory, engine.declareWins( { wins: 2.5, dealId: id }, P1 ) ) )._tag )
+			.toBe( "swish/InvalidMove" );
+	} );
+
+	test( "the bounds are inclusive — 1 and 13 are both legal", async () => {
+		const engine = await boot( memory );
+		const id = dealId( memory );
+
+		await run( memory, engine.declareWins( { wins: 1, dealId: id }, P1 ) );
+		expect( activeDeal( memory ).declarations[ P1.id ] ).toBe( 1 );
+
+		const next = byId( stored( memory ).context.currentPlayer );
+		await run( memory, engine.declareWins( { wins: 13, dealId: id }, next ) );
+		expect( activeDeal( memory ).declarations[ next.id ] ).toBe( 13 );
 	} );
 } );
 
@@ -832,6 +857,38 @@ describe( "callbreak — scoring, deals & completion", () => {
 		expect( state.status ).toBe( "COMPLETED" );
 		// Two identical deals, so every total is exactly doubled.
 		expect( state.view.scores ).toEqual( scoreTable( { p1: 48, p2: 64, p3: -100, p4: -80 } ) );
+	} );
+
+	test( "completing the game does not deal a phantom extra round", async () => {
+		const engine = await boot( memory, { config: { dealCount: 1 } } );
+		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
+
+		// The final round used to be followed by a fresh 52-card deal nobody plays:
+		// the phase transition ran `DECLARING.onEnter` before the game-level `endIf`,
+		// burning a shuffle and leaving a phantom, undeclared `activeDeal` on the
+		// finished board.
+		const deals = stored( memory ).state.deals;
+		expect( deals ).toHaveLength( 1 );
+		expect( deals[ 0 ]!.declarations ).toEqual( BIDS );
+
+		// The completed board still shows the deal that was actually played.
+		const view = asPlayerView( ( await run( memory, engine.getState( P1.id ) ) ).view );
+		expect( view.activeDeal?.id ).toBe( deals[ 0 ]!.id );
+	} );
+
+	test( "the view's lastCompletedTrick is this deal's most recent finished trick", async () => {
+		const engine = await bootPlaying( memory );
+		// Bank four finished tricks, then play the live one out so it finishes too.
+		primeFinalTrick( memory, { p1: 2, p2: 2, p3: 0, p4: 0 }, LAST_TRICK );
+		for ( let i = 0; i < 4; i++ ) {
+			await play( memory, engine, LAST_TRICK[ stored( memory ).context.currentPlayer ]! );
+		}
+
+		// Previously this read `deals[1].tricks[0]` — the *previous* deal's last
+		// trick, so mid-deal it showed a round-old trick (or nothing on deal one).
+		const view = asPlayerView( ( await run( memory, engine.getState( P1.id ) ) ).view );
+		expect( view.lastCompletedTrick?.winner ).toBe( P3.id );
+		expect( Object.keys( view.lastCompletedTrick!.cards ) ).toHaveLength( 4 );
 	} );
 
 	test( "completing the game names the highest cumulative score as the winner", async () => {

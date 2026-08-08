@@ -43,6 +43,14 @@ export const PublicDeal = Schema.Struct( {
 export const CALLBREAK_PLAYER_COUNT = 4;
 
 /**
+ * Tricks in one deal — 52 cards over four seats. Doubles as the upper bound on a
+ * declaration: you cannot bid more tricks than the deal contains. Lives here (not
+ * in `./utils.ts`, which imports *from* this file) so `DeclareWinsInput` can bound
+ * itself without a cycle; `TRICKS_PER_DEAL` in `./utils.ts` re-exports it.
+ */
+export const CALLBREAK_TRICKS_PER_DEAL = 13;
+
+/**
  * The `POST /create` payload: only the round shape is the player's to choose.
  * The four seats and `autoStart` are server-side constants, so they are absent
  * here and filled in by the handler. `dealCount` is pinned to the three lengths
@@ -103,7 +111,10 @@ export const CallbreakSnapshot = GameSnapshot( CallbreakView, CallbreakConfig );
 
 export type DeclareWinsInput = typeof DeclareWinsInput.Type;
 export const DeclareWinsInput = Schema.Struct( {
-	wins: Schema.Number,
+	wins: Schema.Number.check(
+		Schema.isInt(),
+		Schema.isBetween( { minimum: 1, maximum: CALLBREAK_TRICKS_PER_DEAL } )
+	),
 	dealId: Schema.String
 } );
 
