@@ -1,4 +1,3 @@
-import type { FishSnapshot } from "@/games/fish/shared/schema.ts";
 import {
 	AskCardInput,
 	BookClaimed,
@@ -33,14 +32,8 @@ import type { PlayerId } from "@/shared/swish/schema.ts";
 import { defineView } from "@/shared/swish/views.ts";
 import { remove } from "@/shared/utils/array.ts";
 import { generateId } from "@/shared/utils/generator.ts";
-import {
-	detectTeammateSignals,
-	suggestAsks,
-	suggestBooks,
-	suggestClaims,
-	suggestTransfers
-} from "@/games/fish/server/bot.ts";
 import { apply } from "@/games/fish/server/utils.ts";
+import { decideFishMove } from "@/games/fish/server/bot/policy.ts";
 
 /** Whether a player has been seated (has playerData). */
 const playerSeated = ( state: typeof FishState.Type, pid: PlayerId ) =>
@@ -471,101 +464,5 @@ export const fish = makeEngine( {
 		}
 	},
 
-	botMove: ( snapshot ) => fishBotMove( snapshot )
+	botMove: decideFishMove
 } );
-
-/**
- * Pick the bot's move from a game snapshot. Reads the current phase from
- * `context.phase`, rebuilds a `FishBotView` for the AI helpers, and returns the
- * same move shapes the old per-phase `botMove` produced (now plain values).
- */
-function fishBotMove( snapshot: typeof FishSnapshot.Type ) {
-	const phase = snapshot.context.phase;
-	const config = snapshot.config;
-
-	if ( snapshot.view._tag !== "fish/PlayerView" ) {
-		return undefined;
-	}
-
-	if ( phase === "PLAY" ) {
-		const view = snapshot.view;
-
-		const signals = detectTeammateSignals( view, config );
-		const weightedBooks = suggestBooks( view, config, signals );
-
-		const isLastMoveSuccessfulClaim = view.lastMoveType === "claim"
-			&& view.claimHistory[ 0 ]?.success
-			&& view.claimHistory[ 0 ]?.playerId === snapshot.context.currentPlayer;
-
-		if ( isLastMoveSuccessfulClaim ) {
-			const weightedTransfers = suggestTransfers( view, config );
-			if ( weightedTransfers.length > 0 ) {
-				return {
-					moveType: "transferTurn" as const,
-					input: { transferTo: weightedTransfers[ 0 ].transferTo }
-				};
-			}
-
-			const teammates = getTeammates( view.teams, view.playerId );
-			const transferTo = teammates.find( pid => ( view.cardCounts[ pid ] ?? 0 ) > 0 );
-			if ( transferTo ) {
-				return {
-					moveType: "transferTurn" as const,
-					input: { transferTo }
-				};
-			}
-		}
-
-		const weightedClaims = suggestClaims( weightedBooks, view, config, signals );
-		if ( weightedClaims.length > 0 ) {
-			return {
-				moveType: "claimBook" as const,
-				input: { claim: weightedClaims[ 0 ].claim as Record<string, PlayerId> }
-			};
-		}
-
-		const weightedAsks = suggestAsks( weightedBooks, view, config, signals );
-		if ( weightedAsks.length > 0 ) {
-			const { playerId, cardId } = weightedAsks[ 0 ];
-			return {
-				moveType: "askCard" as const,
-				input: { from: playerId, cardId }
-			};
-		}
-
-		const fallbackBook = weightedBooks[ 0 ];
-		if ( fallbackBook ) {
-			const cardsInBook = getCardsOfBook( fallbackBook.book );
-			const claim: Record<string, PlayerId> = {};
-			for ( const cardId of cardsInBook ) {
-				const owners = view.cardLocations[ cardId ] ?? snapshot.context.players;
-				claim[ cardId ] = owners[ 0 ];
-			}
-
-			return {
-				moveType: "claimBook" as const,
-				input: { claim: claim as Record<string, PlayerId> }
-			};
-		}
-
-		// No available move — last resort: an empty claim keeps the engine
-		// progressing (resolves to the opponents on a failed claim).
-		return {
-			moveType: "claimBook" as const,
-			input: { claim: {} as Record<string, PlayerId> }
-		};
-	}
-
-	// TEAM_CONFIG (or default): evenly divide the players into `teamCount` teams.
-	const players = Object.keys( snapshot.players ) as PlayerId[];
-	const teamCount = config.teamCount;
-	const perTeam = players.length / teamCount;
-	const teams: Record<string, PlayerId[]> = {};
-	for ( let t = 0; t < teamCount; t++ ) {
-		teams[ `Team ${ t + 1 }` ] = players.slice( t * perTeam, ( t + 1 ) * perTeam );
-	}
-	return {
-		moveType: "createTeams" as const,
-		input: { teams }
-	};
-}
