@@ -594,15 +594,25 @@ describe( "tictactoe — the minimax bot", () => {
 		expect( memory.log.commits.length ).toBe( before );
 	} );
 
-	test( "undoing back past the start cancels the bot alarm", async () => {
+	test( "undoing the bot's opening move re-arms its alarm", async () => {
 		const engine = await boot( memory, { players: [ BOT, P1 ] } );
-		expect( memory.scheduler.scheduled ).not.toHaveLength( 0 );
+		await run( memory, engine.alarm() );  // the bot opens; the turn passes to p1
+		expect( memory.scheduler.scheduled.map( ( s ) => s.alarm ) ).not.toContain( "bot" );
 
-		// Rewinds to PLAYERS_READY: `reconcile` cancels every timer and arms nothing.
+		// `reconcile` cancels every timer and re-arms for the restored actor.
 		await run( memory, engine.undo( P1 ) );
 
 		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "PLAYERS_READY" );
-		expect( memory.scheduler.scheduled ).toHaveLength( 0 );
+		expect( state.view.board ).toEqual( EMPTY_BOARD );
+		expect( state.context.currentPlayer ).toBe( BOT.id );
+		expect( memory.scheduler.scheduled.map( ( s ) => s.alarm ) ).toContain( "bot" );
+	} );
+
+	test( "undo with no move played is rejected, leaving the game started", async () => {
+		const engine = await boot( memory, { players: [ BOT, P1 ] } );
+
+		const error = await runFail( memory, engine.undo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToUndo" );
+		expect( ( await run( memory, engine.getState( P1.id ) ) ).status ).toBe( "IN_PROGRESS" );
 	} );
 } );

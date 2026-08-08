@@ -939,14 +939,17 @@ describe( "callbreak — log & time travel", () => {
 		expect( stored( memory ).context.currentPlayer ).toBe( P1.id );
 	} );
 
-	test( "undoing back past the start rewinds the whole deal", async () => {
+	test( "undo cannot rewind the deal itself", async () => {
 		const engine = await boot( memory );
-		await run( memory, engine.undo( P1 ) );
+
+		// The deal is dealt by `start`, which is the floor for time travel — with no
+		// move played there is nothing to undo, and the deal survives.
+		const error = await runFail( memory, engine.undo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToUndo" );
 
 		const state = stored( memory );
-		expect( state.status ).toBe( "PLAYERS_READY" );
-		expect( state.state.deals ).toEqual( [] );
-		expect( state.context.phase ).toBeUndefined();
+		expect( state.status ).toBe( "IN_PROGRESS" );
+		expect( state.state.deals ).not.toEqual( [] );
 	} );
 
 	test( "a new declaration after an undo drops the redo tail (NothingToRedo)", async () => {

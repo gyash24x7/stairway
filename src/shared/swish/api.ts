@@ -100,8 +100,9 @@ export const StartApiEndpoint = () =>
 	} );
 
 /**
- * `POST /:gameId/undo` — step the log cursor back one commit and return the
- * rebuilt snapshot. Parameterized by the game's snapshot schema.
+ * `POST /:gameId/undo` — step the log cursor back one move and return the
+ * rebuilt snapshot. Only moves are undoable, and only once the game has started;
+ * otherwise fails `NothingToUndo`. Parameterized by the game's snapshot schema.
  *
  * @param snapshot - The game's snapshot schema.
  * @returns The typed undo endpoint.

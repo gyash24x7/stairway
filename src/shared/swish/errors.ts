@@ -94,7 +94,9 @@ export class CorruptState extends Schema.TaggedErrorClass<CorruptState>()(
 ) {}
 
 /**
- * `undo` was called but the cursor is already at the genesis snapshot.
+ * `undo` was called but there is no move left to undo — either the game has not
+ * started, or the cursor is already back at its opening position. Lifecycle
+ * commits (`join`/`start`) are not undoable.
  */
 export class NothingToUndo extends Schema.TaggedErrorClass<NothingToUndo>()(
 	"swish/NothingToUndo",

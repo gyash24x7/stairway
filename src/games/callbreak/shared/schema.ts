@@ -2,12 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { CardId, CardSuit } from "@/shared/cards/schema.ts";
-import {
-	BaseGameConfig,
-	GameSnapshot,
-	InitializeInput,
-	PlayerId
-} from "@/shared/swish/schema.ts";
+import { BaseGameConfig, GameSnapshot, InitializeInput, PlayerId } from "@/shared/swish/schema.ts";
 
 
 // --- Primitives ----------------------------------------------

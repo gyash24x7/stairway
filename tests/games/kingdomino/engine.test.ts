@@ -986,14 +986,16 @@ describe( "kingdomino — undo / redo", () => {
 		expect( state.draft.filter( ( e ) => !e.selectedBy ) ).toHaveLength( 1 );
 	} );
 
-	test( "undoing past the start rewinds to PLAYERS_READY", async () => {
+	test( "undo before any move leaves the opening draft standing", async () => {
 		const engine = await boot( memory );
-		await run( memory, engine.undo( P1 ) );
+
+		// `start` deals the opening draft and is the floor for time travel.
+		const error = await runFail( memory, engine.undo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToUndo" );
 
 		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "PLAYERS_READY" );
-		expect( state.view.selectionOrder ).toEqual( [] );
-		expect( state.view.draft ).toEqual( [] );
+		expect( state.status ).toBe( "IN_PROGRESS" );
+		expect( state.view.draft ).not.toEqual( [] );
 	} );
 
 	test( "redo at the newest commit fails", async () => {

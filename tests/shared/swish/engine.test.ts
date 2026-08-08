@@ -564,6 +564,43 @@ describe( "engine — undo / redo (event sourcing)", () => {
 		const error = await runFail( memory, engine.redo( P1 ) );
 		expect( error._tag ).toBe( "swish/NothingToRedo" );
 	} );
+
+	test( "undo on a started game with no move yet fails with NothingToUndo", async () => {
+		const engine = await bootTally( memory );
+
+		const error = await runFail( memory, engine.undo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToUndo" );
+	} );
+
+	test( "undo stops at the start rather than rewinding the roster", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+		await run( memory, engine.undo( P1 ) );
+
+		// Back at the opening position: the `start` commit is the floor, so the
+		// game keeps its status and its full roster instead of un-starting.
+		const error = await runFail( memory, engine.undo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToUndo" );
+
+		const state = await run( memory, engine.getState( P1.id ) );
+		expect( state.status ).toBe( "IN_PROGRESS" );
+		expect( Object.keys( state.players ) ).toHaveLength( 2 );
+	} );
+
+	test( "undo in the lobby fails without un-seating anyone", async () => {
+		const engine = await bootTally( memory, { start: false } );
+
+		const error = await runFail( memory, engine.undo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToUndo" );
+		expect( Object.keys( persisted( memory ).players ) ).toHaveLength( 2 );
+	} );
+
+	test( "redo before the game starts fails with NothingToRedo", async () => {
+		const engine = await bootTally( memory, { start: false } );
+
+		const error = await runFail( memory, engine.redo( P1 ) );
+		expect( error._tag ).toBe( "swish/NothingToRedo" );
+	} );
 } );
 
 // ===========================================================================
@@ -989,16 +1026,17 @@ describe( "engine — alarm edge cases", () => {
 		expect( state.context.currentPlayer ).toBe( BOT.id );
 	} );
 
-	test( "undoing past the start cancels the bot alarm without rescheduling", async () => {
+	test( "undoing the bot's move re-arms its alarm", async () => {
 		const engine = await bootTally( memory, { players: [ BOT, P1 ] } );
-		expect( memory.scheduler.scheduled ).not.toHaveLength( 0 );
+		await run( memory, engine.alarm() );  // the bot plays; the turn passes to p1
+		expect( memory.scheduler.scheduled.map( ( s ) => s.alarm ) ).not.toContain( "bot" );
 
-		// Rewinds to PLAYERS_READY: `reconcile` cancels every timer and, because the
-		// game is no longer IN_PROGRESS, arms nothing in its place.
+		// `reconcile` cancels every timer and re-arms for whoever the rewind restored
+		// as the actor — here, the bot that is now owed its turn again.
 		await run( memory, engine.undo( P1 ) );
 
 		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "PLAYERS_READY" );
-		expect( memory.scheduler.scheduled ).toHaveLength( 0 );
+		expect( state.context.currentPlayer ).toBe( BOT.id );
+		expect( memory.scheduler.scheduled.map( ( s ) => s.alarm ) ).toContain( "bot" );
 	} );
 } );

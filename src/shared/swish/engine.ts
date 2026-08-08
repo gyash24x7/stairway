@@ -62,7 +62,7 @@ const AUTO_START_DELAY_MS = 5000;
  * Builds the game-agnostic engine for a game from its declarative structure.
  * Accepts flat or phased structures; the returned object is the lifecycle
  * (`initialize`/`join`/`addBots`/`start`), read models (`getState`/`getLog`), the
- * generic `submitMove`, additive `undo`/`redo`, `cleanup`/`archive`, the alarm
+ * generic `submitMove`, move-scoped `undo`/`redo`, `cleanup`/`archive`, the alarm
  * entry point `runBotTurn`, and one typed handler per declared move. Games wire
  * these onto their RPCs/HttpApi in `toLayer`.
  *
@@ -944,14 +944,43 @@ export const makeEngine = <
 	// --- Undo / Redo ----------------------------------------------------
 
 	/**
-	 * Steps the log cursor back one commit and rebuilds state from it: `refold`,
-	 * save the snapshot, `reconcile` scheduled work, and broadcast.
+	 * Locates the `start` commit — the floor for time travel. A log runs
+	 * `join`* then `start` then `submitMove`*, so every commit at or below this
+	 * index is a lifecycle transition rather than a move, and `undo` must stop
+	 * there: rewinding a `join` would un-seat a player whose D1 `games` row,
+	 * `auto-start` alarm, and open `/sync/` socket the log cannot rewind — and
+	 * would drop the caller out of `players`, failing the `assertMember` on
+	 * their own next `undo`/`redo`. Peeks at the encoded `command` (a plain
+	 * string on the wire) rather than decoding every commit's events.
+	 *
+	 * @param commits - The encoded commits, oldest first.
+	 * @returns The `start` commit's index, or `-1` if the game never started.
+	 */
+	const startCommitIndex = ( commits: ReadonlyArray<unknown> ) => commits.findIndex(
+		( raw ) => typeof raw === "object"
+			&& raw !== null
+			&& ( raw as { readonly command?: unknown } ).command === "start"
+	);
+
+	/**
+	 * Steps the log cursor back one move and rebuilds state from it: `refold`,
+	 * save the snapshot, `reconcile` scheduled work, and broadcast. Only moves are
+	 * undoable, and only once the game has started — the cursor stops at the
+	 * `start` commit (see `startCommitIndex`), so a game rewound to its opening
+	 * position keeps its full roster.
 	 *
 	 * @param playerInfo - The requesting player (audience for the returned snapshot).
-	 * @returns The rebuilt snapshot, or fails with `NothingToUndo` at genesis.
+	 * @returns The rebuilt snapshot, or fails with `NothingToUndo` when no move is left to undo.
 	 */
 	const undo = Effect.fn( function* ( playerInfo: PlayerInfo ) {
 		yield* assertMember( yield* load(), playerInfo.id );
+
+		const { commits, cursor } = yield* log.read();
+		const floor = startCommitIndex( commits );
+		if ( floor < 0 || cursor <= floor ) {
+			return yield* new NothingToUndo();
+		}
+
 		const moved = yield* log.moveCursor( -1 );
 		if ( Option.isNone( moved ) ) {
 			return yield* new NothingToUndo();
@@ -968,6 +997,11 @@ export const makeEngine = <
 	/**
 	 * Steps the log cursor forward one commit and rebuilds state from it (available
 	 * until a new command drops the redo tail): `refold`, save, `reconcile`, broadcast.
+	 *
+	 * Needs no floor of its own: only `undo` can move the cursor backwards and it
+	 * stops at the `start` commit, so the tail `redo` walks is always moves. Before
+	 * the game starts the cursor is still at the newest commit, so there is nothing
+	 * to step onto and this fails `NothingToRedo`.
 	 *
 	 * @param playerInfo - The requesting player (audience for the returned snapshot).
 	 * @returns The rebuilt snapshot, or fails with `NothingToRedo` at the newest commit.
