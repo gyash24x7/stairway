@@ -8,10 +8,12 @@ export function PlayCard() {
 	const { data, selectedCard, selectCard, playCard } = useCallbreak();
 	const isPending = playCard.isPending;
 
-	const handleClick = async () => {
+	const handleClick = () => {
 		if ( selectedCard ) {
-			await playCard.mutateAsync( { dealId: data.view.activeDeal?.id!, cardId: selectedCard } );
-			selectCard( selectedCard );
+			playCard.mutate(
+				{ dealId: data.view.activeDeal?.id!, cardId: selectedCard },
+				{ onSuccess: () => selectCard( selectedCard ) }
+			);
 		}
 	};
 

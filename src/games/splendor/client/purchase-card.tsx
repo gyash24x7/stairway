@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { startTransition, useState, useTransition } from "react";
+import { useState } from "react";
 import { useBoolean } from "usehooks-ts";
 
 import type { Card, Gem, PurchaseCardInput, Tokens } from "@/games/splendor/shared/schema.ts";
@@ -28,7 +28,6 @@ type PurchaseCardProps = {
 }
 
 export function PurchaseCard( props: PurchaseCardProps ) {
-	const [ isPending ] = useTransition();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ payment, setPayment ] = useState<Partial<Tokens>>( {} );
 	const queryClient = useQueryClient();
@@ -39,6 +38,8 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 			queryKey: [ "splendor", "getState", props.gameId ]
 		} )
 	} );
+
+	const isPending = purchaseCard.isPending;
 
 	const discounts = props.discounts as Card[];
 	const canPurchase = canPurchaseCard( props.card, props.tokens, discounts );
@@ -53,10 +54,9 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 		setPayment( {} );
 	};
 
-	const handlePurchaseClick = () => startTransition( async () => {
-		await purchaseCard.mutateAsync( { cardId: props.card.id, payment } );
-		closeDrawer();
-	} );
+	const handlePurchaseClick = () => {
+		purchaseCard.mutate( { cardId: props.card.id, payment }, { onSuccess: closeDrawer } );
+	};
 
 	return (
 		<Drawer open={ value } onOpenChange={ toggle }>

@@ -95,10 +95,12 @@ export function AskCard() {
 		} )
 	} );
 
-	const handleClick = async () => {
+	const handleClick = () => {
 		if ( selectedCard && selectedPlayer ) {
-			await askCard.mutateAsync( { cardId: selectedCard, from: selectedPlayer } );
-			closeDialog();
+			askCard.mutate(
+				{ cardId: selectedCard, from: selectedPlayer },
+				{ onSuccess: closeDialog }
+			);
 		}
 	};
 

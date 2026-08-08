@@ -66,11 +66,12 @@ export function usePlacement( params: UsePlacementParams ) {
 		}
 
 		const placement = { dominoId: activeDominoId, ...tentative };
-		void ( async () => {
-			await placeDomino.mutateAsync( placement );
-			setTentative( null );
-			onClear?.();
-		} )();
+		placeDomino.mutate( placement, {
+			onSuccess: () => {
+				setTentative( null );
+				onClear?.();
+			}
+		} );
 	};
 
 	const handleCancel = () => setTentative( null );
@@ -98,11 +99,12 @@ export function usePlacement( params: UsePlacementParams ) {
 			return;
 		}
 
-		void ( async () => {
-			await discardDomino.mutateAsync( activeDominoId );
-			setTentative( null );
-			onClear?.();
-		} )();
+		discardDomino.mutate( activeDominoId, {
+			onSuccess: () => {
+				setTentative( null );
+				onClear?.();
+			}
+		} );
 	};
 
 	const getPreviewCoords = ( coord: Coord ) => {
