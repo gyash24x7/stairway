@@ -13,6 +13,7 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import { StairwayAPI } from "@/api.ts";
 import { AuthApiLive } from "@/auth/server/api.ts";
 import { AuthMiddlewareLive } from "@/auth/server/middleware.ts";
+import { ChatApiLive, ChatChannelDO } from "@/chat/server/api.ts";
 import { CallbreakApiLive, CallbreakEngineDO } from "@/games/callbreak/server/api.ts";
 import { FishApiLive, FishEngineDO } from "@/games/fish/server/api.ts";
 import { KingdominoApiLive, KingdominoEngineDO } from "@/games/kingdomino/server/api.ts";
@@ -38,6 +39,7 @@ const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
 	Layer.provide( TicTacToeApiLive ),
 	Layer.provide( WordleApiLive ),
 	Layer.provide( AuthApiLive ),
+	Layer.provide( ChatApiLive ),
 	Layer.provide( AuthMiddlewareLive ),
 	Layer.provide( SessionServiceLive ),
 	Layer.provide( WebAuthnServiceLive ),
@@ -63,6 +65,7 @@ const ApiWorker = Cloudflare.Worker(
 		] );
 
 		const channels = yield* GameChannel;
+		const chatChannels = yield* ChatChannelDO;
 
 		const ApiFetch = yield* HttpRouter.toHttpEffect(
 			ApiLive.pipe(
@@ -99,6 +102,25 @@ const ApiWorker = Cloudflare.Worker(
 
 					const channel = `${ gameName }:${ gameId }`;
 					return yield* channels.getByName( channel ).fetch( request );
+				}
+
+				// The chat socket. The REST surface is `/api/chat/...` (the whole
+				// HttpApi is prefixed `/api`), so this only ever catches upgrades.
+				if ( url.pathname.startsWith( "/chat/" ) ) {
+					if ( request.headers[ "upgrade" ] !== "websocket" ) {
+						return HttpServerResponse.text(
+							"Expected Upgrade: websocket",
+							{ status: 426 }
+						);
+					}
+
+					// /chat/{channelId}
+					const [ _, _chat, channelId ] = url.pathname.split( "/" );
+					if ( !channelId ) {
+						return HttpServerResponse.text( "Bad chat path", { status: 400 } );
+					}
+
+					return yield* chatChannels.getByName( channelId ).fetch( request );
 				}
 
 				return yield* ApiFetch;

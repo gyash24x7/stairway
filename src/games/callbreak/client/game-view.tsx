@@ -2,6 +2,7 @@
 
 import { Fragment } from "react";
 
+import { ChatPanel } from "@/chat/client/chat-panel.tsx";
 import { RCardSuit } from "@/shared/ui/components/card.tsx";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
 import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
@@ -27,6 +28,7 @@ export function GameView() {
 				code={ data.code }
 				name={ "callbreak" }
 				completed={ data.status === "COMPLETED" }
+				actions={ <ChatPanel channelId={ data.id }/> }
 				additionalInfo={
 					<Fragment>
 						<div className={ "py-2 px-4" }>

@@ -7,7 +7,7 @@ import { StairwayAPI } from "@/api.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
 import { toPlayerInfo } from "@/client.ts";
 import { FishInitializeInput } from "@/games/fish/shared/schema.ts";
-import { games } from "@/platform/database/schema.ts";
+import { channels, games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
@@ -51,6 +51,14 @@ export const FishApiLive = HttpApiBuilder.group( StairwayAPI, "fish", handlers =
 				const { user } = yield* AuthContext;
 				const game = yield* db.insert( games ).values( { game: "fish" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+
+				yield* db.insert( channels ).values( {
+					id: game.id,
+					refType: "game",
+					refId: game.id,
+					label: "fish",
+					policy: { text: false, reactions: true }
+				} ).pipe( Effect.orDie );
 
 				const input = FishInitializeInput.make( {
 					id: GameId.make( game.id ),

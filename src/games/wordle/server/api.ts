@@ -11,7 +11,7 @@ import {
 	WordleConfig,
 	WordleInitializeInput
 } from "@/games/wordle/shared/schema.ts";
-import { games } from "@/platform/database/schema.ts";
+import { channels, games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
@@ -54,6 +54,14 @@ export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handle
 				const { user } = yield* AuthContext;
 				const game = yield* db.insert( games ).values( { game: "wordle" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+
+				yield* db.insert( channels ).values( {
+					id: game.id,
+					refType: "game",
+					refId: game.id,
+					label: "wordle",
+					policy: { text: true, reactions: true }
+				} ).pipe( Effect.orDie );
 
 				// The puzzle shape comes from the client; the single seat and
 				// `autoStart` are fixed server-side.

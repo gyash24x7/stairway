@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 
+import { ChatPanel } from "@/chat/client/chat-panel.tsx";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
 import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { RPlayerInfoSmall } from "@/shared/ui/components/player-info.tsx";
@@ -27,6 +28,7 @@ export function GameView() {
 				code={ data.code }
 				name={ "tic-tac-toe" }
 				completed={ isCompleted }
+				actions={ <ChatPanel channelId={ data.id }/> }
 			/>
 
 			{ data.status === "CREATED" && (

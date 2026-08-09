@@ -7,7 +7,7 @@ import { StairwayAPI } from "@/api.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
 import { toPlayerInfo } from "@/client.ts";
 import { SplendorInitializeInput } from "@/games/splendor/shared/schema.ts";
-import { games } from "@/platform/database/schema.ts";
+import { channels, games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
@@ -51,6 +51,14 @@ export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", ha
 				const { user } = yield* AuthContext;
 				const game = yield* db.insert( games ).values( { game: "splendor" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+
+				yield* db.insert( channels ).values( {
+					id: game.id,
+					refType: "game",
+					refId: game.id,
+					label: "splendor",
+					policy: { text: true, reactions: true }
+				} ).pipe( Effect.orDie );
 
 				const input = SplendorInitializeInput.make( {
 					id: GameId.make( game.id ),

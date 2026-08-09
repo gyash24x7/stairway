@@ -84,7 +84,13 @@ export function DrawerContent( {
 						"group-data-[vaul-drawer-direction=bottom]/drawer-content:block"
 					) }
 				/>
-				<div className={ "max-w-xl w-full" }>
+				<div
+					className={ cn(
+						"max-w-xl w-full",
+						"group-data-[vaul-drawer-direction=left]/drawer-content:h-full",
+						"group-data-[vaul-drawer-direction=right]/drawer-content:h-full"
+					) }
+				>
 					{ children }
 				</div>
 			</Content>

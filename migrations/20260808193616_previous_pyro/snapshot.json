@@ -1,0 +1,437 @@
+{
+	"version": "7",
+	"dialect": "sqlite",
+	"id": "0e8990f5-6ce4-4701-8885-c44bc49de8e0",
+	"prevIds": [
+		"da6ed5a0-1318-4c99-915c-620bd8721f1a"
+	],
+	"ddl": [
+		{
+			"name": "channels",
+			"entityType": "tables"
+		},
+		{
+			"name": "games",
+			"entityType": "tables"
+		},
+		{
+			"name": "passkeys",
+			"entityType": "tables"
+		},
+		{
+			"name": "users",
+			"entityType": "tables"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "channels"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "ref_type",
+			"entityType": "columns",
+			"table": "channels"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "ref_id",
+			"entityType": "columns",
+			"table": "channels"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "label",
+			"entityType": "columns",
+			"table": "channels"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "policy",
+			"entityType": "columns",
+			"table": "channels"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"table": "channels"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "games"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "code",
+			"entityType": "columns",
+			"table": "games"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "game",
+			"entityType": "columns",
+			"table": "games"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "false",
+			"generated": null,
+			"name": "completed",
+			"entityType": "columns",
+			"table": "games"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"table": "games"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "name",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "public_key",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "user_id",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "credential_id",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "counter",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "device_type",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "backed_up",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "transports",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "aaguid",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "integer",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "id",
+			"entityType": "columns",
+			"table": "users"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "name",
+			"entityType": "columns",
+			"table": "users"
+		},
+		{
+			"type": "text",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "email",
+			"entityType": "columns",
+			"table": "users"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": "false",
+			"generated": null,
+			"name": "email_verified",
+			"entityType": "columns",
+			"table": "users"
+		},
+		{
+			"type": "text",
+			"notNull": false,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "image",
+			"entityType": "columns",
+			"table": "users"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"table": "users"
+		},
+		{
+			"type": "integer",
+			"notNull": true,
+			"autoincrement": false,
+			"default": null,
+			"generated": null,
+			"name": "updated_at",
+			"entityType": "columns",
+			"table": "users"
+		},
+		{
+			"columns": [
+				"user_id"
+			],
+			"tableTo": "users",
+			"columnsTo": [
+				"id"
+			],
+			"onUpdate": "NO ACTION",
+			"onDelete": "CASCADE",
+			"nameExplicit": false,
+			"name": "fk_passkeys_user_id_users_id_fk",
+			"entityType": "fks",
+			"table": "passkeys"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "channels_pk",
+			"table": "channels",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "games_pk",
+			"table": "games",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "passkeys_pk",
+			"table": "passkeys",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "users_pk",
+			"table": "users",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				{
+					"value": "ref_type",
+					"isExpression": false
+				},
+				{
+					"value": "ref_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "idx_channels_ref",
+			"entityType": "indexes",
+			"table": "channels"
+		},
+		{
+			"columns": [
+				{
+					"value": "code",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "idx_games_code",
+			"entityType": "indexes",
+			"table": "games"
+		},
+		{
+			"columns": [
+				{
+					"value": "user_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "passkey_user_id_idx",
+			"entityType": "indexes",
+			"table": "passkeys"
+		},
+		{
+			"columns": [
+				{
+					"value": "credential_id",
+					"isExpression": false
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"origin": "manual",
+			"name": "passkey_credential_id_idx",
+			"entityType": "indexes",
+			"table": "passkeys"
+		},
+		{
+			"columns": [
+				"email"
+			],
+			"nameExplicit": false,
+			"name": "users_email_unique",
+			"entityType": "uniques",
+			"table": "users"
+		}
+	],
+	"renames": [ ]
+}

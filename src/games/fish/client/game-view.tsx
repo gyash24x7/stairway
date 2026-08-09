@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatPanel } from "@/chat/client/chat-panel.tsx";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
 import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
@@ -41,6 +42,7 @@ export function GameView() {
 				code={ data.code }
 				name={ "fish" }
 				completed={ data.status === "COMPLETED" }
+				actions={ <ChatPanel channelId={ data.id }/> }
 				additionalInfo={
 					<div className={ "py-2 px-4" }>
 						<p className={ "text-xs md:text-sm" }>TYPE</p>

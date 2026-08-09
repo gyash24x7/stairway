@@ -6,6 +6,7 @@ import { Fragment, useState } from "react";
 
 import { DOMINO_DECK } from "@/games/kingdomino/shared/utils.ts";
 import type { PlayerId } from "@/shared/swish/schema.ts";
+import { ChatPanel } from "@/chat/client/chat-panel.tsx";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
 import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
@@ -118,6 +119,7 @@ export function GameView() {
 					</Fragment>
 				}
 				completed={ data.status === "COMPLETED" }
+				actions={ <ChatPanel channelId={ data.id }/> }
 			/>
 			{ isLobby ? (
 				<Fragment>

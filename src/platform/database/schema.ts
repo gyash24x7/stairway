@@ -1,7 +1,7 @@
-
 import { defineRelations } from "drizzle-orm";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+import type { ChatPolicy } from "@/chat/shared/schema.ts";
 import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator.ts";
 
 const now = () => new Date();
@@ -60,8 +60,21 @@ export const games = sqliteTable(
 	table => [ index( "idx_games_code" ).on( table.code ) ]
 );
 
+export const channels = sqliteTable(
+	"channels",
+	{
+		id: text( "id" ).primaryKey(),
+		refType: text( "ref_type" ).notNull(),
+		refId: text( "ref_id" ).notNull(),
+		label: text( "label" ),
+		policy: text( "policy", { mode: "json" } ).notNull().$type<ChatPolicy>(),
+		createdAt: integer( "created_at", { mode: "timestamp" } ).notNull().$default( now )
+	},
+	table => [ index( "idx_channels_ref" ).on( table.refType, table.refId ) ]
+);
+
 export const relations = defineRelations(
-	{ users, passkeys, games },
+	{ users, passkeys, games, channels },
 	t => ( {
 		users: {
 			passkeys: t.many.passkeys()

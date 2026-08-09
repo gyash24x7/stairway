@@ -11,7 +11,7 @@ import {
 	CallbreakConfig,
 	CallbreakInitializeInput
 } from "@/games/callbreak/shared/schema.ts";
-import { games } from "@/platform/database/schema.ts";
+import { channels, games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
@@ -55,6 +55,14 @@ export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", 
 				const { user } = yield* AuthContext;
 				const game = yield* db.insert( games ).values( { game: "callbreak" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+
+				yield* db.insert( channels ).values( {
+					id: game.id,
+					refType: "game",
+					refId: game.id,
+					label: "callbreak",
+					policy: { text: true, reactions: true }
+				} ).pipe( Effect.orDie );
 
 				// The round shape comes from the client; the four seats and
 				// `autoStart` are fixed server-side.

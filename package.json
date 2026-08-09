@@ -8,6 +8,7 @@
 		"dev": "alchemy dev",
 		"dev:web": "vite",
 		"build": "vite build",
+		"clean": "rm -rf ./node_modules/.vite",
 		"deploy": "alchemy deploy",
 		"typecheck": "tsc --noEmit",
 		"lint": "eslint .",

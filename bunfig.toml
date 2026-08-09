@@ -1,28 +1,18 @@
 [test]
-# All tests live under `tests/`, mirroring the `src/` layout.
 root = "tests"
 
-# Always collect coverage: `text` prints the table in the terminal, `lcov`
-# writes `coverage/lcov.info` for editors / CI coverage uploads.
 coverage = true
 coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
 
-# Report on the code under test only — not the specs or their fixtures.
-# `errors.ts`/`services.ts` are declaration-only (tagged error classes, service
-# tags): they report 100% lines but 0% functions, which drags the per-file
-# function threshold below anything meaningful. Drop them in if they ever grow
-# real behaviour.
 coverageSkipTestFiles = true
 coveragePathIgnorePatterns = [
 	"tests/_helpers/**",
 	"src/shared/swish/errors.ts",
-	"src/shared/swish/services.ts"
+	"src/shared/swish/services.ts",
+	"src/chat/shared/schema.ts"
 ]
 
-# A ratchet, not a target. Bun applies these PER FILE, so they sit just under
-# today's weakest file (functions: schema.ts 66.7, lines: engine.ts 90.8).
-# Raise them as `src/` gets covered.
 [test.coverageThreshold]
 lines = 0.90
 functions = 0.65

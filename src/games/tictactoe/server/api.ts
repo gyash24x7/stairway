@@ -11,7 +11,7 @@ import {
 	TicTacToeConfig,
 	TicTacToeInitializeInput
 } from "@/games/tictactoe/shared/schema.ts";
-import { games } from "@/platform/database/schema.ts";
+import { channels, games } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
 import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
@@ -55,6 +55,14 @@ export const TicTacToeApiLive = HttpApiBuilder.group( StairwayAPI, "tictactoe", 
 				const { user } = yield* AuthContext;
 				const game = yield* db.insert( games ).values( { game: "tic-tac-toe" } ).returning()
 					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
+
+				yield* db.insert( channels ).values( {
+					id: game.id,
+					refType: "game",
+					refId: game.id,
+					label: "tictactoe",
+					policy: { text: true, reactions: true }
+				} ).pipe( Effect.orDie );
 
 				// Both seats and `autoStart` are fixed server-side — the client has
 				// no say in the roster size.
