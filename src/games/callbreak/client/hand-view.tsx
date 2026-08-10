@@ -64,7 +64,7 @@ export function HandView() {
 						transition={ { type: "spring", stiffness: 380, damping: 22 } }
 						whileHover={ isSelectionAllowed( cardId ) && isMyTurn ? { scale: 1.05 } : undefined }
 						className={ cn(
-							"cursor-pointer p-1 z-10 rounded-md",
+							"cursor-pointer p-1 rounded-md",
 							cardId === selectedCard && "bg-accent/20 border border-accent"
 						) }
 						onClick={ handleCardClick( cardId ) }

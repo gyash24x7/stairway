@@ -4,11 +4,7 @@ import { useWebSocket } from "react-use-websocket/dist/lib/use-websocket";
 
 import { getChatHistoryFn, sendChatMessageFn } from "@/chat/client/client.ts";
 import type { ChatBody, ChatFrame, ChatHistory, ChatMessage } from "@/chat/shared/schema.ts";
-
-const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
-
-/** Same base the typed HTTP client uses, switched to the ws(s) scheme. */
-const WS_URL = API_URL.replace( /^http/, "ws" );
+import { wsUrl } from "@/sync.ts";
 
 /**
  * Deliberately its own cache key, separate from any game's snapshot key: a chat
@@ -35,7 +31,7 @@ export function useChat( channelId: string ) {
 	} );
 
 	const { lastJsonMessage } = useWebSocket(
-		`${ WS_URL }chat/${ channelId }`,
+		wsUrl( `chat/${ channelId }` ),
 		{ shouldReconnect: () => true }
 	);
 
@@ -65,7 +61,6 @@ export function useChat( channelId: string ) {
 		messages: query.data?.messages ?? [],
 		policy: query.data?.policy,
 		isLoading: query.isLoading,
-		/** Set when the channel has no row — e.g. a game created before chat shipped. */
 		error: query.error,
 		send: send.mutate,
 		isSending: send.isPending,

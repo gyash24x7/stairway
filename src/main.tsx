@@ -34,6 +34,15 @@ declare module "@tanstack/react-router" {
 	interface Register {
 		router: typeof router;
 	}
+
+	interface StaticDataRouteOption {
+		/**
+		 * Opt this route out of the root `AppLayout` chrome (navbar, centred
+		 * gutters). Set by the couch/TV screens, which want the full viewport.
+		 * Optional so every other route is unaffected.
+		 */
+		fullBleed?: boolean;
+	}
 }
 
 const rootElement = document.getElementById( "root" )!;

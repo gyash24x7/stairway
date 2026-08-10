@@ -5,6 +5,8 @@ import { cn } from "@/shared/ui/utils/cn.ts";
 export type PlayerInfoProps = {
 	player: PlayerInfo;
 	noBg?: boolean;
+	/** Television sizing — readable from across a room. Used by the couch screens. */
+	large?: boolean;
 }
 
 export function RPlayerInfoSmall( props: { player: PlayerInfo } ) {
@@ -55,10 +57,21 @@ export function RPlayerInfo( props: PlayerInfoProps ) {
 			) }
 			key={ props.player.id }
 		>
-			<Avatar className={ "rounded-full w-8 h-8 md:w-10 md:h-10 xl:h-12 xl:w-12" }>
+			<Avatar
+				className={ cn(
+					"rounded-full w-8 h-8 md:w-10 md:h-10 xl:h-12 xl:w-12",
+					props.large && "w-20 h-20 md:w-24 md:h-24 xl:h-28 xl:w-28"
+				) }
+			>
 				<AvatarImage src={ props.player.avatar } alt={ "" } className={ "bg-accent" }/>
 			</Avatar>
-			<h2 className={ "text-center text-xs md:text-md xl:text-xl" }>
+			<h2
+				className={ cn(
+					"text-center",
+					!props.large && "text-xs md:text-md xl:text-lg",
+					props.large && "text-3xl md:text-4xl xl:text-5xl font-heading"
+				) }
+			>
 				{ firstName }
 			</h2>
 		</div>

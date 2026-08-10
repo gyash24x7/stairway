@@ -5,6 +5,7 @@ import {
 	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
+	GetTableStateApiEndpoint,
 	JoinApiEndpoint,
 	StartApiEndpoint,
 	MoveApiEndpoint
@@ -22,6 +23,7 @@ export const FishApiGroup = HttpApiGroup.make( "fish" )
 	.add(
 		CreateGameApiEndpoint( FishConfig ),
 		GetStateApiEndpoint( FishSnapshot ),
+		GetTableStateApiEndpoint( FishSnapshot ),
 		JoinApiEndpoint(),
 		StartApiEndpoint(),
 		AddBotsApiEndpoint(),

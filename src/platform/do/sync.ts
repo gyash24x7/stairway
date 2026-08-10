@@ -4,17 +4,12 @@ import * as Layer from "effect/Layer";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
+import { admitSocket, type BroadcastSnapshot, frameFor } from "@/platform/do/rules.ts";
 import { Sync } from "@/shared/swish/services.ts";
-import { type Audience, PlayerAudience, PlayerId, TableAudience } from "@/shared/swish/schema.ts";
+import { type Audience, GameFrame } from "@/shared/swish/schema.ts";
 import { SessionService } from "@/auth/server/session.ts";
 import { SessionServiceLive } from "@/auth/server/session.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
-
-/** The per-audience payload the engine hands `broadcast` (already JSON-plain). */
-interface BroadcastSnapshot {
-	readonly table: unknown;
-	readonly playerViews: Record<string, unknown>;
-}
 
 interface Attachment {
 	readonly audience: Audience;
@@ -27,12 +22,12 @@ export class GameChannel extends Cloudflare.DurableObject<GameChannel>()(
 		const sessionService = yield* SessionService;
 
 		return Effect.gen( function* () {
-			const sessions = new Map<Attachment, Cloudflare.WebSocket>();
+			const sessions = new Map<Cloudflare.WebSocket, Attachment>();
 
 			for ( const socket of yield* state.getWebSockets() ) {
 				const attachment = socket.deserializeAttachment<Attachment>();
 				if ( attachment ) {
-					sessions.set( attachment, socket );
+					sessions.set( socket, attachment );
 				}
 			}
 
@@ -42,23 +37,18 @@ export class GameChannel extends Cloudflare.DurableObject<GameChannel>()(
 					const playerId = new URL( request.url, "http://sync" ).searchParams.get( "playerId" );
 					const authInfo = yield* sessionService.load();
 
-					if ( !!playerId ) {
-						if ( !authInfo ) {
-							return HttpServerResponse.text( "Unauthorized", { status: 401 } );
-						}
-
-						if ( authInfo.id !== playerId ) {
-							return HttpServerResponse.text( "Forbidden", { status: 403 } );
-						}
+					const admission = admitSocket( playerId, authInfo?.id ?? null );
+					if ( admission._tag === "reject" ) {
+						return HttpServerResponse.text(
+							admission.status === 401 ? "Unauthorized" : "Forbidden",
+							{ status: admission.status }
+						);
 					}
 
-					const audience = playerId
-						? PlayerAudience.make( { id: PlayerId.make( playerId ) } )
-						: TableAudience.make( {} );
-
 					const [ response, socket ] = yield* Cloudflare.upgrade();
-					socket.serializeAttachment<Attachment>( { audience } );
-					sessions.set( { audience }, socket );
+					const attachment: Attachment = { audience: admission.audience };
+					socket.serializeAttachment<Attachment>( attachment );
+					sessions.set( socket, attachment );
 					return response;
 				} ),
 
@@ -67,23 +57,18 @@ export class GameChannel extends Cloudflare.DurableObject<GameChannel>()(
 					code: number,
 					reason: string
 				) {
-					const attachment = ws.deserializeAttachment<Attachment>();
-					if ( attachment ) {
-						sessions.delete( attachment );
-					}
-
+					sessions.delete( ws );
 					yield* ws.close( code, reason );
 				} ),
 
 				// Engine → DO push. Send each socket the snapshot for its own audience.
 				broadcast: Effect.fn( function* ( snapshot: BroadcastSnapshot ) {
-					for ( const [ attachment, socket ] of sessions.entries() ) {
-						const audience = attachment?.audience;
-						const payload = audience?._tag === "swish/Player"
-							? snapshot.playerViews[ audience.id ] ?? snapshot.table
-							: snapshot.table;
+					for ( const [ socket, attachment ] of sessions.entries() ) {
+						const frame = JSON.stringify( GameFrame.make( {
+							snapshot: frameFor( attachment.audience, snapshot )
+						} ) );
 
-						yield* socket.send( JSON.stringify( payload ) ).pipe( Effect.ignore );
+						yield* socket.send( frame ).pipe( Effect.ignore );
 					}
 				} )
 			};

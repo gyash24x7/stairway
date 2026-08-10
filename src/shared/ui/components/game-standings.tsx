@@ -21,6 +21,12 @@ export type GameStandingsProps = {
 	/** What the score column counts ("POINTS", "BOOKS", …). Omit for scoreless games. */
 	scoreLabel?: string;
 
+	/**
+	 * Television sizing — bigger type and rows that share the available height, so
+	 * the table fills a couch screen instead of sitting tiny in the middle of it.
+	 */
+	large?: boolean;
+
 	className?: string;
 };
 
@@ -79,34 +85,42 @@ export function GameStandings( props: GameStandingsProps ) {
 	const showTeam = ranking.some( ( standing ) => standing.team !== undefined );
 	const showScore = ranking.some( ( standing ) => standing.score !== undefined );
 
+	const large = props.large;
+
 	return (
 		<div
 			className={ cn(
 				"w-full rounded-md bg-background border-2 border-black overflow-hidden",
+				"flex flex-col",
 				props.className
 			) }
 		>
-			<div className={ "bg-accent text-neutral-dark p-3 text-center" }>
-				<p className={ "text-2xl md:text-3xl font-heading" }>{ headline }</p>
+			<div className={ cn( "bg-accent text-neutral-dark p-3 text-center", large && "p-6" ) }>
+				<p className={ cn( "text-2xl md:text-3xl font-heading", large && "text-6xl" ) }>
+					{ headline }
+				</p>
 			</div>
 
 			<div
 				className={ cn(
 					"flex items-center gap-3 px-3 py-1 border-t-2 border-black bg-surface",
-					"text-xs text-muted-foreground"
+					"text-xs text-muted-foreground",
+					large && "px-8 py-3 gap-6 text-2xl tracking-widest"
 				) }
 			>
-				{ showRank && <span className={ "w-10 shrink-0" }>RANK</span> }
+				{ showRank && (
+					<span className={ cn( "w-10 shrink-0", large && "w-24" ) }>RANK</span>
+				) }
 				<span className={ "flex-1 min-w-0" }>PLAYER</span>
 				{ showScore && (
-					<span className={ "w-20 shrink-0 text-right" }>
+					<span className={ cn( "w-20 shrink-0 text-right", large && "w-40" ) }>
 						{ props.scoreLabel ?? "SCORE" }
 					</span>
 				) }
 			</div>
 
 			<motion.ul
-				className={ "flex flex-col" }
+				className={ cn( "flex flex-col", large && "flex-1 min-h-0" ) }
 				variants={ staggerContainer }
 				initial={ "initial" }
 				animate={ "animate" }
@@ -123,23 +137,39 @@ export function GameStandings( props: GameStandingsProps ) {
 								"flex items-center gap-3 px-3 py-2 border-t-2 border-black",
 								standing.rank === 1 && "bg-accent text-neutral-dark",
 								isMe && "border-l-4 border-l-accent",
-								isMe && standing.rank === 1 && "border-l-foreground"
+								isMe && standing.rank === 1 && "border-l-foreground",
+								large && "flex-1 min-h-0 px-8 py-6 gap-6"
 							) }
 						>
 							{ showRank && (
 								<span
-									className={ "w-10 shrink-0 flex items-center gap-1 text-lg font-heading" }
+									className={ cn(
+										"w-10 shrink-0 flex items-center gap-1 text-lg font-heading",
+										large && "w-24 gap-3 text-5xl"
+									) }
 								>
 									{ standing.rank === 1 && (
-										<TrophyIcon className={ "w-4 h-4 shrink-0" }/>
+										<TrophyIcon
+											className={ cn( "w-4 h-4 shrink-0", large && "w-10 h-10" ) }
+										/>
 									) }
 									{ standing.rank }
 								</span>
 							) }
 
-							<span className={ "flex-1 min-w-0 flex items-center gap-2" }>
+							<span
+								className={ cn(
+									"flex-1 min-w-0 flex items-center gap-2",
+									large && "gap-5"
+								) }
+							>
 								{ player && (
-									<Avatar className={ "rounded-full w-6 h-6 md:w-8 md:h-8 shrink-0" }>
+									<Avatar
+										className={ cn(
+											"rounded-full w-6 h-6 md:w-8 md:h-8 shrink-0",
+											large && "w-20 h-20 md:w-20 md:h-20"
+										) }
+									>
 										<AvatarImage
 											src={ player.avatar }
 											alt={ "" }
@@ -147,9 +177,13 @@ export function GameStandings( props: GameStandingsProps ) {
 										/>
 									</Avatar>
 								) }
-								<span className={ "truncate text-sm md:text-base" }>
+								<span className={ cn( "truncate text-sm md:text-base", large && "md:text-4xl" ) }>
 									{ nameOf( standing.playerId ) }
-									{ isMe && <span className={ "text-xs ml-1" }>(YOU)</span> }
+									{ isMe && (
+										<span className={ cn( "text-xs ml-1", large && "text-2xl ml-3" ) }>
+											(YOU)
+										</span>
+									) }
 								</span>
 								{ showTeam && standing.team && (
 									<span
@@ -164,7 +198,12 @@ export function GameStandings( props: GameStandingsProps ) {
 							</span>
 
 							{ showScore && (
-								<span className={ "w-20 shrink-0 text-right text-lg font-heading" }>
+								<span
+									className={ cn(
+										"w-20 shrink-0 text-right text-lg font-heading",
+										large && "w-40 text-5xl"
+									) }
+								>
 									{ standing.score ?? "—" }
 								</span>
 							) }

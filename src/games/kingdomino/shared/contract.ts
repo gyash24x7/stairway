@@ -4,6 +4,7 @@ import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
+	GetTableStateApiEndpoint,
 	JoinApiEndpoint,
 	StartApiEndpoint,
 	MoveApiEndpoint
@@ -20,6 +21,7 @@ export const KingdominoApiGroup = HttpApiGroup.make( "kingdomino" )
 	.add(
 		CreateGameApiEndpoint( KingdominoConfig ),
 		GetStateApiEndpoint( KingdominoSnapshot ),
+		GetTableStateApiEndpoint( KingdominoSnapshot ),
 		JoinApiEndpoint(),
 		StartApiEndpoint(),
 		MoveApiEndpoint( "selectDomino", SelectDominoInput ),

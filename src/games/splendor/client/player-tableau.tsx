@@ -4,7 +4,7 @@ import { GEMS } from "@/games/splendor/shared/utils.ts";
 import type { PlayerId } from "@/shared/swish/schema.ts";
 import { RPlayerInfoStrip } from "@/shared/ui/components/player-info.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { useSplendorBoard } from "@/games/splendor/client/context.tsx";
 import { GameCard } from "@/games/splendor/client/game-card.tsx";
 
 /**
@@ -18,7 +18,7 @@ import { GameCard } from "@/games/splendor/client/game-card.tsx";
  * the cards were actually bought.
  */
 export function PlayerTableau( { playerId }: { playerId: PlayerId } ) {
-	const { data } = useSplendor();
+	const { data } = useSplendorBoard();
 	const player = data.players[ playerId ];
 	const cards = data.view.playerData[ playerId ]?.cards ?? [];
 

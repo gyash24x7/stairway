@@ -5,12 +5,7 @@ import type {
 	ReserveCardInput,
 	SplendorConfig
 } from "@/games/splendor/shared/schema.ts";
-import {
-	GameCode,
-	GameId,
-	GameIdParams,
-	JoinGameInput
-} from "@/shared/swish/schema.ts";
+import { GameCode, GameId, GameIdParams, JoinGameInput } from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -43,6 +38,7 @@ export const purchaseCardFn = ( gameId: string, input: PurchaseCardInput ) =>
 // --- Queries ---------------------------------------------------------------
 
 export const getStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.getState( {
-		params: gameIdParams( gameId )
-	} ), signal );
+	run( client.getState( { params: gameIdParams( gameId ) } ), signal );
+
+export const getTableStateFn = ( gameId: string, signal?: AbortSignal ) =>
+	run( client.getTableState( { params: gameIdParams( gameId ) } ), signal );

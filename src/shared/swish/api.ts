@@ -67,6 +67,21 @@ export const GetStateApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snap
 	} );
 
 /**
+ * `POST /:gameId/getTableState` — the shared TABLE snapshot: the public board with
+ * no private slice and no player identity, for the couch/TV screen. Requires a
+ * valid session but **not** a seat, so a spectator in the room can show the board.
+ *
+ * @param snapshot - The game's snapshot schema.
+ * @returns The typed get-table-state endpoint.
+ */
+export const GetTableStateApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
+	HttpApiEndpoint.post( "getTableState", "/:gameId/getTableState", {
+		params: GameIdParams,
+		success: snapshot,
+		error: GetStateError
+	} );
+
+/**
  * `POST /:gameId/getLog` — the human-readable action feed, redacted for the
  * authenticated caller (audience derived server-side, so no payload).
  */

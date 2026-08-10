@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ChatPanel } from "@/chat/client/chat-panel.tsx";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
 import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
+import { CouchLinks } from "@/shared/ui/couch/couch-links.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
@@ -19,10 +20,12 @@ import {
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { Board } from "@/games/splendor/client/board.tsx";
+import { CardActions } from "@/games/splendor/client/card-actions.tsx";
 import { useSplendor } from "@/games/splendor/client/context.tsx";
 import { PickTokens } from "@/games/splendor/client/pick-tokens.tsx";
 import { PlayerInfo } from "@/games/splendor/client/player-info.tsx";
 import { PlayerTableau } from "@/games/splendor/client/player-tableau.tsx";
+import { ReservedCardsDrawer } from "@/games/splendor/client/reserved-cards.tsx";
 import { startGameFn } from "@/games/splendor/client/client.ts";
 import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
@@ -56,6 +59,7 @@ export function GameView() {
 					</div>
 				}
 			/>
+			<CouchLinks game={ "splendor" } gameId={ data.id }/>
 			<GameStandings
 				results={ data.results }
 				players={ data.players }
@@ -105,7 +109,7 @@ export function GameView() {
 			{ data.status === "IN_PROGRESS" && (
 				<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3 w-full justify-items-center" }>
 					<div className={ "flex flex-col gap-3 w-full max-w-lg md:max-w-xl items-center" }>
-						<Board/>
+						<Board renderCard={ card => <CardActions card={ card }/> }/>
 						<PickTokens/>
 						<Button
 							className={ "w-full flex gap-2 items-center justify-center lg:hidden" }
@@ -123,7 +127,13 @@ export function GameView() {
 						) }
 					</div>
 					<div className={ "hidden lg:flex flex-col gap-3 w-full max-w-lg md:max-w-xl" }>
-						{ data.context.players.map( p => <PlayerInfo playerId={ p } key={ p }/> ) }
+						{ data.context.players.map( p => (
+							<PlayerInfo
+								playerId={ p }
+								key={ p }
+								reservedSlot={ <ReservedCardsDrawer playerId={ p }/> }
+							/>
+						) ) }
 					</div>
 				</div>
 			) }
@@ -135,7 +145,14 @@ export function GameView() {
 							<DrawerDescription/>
 						</DrawerHeader>
 						<div className={ "px-4 flex flex-col gap-2 overflow-y-auto" }>
-							{ otherPlayers.map( p => <PlayerInfo playerId={ p } key={ p } bg/> ) }
+							{ otherPlayers.map( p => (
+								<PlayerInfo
+									playerId={ p }
+									key={ p }
+									bg
+									reservedSlot={ <ReservedCardsDrawer playerId={ p }/> }
+								/>
+							) ) }
 						</div>
 						<DrawerFooter/>
 					</DrawerContent>
@@ -149,7 +166,10 @@ export function GameView() {
 					) }
 				>
 					<div className={ "w-full max-w-lg md:max-w-xl" }>
-						<PlayerInfo playerId={ data.view.playerId }/>
+						<PlayerInfo
+							playerId={ data.view.playerId }
+							reservedSlot={ <ReservedCardsDrawer playerId={ data.view.playerId }/> }
+						/>
 					</div>
 				</div>
 			) }

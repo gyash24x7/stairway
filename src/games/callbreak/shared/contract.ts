@@ -5,6 +5,7 @@ import {
 	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
+	GetTableStateApiEndpoint,
 	JoinApiEndpoint,
 	StartApiEndpoint,
 	MoveApiEndpoint
@@ -20,6 +21,7 @@ export const CallbreakApiGroup = HttpApiGroup.make( "callbreak" )
 	.add(
 		CreateGameApiEndpoint( CallbreakCreateInput ),
 		GetStateApiEndpoint( CallbreakSnapshot ),
+		GetTableStateApiEndpoint( CallbreakSnapshot ),
 		JoinApiEndpoint(),
 		StartApiEndpoint(),
 		AddBotsApiEndpoint(),

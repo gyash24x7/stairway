@@ -5,6 +5,7 @@ import {
 	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
+	GetTableStateApiEndpoint,
 	JoinApiEndpoint,
 	StartApiEndpoint,
 	MoveApiEndpoint
@@ -15,6 +16,7 @@ export const TicTacToeApiGroup = HttpApiGroup.make( "tictactoe" )
 	.add(
 		CreateGameApiEndpoint( TicTacToeCreateInput ),
 		GetStateApiEndpoint( TicTacToeSnapshot ),
+		GetTableStateApiEndpoint( TicTacToeSnapshot ),
 		JoinApiEndpoint(),
 		StartApiEndpoint(),
 		AddBotsApiEndpoint(),

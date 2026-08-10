@@ -4,11 +4,7 @@ import type {
 	DeclareWinsInput,
 	PlayCardInput
 } from "@/games/callbreak/shared/schema.ts";
-import {
-	GameCode,
-	GameIdParams,
-	JoinGameInput
-} from "@/shared/swish/schema.ts";
+import { GameCode, GameIdParams, JoinGameInput } from "@/shared/swish/schema.ts";
 
 const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
 
@@ -61,9 +57,8 @@ export const playCardFn = ( gameId: string, input: PlayCardInput, signal?: Abort
 // --- Queries ---------------------------------------------------------------
 
 export const getStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run(
-		client.callbreak.getState( {
-			params: gameIdParams( gameId )
-		} ),
-		signal
-	);
+	run( client.callbreak.getState( { params: gameIdParams( gameId ) } ), signal );
+
+/** The shared/couch projection. Needs a session, but not a seat at this table. */
+export const getTableStateFn = ( gameId: string, signal?: AbortSignal ) =>
+	run( client.callbreak.getTableState( { params: gameIdParams( gameId ) } ), signal );

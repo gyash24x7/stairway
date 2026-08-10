@@ -132,6 +132,28 @@ export const playerAudience = ( id: PlayerId ) => PlayerAudience.make( { id } );
  */
 export const tableAudience = () => TableAudience.make( {} );
 
+// --- Socket frames ----------------------------------------------------------
+
+/**
+ * What the `/sync/{gameName}/{gameId}` socket pushes. Tagged from the start so
+ * more frame kinds (presence, a "controller connected" ping) can be added without
+ * a breaking change — the mistake `ChatFrame` already calls out about the older,
+ * untagged sync frames.
+ *
+ * `snapshot` is `Unknown` because the channel DO is game-agnostic: it forwards a
+ * payload the engine already encoded and never sees the game's schema. Clients
+ * narrow it to their own `<Game>Snapshot`.
+ */
+export const GameFrame = Schema.TaggedStruct( "swish/Frame", {
+	snapshot: Schema.Unknown
+} );
+
+/** The decoded shape of a socket frame, parameterized by the game's snapshot type. */
+export type GameFrame<Snapshot = unknown> = {
+	readonly _tag: "swish/Frame";
+	readonly snapshot: Snapshot;
+};
+
 /**
  * The minimum every game config must provide. The engine reads `playerCount`
  * to know when a game is full and `autoStart` to decide whether to schedule an

@@ -1040,3 +1040,73 @@ describe( "engine — alarm edge cases", () => {
 		expect( memory.scheduler.scheduled.map( ( s ) => s.alarm ) ).toContain( "bot" );
 	} );
 } );
+
+// ===========================================================================
+describe( "engine — table audience (couch)", () => {
+	let memory: Memory;
+	beforeEach( () => { memory = makeMemory(); } );
+
+	// The whole point of the couch read path: a TV is logged in as *somebody*, but
+	// that somebody need not hold a seat.
+	test( "getTableState is readable by a non-member, unlike getState", async () => {
+		const engine = await bootTally( memory );
+
+		const error = await runFail( memory, engine.getState( STRANGER.id ) );
+		expect( error._tag ).toBe( "swish/NotAMember" );
+
+		const table = await run( memory, engine.getTableState() );
+		expect( table.status ).toBe( "IN_PROGRESS" );
+	} );
+
+	test( "getTableState carries the public board but no private slice", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+
+		const table = await run( memory, engine.getTableState() );
+		expect( table.view.scores ).toEqual( { [ P1.id ]: 3 } );
+		// `me` is the player-only field — it must never appear on the table view.
+		expect( table.view.me ).toBeUndefined();
+	} );
+
+	// The one place a table projection could leak: `redactInteractions` computes
+	// `selfId === undefined` for a table audience, so it must fall through to the
+	// "responded" marker for *every* responder rather than for all-but-one.
+	test( "getTableState redacts every response in a simultaneous window", async () => {
+		const engine = await bootDuel( memory );
+		await run( memory, engine.attack( {}, P1 ) );
+		await run( memory, engine.defend( { block: false }, P2 ) );
+
+		const table = await run( memory, engine.getTableState() );
+		const responses = table.context.interactions![ 0 ]!.responses;
+		expect( responses[ P2.id ] ).toBe( true );
+		expect( Object.values( responses ) ).not.toContain( { block: false } );
+	} );
+
+	test( "getTableState carries results once the game completes", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 3 }, P1 ) );
+		await run( memory, engine.add( { amount: 5 }, P2 ) );
+
+		const table = await run( memory, engine.getTableState() );
+		const forP1 = await run( memory, engine.getState( P1.id ) );
+		expect( table.status ).toBe( "COMPLETED" );
+		expect( table.results ).toEqual( forP1.results );
+	} );
+
+	test( "getTableState fails GameNotFound before initialize", async () => {
+		const engine = await run( memory, makeEngine( tallyGame ) );
+		const error = await runFail( memory, engine.getTableState() );
+		expect( error._tag ).toBe( "swish/GameNotFound" );
+	} );
+
+	// Pins the correctness claim behind reading the table over HTTP rather than
+	// waiting for a push: the TV's first paint is the same projection as every
+	// frame that follows it.
+	test( "getTableState matches the table payload of the last broadcast", async () => {
+		const engine = await bootTally( memory );
+		await run( memory, engine.add( { amount: 2 }, P1 ) );
+
+		const table = await run( memory, engine.getTableState() );
+		expect( lastBroadcast( memory ).snapshot.table ).toEqual( table );
+	} );
+} );

@@ -474,6 +474,22 @@ export const makeEngine = <
 	} );
 
 	/**
+	 * Reads the current state as the shared TABLE snapshot — the public board, no
+	 * private slice, no player identity. This is the couch/TV read path, and it is
+	 * deliberately *not* member-gated: it returns the exact projection
+	 * `broadcastState` already pushes to every table socket, i.e. what is already on
+	 * the television in the room. The caller must still be a logged-in user (the
+	 * HTTP layer's `AuthMiddleware`); membership is not the gate here, `TableAudience`
+	 * is.
+	 *
+	 * @returns The table snapshot, or fails with `GameNotFound`/`CorruptState`.
+	 */
+	const getTableState = Effect.fn( function* () {
+		const data = yield* load();
+		return snapshot( data, tableAudience() );
+	} );
+
+	/**
 	 * Derives the action feed from the committed event log: maps each game (non-
 	 * engine) event through the game's `describe` — redacted for the audience — and
 	 * stamps it with the commit's time/actor. Empty when the game defines no
@@ -1164,6 +1180,7 @@ export const makeEngine = <
 
 	return {
 		getState,
+		getTableState,
 		getLog,
 		initialize,
 		join,

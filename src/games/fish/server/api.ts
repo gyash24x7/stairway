@@ -105,6 +105,12 @@ export const FishApiLive = HttpApiBuilder.group( StairwayAPI, "fish", handlers =
 				return yield* client.getState( PlayerId.make( user.id ) );
 			} ) )
 
+			.handle( "getTableState", ( { params } ) => Effect.gen( function* () {
+				yield* AuthContext;
+				const client = ns.getByName( params.gameId );
+				return yield* client.getTableState();
+			} ) )
+
 			.handle( "createTeams", ( { params, payload } ) => Effect.gen( function* () {
 				const { user } = yield* AuthContext;
 				const client = ns.getByName( params.gameId );

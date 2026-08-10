@@ -7,12 +7,15 @@ import { RCardSuit } from "@/shared/ui/components/card.tsx";
 import { GameInfo } from "@/shared/ui/components/game-info.tsx";
 import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
+import { CouchLinks } from "@/shared/ui/couch/couch-links.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { ActionPanel } from "@/games/callbreak/client/action-panel.tsx";
 import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 import { DealView } from "@/games/callbreak/client/deal-view.tsx";
+import { HandView } from "@/games/callbreak/client/hand-view.tsx";
+import { Scores } from "@/games/callbreak/client/scores.tsx";
 import { startGameFn } from "@/games/callbreak/client/client.ts";
 import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
@@ -45,13 +48,22 @@ export function GameView() {
 				}
 			/>
 			<div className={ "flex flex-col gap-3" }>
+				<CouchLinks game={ "callbreak" } gameId={ data.id }/>
 				<GameStandings
 					results={ data.results }
 					players={ data.players }
 					playerId={ data.view.playerId }
 					scoreLabel={ "SCORE" }
 				/>
-				{ data.view.activeDeal && <DealView/> }
+				{ data.view.activeDeal && ( data.status === "COMPLETED" ? (
+					<DealView/>
+				) : (
+					<div className={ "grid grid-cols-1 lg:grid-cols-2 gap-3" }>
+						<Scores/>
+						<DealView/>
+					</div>
+				) ) }
+				{ data.view.activeDeal && data.status !== "COMPLETED" && <HandView/> }
 				{ !data.view.activeDeal && (
 					<PlayerLobbyGrid
 						players={ data.context.players.map( id => data.players[ id ] ) }

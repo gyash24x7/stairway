@@ -4,6 +4,7 @@ import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
 	CreateGameApiEndpoint,
 	GetStateApiEndpoint,
+	GetTableStateApiEndpoint,
 	JoinApiEndpoint,
 	StartApiEndpoint,
 	MoveApiEndpoint
@@ -20,6 +21,7 @@ export const SplendorApiGroup = HttpApiGroup.make( "splendor" )
 	.add(
 		CreateGameApiEndpoint( SplendorConfig ),
 		GetStateApiEndpoint( SplendorSnapshot ),
+		GetTableStateApiEndpoint( SplendorSnapshot ),
 		JoinApiEndpoint(),
 		StartApiEndpoint(),
 		MoveApiEndpoint( "pickTokens", PickTokensInput ),

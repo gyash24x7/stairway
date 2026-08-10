@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { createRootRouteWithContext, Outlet, useMatches } from "@tanstack/react-router";
+import { Fragment, type ReactNode } from "react";
 
 import { RAuthInfo } from "@/auth/client/auth-info.tsx";
 import { Login } from "@/auth/client/login.tsx";
@@ -30,14 +30,38 @@ function AppLayout( { children }: { children: ReactNode } ) {
 	);
 }
 
-/** Root route: carries the QueryClient in router context and wraps pages in the app layout. */
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()( {
-	component: () => (
+/**
+ * The app shell, unless a matched route asks to skip it. A couch/TV screen renders
+ * edge to edge — a navbar and centred gutters are wasted space across a room — so
+ * it sets `staticData.fullBleed` and gets only the outlet plus toasts.
+ */
+function RootLayout() {
+	const fullBleed = useMatches( {
+		select: matches => matches.some( match => match.staticData.fullBleed === true )
+	} );
+
+	if ( fullBleed ) {
+		return (
+			<Fragment>
+				<Outlet/>
+				<Toaster position={ "top-center" } duration={ 4000 }/>
+			</Fragment>
+		);
+	}
+
+	return (
 		<AppLayout>
 			<Outlet/>
 		</AppLayout>
-	),
+	);
+}
 
+/** Root route: carries the QueryClient in router context and wraps pages in the app layout. */
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()( {
+	component: RootLayout,
+
+	// Errors and 404s keep the chrome even on a couch route: a TV showing an error
+	// with a way back home beats a bare black screen.
 	errorComponent: ( { error } ) => (
 		<AppLayout>
 			<ErrorState error={ error } action={ { label: "BACK HOME", to: "/" } }/>
