@@ -1,8 +1,7 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
 
 import { DOMINO_DECK } from "@/games/kingdomino/shared/utils.ts";
 import type { PlayerId } from "@/shared/swish/schema.ts";
@@ -11,69 +10,38 @@ import { GameInfo } from "@/shared/ui/components/game-info.tsx";
 import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
+import { CouchLinks } from "@/shared/ui/couch/couch-links.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { RBoard } from "@/games/kingdomino/client/board.tsx";
-import { selectDominoFn } from "@/games/kingdomino/client/client.ts";
-import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
 import { RDomino } from "@/games/kingdomino/client/domino.tsx";
 import { RDraft } from "@/games/kingdomino/client/draft.tsx";
+import { PickingOrder } from "@/games/kingdomino/client/picking-order.tsx";
 import { PlayerBoards } from "@/games/kingdomino/client/player-boards.tsx";
 import { PlayerScore } from "@/games/kingdomino/client/player-score.tsx";
-import { usePlacement } from "@/games/kingdomino/client/use-placement.tsx";
+import { useKingdominoTurn } from "@/games/kingdomino/client/use-turn.tsx";
 import { startGameFn } from "@/games/kingdomino/client/client.ts";
 import { StartGame } from "@/shared/ui/components/start-game.tsx";
 
 export function GameView() {
-	const { data } = useKingdomino();
-	const player = data.view;
+	const {
+		data,
+		player,
+		isMyTurn,
+		myPlayerInfo,
+		canSelect,
+		canPlace,
+		activeDomino,
+		handleDominoSelect,
+		placement
+	} = useKingdominoTurn();
 
-	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === player.playerId;
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
-
-	const myPlayerInfo = {
-		...data.players[ player.playerId ],
-		...data.view.playerData[ player.playerId ]
-	};
-
-	const queryClient = useQueryClient();
-	const selectDomino = useMutation( {
-		mutationFn: ( dominoId: number ) => selectDominoFn( data.id, { dominoId } ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "kingdomino", "getState", data.id ]
-		} )
-	} );
-
-	const isSelectPending = selectDomino.isPending;
-	const [ selectednumber, setSelectednumber ] = useState<number | null>( null );
 
 	// Placement comes from the engine's standings, so a shared victory (level on
 	// points, largest property and crowns) highlights every seat that tied for it,
 	// not just whichever one the stable sort happened to leave first.
 	const isWinner = ( pid: PlayerId ) =>
 		data.results?.ranking.some( ( s ) => s.playerId === pid && s.rank === 1 ) ?? false;
-
-	const canSelect = isMyTurn && data.context.phase === "SELECT" && !isSelectPending;
-	const canPlace = data.status === "IN_PROGRESS"
-		&& data.context.phase === "PLACE"
-		&& myPlayerInfo.queue.length > 0;
-	const activeDomino = selectednumber
-		?? ( canPlace ? myPlayerInfo.queue.toSorted( ( a, b ) => a - b )[ 0 ] : null );
-
-	const handleDominoSelect = ( number: number ) => {
-		if ( !canSelect ) {
-			return;
-		}
-		selectDomino.mutate( number );
-	};
-
-	const placement = usePlacement( {
-		gameId: data.id,
-		board: myPlayerInfo.board,
-		activeDominoId: activeDomino,
-		canPlace: canPlace && !isSelectPending,
-		onClear: () => setSelectednumber( null )
-	} );
 
 	const getStatusMsg = () => {
 		switch ( data.status ) {
@@ -121,6 +89,7 @@ export function GameView() {
 				completed={ data.status === "COMPLETED" }
 				actions={ <ChatPanel channelId={ data.id }/> }
 			/>
+			<CouchLinks game={ "kingdomino" } gameId={ data.id }/>
 			{ isLobby ? (
 				<Fragment>
 					<PlayerLobbyGrid players={ data.context.players.map( id => data.players[ id ] ) }/>
@@ -226,6 +195,7 @@ export function GameView() {
 					</div>
 					{ data.status !== "COMPLETED" && (
 						<Fragment>
+							<PickingOrder className={ "col-span-2" }/>
 							<RDraft
 								draft={ data.view.draft }
 								players={ data.players }

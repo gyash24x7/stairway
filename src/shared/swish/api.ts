@@ -6,8 +6,7 @@ import {
 	GameLog,
 	InitializeResponse,
 	JoinGameInput,
-	JoinGameResponse,
-	PlayerInfo
+	JoinGameResponse
 } from "@/shared/swish/schema.ts";
 import {
 	GetStateError,
@@ -125,7 +124,6 @@ export const StartApiEndpoint = () =>
 export const UndoApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
 	HttpApiEndpoint.post( "undo", "/:gameId/undo", {
 		params: GameIdParams,
-		payload: PlayerInfo,
 		success: snapshot,
 		error: UndoError
 	} );
@@ -140,7 +138,6 @@ export const UndoApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snapshot
 export const RedoApiEndpoint = <Snapshot extends Schema.Top>( snapshot: Snapshot ) =>
 	HttpApiEndpoint.post( "redo", "/:gameId/redo", {
 		params: GameIdParams,
-		payload: PlayerInfo,
 		success: snapshot,
 		error: RedoError
 	} );

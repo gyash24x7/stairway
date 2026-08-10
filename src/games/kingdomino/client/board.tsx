@@ -75,7 +75,28 @@ function getCellData( board: Board, x: number, y: number ) {
 	} as CellData;
 }
 
-export function RSmallBoard( { board }: { board: Board; } ) {
+/**
+ * How big a read-only kingdom renders. `sm` is the phone; `md` and `lg` exist for
+ * the couch screen, which picks a step from the seat count and the board size so
+ * the widest possible grid still fits its share of the television.
+ */
+export type SmallBoardSize = "sm" | "md" | "lg";
+
+const SMALL_CELL_CLASS: Record<SmallBoardSize, string> = {
+	sm: "w-6 h-6",
+	md: "w-8 h-8",
+	lg: "w-11 h-11"
+};
+
+const SMALL_CROWN_SIZE: Record<SmallBoardSize, number> = { sm: 6, md: 10, lg: 14 };
+
+const SMALL_GAP_CLASS: Record<SmallBoardSize, string> = {
+	sm: "gap-0.5",
+	md: "gap-1",
+	lg: "gap-1"
+};
+
+export function RSmallBoard( { board, size = "sm" }: { board: Board; size?: SmallBoardSize } ) {
 	const possibleCells = getCandidateCells( board );
 	const { rows, cols } = getRowsAndCols(
 		getExpandedBoardBounds( board ),
@@ -90,18 +111,20 @@ export function RSmallBoard( { board }: { board: Board; } ) {
 
 	return (
 		<div
-			className={ "inline-grid gap-0.5 w-fit" }
+			className={ cn( "inline-grid w-fit", SMALL_GAP_CLASS[ size ] ) }
 			style={ { gridTemplateColumns: `repeat(${ cols.length }, minmax(0, 1fr))` } }
 		>
 			{ cells.map( ( { cell, key, coord } ) => !!cell
-				? <SmallFilledCell cell={ cell } x={ coord.x } y={ coord.y } key={ key }/>
-				: <SmallEmptyCell coord={ coord } key={ key }/>
+				? <SmallFilledCell cell={ cell } x={ coord.x } y={ coord.y } size={ size } key={ key }/>
+				: <SmallEmptyCell coord={ coord } size={ size } key={ key }/>
 			) }
 		</div>
 	);
 }
 
-function SmallFilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } ) {
+function SmallFilledCell(
+	{ cell, x, y, size }: { cell: CellData; x: number; y: number; size: SmallBoardSize }
+) {
 	return (
 		<motion.div
 			layout
@@ -109,13 +132,14 @@ function SmallFilledCell( { cell, x, y }: { cell: CellData; x: number; y: number
 			animate={ { scale: 1, opacity: 1 } }
 			transition={ { type: "spring", stiffness: 360, damping: 22 } }
 			className={ cn(
-				"w-6 h-6 rounded border border-inverted-surface overflow-hidden p-0.5",
+				"rounded border border-inverted-surface overflow-hidden p-0.5",
 				"font-semibold flex flex-wrap justify-between items-center",
+				SMALL_CELL_CLASS[ size ],
 				cell.className
 			) }
 			title={ `(${ x }, ${ y })` }
 		>
-			<CrownIndicator count={ cell.crowns } size={ 6 }/>
+			<CrownIndicator count={ cell.crowns } size={ SMALL_CROWN_SIZE[ size ] }/>
 		</motion.div>
 	);
 }
@@ -179,10 +203,13 @@ function PossibleCell( props: {
 	);
 }
 
-function SmallEmptyCell( props: { coord: Coord; } ) {
+function SmallEmptyCell( props: { coord: Coord; size: SmallBoardSize } ) {
 	return (
 		<div
-			className={ cn( "w-6 h-6 rounded border border-dashed border-inverted-surface transition" ) }
+			className={ cn(
+				"rounded border border-dashed border-inverted-surface transition",
+				SMALL_CELL_CLASS[ props.size ]
+			) }
 			title={ `(${ props.coord.x }, ${ props.coord.y })` }
 		/>
 	);

@@ -19,6 +19,10 @@ const COUCH_ROUTES = {
 	callbreak: {
 		couch: "/callbreak/$gameId/couch",
 		controller: "/callbreak/$gameId/controller"
+	},
+	kingdomino: {
+		couch: "/kingdomino/$gameId/couch",
+		controller: "/kingdomino/$gameId/controller"
 	}
 } as const;
 

@@ -46,3 +46,12 @@ export const getKingdominoStateFn = ( gameId: string, signal?: AbortSignal ) =>
 	run( client.getState( {
 		params: gameIdParams( gameId )
 	} ), signal );
+
+/**
+ * The shared-screen read. Not member-gated on the server — the couch shows the
+ * public board and the television may hold no seat.
+ */
+export const getTableStateFn = ( gameId: string, signal?: AbortSignal ) =>
+	run( client.getTableState( {
+		params: gameIdParams( gameId )
+	} ), signal );

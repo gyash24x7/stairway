@@ -18,6 +18,8 @@ type RDominoProps = {
 	domino: Domino;
 	isSelected?: boolean;
 	enabled?: boolean;
+	/** Television sizing — readable from across a room. Used by the couch draft. */
+	large?: boolean;
 	onClick?: ( dominoId: number ) => void;
 }
 
@@ -36,12 +38,13 @@ function RSmallTerrain( props: { terrain: Terrain; crowns: number } ) {
 	);
 }
 
-function RTerrain( props: { terrain: Terrain; crowns: number } ) {
+function RTerrain( props: { terrain: Terrain; crowns: number; large?: boolean } ) {
 	return (
 		<div
 			className={ cn(
 				"w-10 md:w-14 h-10 md:h-14 p-1 text-[8px] md:text-xs",
 				"font-semibold flex flex-col justify-between",
+				props.large && "w-20 md:w-20 h-20 md:h-20 p-2 md:text-sm",
 				TERRAIN_CLASS[ props.terrain ]
 			) }
 		>
@@ -49,7 +52,7 @@ function RTerrain( props: { terrain: Terrain; crowns: number } ) {
 				{ props.terrain.toUpperCase() }
 			</span>
 			<span className={ "self-end" }>
-				<CrownIndicator count={ props.crowns } size={ 14 }/>
+				<CrownIndicator count={ props.crowns } size={ props.large ? 22 : 14 }/>
 			</span>
 		</div>
 	);
@@ -72,7 +75,7 @@ export function RSmallDomino( { enabled, domino }: RDominoProps ) {
 	);
 }
 
-export function RDomino( { domino, enabled, isSelected, onClick }: RDominoProps ) {
+export function RDomino( { domino, enabled, isSelected, large, onClick }: RDominoProps ) {
 
 	const handleDominoClick = () => {
 		if ( !enabled || !onClick ) {
@@ -95,12 +98,13 @@ export function RDomino( { domino, enabled, isSelected, onClick }: RDominoProps 
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
 				"border-2 border-inverted-surface",
 				enabled && "cursor-pointer",
+				large && "border-4 rounded-lg",
 				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-sm md:shadow-md"
 			) }
 			onClick={ handleDominoClick }
 		>
-			<RTerrain terrain={ domino.left.terrain } crowns={ domino.left.crowns }/>
-			<RTerrain terrain={ domino.right.terrain } crowns={ domino.right.crowns }/>
+			<RTerrain terrain={ domino.left.terrain } crowns={ domino.left.crowns } large={ large }/>
+			<RTerrain terrain={ domino.right.terrain } crowns={ domino.right.crowns } large={ large }/>
 		</motion.div>
 	);
 }

@@ -1,9 +1,17 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-/**
- * Layout for one game's screens. Owns nothing — not even the session gate, which
- * lives on each leaf because the couch screen needs its own TV-sized version of it.
- */
+import { TicTacToeGamePage } from "@/games/tictactoe/client/index.ts";
+import { RequireSession } from "@/shared/ui/components/require-session.tsx";
+
 export const Route = createFileRoute( "/tictactoe/$gameId" )( {
-	component: () => <Outlet/>
+	component: GameRoute
 } );
+
+function GameRoute() {
+	const { gameId } = Route.useParams();
+	return (
+		<RequireSession>
+			<TicTacToeGamePage gameId={ gameId }/>
+		</RequireSession>
+	);
+}
