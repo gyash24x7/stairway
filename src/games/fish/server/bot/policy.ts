@@ -1,14 +1,31 @@
-import { type Beliefs, buildBeliefs, probability } from "@/games/fish/server/bot/beliefs.ts";
+import { buildBeliefs, probability } from "@/games/fish/server/bot/beliefs.ts";
 import {
 	bestSnatch,
 	opponentRisk,
-	type Snatch,
+	seatBeliefs,
 	snatchScore
 } from "@/games/fish/server/bot/snatch.ts";
-import type { Book, FishConfig, FishPlayerView, FishSnapshot } from "@/games/fish/shared/schema.ts";
-import { getBookForCard, getCardsOfBook, getTeammates } from "@/games/fish/shared/utils.ts";
+import { asksOf } from "@/games/fish/server/utils.ts";
+import {
+	canTransferTurn,
+	claimsOf,
+	getBookForCard,
+	getCardsOfBook,
+	getTeamScores
+} from "@/games/fish/shared/utils.ts";
+import { teamMatesOf, teamOf } from "@/swish/shared/teams.ts";
+
+import type { Beliefs } from "@/games/fish/server/bot/beliefs.ts";
+import type { Snatch } from "@/games/fish/server/bot/snatch.ts";
+import type {
+	Book,
+	FishBotData,
+	FishConfig,
+	FishSeatView,
+	FishView
+} from "@/games/fish/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
+import type { GameData, PlayerId } from "@/swish/shared/schema.ts";
 
 // --- The policy -------------------------------------------------------------
 // A flat priority list over the belief model. The one thing worth understanding
@@ -17,73 +34,101 @@ import type { PlayerId } from "@/shared/swish/schema.ts";
 // it is a stored turn-teleport. Nobody can take it off us (asking in a book
 // requires holding one of its cards, and we hold them all), so we sit on it
 // until a teammate is better placed to act, then cash it and pass them the turn.
+//
+// Every seat is modelled from its own knowledge, not from ours: what a teammate
+// or an opponent can do with the turn depends on what they can see.
 
 /**
  * How much better a teammate's prospects must be before the bot spends a banked
  * claim to hand them the turn. Hysteresis, so a marginal difference does not
- * burn the bank. The only tuned number in the policy.
+ * burn the bank.
  */
 const HOLD_MARGIN = 1.25;
 
+/**
+ * How much better an ask in another book has to be before the bot abandons the
+ * one it is working. Asks are ranked on a single expectation now, and without
+ * some stickiness a hair of difference would send it hopping between books —
+ * which is exactly what made an earlier version impossible to follow at the table.
+ */
+const BOOK_SWITCH_MARGIN = 1.15;
+
 
 /**
- * Pick the bot's move for a snapshot.
+ * Whether this view was built for a seat rather than for the table. The engine
+ * only ever plays a seat through that seat's own audience, so this holds every
+ * time it is asked — it is what narrows the one wire view to the seated shape the
+ * rest of the policy reads its hand from.
+ */
+const isSeated = ( data: GameData<FishView, FishConfig> ): data is FishBotData =>
+	data.state.playerId !== undefined;
+
+/**
+ * Pick the bot's move.
  *
- * @param snapshot - The acting bot's snapshot, its own audience.
+ * @param data - The acting bot's data, its own audience.
  * @returns The move to submit, or `undefined` when there is nothing legal left.
  * @public
  */
-export function decideFishMove( snapshot: FishSnapshot ) {
-	if ( snapshot.view._tag !== "fish/PlayerView" ) {
+export function decideFishMove( data: GameData<FishView, FishConfig> ) {
+	if ( !isSeated( data ) ) {
 		return undefined;
 	}
 
-	if ( snapshot.context.phase !== "PLAY" ) {
-		return createTeams( snapshot );
-	}
+	const beliefs = buildBeliefs( data.state, data.config, {
+		playerId: data.state.playerId,
+		hand: data.state.hand,
+		complete: true
+	} );
 
-	const view = snapshot.view;
-	const beliefs = buildBeliefs( view, snapshot.config );
-	const teammates = getTeammates( view.teams, view.playerId );
+	// One model per other seat, each from that seat's own knowledge. Everything
+	// that asks "how well placed is somebody else" reads theirs, not ours.
+	const seats = seatBeliefs( data, beliefs );
 
 	// 1. Straight after our own successful claim, a transfer is the only legal
 	//    move — and the whole point of having claimed. Hand it to whoever is best
 	//    placed; card counts here are already post-claim.
-	if ( justClaimed( view, snapshot.context.currentPlayer ) ) {
-		const target = bestTeammate( beliefs, view, teammates );
+	if ( canTransferTurn( data.state, data.context.currentPlayer ) ) {
+		const target = bestTeammate( data, seats );
 		if ( target ) {
 			return { moveType: "transferTurn" as const, input: { transferTo: target } };
 		}
 	}
 
-	const banked = bankedBooks( beliefs, view, teammates );
-	const active = activeBook( view, snapshot.config );
+	const banked = bankedBooks( beliefs, data );
+	const active = activeBook( data );
 
 	// Whoever we ask gets the turn if we are wrong, so price that in first.
-	const risks = opponentRisk( beliefs, view );
+	const risks = opponentRisk( data, seats );
 	const ask = stayOnBook(
 		beliefs,
-		view,
+		data,
 		active,
-		bestSnatch( beliefs, view, view.playerId, undefined, risks ),
+		bestSnatch( beliefs, data, data.state.playerId, undefined, risks ),
 		risks
 	);
 
 	// 2. Spend a banked book, if this is the moment for it.
-	const cashIn = chooseCashIn( beliefs, view, teammates, banked, ask );
+	const cashIn = chooseCashIn( beliefs, data, seats, banked, ask );
 	if ( cashIn ) {
-		return { moveType: "claimBook" as const, input: { claim: provenClaim( beliefs, cashIn ) } };
+		return {
+			moveType: "claimBook" as const,
+			input: { claim: provenClaim( beliefs, cashIn ) }
+		};
 	}
 
 	// 3. Otherwise keep working.
 	if ( ask ) {
-		return { moveType: "askCard" as const, input: { from: ask.from, cardId: ask.cardId } };
+		return {
+			moveType: "askCard" as const,
+			input: { from: ask.from, cardId: ask.cardId }
+		};
 	}
 
 	// 4. No ask and nothing banked: every card of every book we hold is already
 	//    with our own team, so claim the book we hold most of and guess the rest
 	//    among teammates. Bounded, and the only move left.
-	return forcedClaim( beliefs, view, teammates );
+	return forcedClaim( beliefs, data );
 }
 
 /**
@@ -96,21 +141,19 @@ export function decideFishMove( snapshot: FishSnapshot ) {
  * — which is precisely where a human player would carry on where they left off,
  * and precisely what makes a bot hard to follow.
  */
-function activeBook( view: FishPlayerView, config: FishConfig ) {
-	const last = view.askHistory.find( ask => ask.playerId === view.playerId );
-	return last ? getBookForCard( last.cardId, config.type ) : undefined;
+function activeBook( data: FishBotData ) {
+	const last = asksOf( data.state ).findLast( ask => ask.playerId === data.state.playerId );
+	return last ? getBookForCard( last.cardId, data.config.type ) : undefined;
 }
 
 /**
- * Prefer carrying on with the active book. The bot only walks away for a book
- * that is *closer to closing* — never merely for better odds,
- * which is the trade that made it hop about. Losing the turn on a long shot at
- * the last card of a book is a better deal than a safe ask that finishes
- * nothing, and it is the version a human at the table can actually follow.
+ * Prefer carrying on with the active book. The bot only walks away for an ask
+ * worth materially more — `BOOK_SWITCH_MARGIN` more — so a hair of difference
+ * between two books never moves it, and a genuinely better opening always does.
  */
 function stayOnBook(
 	beliefs: Beliefs,
-	view: FishPlayerView,
+	data: FishBotData,
 	book: Book | undefined,
 	best: Snatch | undefined,
 	risks: ReadonlyMap<PlayerId, number>
@@ -123,32 +166,26 @@ function stayOnBook(
 		return best;
 	}
 
-	const staying = bestSnatch( beliefs, view, view.playerId, book, risks );
+	const staying = bestSnatch( beliefs, data, data.state.playerId, book, risks );
 	if ( !staying ) {
 		// Nothing left to ask for in that book — moving on is the whole point.
 		return best;
 	}
 
-	return best.outstanding < staying.outstanding - 1e-9 ? best : staying;
-}
-
-/** Whether the previous move was this bot's own successful claim. */
-function justClaimed( view: FishPlayerView, currentPlayer: PlayerId ) {
-	return view.lastMoveType === "claim"
-		&& view.claimHistory[ 0 ]?.success === true
-		&& view.claimHistory[ 0 ]?.playerId === currentPlayer;
+	return best.expected > staying.expected * BOOK_SWITCH_MARGIN ? best : staying;
 }
 
 /** The teammate with cards and the best prospects, if there is one. */
-function bestTeammate( beliefs: Beliefs, view: FishPlayerView, teammates: readonly PlayerId[] ) {
+function bestTeammate( data: FishBotData, seats: ReadonlyMap<PlayerId, Beliefs> ) {
 	let best: { pid: PlayerId; score: number } | undefined;
 
-	for ( const pid of teammates ) {
-		if ( ( view.cardCounts[ pid ] ?? 0 ) <= 0 ) {
+	for ( const pid of teamMatesOf( data.context, data.state.playerId ) ) {
+		const theirs = seats.get( pid );
+		if ( !theirs ) {
 			continue;
 		}
 
-		const score = snatchScore( beliefs, view, pid );
+		const score = snatchScore( theirs, data, pid );
 		if ( !best || score > best.score ) {
 			best = { pid, score };
 		}
@@ -167,8 +204,9 @@ function bestTeammate( beliefs: Beliefs, view: FishPlayerView, teammates: readon
  * either. A banked book cannot be taken; it can only be given away by claiming
  * it wrong.
  */
-function bankedBooks( beliefs: Beliefs, view: FishPlayerView, teammates: readonly PlayerId[] ) {
-	const ours = new Set<PlayerId>( [ view.playerId, ...teammates ] );
+function bankedBooks( beliefs: Beliefs, data: FishBotData ) {
+	const teammates = teamMatesOf( data.context, data.state.playerId );
+	const ours = new Set<PlayerId>( [ data.state.playerId, ...teammates ] );
 
 	return beliefs.liveBooks.filter( book => {
 		const cards = beliefs.cardsOf.get( book ) ?? [];
@@ -176,7 +214,7 @@ function bankedBooks( beliefs: Beliefs, view: FishPlayerView, teammates: readonl
 			return false;
 		}
 
-		if ( !cards.some( card => view.hand.includes( card ) ) ) {
+		if ( !cards.some( card => data.state.hand.includes( card ) ) ) {
 			return false;
 		}
 
@@ -188,8 +226,8 @@ function bankedBooks( beliefs: Beliefs, view: FishPlayerView, teammates: readonl
 }
 
 /**
- * Which banked book to cash now, if any. Two reasons to spend one; absent both,
- * the bank keeps its value by staying unspent.
+ * Which banked book to cash now, if any. Three reasons to spend one; absent all
+ * of them, the bank keeps its value by staying unspent.
  *
  * There is deliberately no "cash it before someone steals it" case. Claiming a
  * book requires holding one of its cards, and a banked book has none outside the
@@ -197,10 +235,10 @@ function bankedBooks( beliefs: Beliefs, view: FishPlayerView, teammates: readonl
  */
 function chooseCashIn(
 	beliefs: Beliefs,
-	view: FishPlayerView,
-	teammates: readonly PlayerId[],
-	banked: readonly Book[],
-	ask: Snatch | undefined
+	data: FishBotData,
+	seats: ReadonlyMap<PlayerId, Beliefs>,
+	banked: Book[],
+	ask?: Snatch
 ) {
 	if ( banked.length === 0 ) {
 		return undefined;
@@ -210,28 +248,64 @@ function chooseCashIn(
 	//    the game on. Cash in; this is what keeps the game terminating.
 	const bankedSet = new Set( banked );
 	if ( !ask || beliefs.liveBooks.every( book => bankedSet.has( book ) ) ) {
-		return cheapest( beliefs, view, banked );
+		return cheapest( beliefs, data.state, banked );
 	}
 
-	// b. The handoff. A teammate is better placed than we are, so buy them the
+	// b. The endgame. A banked book is only worth holding while there are turns
+	//    left to buy with it, and cashing out now settles the game: even if every
+	//    book still in play went the other way, our side would finish ahead. Bank
+	//    value becomes score, and there is nothing left to spend it on.
+	if ( clinches( data, banked, beliefs ) ) {
+		return cheapest( beliefs, data.state, banked );
+	}
+
+	// c. The handoff. A teammate is better placed than we are, so buy them the
 	//    turn — but only with a book whose claim leaves them holding cards, or
 	//    the transfer that follows would not be legal.
-	for ( const pid of teammates ) {
-		if ( ( view.cardCounts[ pid ] ?? 0 ) <= 0 ) {
+	for ( const pid of teamMatesOf( data.context, data.state.playerId ) ) {
+		const theirs = seats.get( pid );
+		if ( !theirs ) {
 			continue;
 		}
 
-		if ( snatchScore( beliefs, view, pid ) <= ask.score * HOLD_MARGIN ) {
+		if ( snatchScore( theirs, data, pid ) <= ask.potential * HOLD_MARGIN ) {
 			continue;
 		}
 
-		const usable = banked.filter( book => cardsHeldIn( beliefs, book, pid ) < view.cardCounts[ pid ]! );
+		const usable = banked.filter(
+			book => cardsHeldIn( beliefs, book, pid ) < data.state.cardCounts[ pid ]!
+		);
+
 		if ( usable.length > 0 ) {
-			return cheapest( beliefs, view, usable );
+			return cheapest( beliefs, data.state, usable );
 		}
 	}
 
 	return undefined;
+}
+
+/**
+ * Whether cashing the bank settles the game: our side's books plus the bank,
+ * against every other side's books plus every book still in play that we cannot
+ * call ourselves.
+ *
+ * Deliberately pessimistic — it hands *all* the uncalled books to each rival in
+ * turn — so it only fires when the lead is genuinely beyond reach and the bank
+ * has no further use as tempo.
+ */
+function clinches( data: FishBotData, banked: readonly Book[], beliefs: Beliefs ) {
+	const ours = teamOf( data.context, data.state.playerId );
+	if ( ours === undefined ) {
+		return false;
+	}
+
+	const scores = getTeamScores( claimsOf( data.state ), data.context, data.config.teams );
+	const mine = ( scores[ ours ] ?? 0 ) + banked.length;
+	const contested = beliefs.liveBooks.length - banked.length;
+
+	return data.config.teams
+		.filter( team => team !== ours )
+		.every( team => mine > ( scores[ team ] ?? 0 ) + contested );
 }
 
 /** How many of a book's cards are proven to be in a player's hand. */
@@ -241,9 +315,10 @@ function cardsHeldIn( beliefs: Beliefs, book: Book, playerId: PlayerId ) {
 }
 
 /** The banked book that costs the bot the fewest cards from its own hand. */
-function cheapest( beliefs: Beliefs, view: FishPlayerView, banked: readonly Book[] ) {
+function cheapest( beliefs: Beliefs, view: FishSeatView, banked: readonly Book[] ) {
 	return banked.toSorted( ( a, b ) => {
-		const cost = cardsHeldIn( beliefs, a, view.playerId ) - cardsHeldIn( beliefs, b, view.playerId );
+		const cost = cardsHeldIn( beliefs, a, view.playerId ) -
+			cardsHeldIn( beliefs, b, view.playerId );
 		return cost !== 0 ? cost : a.localeCompare( b );
 	} )[ 0 ];
 }
@@ -263,15 +338,19 @@ function provenClaim( beliefs: Beliefs, book: Book ) {
  * hold is with our own team, so claim the book we hold most of and give each
  * unproven card to the teammate most likely to have it.
  */
-function forcedClaim( beliefs: Beliefs, view: FishPlayerView, teammates: readonly PlayerId[] ) {
-	const ours = [ view.playerId, ...teammates ];
+function forcedClaim( beliefs: Beliefs, data: FishBotData ) {
+	const teammates = teamMatesOf( data.context, data.state.playerId );
+	const ours = [ data.state.playerId, ...teammates ];
 	// Only a book we are in — `claimBook` requires holding one of its cards. Any
 	// player still holding a card is in that card's book, so this is empty only
 	// when the bot has no cards at all, and then it has no legal move to make.
 	const books = beliefs.liveBooks
-		.filter( book => ( beliefs.cardsOf.get( book ) ?? [] ).some( c => view.hand.includes( c ) ) )
+		.filter(
+			book => ( beliefs.cardsOf.get( book ) ?? [] ).some( c => data.state.hand.includes( c ) )
+		)
 		.toSorted( ( a, b ) => {
-			const held = cardsHeldIn( beliefs, b, view.playerId ) - cardsHeldIn( beliefs, a, view.playerId );
+			const held = cardsHeldIn( beliefs, b, data.state.playerId ) -
+				cardsHeldIn( beliefs, a, data.state.playerId );
 			return held !== 0 ? held : a.localeCompare( b );
 		} );
 
@@ -280,9 +359,16 @@ function forcedClaim( beliefs: Beliefs, view: FishPlayerView, teammates: readonl
 		return undefined;
 	}
 
+	// Only ever names our own side. A claim naming an opponent is refused outright
+	// — it is not a losing claim, it is an illegal one — so a card proven to be
+	// with the other side is guessed onto the likeliest of us instead, and the
+	// declaration goes down as the wrong claim it always was.
 	const claim: Record<string, PlayerId> = {};
 	for ( const card of getCardsOfBook( book ) ) {
-		claim[ card ] = beliefs.owner.get( card ) ?? likeliestOf( beliefs, card, ours );
+		const owner = beliefs.owner.get( card );
+		claim[ card ] = owner !== undefined && ours.includes( owner )
+			? owner
+			: likeliestOf( beliefs, card, ours );
 	}
 
 	return { moveType: "claimBook" as const, input: { claim } };
@@ -302,18 +388,4 @@ function likeliestOf( beliefs: Beliefs, card: CardId, players: readonly PlayerId
 	}
 
 	return best;
-}
-
-/** TEAM_CONFIG: divide the seated players evenly into `teamCount` teams. */
-function createTeams( snapshot: FishSnapshot ) {
-	const players = Object.keys( snapshot.players ) as PlayerId[];
-	const teamCount = snapshot.config.teamCount;
-	const perTeam = players.length / teamCount;
-	const teams: Record<string, PlayerId[]> = {};
-
-	for ( let t = 0; t < teamCount; t++ ) {
-		teams[ `Team ${ t + 1 }` ] = players.slice( t * perTeam, ( t + 1 ) * perTeam );
-	}
-
-	return { moveType: "createTeams" as const, input: { teams } };
 }

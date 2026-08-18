@@ -1,9 +1,11 @@
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Layer from "effect/Layer";
 import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+
+import { WebAuthnStore } from "@/auth/server/webauthn.ts";
+import { withRuntime } from "@/platform/utils/runtime.ts";
 
 import type { AuthFlow } from "@/auth/shared/schema.ts";
-import { WebAuthnStore } from "@/auth/server/webauthn.ts";
 
 export const WebAuthnKV = Cloudflare.KV.Namespace( "WebAuthnKV" );
 
@@ -14,11 +16,12 @@ export const WebAuthnStoreLive = Layer.effect(
 	Effect.gen( function* () {
 		const kv = yield* Cloudflare.KV.ReadWriteNamespace( WebAuthnKV );
 		return WebAuthnStore.of( {
-			get: key => Effect.orDie( kv.get<AuthFlow>( key, "json" ) ),
-			set: ( key, value ) => Effect.orDie(
-				kv.put( key, JSON.stringify( value ), { expirationTtl: CHALLENGE_TTL } )
+			get: key => withRuntime( kv.get<AuthFlow>( key, "json" ).pipe( Effect.orDie ) ),
+			put: ( value ) => withRuntime(
+				kv.put( value.id, JSON.stringify( value ), { expirationTtl: CHALLENGE_TTL } )
+					.pipe( Effect.orDie )
 			),
-			delete: key => Effect.orDie( kv.delete( key ) )
+			delete: key => withRuntime( kv.delete( key ).pipe( Effect.orDie ) )
 		} );
 	} )
 );

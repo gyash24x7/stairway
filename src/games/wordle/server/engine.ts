@@ -1,63 +1,37 @@
-import type {
-	GuessRow} from "@/games/wordle/shared/schema.ts";
+import * as Match from "effect/Match";
+import { produce } from "immer";
+
+import { decideWordleMove } from "@/games/wordle/server/bot/policy.ts";
 import {
+	boardFor,
+	hasFinished,
+	isValidWord,
+	maxGuessesFor,
+	nextUnfinishedSeat,
+	normalizeGuess,
+	scoreFor,
+	solvedCountFor
+} from "@/games/wordle/server/utils.ts";
+import { dictionaries } from "@/games/wordle/shared/dictionary.ts";
+import {
+	DecidedEvent,
+	ForfeitedEvent,
+	ForfeitInput,
 	GuessedEvent,
 	GuessInput,
-	VictoryDecidedEvent,
 	WordleConfig,
 	WordleEvents,
-	WordlePlayerView,
 	WordleState,
-	WordleTableView,
 	WordleView
 } from "@/games/wordle/shared/schema.ts";
-import { makeEngine } from "@/shared/swish/engine.ts";
-import { InvalidMove } from "@/shared/swish/errors.ts";
-import type { ReadonlyGameData } from "@/shared/swish/structure.ts";
-import { defineView } from "@/shared/swish/views.ts";
-import { dictionaries } from "@/games/wordle/server/dictionary.ts";
-import { allWordsGuessed, apply, computeRow } from "@/games/wordle/server/utils.ts";
-
-
-// --- View projection (shared board, per-audience wrappers via defineView) ---
-
-/** The public board fields both audiences see, with unsolved rows padded to `maxGuesses`. */
-const sharedView = ( { state, config }: ReadonlyGameData<WordleState, WordleConfig> ) => {
-	const emptyRow: typeof GuessRow.Type = Array.from(
-		{ length: config.wordLength },
-		() => ( { letter: "", status: "absent" as const } )
-	);
-
-	return {
-		guesses: state.guesses,
-		maxGuesses: state.maxGuesses,
-		victory: state.victory,
-		guessResults: state.words.map( ( word ) => {
-			const results = state.guessResults[ word ] ?? [];
-			const solvedAt = results.findIndex(
-				( row ) => row.every( ( r ) => r.status === "correct" )
-			);
-			const truncated = solvedAt !== -1 ? results.slice( 0, solvedAt + 1 ) : results;
-			return [
-				...truncated,
-				...Array.from( { length: state.maxGuesses - truncated.length }, () => emptyRow )
-			];
-		} )
-	};
-};
+import { makeEngine } from "@/swish/server/engine.ts";
+import { playerIdFor } from "@/swish/server/utils.ts";
+import { InvalidMove } from "@/swish/shared/schema.ts";
 
 
 // --- Engine ----------------------------------------------------------------
 
-export const wordle = makeEngine<
-	"wordle",
-	WordleState,
-	WordleConfig,
-	{ guess: typeof GuessInput },
-	Record<string, never>,
-	WordleEvents,
-	WordleView
->( {
+export const wordle = makeEngine( {
 	name: "wordle",
 	schemas: {
 		state: WordleState,
@@ -65,85 +39,139 @@ export const wordle = makeEngine<
 		events: WordleEvents,
 		view: WordleView,
 		moves: {
-			guess: GuessInput
+			guess: GuessInput,
+			forfeit: ForfeitInput
 		}
 	},
 
 	setup: ( config, rng ) => {
-		const wordLength = config.wordLength;
-		const dictionary = dictionaries[ wordLength ];
-		const maxGuesses = config.wordCount + config.wordLength;
-
-		// Drawn from the seeded stream, so the same seed always sets the same words.
+		const dictionary = dictionaries[ config.wordLength ];
 		const random = rng( "words" );
 		const selected = new Set<string>();
 		while ( selected.size < config.wordCount ) {
 			selected.add( dictionary[ random.int( dictionary.length ) ]! );
 		}
 
-		const words = [ ...selected ];
-		const guessResults = words.reduce(
-			( acc, word ) => {
-				acc[ word ] = [];
-				return acc;
-			},
-			{} as Record<string, ReadonlyArray<typeof GuessRow.Type>>
-		);
-
-		return { words, guesses: [], guessResults, maxGuesses };
+		return { words: [ ...selected ], guesses: {}, forfeited: [], decided: false };
 	},
 
-	apply,
-
-	endIf: ( { state } ) => allWordsGuessed( state ) || state.guesses.length === state.maxGuesses,
-
-	/**
-	 * Wordle seats exactly one player (`WORDLE_PLAYER_COUNT`), so there is
-	 * nobody to out-rank and the standings degenerate to a single entry — built
-	 * directly rather than through `makeStandings`, whose comparator has nothing to
-	 * compare. The `score` is the number of guesses spent (fewer is better), and the
-	 * seat is only crowned when every word actually fell: running out of guesses
-	 * still places first, but wins nothing.
-	 */
-	resolveResults: ( { state, context } ) => ( {
-		ranking: context.players.map( ( playerId ) => ( {
-			playerId,
-			rank: 1,
-			score: state.guesses.length
-		} ) ),
-		winner: allWordsGuessed( state ) ? context.players[ 0 ] : undefined
+	apply: ( state, event ) => produce( state, ( draft ) => {
+		Match.value( event ).pipe(
+			Match.tag( "wordle/ev/Guessed", e => {
+				( draft.guesses[ e.playerId ] ??= [] ).push( e.guess );
+			} ),
+			Match.tag( "wordle/ev/Forfeited", e => { draft.forfeited.push( e.playerId ); } ),
+			Match.tag( "wordle/ev/Decided", () => { draft.decided = true; } ),
+			Match.exhaustive
+		);
 	} ),
 
-	view: defineView( {
-		table: ( data ) => WordleTableView.make( sharedView( data ) ),
-		player: ( data, id ) => WordlePlayerView.make( { ...sharedView( data ), playerId: id } )
+	endIf: ( { state, config, context } ) =>
+		context.players.every( ( playerId ) => hasFinished( state, config, playerId ) ),
+
+	resolveResults: ( { state, config, context } ) => {
+		const scored = context.players
+			.map( ( playerId ) => ( {
+				playerId,
+				score: scoreFor( state, config, playerId ),
+				solved: solvedCountFor( state, playerId )
+			} ) )
+			.sort( ( a, b ) => b.score - a.score );
+
+		const ranking = scored.map( ( entry ) => ( {
+			playerId: entry.playerId,
+			score: entry.score,
+			rank: scored.findIndex( ( other ) => other.score === entry.score ) + 1
+		} ) );
+
+		const [ top, runnerUp ] = scored;
+
+		// A solo table has nobody to outscore, so the only thing that can make its
+		// one seat a winner is finishing the puzzle. Leaving a word unsolved and
+		// still being told "You won!" is the case this rules out — a race is won by
+		// outscoring the field, but a solitaire is won by solving it.
+		const solo = context.players.length === 1;
+		const won = !!top
+			&& top.solved > 0
+			&& ( solo
+				? top.solved === state.words.length
+				: top.score !== runnerUp?.score );
+
+		return { ranking, winner: won ? top.playerId : undefined };
+	},
+
+	view: ( data, audience ) => WordleView.make( {
+		maxGuesses: maxGuessesFor( data.config ),
+		decided: data.state.decided,
+		answers: data.state.decided ? data.state.words : undefined,
+		playerId: playerIdFor( audience ),
+		boards: data.context.players.map( playerId => boardFor( data, playerId, audience ) )
 	} ),
 
 	hooks: {
-		onEnd: ( { state } ) => [ VictoryDecidedEvent.make( { victory: allWordsGuessed( state ) } ) ]
+		onEnd: () => [ DecidedEvent.make( {} ) ]
 	},
+
+	// The cursor is a schedule, not a permission: `canMove` is `true` for every
+	// seat whoever holds it, so a player never waits their turn, and moving it on
+	// after each guess is only what tells the engine which seat to run the clocks
+	// for and hand to `botMove` next. See `nextUnfinishedSeat`.
+	resolveNextPlayer: nextUnfinishedSeat,
 
 	moves: {
 		guess: {
-			validate: ( { state, config }, _playerId, { guess } ) => {
-				if ( state.guesses.length >= state.maxGuesses ) {
-					return new InvalidMove( { move: "guess", reason: "No more guesses left" } );
+			canMove: () => true,
+			endsTurn: true,
+			validate: ( { state, config }, playerId, input ) => {
+				if ( hasFinished( state, config, playerId ) ) {
+					return new InvalidMove( {
+						move: "guess",
+						reason: "You have finished your board"
+					} );
 				}
 
-				const dictionary = dictionaries[ config.wordLength ];
-				if ( !dictionary.includes( guess ) ) {
-					return new InvalidMove( { move: "guess", reason: "The guess is not a valid word" } );
+				const guess = normalizeGuess( input.guess );
+
+				if ( guess.length !== config.wordLength ) {
+					return new InvalidMove( {
+						move: "guess",
+						reason: `A guess must be ${ config.wordLength } letters long`
+					} );
+				}
+
+				if ( !isValidWord( guess, config.wordLength ) ) {
+					return new InvalidMove( {
+						move: "guess",
+						reason: "The guess is not a valid word"
+					} );
 				}
 
 				return;
 			},
 
-			execute: ( { state }, _playerId, { guess } ) => [
-				GuessedEvent.make( {
-					guess,
-					rows: state.words.map( ( word ) => computeRow( guess, word ) )
-				} )
+			execute: ( _data, playerId, input ) => [
+				GuessedEvent.make( { playerId, guess: normalizeGuess( input.guess ) } )
 			]
+		},
+
+		forfeit: {
+			canMove: () => true,
+			endsTurn: true,
+
+			validate: ( { state, config }, playerId ) => {
+				if ( hasFinished( state, config, playerId ) ) {
+					return new InvalidMove( {
+						move: "forfeit",
+						reason: "You have finished your board"
+					} );
+				}
+
+				return;
+			},
+
+			execute: ( _data, playerId ) => [ ForfeitedEvent.make( { playerId } ) ]
 		}
-	}
+	},
+
+	botMove: decideWordleMove
 } );

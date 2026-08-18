@@ -49,7 +49,8 @@ describe( "CardId", () => {
 	} );
 
 	it( "rejects malformed card ids", () => {
-		for ( const bad of [ "H", "A", "AX", "1H", "TH", "AHH", "ah", "", "10", 42, null, undefined ] ) {
+		const cardIds = [ "H", "A", "AX", "1H", "TH", "AHH", "ah", "", "10", 42, null, undefined ];
+		for ( const bad of cardIds ) {
 			expect( Option.isNone( decodeCard( bad ) ) ).toBe( true );
 		}
 	} );

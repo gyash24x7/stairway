@@ -1,12 +1,5 @@
 "use client";
 
-import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
-import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
-import { StartGame } from "@/shared/ui/components/start-game.tsx";
-import { Button } from "@/shared/ui/primitives/button.tsx";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { ControllerShell } from "@/shared/ui/couch/controller-shell.tsx";
-import { startGameFn } from "@/games/callbreak/client/client.ts";
 import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 import { DeclarationsRow } from "@/games/callbreak/client/declarations-row.tsx";
 import { DeclareWins } from "@/games/callbreak/client/declare-wins.tsx";
@@ -14,6 +7,11 @@ import { HandView } from "@/games/callbreak/client/hand-view.tsx";
 import { PlayCard } from "@/games/callbreak/client/play-card.tsx";
 import { SuitBar } from "@/games/callbreak/client/suit-bar.tsx";
 import { TrickStrip } from "@/games/callbreak/client/trick-strip.tsx";
+import { ControllerShell } from "@/swish/client/controller-shell.tsx";
+import { GameStandings } from "@/swish/client/game-standings.tsx";
+import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { AddBots, AutoPlayToggle } from "@/swish/client/seat-controls.tsx";
+import { StartGame } from "@/swish/client/start-game.tsx";
 
 /**
  * The phone half. Your hand plus the compact trick context; the four seats, the
@@ -23,13 +21,14 @@ import { TrickStrip } from "@/games/callbreak/client/trick-strip.tsx";
  * already gates selection on both `isMyTurn` and the playable-card rules.
  */
 export function ControllerView() {
-	const { data, isMyTurn, addBots } = useCallbreak();
+	const { data, playerId, isMyTurn, actions, isPending } = useCallbreak();
 
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
 	const isPlaying = data.status === "IN_PROGRESS";
 	const phase = data.context.phase;
 
 	const waitingFor = data.players[ data.context.currentPlayer ]?.name;
+	const autoPlaying = !!playerId && ( data.autoPlay[ playerId ] ?? false );
 
 	return (
 		<ControllerShell
@@ -37,31 +36,32 @@ export function ControllerView() {
 			code={ data.code }
 			isMyTurn={ isMyTurn || isLobby }
 			waitingFor={ waitingFor }
+			deadline={ data.deadline }
+			completed={ data.status === "COMPLETED" }
 			channelId={ data.id }
+			persistentActions={ isPlaying && (
+				<AutoPlayToggle
+					autoPlaying={ autoPlaying }
+					setAutoPlay={ actions.setAutoPlay }
+					disabled={ isPending }
+				/>
+			) }
 			actions={
 				<>
 					{ data.status === "CREATED" && (
-						<Button onClick={ () => addBots.mutate() } disabled={ addBots.isPending }>
-							{ addBots.isPending ? <Spinner/> : "ADD BOTS" }
-						</Button>
+						<AddBots addBots={ actions.addBots } disabled={ isPending }/>
 					) }
 					{ data.status === "PLAYERS_READY" && (
-						<StartGame
-							gameId={ data.id }
-							queryKey={ [ "callbreak", "getState", data.id ] }
-							startGame={ startGameFn }
-						/>
+						<StartGame startGame={ actions.startGame } disabled={ isPending }/>
 					) }
-					{ isPlaying && phase === "DECLARING" && isMyTurn && <DeclareWins/> }
-					{ isPlaying && phase === "PLAYING" && isMyTurn && <PlayCard/> }
+					{ isPlaying && !autoPlaying && phase === "DECLARING" && isMyTurn && <DeclareWins/> }
+					{ isPlaying && !autoPlaying && phase === "PLAYING" && isMyTurn && <PlayCard/> }
 				</>
 			}
 		>
 			{ isLobby && (
 				<div className={ "flex flex-col gap-3 w-full items-center" }>
-					<p className={ "text-lg font-heading text-center" }>
-						YOU'RE SEATED
-					</p>
+					<p className={ "text-lg font-heading text-center" }>YOU&apos;RE SEATED</p>
 					<PlayerLobbyGrid
 						players={ data.context.players.map( id => data.players[ id ] ) }
 					/>
@@ -78,11 +78,10 @@ export function ControllerView() {
 
 			{ data.status === "COMPLETED" && (
 				<div className={ "flex flex-col gap-3 w-full items-center" }>
-					<p className={ "text-lg font-heading" }>GAME OVER</p>
 					<GameStandings
 						results={ data.results }
 						players={ data.players }
-						playerId={ data.view.playerId }
+						playerId={ playerId }
 						scoreLabel={ "SCORE" }
 					/>
 				</div>

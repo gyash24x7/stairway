@@ -2,14 +2,14 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 
+import { useTicTacToe } from "@/games/tictactoe/client/context.tsx";
 import { popIn } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { useTicTacToe } from "@/games/tictactoe/client/context.tsx";
 
 export const WINNING_LINES = [
 	[ 0, 1, 2 ], [ 3, 4, 5 ], [ 6, 7, 8 ], // rows
 	[ 0, 3, 6 ], [ 1, 4, 7 ], [ 2, 5, 8 ], // columns
-	[ 0, 4, 8 ], [ 2, 4, 6 ]               // diagonals
+	[ 0, 4, 8 ], [ 2, 4, 6 ] // diagonals
 ];
 
 const CELL_CENTERS = [
@@ -48,7 +48,7 @@ export function Board() {
 					onClick={ () => handlePlace( index ) }
 					disabled={ disabled || cell !== null }
 					className={ cn(
-						"aspect-square border-2 border-black rounded-base",
+						"aspect-square border-2 border-outline rounded-base",
 						"flex items-center justify-center",
 						"text-4xl md:text-6xl font-title transition-colors",
 						cell === "X" && "text-accent bg-background",

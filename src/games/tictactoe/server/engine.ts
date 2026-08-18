@@ -1,26 +1,30 @@
+import * as Match from "effect/Match";
+import { produce } from "immer";
+
+import {
+	checkWinner,
+	findBestMove,
+	isBoardFull,
+	symbolOf
+} from "@/games/tictactoe/server/utils.ts";
 import {
 	Placed,
 	PlaceInput,
 	SymbolAssigned,
+	TICTACTOE_BOARD_SIZE,
 	TicTacToeConfig,
 	TicTacToeEvent,
-	TicTacToePlayerView,
 	TicTacToeState,
-	TicTacToeTableView,
-	TicTacToeView,
-	WinnerDecided
+	TicTacToeView
 } from "@/games/tictactoe/shared/schema.ts";
-import { makeEngine } from "@/shared/swish/engine.ts";
-import { InvalidMove } from "@/shared/swish/errors.ts";
-import { PlayerId } from "@/shared/swish/schema.ts";
-import { makeStandings } from "@/shared/swish/standings.ts";
-import { defineView } from "@/shared/swish/views.ts";
-import { apply, checkWinner, findBestMove, isBoardFull, symbolOf } from "@/games/tictactoe/server/utils.ts";
+import { makeEngine } from "@/swish/server/engine.ts";
+import { playerIdFor } from "@/swish/server/utils.ts";
+import { InvalidMove } from "@/swish/shared/schema.ts";
 
 // --- Engine ----------------------------------------------------------------
 
 export const tictactoe = makeEngine( {
-	name: "tic-tac-toe",
+	name: "tictactoe",
 	schemas: {
 		state: TicTacToeState,
 		config: TicTacToeConfig,
@@ -31,72 +35,61 @@ export const tictactoe = makeEngine( {
 		}
 	},
 
-	setup: () => ( {
-		board: Array.from( { length: 9 }, () => null ),
-		symbols: { X: PlayerId.make( "" ), O: PlayerId.make( "" ) }
+	setup: () => TicTacToeState.make( {
+		board: Array.from( { length: TICTACTOE_BOARD_SIZE }, () => null ),
+		symbols: {}
 	} ),
 
-	apply,
+	apply: ( state, event ) => produce( state, ( draft ) => {
+		Match.value( event ).pipe(
+			Match.tag( "tictactoe/ev/SymbolAssigned", ( e ) => {
+				draft.symbols[ e.symbol ] = e.playerId;
+			} ),
+			Match.tag( "tictactoe/ev/Placed", ( e ) => {
+				draft.board[ e.position ] = e.symbol;
+			} ),
+			Match.exhaustive
+		);
+	} ),
 
 	endIf: ( { state } ) => checkWinner( state.board ) !== null || isBoardFull( state.board ),
 
-	view: defineView( {
-		table: ( { state } ) => TicTacToeTableView.make( { ...state } ),
-		player: ( { state }, id ) => TicTacToePlayerView.make( { ...state, playerId: id } )
+	view: ( { state }, audience ) => TicTacToeView.make( {
+		...state,
+		playerId: playerIdFor( audience )
 	} ),
 
-	resolveNextPlayer: ( { context } ) => context.players[ context.turn % context.players.length ],
-
-	/**
-	 * Tic-tac-toe is scoreless: the only result is who holds the winning line. The
-	 * board (not `state.winner`) is the source of truth here, so the standings hold
-	 * even for a snapshot taken before `WinnerDecided` folded in. A full board with
-	 * no line leaves both seats level — a draw, which `makeStandings` renders as a
-	 * shared rank 1 and no outright winner.
-	 */
 	resolveResults: ( { state, context } ) => {
 		const winnerSymbol = checkWinner( [ ...state.board ] );
 		const winner = winnerSymbol ? state.symbols[ winnerSymbol ] : undefined;
-		const placing = ( id: PlayerId ) => id === winner ? 1 : 0;
 
-		return makeStandings( {
-			players: context.players,
-			compare: ( a, b ) => placing( b ) - placing( a )
-		} );
+		const ranking = context.players.map( playerId => ( {
+			playerId,
+			rank: !winner || playerId === winner ? 1 : 2
+		} ) );
+
+		return { ranking, winner };
 	},
 
+	// How the game came out is `resolveResults`' answer alone — there is no `onEnd`
+	// writing a second copy of it into the state for a client to read instead.
 	hooks: {
 		onJoin: ( { state }, playerId ) => [
 			SymbolAssigned.make( {
 				symbol: state.symbols.X ? "O" : "X",
 				playerId
 			} )
-		],
-
-		onEnd: ( { state } ) => {
-			const board = [ ...state.board ];
-			const winnerSymbol = checkWinner( board );
-			if ( winnerSymbol ) {
-				return [ WinnerDecided.make( { winner: state.symbols[ winnerSymbol ] } ) ];
-			}
-
-			if ( isBoardFull( board ) ) {
-				return [ WinnerDecided.make( { winner: "draw" as const } ) ];
-			}
-
-			return [];
-		}
+		]
 	},
 
 	moves: {
 		place: {
 			validate: ( { state }, _playerId, { position } ) => {
-				if ( position < 0 || position > 8 ) {
-					return new InvalidMove( { move: "place", reason: "Invalid position." } );
-				}
-
 				if ( state.board[ position ] !== null ) {
-					return new InvalidMove( { move: "place", reason: "Cell is already occupied." } );
+					return new InvalidMove( {
+						move: "place",
+						reason: "Cell is already occupied."
+					} );
 				}
 
 				return;
@@ -108,15 +101,12 @@ export const tictactoe = makeEngine( {
 		}
 	},
 
-	botMove: ( snapshot ) => {
-		if ( snapshot.view._tag !== "tictactoe/PlayerView" ) {
-			return undefined;
-		}
-
+	botMove: ( { state } ) => {
 		const position = findBestMove(
-			[ ...snapshot.view.board ],
-			symbolOf( snapshot.view.symbols, snapshot.view.playerId )
+			[ ...state.board ],
+			symbolOf( state.symbols, state.playerId! )
 		);
+
 		return { moveType: "place" as const, input: { position } };
 	}
 } );

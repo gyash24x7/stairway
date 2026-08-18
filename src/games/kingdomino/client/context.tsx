@@ -1,44 +1,46 @@
 "use client";
 
-import { createContext, type ReactNode, useContext } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext } from "react";
+
+import type { ReactNode } from "react";
+
+import { kingdominoApi } from "@/games/kingdomino/client/client.ts";
 
 import type {
-	KingdominoPlayerView,
-	KingdominoSharedView,
-	KingdominoSnapshot,
-	KingdominoTableView
+	DiscardDominoInput,
+	KingdominoConfig,
+	KingdominoView,
+	PlaceDominoInput,
+	SelectDominoInput
 } from "@/games/kingdomino/shared/schema.ts";
-
-/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
-export type KingdominoPlayerSnapshot = Omit<KingdominoSnapshot, "view"> & { view: KingdominoPlayerView };
-
-/** The snapshot as seen by the shared screen — `view` narrowed to the TableView. */
-export type KingdominoTableSnapshot = Omit<KingdominoSnapshot, "view"> & { view: KingdominoTableView };
+import type { GameId, GameView, PlayerId } from "@/swish/shared/schema.ts";
 
 /**
- * What *every* audience can see: the envelope plus the public board fields.
+ * One context for all three screens.
  *
- * Kingdomino hides only the undrawn `deck`, so both view variants are structural
- * supersets of `KingdominoSharedView` (the player one only adds `playerId`) and
- * either snapshot widens to this with no conversion. Components that render
- * kingdoms, scores or the draft read this and work unchanged on the phone and on
- * the television.
+ * Kingdomino hides nothing but the undrawn deck, so a seat's view and a
+ * spectator's differ in `view.playerId` alone — every kingdom, every score and
+ * the whole draft are public. `playerId` is therefore optional here and the
+ * television simply never renders a control.
  */
-export type KingdominoBoardData = Omit<KingdominoSnapshot, "view"> & { view: KingdominoSharedView };
-
 type KingdominoContextValue = {
-	data: KingdominoPlayerSnapshot;
-};
-
-type KingdominoTableContextValue = {
-	data: KingdominoTableSnapshot;
+	data: GameView<KingdominoView, KingdominoConfig>;
+	/** The viewing seat, absent on a shared screen. */
+	playerId?: PlayerId;
+	selectDomino: ( input: SelectDominoInput ) => void;
+	placeDomino: ( input: PlaceDominoInput, onDone?: () => void ) => void;
+	discardDomino: ( input: DiscardDominoInput, onDone?: () => void ) => void;
+	addBots: () => void;
+	startGame: () => void;
+	setAutoPlay: ( enabled: boolean ) => void;
+	isSelectPending: boolean;
+	isPlacePending: boolean;
+	isPending: boolean;
 };
 
 const KingdominoContext = createContext<KingdominoContextValue | null>( null );
-const KingdominoTableContext = createContext<KingdominoTableContextValue | null>( null );
-const KingdominoBoardContext = createContext<KingdominoBoardData | null>( null );
 
-/** The seated player's snapshot. Only available below `KingdominoProvider`. */
 export function useKingdomino() {
 	const ctx = useContext( KingdominoContext );
 	if ( !ctx ) {
@@ -47,63 +49,68 @@ export function useKingdomino() {
 	return ctx;
 }
 
-/** The shared screen's snapshot. Only available below `KingdominoTableProvider`. */
-export function useKingdominoTable() {
-	const ctx = useContext( KingdominoTableContext );
-	if ( !ctx ) {
-		throw new Error( "useKingdominoTable must be used within a KingdominoTableProvider" );
-	}
-	return ctx;
-}
+type KingdominoProviderProps = {
+	data: GameView<KingdominoView, KingdominoConfig>;
+	gameId: GameId;
+	children: ReactNode;
+};
 
-/** The public board, whichever audience is being rendered. Available below either provider. */
-export function useKingdominoBoard() {
-	const ctx = useContext( KingdominoBoardContext );
-	if ( !ctx ) {
-		throw new Error( "useKingdominoBoard must be used within a Kingdomino provider" );
-	}
-	return { data: ctx };
-}
+export function KingdominoProvider( { data, gameId, children }: KingdominoProviderProps ) {
+	const queryClient = useQueryClient();
+	const invalidate = () => queryClient.invalidateQueries( {
+		queryKey: [ "kingdomino", "getState", gameId ]
+	} );
 
-type KingdominoProviderProps = { data: KingdominoSnapshot; children: ReactNode; };
+	const select = useMutation( {
+		mutationFn: ( input: SelectDominoInput ) => kingdominoApi.selectDomino( gameId, input ),
+		onSuccess: invalidate
+	} );
 
-/**
- * Provides the seated player's snapshot, plus the board view beneath it. The page
- * fetches through the member-gated `getState`, so a non-player view here is an
- * invariant violation rather than a state to render.
- */
-export function KingdominoProvider( { data, children }: KingdominoProviderProps ) {
-	if ( data.view._tag !== "kingdomino/PlayerView" ) {
-		return null;
-	}
+	const place = useMutation( {
+		mutationFn: ( input: PlaceDominoInput ) => kingdominoApi.placeDomino( gameId, input ),
+		onSuccess: invalidate
+	} );
 
-	const playerData: KingdominoPlayerSnapshot = { ...data, view: data.view };
+	const discard = useMutation( {
+		mutationFn: ( input: DiscardDominoInput ) => kingdominoApi.discardDomino( gameId, input ),
+		onSuccess: invalidate
+	} );
+
+	const bots = useMutation( {
+		mutationFn: () => kingdominoApi.addBots( gameId ),
+		onSuccess: invalidate
+	} );
+
+	const start = useMutation( {
+		mutationFn: () => kingdominoApi.start( gameId ),
+		onSuccess: invalidate
+	} );
+
+	const autoPlay = useMutation( {
+		mutationFn: ( enabled: boolean ) => kingdominoApi.setAutoPlay( gameId, { enabled } ),
+		onSuccess: invalidate
+	} );
 
 	return (
-		<KingdominoContext value={ { data: playerData } }>
-			<KingdominoBoardContext value={ playerData }>
-				{ children }
-			</KingdominoBoardContext>
+		<KingdominoContext value={ {
+			data,
+			playerId: data.view.playerId,
+			selectDomino: input => select.mutate( input ),
+			placeDomino: ( input, onDone ) => place.mutate( input, { onSuccess: onDone } ),
+			discardDomino: ( input, onDone ) => discard.mutate( input, { onSuccess: onDone } ),
+			addBots: () => bots.mutate(),
+			startGame: () => start.mutate(),
+			setAutoPlay: enabled => autoPlay.mutate( enabled ),
+			isSelectPending: select.isPending,
+			isPlacePending: place.isPending || discard.isPending,
+			isPending: select.isPending
+				|| place.isPending
+				|| discard.isPending
+				|| bots.isPending
+				|| start.isPending
+				|| autoPlay.isPending
+		} }>
+			{ children }
 		</KingdominoContext>
-	);
-}
-
-/**
- * Provides the shared/couch snapshot, plus the board view beneath it. Note it
- * carries no mutations: nothing on a television can take a turn.
- */
-export function KingdominoTableProvider( { data, children }: KingdominoProviderProps ) {
-	if ( data.view._tag !== "kingdomino/TableView" ) {
-		return null;
-	}
-
-	const tableData: KingdominoTableSnapshot = { ...data, view: data.view };
-
-	return (
-		<KingdominoTableContext value={ { data: tableData } }>
-			<KingdominoBoardContext value={ tableData }>
-				{ children }
-			</KingdominoBoardContext>
-		</KingdominoTableContext>
 	);
 }

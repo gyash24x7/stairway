@@ -2,72 +2,55 @@
 
 import { motion } from "framer-motion";
 
-import { ChatPanel } from "@/chat/client/chat-panel.tsx";
-import { GameInfo } from "@/shared/ui/components/game-info.tsx";
-import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
-import { RPlayerInfoSmall } from "@/shared/ui/components/player-info.tsx";
-import { Button } from "@/shared/ui/primitives/button.tsx";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { cn } from "@/shared/ui/utils/cn.ts";
 import { Board } from "@/games/tictactoe/client/board.tsx";
 import { useTicTacToe } from "@/games/tictactoe/client/context.tsx";
-import { startGameFn } from "@/games/tictactoe/client/client.ts";
-import { StartGame } from "@/shared/ui/components/start-game.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { ActionBar } from "@/swish/client/action-bar.tsx";
+import { GameInfo } from "@/swish/client/game-info.tsx";
+import { GameStandings } from "@/swish/client/game-standings.tsx";
+import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
+import { RPlayerInfoSmall } from "@/swish/client/player-info.tsx";
+import { AddBots } from "@/swish/client/seat-controls.tsx";
+import { StartGame } from "@/swish/client/start-game.tsx";
+import { TurnBanner } from "@/swish/client/turn-banner.tsx";
 
 export function GameView() {
-	const { data, addBots, isPending } = useTicTacToe();
+	const { data, addBots, startGame, isPending } = useTicTacToe();
 	const players = Object.values( data.players );
 	const isActive = data.status === "IN_PROGRESS";
 	const isCompleted = data.status === "COMPLETED";
-
-	const handleAddBots = () => addBots();
+	const isMyTurn = data.context.currentPlayer === data.view.playerId;
+	const nonBotPlayers = data.context.players.filter( pid => !data.players[ pid ].isBot );
 
 	return (
-		<div className={ "flex flex-col gap-3 items-center mb-40 max-w-6xl w-full" }>
+		<div className={ "flex flex-col gap-3 items-center max-w-6xl w-full" }>
 			<GameInfo
+				id={ data.id }
 				code={ data.code }
-				name={ "tic-tac-toe" }
+				name={ "tictactoe" }
+				showChat={ nonBotPlayers.length > 1 }
 				completed={ isCompleted }
-				actions={ <ChatPanel channelId={ data.id }/> }
+				deadline={ data.deadline }
 			/>
 
-			{ data.status === "CREATED" && (
-				<div
-					className={ cn(
-						"rounded-md bg-background p-8 text-center",
-						"w-full flex flex-col gap-2 items-center"
-					) }
-				>
-					<p className={ "text-lg font-heading" }>Waiting for opponent...</p>
-					<p className={ "text-sm text-muted-foreground mb-2" }>
-						Share the game code to invite a player
-					</p>
-					<Button onClick={ handleAddBots }>
-						{ isPending ? <Spinner/> : "Add Bots" }
-					</Button>
-				</div>
-			) }
-
-			{ data.status === "PLAYERS_READY" && (
-				<div
-					className={ cn(
-						"rounded-md bg-background p-8 text-center",
-						"w-full flex flex-col gap-2 items-center"
-					) }
-				>
-					<p className={ "text-lg font-heading" }>Both seats filled</p>
-					<StartGame
-						gameId={ data.id }
-						queryKey={ [ "tic-tac-toe", "getState", data.id ] }
-						startGame={ startGameFn }
-					/>
-				</div>
-			) }
+			<GameStatusPanel
+				status={ data.status }
+				seated={ data.context.players.length }
+				playerCount={ data.config.playerCount }
+				hint={ "Share the game code to invite a player." }
+			/>
 
 			<GameStandings
 				results={ data.results }
 				players={ data.players }
 				playerId={ data.view.playerId }
+			/>
+
+			<TurnBanner
+				status={ data.status }
+				players={ data.players }
+				currentPlayer={ data.context.currentPlayer }
+				isMyTurn={ isMyTurn }
 			/>
 
 			<Board/>
@@ -102,6 +85,19 @@ export function GameView() {
 						);
 					} ) }
 				</div>
+			) }
+
+			{ /* Only a lobby has a control here — tictactoe's moves are the board
+			     itself, so an in-progress table gets no bar and no space reserved. */ }
+			{ data.status === "CREATED" && (
+				<ActionBar>
+					<AddBots addBots={ addBots } disabled={ isPending }/>
+				</ActionBar>
+			) }
+			{ data.status === "PLAYERS_READY" && (
+				<ActionBar>
+					<StartGame startGame={ startGame } disabled={ isPending }/>
+				</ActionBar>
 			) }
 		</div>
 	);

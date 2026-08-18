@@ -1,29 +1,32 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { type ButtonHTMLAttributes, forwardRef } from "react";
+import { cva } from "class-variance-authority";
+import { forwardRef } from "react";
+
+import type { VariantProps } from "class-variance-authority";
+import type { ButtonHTMLAttributes } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
 
 const buttonVariants = cva(
 	cn(
 		"inline-flex items-center justify-center whitespace-nowrap rounded-base",
-		"text-sm cursor-pointer ring-offset-white transition-all gap-2 font-base",
-		"focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black",
+		"text-sm cursor-pointer ring-offset-background transition-all gap-2 font-base",
+		"focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
 		"focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
 	),
 	{
 		variants: {
 			variant: {
 				default: cn(
-					"text-neutral-dark bg-accent border-2 border-black shadow-sm md:shadow-md",
+					"text-neutral-dark bg-accent border-2 border-outline shadow-sm md:shadow-md",
 					"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
 				),
-				noShadow: "text-neutral-dark bg-accent border-2 border-black",
+				noShadow: "text-neutral-dark bg-accent border-2 border-outline",
 				neutral: cn(
-					"bg-background text-foreground border-black shadow-sm md:shadow-md",
+					"bg-background text-foreground border-outline shadow-sm md:shadow-md",
 					"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
 				),
 				reverse: cn(
-					"text-neutral-dark bg-accent border-2 border-black hover:shadow-sm md:shadow-md",
+					"text-neutral-dark bg-accent border-2 border-outline hover:shadow-sm md:shadow-md",
 					"hover:translate-x-reverseBoxShadowX hover:translate-y-reverseBoxShadowY"
 				)
 			},

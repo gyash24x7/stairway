@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 
-import type { Domino, Terrain } from "@/games/kingdomino/shared/schema.ts";
-import { cn } from "@/shared/ui/utils/cn.ts";
 import { CrownIndicator } from "@/games/kingdomino/client/board.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+
+import type { Domino, Terrain } from "@/games/kingdomino/shared/schema.ts";
 
 const TERRAIN_CLASS: Record<string, string> = {
 	desert: "bg-amber-200 text-amber-900",
@@ -21,7 +22,7 @@ type RDominoProps = {
 	/** Television sizing — readable from across a room. Used by the couch draft. */
 	large?: boolean;
 	onClick?: ( dominoId: number ) => void;
-}
+};
 
 function RSmallTerrain( props: { terrain: Terrain; crowns: number } ) {
 	return (
@@ -63,7 +64,7 @@ export function RSmallDomino( { enabled, domino }: RDominoProps ) {
 		<div
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
-				"border-2 border-inverted-surface transition",
+				"border-2 border-outline transition",
 				!enabled ? "shadow-none" : "shadow-sm md:shadow-md",
 				enabled && "cursor-pointer hover:shadow-none",
 				enabled && "hover:translate-x-boxShadowX hover:translate-y-boxShadowY"
@@ -96,7 +97,7 @@ export function RDomino( { domino, enabled, isSelected, large, onClick }: RDomin
 			}
 			className={ cn(
 				"flex gap-0.5 rounded-md overflow-hidden bg-gray-400",
-				"border-2 border-inverted-surface",
+				"border-2 border-outline",
 				enabled && "cursor-pointer",
 				large && "border-4 rounded-lg",
 				!enabled ? "shadow-none" : isSelected ? "shadow-none" : "shadow-sm md:shadow-md"

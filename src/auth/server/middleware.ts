@@ -1,11 +1,12 @@
-import * as Alchemy from "alchemy";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 
-import { Unauthorized } from "@/auth/shared/schema.ts";
-import { AuthContext, AuthMiddleware } from "@/auth/shared/middleware.ts";
 import { SessionService } from "@/auth/server/session.ts";
+import { AuthContext, AuthMiddleware } from "@/auth/shared/middleware.ts";
+import { Unauthorized } from "@/auth/shared/schema.ts";
+
+
+// --- Auth Middleware Implementation -------------------------------------------------
 
 export const AuthMiddlewareLive = Layer.effect(
 	AuthMiddleware,
@@ -13,15 +14,7 @@ export const AuthMiddlewareLive = Layer.effect(
 		const sessions = yield* SessionService;
 
 		return httpEffect => Effect.gen( function* () {
-			const runtime = yield* Effect.serviceOption( Alchemy.RuntimeContext );
-			if ( Option.isNone( runtime ) ) {
-				return yield* Effect.die( "RuntimeContext missing from request scope" );
-			}
-
-			const user = yield* sessions.load().pipe(
-				Effect.provideService( Alchemy.RuntimeContext, runtime.value )
-			);
-			
+			const user = yield* sessions.load();
 			if ( !user ) {
 				return yield* new Unauthorized();
 			}

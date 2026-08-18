@@ -4,59 +4,44 @@ import {
 	verifyAuthenticationResponse,
 	verifyRegistrationResponse
 } from "@simplewebauthn/server";
-import type {
-	PublicKeyCredentialCreationOptionsJSON,
-	PublicKeyCredentialRequestOptionsJSON,
-	AuthenticationResponseJSON,
-	RegistrationResponseJSON,
-	WebAuthnCredential,
-	VerifiedRegistrationResponse,
-	VerifiedAuthenticationResponse
-} from "@simplewebauthn/server";
 import * as Config from "effect/Config";
-import * as Effect from "effect/Effect";
 import * as Context from "effect/Context";
-import type * as Alchemy from "alchemy";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
-import type { AuthFlow } from "@/auth/shared/schema.ts";
+import type {
+	AuthenticationResponseJSON,
+	RegistrationResponseJSON,
+	VerifiedAuthenticationResponse,
+	VerifiedRegistrationResponse,
+	WebAuthnCredential
+} from "@simplewebauthn/server";
 
-const RP_NAME = "Stairway";
+import type { AuthFlow, LoginOptions, RegisterOptions } from "@/auth/shared/schema.ts";
 
-/**
- * RP identity read once per call from config. A missing/invalid value is an
- * operator misconfiguration, so it becomes a defect (`orDie`) rather than a
- * domain error the ceremony endpoints have to declare.
- */
-const RpConfig = Effect.all( {
+// --- WebAuthn RpConfig ----------------------------------------------------
+
+export const RpConfig = Effect.all( {
+	rpName: Effect.succeed( "Stairway" ),
 	rpID: Config.string( "WEBAUTHN_RP_ID" ),
 	rpOrigin: Config.string( "WEBAUTHN_RP_ORIGIN" )
 } ).pipe( Effect.orDie );
 
 
-/**
- * Short-lived WebAuthn challenges keyed by an opaque `flowId`: the value is the
- * pending ceremony (challenge string plus, for registration, the requested
- * name/email). Separate effectful store from {@link SessionStore}; shares the KV
- * namespace under its own key prefix and relies on KV TTL for expiry.
- */
+// --- WebAuthn Flow Store ----------------------------------------------------
+
 export class WebAuthnStore extends Context.Service<WebAuthnStore, {
-	readonly get: ( key: string ) => Effect.Effect<AuthFlow | null, never, Alchemy.RuntimeContext>;
-
-	readonly set: ( key: string, value: AuthFlow ) =>
-		Effect.Effect<void, never, Alchemy.RuntimeContext>;
-
-	readonly delete: ( key: string ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly get: ( key: string ) => Effect.Effect<AuthFlow | null>;
+	readonly put: ( value: AuthFlow ) => Effect.Effect<void>;
+	readonly delete: ( key: string ) => Effect.Effect<void>;
 }>()( "auth/WebAuthnStore" ) {}
 
-/**
- * WebAuthn Service to capture webauthn logic
- */
-export class WebAuthnService extends Context.Service<WebAuthnService, {
-	readonly getRegisterOptions: ( email: string ) =>
-		Effect.Effect<PublicKeyCredentialCreationOptionsJSON>;
 
-	readonly getLoginOptions: () => Effect.Effect<PublicKeyCredentialRequestOptionsJSON>;
+// --- WebAuthn Service ----------------------------------------------------
+
+export class WebAuthnService extends Context.Service<WebAuthnService, {
+	readonly getRegisterOptions: ( email: string ) => Effect.Effect<RegisterOptions>;
+	readonly getLoginOptions: () => Effect.Effect<LoginOptions>;
 
 	readonly verifyRegistration: (
 		response: RegistrationResponseJSON,
@@ -69,12 +54,9 @@ export class WebAuthnService extends Context.Service<WebAuthnService, {
 		credential: WebAuthnCredential
 	) => Effect.Effect<VerifiedAuthenticationResponse>;
 
-	readonly setAuthFlow: ( flow: AuthFlow ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
-
-	readonly getAuthFlow: ( flowId: string ) =>
-		Effect.Effect<AuthFlow | null, never, Alchemy.RuntimeContext>;
-
-	readonly deleteAuthFlow: ( flowId: string ) => Effect.Effect<void, never, Alchemy.RuntimeContext>;
+	readonly setAuthFlow: ( flow: AuthFlow ) => Effect.Effect<void>;
+	readonly getAuthFlow: ( flowId: string ) => Effect.Effect<AuthFlow | null>;
+	readonly deleteAuthFlow: ( flowId: string ) => Effect.Effect<void>;
 
 }>()( "auth/WebAuthnService" ) {}
 
@@ -82,12 +64,12 @@ export const WebAuthnServiceLive = Layer.effect(
 	WebAuthnService,
 	Effect.gen( function* () {
 		const store = yield* WebAuthnStore;
-		const { rpID, rpOrigin } = yield* RpConfig;
+		const { rpName, rpID, rpOrigin } = yield* RpConfig;
 
 		return WebAuthnService.of( {
 			getRegisterOptions: Effect.fn( function* ( email: string ) {
 				return yield* Effect.promise( () => generateRegistrationOptions( {
-					rpName: RP_NAME,
+					rpName,
 					rpID,
 					userName: email,
 					attestationType: "none",
@@ -134,7 +116,7 @@ export const WebAuthnServiceLive = Layer.effect(
 			} ),
 
 			setAuthFlow: Effect.fn( function* ( flow: AuthFlow ) {
-				return yield* store.set( flow.id, flow );
+				return yield* store.put( flow );
 			} ),
 
 			deleteAuthFlow: Effect.fn( function* ( flowId: string ) {

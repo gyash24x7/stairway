@@ -2,19 +2,30 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
+	ForfeitInput,
+	GuessInput,
+	WordleConfig,
+	WordleCreateInput,
+	WordleView
+} from "@/games/wordle/shared/schema.ts";
+import {
+	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
-	GetStateApiEndpoint,
-	GetTableStateApiEndpoint,
-	MoveApiEndpoint
-} from "@/shared/swish/api.ts";
-import { GuessInput, WordleCreateInput, WordleSnapshot } from "@/games/wordle/shared/schema.ts";
+	GetViewApiEndpoint,
+	JoinApiEndpoint,
+	MoveApiEndpoint,
+	SetAutoPlayApiEndpoint
+} from "@/swish/shared/contract.ts";
 
 export const WordleApiGroup = HttpApiGroup.make( "wordle" )
 	.add(
 		CreateGameApiEndpoint( WordleCreateInput ),
-		GetStateApiEndpoint( WordleSnapshot ),
-		GetTableStateApiEndpoint( WordleSnapshot ),
-		MoveApiEndpoint( "guess", GuessInput )
+		JoinApiEndpoint(),
+		GetViewApiEndpoint( WordleView, WordleConfig ),
+		AddBotsApiEndpoint(),
+		MoveApiEndpoint( "guess", GuessInput ),
+		MoveApiEndpoint( "forfeit", ForfeitInput ),
+		SetAutoPlayApiEndpoint()
 	)
 	.prefix( "/wordle" )
 	.middleware( AuthMiddleware );

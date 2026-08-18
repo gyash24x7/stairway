@@ -1,8 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+"use client";
+
 import { useState } from "react";
 import { useBoolean } from "usehooks-ts";
 
-import type { Card, Gem, PurchaseCardInput, Tokens } from "@/games/splendor/shared/schema.ts";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { GameCard } from "@/games/splendor/client/game-card.tsx";
+import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
+import { gemLightColors } from "@/games/splendor/client/utils.tsx";
 import { canPurchaseCard, isValidPayment } from "@/games/splendor/shared/utils.ts";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
@@ -15,39 +19,22 @@ import {
 } from "@/shared/ui/primitives/drawer.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { purchaseCardFn } from "@/games/splendor/client/client.ts";
-import { GameCard } from "@/games/splendor/client/game-card.tsx";
-import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
-import { gemLightColors } from "@/games/splendor/client/utils.tsx";
+
+import type { Card, Gem, Tokens } from "@/games/splendor/shared/schema.ts";
 
 type PurchaseCardProps = {
-	gameId: string;
 	card: Card;
 	tokens: Tokens;
 	discounts: readonly Card[];
-}
+};
 
 export function PurchaseCard( props: PurchaseCardProps ) {
+	const { purchaseCard, isPending } = useSplendor();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ payment, setPayment ] = useState<Partial<Tokens>>( {} );
-	const queryClient = useQueryClient();
 
-	const purchaseCard = useMutation( {
-		mutationFn: ( input: PurchaseCardInput ) => purchaseCardFn( props.gameId, input ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "splendor", "getState", props.gameId ]
-		} )
-	} );
-
-	const isPending = purchaseCard.isPending;
-
-	const discounts = props.discounts as Card[];
-	const canPurchase = canPurchaseCard( props.card, props.tokens, discounts );
-	const isPaymentCorrect = isValidPayment( props.card, payment, discounts );
-
-	const openDrawer = () => {
-		setTrue();
-	};
+	const canPurchase = canPurchaseCard( props.card, props.tokens, props.discounts );
+	const isPaymentCorrect = isValidPayment( props.card, payment, props.discounts );
 
 	const closeDrawer = () => {
 		setFalse();
@@ -55,12 +42,12 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 	};
 
 	const handlePurchaseClick = () => {
-		purchaseCard.mutate( { cardId: props.card.id, payment }, { onSuccess: closeDrawer } );
+		purchaseCard( { cardId: props.card.id, payment }, closeDrawer );
 	};
 
 	return (
 		<Drawer open={ value } onOpenChange={ toggle }>
-			<Button onClick={ openDrawer } disabled={ !canPurchase } className={ "w-full" }>
+			<Button onClick={ setTrue } disabled={ !canPurchase } className={ "w-full" }>
 				PURCHASE
 			</Button>
 			<DrawerContent>
@@ -68,16 +55,16 @@ export function PurchaseCard( props: PurchaseCardProps ) {
 					<DrawerTitle>PURCHASE CARD</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "px-4 flex flex-col gap-2" }>
+				<div className={ "px-4 flex flex-col gap-2 overflow-y-scroll max-h-100" }>
 					<div className={ "grid grid-cols-2" }>
-						<GameCard card={ props.card }/>
+						<GameCard card={ props.card } disabled/>
 						<div className={ "grid gap-2 grid-cols-3" }>
 							{ Object.keys( props.tokens ).map( g => g as Gem ).map( gem => (
 								<div
 									className={ cn(
 										"w-8 h-12 md:w-10 md:h-15 p-1",
 										"flex rounded-md items-center justify-center",
-										"border-3 border-inverted-surface",
+										"border-3 border-outline",
 										"text-2xl md:text-3xl text-neutral-dark",
 										gemLightColors[ gem ]
 									) }

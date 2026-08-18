@@ -2,35 +2,42 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
-	AddBotsApiEndpoint,
-	CreateGameApiEndpoint,
-	GetStateApiEndpoint,
-	GetTableStateApiEndpoint,
-	JoinApiEndpoint,
-	StartApiEndpoint,
-	MoveApiEndpoint
-} from "@/shared/swish/api.ts";
-import {
 	AskCardInput,
 	ClaimBookInput,
-	CreateTeamsInput,
 	FishConfig,
-	FishSnapshot,
+	FishCreateInput,
+	FishView,
 	TransferTurnInput
 } from "@/games/fish/shared/schema.ts";
+import {
+	AddBotsApiEndpoint,
+	CreateGameApiEndpoint,
+	GetViewApiEndpoint,
+	JoinApiEndpoint,
+	JoinTeamApiEndpoint,
+	MoveApiEndpoint,
+	NameTeamApiEndpoint,
+	RedoApiEndpoint,
+	SetAutoPlayApiEndpoint,
+	StartApiEndpoint,
+	UndoApiEndpoint
+} from "@/swish/shared/contract.ts";
 
 export const FishApiGroup = HttpApiGroup.make( "fish" )
 	.add(
-		CreateGameApiEndpoint( FishConfig ),
-		GetStateApiEndpoint( FishSnapshot ),
-		GetTableStateApiEndpoint( FishSnapshot ),
+		CreateGameApiEndpoint( FishCreateInput ),
+		GetViewApiEndpoint( FishView, FishConfig ),
 		JoinApiEndpoint(),
-		StartApiEndpoint(),
 		AddBotsApiEndpoint(),
-		MoveApiEndpoint( "createTeams", CreateTeamsInput ),
+		JoinTeamApiEndpoint(),
+		NameTeamApiEndpoint(),
+		StartApiEndpoint(),
 		MoveApiEndpoint( "askCard", AskCardInput ),
 		MoveApiEndpoint( "claimBook", ClaimBookInput ),
-		MoveApiEndpoint( "transferTurn", TransferTurnInput )
+		MoveApiEndpoint( "transferTurn", TransferTurnInput ),
+		SetAutoPlayApiEndpoint(),
+		UndoApiEndpoint(),
+		RedoApiEndpoint()
 	)
 	.prefix( "/fish" )
 	.middleware( AuthMiddleware );

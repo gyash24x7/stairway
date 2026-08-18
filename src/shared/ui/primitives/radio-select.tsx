@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
@@ -39,7 +37,7 @@ export function RadioSelect<T>( props: RadioSelectProps<T> ) {
 						onClick={ () => !isDisabled && handleClick( option ) }
 						className={ cn(
 							"rounded-md border flex justify-center p-1 md:p-2",
-							"bg-background border-inverted-surface min-w-20 md:min-w-30",
+							"bg-background border-outline min-w-20 md:min-w-30",
 							!isDisabled && "cursor-pointer",
 							isSelected && "border-accent bg-accent/20",
 							isDisabled && "opacity-50 cursor-not-allowed"

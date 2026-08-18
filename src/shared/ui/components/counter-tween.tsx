@@ -1,7 +1,6 @@
-"use client";
-
 import { AnimatePresence, motion } from "framer-motion";
 
+import { SPRING_TIGHT } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
 
 type CounterTweenProps = {
@@ -18,7 +17,7 @@ export function CounterTween( { value, className }: CounterTweenProps ) {
 					initial={ { scale: 0.5, opacity: 0 } }
 					animate={ { scale: 1, opacity: 1 } }
 					exit={ { scale: 0.5, opacity: 0 } }
-					transition={ { type: "spring", stiffness: 420, damping: 22 } }
+					transition={ SPRING_TIGHT }
 					className={ "inline-block" }
 				>
 					{ value }

@@ -2,17 +2,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { LogOutIcon } from "lucide-react";
 import { Fragment, useTransition } from "react";
 
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { Button } from "@/shared/ui/primitives/button.tsx";
 import { logoutFn } from "@/auth/client/client.ts";
 import { useRefreshAuth } from "@/auth/client/use-auth.tsx";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 
 export function LogoutButton() {
 	const navigate = useNavigate();
 	const refreshAuth = useRefreshAuth();
 	const [ isPending, startTransition ] = useTransition();
 
-	const handleLogout = () => startTransition( async () => {
+	const handleLogout = () => startTransition( async() => {
 		await logoutFn();
 		await refreshAuth();
 		await navigate( { to: "/" } );

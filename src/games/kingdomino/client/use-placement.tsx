@@ -1,21 +1,19 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckIcon, RotateCwIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 
-import type { Board, Coord, Placement, Rotation } from "@/games/kingdomino/shared/schema.ts";
+import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
 import {
 	getPlacementCoordinates,
 	getValidPlacements,
 	getValidRotations
 } from "@/games/kingdomino/shared/utils.ts";
 import { Button } from "@/shared/ui/primitives/button.tsx";
-import type { Tentative } from "@/games/kingdomino/client/board.tsx";
-import { discardDominoFn, placeDominoFn } from "@/games/kingdomino/client/client.ts";
+
+import type { Board, Coord, Rotation } from "@/games/kingdomino/shared/schema.ts";
 
 type UsePlacementParams = {
-	gameId: string;
 	board: Board;
 	activeDominoId: number | null;
 	canPlace: boolean;
@@ -23,25 +21,14 @@ type UsePlacementParams = {
 };
 
 export function usePlacement( params: UsePlacementParams ) {
-	const { gameId, activeDominoId, canPlace, onClear } = params;
+	const { activeDominoId, canPlace, onClear } = params;
+	const { placeDomino, discardDomino, isPlacePending } = useKingdomino();
 	const [ tentative, setTentative ] = useState<{ coord: Coord; rotation: Rotation } | null>( null );
 
-	const queryClient = useQueryClient();
-	const invalidate = () => queryClient.invalidateQueries( {
-		queryKey: [ "kingdomino", "getState", gameId ]
-	} );
-
-	const placeDomino = useMutation( {
-		mutationFn: ( placement: Placement ) => placeDominoFn( gameId, { placement } ),
-		onSuccess: invalidate
-	} );
-
-	const discardDomino = useMutation( {
-		mutationFn: ( dominoId: number ) => discardDominoFn( gameId, { dominoId } ),
-		onSuccess: invalidate
-	} );
-
-	const isPending = placeDomino.isPending || discardDomino.isPending;
+	const clear = () => {
+		setTentative( null );
+		onClear?.();
+	};
 
 	const handleCellClick = ( coord: Coord ) => {
 		if ( !canPlace || !activeDominoId ) {
@@ -65,13 +52,7 @@ export function usePlacement( params: UsePlacementParams ) {
 			return;
 		}
 
-		const placement = { dominoId: activeDominoId, ...tentative };
-		placeDomino.mutate( placement, {
-			onSuccess: () => {
-				setTentative( null );
-				onClear?.();
-			}
-		} );
+		placeDomino( { placement: { dominoId: activeDominoId, ...tentative } }, clear );
 	};
 
 	const handleCancel = () => setTentative( null );
@@ -99,12 +80,7 @@ export function usePlacement( params: UsePlacementParams ) {
 			return;
 		}
 
-		discardDomino.mutate( activeDominoId, {
-			onSuccess: () => {
-				setTentative( null );
-				onClear?.();
-			}
-		} );
+		discardDomino( { dominoId: activeDominoId }, clear );
 	};
 
 	const getPreviewCoords = ( coord: Coord ) => {
@@ -122,7 +98,7 @@ export function usePlacement( params: UsePlacementParams ) {
 
 	const tentativeCoords = tentative ? getPlacementCoordinates( tentative ) : null;
 
-	const tentativeProp: Tentative | undefined = tentative && tentativeCoords ? {
+	const tentativeProp = tentative && tentativeCoords ? {
 		coords: tentativeCoords,
 		anchor: tentative.coord,
 		toolbar: (
@@ -135,12 +111,12 @@ export function usePlacement( params: UsePlacementParams ) {
 					<RotateCwIcon className={ "w-4 h-4" }/>
 					<span className={ "text-xs" }>{ tentative.rotation }°</span>
 				</Button>
-				<Button onClick={ handleConfirm } disabled={ isPending } className={ "w-8 h-8" }
-				        size={ "icon" }>
+				<Button onClick={ handleConfirm } disabled={ isPlacePending } className={ "w-8 h-8" }
+								size={ "icon" }>
 					<CheckIcon/>
 				</Button>
-				<Button onClick={ handleCancel } disabled={ isPending } className={ "w-8 h-8" }
-				        size={ "icon" }>
+				<Button onClick={ handleCancel } disabled={ isPlacePending } className={ "w-8 h-8" }
+								size={ "icon" }>
 					<XIcon/>
 				</Button>
 			</div>
@@ -154,6 +130,6 @@ export function usePlacement( params: UsePlacementParams ) {
 		canDiscard,
 		handleDiscard,
 		tentativeProp,
-		isPending
+		isPending: isPlacePending
 	};
 }

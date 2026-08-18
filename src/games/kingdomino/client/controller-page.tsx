@@ -1,40 +1,37 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/auth/client/use-auth.tsx";
-import { ErrorState } from "@/shared/ui/components/error-state.tsx";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { getKingdominoStateFn } from "@/games/kingdomino/client/client.ts";
+import { useGameSync } from "@/client.ts";
+import { kingdominoApi } from "@/games/kingdomino/client/client.ts";
 import { KingdominoProvider } from "@/games/kingdomino/client/context.tsx";
 import { ControllerView } from "@/games/kingdomino/client/controller-view.tsx";
-import { useGameSync } from "@/sync.ts";
+import { ErrorState } from "@/shared/ui/components/error-state.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { GameId } from "@/swish/shared/schema.ts";
 
 /**
- * The controller page. Same data path as the full game page — the member-gated
- * `getState` plus the player sync socket — only the rendered view differs.
+ * The controller page. Same data path as the full game page — the player sync
+ * socket over the seat's own view — only the rendered layout differs.
  */
-export function KingdominoControllerPage( { gameId }: { gameId: string } ) {
+export function KingdominoControllerPage( props: { gameId: string } ) {
+	const gameId = GameId.make( props.gameId );
 	const { authInfo } = useAuth();
 
 	const queryKey = [ "kingdomino", "getState", gameId ];
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getKingdominoStateFn( gameId, signal )
+		queryFn: ( { signal } ) => kingdominoApi.getView( gameId, signal )
 	} );
 
 	useGameSync( { gameName: "kingdomino", gameId, playerId: authInfo!.id, queryKey } );
 
 	if ( isError ) {
-		// `getState` runs `assertMember`, so the common failure here is opening a
-		// controller for a table you don't hold a seat at.
-		const notAMember = ( error as { _tag?: string } )?._tag === "swish/NotAMember";
-
 		return (
 			<ErrorState
-				title={ notAMember ? "You're not at this table" : "Couldn't load this game" }
-				message={ notAMember ? "Join the game with its code first." : undefined }
-				error={ notAMember ? undefined : error }
-				onRetry={ notAMember ? undefined : () => void refetch() }
+				title={ "Couldn't load this game" }
+				error={ error }
+				onRetry={ () => void refetch() }
 				action={ { label: "JOIN A GAME", to: "/kingdomino" } }
 			/>
 		);
@@ -44,8 +41,20 @@ export function KingdominoControllerPage( { gameId }: { gameId: string } ) {
 		return <div className={ "mt-8 flex justify-center" }><Spinner/></div>;
 	}
 
+	// A controller is a seat's own screen. Without one there is nothing to drive,
+	// so send them to the lobby rather than rendering a board they cannot play.
+	if ( !data.view.playerId ) {
+		return (
+			<ErrorState
+				title={ "You're not at this table" }
+				message={ "Join the game with its code first." }
+				action={ { label: "JOIN A GAME", to: "/kingdomino" } }
+			/>
+		);
+	}
+
 	return (
-		<KingdominoProvider data={ data }>
+		<KingdominoProvider data={ data } gameId={ gameId }>
 			<ControllerView/>
 		</KingdominoProvider>
 	);

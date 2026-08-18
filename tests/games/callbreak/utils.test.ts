@@ -1,424 +1,230 @@
 import { describe, expect, test } from "bun:test";
 
-import { apply } from "@/games/callbreak/server/utils.ts";
-import {
-	CardPlayedEvent,
-	DealDealtEvent,
-	DealScoredEvent,
-	ScoreInitializedEvent,
-	Trick,
-	TrickStartedEvent,
-	TrickWonEvent,
-	WinnerDecidedEvent,
-	WinsDeclaredEvent
-} from "@/games/callbreak/shared/schema.ts";
-import type { CallbreakEvent, CallbreakState } from "@/games/callbreak/shared/schema.ts";
+import { CALLBREAK_TRICKS_PER_DEAL } from "@/games/callbreak/shared/schema.ts";
 import {
 	calculateRoundScore,
 	createNewDeal,
+	decideWinner,
 	determineTrickWinner,
-	emptyTrick,
+	rankPlayers,
+	standingsFor
+} from "@/games/callbreak/server/utils.ts";
+import {
 	getCardValue,
+	getHighestCardValue,
 	getPlayableCards,
-	PLAYER_COUNT,
-	RANK_ORDER,
-	TRICKS_PER_DEAL
+	RANK_ORDER
 } from "@/games/callbreak/shared/utils.ts";
-import type { CardId, CardSuit } from "@/shared/cards/schema.ts";
-import { SORTED_DECK } from "@/shared/cards/utils.ts";
-import { PlayerId } from "@/shared/swish/schema.ts";
+import { makeRng } from "@/shared/utils/rng.ts";
+import { PlayerId } from "@/swish/shared/schema.ts";
 
-// Spades are trump everywhere in this file; the fixtures below read as
-// "H is the led suit, S beats it".
-const TRUMP: CardSuit = "S";
+import type { Trick } from "@/games/callbreak/shared/schema.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
-const P1 = PlayerId.make( "p1" );
-const P2 = PlayerId.make( "p2" );
-const P3 = PlayerId.make( "p3" );
-const P4 = PlayerId.make( "p4" );
-const SEATS = [ P1, P2, P3, P4 ];
+const seat = ( id: string ) => PlayerId.make( id );
 
-/** A trick built from `[ player, card ]` pairs; the first pair is the lead. */
-function trickOf( played: ReadonlyArray<readonly [ PlayerId, CardId ]> ) {
+const [ a, b, c, d ] = [ seat( "a" ), seat( "b" ), seat( "c" ), seat( "d" ) ];
+
+const seats: ReadonlyArray<Player> = [ a, b, c, d ];
+
+/** A trick built from `[ seat, card ]` pairs, led by the first of them. */
+const trick = ( ...played: ReadonlyArray<readonly [ Player, CardId ]> ) => {
 	const [ lead ] = played;
-	return Trick.make( {
+
+	return {
 		leadPlayer: lead![ 0 ],
-		suit: lead![ 1 ].charAt( lead![ 1 ].length - 1 ) as CardSuit,
-		cards: Object.fromEntries( played ) as Record<PlayerId, CardId>
-	} );
-}
+		suit: lead![ 1 ].slice( -1 ),
+		cards: Object.fromEntries( played )
+	} as Trick;
+};
 
-/** Brands the keys of a plain `{ p1: … }` literal so it can be compared to state. */
-const table = ( entries: Record<string, number> ) => entries as Record<PlayerId, number>;
 
-/** The empty `CallbreakState` every fold starts from. */
-const EMPTY: CallbreakState = { deals: [], scores: {} };
-
-/** Folds a list of events through the game's reducer. */
-const fold = ( state: CallbreakState, events: ReadonlyArray<CallbreakEvent> ) =>
-	events.reduce( apply, state );
-
-// ===========================================================================
-describe( "callbreak/utils — card values", () => {
-	test( "RANK_ORDER runs 2 (lowest) through A (highest)", () => {
-		expect( RANK_ORDER ).toHaveLength( 13 );
+describe( "ranking cards", () => {
+	test( "runs two low to ace high, unlike the deck's own order", () => {
 		expect( RANK_ORDER[ 0 ] ).toBe( "2" );
-		expect( RANK_ORDER.at( -1 ) ).toBe( "A" );
+		expect( RANK_ORDER[ RANK_ORDER.length - 1 ] ).toBe( "A" );
+		expect( getCardValue( "AS" ) ).toBeGreaterThan( getCardValue( "KS" ) );
+		expect( getCardValue( "10S" ) ).toBeGreaterThan( getCardValue( "9S" ) );
+		expect( getCardValue( "2S" ) ).toBe( 0 );
 	} );
 
-	test( "a card's value is its rank index, independent of suit", () => {
-		expect( getCardValue( "2H" ) ).toBe( 0 );
-		expect( getCardValue( "10C" ) ).toBe( 8 );
-		expect( getCardValue( "JD" ) ).toBe( 9 );
-		expect( getCardValue( "AS" ) ).toBe( 12 );
-		expect( getCardValue( "AS" ) ).toBe( getCardValue( "AH" ) );
-	} );
+	test( "ignores every suit but the one asked for", () => {
+		const cards: ReadonlyArray<CardId> = [ "2S", "AH", "KS", "AD" ];
 
-	test( "the table constants describe a four-handed, thirteen-trick deal", () => {
-		expect( PLAYER_COUNT ).toBe( 4 );
-		expect( TRICKS_PER_DEAL ).toBe( 13 );
+		expect( getHighestCardValue( cards, "S" ) ).toBe( getCardValue( "KS" ) );
+		expect( getHighestCardValue( cards, "C" ) ).toBe( -1 );
 	} );
 } );
 
-// ===========================================================================
-describe( "callbreak/utils — determineTrickWinner", () => {
-	const cases: ReadonlyArray<{
-		name: string;
-		played: ReadonlyArray<readonly [ PlayerId, CardId ]>;
-		winner: PlayerId;
-	}> = [
-		{
-			name: "the highest card of the led suit wins",
-			played: [ [ P1, "5H" ], [ P2, "9H" ], [ P3, "KH" ], [ P4, "2H" ] ],
-			winner: P3
-		},
-		{
-			name: "the leader keeps the trick when nobody beats it",
-			played: [ [ P1, "AH" ], [ P2, "2H" ], [ P3, "3H" ], [ P4, "4H" ] ],
-			winner: P1
-		},
-		{
-			name: "off-suit discards never win",
-			played: [ [ P1, "5H" ], [ P2, "AD" ], [ P3, "AC" ], [ P4, "2H" ] ],
-			winner: P1
-		},
-		{
-			name: "a trump beats the highest card of the led suit",
-			played: [ [ P1, "AH" ], [ P2, "KH" ], [ P3, "2S" ], [ P4, "QH" ] ],
-			winner: P3
-		},
-		{
-			name: "the highest trump wins a trumped trick",
-			played: [ [ P1, "AH" ], [ P2, "2S" ], [ P3, "KS" ], [ P4, "5S" ] ],
-			winner: P3
-		},
-		{
-			name: "a trump lead is decided by the highest trump",
-			played: [ [ P1, "5S" ], [ P2, "9S" ], [ P3, "2S" ], [ P4, "KS" ] ],
-			winner: P4
-		},
-		{
-			name: "a partial trick is decided among the cards played so far",
-			played: [ [ P1, "5H" ], [ P2, "9H" ] ],
-			winner: P2
-		},
-		{
-			name: "a trick led from the middle of the seating order still resolves",
-			played: [ [ P3, "5H" ], [ P4, "9H" ], [ P1, "2S" ], [ P2, "AH" ] ],
-			winner: P1
-		}
-	];
 
-	for ( const { name, played, winner } of cases ) {
-		test( name, () => {
-			expect( determineTrickWinner( trickOf( played ), TRUMP, [ ...SEATS ] ) ).toBe( winner );
-		} );
-	}
-} );
+describe( "settling a trick", () => {
+	test( "gives it to the highest card of the led suit", () => {
+		const played = trick( [ a, "4H" ], [ b, "KH" ], [ c, "7H" ], [ d, "2H" ] );
+		expect( determineTrickWinner( played, "S", seats ) ).toBe( b );
+	} );
 
-// ===========================================================================
-describe( "callbreak/utils — getPlayableCards (the follow-suit rules)", () => {
-	const cases: ReadonlyArray<{
-		name: string;
-		hand: ReadonlyArray<CardId>;
-		trick: ReadonlyArray<readonly [ PlayerId, CardId ]>;
-		playable: ReadonlyArray<CardId>;
-	}> = [
-		{
-			name: "leading a trick — every card is playable",
-			hand: [ "2H", "AC", "9S" ],
-			trick: [],
-			playable: [ "2H", "AC", "9S" ]
-		},
-		{
-			name: "holding the led suit — only the led suit may be played",
-			hand: [ "KH", "2C", "AS" ],
-			trick: [ [ P1, "5H" ] ],
-			playable: [ "KH" ]
-		},
-		{
-			name: "holding the led suit — must beat the highest card of it when able",
-			hand: [ "2H", "9H" ],
-			trick: [ [ P1, "5H" ] ],
-			playable: [ "9H" ]
-		},
-		{
-			name: "holding only lower cards of the led suit — any of them will do",
-			hand: [ "2H", "3H" ],
-			trick: [ [ P1, "AH" ] ],
-			playable: [ "2H", "3H" ]
-		},
-		{
-			name: "a trump already beat the led suit — any card of the led suit will do",
-			hand: [ "2H", "KH" ],
-			trick: [ [ P1, "5H" ], [ P2, "2S" ] ],
-			playable: [ "2H", "KH" ]
-		},
-		{
-			name: "void in the led suit but holding trump — must trump",
-			hand: [ "2S", "AC", "AD" ],
-			trick: [ [ P1, "5H" ] ],
-			playable: [ "2S" ]
-		},
-		{
-			name: "void in the led suit and trumped already — must over-trump",
-			hand: [ "2S", "9S", "AC" ],
-			trick: [ [ P1, "5H" ], [ P2, "3S" ] ],
-			playable: [ "9S" ]
-		},
-		{
-			name: "unable to over-trump — the whole hand opens up",
-			hand: [ "2S", "AC" ],
-			trick: [ [ P1, "5H" ], [ P2, "9S" ] ],
-			playable: [ "2S", "AC" ]
-		},
-		{
-			name: "void in the led suit and holding no trump — the whole hand opens up",
-			hand: [ "AC", "AD" ],
-			trick: [ [ P1, "5H" ] ],
-			playable: [ "AC", "AD" ]
-		},
-		{
-			name: "following a trump lead — the head rule still applies",
-			hand: [ "2S", "9S" ],
-			trick: [ [ P1, "5S" ] ],
-			playable: [ "9S" ]
-		}
-	];
+	test( "gives it to the leader when nobody beats them in suit", () => {
+		const played = trick( [ a, "AH" ], [ b, "KH" ], [ c, "7H" ], [ d, "2H" ] );
+		expect( determineTrickWinner( played, "S", seats ) ).toBe( a );
+	} );
 
-	for ( const { name, hand, trick, playable } of cases ) {
-		test( name, () => {
-			const result = trick.length === 0
-				? getPlayableCards( [ ...hand ], TRUMP, emptyTrick( P1 ) )
-				: getPlayableCards( [ ...hand ], TRUMP, trickOf( trick ) );
+	test( "lets any trump beat the best card of the led suit", () => {
+		const played = trick( [ a, "AH" ], [ b, "KH" ], [ c, "2S" ], [ d, "QH" ] );
+		expect( determineTrickWinner( played, "S", seats ) ).toBe( c );
+	} );
 
-			expect( result.slice().sort() ).toEqual( [ ...playable ].sort() );
-		} );
-	}
+	test( "settles a trump war on the highest trump", () => {
+		const played = trick( [ a, "AH" ], [ b, "2S" ], [ c, "JS" ], [ d, "9S" ] );
+		expect( determineTrickWinner( played, "S", seats ) ).toBe( c );
+	} );
 
-	test( "every playable card is drawn from the hand it was given", () => {
-		const hand: CardId[] = [ "2S", "9S", "AC", "KH" ];
-		const trick = trickOf( [ [ P1, "5H" ], [ P2, "3S" ] ] );
-		for ( const card of getPlayableCards( hand, TRUMP, trick ) ) {
-			expect( hand ).toContain( card );
-		}
+	test( "reads off-suit discards as losers however high they are", () => {
+		const played = trick( [ a, "3H" ], [ b, "AD" ], [ c, "AC" ], [ d, "2H" ] );
+		expect( determineTrickWinner( played, "S", seats ) ).toBe( a );
+	} );
+
+	test( "walks the seating order, not the key order of the cards", () => {
+		// Numeric-looking ids are exactly the case a `for … in` over the cards
+		// would reorder, and the two highest hearts are seated either side of it.
+		const [ one, two, three ] = [ seat( "2" ), seat( "10" ), seat( "1" ) ];
+		const played = trick( [ one, "3H" ], [ two, "KH" ], [ three, "AH" ] );
+
+		expect( determineTrickWinner( played, "S", [ one, two, three ] ) ).toBe( three );
 	} );
 } );
 
-// ===========================================================================
-describe( "callbreak/utils — scoring", () => {
-	test( "making the declared bid exactly pays ten a trick", () => {
+
+describe( "what a seat may play", () => {
+	const hand: ReadonlyArray<CardId> = [ "2H", "QH", "AH", "3S", "KS", "4D" ];
+
+	test( "leaves the leader every card in hand", () => {
+		const empty = { leadPlayer: a, cards: {} } as Trick;
+		expect( getPlayableCards( hand, "S", empty ) ).toEqual( [ ...hand ] );
+	} );
+
+	test( "makes a seat holding the led suit head the trick when it can", () => {
+		const played = trick( [ b, "JH" ] );
+		expect( getPlayableCards( hand, "S", played ) ).toEqual( [ "QH", "AH" ] );
+	} );
+
+	test( "falls back to any card of the led suit when none of them wins", () => {
+		const played = trick( [ b, "AH" ] );
+		expect( getPlayableCards( hand, "S", played ) ).toEqual( [ "2H", "QH", "AH" ] );
+	} );
+
+	test( "drops the heading rule once a trump has taken the trick", () => {
+		const played = trick( [ b, "3H" ], [ c, "2S" ] );
+		expect( getPlayableCards( hand, "S", played ) ).toEqual( [ "2H", "QH", "AH" ] );
+	} );
+
+	test( "keeps the heading rule when the led suit is trump", () => {
+		const played = trick( [ b, "JS" ] );
+		expect( getPlayableCards( hand, "S", played ) ).toEqual( [ "KS" ] );
+	} );
+
+	test( "forces a trump out of a seat void in the led suit", () => {
+		const played = trick( [ b, "5C" ] );
+		expect( getPlayableCards( hand, "S", played ) ).toEqual( [ "3S", "KS" ] );
+	} );
+
+	test( "forces an overtrump when one is held", () => {
+		const played = trick( [ b, "5C" ], [ c, "JS" ] );
+		expect( getPlayableCards( hand, "S", played ) ).toEqual( [ "KS" ] );
+	} );
+
+	test( "frees the whole hand when the trumps held cannot overtrump", () => {
+		const played = trick( [ b, "5C" ], [ c, "AS" ] );
+		expect( getPlayableCards( hand, "S", played ) ).toEqual( [ ...hand ] );
+	} );
+
+	test( "frees the whole hand when the seat holds neither the led suit nor trump", () => {
+		const short: ReadonlyArray<CardId> = [ "2H", "AH", "4D" ];
+		const played = trick( [ b, "5C" ] );
+		expect( getPlayableCards( short, "S", played ) ).toEqual( [ ...short ] );
+	} );
+} );
+
+
+describe( "scoring a deal", () => {
+	test( "pays the call plus two tenths for every overtrick", () => {
 		expect( calculateRoundScore( 3, 3 ) ).toBe( 30 );
-		expect( calculateRoundScore( 1, 1 ) ).toBe( 10 );
-		expect( calculateRoundScore( 13, 13 ) ).toBe( 130 );
-	} );
-
-	test( "overtricks pay two apiece on top of the bid", () => {
 		expect( calculateRoundScore( 3, 5 ) ).toBe( 34 );
-		expect( calculateRoundScore( 2, 13 ) ).toBe( 42 );
+		expect( calculateRoundScore( 1, 13 ) ).toBe( 34 );
 	} );
 
-	test( "falling short forfeits ten a trick of the whole bid", () => {
+	test( "costs the whole call when the seat falls short", () => {
 		expect( calculateRoundScore( 3, 2 ) ).toBe( -30 );
-		expect( calculateRoundScore( 5, 0 ) ).toBe( -50 );
-		expect( calculateRoundScore( 13, 12 ) ).toBe( -130 );
-	} );
-
-	test( "a bid of zero is worth nothing either way", () => {
-		expect( calculateRoundScore( 0, 0 ) ).toBe( 0 );
-		expect( calculateRoundScore( 0, 4 ) ).toBe( 8 );
+		expect( calculateRoundScore( 3, 0 ) ).toBe( -30 );
 	} );
 } );
 
-// ===========================================================================
-describe( "callbreak/utils — dealing", () => {
-	test( "a new deal hands thirteen cards to each of four players", () => {
-		const deal = createNewDeal( [ ...SEATS ] );
-		const hands = SEATS.map( ( pid ) => deal.hands[ pid ]! );
 
-		expect( hands.map( ( h ) => h.length ) ).toEqual( [ 13, 13, 13, 13 ] );
-		expect( new Set( hands.flat() ).size ).toBe( 52 );
-		expect( hands.flat().slice().sort() ).toEqual( [ ...SORTED_DECK ].sort() );
-	} );
+describe( "dealing", () => {
+	test( "cuts the whole deck into four disjoint thirteens", () => {
+		const deal = createNewDeal( seats, b, makeRng( 7 ).next );
+		const dealt = seats.flatMap( id => [ ...deal.hands[ id ]! ] );
 
-	test( "a new deal starts with zeroed declarations, wins, scores and no tricks", () => {
-		const deal = createNewDeal( [ ...SEATS ] );
+		for ( const id of seats ) {
+			expect( deal.hands[ id ] ).toHaveLength( CALLBREAK_TRICKS_PER_DEAL );
+			expect( deal.declarations[ id ] ).toBe( 0 );
+			expect( deal.wins[ id ] ).toBe( 0 );
+			expect( deal.scores[ id ] ).toBe( 0 );
+		}
 
-		expect( deal.declarations ).toEqual( table( { p1: 0, p2: 0, p3: 0, p4: 0 } ) );
-		expect( deal.wins ).toEqual( table( { p1: 0, p2: 0, p3: 0, p4: 0 } ) );
-		expect( deal.scores ).toEqual( table( { p1: 0, p2: 0, p3: 0, p4: 0 } ) );
+		expect( new Set( dealt ).size ).toBe( 52 );
+		expect( deal.startingPlayer ).toBe( b );
 		expect( deal.tricks ).toEqual( [] );
-		expect( deal.id.length ).toBeGreaterThan( 0 );
 	} );
 
-	test( "the starting player defaults to the first seat and honours an explicit one", () => {
-		expect( createNewDeal( [ ...SEATS ] ).startingPlayer ).toBe( P1 );
-		expect( createNewDeal( [ ...SEATS ], P3 ).startingPlayer ).toBe( P3 );
+	test( "deals the same hands twice from the same seeded stream", () => {
+		const first = createNewDeal( seats, a, makeRng( 42 ).next );
+		const second = createNewDeal( seats, a, makeRng( 42 ).next );
+
+		expect( second.hands ).toEqual( first.hands );
 	} );
 
-	test( "an empty trick has a lead player and nothing else", () => {
-		expect( emptyTrick( P2 ) ).toEqual( { leadPlayer: P2, cards: {} } );
-		expect( emptyTrick() ).toEqual( { leadPlayer: PlayerId.make( "" ), cards: {} } );
+	test( "deals different hands from a different stream", () => {
+		const first = createNewDeal( seats, a, makeRng( 1 ).next );
+		const second = createNewDeal( seats, a, makeRng( 2 ).next );
+
+		expect( second.hands ).not.toEqual( first.hands );
 	} );
 } );
 
-// ===========================================================================
-describe( "callbreak/apply — the reducer", () => {
-	test( "ScoreInitialized seats a player at zero", () => {
-		const state = fold( EMPTY, SEATS.map( ( playerId ) =>
-			ScoreInitializedEvent.make( { playerId } ) ) );
 
-		expect( state.scores ).toEqual( table( { p1: 0, p2: 0, p3: 0, p4: 0 } ) );
+describe( "standings", () => {
+	test( "ranks the table best-first and names the top seat", () => {
+		const scores = { [ a ]: 30, [ b ]: 52, [ c ]: -10, [ d ]: 51 };
+
+		expect( rankPlayers( seats, scores ) ).toEqual( [ b, d, a, c ] );
+		expect( standingsFor( seats, scores ) ).toEqual( {
+			ranking: [
+				{ playerId: b, rank: 1, score: 52 },
+				{ playerId: d, rank: 2, score: 51 },
+				{ playerId: a, rank: 3, score: 30 },
+				{ playerId: c, rank: 4, score: -10 }
+			],
+			winner: b
+		} );
 	} );
 
-	test( "DealDealt pushes the new deal to the front of the history", () => {
-		const first = createNewDeal( [ ...SEATS ], P1 );
-		const second = createNewDeal( [ ...SEATS ], P2 );
-		const state = fold( EMPTY, [
-			DealDealtEvent.make( { deal: first } ),
-			DealDealtEvent.make( { deal: second } )
-		] );
+	test( "shares a rank on a tie and skips the place it consumed", () => {
+		const scores = { [ a ]: 40, [ b ]: 40, [ c ]: 20, [ d ]: 10 };
+		const { ranking } = standingsFor( seats, scores );
 
-		expect( state.deals.map( ( d ) => d.id ) ).toEqual( [ second.id, first.id ] );
+		expect( ranking.map( entry => entry.rank ) ).toEqual( [ 1, 1, 3, 4 ] );
 	} );
 
-	test( "a trick plays out: cards leave hands, the suit locks, the winner banks a win", () => {
-		const deal = createNewDeal( [ ...SEATS ], P1 );
-		const cards = SEATS.map( ( pid ) => deal.hands[ pid ]![ 0 ]! );
+	test( "names nobody when the top is shared", () => {
+		const scores = { [ a ]: 40, [ b ]: 40, [ c ]: 20, [ d ]: 10 };
 
-		const state = fold( EMPTY, [
-			DealDealtEvent.make( { deal } ),
-			TrickStartedEvent.make( { leadPlayer: P1 } ),
-			...SEATS.map( ( playerId, i ) =>
-				CardPlayedEvent.make( { playerId, cardId: cards[ i ]! } ) ),
-			TrickWonEvent.make( { winner: P3 } )
-		] );
-
-		const active = state.deals[ 0 ]!;
-		const trick = active.tricks[ 0 ]!;
-
-		// Each played card is gone from its owner's hand...
-		for ( const [ i, pid ] of SEATS.entries() ) {
-			expect( active.hands[ pid ] ).toHaveLength( 12 );
-			expect( active.hands[ pid ] ).not.toContain( cards[ i ]! );
-		}
-
-		// ...and recorded on the trick, whose suit is fixed by the lead card.
-		expect( trick.cards ).toEqual( Object.fromEntries( SEATS.map( ( pid, i ) =>
-			[ pid, cards[ i ]! ] ) ) );
-		expect( trick.suit ).toBe( cards[ 0 ]!.charAt( cards[ 0 ]!.length - 1 ) as CardSuit );
-		expect( trick.winner ).toBe( P3 );
-		expect( active.wins[ P3 ] ).toBe( 1 );
+		expect( decideWinner( seats, scores ) ).toBeUndefined();
+		expect( standingsFor( seats, scores ).winner ).toBeUndefined();
 	} );
 
-	test( "TrickStarted stacks the new trick in front of the finished one", () => {
-		const deal = createNewDeal( [ ...SEATS ], P1 );
-		const state = fold( EMPTY, [
-			DealDealtEvent.make( { deal } ),
-			TrickStartedEvent.make( { leadPlayer: P1 } ),
-			TrickWonEvent.make( { winner: P2 } ),
-			TrickStartedEvent.make( { leadPlayer: P2 } )
-		] );
-
-		const tricks = state.deals[ 0 ]!.tricks;
-		expect( tricks ).toHaveLength( 2 );
-		expect( tricks[ 0 ]!.leadPlayer ).toBe( P2 );
-		expect( tricks[ 0 ]!.winner ).toBeUndefined();
-		expect( tricks[ 1 ]!.winner ).toBe( P2 );
-	} );
-
-	test( "WinsDeclared records each player's bid on the active deal", () => {
-		const deal = createNewDeal( [ ...SEATS ], P1 );
-		const state = fold( EMPTY, [
-			DealDealtEvent.make( { deal } ),
-			WinsDeclaredEvent.make( { playerId: P1, wins: 2 } ),
-			WinsDeclaredEvent.make( { playerId: P2, wins: 5 } )
-		] );
-
-		expect( state.deals[ 0 ]!.declarations ).toEqual( table( { p1: 2, p2: 5, p3: 0, p4: 0 } ) );
-	} );
-
-	test( "DealScored writes the round onto the deal and adds it to the running total", () => {
-		const first = createNewDeal( [ ...SEATS ], P1 );
-		const second = createNewDeal( [ ...SEATS ], P2 );
-		const round = { [ P1 ]: 24, [ P2 ]: 32, [ P3 ]: -50, [ P4 ]: -40 };
-
-		const state = fold( EMPTY, [
-			...SEATS.map( ( playerId ) => ScoreInitializedEvent.make( { playerId } ) ),
-			DealDealtEvent.make( { deal: first } ),
-			DealScoredEvent.make( { scores: round } ),
-			DealDealtEvent.make( { deal: second } ),
-			DealScoredEvent.make( { scores: round } )
-		] );
-
-		// Every deal keeps its own round score...
-		expect( state.deals[ 0 ]!.scores ).toEqual( round );
-		expect( state.deals[ 1 ]!.scores ).toEqual( round );
-		// ...and the cumulative table accumulates across deals.
-		expect( state.scores ).toEqual( table( { p1: 48, p2: 64, p3: -100, p4: -80 } ) );
-	} );
-
-	test( "WinnerDecided stamps the game winner", () => {
-		expect( fold( EMPTY, [ WinnerDecidedEvent.make( { winner: P2 } ) ] ).winner ).toBe( P2 );
-	} );
-
-	test( "deal-scoped events are inert while no deal is active", () => {
-		const events: ReadonlyArray<CallbreakEvent> = [
-			WinsDeclaredEvent.make( { playerId: P1, wins: 3 } ),
-			TrickStartedEvent.make( { leadPlayer: P1 } ),
-			CardPlayedEvent.make( { playerId: P1, cardId: "AS" } ),
-			TrickWonEvent.make( { winner: P1 } )
-		];
-
-		for ( const event of events ) {
-			expect( apply( EMPTY, event ) ).toEqual( EMPTY );
-		}
-
-		// DealScored is the exception: the cumulative table lives outside the deal.
-		expect( apply( EMPTY, DealScoredEvent.make( { scores: { [ P1 ]: 10 } } ) ).scores )
-			.toEqual( table( { p1: 10 } ) );
-	} );
-
-	test( "a card played with no trick open still leaves the hand", () => {
-		const deal = createNewDeal( [ ...SEATS ], P1 );
-		const card = deal.hands[ P1 ]![ 0 ]!;
-		const state = fold( EMPTY, [
-			DealDealtEvent.make( { deal } ),
-			CardPlayedEvent.make( { playerId: P1, cardId: card } )
-		] );
-
-		expect( state.deals[ 0 ]!.hands[ P1 ] ).not.toContain( card );
-		expect( state.deals[ 0 ]!.tricks ).toHaveLength( 0 );
-	} );
-
-	test( "a trick won with no trick open still banks the win", () => {
-		const deal = createNewDeal( [ ...SEATS ], P1 );
-		const state = fold( EMPTY, [
-			DealDealtEvent.make( { deal } ),
-			TrickWonEvent.make( { winner: P4 } )
-		] );
-
-		expect( state.deals[ 0 ]!.wins[ P4 ] ).toBe( 1 );
-		expect( state.deals[ 0 ]!.tricks ).toHaveLength( 0 );
+	test( "treats a seat with no recorded score as zero", () => {
+		expect( decideWinner( seats, { [ a ]: -5 } ) ).toBeUndefined();
+		expect( decideWinner( seats, { [ a ]: 5 } ) ).toBe( a );
 	} );
 } );

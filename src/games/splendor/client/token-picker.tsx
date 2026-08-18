@@ -1,10 +1,13 @@
 "use client";
 
-import { Fragment, type ReactNode, useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+
+import type { ReactNode } from "react";
+
+import { TokenBar } from "@/games/splendor/client/token-bar.tsx";
+import { DEFAULT_TOKENS } from "@/games/splendor/shared/utils.ts";
 
 import type { Gem, Tokens } from "@/games/splendor/shared/schema.ts";
-import { DEFAULT_TOKENS } from "@/games/splendor/shared/utils.ts";
-import { TokenBar } from "@/games/splendor/client/token-bar.tsx";
 
 type TokenPickerProps = {
 	initialTokens: Partial<Tokens>;
@@ -15,7 +18,7 @@ type TokenPickerProps = {
 	sinkText?: string;
 	action?: ReactNode;
 	disabled?: boolean;
-}
+};
 
 export function TokenPicker( { initialTokens, pickLimit, ...props }: TokenPickerProps ) {
 	const [ tokens, setTokens ] = useState<Tokens>( DEFAULT_TOKENS );

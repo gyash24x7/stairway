@@ -1,44 +1,26 @@
-import { getClient, run } from "@/client.ts";
-import type {
-	PickTokensInput,
-	PurchaseCardInput,
-	ReserveCardInput,
-	SplendorConfig
-} from "@/games/splendor/shared/schema.ts";
-import { GameCode, GameId, GameIdParams, JoinGameInput } from "@/shared/swish/schema.ts";
+import { client } from "@/client.ts";
+import { gameFn, gameInputFn, inputFn } from "@/swish/client/api.ts";
 
-const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
-
-const client = getClient( API_URL ).splendor;
-
-/** Build the branded `:gameId` path-param struct the endpoints expect. */
-const gameIdParams = ( gameId: string ) => GameIdParams.make( { gameId: GameId.make( gameId ) } );
-
-// --- Mutations -------------------------------------------------------------
-
-export const createSplendorGameFn = ( config: SplendorConfig ) =>
-	run( client.createGame( { payload: config } ) );
-
-export const joinSplendorGameFn = ( code: string ) =>
-	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
-
-/** Start a filled game sitting at `PLAYERS_READY`. */
-export const startGameFn = ( gameId: string ) =>
-	run( client.start( { params: gameIdParams( gameId ) } ) );
-
-export const pickTokensFn = ( gameId: string, input: PickTokensInput ) =>
-	run( client.pickTokens( { params: gameIdParams( gameId ), payload: input } ) );
-
-export const reserveCardFn = ( gameId: string, input: ReserveCardInput ) =>
-	run( client.reserveCard( { params: gameIdParams( gameId ), payload: input } ) );
-
-export const purchaseCardFn = ( gameId: string, input: PurchaseCardInput ) =>
-	run( client.purchaseCard( { params: gameIdParams( gameId ), payload: input } ) );
-
-// --- Queries ---------------------------------------------------------------
-
-export const getStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.getState( { params: gameIdParams( gameId ) } ), signal );
-
-export const getTableStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.getTableState( { params: gameIdParams( gameId ) } ), signal );
+/**
+ * Splendor's endpoints, as calls a component can make. `pass` is legal only when
+ * the rules leave the seat nothing else to do, and `claimNoble` settles an open
+ * noble-visit frame with the noble the buyer chose.
+ *
+ * Splendor hides only the order of the three decks, so a seat and a spectator
+ * get almost the same envelope from `getView` — what differs is `view.playerId`.
+ */
+export const splendorApi = {
+	createGame: inputFn( client.splendor.createGame ),
+	join: inputFn( client.splendor.join ),
+	getView: gameFn( client.splendor.getView ),
+	addBots: gameFn( client.splendor.addBots ),
+	start: gameFn( client.splendor.start ),
+	undo: gameFn( client.splendor.undo ),
+	redo: gameFn( client.splendor.redo ),
+	pickTokens: gameInputFn( client.splendor.pickTokens ),
+	reserveCard: gameInputFn( client.splendor.reserveCard ),
+	purchaseCard: gameInputFn( client.splendor.purchaseCard ),
+	pass: gameInputFn( client.splendor.pass ),
+	claimNoble: gameInputFn( client.splendor.claimNoble ),
+	setAutoPlay: gameInputFn( client.splendor.setAutoPlay )
+};

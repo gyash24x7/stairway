@@ -3,17 +3,25 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 
-import { GameArchive } from "@/shared/swish/services.ts";
+import { withRuntime } from "@/platform/utils/runtime.ts";
+import { SwishArchive } from "@/swish/server/services.ts";
+
+import type { GameAddress } from "@/swish/server/services.ts";
 
 export const ArchiveKV = Cloudflare.KV.Namespace( "ArchiveKV" );
 
-export const GameArchiveLive = ( kv: Cloudflare.KV.ReadWriteNamespaceClient ) =>
-	Layer.succeed( GameArchive, GameArchive.of( {
-		save: ( key, encoded ) => Effect.orDie( kv.put( key, JSON.stringify( encoded ) ) ),
-
-		load: key => Effect.orDie( kv.get<unknown>( key, "json" ) ).pipe(
-			Effect.map( Option.fromNullishOr )
+export const SwishArchiveLive = ( kv: Cloudflare.KV.ReadWriteNamespaceClient ) =>
+	Layer.succeed( SwishArchive, SwishArchive.of( {
+		save: ( address, encoded ) => withRuntime(
+			kv.put( `${ address.game }:${ address.id }`, JSON.stringify( encoded ) ).pipe(
+				Effect.orDie
+			)
 		),
 
-		remove: key => Effect.orDie( kv.delete( key ) )
+		load: <T>( address: GameAddress ) => withRuntime(
+			kv.get<T>( `${ address.game }:${ address.id }`, "json" ).pipe(
+				Effect.map( Option.fromNullishOr ),
+				Effect.orDie
+			)
+		)
 	} ) );

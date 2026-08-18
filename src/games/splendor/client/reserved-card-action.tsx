@@ -2,7 +2,9 @@
 
 import { useBoolean } from "usehooks-ts";
 
-import type { Card } from "@/games/splendor/shared/schema.ts";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { GameCard } from "@/games/splendor/client/game-card.tsx";
+import { PurchaseCard } from "@/games/splendor/client/purchase-card.tsx";
 import {
 	Drawer,
 	DrawerContent,
@@ -11,9 +13,8 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@/shared/ui/primitives/drawer.tsx";
-import { useSplendor } from "@/games/splendor/client/context.tsx";
-import { GameCard } from "@/games/splendor/client/game-card.tsx";
-import { PurchaseCard } from "@/games/splendor/client/purchase-card.tsx";
+
+import type { Card } from "@/games/splendor/shared/schema.ts";
 
 /**
  * One of your reserved cards on the controller: tap it to buy it.
@@ -25,15 +26,12 @@ import { PurchaseCard } from "@/games/splendor/client/purchase-card.tsx";
  */
 export function ReservedCardAction( { card }: { card: Card } ) {
 	const { value, toggle, setTrue } = useBoolean();
-	const { data } = useSplendor();
+	const { data, playerId, isMyTurn } = useSplendor();
 
-	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === data.view.playerId;
-
-	const {
-		cards: discounts,
-		tokens: playerTokens
-	} = data.view.playerData[ data.view.playerId ];
+	const me = playerId ? data.view.playerData[ playerId ] : undefined;
+	if ( !me ) {
+		return <GameCard card={ card } disabled/>;
+	}
 
 	return (
 		<Drawer open={ value } onOpenChange={ toggle }>
@@ -43,16 +41,11 @@ export function ReservedCardAction( { card }: { card: Card } ) {
 					<DrawerTitle>BUY RESERVED CARD</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "flex justify-center" }>
+				<div className={ "flex justify-center overflow-y-scroll max-h-100" }>
 					<GameCard card={ card } disabled/>
 				</div>
 				<DrawerFooter>
-					<PurchaseCard
-						gameId={ data.id }
-						card={ card }
-						tokens={ playerTokens }
-						discounts={ discounts }
-					/>
+					<PurchaseCard card={ card } tokens={ me.tokens } discounts={ me.cards }/>
 				</DrawerFooter>
 			</DrawerContent>
 		</Drawer>

@@ -1,25 +1,31 @@
 import {
-	type Beliefs,
+	buildBeliefs,
 	holdsBookProbability,
 	probability
 } from "@/games/fish/server/bot/beliefs.ts";
-import type { Book, FishPlayerView } from "@/games/fish/shared/schema.ts";
-import { getOpponents, getTeamForPlayer } from "@/games/fish/shared/utils.ts";
+import { membersOf, opponentsOf, teamOf } from "@/swish/shared/teams.ts";
+
+import type { Beliefs } from "@/games/fish/server/bot/beliefs.ts";
+import type { Book, FishBotData } from "@/games/fish/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
+import type { GameContext, PlayerId } from "@/swish/shared/schema.ts";
 
 // --- How well placed a player is to take a book off the opponents -----------
 // Read off the belief model, and used for three things: picking the bot's own
 // ask, picking who to hand the turn to, and deciding when a banked claim is
 // worth spending.
 //
-// Asks are ranked to CLOSE BOOKS, not to keep the turn: the fewest cards left
-// to collect wins, and only ties are settled on the odds. So a bot with one ace
-// outstanding hunts that ace even at long odds, rather than retreating to a
-// safer book — losing the turn on a long shot costs less than never finishing
-// anything, and it is far easier to follow.
+// Asks are ranked on ONE number: the books an ask is expected to be worth, net of
+// what missing costs. A card is worth its share of the book it belongs to — a
+// book needing one more card is a whole book away from being won, so that card is
+// worth 1, while a card in a book needing four is worth a quarter of one. Missing
+// hands the turn to whoever was asked, so their own prospects come off the top.
+//
+// That single expectation replaced a lexicographic rule that closed the nearest
+// book first and only consulted the odds to break ties. It chased long shots at
+// nearly-finished books and paid for them in turns: a fifth of its asks landed.
 
-/** Cards-outstanding differences below this are noise in an expectation, not a gap. */
+/** Differences below this are noise in an expectation, not a gap. */
 const EPSILON = 1e-9;
 
 /** The best ask available to a player, and what it is worth. */
@@ -30,61 +36,97 @@ export type Snatch = {
 	readonly book: Book;
 	/** Expected cards of the book not yet with the player's team. Lower is closer. */
 	readonly outstanding: number;
-	/** P( the ask succeeds ), weighted by how close the book is to being ours. */
-	readonly score: number;
-	/** P( the ask succeeds ) on its own. */
+	/** P( the ask succeeds ). */
 	readonly success: number;
+	/** Books this ask is expected to be worth: `success` × the card's share of one. */
+	readonly potential: number;
 	/** How well placed the player being asked is to take a book, if this misses. */
 	readonly risk: number;
-	/** `success` net of what a miss hands the target. See {@link bestSnatch}. */
-	readonly value: number;
+	/** `potential` net of what a miss hands the target. The number asks are ranked on. */
+	readonly expected: number;
 };
 
 /**
- * Ranks two asks: close a book first, then net worth.
+ * Ranks two asks: expected books first, then — for asks the model cannot separate
+ * — the one that closes a book soonest, and the likelier of those.
  *
- * Returns true when `a` is the better ask.
+ * The tie-break is what keeps the bot readable at the table. It follows the same
+ * book across turns rather than hopping between equally-valued asks, and it never
+ * overrides the expectation: two asks have to be worth the same before it speaks.
+ *
+ * @param a - The ask being considered.
+ * @param b - The ask to beat.
+ * @returns `true` when `a` is the better ask.
  * @public
  */
-export function closesSooner( a: Snatch, b: Snatch ) {
-	// A hair of tolerance, because `outstanding` is an expectation over the
-	// belief model rather than a count — two books genuinely one card from home
-	// should tie and fall through to what the ask is worth.
+export function isBetterAsk( a: Snatch, b: Snatch ) {
+	if ( Math.abs( a.expected - b.expected ) > EPSILON ) {
+		return a.expected > b.expected;
+	}
+
 	if ( Math.abs( a.outstanding - b.outstanding ) > EPSILON ) {
 		return a.outstanding < b.outstanding;
 	}
 
-	return a.value > b.value;
+	return a.success > b.success;
+}
+
+/**
+ * A belief model per seat, each built from what that seat knows.
+ *
+ * An opponent's prospects have to be measured with *their* knowledge, not ours:
+ * our own hand tells us where cards are not, which sharpens our picture of what
+ * they could be chasing into something they cannot actually see. Scoring them
+ * from our model systematically overstated them, and the bot swerved away from
+ * targets that were no danger at all.
+ *
+ * What they certainly do know is their own hand, so each perspective is seeded
+ * with the cards we have proved are theirs — a lower bound on it, and the only
+ * part of it we are entitled to.
+ *
+ * @param data - The acting bot's game data.
+ * @param own - The bot's own model, for the proofs it has about other hands.
+ * @returns A model per other seated player, keyed by player.
+ * @public
+ */
+export function seatBeliefs( data: FishBotData, own: Beliefs ) {
+	const models = new Map<PlayerId, Beliefs>();
+
+	for ( const playerId of data.context.players ) {
+		if ( playerId === data.state.playerId || ( data.state.cardCounts[ playerId ] ?? 0 ) <= 0 ) {
+			continue;
+		}
+
+		const hand = [ ...own.owner ]
+			.filter( ( [ , holder ] ) => holder === playerId )
+			.map( ( [ card ] ) => card );
+
+		models.set(
+			playerId,
+			buildBeliefs( data.state, data.config, { playerId, hand, complete: false } )
+		);
+	}
+
+	return models;
 }
 
 /**
  * How well placed each opponent is to take a book, i.e. what it costs to hand
  * them the turn by asking them for a card they turn out not to have.
  *
- * Read off the same belief model as everything else, which means it is built
- * from what those opponents have *asked for*: the rule that you only ask in a
- * book you hold a card of is what puts them on a book at all, and the counting
- * then says how much of it their team already holds.
- *
- * Measured with the bot's own knowledge, which is more than they have — they may
- * not yet know where the card they need is. That makes this cautious rather than
- * exact, which is the right way round for a rule about what to avoid.
- *
- * @param beliefs - The belief model for this turn.
- * @param view - The acting bot's view.
- * @returns Opponent id → how dangerous it is to give them the turn, in [0, 1].
+ * @param data - The acting bot's game data.
+ * @param seats - The per-seat models from {@link seatBeliefs}.
+ * @returns Opponent id → how dangerous it is to give them the turn, in books.
  * @public
  */
-export function opponentRisk( beliefs: Beliefs, view: FishPlayerView ) {
+export function opponentRisk( data: FishBotData, seats: ReadonlyMap<PlayerId, Beliefs> ) {
 	const risk = new Map<PlayerId, number>();
 
-	for ( const pid of getOpponents( view.teams, view.playerId ) ) {
-		if ( ( view.cardCounts[ pid ] ?? 0 ) <= 0 ) {
-			continue;
+	for ( const pid of opponentsOf( data.context, data.state.playerId ) ) {
+		const theirs = seats.get( pid );
+		if ( theirs ) {
+			risk.set( pid, snatchScore( theirs, data, pid ) );
 		}
-
-		// Their own best ask, unweighted — we do not model them dodging us too.
-		risk.set( pid, snatchScore( beliefs, view, pid ) );
 	}
 
 	return risk;
@@ -94,23 +136,20 @@ export function opponentRisk( beliefs: Beliefs, view: FishPlayerView ) {
  * The strongest ask `playerId` could make right now.
  *
  * Exact for the bot itself, which knows its own hand: every "do they hold this"
- * term collapses to 1 or 0. For anyone else the terms come from the model, and
- * the book's cards are treated as independent — the one approximation here.
+ * term collapses to 1 or 0. For anyone else the terms come from their own model.
  *
- * Among asks that get equally close to closing a book, the one picked is the one
- * worth most once the downside is counted:
+ * The value of an ask is
  *
- *     value = success − ( 1 − success ) × risk( target )
+ *     expected = success × ( 1 / outstanding ) − ( 1 − success ) × risk( target )
  *
  * A miss hands the turn to whoever was asked, so asking a player who is poised
  * to take a book pays for their book with your turn. Netting that off is what
  * keeps the bot away from them — and it does so without a cutoff: a target who
  * certainly holds the card is still asked however dangerous they are, because
- * there is no miss to pay for. That is the "unless there is no other option"
- * part, falling out of the arithmetic rather than bolted on.
+ * there is no miss to pay for.
  *
- * @param beliefs - The belief model for this turn.
- * @param view - The acting bot's view.
+ * @param beliefs - The belief model to score with — the asker's own.
+ * @param data - The acting bot's game data.
  * @param playerId - Whose prospects to score.
  * @param onlyBook - Restrict to one book, for "can I carry on where I was?".
  * @param risks - What it costs to hand each opponent the turn; see {@link opponentRisk}.
@@ -119,17 +158,17 @@ export function opponentRisk( beliefs: Beliefs, view: FishPlayerView ) {
  */
 export function bestSnatch(
 	beliefs: Beliefs,
-	view: FishPlayerView,
+	{ state, context }: FishBotData,
 	playerId: PlayerId,
 	onlyBook?: Book,
 	risks?: ReadonlyMap<PlayerId, number>
 ) {
-	if ( ( view.cardCounts[ playerId ] ?? 0 ) <= 0 ) {
+	if ( ( state.cardCounts[ playerId ] ?? 0 ) <= 0 ) {
 		return undefined;
 	}
 
-	const opponents = getOpponents( view.teams, playerId )
-		.filter( pid => ( view.cardCounts[ pid ] ?? 0 ) > 0 );
+	const opponents = opponentsOf( context, playerId )
+		.filter( pid => ( state.cardCounts[ pid ] ?? 0 ) > 0 );
 
 	if ( opponents.length === 0 ) {
 		return undefined;
@@ -148,9 +187,13 @@ export function bestSnatch(
 			continue;
 		}
 
-		const share = teamShare( beliefs, view, book, playerId );
+		const share = teamShare( beliefs, context, book, playerId );
 		const cards = beliefs.cardsOf.get( book ) ?? [];
 		const outstanding = cards.length * ( 1 - share );
+
+		// What one of its cards is worth: a book needing one more card is one card
+		// from being a whole book, so that card is worth a whole one.
+		const gain = 1 / Math.max( outstanding, 1 );
 
 		for ( const cardId of cards ) {
 			const lacks = 1 - probability( beliefs, cardId, playerId );
@@ -166,6 +209,8 @@ export function bestSnatch(
 
 				const success = holdsBook * lacks * odds;
 				const risk = risks?.get( from ) ?? 0;
+				const potential = success * gain;
+
 				const candidate = {
 					playerId,
 					cardId,
@@ -173,12 +218,12 @@ export function bestSnatch(
 					book,
 					outstanding,
 					success,
-					score: success * share,
+					potential,
 					risk,
-					value: success - ( 1 - success ) * risk
+					expected: potential - ( 1 - success ) * risk
 				};
 
-				if ( !best || closesSooner( candidate, best ) ) {
+				if ( !best || isBetterAsk( candidate, best ) ) {
 					best = candidate;
 				}
 			}
@@ -188,9 +233,21 @@ export function bestSnatch(
 	return best;
 }
 
-/** `bestSnatch`'s score, or 0 when the player has no ask at all. */
-export function snatchScore( beliefs: Beliefs, view: FishPlayerView, playerId: PlayerId ) {
-	return bestSnatch( beliefs, view, playerId )?.score ?? 0;
+/**
+ * What a player's best ask is worth before the downside — the measure of how well
+ * placed they are, used to compare seats rather than to pick between asks.
+ *
+ * Risk is deliberately left out: it prices handing the turn *away*, which is a
+ * cost to whoever is asking, not part of how dangerous that player is.
+ *
+ * @param beliefs - The model to score with — that player's own.
+ * @param data - The acting bot's game data.
+ * @param playerId - Whose prospects to score.
+ * @returns The books their best ask is expected to be worth, or 0 when they have none.
+ * @public
+ */
+export function snatchScore( beliefs: Beliefs, data: FishBotData, playerId: PlayerId ) {
+	return bestSnatch( beliefs, data, playerId )?.potential ?? 0;
 }
 
 /**
@@ -200,20 +257,19 @@ export function snatchScore( beliefs: Beliefs, view: FishPlayerView, playerId: P
  */
 export function teamShare(
 	beliefs: Beliefs,
-	view: FishPlayerView,
+	context: GameContext,
 	book: Book,
 	playerId: PlayerId
 ) {
-	const teamId = getTeamForPlayer( view.teams, playerId );
-	const team = view.teams[ teamId ]?.members ?? [];
+	const teamId = teamOf( context, playerId );
 	const cards = beliefs.cardsOf.get( book ) ?? [];
-	if ( cards.length === 0 ) {
+	if ( cards.length === 0 || teamId === undefined ) {
 		return 0;
 	}
 
 	let held = 0;
 	for ( const card of cards ) {
-		for ( const member of team ) {
+		for ( const member of membersOf( context, teamId ) ) {
 			held += probability( beliefs, card, member );
 		}
 	}

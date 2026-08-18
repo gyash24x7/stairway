@@ -1,57 +1,39 @@
-import { getClient, run } from "@/client.ts";
-import type {
-	DiscardDominoInput,
-	KingdominoConfig,
-	PlaceDominoInput,
-	SelectDominoInput
-} from "@/games/kingdomino/shared/schema.ts";
-import {
-	GameCode,
-	GameIdParams,
-	JoinGameInput
-} from "@/shared/swish/schema.ts";
+import { client, run } from "@/client.ts";
+import { gameFn, gameInputFn, inputFn } from "@/swish/client/api.ts";
 
-const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
-
-const client = getClient( API_URL ).kingdomino;
-
-/** Build the branded `:gameId` path-param struct the endpoints expect. */
-const gameIdParams = ( gameId: string ) =>
-	GameIdParams.make( { gameId: GameIdParams.fields.gameId.make( gameId ) } );
-
-// --- Mutations -------------------------------------------------------------
-
-export const createKingdominoGameFn = ( config: KingdominoConfig ) =>
-	run( client.createGame( { payload: config } ) );
-
-export const joinKingdominoGameFn = ( code: string ) =>
-	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
-
-export const selectDominoFn = ( gameId: string, input: SelectDominoInput ) =>
-	run( client.selectDomino( { params: gameIdParams( gameId ), payload: input } ) );
-
-export const placeDominoFn = ( gameId: string, input: PlaceDominoInput ) =>
-	run( client.placeDomino( { params: gameIdParams( gameId ), payload: input } ) );
-
-export const discardDominoFn = ( gameId: string, input: DiscardDominoInput ) =>
-	run( client.discardDomino( { params: gameIdParams( gameId ), payload: input } ) );
-
-// --- Queries ---------------------------------------------------------------
-
-/** Start a filled game sitting at `PLAYERS_READY`. */
-export const startGameFn = ( gameId: string ) =>
-	run( client.start( { params: gameIdParams( gameId ) } ) );
-
-export const getKingdominoStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.getState( {
-		params: gameIdParams( gameId )
-	} ), signal );
+import type { KingdominoCreateInput } from "@/games/kingdomino/shared/schema.ts";
 
 /**
- * The shared-screen read. Not member-gated on the server — the couch shows the
- * public board and the television may hold no seat.
+ * The create payload is a union — a 7x7 kingdom is a duel's, and the schema says
+ * so by pairing each seat count with the sizes it allows. The generated client
+ * takes the union of *request objects* rather than an object over the union, so
+ * the branch is spelled out here to narrow `payload` into one member. That is
+ * also why this one endpoint is written out rather than wrapped by `inputFn`,
+ * which would infer the payload as whichever member of the union comes first.
+ *
+ * @param payload - The seat count, and the board size it allows.
+ * @returns A reference to the game created.
  */
-export const getTableStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.getTableState( {
-		params: gameIdParams( gameId )
-	} ), signal );
+const createGame = ( payload: KingdominoCreateInput ) =>
+	run( payload.playerCount === 2
+		? client.kingdomino.createGame( { payload } )
+		: client.kingdomino.createGame( { payload } ) );
+
+/**
+ * Kingdomino's endpoints, as calls a component can make. Kingdomino hides only
+ * the undrawn deck, so a seat and a spectator get almost the same envelope from
+ * `getView` — what differs is `view.playerId`.
+ */
+export const kingdominoApi = {
+	createGame,
+	join: inputFn( client.kingdomino.join ),
+	getView: gameFn( client.kingdomino.getView ),
+	addBots: gameFn( client.kingdomino.addBots ),
+	start: gameFn( client.kingdomino.start ),
+	undo: gameFn( client.kingdomino.undo ),
+	redo: gameFn( client.kingdomino.redo ),
+	selectDomino: gameInputFn( client.kingdomino.selectDomino ),
+	placeDomino: gameInputFn( client.kingdomino.placeDomino ),
+	discardDomino: gameInputFn( client.kingdomino.discardDomino ),
+	setAutoPlay: gameInputFn( client.kingdomino.setAutoPlay )
+};

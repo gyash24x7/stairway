@@ -1,39 +1,15 @@
-import { getClient, run } from "@/client.ts";
-import {
-	GameCode,
-	GameIdParams,
-	JoinGameInput
-} from "@/shared/swish/schema.ts";
+import { client } from "@/client.ts";
+import { gameFn, gameInputFn, inputFn } from "@/swish/client/api.ts";
 
-const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
-
-const client = getClient( API_URL ).tictactoe;
-
-/** Build the branded `:gameId` path-param struct the endpoints expect. */
-const gameIdParams = ( gameId: string ) =>
-	GameIdParams.make( { gameId: GameIdParams.fields.gameId.make( gameId ) } );
-
-// --- Mutations -------------------------------------------------------------
-
-export const createTicTacToeGameFn = () =>
-	run( client.createGame( { payload: {} } ) );
-
-export const joinTicTacToeGameFn = ( code: string ) =>
-	run( client.join( { payload: JoinGameInput.make( { code: GameCode.make( code ) } ) } ) );
-
-/** Start a filled game sitting at `PLAYERS_READY`. */
-export const startGameFn = ( gameId: string ) =>
-	run( client.start( { params: gameIdParams( gameId ) } ) );
-
-export const addBotsFn = ( gameId: string ) =>
-	run( client.addBots( { params: gameIdParams( gameId ) } ) );
-
-export const placeFn = ( gameId: string, position: number ) =>
-	run( client.place( { params: gameIdParams( gameId ), payload: { position } } ) );
-
-// --- Queries ---------------------------------------------------------------
-
-export const getStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.getState( {
-		params: gameIdParams( gameId )
-	} ), signal );
+/** Tic Tac Toe's endpoints, as calls a component can make. */
+export const tictactoeApi = {
+	createGame: inputFn( client.tictactoe.createGame ),
+	join: inputFn( client.tictactoe.join ),
+	getView: gameFn( client.tictactoe.getView ),
+	addBots: gameFn( client.tictactoe.addBots ),
+	start: gameFn( client.tictactoe.start ),
+	undo: gameFn( client.tictactoe.undo ),
+	redo: gameFn( client.tictactoe.redo ),
+	place: gameInputFn( client.tictactoe.place ),
+	setAutoPlay: gameInputFn( client.tictactoe.setAutoPlay )
+};

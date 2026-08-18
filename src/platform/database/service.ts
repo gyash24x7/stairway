@@ -4,6 +4,7 @@ import * as Effect from "effect/Effect";
 
 import { relations } from "@/platform/database/schema.ts";
 
+
 export const StairwayDatabase = Effect.gen( function* () {
 	const schema = yield* Drizzle.Schema( "StairwaySchema", {
 		schema: "./src/platform/database/schema.ts",

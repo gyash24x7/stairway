@@ -1,8 +1,8 @@
-"use client";
-
 import { Select as SelectPrimitive } from "@base-ui/react/select";
 import { CheckIcon, ChevronDownIcon } from "lucide-react";
-import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
+import { forwardRef } from "react";
+
+import type { ComponentPropsWithoutRef, ComponentRef } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
 
@@ -32,7 +32,7 @@ export const SelectTrigger = forwardRef<ComponentRef<typeof Trigger>, ComponentP
 		<Trigger
 			className={ cn(
 				"flex h-8 md:h-10 items-center justify-between gap-3 rounded-md",
-				"border-2 border-black px-3 py-2 text-sm select-none",
+				"border-2 border-outline px-3 py-2 text-sm select-none",
 				"bg-accent shadow-sm md:shadow-md cursor-pointer text-neutral-dark transition",
 				"hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none"
 			) }
@@ -71,7 +71,7 @@ export const SelectContent = forwardRef<
 					className={ cn(
 						"group max-h-(--available-height) origin-(--transform-origin) bg-accent",
 						"overflow-y-auto rounded-md py-1 text-gray-900 shadow-sm md:shadow-md",
-						"border-black border-2 transition-[transform,scale,opacity]",
+						"border-outline border-2 transition-[transform,scale,opacity]",
 						"data-ending-style:scale-90 data-ending-style:opacity-0",
 						"data-[side=none]:data-ending-style:transition-none",
 						"data-starting-style:scale-90 data-starting-style:opacity-0",

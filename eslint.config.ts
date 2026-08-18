@@ -1,19 +1,27 @@
+import effectPlugin from "@effect/eslint-plugin";
+import stylistic from "@stylistic/eslint-plugin";
+import pluginQuery from "@tanstack/eslint-plugin-query";
+import pluginRouter from "@tanstack/eslint-plugin-router";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import importPlugin from "eslint-plugin-import-x";
+import perfectionist from "eslint-plugin-perfectionist";
+import reactHooks from "eslint-plugin-react-hooks";
 
+// `src/*/client|server|shared/**` covers every domain (auth, chat, …) without
+// having to list each one; the `games/*` entries cover the nested game layout.
 const client = [
 	"src/routes/**",
 	"src/main.*",
 	"src/routeTree.*",
 	"src/shared/ui/**",
-	"src/auth/client/**",
+	"src/*/client/**",
 	"src/games/*/client/**"
 ];
 
 const server = [
 	"src/platform/**",
-	"src/auth/server/**",
+	"src/*/server/**",
 	"src/games/*/server/**",
 	"src/worker.*"
 ];
@@ -21,7 +29,7 @@ const server = [
 const shared = [
 	"src/api.*",
 	"src/client.*",
-	"src/auth/shared/**",
+	"src/*/shared/**",
 	"src/games/*/shared/**",
 	"src/shared/cards/**",
 	"src/shared/swish/**",
@@ -34,12 +42,18 @@ export default [
 		ignores: [ "src/routeTree.gen.ts" ]
 	},
 	{
-		files: [ "**/*.ts", "**/*.tsx" ],
+		files: [ "src/**/*.ts", "src/**/*.tsx", "./*.ts" ],
 		languageOptions: {
 			parser: tsParser,
 			parserOptions: { ecmaFeatures: { jsx: true } }
 		},
-		plugins: { "import-x": importPlugin, "@typescript-eslint": tsPlugin },
+		plugins: {
+			"import-x": importPlugin,
+			"@typescript-eslint": tsPlugin,
+			"@stylistic": stylistic,
+			effect: effectPlugin,
+			perfectionist
+		},
 		settings: {
 			"import-x/resolver": {
 				typescript: { project: "./tsconfig.json" }
@@ -55,15 +69,15 @@ export default [
 				"error",
 				{
 					selector: "FunctionDeclaration[returnType][returnType.typeAnnotation.type!='TSTypePredicate']",
-					message: "Explicit return type annotations are not allowed; let TypeScript infer the return type."
+					message: "Explicit return type annotations are not allowed"
 				},
 				{
 					selector: "FunctionExpression[returnType][returnType.typeAnnotation.type!='TSTypePredicate']",
-					message: "Explicit return type annotations are not allowed; let TypeScript infer the return type."
+					message: "Explicit return type annotations are not allowed"
 				},
 				{
 					selector: "ArrowFunctionExpression[returnType][returnType.typeAnnotation.type!='TSTypePredicate']",
-					message: "Explicit return type annotations are not allowed; let TypeScript infer the return type."
+					message: "Explicit return type annotations are not allowed"
 				}
 			],
 			// All local ts/tsx imports must carry their file extension (npm packages are exempt).
@@ -86,11 +100,80 @@ export default [
 					fixStyle: "separate-type-imports"
 				}
 			],
-			// Group imports (external → internal) with a blank line between groups.
-			"import-x/order": [
+			// --- House formatting -------------------------------------------------
+			// Spacing inside parens, braces, brackets and template holes:
+			// `fn( arg )`, `{ Foo }`, `[ "a", "b" ]`, `${ x }`. The brace rule also
+			// covers import/export specifiers, so autofixed imports come out in style.
+			// Note: `computed-property-spacing` is deliberately absent — it cannot
+			// tell `data.players[ playerId ]` from a mapped type's `[K in keyof T]`,
+			// and this codebase spaces the former but not the latter.
+			"@stylistic/space-in-parens": [ "error", "always" ],
+			"@stylistic/object-curly-spacing": [ "error", "always" ],
+			"@stylistic/array-bracket-spacing": [ "error", "always" ],
+			"@stylistic/template-curly-spacing": [ "error", "always" ],
+			"@stylistic/space-before-function-paren": [ "error", "never" ],
+			"@stylistic/quotes": [ "error", "double" ],
+			"@stylistic/semi": [ "error", "always" ],
+			"@stylistic/comma-dangle": [ "error", "never" ],
+			"@stylistic/eol-last": [ "error", "always" ],
+			"@stylistic/no-multiple-empty-lines": [ "error", { max: 2 } ],
+			"@stylistic/quote-props": [ "error", "as-needed" ],
+			"@stylistic/member-delimiter-style": "error",
+			"@stylistic/type-annotation-spacing": "error",
+			"@stylistic/keyword-spacing": "error",
+			"@stylistic/space-before-blocks": "error",
+			"@stylistic/space-infix-ops": "error",
+			"@stylistic/key-spacing": "error",
+			"@stylistic/comma-spacing": "error",
+			"@stylistic/arrow-spacing": "error",
+			"@stylistic/no-multi-spaces": "error",
+
+			// --- Effect -----------------------------------------------------------
+			// Import the specific module (`effect/Effect`), never the barrel
+			// (`effect`), so bundles stay small and module graphs stay explicit.
+			"effect/no-import-from-barrel-package": [
+				"error", { packageNames: [ "effect", "@effect/platform" ] }
+			],
+			// No trailing whitespace, including on otherwise-blank lines — which is
+			// what an autofixer leaves behind when it lifts a name out of an import.
+			"@stylistic/no-trailing-spaces": [ "error", { skipBlankLines: false } ],
+			// Type imports live in their own `import type` statement — never as an
+			// inline `type` specifier mixed in with value imports.
+			"import-x/consistent-type-specifier-style": [ "error", "prefer-top-level" ],
+			// Sort the names inside a single import statement. Declaration order is
+			// left to `import-x/order` below.
+			"sort-imports": [
 				"error", {
-					groups: [ [ "builtin", "external" ], "internal" ],
-					"newlines-between": "always"
+					ignoreDeclarationSort: true,
+					ignoreMemberSort: false,
+					ignoreCase: true
+				}
+			],
+			// Four import groups, blank line between each: external values, external
+			// types, internal ("@/") values, internal types — so a group's types sit
+			// directly under the values they belong with rather than in one pile at
+			// the bottom. `consistent-type-specifier-style` above is what makes the
+			// split meaningful: an inline `type` specifier would ride along in a
+			// value group instead of sorting into a type one.
+			//
+			// This is `perfectionist` rather than `import-x/order` because the latter
+			// cannot express it — it ranks a type import as `groups.type + rank / 10`,
+			// which pins every type import into one contiguous band no matter how the
+			// groups are arranged. `import-x` still owns extensions and the
+			// client/server/shared zones below; only the ordering moved.
+			//
+			// Sorting is alphabetical/ascending/case-insensitive and "@/" is internal
+			// by default (`internalPattern`), matching what `import-x/order` did.
+			"perfectionist/sort-imports": [
+				"error", {
+					groups: [
+						[ "value-builtin", "value-external" ],
+						[ "type-builtin", "type-external" ],
+						"value-internal",
+						"type-internal",
+						"unknown"
+					],
+					newlinesBetween: 1
 				}
 			],
 			"import-x/no-restricted-paths": [
@@ -115,5 +198,24 @@ export default [
 				}
 			]
 		}
-	}
+	},
+
+	// React rules only make sense on the client. Only the two classic rules are
+	// on: react-hooks v7's `recommended-latest` also enables the React Compiler
+	// ruleset (purity, set-state-in-effect, immutability, …), which presupposes
+	// the compiler this project does not run. Swap this block for
+	// `...reactHooks.configs.flat[ "recommended-latest" ], files: client` if the
+	// compiler is ever enabled in `vite.config.ts`.
+	{
+		files: client,
+		plugins: { "react-hooks": reactHooks },
+		rules: {
+			"react-hooks/rules-of-hooks": "error",
+			"react-hooks/exhaustive-deps": "error"
+		}
+	},
+
+	// TanStack Query / Router lint their own hooks and route definitions.
+	...pluginQuery.configs[ "flat/recommended" ].map( config => ( { ...config, files: client } ) ),
+	...pluginRouter.configs[ "flat/recommended" ].map( config => ( { ...config, files: client } ) )
 ];

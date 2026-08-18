@@ -1,21 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/auth/client/use-auth.tsx";
-import { ErrorState } from "@/shared/ui/components/error-state.tsx";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { getStateFn } from "@/games/splendor/client/client.ts";
+import { useGameSync } from "@/client.ts";
+import { splendorApi } from "@/games/splendor/client/client.ts";
 import { SplendorProvider } from "@/games/splendor/client/context.tsx";
 import { GameView } from "@/games/splendor/client/game-view.tsx";
-import { useGameSync } from "@/sync.ts";
+import { ErrorState } from "@/shared/ui/components/error-state.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { GameId } from "@/swish/shared/schema.ts";
 
-export function SplendorGamePage( { gameId }: { gameId: string } ) {
+export function SplendorGamePage( props: { gameId: string } ) {
+	const gameId = GameId.make( props.gameId );
 	const { authInfo } = useAuth();
 
 	const queryKey = [ "splendor", "getState", gameId ];
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getStateFn( gameId, signal )
+		queryFn: ( { signal } ) => splendorApi.getView( gameId, signal )
 	} );
 
 	useGameSync( { gameName: "splendor", gameId, playerId: authInfo!.id, queryKey } );
@@ -36,7 +38,7 @@ export function SplendorGamePage( { gameId }: { gameId: string } ) {
 	}
 
 	return (
-		<SplendorProvider data={ data }>
+		<SplendorProvider data={ data } gameId={ gameId }>
 			<GameView/>
 		</SplendorProvider>
 	);

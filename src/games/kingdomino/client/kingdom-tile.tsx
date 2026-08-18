@@ -2,15 +2,17 @@
 
 import { motion } from "framer-motion";
 
+import { RSmallBoard } from "@/games/kingdomino/client/board.tsx";
+import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
+import { RSmallDomino } from "@/games/kingdomino/client/domino.tsx";
 import { DOMINO_DECK } from "@/games/kingdomino/shared/utils.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
 import { CounterTween } from "@/shared/ui/components/counter-tween.tsx";
 import { FloatPlusN } from "@/shared/ui/components/float-plus-n.tsx";
 import { Avatar, AvatarImage } from "@/shared/ui/primitives/avatar.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { RSmallBoard, type SmallBoardSize } from "@/games/kingdomino/client/board.tsx";
-import { useKingdominoBoard } from "@/games/kingdomino/client/context.tsx";
-import { RSmallDomino } from "@/games/kingdomino/client/domino.tsx";
+
+import type { SmallBoardSize } from "@/games/kingdomino/client/board.tsx";
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
 /**
  * How large a kingdom can render before it stops fitting its share of the couch
@@ -51,7 +53,7 @@ export type KingdomTileProps = {
 export function KingdomTile(
 	{ playerId, size = "md", showQueue = true, showBoard = true }: KingdomTileProps
 ) {
-	const { data } = useKingdominoBoard();
+	const { data } = useKingdomino();
 
 	const baseInfo = data.players[ playerId ];
 	const playerData = data.view.playerData[ playerId ];
@@ -67,22 +69,11 @@ export function KingdomTile(
 			layout
 			className={ cn(
 				"bg-background rounded-xl overflow-hidden min-h-0",
-				"flex flex-col gap-2 p-4 items-center justify-start"
+				"flex flex-col gap-2 p-4 items-center justify-start transition-shadow",
+				// A steady ring. This is a television across a room, where a kingdom
+				// flashing on a loop for the whole of someone's turn is unwatchable.
+				isCurrentTurn && "ring-6 ring-accent"
 			) }
-			animate={ isCurrentTurn
-				? {
-					boxShadow: [
-						"0 0 0 0 rgba(0,0,0,0)",
-						"0 0 0 6px var(--color-accent)",
-						"0 0 0 0 rgba(0,0,0,0)"
-					]
-				}
-				: { boxShadow: "0 0 0 0 rgba(0,0,0,0)" }
-			}
-			transition={ isCurrentTurn
-				? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
-				: { duration: 0.3 }
-			}
 		>
 			<div className={ "flex gap-4 items-center w-full shrink-0" }>
 				<Avatar className={ "rounded-full w-14 h-14 shrink-0" }>

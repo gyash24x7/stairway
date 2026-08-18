@@ -1,4 +1,6 @@
-import type { PlayerId } from "@/shared/swish/schema.ts";
+"use client";
+
+import { useFish } from "@/games/fish/client/context.tsx";
 import {
 	Table,
 	TableBody,
@@ -7,10 +9,23 @@ import {
 	TableHeader,
 	TableRow
 } from "@/shared/ui/primitives/table.tsx";
-import { useFish } from "@/games/fish/client/context.tsx";
 
+const percent = ( part: number, whole: number ) =>
+	whole === 0 ? "-" : `${ Math.floor( part / whole * 100 ) } %`;
+
+/**
+ * How every seat played. The engine only fills `metrics` once the last book has
+ * been declared — it is an end-of-game summary, and the histories it is folded
+ * from are there to read in the meantime — so this renders nothing before then.
+ */
 export function GameMetrics() {
 	const { data } = useFish();
+	const metrics = data.view.metrics;
+
+	if ( !metrics ) {
+		return null;
+	}
+
 	return (
 		<div className={ "w-full overflow-scroll" }>
 			<Table>
@@ -27,28 +42,29 @@ export function GameMetrics() {
 					</TableRow>
 				</TableHeader>
 				<TableBody>
-					{ Object.entries( data.view.playerData ).map( ( [ id, { metrics } ] ) => (
-						<TableRow key={ id } className={ "font-semibold" }>
-							<TableCell>{ data.players[ id as PlayerId ].name }</TableCell>
-							<TableCell className={ "text-center" }>{ metrics.totalAsks }</TableCell>
-							<TableCell className={ "text-center" }>{ metrics.cardsTaken }</TableCell>
-							<TableCell className={ "text-center" }>{ metrics.cardsGiven }</TableCell>
-							<TableCell className={ "text-center" }>{ metrics.totalClaims }</TableCell>
-							<TableCell className={ "text-center" }>{ metrics.successfulClaims }</TableCell>
-							<TableCell className={ "text-center" }>
-								{ metrics.totalAsks !== 0
-									? `${ Math.floor( metrics.cardsTaken / metrics.totalAsks * 100 ) } %`
-									: "-"
-								}
-							</TableCell>
-							<TableCell className={ "text-center" }>
-								{ metrics.totalClaims !== 0
-									? `${ Math.floor( metrics.successfulClaims / metrics.totalClaims * 100 ) } %`
-									: "-"
-								}
-							</TableCell>
-						</TableRow>
-					) ) }
+					{ data.context.players.map( playerId => {
+						const seat = metrics[ playerId ];
+						if ( !seat ) {
+							return null;
+						}
+
+						return (
+							<TableRow key={ playerId } className={ "font-semibold" }>
+								<TableCell>{ data.players[ playerId ]?.name }</TableCell>
+								<TableCell className={ "text-center" }>{ seat.totalAsks }</TableCell>
+								<TableCell className={ "text-center" }>{ seat.cardsTaken }</TableCell>
+								<TableCell className={ "text-center" }>{ seat.cardsGiven }</TableCell>
+								<TableCell className={ "text-center" }>{ seat.totalClaims }</TableCell>
+								<TableCell className={ "text-center" }>{ seat.successfulClaims }</TableCell>
+								<TableCell className={ "text-center" }>
+									{ percent( seat.cardsTaken, seat.totalAsks ) }
+								</TableCell>
+								<TableCell className={ "text-center" }>
+									{ percent( seat.successfulClaims, seat.totalClaims ) }
+								</TableCell>
+							</TableRow>
+						);
+					} ) }
 				</TableBody>
 			</Table>
 		</div>

@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/shared/ui/primitives/button.tsx";
-import { errorMessage } from "@/shared/ui/utils/errors.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
+import { errorMessage } from "@/shared/ui/utils/errors.ts";
 
 export type ErrorStateProps = {
 	title?: string;
@@ -19,7 +19,7 @@ export function ErrorState( { title, error, message, action, onRetry }: ErrorSta
 		<div
 			className={ cn(
 				"mt-8 mx-auto max-w-md w-full rounded-md bg-background",
-				"border-2 border-inverted-surface p-6 flex flex-col gap-4 items-center",
+				"border-2 border-outline p-6 flex flex-col gap-4 items-center",
 				"text-center shadow-sm md:shadow-md"
 			) }
 		>

@@ -154,6 +154,25 @@
 	--color-foreground: var(--foreground);
 	--color-inverted-surface: var(--inverted-surface);
 
+	/* Secondary text. `text-muted-foreground` was used in 35 places while no such
+	   token existed, so every hint line rendered at full foreground weight and the
+	   type hierarchy was invisible. One definition restores all of them. */
+	--color-muted-foreground: color-mix(in oklab, var(--foreground) 62%, transparent);
+
+	/* The hard border the neo-brutalist style is built on. `border-black` reads as
+	   a black-on-black seam in every dark palette, so the outline follows the
+	   inverted surface instead and stays visible in both. */
+	--color-outline: var(--inverted-surface);
+
+	/* Errors, and a clock about to run out. Also previously used without being
+	   defined, alongside a hand-picked `text-red-500` doing the same job. */
+	--color-destructive: #E5484D;
+
+	/* The floating surfaces. `bg-popover` was referenced by the popover primitive
+	   itself, so tooltips were rendering with no background at all. */
+	--color-popover: var(--background);
+	--color-popover-foreground: var(--foreground);
+
 	--color-ring: var(--ring);
 	--color-neutral-dark: var(--neutral-dark);
 	--color-neutral-light: var(--neutral-light);
@@ -188,8 +207,10 @@
 	--spacing-reverseBoxShadowX: -4px;
 	--spacing-reverseBoxShadowY: -2px;
 	--radius-base: 5px;
-	--shadow-md: -4px 2px 0px 0px var(--neutral-dark);
-	--shadow-sm: -2px 1px 0px 0px var(--neutral-dark);
+	/* Tracks the outline rather than a fixed dark, or the signature offset shadow
+	   disappears against every dark palette's background. */
+	--shadow-md: -4px 2px 0px 0px var(--inverted-surface);
+	--shadow-sm: -2px 1px 0px 0px var(--inverted-surface);
 
 	--font-title: "Bungee", serif;
 	--font-heading: "Oswald", serif;
@@ -200,11 +221,51 @@
 
 @layer base {
 	* {
-		@apply border-black;
+		@apply border-outline;
 	}
 
 	body {
 		@apply bg-surface text-foreground font-base transition;
+	}
+}
+
+/* The shared type ramp. Three competing ramps were in use for the same three
+   roles; naming them keeps a status line the same size in every game. */
+@utility text-status {
+	@apply text-sm md:text-lg xl:text-xl font-heading;
+}
+
+@utility text-metric-label {
+	@apply text-xs md:text-sm tracking-widest text-muted-foreground;
+}
+
+@utility text-metric-value {
+	@apply text-2xl md:text-4xl font-heading leading-none;
+}
+
+/* Television sizing for the same three roles, used by the couch screens. */
+@utility text-status-lg {
+	@apply text-5xl font-heading;
+}
+
+@utility text-metric-label-lg {
+	@apply text-2xl tracking-widest text-muted-foreground;
+}
+
+@utility text-metric-value-lg {
+	@apply text-6xl font-heading leading-none;
+}
+
+/* `TurnTimer` pulses on a loop and a winning tile pulses its shadow; both are
+   exactly what this query exists for. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
 	}
 }
 

@@ -1,30 +1,25 @@
+import { useQueryClient } from "@tanstack/react-query";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
-import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
-import * as HttpApiClient from "effect/unstable/httpapi/HttpApiClient";
+import { FetchHttpClient } from "effect/unstable/http";
+import { HttpApiClient } from "effect/unstable/httpapi";
+import { useEffect, useRef } from "react";
+import { useWebSocket } from "react-use-websocket/dist/lib/use-websocket";
 
-import { PlayerId, PlayerInfo } from "@/shared/swish/schema.ts";
-import type { AuthInfo } from "@/auth/shared/schema.ts";
+import type { QueryKey } from "@tanstack/react-query";
+
 import { StairwayAPI } from "@/api.ts";
 
-const build = ( baseUrl: string ) =>
-	Effect.runSync(
-		HttpApiClient.make( StairwayAPI, { baseUrl } ).pipe(
-			Effect.provide( FetchHttpClient.layer ),
-			Effect.provideService( FetchHttpClient.RequestInit, { credentials: "include" } )
-		)
-	);
+const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
+const WS_URL = API_URL.replace( /^http/, "ws" );
 
-// The generated client is stateless over a base URL, so build it once per URL.
-let client: ReturnType<typeof build> | undefined;
-
-export function getClient( baseUrl: string ) {
-	if ( !client ) {
-		client = build( baseUrl );
-	}
-	return client;
-}
+export const client = Effect.runSync(
+	HttpApiClient.make( StairwayAPI, { baseUrl: API_URL } ).pipe(
+		Effect.provide( FetchHttpClient.layer ),
+		Effect.provideService( FetchHttpClient.RequestInit, { credentials: "include" } )
+	)
+);
 
 /**
  * Run a client Effect as a Promise for TanStack Query. Forwards the query's
@@ -41,10 +36,26 @@ export async function run<A, E>( effect: Effect.Effect<A, E>, signal?: AbortSign
 	throw Cause.squash( exit.cause );
 }
 
-/** Turn the logged-in `AuthInfo` into the `PlayerInfo` payload the API expects. */
-export const toPlayerInfo = ( authInfo: AuthInfo ) => PlayerInfo.make( {
-	id: PlayerId.make( authInfo.id ),
-	name: authInfo.name,
-	avatar: authInfo.avatar,
-	isBot: false
-} );
+export const wsUrl = ( path: string ) => `${ WS_URL.replace( /\/$/, "" ) }/${ path }`;
+
+type GameSyncOptions = {
+	gameName: string;
+	gameId: string;
+	playerId?: string;
+	queryKey: QueryKey;
+};
+
+export function useGameSync( { gameName, gameId, playerId, queryKey }: GameSyncOptions ) {
+	const target = useRef( queryKey );
+	const queryClient = useQueryClient();
+	const url = wsUrl( `${ gameName }/${ gameId }` )
+		+ ( playerId ? `?playerId=${ playerId }` : "" );
+
+	const { lastJsonMessage } = useWebSocket( url, { shouldReconnect: () => true } );
+
+	useEffect( () => {
+		if ( lastJsonMessage !== null ) {
+			queryClient.setQueryData( target.current, lastJsonMessage );
+		}
+	}, [ lastJsonMessage, queryClient ] );
+}

@@ -1,4 +1,6 @@
-import { forwardRef, type HTMLAttributes } from "react";
+import { forwardRef } from "react";
+
+import type { HTMLAttributes } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
 
@@ -75,7 +77,7 @@ export const TableHead = forwardRef<
 			ref={ ref }
 			className={ cn(
 				"h-12 px-4 text-left align-middle font-heading",
-				"bg-accent text-neutral-dark [&:has([role=checkbox])]:pr-0",
+				"bg-accent text-neutral-dark has-[[role=checkbox]]:pr-0",
 				className
 			) }
 			{ ...props }
@@ -86,7 +88,7 @@ export const TableHead = forwardRef<
 export const TableCell = forwardRef<HTMLTableCellElement, HTMLAttributes<HTMLTableCellElement>>(
 	( { className, ...props }, ref ) => (
 		<td ref={ ref } className={ cn(
-			"p-2 align-middle [&:has([role=checkbox])]:pr-0",
+			"p-2 align-middle has-[[role=checkbox]]:pr-0",
 			className
 		) } { ...props }/>
 	)

@@ -1,24 +1,26 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/auth/client/use-auth.tsx";
-import { ErrorState } from "@/shared/ui/components/error-state.tsx";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { getStateFn } from "@/games/tictactoe/client/client.ts";
+import { useGameSync } from "@/client.ts";
+import { tictactoeApi } from "@/games/tictactoe/client/client.ts";
 import { TicTacToeProvider } from "@/games/tictactoe/client/context.tsx";
 import { GameView } from "@/games/tictactoe/client/game-view.tsx";
-import { useGameSync } from "@/sync.ts";
+import { ErrorState } from "@/shared/ui/components/error-state.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { GameId } from "@/swish/shared/schema.ts";
 
-export function TicTacToeGamePage( { gameId }: { gameId: string } ) {
+export function TicTacToeGamePage( props: { gameId: string } ) {
+	const gameId = GameId.make( props.gameId );
 	const { authInfo } = useAuth();
 
-	const queryKey = [ "tic-tac-toe", "getState", gameId ];
+	const queryKey = [ "tictactoe", "getState", gameId ];
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getStateFn( gameId, signal )
+		queryFn: ( { signal } ) => tictactoeApi.getView( gameId, signal )
 	} );
 
-	useGameSync( { gameName: "tic-tac-toe", gameId, playerId: authInfo!.id, queryKey } );
+	useGameSync( { gameName: "tictactoe", gameId, playerId: authInfo!.id, queryKey } );
 
 	if ( isError ) {
 		return (

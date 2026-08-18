@@ -1,26 +1,23 @@
 "use client";
 
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 
 export function PlayCard() {
-	const { data, selectedCard, selectCard, playCard } = useCallbreak();
-	const isPending = playCard.isPending;
+	const { data, selectedCard, actions, isPending } = useCallbreak();
+	const dealId = data.view.activeDeal?.id;
 
 	const handleClick = () => {
-		if ( selectedCard ) {
-			playCard.mutate(
-				{ dealId: data.view.activeDeal?.id!, cardId: selectedCard },
-				{ onSuccess: () => selectCard( selectedCard ) }
-			);
+		if ( selectedCard && dealId ) {
+			actions.playCard( { dealId, cardId: selectedCard } );
 		}
 	};
 
 	return (
 		<Button
 			onClick={ handleClick }
-			disabled={ isPending || !selectedCard }
+			disabled={ isPending || !selectedCard || !dealId }
 			className={ "w-full max-w-lg" }
 		>
 			{ isPending ? <Spinner/> : "PLAY CARD" }

@@ -1,126 +1,54 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
-import { AuthContext } from "@/auth/shared/middleware.ts";
-import { toPlayerInfo } from "@/client.ts";
-import { SplendorInitializeInput } from "@/games/splendor/shared/schema.ts";
-import { channels, games } from "@/platform/database/schema.ts";
-import { Database } from "@/platform/database/service.ts";
-import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
-import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
-import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
-import { GameArchiveLive } from "@/platform/kv/archive.ts";
-import { ArchiveKV } from "@/platform/kv/archive.ts";
-import { GameNotFound } from "@/shared/swish/errors.ts";
-import { GameCode, GameId, PlayerId } from "@/shared/swish/schema.ts";
 import { splendor } from "@/games/splendor/server/engine.ts";
+import {
+	SPLENDOR_DEFAULT_WINNING_POINTS,
+	SPLENDOR_MOVE_TIMEOUT_MILLIS,
+	SplendorConfig
+} from "@/games/splendor/shared/schema.ts";
+import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
+
+import type { SplendorCreateInput } from "@/games/splendor/shared/schema.ts";
+
 
 // --- Durable Object ----------------------------------------------------------
 
-export class SplendorEngineDO extends Cloudflare.DurableObject<SplendorEngineDO>()(
-	"SplendorEngineDO",
-	Effect.gen( function* () {
-		const channels = yield* GameChannel;
-		const state = yield* Cloudflare.DurableObjectState;
-		const kv = yield* Cloudflare.KV.ReadWriteNamespace( ArchiveKV );
-		return splendor.pipe(
-			Effect.provide(
-				Layer.mergeAll(
-					DurableGameStoreLive( state ),
-					DurableEventStoreLive( state ),
-					DurableSyncLive( channels ),
-					DurableSchedulerLive( state ),
-					GameArchiveLive( kv )
-				)
-			)
-		);
-	} ).pipe( Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding ) )
+export class SplendorGame extends Cloudflare.DurableObject<SplendorGame>()(
+	"SplendorGame",
+	SwishDurableObject( splendor )
 ) {}
+
 
 // --- HTTP Api implementation -------------------------------------------------
 
 export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", handlers =>
 	Effect.gen( function* () {
-		const db = yield* Database;
-		const ns = yield* SplendorEngineDO;
+		const api = yield* makeGameApi( { game: "splendor", ns: yield* SplendorGame } );
+
 		return handlers
-			.handle( "createGame", ( { payload } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const game = yield* db.insert( games ).values( { game: "splendor" } ).returning()
-					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
-
-				yield* db.insert( channels ).values( {
-					id: game.id,
-					refType: "game",
-					refId: game.id,
-					label: "splendor",
-					policy: { text: true, reactions: true }
-				} ).pipe( Effect.orDie );
-
-				const input = SplendorInitializeInput.make( {
-					id: GameId.make( game.id ),
-					code: GameCode.make( game.code ),
-					config: payload
-				} );
-
-				const client = ns.getByName( game.id );
-				const response = yield* client.initialize( input );
-				yield* client.join( toPlayerInfo( user ) );
-
-				return response;
-			} ) )
-
-			.handle( "join", ( { payload } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const game = yield* db.query.games
-					.findFirst( { where: { game: "splendor", code: payload.code } } )
-					.pipe( Effect.orDie );
-
-				if ( !game ) {
-					return yield* new GameNotFound( { code: payload.code } );
-				}
-
-				const client = ns.getByName( game.id );
-				return yield* client.join( toPlayerInfo( user ) );
-			} ) )
-
-			.handle( "start", ( { params } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.start( PlayerId.make( user.id ) );
-			} ) )
-
-			.handle( "getState", ( { params } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.getState( PlayerId.make( user.id ) );
-			} ) )
-
-			.handle( "getTableState", ( { params } ) => Effect.gen( function* () {
-				yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.getTableState();
-			} ) )
-
-			.handle( "pickTokens", ( { params, payload } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.pickTokens( payload, toPlayerInfo( user ) );
-			} ) )
-
-			.handle( "reserveCard", ( { params, payload } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.reserveCard( payload, toPlayerInfo( user ) );
-			} ) )
-
-			.handle( "purchaseCard", ( { params, payload } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.purchaseCard( payload, toPlayerInfo( user ) );
-			} ) );
+			.handle( "createGame", api.createGame(
+				client => client.initialize,
+				( payload: SplendorCreateInput ) => Effect.succeed( SplendorConfig.make( {
+					playerCount: payload.playerCount,
+					winningPoints: payload.winningPoints ?? SPLENDOR_DEFAULT_WINNING_POINTS,
+					autoStart: false,
+					moveTimeoutMillis: SPLENDOR_MOVE_TIMEOUT_MILLIS
+				} ) )
+			) )
+			.handle( "join", api.join )
+			.handle( "getView", api.getView( client => client.getState ) )
+			.handle( "addBots", api.addBots )
+			.handle( "start", api.start )
+			.handle( "pickTokens", api.move( client => client.pickTokens ) )
+			.handle( "reserveCard", api.move( client => client.reserveCard ) )
+			.handle( "purchaseCard", api.move( client => client.purchaseCard ) )
+			.handle( "pass", api.move( client => client.pass ) )
+			.handle( "claimNoble", api.move( client => client.claimNoble ) )
+			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "undo", api.undo )
+			.handle( "redo", api.redo );
 	} )
 );

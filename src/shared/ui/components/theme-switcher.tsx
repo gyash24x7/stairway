@@ -10,8 +10,10 @@ import {
 	SelectSeparator,
 	SelectTrigger
 } from "@/shared/ui/primitives/select.tsx";
-import { type Theme, type ThemeMode, themes } from "@/shared/ui/utils/cn.ts";
+import { themes } from "@/shared/ui/utils/cn.ts";
 import { applyTheme, readTheme } from "@/shared/ui/utils/theme.ts";
+
+import type { Theme, ThemeMode } from "@/shared/ui/utils/cn.ts";
 
 export function ThemeSwitcher() {
 	const [ { theme, mode }, setState ] = useState( () => readTheme() );

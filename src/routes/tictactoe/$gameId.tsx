@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { TicTacToeGamePage } from "@/games/tictactoe/client/index.ts";
-import { RequireSession } from "@/shared/ui/components/require-session.tsx";
+import { RequireSession } from "@/auth/client/require-session.tsx";
+import { TicTacToeGamePage } from "@/games/tictactoe/client/game-page.tsx";
 
 export const Route = createFileRoute( "/tictactoe/$gameId" )( {
 	component: GameRoute

@@ -1,5 +1,7 @@
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar";
-import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
+import { forwardRef } from "react";
+
+import type { ComponentPropsWithoutRef, ComponentRef } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
 
@@ -11,7 +13,7 @@ export const Avatar = forwardRef<ComponentRef<typeof Root>, ComponentPropsWithou
 			ref={ ref }
 			className={ cn(
 				"relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full",
-				"border border-inverted-surface bg-surface",
+				"border border-outline bg-surface",
 				className
 			) }
 			{ ...props }

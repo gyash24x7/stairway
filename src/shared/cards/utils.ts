@@ -1,5 +1,6 @@
-import type { CardId, CardRank, CardSuit } from "@/shared/cards/schema.ts";
 import { chunk, shuffle } from "@/shared/utils/array.ts";
+
+import type { CardId, CardRank, CardSuit } from "@/shared/cards/schema.ts";
 
 export const CARD_RANKS = {
 	ACE: "A",

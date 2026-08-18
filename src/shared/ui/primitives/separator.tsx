@@ -1,5 +1,7 @@
 import { Separator as Root } from "@base-ui/react/separator";
-import { type ComponentPropsWithoutRef, type ComponentRef, forwardRef } from "react";
+import { forwardRef } from "react";
+
+import type { ComponentPropsWithoutRef, ComponentRef } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
 

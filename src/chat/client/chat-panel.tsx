@@ -2,17 +2,13 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { MessageCircleIcon, XIcon } from "lucide-react";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import type { SubmitEvent } from "react";
 
 import { useAuth } from "@/auth/client/use-auth.tsx";
 import { useChat } from "@/chat/client/use-chat.ts";
-import {
-	ChatReaction,
-	ChatText,
-	MAX_MESSAGE_LENGTH,
-	type ChatMessage,
-	REACTIONS
-} from "@/chat/shared/schema.ts";
+import { ChatReaction, ChatText, MAX_MESSAGE_LENGTH, REACTIONS } from "@/chat/shared/schema.ts";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
@@ -23,16 +19,11 @@ import {
 	DrawerTitle
 } from "@/shared/ui/primitives/drawer.tsx";
 import { Input } from "@/shared/ui/primitives/input.tsx";
+import { SPRING } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
 
-/**
- * The one chat surface, shared by every game — mounted into `GameInfo`'s
- * `actions` slot so its trigger sits alongside the copy-code button.
- *
- * What the composer offers is driven entirely by the channel's server-side
- * policy: on a reactions-only channel the text input is simply absent. That is a
- * courtesy, not a control — the API rejects a disallowed body regardless.
- */
+import type { ChatMessage } from "@/chat/shared/schema.ts";
+
 export function ChatPanel( { channelId }: { channelId: string } ) {
 	const [ open, setOpen ] = useState( false );
 	const [ draft, setDraft ] = useState( "" );
@@ -40,7 +31,7 @@ export function ChatPanel( { channelId }: { channelId: string } ) {
 	const listRef = useRef<HTMLDivElement>( null );
 
 	const { authInfo } = useAuth();
-	const { messages, policy, error, send, isSending } = useChat( channelId );
+	const { messages, policy, error, send, isSending } = useChat( { channelId } );
 
 	const unread = Math.max( 0, messages.length - seenCount );
 
@@ -51,13 +42,11 @@ export function ChatPanel( { channelId }: { channelId: string } ) {
 		}
 	}, [ open, messages.length ] );
 
-	// No channel row — a game created before chat existed. Offer nothing rather
-	// than a button that can only fail.
 	if ( error ) {
 		return null;
 	}
 
-	const submitText = ( event: FormEvent ) => {
+	const submitText = ( event: SubmitEvent ) => {
 		event.preventDefault();
 		const text = draft.trim();
 		if ( !text || isSending ) {
@@ -70,17 +59,13 @@ export function ChatPanel( { channelId }: { channelId: string } ) {
 
 	return (
 		<Drawer direction={ "right" } open={ open } onOpenChange={ setOpen }>
-			<Button
-				onClick={ () => setOpen( true ) }
-				size={ "icon" }
-				className={ "relative w-8 h-8 md:h-10 md:w-10" }
-			>
+			<Button onClick={ () => setOpen( true ) } size={ "icon" }>
 				<MessageCircleIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 				{ unread > 0 && (
 					<span
 						className={ cn(
 							"absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1",
-							"rounded-full bg-background border-2 border-black",
+							"rounded-full bg-background border-2 border-outline",
 							"text-[10px] font-semibold leading-none",
 							"flex items-center justify-center"
 						) }
@@ -93,7 +78,7 @@ export function ChatPanel( { channelId }: { channelId: string } ) {
 			<DrawerContent>
 				<div className={ "flex flex-col h-full" }>
 					<DrawerHeader
-						className={ "flex-row items-center justify-between border-b border-black shrink-0" }
+						className={ "flex-row items-center justify-between border-b border-outline shrink-0" }
 					>
 						<DrawerTitle>CHAT</DrawerTitle>
 						<DrawerDescription className={ "sr-only" }>
@@ -129,7 +114,7 @@ export function ChatPanel( { channelId }: { channelId: string } ) {
 						</AnimatePresence>
 					</div>
 
-					<div className={ "flex flex-col gap-2 p-4 border-t border-black shrink-0" }>
+					<div className={ "flex flex-col gap-2 p-4 border-t border-outline shrink-0" }>
 						{ policy?.reactions && (
 							<div className={ "flex flex-wrap gap-1.5 justify-center" }>
 								{ REACTIONS.map( reaction => (
@@ -191,7 +176,7 @@ function ChatBubble( { message, isOwn }: { message: ChatMessage; isOwn: boolean 
 			animate={ {
 				opacity: 1,
 				scale: 1,
-				transition: { type: "spring", stiffness: 380, damping: 22 }
+				transition: SPRING
 			} }
 			exit={ { opacity: 0, scale: 0.7, transition: { duration: 0.2 } } }
 			className={ cn( "flex gap-2 items-end max-w-full", isOwn && "flex-row-reverse" ) }
@@ -213,8 +198,8 @@ function ChatBubble( { message, isOwn }: { message: ChatMessage; isOwn: boolean 
 				{ body._tag === "chat/Text" ? (
 					<div
 						className={ cn(
-							"px-3 py-2 max-w-full border-2 border-black",
-							"text-xs md:text-sm break-words whitespace-pre-wrap",
+							"px-3 py-2 max-w-full border-2 border-outline",
+							"text-xs md:text-sm wrap-break-word whitespace-pre-wrap",
 							isOwn
 								? "bg-accent text-neutral-dark rounded-2xl rounded-br-sm"
 								: "bg-background text-foreground rounded-2xl rounded-bl-sm"

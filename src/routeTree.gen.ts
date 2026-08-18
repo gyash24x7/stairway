@@ -11,26 +11,23 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CallbreakIndexRouteImport } from './routes/callbreak/index'
-import { Route as CallbreakGameIdRouteImport } from './routes/callbreak/$gameId'
 import { Route as FishIndexRouteImport } from './routes/fish/index'
 import { Route as FishGameIdRouteImport } from './routes/fish/$gameId'
 import { Route as KingdominoIndexRouteImport } from './routes/kingdomino/index'
-import { Route as KingdominoGameIdRouteImport } from './routes/kingdomino/$gameId'
 import { Route as SplendorIndexRouteImport } from './routes/splendor/index'
-import { Route as SplendorGameIdRouteImport } from './routes/splendor/$gameId'
 import { Route as TictactoeIndexRouteImport } from './routes/tictactoe/index'
 import { Route as TictactoeGameIdRouteImport } from './routes/tictactoe/$gameId'
 import { Route as WordleIndexRouteImport } from './routes/wordle/index'
 import { Route as WordleGameIdRouteImport } from './routes/wordle/$gameId'
-import { Route as CallbreakGameIdIndexRouteImport } from './routes/callbreak/$gameId.index'
-import { Route as CallbreakGameIdControllerRouteImport } from './routes/callbreak/$gameId.controller'
-import { Route as CallbreakGameIdCouchRouteImport } from './routes/callbreak/$gameId.couch'
-import { Route as KingdominoGameIdIndexRouteImport } from './routes/kingdomino/$gameId.index'
-import { Route as KingdominoGameIdControllerRouteImport } from './routes/kingdomino/$gameId.controller'
-import { Route as KingdominoGameIdCouchRouteImport } from './routes/kingdomino/$gameId.couch'
-import { Route as SplendorGameIdIndexRouteImport } from './routes/splendor/$gameId.index'
-import { Route as SplendorGameIdControllerRouteImport } from './routes/splendor/$gameId.controller'
-import { Route as SplendorGameIdCouchRouteImport } from './routes/splendor/$gameId.couch'
+import { Route as CallbreakGameIdIndexRouteImport } from './routes/callbreak/$gameId/index'
+import { Route as CallbreakGameIdControllerRouteImport } from './routes/callbreak/$gameId/controller'
+import { Route as CallbreakGameIdCouchRouteImport } from './routes/callbreak/$gameId/couch'
+import { Route as KingdominoGameIdIndexRouteImport } from './routes/kingdomino/$gameId/index'
+import { Route as KingdominoGameIdControllerRouteImport } from './routes/kingdomino/$gameId/controller'
+import { Route as KingdominoGameIdCouchRouteImport } from './routes/kingdomino/$gameId/couch'
+import { Route as SplendorGameIdIndexRouteImport } from './routes/splendor/$gameId/index'
+import { Route as SplendorGameIdControllerRouteImport } from './routes/splendor/$gameId/controller'
+import { Route as SplendorGameIdCouchRouteImport } from './routes/splendor/$gameId/couch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,11 +37,6 @@ const IndexRoute = IndexRouteImport.update({
 const CallbreakIndexRoute = CallbreakIndexRouteImport.update({
   id: '/callbreak/',
   path: '/callbreak/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CallbreakGameIdRoute = CallbreakGameIdRouteImport.update({
-  id: '/callbreak/$gameId',
-  path: '/callbreak/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FishIndexRoute = FishIndexRouteImport.update({
@@ -62,19 +54,9 @@ const KingdominoIndexRoute = KingdominoIndexRouteImport.update({
   path: '/kingdomino/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const KingdominoGameIdRoute = KingdominoGameIdRouteImport.update({
-  id: '/kingdomino/$gameId',
-  path: '/kingdomino/$gameId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SplendorIndexRoute = SplendorIndexRouteImport.update({
   id: '/splendor/',
   path: '/splendor/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SplendorGameIdRoute = SplendorGameIdRouteImport.update({
-  id: '/splendor/$gameId',
-  path: '/splendor/$gameId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TictactoeIndexRoute = TictactoeIndexRouteImport.update({
@@ -98,60 +80,57 @@ const WordleGameIdRoute = WordleGameIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CallbreakGameIdIndexRoute = CallbreakGameIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => CallbreakGameIdRoute,
+  id: '/callbreak/$gameId/',
+  path: '/callbreak/$gameId/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const CallbreakGameIdControllerRoute =
   CallbreakGameIdControllerRouteImport.update({
-    id: '/controller',
-    path: '/controller',
-    getParentRoute: () => CallbreakGameIdRoute,
+    id: '/callbreak/$gameId/controller',
+    path: '/callbreak/$gameId/controller',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const CallbreakGameIdCouchRoute = CallbreakGameIdCouchRouteImport.update({
-  id: '/couch',
-  path: '/couch',
-  getParentRoute: () => CallbreakGameIdRoute,
+  id: '/callbreak/$gameId/couch',
+  path: '/callbreak/$gameId/couch',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const KingdominoGameIdIndexRoute = KingdominoGameIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => KingdominoGameIdRoute,
+  id: '/kingdomino/$gameId/',
+  path: '/kingdomino/$gameId/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const KingdominoGameIdControllerRoute =
   KingdominoGameIdControllerRouteImport.update({
-    id: '/controller',
-    path: '/controller',
-    getParentRoute: () => KingdominoGameIdRoute,
+    id: '/kingdomino/$gameId/controller',
+    path: '/kingdomino/$gameId/controller',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const KingdominoGameIdCouchRoute = KingdominoGameIdCouchRouteImport.update({
-  id: '/couch',
-  path: '/couch',
-  getParentRoute: () => KingdominoGameIdRoute,
+  id: '/kingdomino/$gameId/couch',
+  path: '/kingdomino/$gameId/couch',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SplendorGameIdIndexRoute = SplendorGameIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SplendorGameIdRoute,
+  id: '/splendor/$gameId/',
+  path: '/splendor/$gameId/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SplendorGameIdControllerRoute =
   SplendorGameIdControllerRouteImport.update({
-    id: '/controller',
-    path: '/controller',
-    getParentRoute: () => SplendorGameIdRoute,
+    id: '/splendor/$gameId/controller',
+    path: '/splendor/$gameId/controller',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const SplendorGameIdCouchRoute = SplendorGameIdCouchRouteImport.update({
-  id: '/couch',
-  path: '/couch',
-  getParentRoute: () => SplendorGameIdRoute,
+  id: '/splendor/$gameId/couch',
+  path: '/splendor/$gameId/couch',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/callbreak/$gameId': typeof CallbreakGameIdRouteWithChildren
   '/fish/$gameId': typeof FishGameIdRoute
-  '/kingdomino/$gameId': typeof KingdominoGameIdRouteWithChildren
-  '/splendor/$gameId': typeof SplendorGameIdRouteWithChildren
   '/tictactoe/$gameId': typeof TictactoeGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/callbreak/': typeof CallbreakIndexRoute
@@ -194,10 +173,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/callbreak/$gameId': typeof CallbreakGameIdRouteWithChildren
   '/fish/$gameId': typeof FishGameIdRoute
-  '/kingdomino/$gameId': typeof KingdominoGameIdRouteWithChildren
-  '/splendor/$gameId': typeof SplendorGameIdRouteWithChildren
   '/tictactoe/$gameId': typeof TictactoeGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
   '/callbreak/': typeof CallbreakIndexRoute
@@ -220,10 +196,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/callbreak/$gameId'
     | '/fish/$gameId'
-    | '/kingdomino/$gameId'
-    | '/splendor/$gameId'
     | '/tictactoe/$gameId'
     | '/wordle/$gameId'
     | '/callbreak/'
@@ -265,10 +238,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/callbreak/$gameId'
     | '/fish/$gameId'
-    | '/kingdomino/$gameId'
-    | '/splendor/$gameId'
     | '/tictactoe/$gameId'
     | '/wordle/$gameId'
     | '/callbreak/'
@@ -290,10 +260,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  CallbreakGameIdRoute: typeof CallbreakGameIdRouteWithChildren
   FishGameIdRoute: typeof FishGameIdRoute
-  KingdominoGameIdRoute: typeof KingdominoGameIdRouteWithChildren
-  SplendorGameIdRoute: typeof SplendorGameIdRouteWithChildren
   TictactoeGameIdRoute: typeof TictactoeGameIdRoute
   WordleGameIdRoute: typeof WordleGameIdRoute
   CallbreakIndexRoute: typeof CallbreakIndexRoute
@@ -302,6 +269,15 @@ export interface RootRouteChildren {
   SplendorIndexRoute: typeof SplendorIndexRoute
   TictactoeIndexRoute: typeof TictactoeIndexRoute
   WordleIndexRoute: typeof WordleIndexRoute
+  CallbreakGameIdControllerRoute: typeof CallbreakGameIdControllerRoute
+  CallbreakGameIdCouchRoute: typeof CallbreakGameIdCouchRoute
+  KingdominoGameIdControllerRoute: typeof KingdominoGameIdControllerRoute
+  KingdominoGameIdCouchRoute: typeof KingdominoGameIdCouchRoute
+  SplendorGameIdControllerRoute: typeof SplendorGameIdControllerRoute
+  SplendorGameIdCouchRoute: typeof SplendorGameIdCouchRoute
+  CallbreakGameIdIndexRoute: typeof CallbreakGameIdIndexRoute
+  KingdominoGameIdIndexRoute: typeof KingdominoGameIdIndexRoute
+  SplendorGameIdIndexRoute: typeof SplendorGameIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -318,13 +294,6 @@ declare module '@tanstack/react-router' {
       path: '/callbreak'
       fullPath: '/callbreak/'
       preLoaderRoute: typeof CallbreakIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/callbreak/$gameId': {
-      id: '/callbreak/$gameId'
-      path: '/callbreak/$gameId'
-      fullPath: '/callbreak/$gameId'
-      preLoaderRoute: typeof CallbreakGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fish/': {
@@ -348,25 +317,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof KingdominoIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/kingdomino/$gameId': {
-      id: '/kingdomino/$gameId'
-      path: '/kingdomino/$gameId'
-      fullPath: '/kingdomino/$gameId'
-      preLoaderRoute: typeof KingdominoGameIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/splendor/': {
       id: '/splendor/'
       path: '/splendor'
       fullPath: '/splendor/'
       preLoaderRoute: typeof SplendorIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/splendor/$gameId': {
-      id: '/splendor/$gameId'
-      path: '/splendor/$gameId'
-      fullPath: '/splendor/$gameId'
-      preLoaderRoute: typeof SplendorGameIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/tictactoe/': {
@@ -399,123 +354,73 @@ declare module '@tanstack/react-router' {
     }
     '/callbreak/$gameId/': {
       id: '/callbreak/$gameId/'
-      path: '/'
+      path: '/callbreak/$gameId'
       fullPath: '/callbreak/$gameId/'
       preLoaderRoute: typeof CallbreakGameIdIndexRouteImport
-      parentRoute: typeof CallbreakGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/callbreak/$gameId/controller': {
       id: '/callbreak/$gameId/controller'
-      path: '/controller'
+      path: '/callbreak/$gameId/controller'
       fullPath: '/callbreak/$gameId/controller'
       preLoaderRoute: typeof CallbreakGameIdControllerRouteImport
-      parentRoute: typeof CallbreakGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/callbreak/$gameId/couch': {
       id: '/callbreak/$gameId/couch'
-      path: '/couch'
+      path: '/callbreak/$gameId/couch'
       fullPath: '/callbreak/$gameId/couch'
       preLoaderRoute: typeof CallbreakGameIdCouchRouteImport
-      parentRoute: typeof CallbreakGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/kingdomino/$gameId/': {
       id: '/kingdomino/$gameId/'
-      path: '/'
+      path: '/kingdomino/$gameId'
       fullPath: '/kingdomino/$gameId/'
       preLoaderRoute: typeof KingdominoGameIdIndexRouteImport
-      parentRoute: typeof KingdominoGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/kingdomino/$gameId/controller': {
       id: '/kingdomino/$gameId/controller'
-      path: '/controller'
+      path: '/kingdomino/$gameId/controller'
       fullPath: '/kingdomino/$gameId/controller'
       preLoaderRoute: typeof KingdominoGameIdControllerRouteImport
-      parentRoute: typeof KingdominoGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/kingdomino/$gameId/couch': {
       id: '/kingdomino/$gameId/couch'
-      path: '/couch'
+      path: '/kingdomino/$gameId/couch'
       fullPath: '/kingdomino/$gameId/couch'
       preLoaderRoute: typeof KingdominoGameIdCouchRouteImport
-      parentRoute: typeof KingdominoGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/splendor/$gameId/': {
       id: '/splendor/$gameId/'
-      path: '/'
+      path: '/splendor/$gameId'
       fullPath: '/splendor/$gameId/'
       preLoaderRoute: typeof SplendorGameIdIndexRouteImport
-      parentRoute: typeof SplendorGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/splendor/$gameId/controller': {
       id: '/splendor/$gameId/controller'
-      path: '/controller'
+      path: '/splendor/$gameId/controller'
       fullPath: '/splendor/$gameId/controller'
       preLoaderRoute: typeof SplendorGameIdControllerRouteImport
-      parentRoute: typeof SplendorGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
     '/splendor/$gameId/couch': {
       id: '/splendor/$gameId/couch'
-      path: '/couch'
+      path: '/splendor/$gameId/couch'
       fullPath: '/splendor/$gameId/couch'
       preLoaderRoute: typeof SplendorGameIdCouchRouteImport
-      parentRoute: typeof SplendorGameIdRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
 
-interface CallbreakGameIdRouteChildren {
-  CallbreakGameIdControllerRoute: typeof CallbreakGameIdControllerRoute
-  CallbreakGameIdCouchRoute: typeof CallbreakGameIdCouchRoute
-  CallbreakGameIdIndexRoute: typeof CallbreakGameIdIndexRoute
-}
-
-const CallbreakGameIdRouteChildren: CallbreakGameIdRouteChildren = {
-  CallbreakGameIdControllerRoute: CallbreakGameIdControllerRoute,
-  CallbreakGameIdCouchRoute: CallbreakGameIdCouchRoute,
-  CallbreakGameIdIndexRoute: CallbreakGameIdIndexRoute,
-}
-
-const CallbreakGameIdRouteWithChildren = CallbreakGameIdRoute._addFileChildren(
-  CallbreakGameIdRouteChildren,
-)
-
-interface KingdominoGameIdRouteChildren {
-  KingdominoGameIdControllerRoute: typeof KingdominoGameIdControllerRoute
-  KingdominoGameIdCouchRoute: typeof KingdominoGameIdCouchRoute
-  KingdominoGameIdIndexRoute: typeof KingdominoGameIdIndexRoute
-}
-
-const KingdominoGameIdRouteChildren: KingdominoGameIdRouteChildren = {
-  KingdominoGameIdControllerRoute: KingdominoGameIdControllerRoute,
-  KingdominoGameIdCouchRoute: KingdominoGameIdCouchRoute,
-  KingdominoGameIdIndexRoute: KingdominoGameIdIndexRoute,
-}
-
-const KingdominoGameIdRouteWithChildren =
-  KingdominoGameIdRoute._addFileChildren(KingdominoGameIdRouteChildren)
-
-interface SplendorGameIdRouteChildren {
-  SplendorGameIdControllerRoute: typeof SplendorGameIdControllerRoute
-  SplendorGameIdCouchRoute: typeof SplendorGameIdCouchRoute
-  SplendorGameIdIndexRoute: typeof SplendorGameIdIndexRoute
-}
-
-const SplendorGameIdRouteChildren: SplendorGameIdRouteChildren = {
-  SplendorGameIdControllerRoute: SplendorGameIdControllerRoute,
-  SplendorGameIdCouchRoute: SplendorGameIdCouchRoute,
-  SplendorGameIdIndexRoute: SplendorGameIdIndexRoute,
-}
-
-const SplendorGameIdRouteWithChildren = SplendorGameIdRoute._addFileChildren(
-  SplendorGameIdRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  CallbreakGameIdRoute: CallbreakGameIdRouteWithChildren,
   FishGameIdRoute: FishGameIdRoute,
-  KingdominoGameIdRoute: KingdominoGameIdRouteWithChildren,
-  SplendorGameIdRoute: SplendorGameIdRouteWithChildren,
   TictactoeGameIdRoute: TictactoeGameIdRoute,
   WordleGameIdRoute: WordleGameIdRoute,
   CallbreakIndexRoute: CallbreakIndexRoute,
@@ -524,6 +429,15 @@ const rootRouteChildren: RootRouteChildren = {
   SplendorIndexRoute: SplendorIndexRoute,
   TictactoeIndexRoute: TictactoeIndexRoute,
   WordleIndexRoute: WordleIndexRoute,
+  CallbreakGameIdControllerRoute: CallbreakGameIdControllerRoute,
+  CallbreakGameIdCouchRoute: CallbreakGameIdCouchRoute,
+  KingdominoGameIdControllerRoute: KingdominoGameIdControllerRoute,
+  KingdominoGameIdCouchRoute: KingdominoGameIdCouchRoute,
+  SplendorGameIdControllerRoute: SplendorGameIdControllerRoute,
+  SplendorGameIdCouchRoute: SplendorGameIdCouchRoute,
+  CallbreakGameIdIndexRoute: CallbreakGameIdIndexRoute,
+  KingdominoGameIdIndexRoute: KingdominoGameIdIndexRoute,
+  SplendorGameIdIndexRoute: SplendorGameIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

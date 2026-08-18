@@ -1,58 +1,51 @@
+"use client";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createContext, type ReactNode, useCallback, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
+
+import type { ReactNode } from "react";
+
+import { callbreakApi } from "@/games/callbreak/client/client.ts";
 
 import type {
-	CallbreakPlayerView,
-	CallbreakSharedView,
-	CallbreakSnapshot,
-	CallbreakTableView,
+	CallbreakConfig,
+	CallbreakView,
 	DeclareWinsInput,
 	PlayCardInput
 } from "@/games/callbreak/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
-import { addBotsFn, declareWinsFn, playCardFn } from "@/games/callbreak/client/client.ts";
-
-/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
-export type CallbreakPlayerSnapshot = Omit<CallbreakSnapshot, "view"> & {
-	view: CallbreakPlayerView
-};
-
-/** The snapshot as seen by the shared screen — `view` narrowed to the TableView. */
-export type CallbreakTableSnapshot = Omit<CallbreakSnapshot, "view"> & {
-	view: CallbreakTableView
-};
+import type { GameId, GameView, PlayerId } from "@/swish/shared/schema.ts";
 
 /**
- * What *every* audience can see: scores, the public deal and the last completed
- * trick. Both view variants are structural supersets of `CallbreakSharedView` (the
- * player one adds `playerId` and `hand`), so either snapshot widens to this.
+ * One context for all three screens.
  *
- * Components reading this are safe on a television by construction — there is no
- * `hand` on it to leak.
+ * The full page, the phone controller and the television all render the same
+ * `GameView` — the wire carries exactly one envelope, and what differs between
+ * an audience that holds a seat and one that doesn't is `view.playerId` and
+ * whether `view.hand` has anything in it. So `playerId` is optional here and
+ * everything seat-shaped is derived from it; a screen with no seat simply gets
+ * `isMyTurn: false` and an empty hand, and the mutations it must not use are
+ * never rendered.
  */
-export type CallbreakBoardData = Omit<CallbreakSnapshot, "view"> & {
-	view: CallbreakSharedView
-};
-
 type CallbreakContextValue = {
-	data: CallbreakPlayerSnapshot;
+	data: GameView<CallbreakView, CallbreakConfig>;
+	/** The viewing seat, absent on a shared screen. */
+	playerId?: PlayerId;
 	isMyTurn: boolean;
 	selectedCard?: CardId;
 	selectCard: ( cardId: CardId ) => void;
-	declareWins: ReturnType<typeof useMutation<unknown, Error, DeclareWinsInput>>;
-	playCard: ReturnType<typeof useMutation<unknown, Error, PlayCardInput>>;
-	addBots: ReturnType<typeof useMutation<unknown, Error>>;
-};
-
-type CallbreakTableContextValue = {
-	data: CallbreakTableSnapshot;
+	actions: {
+		declareWins: ( input: DeclareWinsInput ) => void;
+		playCard: ( input: PlayCardInput ) => void;
+		addBots: () => void;
+		startGame: () => void;
+		setAutoPlay: ( enabled: boolean ) => void;
+	};
+	isPending: boolean;
 };
 
 const CallbreakContext = createContext<CallbreakContextValue | null>( null );
-const CallbreakTableContext = createContext<CallbreakTableContextValue | null>( null );
-const CallbreakBoardContext = createContext<CallbreakBoardData | null>( null );
 
-/** The seated player's snapshot, plus the mutations only a seat can make. */
 export function useCallbreak() {
 	const ctx = useContext( CallbreakContext );
 	if ( !ctx ) {
@@ -61,25 +54,11 @@ export function useCallbreak() {
 	return ctx;
 }
 
-/** The shared screen's snapshot. Carries no mutations — a television takes no turns. */
-export function useCallbreakTable() {
-	const ctx = useContext( CallbreakTableContext );
-	if ( !ctx ) {
-		throw new Error( "useCallbreakTable must be used within a CallbreakTableProvider" );
-	}
-	return ctx;
-}
-
-/** The public board, whichever audience is being rendered. Available below either provider. */
-export function useCallbreakBoard() {
-	const ctx = useContext( CallbreakBoardContext );
-	if ( !ctx ) {
-		throw new Error( "useCallbreakBoard must be used within a Callbreak provider" );
-	}
-	return { data: ctx };
-}
-
-type CallbreakProviderProps = { data: CallbreakSnapshot; gameId: string; children: ReactNode; };
+type CallbreakProviderProps = {
+	data: GameView<CallbreakView, CallbreakConfig>;
+	gameId: GameId;
+	children: ReactNode;
+};
 
 export function CallbreakProvider( { data, gameId, children }: CallbreakProviderProps ) {
 	const queryClient = useQueryClient();
@@ -89,78 +68,62 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 		queryKey: [ "callbreak", "getState", gameId ]
 	} );
 
-	const declareWins = useMutation( {
-		mutationFn: ( input: DeclareWinsInput ) => declareWinsFn( gameId, input ),
-		onSuccess: () => invalidate()
+	const declare = useMutation( {
+		mutationFn: ( input: DeclareWinsInput ) => callbreakApi.declareWins( gameId, input ),
+		onSuccess: invalidate
 	} );
 
-	const playCard = useMutation( {
-		mutationFn: ( input: PlayCardInput ) => playCardFn( gameId, input ),
-		onSuccess: () => invalidate()
+	const play = useMutation( {
+		mutationFn: ( input: PlayCardInput ) => callbreakApi.playCard( gameId, input ),
+		onSuccess: () => {
+			setSelectedCard( undefined );
+			return invalidate();
+		}
 	} );
 
-	const addBots = useMutation( {
-		mutationFn: () => addBotsFn( gameId ),
-		onSuccess: () => invalidate()
+	const bots = useMutation( {
+		mutationFn: () => callbreakApi.addBots( gameId ),
+		onSuccess: invalidate
 	} );
 
-	const selectCard = useCallback(
-		( cardId: CardId ) => {
-			if ( cardId === selectedCard ) {
-				setSelectedCard( undefined );
-			} else {
-				setSelectedCard( cardId );
-			}
-		},
-		[ selectedCard ]
-	);
+	const start = useMutation( {
+		mutationFn: () => callbreakApi.start( gameId ),
+		onSuccess: invalidate
+	} );
 
-	// The SPA always plays as a seated player; the table/spectator view is not rendered.
-	if ( data.view._tag !== "callbreak/PlayerView" ) {
-		return null;
-	}
+	const autoPlay = useMutation( {
+		mutationFn: ( enabled: boolean ) => callbreakApi.setAutoPlay( gameId, { enabled } ),
+		onSuccess: invalidate
+	} );
 
-	const playerData: CallbreakPlayerSnapshot = { ...data, view: data.view };
+	const selectCard = useCallback( ( cardId: CardId ) => {
+		setSelectedCard( current => current === cardId ? undefined : cardId );
+	}, [] );
 
-	const isMyTurn = playerData.status === "IN_PROGRESS"
-		&& playerData.context.currentPlayer === playerData.view.playerId;
+	const playerId = data.view.playerId;
+	const isMyTurn = data.status === "IN_PROGRESS" && data.context.currentPlayer === playerId;
 
 	return (
 		<CallbreakContext value={ {
-			data: playerData,
+			data,
+			playerId,
 			isMyTurn,
-			selectCard,
 			selectedCard,
-			declareWins,
-			playCard,
-			addBots
+			selectCard,
+			actions: {
+				declareWins: input => declare.mutate( input ),
+				playCard: input => play.mutate( input ),
+				addBots: () => bots.mutate(),
+				startGame: () => start.mutate(),
+				setAutoPlay: enabled => autoPlay.mutate( enabled )
+			},
+			isPending: declare.isPending
+				|| play.isPending
+				|| bots.isPending
+				|| start.isPending
+				|| autoPlay.isPending
 		} }>
-			<CallbreakBoardContext value={ playerData }>
-				{ children }
-			</CallbreakBoardContext>
+			{ children }
 		</CallbreakContext>
-	);
-}
-
-type CallbreakTableProviderProps = { data: CallbreakSnapshot; children: ReactNode };
-
-/**
- * Provides the shared/couch snapshot, plus the board view beneath it. Deliberately
- * holds none of the player context's mutations or selection state: on a television
- * there is no seat to act as.
- */
-export function CallbreakTableProvider( { data, children }: CallbreakTableProviderProps ) {
-	if ( data.view._tag !== "callbreak/TableView" ) {
-		return null;
-	}
-
-	const tableData: CallbreakTableSnapshot = { ...data, view: data.view };
-
-	return (
-		<CallbreakTableContext value={ { data: tableData } }>
-			<CallbreakBoardContext value={ tableData }>
-				{ children }
-			</CallbreakBoardContext>
-		</CallbreakTableContext>
 	);
 }

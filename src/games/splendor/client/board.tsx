@@ -1,13 +1,16 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+
 import type { ReactNode } from "react";
 
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { EmptyCard, GameCard, GameCardBack } from "@/games/splendor/client/game-card.tsx";
+import { EmptyNoble, Noble, NobleBack } from "@/games/splendor/client/noble.tsx";
+import { SPRING } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
+
 import type { Card } from "@/games/splendor/shared/schema.ts";
-import { useSplendorBoard } from "@/games/splendor/client/context.tsx";
-import { GameCard, GameCardBack } from "@/games/splendor/client/game-card.tsx";
-import { Noble, NobleBack } from "@/games/splendor/client/noble.tsx";
 
 export type BoardProps = {
 	renderCard?: ( card: Card ) => ReactNode;
@@ -20,7 +23,7 @@ export type BoardProps = {
 };
 
 export function Board( { renderCard, fill }: BoardProps ) {
-	const { data } = useSplendorBoard();
+	const { data } = useSplendor();
 
 	return (
 		<div className={ cn( "flex flex-col gap-3 w-full", fill && "h-full min-h-0 gap-4" ) }>
@@ -43,7 +46,7 @@ export function Board( { renderCard, fill }: BoardProps ) {
 							animate={ {
 								scale: 1,
 								opacity: 1,
-								transition: { type: "spring", stiffness: 380, damping: 22 }
+								transition: SPRING
 							} }
 							exit={ {
 								opacity: 0,
@@ -56,16 +59,7 @@ export function Board( { renderCard, fill }: BoardProps ) {
 					) ) }
 				</AnimatePresence>
 				{ new Array( data.config.playerCount + 1 - data.view.nobles.length ).fill( 0 )
-					.map( ( _, i ) => (
-						<div
-							key={ `empty-noble-${ i }` }
-							className={ cn(
-								"w-16 md:w-20 h-16 md:h-20 rounded-md",
-								"border-2 border-dashed border-gray-300",
-								fill && "w-28 h-28 md:w-32 md:h-32 rounded-xl"
-							) }
-						/>
-					) ) }
+					.map( ( _, i ) => <EmptyNoble key={ `empty-noble-${ i }` } large={ fill }/> ) }
 			</div>
 			<div
 				className={ cn(
@@ -95,7 +89,7 @@ export function Board( { renderCard, fill }: BoardProps ) {
 									animate={ {
 										scale: 1,
 										opacity: 1,
-										transition: { type: "spring", stiffness: 380, damping: 22 }
+										transition: SPRING
 									} }
 									exit={ {
 										opacity: 0,
@@ -108,16 +102,7 @@ export function Board( { renderCard, fill }: BoardProps ) {
 							) ) }
 						</AnimatePresence>
 						{ Array.from( { length: 4 - data.view.cards[ level ].length } )
-							.map( ( _, i ) => (
-								<div
-									key={ `empty-${ level }-${ i }` }
-									className={ cn(
-										"w-16 md:w-20 h-24 md:h-30 rounded-md",
-										"border-2 border-dashed border-gray-300",
-										fill && "h-full w-auto aspect-[2/3] rounded-xl"
-									) }
-								/>
-							) ) }
+							.map( ( _, i ) => <EmptyCard key={ `empty-${ level }-${ i }` } large={ fill }/> ) }
 					</div>
 				) ) }
 			</div>

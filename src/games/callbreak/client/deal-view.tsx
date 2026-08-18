@@ -2,11 +2,12 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 
-import { RCard } from "@/shared/ui/components/card.tsx";
-import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
-import { cn } from "@/shared/ui/utils/cn.ts";
-import { useCallbreakBoard } from "@/games/callbreak/client/context.tsx";
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 import { DeclarationBadge } from "@/games/callbreak/client/declaration-badge.tsx";
+import { RCard } from "@/shared/ui/components/card.tsx";
+import { SPRING } from "@/shared/ui/utils/animation.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { RPlayerInfo } from "@/swish/client/player-info.tsx";
 
 export type DealViewProps = {
 	/**
@@ -18,12 +19,13 @@ export type DealViewProps = {
 };
 
 /**
- * The shared table: four seats and the trick in play. Reads only the public view,
- * so it renders unchanged on the phone and on the television. The hand is *not*
- * rendered here — the page that wants one mounts `HandView` after this.
+ * The shared table: four seats and the trick in play. Reads only public fields of
+ * the view, so it renders unchanged on the phone and on the television. The hand
+ * is *not* rendered here — the page that wants one mounts `HandView` after this.
  */
 export function DealView( { fill }: DealViewProps ) {
-	const { data } = useCallbreakBoard();
+	const { data } = useCallbreak();
+
 	const currentTurn = data.context.currentPlayer;
 	const activeDeal = data.view.activeDeal;
 	const activeTrick = activeDeal?.tricks[ 0 ];
@@ -38,15 +40,18 @@ export function DealView( { fill }: DealViewProps ) {
 				fill && "w-full h-full grid-rows-2 gap-6"
 			) }
 		>
-			{ [ 0, 1, 3, 2 ].map( ( idx ) => {
+			{ [ 0, 1, 3, 2 ].map( idx => {
 				const playerId = data.context.players[ idx ];
+				if ( !playerId ) {
+					return null;
+				}
+
 				const cardId = activeTrick?.cards[ playerId ];
 				const isRightSide = idx === 1 || idx === 2;
-				// Trick state is meaningless once the game is over — the seats are then
-				// just the faces around the table, and a green "winner" ring on whoever
-				// took the last trick would read as having won the game.
+				const declared = activeDeal?.declarations[ playerId ] || undefined;
 				const isWinner = !isCompleted && activeTrick?.winner === playerId;
 				const isCurrent = !isCompleted && !allPlayersPlayed && currentTurn === playerId;
+
 				return (
 					<motion.div
 						key={ playerId }
@@ -65,11 +70,7 @@ export function DealView( { fill }: DealViewProps ) {
 							: { type: "spring", stiffness: 400, damping: 28 }
 						}
 					>
-						<RPlayerInfo
-							player={ data.players[ playerId ] }
-							key={ playerId }
-							large={ fill }
-						/>
+						<RPlayerInfo player={ data.players[ playerId ] } large={ fill }/>
 						{ !isCompleted && (
 							<AnimatePresence mode={ "wait" }>
 								{ cardId ? (
@@ -80,22 +81,19 @@ export function DealView( { fill }: DealViewProps ) {
 										animate={ {
 											scale: 1,
 											opacity: 1,
-											transition: { type: "spring", stiffness: 380, damping: 22 }
+											transition: SPRING
 										} }
-										exit={ {
-											opacity: 0,
-											scale: 0.6,
-											transition: { duration: 0.35 }
-										} }
+										exit={ { opacity: 0, scale: 0.6, transition: { duration: 0.35 } } }
 									>
 										<RCard cardId={ cardId } large={ fill }/>
 									</motion.div>
 								) : isDeclaring ? (
 									<DeclarationBadge
-										key={ activeDeal?.declarations[ playerId ] === undefined
+										key={ declared === undefined
 											? `awaiting-${ playerId }`
 											: `declared-${ playerId }` }
-										wins={ activeDeal?.declarations[ playerId ] }
+										wins={ declared }
+										pending={ currentTurn === playerId }
 										large={ fill }
 									/>
 								) : !!activeTrick ? (
@@ -106,7 +104,7 @@ export function DealView( { fill }: DealViewProps ) {
 										exit={ { opacity: 0 } }
 										className={ cn(
 											"w-16 md:w-20 xl:w-24 p-1 md:p-1.5 md:text-lg h-24 md:h-30 xl:h-36",
-											"rounded-lg border-2 bg-surface border-dotted border-inverted-surface",
+											"rounded-lg border-2 bg-surface border-dotted border-outline",
 											"flex flex-col justify-between",
 											fill && "w-28 md:w-36 xl:w-44 h-42 md:h-54 xl:h-66"
 										) }

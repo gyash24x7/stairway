@@ -1,20 +1,24 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, useContext } from "react";
 
-import type { TicTacToePlayerView, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema.ts";
-import { addBotsFn, placeFn } from "@/games/tictactoe/client/client.ts";
+import type { ReactNode } from "react";
 
-/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
-export type TicTacToePlayerSnapshot = Omit<TicTacToeSnapshot, "view"> & {
-	view: TicTacToePlayerView
-};
+import { tictactoeApi } from "@/games/tictactoe/client/client.ts";
+import { TicTacToeConfig, TicTacToeSeatView } from "@/games/tictactoe/shared/schema.ts";
+import { ErrorState } from "@/shared/ui/components/error-state.tsx";
+import { GameView } from "@/swish/shared/schema.ts";
+
+import type { TicTacToeView } from "@/games/tictactoe/shared/schema.ts";
+import type { GameId } from "@/swish/shared/schema.ts";
+
 
 type TicTacToeContextValue = {
-	data: TicTacToePlayerSnapshot;
+	data: GameView<TicTacToeSeatView, TicTacToeConfig>;
 	placeMove: ( position: number ) => void;
 	addBots: () => void;
+	startGame: () => void;
 	isPending: boolean;
 };
 
@@ -29,40 +33,54 @@ export function useTicTacToe() {
 }
 
 type TicTacToeProviderProps = {
-	data: TicTacToeSnapshot;
-	gameId: string;
+	data: GameView<TicTacToeView, TicTacToeConfig>;
+	gameId: GameId;
 	children: ReactNode;
 };
 
 export function TicTacToeProvider( { data, gameId, children }: TicTacToeProviderProps ) {
 	const queryClient = useQueryClient();
 	const invalidate = () => queryClient.invalidateQueries( {
-		queryKey: [ "tic-tac-toe", "getState", gameId ]
+		queryKey: [ "tictactoe", "getState", gameId ]
 	} );
 
 	const place = useMutation( {
-		mutationFn: ( position: number ) => placeFn( gameId, position ),
+		mutationFn: ( position: number ) => tictactoeApi.place( gameId, { position } ),
 		onSuccess: invalidate
 	} );
 
 	const bots = useMutation( {
-		mutationFn: () => addBotsFn( gameId ),
+		mutationFn: () => tictactoeApi.addBots( gameId ),
 		onSuccess: invalidate
 	} );
 
-	// The SPA always plays as a seated player; the table/spectator view is not rendered.
-	if ( data.view._tag !== "tictactoe/PlayerView" ) {
-		return null;
+	const start = useMutation( {
+		mutationFn: () => tictactoeApi.start( gameId ),
+		onSuccess: invalidate
+	} );
+
+	if ( !data.view.playerId ) {
+		// A screen holding no seat — a spectator, or a stale link. These three games
+		// have only a seat's screen to offer, so say so rather than rendering blank.
+		return (
+			<ErrorState
+				title={ "You don't have a seat in this game" }
+				message={ "This game is already under way, and only its players can watch it." }
+				action={ { label: "BACK TO LOBBY", to: "/tictactoe" } }
+			/>
+		);
 	}
 
-	const playerData: TicTacToePlayerSnapshot = { ...data, view: data.view };
+	const playerData = GameView( TicTacToeSeatView, TicTacToeConfig )
+		.make( { ...data, view: { ...data.view, playerId: data.view.playerId } } );
 
 	return (
 		<TicTacToeContext value={ {
 			data: playerData,
 			placeMove: ( position: number ) => place.mutate( position ),
 			addBots: () => bots.mutate(),
-			isPending: place.isPending || bots.isPending
+			startGame: () => start.mutate(),
+			isPending: place.isPending || bots.isPending || start.isPending
 		} }>
 			{ children }
 		</TicTacToeContext>

@@ -1,25 +1,24 @@
+"use client";
+
 import { useState } from "react";
 
-import type { CardSuit } from "@/shared/cards/schema.ts";
+import { callbreakApi } from "@/games/callbreak/client/client.ts";
+import { CALLBREAK_DEAL_COUNTS } from "@/games/callbreak/shared/schema.ts";
 import { CARD_SUITS } from "@/shared/cards/utils.ts";
 import { RCardSuit } from "@/shared/ui/components/card.tsx";
-import { CreateGame } from "@/shared/ui/components/create-game.tsx";
 import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
-import { createCallbreakGameFn } from "@/games/callbreak/client/client.ts";
+import { CreateGame } from "@/swish/client/create-game.tsx";
+
+import type { DealCount } from "@/games/callbreak/shared/schema.ts";
+import type { CardSuit } from "@/shared/cards/schema.ts";
 
 export function CallbreakCreateGame() {
 	const [ trumpSuit, setTrumpSuit ] = useState<CardSuit>();
-	const [ dealCount, setDealCount ] = useState<5 | 9 | 13>();
+	const [ dealCount, setDealCount ] = useState<DealCount>();
 
-	const createCallbreakGame = async () => {
-		if ( !dealCount || !trumpSuit ) {
-			return "";
-		}
-		// Four seats and `autoStart` are fixed server-side.
-		const { id } = await createCallbreakGameFn( { dealCount, trumpSuit } );
-
-		return id;
-	};
+	// Four seats, the move clock and the manual start are fixed server-side.
+	const createCallbreakGame = () =>
+		callbreakApi.createGame( { dealCount: dealCount!, trumpSuit: trumpSuit! } );
 
 	return (
 		<CreateGame
@@ -33,12 +32,12 @@ export function CallbreakCreateGame() {
 					options={ Object.values( CARD_SUITS ) }
 					value={ trumpSuit }
 					onChange={ setTrumpSuit }
-					renderOption={ suit => <RCardSuit suit={ suit } themed/> }
+					renderOption={ suit => <RCardSuit suit={ suit } large themed/> }
 				/>
 
 				<label className={ "text-sm text-muted-foreground" }>Deal Count</label>
 				<RadioSelect
-					options={ [ 5, 9, 13 ] as const }
+					options={ CALLBREAK_DEAL_COUNTS }
 					value={ dealCount }
 					onChange={ setDealCount }
 				/>

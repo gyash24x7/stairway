@@ -1,1174 +1,1028 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import * as Effect from "effect/Effect";
 
+import { decideMove } from "@/games/splendor/server/bot.ts";
 import { splendor } from "@/games/splendor/server/engine.ts";
-import { DEFAULT_TOKENS } from "@/games/splendor/server/utils.ts";
 import type {
 	Card,
-	Cost,
-	Noble,
-	PlayerData,
+	PickTokensInput,
 	SplendorConfig,
-	SplendorPlayerView,
-	SplendorState,
-	SplendorTableView,
-	SplendorView,
-	Tokens
+	SplendorView
 } from "@/games/splendor/shared/schema.ts";
-import { GameCode, GameId, type PlayerId } from "@/shared/swish/schema.ts";
-import { makeMemory, type Memory, player, run, runFail } from "@tests/_helpers/swish.ts";
+import {
+	SPLENDOR_DEFAULT_WINNING_POINTS,
+	SPLENDOR_GOLD_SUPPLY,
+	SPLENDOR_MAX_RESERVED,
+	SPLENDOR_MOVE_TIMEOUT_MILLIS,
+	SPLENDOR_NOBLE_VISIT,
+	SPLENDOR_OPEN_CARDS,
+	SPLENDOR_TOKEN_SUPPLY,
+	SPLENDOR_WINNING_POINTS
+} from "@/games/splendor/shared/schema.ts";
+import { discountedCost, GEMS, paymentFor, sumTokens } from "@/games/splendor/shared/utils.ts";
+import type { InteractionFrame, InvalidMove, PlayerId as Player } from "@/swish/shared/schema.ts";
+import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 
-const GID = GameId.make( "g1" );
-const CODE = GameCode.make( "ABC123" );
+const player = ( id: string ) => PlayerId.make( id );
 
-const P1 = player( "p1" );
-const P2 = player( "p2" );
-const P3 = player( "p3" );
-const P4 = player( "p4" );
-/** Never joins anything — used to prove `assertMember` gates each command. */
-const STRANGER = player( "p9" );
-const BOT = player( "bot", true );
+const [ a, b ] = [ player( "a" ), player( "b" ) ];
 
-const CONFIG: SplendorConfig = { playerCount: 2, autoStart: false, winningPoints: 15 };
+const info = ( id: Player, isBot = false ) =>
+	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar", isBot } );
 
-// --- Fixtures --------------------------------------------------------------
+/** How long the engine waits before the policy plays a seat. */
+const BOT_DELAY_MS = 5_000;
 
-/** A full token map; every gem defaults to zero. */
-const tokens = ( over: Partial<Tokens> = {} ) => ( { ...DEFAULT_TOKENS, ...over } );
+/** What a table plays to, when a test does not care which. */
+type WinningPoints = typeof SPLENDOR_WINNING_POINTS[number];
 
-/** A full cost map; every gem defaults to zero. */
-const cost = ( over: Partial<Cost> = {} ) =>
-	( { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, ...over } );
-
-/** A card with sane defaults — override only what a test cares about. */
-const card = ( id: string, over: Partial<Card> = {} ) => {
-	const base: Card = { id, level: 1, points: 0, cost: cost(), bonus: "diamond" };
-	return { ...base, ...over };
-};
-
-/** A noble whose requirement is the given (partial) cost. */
-const noble = ( id: string, over: Partial<Cost> = {} ) => {
-	const result: Noble = { id, points: 3, cost: cost( over ) };
-	return result;
-};
-
-// --- Store access ----------------------------------------------------------
+const configFor = (
+	playerCount: 2 | 3 | 4,
+	winningPoints: WinningPoints = SPLENDOR_DEFAULT_WINNING_POINTS
+): SplendorConfig => ( {
+	playerCount,
+	winningPoints,
+	autoStart: false,
+	moveTimeoutMillis: SPLENDOR_MOVE_TIMEOUT_MILLIS
+} );
 
 /**
- * The snapshot the fake `GameStore` holds. The decks are deliberately absent from
- * every view, so the only way to assert on them is through the store itself.
+ * Seats a table by hand and starts it, which is how Splendor runs: `autoStart`
+ * is off, so the creator says when the lobby closes.
+ *
+ * @param body - What to play once the game is under way.
+ * @param [options] - The seat count, who is a bot, and the clock to drive it with.
+ * @returns The run's result and collectors.
  */
-const persisted = ( memory: Memory ) => memory.store.value as {
-	status: string;
-	state: SplendorState;
-	context: { turn: number; currentPlayer: PlayerId };
-};
-
-/** Overwrite fields of the stored board, staging a position real play would take many turns to reach. */
-const patchState = ( memory: Memory, patch: Partial<SplendorState> ) => {
-	const snap = memory.store.value as { state: SplendorState };
-	memory.store.value = { ...snap, state: { ...snap.state, ...patch } };
-};
-
-/** Overwrite fields of one player's slice (tokens, owned cards, reserves, points). */
-const patchPlayer = ( memory: Memory, id: PlayerId, patch: Partial<PlayerData> ) => {
-	const { state } = persisted( memory );
-	patchState( memory, {
-		playerData: { ...state.playerData, [ id ]: { ...state.playerData[ id ]!, ...patch } }
-	} );
-};
-
-/** The table + per-player payload of the most recent broadcast. */
-const lastBroadcast = ( memory: Memory ) => memory.broadcasts.at( -1 )! as {
-	channel: string;
-	snapshot: {
-		table: { view: SplendorTableView };
-		playerViews: Record<string, { view: SplendorPlayerView }>;
-	};
-};
-
-/** Narrows a snapshot's audience-parameterised view to the player variant. */
-const asPlayerView = ( view: SplendorView ) => view as SplendorPlayerView;
-
-/** initialize → join every player → (optionally) start a splendor game. */
-async function bootSplendor(
-	memory: Memory,
-	opts: {
-		config?: Partial<SplendorConfig>;
-		players?: ReturnType<typeof player>[];
-		start?: boolean;
-		seed?: string;
+const table = <A, E>(
+	body: ( engine: Effect.Success<typeof splendor> ) => Effect.Effect<A, E>,
+	options: {
+		readonly seats?: ReadonlyArray<Player>;
+		readonly bots?: ReadonlyArray<Player>;
+		readonly clock?: ReturnType<typeof testClock>;
+		readonly winningPoints?: WinningPoints;
 	} = {}
-) {
-	const engine = await run( memory, splendor );
-	const players = opts.players ?? [ P1, P2 ];
-	// The roster drives the seat count; the schema pins it to the game's legal
-	// set, so narrow the derived length to it.
-	const config = {
-		...CONFIG,
-		playerCount: players.length as SplendorConfig[ "playerCount" ],
-		...opts.config
-	};
+) => {
+	const seats = options.seats ?? [ a, b ];
+	const clock = options.clock ?? testClock();
+	const config = configFor( seats.length as 2 | 3 | 4, options.winningPoints );
 
-	await run( memory, engine.initialize( {
-		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
-	} ) );
-	for ( const p of players ) {
-		await run( memory, engine.join( p ) );
+	return runGame( splendor, engine => Effect.gen( function* () {
+		yield* engine.initialize( createInput( config, seats[ 0 ]! ) );
+		for ( const seat of seats ) {
+			yield* engine.join( info( seat, options.bots?.includes( seat ) ?? false ) );
+		}
+
+		yield* engine.start( seats[ 0 ]! );
+		return yield* body( engine );
+	} ), { now: clock.now } );
+};
+
+/** The view a seat holds right now. */
+const viewOf = ( engine: Effect.Success<typeof splendor>, id?: Player ) =>
+	( id ? engine.getState( id ) : engine.getState() ).pipe(
+		Effect.map( envelope => envelope.view as SplendorView )
+	);
+
+/** A `pickTokens` input taking one of each named gem. */
+const take = ( ...gems: ReadonlyArray<string> ): PickTokensInput =>
+	( { tokens: Object.fromEntries( gems.map( gem => [ gem, 1 ] ) ) } );
+
+/** Plays whatever the policy would play for the seat whose turn it is. */
+const policyMove = ( engine: Effect.Success<typeof splendor> ) => Effect.gen( function* () {
+	const envelope = yield* engine.getState();
+	const [ frame ] = envelope.context.interactions.slice( -1 );
+	const seat = frame
+		? frame.responders.find( id => !( id in frame.responses ) )!
+		: envelope.context.currentPlayer;
+
+	const view = ( yield* engine.getState( seat ) ).view as SplendorView;
+	const move = decideMove( view, envelope.context )!;
+
+	switch ( move.moveType ) {
+		case "pickTokens":
+			return yield* engine.pickTokens( move.input, seat );
+		case "reserveCard":
+			return yield* engine.reserveCard( move.input, seat );
+		case "purchaseCard":
+			return yield* engine.purchaseCard( move.input, seat );
+		case "claimNoble":
+			return yield* engine.claimNoble( move.input, seat );
 	}
+} );
 
-	if ( opts.start !== false ) {
-		await run( memory, engine.start( players[ 0 ]!.id ) );
-	}
 
-	return engine;
-}
+describe( "dealing the table", () => {
+	test( "sizes the bank to the seat count and always deals five gold", () => {
+		for ( const seats of [ [ a, b ], [ a, b, player( "c" ) ] ] as const ) {
+			const { result } = table( engine => viewOf( engine ), { seats } );
+			const supply = SPLENDOR_TOKEN_SUPPLY[ seats.length as 2 | 3 ];
 
-// ===========================================================================
-describe( "splendor — setup & deal", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
+			expect( result.tokens ).toEqual( {
+				diamond: supply,
+				sapphire: supply,
+				emerald: supply,
+				ruby: supply,
+				onyx: supply,
+				gold: SPLENDOR_GOLD_SUPPLY
+			} );
+		}
+	} );
 
-	test( "initialize builds the full 40/30/20 deck with nothing on the table yet", async () => {
-		const engine = await run( memory, splendor );
-		await run( memory, engine.initialize( {
-			id: GID, code: CODE, config: CONFIG, seed: "seed"
+	test( "turns up four cards of each level and keeps the rest face down", () => {
+		const { result } = table( engine => viewOf( engine ) );
+
+		expect( result.cards[ 1 ] ).toHaveLength( SPLENDOR_OPEN_CARDS );
+		expect( result.cards[ 2 ] ).toHaveLength( SPLENDOR_OPEN_CARDS );
+		expect( result.cards[ 3 ] ).toHaveLength( SPLENDOR_OPEN_CARDS );
+		expect( result.deckCounts ).toEqual( { 1: 36, 2: 26, 3: 16 } );
+	} );
+
+	test( "draws one more noble than there are seats", () => {
+		const { result } = table( engine => viewOf( engine ) );
+		expect( result.nobles ).toHaveLength( 3 );
+	} );
+
+	test( "seats everyone empty-handed", () => {
+		const { result } = table( engine => viewOf( engine ) );
+
+		for ( const seat of [ a, b ] ) {
+			expect( result.playerData[ seat ] ).toMatchObject( {
+				cards: [],
+				nobles: [],
+				reserved: [],
+				points: 0
+			} );
+			expect( sumTokens( result.playerData[ seat ]!.tokens ) ).toBe( 0 );
+		}
+	} );
+
+	test( "never puts the deck order on the wire", () => {
+		const { result } = table( engine => viewOf( engine, a ) );
+		expect( result ).not.toHaveProperty( "decks" );
+	} );
+
+	test( "shows every seat the same table, itself included", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.reserveCard( {
+				cardId: ( yield* viewOf( engine, a ) ).cards[ 1 ][ 0 ]!.id,
+				withGold: true
+			}, a );
+
+			return {
+				own: yield* viewOf( engine, a ),
+				opponent: yield* viewOf( engine, b ),
+				spectator: yield* viewOf( engine )
+			};
 		} ) );
 
-		const { state, status } = persisted( memory );
-		expect( status ).toBe( "CREATED" );
-		expect( state.decks[ 1 ] ).toHaveLength( 40 );
-		expect( state.decks[ 2 ] ).toHaveLength( 30 );
-		expect( state.decks[ 3 ] ).toHaveLength( 20 );
-		// `setup` only shuffles the decks — the board is dealt by `onStart`.
-		expect( state.cards ).toEqual( { 1: [], 2: [], 3: [] } );
-		expect( state.nobles ).toHaveLength( 0 );
-		expect( state.tokens ).toEqual( tokens() );
-		expect( state.playerData ).toEqual( {} );
+		const { own, opponent, spectator } = result;
+
+		// Nothing about a seat is private — the reservation came off the board face
+		// up — so the three views differ only in whose seat they were built for.
+		expect( opponent.playerData ).toEqual( own.playerData );
+		expect( spectator.playerData ).toEqual( own.playerData );
+		expect( own.playerId ).toBe( a );
+		expect( opponent.playerId ).toBe( b );
+		expect( spectator.playerId ).toBeUndefined();
 	} );
+} );
 
-	test( "each join seeds that player's empty slice", async () => {
-		await bootSplendor( memory, { start: false } );
 
-		const { state } = persisted( memory );
-		expect( Object.keys( state.playerData ).sort() ).toEqual( [ "p1", "p2" ] );
-		expect( state.playerData[ P1.id ] ).toEqual( {
-			tokens: tokens(), cards: [], nobles: [], reserved: [], points: 0
+describe( "taking gems", () => {
+	test( "moves three different gems from the bank to the seat", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+			return yield* viewOf( engine, a );
+		} ) );
+
+		expect( result.tokens ).toMatchObject( { diamond: 3, sapphire: 3, emerald: 3, ruby: 4 } );
+		expect( result.playerData[ a ]!.tokens ).toMatchObject( {
+			diamond: 1,
+			sapphire: 1,
+			emerald: 1
 		} );
 	} );
 
-	test( "start deals four cards per level off the top of each deck", async () => {
-		const engine = await run( memory, splendor );
-		await run( memory, engine.initialize( {
-			id: GID, code: CODE, config: CONFIG, seed: "seed"
+	test( "hands the turn to the next seat", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+			return yield* engine.getState();
 		} ) );
 
-		const before = persisted( memory ).state.decks;
-		const tops = {
-			1: before[ 1 ].slice( 0, 4 ).map( c => c.id ),
-			2: before[ 2 ].slice( 0, 4 ).map( c => c.id ),
-			3: before[ 3 ].slice( 0, 4 ).map( c => c.id )
+		expect( result.context.currentPlayer ).toBe( b );
+		expect( result.context.turn ).toBe( 1 );
+	} );
+
+	test( "refuses gold, which is only ever taken with a reservation", () => {
+		const { result } = table( engine =>
+			engine.pickTokens( { tokens: { gold: 1 } }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses a negative take at the decode boundary", () => {
+		// A negative entry never reaches the rules: `sumTokens` would read it as a
+		// credit and wave the ten-token discard through, so the schema stops it.
+		const { result } = table( engine =>
+			engine.pickTokens( { tokens: { diamond: 1, sapphire: -5 } }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+		expect( ( result as InvalidMove ).reason )
+			.not.toBe( "Take three different gems, or two of the same!" );
+	} );
+
+	test( "refuses a fractional take at the decode boundary", () => {
+		const { result } = table( engine =>
+			engine.pickTokens( { tokens: { diamond: 1.5 } }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "allows two of a kind only off a pile of four or more", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			// The two-seat bank holds exactly four, so the first double is legal and
+			// the second — against the two left — is not.
+			yield* engine.pickTokens( { tokens: { diamond: 2 } }, a );
+			yield* engine.pickTokens( take( "ruby", "onyx", "emerald" ), b );
+
+			return yield* engine.pickTokens( { tokens: { diamond: 2 } }, a ).pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "insists on three different gems while three are still there", () => {
+		const { result } = table( engine =>
+			engine.pickTokens( take( "diamond" ), a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses a take of nothing", () => {
+		const { result } = table( engine =>
+			engine.pickTokens( { tokens: {} }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses a mix that is neither three different nor two alike", () => {
+		const { result } = table( engine =>
+			engine.pickTokens( { tokens: { diamond: 2, sapphire: 1 } }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses to take more than the bank holds", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			// Two seats plus a double empties a four-token pile.
+			yield* engine.pickTokens( { tokens: { diamond: 2 } }, a );
+			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), b );
+			yield* engine.pickTokens( take( "diamond", "ruby", "onyx" ), a );
+
+			return yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), b )
+				.pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "asks for every type left once fewer than three remain", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			// Drains the diamond, sapphire and emerald piles between the two seats,
+			// which leaves only two types on the table.
+			yield* engine.pickTokens( { tokens: { diamond: 2 } }, a );
+			yield* engine.pickTokens( { tokens: { sapphire: 2 } }, b );
+			yield* engine.pickTokens( { tokens: { emerald: 2 } }, a );
+			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), b );
+			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+
+			const refused = yield* engine.pickTokens( take( "ruby" ), b ).pipe( Effect.flip );
+			yield* engine.pickTokens( take( "ruby", "onyx" ), b );
+
+			return { refused, view: yield* viewOf( engine, b ) };
+		} ) );
+
+		expect( result.view.tokens ).toMatchObject( { diamond: 0, sapphire: 0, emerald: 0 } );
+		expect( result.refused._tag ).toBe( "swish/InvalidMove" );
+		expect( result.view.playerData[ b ]!.tokens ).toMatchObject( { ruby: 1, onyx: 1 } );
+	} );
+} );
+
+
+describe( "the ten-token limit", () => {
+	/**
+	 * Walks `a` up to nine gems while `b` banks third-row cards instead of gems,
+	 * so every pile still has something in it when the limit finally bites.
+	 */
+	const nearTheLimit = <A, E>(
+		body: ( engine: Effect.Success<typeof splendor> ) => Effect.Effect<A, E>
+	) => table( engine => Effect.gen( function* () {
+		for ( let round = 0; round < 3; round++ ) {
+			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+
+			const view = yield* viewOf( engine, b );
+			yield* engine.reserveCard( { cardId: view.cards[ 3 ][ round ]!.id, withGold: true }, b );
+		}
+
+		return yield* body( engine );
+	} ) );
+
+	test( "leaves a seat at nine holding nine", () => {
+		const { result } = nearTheLimit( engine => viewOf( engine, a ) );
+		expect( sumTokens( result.playerData[ a ]!.tokens ) ).toBe( 9 );
+	} );
+
+	test( "refuses a take that would carry a seat past ten", () => {
+		const { result } = nearTheLimit( engine =>
+			engine.pickTokens( take( "ruby", "onyx", "diamond" ), a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "accepts the same take with the excess handed back", () => {
+		const { result } = nearTheLimit( engine => Effect.gen( function* () {
+			yield* engine.pickTokens( {
+				tokens: { ruby: 1, onyx: 1, diamond: 1 },
+				returned: { sapphire: 1, emerald: 1 }
+			}, a );
+
+			return yield* viewOf( engine, a );
+		} ) );
+
+		expect( sumTokens( result.playerData[ a ]!.tokens ) ).toBe( 10 );
+		expect( result.playerData[ a ]!.tokens ).toMatchObject( { sapphire: 2, emerald: 2, ruby: 1 } );
+	} );
+
+	test( "refuses a hand-back the seat does not hold", () => {
+		const { result } = nearTheLimit( engine => engine.pickTokens( {
+			tokens: { ruby: 1, onyx: 1, diamond: 1 },
+			returned: { gold: 2 }
+		}, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses a hand-back when the seat is not over the limit", () => {
+		const { result } = table( engine => engine.pickTokens( {
+			tokens: { diamond: 1, sapphire: 1, emerald: 1 },
+			returned: { diamond: 1 }
+		}, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+} );
+
+
+describe( "reserving a card", () => {
+	test( "takes the card off the board, turns up its replacement and pays a gold", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const before = yield* viewOf( engine, a );
+			const target = before.cards[ 1 ][ 0 ]!;
+
+			yield* engine.reserveCard( { cardId: target.id, withGold: true }, a );
+
+			return { target, after: yield* viewOf( engine, a ) };
+		} ) );
+
+		const { target, after } = result;
+
+		expect( after.cards[ 1 ] ).toHaveLength( SPLENDOR_OPEN_CARDS );
+		expect( after.cards[ 1 ].map( c => c.id ) ).not.toContain( target.id );
+		expect( after.deckCounts[ 1 ] ).toBe( 35 );
+		expect( after.playerData[ a ]!.reserved.map( c => c.id ) ).toEqual( [ target.id ] );
+		expect( after.playerData[ a ]!.tokens.gold ).toBe( 1 );
+		expect( after.tokens.gold ).toBe( SPLENDOR_GOLD_SUPPLY - 1 );
+	} );
+
+	test( "leaves the gold alone when the seat says so", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = ( yield* viewOf( engine, a ) ).cards[ 2 ][ 0 ]!;
+			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+
+			return yield* viewOf( engine, a );
+		} ) );
+
+		expect( result.playerData[ a ]!.tokens.gold ).toBe( 0 );
+		expect( result.tokens.gold ).toBe( SPLENDOR_GOLD_SUPPLY );
+	} );
+
+	test( "refuses a fourth card in reserve", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			for ( let i = 0; i < 3; i++ ) {
+				const view = yield* viewOf( engine, a );
+				yield* engine.reserveCard( { cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false }, a );
+				yield* engine.pickTokens( take( "ruby", "onyx", "emerald" ), b );
+			}
+
+			const view = yield* viewOf( engine, a );
+			return yield* engine.reserveCard( { cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false }, a )
+				.pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses a card that is not on the board", () => {
+		const { result } = table( engine =>
+			engine.reserveCard( { cardId: "no-such-card", withGold: false }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses a card another seat already reserved", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = ( yield* viewOf( engine, a ) ).cards[ 1 ][ 0 ]!;
+			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+
+			return yield* engine.reserveCard( { cardId: target.id, withGold: false }, b )
+				.pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+} );
+
+
+describe( "buying a card", () => {
+	/** The cheapest card face up on the first row — what a fresh seat can reach. */
+	const cheapest = ( view: SplendorView ) =>
+		view.cards[ 1 ].toSorted( ( x, y ) => sumTokens( x.cost ) - sumTokens( y.cost ) )[ 0 ]!;
+
+	/**
+	 * Keeps the turn moving for `b` without disturbing what `a` is saving for. A
+	 * third-row reservation costs no gems and cannot touch a first-row target, so
+	 * that is the first choice; once `b` is holding three, it takes the gems the
+	 * target asks least for instead.
+	 */
+	const filler = ( engine: Effect.Success<typeof splendor>, target: Card ) =>
+		Effect.gen( function* () {
+			const view = yield* viewOf( engine, b );
+
+			if ( view.playerData[ b ]!.reserved.length < SPLENDOR_MAX_RESERVED ) {
+				return yield* engine.reserveCard(
+					{ cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false },
+					b
+				);
+			}
+
+			const picked = GEMS.filter( gem => view.tokens[ gem ] > 0 )
+				.toSorted( ( x, y ) => target.cost[ x ] - target.cost[ y ] )
+				.slice( 0, 3 );
+
+			return yield* engine.pickTokens(
+				{ tokens: Object.fromEntries( picked.map( gem => [ gem, 1 ] ) ) },
+				b
+			);
+		} );
+
+	/**
+	 * Walks `a` up to paying for one card, taking the gems that card still asks
+	 * for ahead of any others. Three rounds is enough for any first-row card and
+	 * leaves `a` at nine tokens, so the ten-token discard never enters into it.
+	 */
+	const fund = ( engine: Effect.Success<typeof splendor>, target: Card ) =>
+		Effect.gen( function* () {
+			for ( let round = 0; round < 3; round++ ) {
+				const view = yield* viewOf( engine, a );
+				const me = view.playerData[ a ]!;
+				const paid = paymentFor( target, me.tokens, me.cards );
+				if ( paid ) {
+					return paid;
+				}
+
+				const cost = discountedCost( target, me.cards );
+				const available = GEMS.filter( gem => view.tokens[ gem ] > 0 );
+				const wanted = available.filter( gem => cost[ gem ] > me.tokens[ gem ] );
+
+				// Two of a kind whenever the card wants two more of one gem and the
+				// pile can stand it; three different otherwise.
+				const double = wanted.find(
+					gem => cost[ gem ] - me.tokens[ gem ] >= 2 && view.tokens[ gem ] >= 4
+				);
+
+				const picked = [ ...wanted, ...available.filter( gem => !wanted.includes( gem ) ) ]
+					.slice( 0, Math.min( 3, available.length ) );
+
+				yield* engine.pickTokens(
+					double
+						? { tokens: { [ double ]: 2 } }
+						: { tokens: Object.fromEntries( picked.map( gem => [ gem, 1 ] ) ) },
+					a
+				);
+				yield* filler( engine, target );
+			}
+
+			const view = yield* viewOf( engine, a );
+			const me = view.playerData[ a ]!;
+			return paymentFor( target, me.tokens, me.cards );
+		} );
+
+	test( "pays the bank, keeps the card and turns up its replacement", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = cheapest( yield* viewOf( engine, a ) );
+			const payment = yield* fund( engine, target );
+
+			const before = yield* viewOf( engine, a );
+			yield* engine.purchaseCard( { cardId: target.id, payment: payment! }, a );
+
+			return { target, payment: payment!, before, after: yield* viewOf( engine, a ) };
+		} ) );
+
+		const { target, payment, before, after } = result;
+
+		expect( after.playerData[ a ]!.cards.map( c => c.id ) ).toEqual( [ target.id ] );
+		expect( after.playerData[ a ]!.points ).toBe( target.points );
+		expect( after.cards[ 1 ].map( c => c.id ) ).not.toContain( target.id );
+		expect( after.cards[ 1 ] ).toHaveLength( SPLENDOR_OPEN_CARDS );
+		expect( after.deckCounts[ 1 ] ).toBe( before.deckCounts[ 1 ] - 1 );
+
+		// Every token spent goes back to the bank, none of it anywhere else.
+		expect( sumTokens( after.playerData[ a ]!.tokens ) )
+			.toBe( sumTokens( before.playerData[ a ]!.tokens ) - sumTokens( payment ) );
+		expect( sumTokens( after.tokens ) ).toBe( sumTokens( before.tokens ) + sumTokens( payment ) );
+	} );
+
+	test( "discounts the next card by the bonus the first one left behind", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = cheapest( yield* viewOf( engine, a ) );
+			const payment = yield* fund( engine, target );
+			yield* engine.purchaseCard( { cardId: target.id, payment: payment! }, a );
+
+			const after = yield* viewOf( engine, a );
+			const priced = { ...target, cost: { ...target.cost, [ target.bonus ]: 2 } };
+
+			return {
+				bonus: target.bonus,
+				discounted: discountedCost( priced, after.playerData[ a ]!.cards )
+			};
+		} ) );
+
+		// One card bought, so the gem it prints comes off the next card's price.
+		expect( result.discounted[ result.bonus ] ).toBe( 1 );
+	} );
+
+	test( "buys a card out of the seat's own reserve", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = cheapest( yield* viewOf( engine, a ) );
+
+			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+			yield* filler( engine, target );
+
+			const payment = yield* fund( engine, target );
+			const before = yield* viewOf( engine, a );
+			yield* engine.purchaseCard( { cardId: target.id, payment: payment! }, a );
+
+			return { target, before, after: yield* viewOf( engine, a ) };
+		} ) );
+
+		const { target, before, after } = result;
+
+		expect( before.playerData[ a ]!.reserved ).toHaveLength( 1 );
+		expect( after.playerData[ a ]!.reserved ).toHaveLength( 0 );
+		expect( after.playerData[ a ]!.cards.map( c => c.id ) ).toEqual( [ target.id ] );
+
+		// Nothing is turned up: the card left the board when it was reserved.
+		expect( after.deckCounts[ 1 ] ).toBe( before.deckCounts[ 1 ] );
+	} );
+
+	test( "refuses a payment that leaves the cost short", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = cheapest( yield* viewOf( engine, a ) );
+			return yield* engine.purchaseCard( { cardId: target.id, payment: {} }, a )
+				.pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses an overpayment in gold", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = cheapest( yield* viewOf( engine, a ) );
+			const payment = yield* fund( engine, target );
+
+			return yield* engine.purchaseCard(
+				{ cardId: target.id, payment: { ...payment, gold: ( payment!.gold ?? 0 ) + 1 } },
+				a
+			).pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses a card the seat neither sees nor holds", () => {
+		const { result } = table( engine =>
+			engine.purchaseCard( { cardId: "no-such-card", payment: {} }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses tokens the seat does not have", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = cheapest( yield* viewOf( engine, a ) );
+			const payment = paymentFor( target, {
+				diamond: 9, sapphire: 9, emerald: 9, ruby: 9, onyx: 9, gold: 9
+			}, [] )!;
+
+			return yield* engine.purchaseCard( { cardId: target.id, payment }, a ).pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+
+	test( "refuses another seat's reserved card", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const target = cheapest( yield* viewOf( engine, a ) );
+			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+
+			const payment = paymentFor(
+				target, { diamond: 9, sapphire: 9, emerald: 9, ruby: 9, onyx: 9, gold: 9 },
+				[]
+			)!;
+
+			return yield* engine.purchaseCard( { cardId: target.id, payment }, b ).pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+	} );
+} );
+
+
+describe( "the noble visit", () => {
+	/** A full table: five nobles on it, so two often want the same seat at once. */
+	const NOBLE_SEATS = [ a, b, player( "c" ), player( "d" ) ] as const;
+
+	/** Long enough to cover the tail of the hunt below, which is not a fixed cost. */
+	const HUNT_TIMEOUT_MS = 60_000;
+
+	/**
+	 * Plays bot tables until a purchase leaves its buyer choosing between nobles,
+	 * then hands the game over with that frame still open.
+	 *
+	 * A choice needs two nobles willing to visit the same seat at the same moment,
+	 * which turns on the cards the shuffle deals — so this hunts for one across
+	 * whole games rather than trying to script it. About one table in four
+	 * produces one, which makes an empty run of this many astronomically unlikely;
+	 * it throws rather than passing vacuously if it ever happens.
+	 *
+	 * Hunting is why the three tests below carry their own timeout: a table is
+	 * cheap but the number of them needed varies, and the default five seconds is
+	 * inside the spread rather than outside it.
+	 *
+	 * @param body - What to assert against the paused table, given the clock it
+	 * 		is running on so it can let the frame's own timers fire.
+	 * @returns Whatever the body returned.
+	 */
+	const atNobleChoice = <A, E>(
+		body: (
+			engine: Effect.Success<typeof splendor>,
+			frame: InteractionFrame,
+			clock: ReturnType<typeof testClock>
+		) => Effect.Effect<A, E>
+	) => {
+		for ( let attempt = 0; attempt < 100; attempt++ ) {
+			const clock = testClock();
+
+			const { result } = table( engine => Effect.gen( function* () {
+				for ( let tick = 0; tick < 1200; tick++ ) {
+					const state = yield* engine.getState();
+					if ( state.status === "COMPLETED" ) {
+						return undefined;
+					}
+
+					const [ frame ] = state.context.interactions.slice( -1 );
+					if ( frame?.kind === SPLENDOR_NOBLE_VISIT ) {
+						return { value: yield* body( engine, frame, clock ) };
+					}
+
+					clock.advance( BOT_DELAY_MS + 1 );
+					yield* engine.alarm();
+				}
+
+				return undefined;
+			} ), { seats: NOBLE_SEATS, bots: NOBLE_SEATS, clock } );
+
+			if ( result ) {
+				return result.value;
+			}
+		}
+
+		throw new Error( "no table produced a choice of nobles" );
+	};
+
+	// One paused table, several questions — none of these commit, since a refused
+	// move is discarded whole, so the frame is still open for the next of them.
+	test( "opens a frame on the buyer alone and holds the table there", () => {
+		const result = atNobleChoice( ( engine, frame ) => Effect.gen( function* () {
+			const offered = frame.payload as ReadonlyArray<string>;
+			const state = yield* engine.getState();
+			const other = state.context.players.find( id => id !== frame.initiator )!;
+
+			return {
+				frame,
+				offered,
+				view: ( yield* engine.getState( frame.initiator ) ).view as SplendorView,
+
+				// Anything but a response is refused outright...
+				otherMove: yield* engine
+					.pickTokens( take( "diamond", "sapphire", "emerald" ), frame.initiator )
+					.pipe( Effect.flip ),
+
+				// ...a response from anyone but the buyer is not their turn to make...
+				otherSeat: yield* engine
+					.claimNoble( { nobleId: offered[ 0 ]! }, other )
+					.pipe( Effect.flip ),
+
+				// ...and a noble that is not on offer is refused on the rules.
+				wrongNoble: yield* engine
+					.claimNoble( { nobleId: "no-such-noble" }, frame.initiator )
+					.pipe( Effect.flip )
+			};
+		} ) );
+
+		const { frame, offered, view, otherMove, otherSeat, wrongNoble } = result;
+
+		expect( frame.responders ).toEqual( [ frame.initiator ] );
+		expect( frame.responses ).toEqual( {} );
+		expect( offered.length ).toBeGreaterThanOrEqual( 2 );
+		expect( frame.deadline ).toBeDefined();
+
+		// The card is already the buyer's — only the noble is still pending.
+		expect( view.nobles.map( n => n.id ) ).toEqual( expect.arrayContaining( [ ...offered ] ) );
+
+		expect( otherMove._tag ).toBe( "swish/MoveNotAllowed" );
+		expect( otherSeat._tag ).toBe( "swish/NotYourTurn" );
+		expect( wrongNoble._tag ).toBe( "swish/InvalidMove" );
+	}, HUNT_TIMEOUT_MS );
+
+	test( "sends in the one the buyer named, and only that one", () => {
+		const result = atNobleChoice( ( engine, frame ) => Effect.gen( function* () {
+			const before = ( yield* engine.getState( frame.initiator ) ).view as SplendorView;
+			const offered = frame.payload as ReadonlyArray<string>;
+
+			// The second, so a resolution that just took the first would show up.
+			const chosen = offered[ 1 ]!;
+			yield* engine.claimNoble( { nobleId: chosen }, frame.initiator ).pipe( Effect.orDie );
+
+			return {
+				chosen,
+				seat: frame.initiator,
+				before,
+				after: yield* engine.getState( frame.initiator )
+			};
+		} ) );
+
+		const { chosen, seat, before, after } = result;
+		const view = after.view as SplendorView;
+		const held = view.playerData[ seat ]!;
+		const had = before.playerData[ seat ]!;
+
+		// Exactly one noble more than before, and it is the one that was named —
+		// a seat may have been visited on an earlier turn, so the delta is the test.
+		expect( held.nobles.map( n => n.id ) )
+			.toEqual( [ ...had.nobles.map( n => n.id ), chosen ] );
+		expect( held.points ).toBe( had.points + 3 );
+		expect( view.nobles.map( n => n.id ) ).not.toContain( chosen );
+
+		// The frame is gone and the turn has moved on.
+		expect( after.context.interactions ).toEqual( [] );
+		expect( after.context.currentPlayer ).not.toBe( seat );
+	}, HUNT_TIMEOUT_MS );
+
+	test( "settles itself when the buyer never answers", () => {
+		const result = atNobleChoice( ( engine, frame, clock ) => Effect.gen( function* () {
+			const before = ( yield* engine.getState( frame.initiator ) ).view as SplendorView;
+
+			// The seat is machine-played, so the alarm the frame is waiting on hands
+			// it to the policy — which answers rather than leaving the table stuck.
+			clock.advance( BOT_DELAY_MS + 1 );
+			yield* engine.alarm();
+
+			return { seat: frame.initiator, before, after: yield* engine.getState( frame.initiator ) };
+		} ) );
+
+		const { seat, before, after } = result;
+		const view = after.view as SplendorView;
+
+		expect( after.context.interactions ).toEqual( [] );
+		expect( view.playerData[ seat ]!.nobles )
+			.toHaveLength( before.playerData[ seat ]!.nobles.length + 1 );
+	}, HUNT_TIMEOUT_MS );
+
+	test( "refuses a claim with no noble waiting", () => {
+		const { result } = table( engine =>
+			engine.claimNoble( { nobleId: "anything" }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+		expect( ( result as InvalidMove ).reason ).toBe( "No noble is waiting on you!" );
+	} );
+} );
+
+
+describe( "passing a turn", () => {
+	/**
+	 * A seat with nothing to do: the bank holds only gold, the board is bare and
+	 * the three cards it is holding cost more than it owns.
+	 *
+	 * A live table cannot be walked into this position — every gem would have to
+	 * be in somebody's hand at once, and a seat holding that many can always buy
+	 * something — so the rule itself is covered by `hasLegalMove`'s own tests and
+	 * this is what the policy is shown.
+	 */
+	const stuck = ( over: Partial<SplendorView> = {} ) => ( {
+		tokens: { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 5 },
+		cards: { 1: [], 2: [], 3: [] },
+		nobles: [],
+		deckCounts: { 1: 0, 2: 0, 3: 0 },
+		playerData: {
+			[ a ]: {
+				tokens: { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0 },
+				cards: [],
+				nobles: [],
+				reserved: [ 1, 2, 3 ].map( n => ( {
+					id: `dear-${ n }`,
+					level: 3 as const,
+					points: 5,
+					cost: { diamond: 7, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 },
+					bonus: "onyx" as const
+				} ) ),
+				points: 0
+			}
+		},
+		playerId: a,
+		...over
+	} );
+
+	/** A context with nothing pending, which is what a normal turn looks like. */
+	const openTurn = {
+		_tag: "swish/GameContext" as const,
+		turn: 4,
+		players: [ a, b ],
+		currentPlayer: a,
+		interactions: [],
+		seats: {},
+		teams: {},
+		teamNames: {}
+	};
+
+	test( "is refused while the seat still has a move to make", () => {
+		const { result } = table( engine => engine.pass( {}, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+		expect( ( result as InvalidMove ).reason ).toBe( "You still have a move to make!" );
+	} );
+
+	test( "is refused out of turn", () => {
+		const { result } = table( engine => engine.pass( {}, b ).pipe( Effect.flip ) );
+		expect( result._tag ).toBe( "swish/NotYourTurn" );
+	} );
+
+	test( "is what the policy plays when the rules leave it nothing else", () => {
+		expect( decideMove( stuck(), openTurn ) ).toEqual( { moveType: "pass", input: {} } );
+	} );
+
+	test( "is not what the policy plays while a gem is left in the bank", () => {
+		const view = stuck( {
+			tokens: { diamond: 1, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 5 }
+		} );
+
+		expect( decideMove( view, openTurn )?.moveType ).toBe( "pickTokens" );
+	} );
+
+	test( "is not what the policy plays while there is a card to reserve", () => {
+		const cheap = {
+			id: "cheap",
+			level: 1 as const,
+			points: 0,
+			cost: { diamond: 1, sapphire: 0, emerald: 0, ruby: 0, onyx: 0 },
+			bonus: "ruby" as const
 		};
 
-		await run( memory, engine.join( P1 ) );
-		await run( memory, engine.join( P2 ) );
-		await run( memory, engine.start( P1.id ) );
+		const base = stuck();
+		const view = stuck( {
+			cards: { 1: [ cheap ], 2: [], 3: [] },
+			playerData: { [ a ]: { ...base.playerData[ a ]!, reserved: [] } }
+		} );
 
-		const { state } = persisted( memory );
-		for ( const level of [ 1, 2, 3 ] as const ) {
-			expect( state.cards[ level ].map( c => c.id ) ).toEqual( tops[ level ] );
+		expect( decideMove( view, openTurn )?.moveType ).toBe( "reserveCard" );
+	} );
+} );
+
+
+describe( "a table played by the policy", () => {
+	/**
+	 * Runs both seats through the policy until the game is over, noting the best
+	 * score standing at each round boundary the table played *through*. A boundary
+	 * only gets recorded while the game is still going, so the list is every round
+	 * that did not end it.
+	 */
+	const playOut = (
+		clock: ReturnType<typeof testClock>,
+		winningPoints?: WinningPoints
+	) => table( engine => Effect.gen( function* () {
+		// Both seats to the machine: `b` is a bot outright, `a` hands its seat over.
+		yield* engine.setAutoPlay( a, true );
+		const boundaries: Array<number> = [];
+
+		for ( let tick = 0; tick < 800; tick++ ) {
+			const state = yield* engine.getState();
+			if ( state.status === "COMPLETED" ) {
+				return { state, boundaries };
+			}
+
+			const { turn, players } = state.context;
+			if ( turn > 0 && turn % players.length === 0 ) {
+				const view = state.view as SplendorView;
+				boundaries.push(
+					Math.max( ...players.map( id => view.playerData[ id ]?.points ?? 0 ) )
+				);
+			}
+
+			clock.advance( BOT_DELAY_MS + 1 );
+			yield* engine.alarm();
 		}
 
-		expect( state.decks[ 1 ] ).toHaveLength( 36 );
-		expect( state.decks[ 2 ] ).toHaveLength( 26 );
-		expect( state.decks[ 3 ] ).toHaveLength( 16 );
+		return { state: yield* engine.getState(), boundaries };
+	} ), { bots: [ b ], clock, winningPoints } );
+
+	test( "runs to a finish with a legal move every turn", () => {
+		const { result, saved } = playOut( testClock() );
+
+		expect( result.state.status ).toBe( "COMPLETED" );
+		expect( result.state.results?.ranking ).toHaveLength( 2 );
+		expect( result.state.context.interactions ).toEqual( [] );
+		expect( saved.size ).toBe( 1 );
 	} );
 
-	test( "a 2- or 3-player table gets 5 gem tokens; a 4-player table gets 7", async () => {
-		await bootSplendor( memory, { players: [ P1, P2 ] } );
-		expect( persisted( memory ).state.tokens ).toEqual( tokens( {
-			diamond: 5, sapphire: 5, emerald: 5, ruby: 5, onyx: 5, gold: 5
-		} ) );
+	test( "ends only on a round boundary, so both seats have had the same turns", () => {
+		const { result } = playOut( testClock() );
 
-		const three = makeMemory();
-		await bootSplendor( three, { players: [ P1, P2, P3 ] } );
-		expect( persisted( three ).state.tokens.diamond ).toBe( 5 );
+		expect( result.state.context.turn % 2 ).toBe( 0 );
 
-		const four = makeMemory();
-		await bootSplendor( four, { players: [ P1, P2, P3, P4 ] } );
-		// Only the gem piles scale — gold is always five.
-		expect( persisted( four ).state.tokens ).toEqual( tokens( {
-			diamond: 7, sapphire: 7, emerald: 7, ruby: 7, onyx: 7, gold: 5
-		} ) );
+		const scores = result.state.results!.ranking.map( r => r.score ?? 0 );
+		expect( Math.max( ...scores ) ).toBeGreaterThanOrEqual( SPLENDOR_DEFAULT_WINNING_POINTS );
 	} );
 
-	test( "the noble row is always one longer than the table", async () => {
-		for ( const seats of [ [ P1, P2 ], [ P1, P2, P3 ], [ P1, P2, P3, P4 ] ] ) {
-			const table = makeMemory();
-			await bootSplendor( table, { players: seats } );
-			expect( persisted( table ).state.nobles ).toHaveLength( seats.length + 1 );
+	test( "keeps every seat's prestige equal to the cards and nobles it holds", () => {
+		const { result } = playOut( testClock() );
+		const view = result.state.view as SplendorView;
+
+		for ( const seat of [ a, b ] ) {
+			const held = view.playerData[ seat ]!;
+			const earned = held.cards.reduce( ( total, card ) => total + card.points, 0 )
+				+ held.nobles.reduce( ( total, noble ) => total + noble.points, 0 );
+
+			expect( held.points ).toBe( earned );
 		}
 	} );
 
-	test( "the first player to join opens the game", async () => {
-		const engine = await bootSplendor( memory );
-		const state = await run( memory, engine.getState( P1.id ) );
+	test( "takes every claimed noble off the table exactly once", () => {
+		const { result } = playOut( testClock() );
+		const view = result.state.view as SplendorView;
 
-		expect( state.status ).toBe( "IN_PROGRESS" );
-		expect( state.context.currentPlayer ).toBe( P1.id );
-		expect( state.context.turn ).toBe( 0 );
-	} );
-} );
+		const claimed = [ a, b ].flatMap( seat => view.playerData[ seat ]!.nobles.map( n => n.id ) );
 
-// ===========================================================================
-describe( "splendor — determinism & replay", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "folding the same log always reproduces the same board", async () => {
-		const engine = await bootSplendor( memory );
-		// The deal is captured inside `GameDealt`, so replaying the log rebuilds it.
-		const dealt = persisted( memory ).state;
-
-		await run( memory, engine.pickTokens(
-			{ tokens: { diamond: 1, sapphire: 1, emerald: 1 } },
-			P1
-		) );
-		await run( memory, engine.pickTokens(
-			{ tokens: { ruby: 1, onyx: 1, diamond: 1 } },
-			P2
-		) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 2 } }, P1 ) );
-		const played = persisted( memory ).state;
-
-		// Rewind every move commit — the genesis snapshot refolds to the deal...
-		for ( let i = 0; i < 3; i++ ) {
-			await run( memory, engine.undo( P1 ) );
-		}
-		expect( persisted( memory ).state ).toEqual( dealt );
-
-		// ...and replaying them lands on exactly the same board again.
-		for ( let i = 0; i < 3; i++ ) {
-			await run( memory, engine.redo( P1 ) );
-		}
-		expect( persisted( memory ).state ).toEqual( played );
+		expect( new Set( claimed ).size ).toBe( claimed.length );
+		expect( view.nobles.map( n => n.id ).filter( id => claimed.includes( id ) ) ).toEqual( [] );
+		expect( view.nobles.length + claimed.length ).toBe( 3 );
 	} );
 
-	// `generateDecks`/`generateNobles` draw from the engine's seeded `rng`, so the
-	// seed fixes both the shuffled decks and the noble row.
-	test( "a fixed seed always deals the same board", async () => {
-		const a = makeMemory();
-		const b = makeMemory();
-		await bootSplendor( a );
-		await bootSplendor( b );
+	for ( const winningPoints of SPLENDOR_WINNING_POINTS ) {
+		test( `plays to the ${ winningPoints } it was created with`, () => {
+			const { result } = playOut( testClock(), winningPoints );
+			const { state, boundaries } = result;
 
-		expect( persisted( a ).state.cards ).toEqual( persisted( b ).state.cards );
-		expect( persisted( a ).state.nobles ).toEqual( persisted( b ).state.nobles );
+			expect( state.status ).toBe( "COMPLETED" );
+			expect( state.config.winningPoints ).toBe( winningPoints );
 
-		// ...and a different seed deals a different board, so the assertions above
-		// are about the seed rather than a constant.
-		const c = makeMemory();
-		await bootSplendor( c, { seed: "another-seed" } );
-		expect( persisted( c ).state.cards ).not.toEqual( persisted( a ).state.cards );
-	} );
-} );
+			const scores = state.results!.ranking.map( r => r.score ?? 0 );
+			expect( Math.max( ...scores ) ).toBeGreaterThanOrEqual( winningPoints );
 
-// ===========================================================================
-describe( "splendor — pickTokens validation", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
+			// Every round the table played *through* left everyone short of the
+			// target — so the round that ended it is the first one to reach it. A
+			// target the engine ignored would show up here as a boundary it played
+			// straight past.
+			expect( boundaries.every( best => best < winningPoints ) ).toBe( true );
+		} );
+	}
 
-	test( "gold can never be taken directly", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail( memory, engine.pickTokens( { tokens: { gold: 1 } }, P1 ) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a depleted pile cannot be drawn from", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, { tokens: tokens( { diamond: 5, sapphire: 5, ruby: 5, gold: 5 } ) } );
-
-		const error = await runFail( memory, engine.pickTokens( { tokens: { onyx: 1 } }, P1 ) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "no more than two of a single type may be taken", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail( memory, engine.pickTokens( { tokens: { diamond: 3 } }, P1 ) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "taking two of a type needs four left in the pile", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, { tokens: tokens( {
-			diamond: 3, sapphire: 5, emerald: 5, ruby: 5, onyx: 5, gold: 5
-		} ) } );
-
-		const error = await runFail( memory, engine.pickTokens( { tokens: { diamond: 2 } }, P1 ) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "two different types must be one each", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail(
-			memory,
-			engine.pickTokens( { tokens: { diamond: 2, sapphire: 1 } }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "three different types must be one each", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail(
-			memory,
-			engine.pickTokens( { tokens: { diamond: 2, sapphire: 1, emerald: 1 } }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "picking nothing, or four types, is not a legal shape", async () => {
-		const engine = await bootSplendor( memory );
-
-		expect( ( await runFail( memory, engine.pickTokens( { tokens: {} }, P1 ) ) )._tag )
-			.toBe( "swish/InvalidMove" );
-
-		const four = { diamond: 1, sapphire: 1, emerald: 1, ruby: 1 };
-		expect( ( await runFail( memory, engine.pickTokens( { tokens: four }, P1 ) ) )._tag )
-			.toBe( "swish/InvalidMove" );
-	} );
-
-	test( "tokens may not be returned when the hold limit is not exceeded", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail( memory, engine.pickTokens(
-			{ tokens: { diamond: 1 }, returned: { diamond: 1 } },
-			P1
-		) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "crossing the ten-token limit demands exactly the overflow back", async () => {
-		const engine = await bootSplendor( memory );
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 5, sapphire: 4 } ) } );
-
-		// 9 held + 3 picked = 12, so exactly 2 must come back — not 1.
-		const error = await runFail( memory, engine.pickTokens(
-			{ tokens: { emerald: 1, ruby: 1, onyx: 1 }, returned: { diamond: 1 } },
-			P1
-		) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a player cannot return tokens they will not hold", async () => {
-		const engine = await bootSplendor( memory );
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 5, sapphire: 4 } ) } );
-
-		const error = await runFail( memory, engine.pickTokens(
-			{ tokens: { emerald: 1, ruby: 1, onyx: 1 }, returned: { gold: 2 } },
-			P1
-		) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "only the current player may pick", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P2 ) );
-		expect( error._tag ).toBe( "swish/NotYourTurn" );
-	} );
-
-	test( "no move lands before the game starts", async () => {
-		const engine = await bootSplendor( memory, { start: false } );
-		const error = await runFail( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		expect( error._tag ).toBe( "swish/GameNotInProgress" );
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — pickTokens economics", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "three different tokens move from the board to the player, and the turn passes", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens(
-			{ tokens: { diamond: 1, sapphire: 1, emerald: 1 } },
-			P1
-		) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.tokens )
-			.toEqual( tokens( { diamond: 1, sapphire: 1, emerald: 1 } ) );
-		expect( state.view.tokens ).toEqual( tokens( {
-			diamond: 4, sapphire: 4, emerald: 4, ruby: 5, onyx: 5, gold: 5
+	test( "plays a seat that hands itself over", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.setAutoPlay( a, true );
+			return yield* engine.getState();
 		} ) );
-		expect( state.context.turn ).toBe( 1 );
-		expect( state.context.currentPlayer ).toBe( P2.id );
+
+		expect( result.autoPlay[ a ] ).toBe( true );
 	} );
 
-	test( "two different tokens is a legal pick", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1, onyx: 1 } }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.tokens )
-			.toEqual( tokens( { diamond: 1, onyx: 1 } ) );
-		expect( state.view.tokens.diamond ).toBe( 4 );
-		expect( state.view.tokens.onyx ).toBe( 4 );
-	} );
-
-	test( "two of a type is legal when four remain in the pile", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 2 } }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.tokens.ruby ).toBe( 2 );
-		expect( state.view.tokens.ruby ).toBe( 3 );
-	} );
-
-	test( "the overflow is handed straight back to the board", async () => {
-		const engine = await bootSplendor( memory );
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 5, sapphire: 4 } ) } );
-
-		await run( memory, engine.pickTokens(
-			{ tokens: { emerald: 1, ruby: 1, onyx: 1 }, returned: { diamond: 2 } },
-			P1
-		) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		const hand = state.view.playerData[ P1.id ]!.tokens;
-		expect( hand ).toEqual( tokens( {
-			diamond: 3, sapphire: 4, emerald: 1, ruby: 1, onyx: 1
+	test( "picks a move for the seat whose turn it is, by hand too", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* policyMove( engine );
+			return yield* engine.getState();
 		} ) );
-		// The hold limit is exactly ten.
-		expect( Object.values( hand ).reduce( ( a, b ) => a + b, 0 ) ).toBe( 10 );
-		expect( state.view.tokens ).toEqual( tokens( {
-			diamond: 7, sapphire: 5, emerald: 4, ruby: 4, onyx: 4, gold: 5
-		} ) );
-	} );
-} );
 
-// ===========================================================================
-describe( "splendor — reserveCard", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "an unknown card cannot be reserved", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail(
-			memory,
-			engine.reserveCard( { cardId: "nope", withGold: false }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a fourth reserve is refused", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchPlayer( memory, P1.id, {
-			reserved: [ card( "r1" ), card( "r2" ), card( "r3" ) ]
-		} );
-
-		const error = await runFail(
-			memory,
-			engine.reserveCard( { cardId: open.id, withGold: false }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "no gold left means no gold taken", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchState( memory, { tokens: tokens( {
-			diamond: 5, sapphire: 5, emerald: 5, ruby: 5, onyx: 5, gold: 0
-		} ) } );
-
-		const error = await runFail(
-			memory,
-			engine.reserveCard( { cardId: open.id, withGold: true }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "taking gold at the hold limit requires handing a token back", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 5, sapphire: 5 } ) } );
-
-		const error = await runFail(
-			memory,
-			engine.reserveCard( { cardId: open.id, withGold: true }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a token may not be handed back when the limit is not reached", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 1 } ) } );
-
-		const error = await runFail(
-			memory,
-			engine.reserveCard( { cardId: open.id, withGold: true, returnedToken: "diamond" }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a token the player does not hold cannot be handed back", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 5, sapphire: 5 } ) } );
-
-		const error = await runFail(
-			memory,
-			engine.reserveCard( { cardId: open.id, withGold: true, returnedToken: "onyx" }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "reserving with gold takes the card, refills the row, and pays a gold", async () => {
-		const engine = await bootSplendor( memory );
-		const board = persisted( memory ).state;
-		const open = board.cards[ 1 ][ 0 ]!;
-		const next = board.decks[ 1 ][ 0 ]!;
-
-		await run( memory, engine.reserveCard( { cardId: open.id, withGold: true }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.reserved.map( c => c.id ) ).toEqual( [ open.id ] );
-		expect( state.view.playerData[ P1.id ]!.tokens.gold ).toBe( 1 );
-		expect( state.view.tokens.gold ).toBe( 4 );
-		// The vacated slot is refilled from the top of that level's deck.
-		expect( state.view.cards[ 1 ] ).toHaveLength( 4 );
-		expect( state.view.cards[ 1 ][ 0 ]!.id ).toBe( next.id );
-		expect( persisted( memory ).state.decks[ 1 ] ).toHaveLength( 35 );
-		expect( state.context.currentPlayer ).toBe( P2.id );
-	} );
-
-	test( "an exhausted deck leaves the slot empty rather than refilled", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchState( memory, {
-			decks: { ...persisted( memory ).state.decks, 1: [] }
-		} );
-
-		await run( memory, engine.reserveCard( { cardId: open.id, withGold: false }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.cards[ 1 ] ).toHaveLength( 3 );
-		expect( state.view.cards[ 1 ].some( c => c.id === open.id ) ).toBe( false );
-		// No gold was taken, so the bank is untouched.
-		expect( state.view.tokens.gold ).toBe( 5 );
-	} );
-
-	test( "handing a token back at the limit keeps the hand at ten", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 5, sapphire: 5 } ) } );
-
-		await run( memory, engine.reserveCard(
-			{ cardId: open.id, withGold: true, returnedToken: "diamond" },
-			P1
-		) );
-
-		const hand = ( await run( memory, engine.getState( P1.id ) ) )
-			.view.playerData[ P1.id ]!.tokens;
-		expect( hand ).toEqual( tokens( { diamond: 4, sapphire: 5, gold: 1 } ) );
-		expect( Object.values( hand ).reduce( ( a, b ) => a + b, 0 ) ).toBe( 10 );
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — purchaseCard validation", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "an unknown card cannot be bought", async () => {
-		const engine = await bootSplendor( memory );
-		const error = await runFail(
-			memory,
-			engine.purchaseCard( { cardId: "nope", payment: {} }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "paying more of a gem than the card costs is refused", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, {
-			cards: { ...persisted( memory ).state.cards, 1: [ card( "t", {
-				cost: cost( { diamond: 1 } )
-			} ) ] }
-		} );
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 5 } ) } );
-
-		const error = await runFail(
-			memory,
-			engine.purchaseCard( { cardId: "t", payment: { diamond: 2 } }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "an unfunded shortfall is refused", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, {
-			cards: { ...persisted( memory ).state.cards, 1: [ card( "t", {
-				cost: cost( { diamond: 2 } )
-			} ) ] }
-		} );
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 1, gold: 5 } ) } );
-
-		// One diamond short and no gold offered to cover it.
-		const error = await runFail(
-			memory,
-			engine.purchaseCard( { cardId: "t", payment: { diamond: 1 } }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "offering more gold than the shortfall is refused", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, {
-			cards: { ...persisted( memory ).state.cards, 1: [ card( "t", {
-				cost: cost( { diamond: 2 } )
-			} ) ] }
-		} );
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 2, gold: 5 } ) } );
-
-		const error = await runFail(
-			memory,
-			engine.purchaseCard( { cardId: "t", payment: { diamond: 2, gold: 1 } }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a payment the player cannot cover is refused", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, {
-			cards: { ...persisted( memory ).state.cards, 1: [ card( "t", {
-				cost: cost( { diamond: 2 } )
-			} ) ] }
-		} );
-
-		// The payment matches the cost exactly — the player just has no tokens.
-		const error = await runFail(
-			memory,
-			engine.purchaseCard( { cardId: "t", payment: { diamond: 2 } }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — purchaseCard economics", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "buying an open card pays the bank, banks the card, and refills the row", async () => {
-		const engine = await bootSplendor( memory );
-		const board = persisted( memory ).state;
-		const target = board.cards[ 1 ][ 0 ]!;
-		const next = board.decks[ 1 ][ 0 ]!;
-		patchPlayer( memory, P1.id, { tokens: tokens( target.cost ) } );
-
-		await run( memory, engine.purchaseCard(
-			{ cardId: target.id, payment: target.cost },
-			P1
-		) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		const me = state.view.playerData[ P1.id ]!;
-		expect( me.cards.map( c => c.id ) ).toEqual( [ target.id ] );
-		expect( me.points ).toBe( target.points );
-		expect( me.tokens ).toEqual( tokens() );
-		// Every token spent goes back to the bank.
-		for ( const gem of [ "diamond", "sapphire", "emerald", "ruby", "onyx" ] as const ) {
-			expect( state.view.tokens[ gem ] ).toBe( 5 + target.cost[ gem ] );
-		}
-
-		expect( state.view.cards[ 1 ][ 0 ]!.id ).toBe( next.id );
-		expect( persisted( memory ).state.decks[ 1 ] ).toHaveLength( 35 );
-	} );
-
-	test( "gold stands in for the gems a player is short of", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, {
-			cards: { ...persisted( memory ).state.cards, 1: [ card( "t", {
-				cost: cost( { diamond: 2, onyx: 1 } )
-			} ) ] }
-		} );
-		patchPlayer( memory, P1.id, { tokens: tokens( { diamond: 1, gold: 2 } ) } );
-
-		await run( memory, engine.purchaseCard(
-			{ cardId: "t", payment: { diamond: 1, gold: 2 } },
-			P1
-		) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.tokens ).toEqual( tokens() );
-		// The two jokers return to the bank as gold, not as the gems they covered.
-		expect( state.view.tokens.gold ).toBe( 7 );
-		expect( state.view.tokens.diamond ).toBe( 6 );
-		expect( state.view.tokens.onyx ).toBe( 5 );
-	} );
-
-	test( "owned cards discount the price, gem by gem", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, {
-			cards: { ...persisted( memory ).state.cards, 1: [ card( "t", {
-				cost: cost( { diamond: 2, onyx: 1 } )
-			} ) ] }
-		} );
-		patchPlayer( memory, P1.id, {
-			tokens: tokens( { onyx: 1 } ),
-			cards: [ card( "d1" ), card( "d2" ) ]
-		} );
-
-		// Two diamond bonuses wipe out the diamond cost entirely...
-		const error = await runFail(
-			memory,
-			engine.purchaseCard( { cardId: "t", payment: { diamond: 1, onyx: 1 } }, P1 )
-		);
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-
-		// ...so the onyx alone buys the card.
-		await run( memory, engine.purchaseCard( { cardId: "t", payment: { onyx: 1 } }, P1 ) );
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.cards.map( c => c.id ) )
-			.toEqual( [ "d1", "d2", "t" ] );
-		expect( state.view.playerData[ P1.id ]!.tokens ).toEqual( tokens() );
-	} );
-
-	test( "a qualifying purchase pulls a noble off the row for three points", async () => {
-		const engine = await bootSplendor( memory );
-		patchState( memory, {
-			cards: { ...persisted( memory ).state.cards, 1: [ card( "t", { points: 1 } ) ] },
-			nobles: [ noble( "n1", { diamond: 3 } ), noble( "n2", { onyx: 4 } ) ]
-		} );
-		patchPlayer( memory, P1.id, { cards: [ card( "d1" ), card( "d2" ) ] } );
-
-		// The third diamond bonus is what summons the noble.
-		await run( memory, engine.purchaseCard( { cardId: "t", payment: {} }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		const me = state.view.playerData[ P1.id ]!;
-		expect( me.nobles.map( n => n.id ) ).toEqual( [ "n1" ] );
-		expect( me.points ).toBe( 4 );
-		expect( state.view.nobles.map( n => n.id ) ).toEqual( [ "n2" ] );
-	} );
-
-	test( "buying out of reserve consumes the reserve and leaves the row alone", async () => {
-		const engine = await bootSplendor( memory );
-		const openBefore = persisted( memory ).state.cards[ 1 ].map( c => c.id );
-		patchPlayer( memory, P1.id, {
-			tokens: tokens( { ruby: 1 } ),
-			reserved: [ card( "held", { cost: cost( { ruby: 1 } ), points: 2 } ) ]
-		} );
-
-		await run( memory, engine.purchaseCard(
-			{ cardId: "held", payment: { ruby: 1 } },
-			P1
-		) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		const me = state.view.playerData[ P1.id ]!;
-		expect( me.reserved ).toHaveLength( 0 );
-		expect( me.cards.map( c => c.id ) ).toEqual( [ "held" ] );
-		expect( me.points ).toBe( 2 );
-		expect( state.view.cards[ 1 ].map( c => c.id ) ).toEqual( openBefore );
-		expect( persisted( memory ).state.decks[ 1 ] ).toHaveLength( 36 );
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — view redaction & broadcast", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "a player audience sees the board plus their own identity — never the decks", async () => {
-		const engine = await bootSplendor( memory );
-		const state = await run( memory, engine.getState( P1.id ) );
-
-		expect( state.view._tag ).toBe( "splendor/PlayerView" );
-		expect( asPlayerView( state.view ).playerId ).toBe( P1.id );
-		expect( Object.keys( state.view ).sort() )
-			.toEqual( [ "_tag", "cards", "nobles", "playerData", "playerId", "tokens" ] );
-		// The undealt decks are the game's only hidden state, and they stay hidden.
-		expect( state.view ).not.toHaveProperty( "decks" );
-		expect( persisted( memory ).state.decks[ 1 ] ).toHaveLength( 36 );
-	} );
-
-	test( "the table projection is the same board minus any player identity", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-
-		const { table, playerViews } = lastBroadcast( memory ).snapshot;
-		expect( table.view._tag ).toBe( "splendor/TableView" );
-		expect( Object.keys( table.view ).sort() )
-			.toEqual( [ "_tag", "cards", "nobles", "playerData", "tokens" ] );
-		expect( table.view ).not.toHaveProperty( "decks" );
-		expect( table.view ).not.toHaveProperty( "playerId" );
-
-		// Both audiences see one identical public board; only the tag and the
-		// viewer's own id differ.
-		const { _tag: _p, playerId: _id, ...forP1 } = playerViews[ P1.id ]!.view;
-		const { _tag: _t, ...forTable } = table.view;
-		expect( forP1 ).toEqual( forTable );
-	} );
-
-	test( "each commit broadcasts a table + per-player snapshot on the game channel", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-
-		const last = lastBroadcast( memory );
-		expect( last.channel ).toBe( "splendor:g1" );
-		expect( Object.keys( last.snapshot.playerViews ).sort() ).toEqual( [ "p1", "p2" ] );
-		expect( last.snapshot.playerViews[ P2.id ]!.view.playerId ).toBe( P2.id );
-	} );
-
-	test( "reserved cards are public — a card can only ever be reserved face-up", async () => {
-		const engine = await bootSplendor( memory );
-		const open = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		await run( memory, engine.reserveCard( { cardId: open.id, withGold: false }, P1 ) );
-
-		// `reserveCard` only accepts an id from the open rows (there is no
-		// reserve-from-deck move), so every opponent already watched this card
-		// leave the tableau — nothing is being leaked by showing it.
-		const forP2 = await run( memory, engine.getState( P2.id ) );
-		expect( forP2.view.playerData[ P1.id ]!.reserved.map( c => c.id ) ).toEqual( [ open.id ] );
-		expect( lastBroadcast( memory ).snapshot.table.view.playerData[ P1.id ]!.reserved )
-			.toHaveLength( 1 );
-	} );
-
-	test( "a non-member can read neither the board nor the action feed", async () => {
-		const engine = await bootSplendor( memory );
-
-		expect( ( await runFail( memory, engine.getState( STRANGER.id ) ) )._tag )
-			.toBe( "swish/NotAMember" );
-		expect( ( await runFail( memory, engine.getLog( STRANGER.id ) ) )._tag )
-			.toBe( "swish/NotAMember" );
-	} );
-
-	test( "the action feed is empty — splendor declares no describe", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-
-		expect( await run( memory, engine.getLog( P1.id ) ) ).toEqual( [] );
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — completion & scoring", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	/** Stages a one-point card p1 can buy for free, with `winningPoints` set to one. */
-	const stageWinningCard = ( mem: Memory ) => patchState( mem, {
-		cards: { ...persisted( mem ).state.cards, 1: [ card( "win", { points: 1 } ) ] }
-	} );
-
-	test( "the game only ends once the round completes", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 1 } } );
-		stageWinningCard( memory );
-
-		await run( memory, engine.purchaseCard( { cardId: "win", payment: {} }, P1 ) );
-
-		// p1 is over the threshold, but p2 still owes a turn.
-		const midRound = await run( memory, engine.getState( P1.id ) );
-		expect( midRound.status ).toBe( "IN_PROGRESS" );
-		expect( midRound.view.playerData[ P1.id ]!.points ).toBe( 1 );
-		expect( midRound.context.turn ).toBe( 1 );
-
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-
-		const final = await run( memory, engine.getState( P1.id ) );
-		expect( final.status ).toBe( "COMPLETED" );
-		expect( final.context.turn ).toBe( 2 );
-		expect( final.view.winner ).toBe( P1.id );
-	} );
-
-	test( "a completed game accepts no further moves", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 1 } } );
-		stageWinningCard( memory );
-		await run( memory, engine.purchaseCard( { cardId: "win", payment: {} }, P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-
-		const error = await runFail( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P1 ) );
-		expect( error._tag ).toBe( "swish/GameNotInProgress" );
-	} );
-
-	test( "the highest scorer wins", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		patchPlayer( memory, P1.id, { points: 3 } );
-		patchPlayer( memory, P2.id, { points: 7 } );
-
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		expect( state.view.winner ).toBe( P2.id );
-	} );
-
-	test( "a tie on points goes to the fewest development cards", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		// p1 needed four cards to reach five points; p2 got there on two, so the
-		// later seat takes it despite the fold starting from the earlier one.
-		patchPlayer( memory, P1.id, {
-			points: 5,
-			cards: [ card( "a" ), card( "b" ), card( "c" ), card( "d" ) ]
-		} );
-		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "e" ), card( "f" ) ] } );
-
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		expect( state.view.winner ).toBe( P2.id );
-	} );
-
-	test( "nobles and reserved cards do not count toward the card tie-break", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		// Both bought two cards. p1 also holds a noble and three reserves — none
-		// of which are development cards, so the tie stands and the seat decides.
-		patchPlayer( memory, P1.id, {
-			points: 5,
-			cards: [ card( "a" ), card( "b" ) ],
-			nobles: [ noble( "n1" ) ],
-			reserved: [ card( "r1" ), card( "r2" ), card( "r3" ) ]
-		} );
-		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "c" ), card( "d" ) ] } );
-
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).view.winner ).toBe( P1.id );
-	} );
-
-	test( "a tie on points and cards resolves to the earlier seat", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		patchPlayer( memory, P1.id, { points: 5, cards: [ card( "a" ) ] } );
-		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "b" ) ] } );
-
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		// The sort is stable, so a dead-even draw keeps the seating order.
-		expect( state.view.winner ).toBe( P1.id );
-	} );
-
-	test( "the card tie-break never overrides a points lead", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		// p2 owns fewer cards but is a point behind — points come first.
-		patchPlayer( memory, P1.id, {
-			points: 6,
-			cards: [ card( "a" ), card( "b" ), card( "c" ) ]
-		} );
-		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "d" ) ] } );
-
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).view.winner ).toBe( P1.id );
-	} );
-
-	test( "turns rotate round-robin through the seating order", async () => {
-		const engine = await bootSplendor( memory, { players: [ P1, P2, P3 ] } );
-
-		for ( const [ actor, next ] of [ [ P1, P2 ], [ P2, P3 ], [ P3, P1 ] ] as const ) {
-			await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, actor ) );
-			expect( ( await run( memory, engine.getState( P1.id ) ) ).context.currentPlayer )
-				.toBe( next.id );
-		}
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — resolveResults", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	/** Ends the round both seats are mid-way through, completing the game. */
-	const closeRound = async ( engine: Awaited<ReturnType<typeof bootSplendor>> ) => {
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 1 } }, P2 ) );
-		return run( memory, engine.getState( P1.id ) );
-	};
-
-	test( "ranks by prestige points and carries each seat's score", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		patchPlayer( memory, P1.id, { points: 3 } );
-		patchPlayer( memory, P2.id, { points: 7 } );
-
-		const state = await closeRound( engine );
-		expect( state.results ).toEqual( {
-			winner: P2.id,
-			ranking: [
-				{ playerId: P2.id, rank: 1, score: 7 },
-				{ playerId: P1.id, rank: 2, score: 3 }
-			]
-		} );
-	} );
-
-	test( "the fewest-cards tie-break decides the ranking, not just the winner", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		patchPlayer( memory, P1.id, {
-			points: 5,
-			cards: [ card( "a" ), card( "b" ), card( "c" ), card( "d" ) ]
-		} );
-		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "e" ), card( "f" ) ] } );
-
-		const state = await closeRound( engine );
-		expect( state.results?.winner ).toBe( P2.id );
-		expect( state.results?.ranking.map( ( r ) => r.playerId ) ).toEqual( [ P2.id, P1.id ] );
-		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 2 ] );
-	} );
-
-	test( "seats level on points and cards share rank 1 with no outright winner", async () => {
-		const engine = await bootSplendor( memory, { config: { winningPoints: 3 } } );
-		patchPlayer( memory, P1.id, { points: 5, cards: [ card( "a" ) ] } );
-		patchPlayer( memory, P2.id, { points: 5, cards: [ card( "b" ) ] } );
-
-		const state = await closeRound( engine );
-		// `view.winner` still names the top seat (the fold is stable), but the
-		// standings refuse to crown a winner nobody actually out-ranked.
-		expect( state.view.winner ).toBe( P1.id );
-		expect( state.results?.winner ).toBeUndefined();
-		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 1 ] );
-	} );
-
-	test( "an unfinished game has no results", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — undo / redo", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "undo rewinds a pick — tokens go back to the board and the turn resets", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens(
-			{ tokens: { diamond: 1, sapphire: 1, emerald: 1 } },
-			P1
-		) );
-
-		await run( memory, engine.undo( P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.tokens ).toEqual( tokens() );
-		expect( state.view.tokens.diamond ).toBe( 5 );
-		expect( state.context.turn ).toBe( 0 );
-		expect( state.context.currentPlayer ).toBe( P1.id );
-	} );
-
-	test( "redo re-applies the undone purchase", async () => {
-		const engine = await bootSplendor( memory );
-		const target = persisted( memory ).state.cards[ 1 ][ 0 ]!;
-		patchPlayer( memory, P1.id, { tokens: tokens( target.cost ) } );
-		await run( memory, engine.purchaseCard( { cardId: target.id, payment: target.cost }, P1 ) );
-
-		await run( memory, engine.undo( P1 ) );
-		expect( ( await run( memory, engine.getState( P1.id ) ) )
-			.view.playerData[ P1.id ]!.cards ).toHaveLength( 0 );
-
-		await run( memory, engine.redo( P1 ) );
-		expect( ( await run( memory, engine.getState( P1.id ) ) )
-			.view.playerData[ P1.id ]!.cards.map( c => c.id ) ).toEqual( [ target.id ] );
-	} );
-
-	test( "redo at the newest commit fails with NothingToRedo", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-
-		const error = await runFail( memory, engine.redo( P1 ) );
-		expect( error._tag ).toBe( "swish/NothingToRedo" );
-	} );
-
-	test( "a fresh move after an undo drops the redo tail", async () => {
-		const engine = await bootSplendor( memory );
-		await run( memory, engine.pickTokens( { tokens: { diamond: 1 } }, P1 ) );
-		await run( memory, engine.undo( P1 ) );
-		await run( memory, engine.pickTokens( { tokens: { ruby: 2 } }, P1 ) );
-
-		const error = await runFail( memory, engine.redo( P1 ) );
-		expect( error._tag ).toBe( "swish/NothingToRedo" );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.playerData[ P1.id ]!.tokens ).toEqual( tokens( { ruby: 2 } ) );
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor — bots & scheduling", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "addBots fills the empty seats", async () => {
-		const engine = await run( memory, splendor );
-		await run( memory, engine.initialize( {
-			id: GID, code: CODE, config: { ...CONFIG, playerCount: 3 }, seed: "seed"
-		} ) );
-		await run( memory, engine.join( P1 ) );
-		await run( memory, engine.addBots( P1.id ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		const roster = Object.values( state.players );
-		expect( roster ).toHaveLength( 3 );
-		expect( roster.filter( p => p.isBot ) ).toHaveLength( 2 );
-		// Every seat, bot or not, gets its own player slice from `onJoin`.
-		expect( Object.keys( state.view.playerData ) ).toHaveLength( 3 );
-	} );
-
-	test( "a non-member can neither start the game nor add bots", async () => {
-		const engine = await bootSplendor( memory, { start: false } );
-
-		expect( ( await runFail( memory, engine.start( STRANGER.id ) ) )._tag )
-			.toBe( "swish/NotAMember" );
-		expect( ( await runFail( memory, engine.addBots( STRANGER.id ) ) )._tag )
-			.toBe( "swish/NotAMember" );
-	} );
-
-	test( "filling an autoStart game arms an auto-start alarm that starts it", async () => {
-		const engine = await bootSplendor( memory, {
-			start: false,
-			config: { autoStart: true }
-		} );
-		expect( memory.scheduler.scheduled.map( s => s.alarm ) ).toContain( "auto-start" );
-
-		await run( memory, engine.alarm() );
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).status ).toBe( "IN_PROGRESS" );
-	} );
-
-	test( "a seated bot stalls the game forever — splendor declares no botMove", async () => {
-		const engine = await bootSplendor( memory, { players: [ BOT, P1 ] } );
-
-		// The engine arms the alarm for the pending bot...
-		expect( memory.scheduler.scheduled.map( s => s.alarm ) ).toContain( "bot" );
-		const before = memory.log.commits.length;
-
-		await run( memory, engine.alarm() );
-
-		// ...but `structure.botMove` is undefined, so the alarm returns without
-		// moving, and nothing re-arms it. The bot's turn never ends.
-		expect( memory.log.commits.length ).toBe( before );
-		expect( memory.scheduler.scheduled ).toHaveLength( 0 );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "IN_PROGRESS" );
-		expect( state.context.currentPlayer ).toBe( BOT.id );
-		expect( state.context.turn ).toBe( 0 );
-	} );
-
-	test( "cleanup clears the board and cancels every timer", async () => {
-		const engine = await bootSplendor( memory, { players: [ BOT, P1 ] } );
-		expect( memory.scheduler.scheduled ).not.toHaveLength( 0 );
-
-		await run( memory, engine.cleanup() );
-		expect( memory.store.value ).toBeNull();
-		expect( memory.scheduler.scheduled ).toHaveLength( 0 );
+		expect( result.context.turn ).toBe( 1 );
+		expect( result.context.currentPlayer ).toBe( b );
 	} );
 } );

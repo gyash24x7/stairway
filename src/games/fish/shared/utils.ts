@@ -1,74 +1,49 @@
+import { TeamCount } from "@/games/fish/shared/schema.ts";
+import { getCardDisplayString } from "@/shared/cards/utils.ts";
+import { teamOf } from "@/swish/shared/teams.ts";
+
 import type {
 	Ask,
 	Book,
 	BookType,
+	CanadianBook,
 	Claim,
-	FishState,
-	Team,
+	FishMove,
+	NormalBook,
+	PlayerCount,
 	Transfer
 } from "@/games/fish/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
-import { getCardDisplayString } from "@/shared/cards/utils.ts";
-import type { PlayerId, PlayerInfo } from "@/shared/swish/schema.ts";
+import type { GameContext, PlayerId, PlayerInfo, TeamId } from "@/swish/shared/schema.ts";
 
-/** Normal book names representing card ranks (all four suits per rank). */
-export type NormalBook =
-	"ACES"
-	| "TWOS"
-	| "THREES"
-	| "FOURS"
-	| "FIVES"
-	| "SIXES"
-	| "SEVENS"
-	| "EIGHTS"
-	| "NINES"
-	| "TENS"
-	| "JACKS"
-	| "QUEENS"
-	| "KINGS";
-
-/** Canadian book names representing suit halves (L=low A-6, U=high 8-K). */
-export type CanadianBook = "LC" | "LD" | "LH" | "LS" | "UC" | "UD" | "UH" | "US";
-
-/** Supported player counts for Fish games. */
-export type PlayerCount = 4 | 6 | 8;
-
-/** Supported team counts for Fish games. */
-export type TeamCount = 2 | 3 | 4;
-
-/** Unique identifier for a team. */
-export type TeamId = string;
-
-/** Map of team IDs to team objects. */
-export type TeamData = Record<TeamId, Team>;
 
 /** Mapping of normal book names to their card IDs (4 cards per book, grouped by rank). */
 export const NORMAL_BOOKS = {
-	"ACES": [ "AC", "AD", "AH", "AS" ] as CardId[],
-	"TWOS": [ "2C", "2D", "2H", "2S" ] as CardId[],
-	"THREES": [ "3C", "3D", "3H", "3S" ] as CardId[],
-	"FOURS": [ "4C", "4D", "4H", "4S" ] as CardId[],
-	"FIVES": [ "5C", "5D", "5H", "5S" ] as CardId[],
-	"SIXES": [ "6C", "6D", "6H", "6S" ] as CardId[],
-	"SEVENS": [ "7C", "7D", "7H", "7S" ] as CardId[],
-	"EIGHTS": [ "8C", "8D", "8H", "8S" ] as CardId[],
-	"NINES": [ "9C", "9D", "9H", "9S" ] as CardId[],
-	"TENS": [ "10C", "10D", "10H", "10S" ] as CardId[],
-	"JACKS": [ "JC", "JD", "JH", "JS" ] as CardId[],
-	"QUEENS": [ "QC", "QD", "QH", "QS" ] as CardId[],
-	"KINGS": [ "KC", "KD", "KH", "KS" ] as CardId[]
+	ACES: [ "AC", "AD", "AH", "AS" ] as CardId[],
+	TWOS: [ "2C", "2D", "2H", "2S" ] as CardId[],
+	THREES: [ "3C", "3D", "3H", "3S" ] as CardId[],
+	FOURS: [ "4C", "4D", "4H", "4S" ] as CardId[],
+	FIVES: [ "5C", "5D", "5H", "5S" ] as CardId[],
+	SIXES: [ "6C", "6D", "6H", "6S" ] as CardId[],
+	SEVENS: [ "7C", "7D", "7H", "7S" ] as CardId[],
+	EIGHTS: [ "8C", "8D", "8H", "8S" ] as CardId[],
+	NINES: [ "9C", "9D", "9H", "9S" ] as CardId[],
+	TENS: [ "10C", "10D", "10H", "10S" ] as CardId[],
+	JACKS: [ "JC", "JD", "JH", "JS" ] as CardId[],
+	QUEENS: [ "QC", "QD", "QH", "QS" ] as CardId[],
+	KINGS: [ "KC", "KD", "KH", "KS" ] as CardId[]
 } as const;
 
 /** Mapping of Canadian book names to their card IDs (6 cards per book, grouped by suit half). */
 export const CANADIAN_BOOKS = {
-	"LC": [ "AC", "2C", "3C", "4C", "5C", "6C" ] as CardId[],
-	"LD": [ "AD", "2D", "3D", "4D", "5D", "6D" ] as CardId[],
-	"UC": [ "8C", "9C", "10C", "JC", "QC", "KC" ] as CardId[],
-	"UD": [ "8D", "9D", "10D", "JD", "QD", "KD" ] as CardId[],
-	"LH": [ "AH", "2H", "3H", "4H", "5H", "6H" ] as CardId[],
-	"UH": [ "8H", "9H", "10H", "JH", "QH", "KH" ] as CardId[],
-	"LS": [ "AS", "2S", "3S", "4S", "5S", "6S" ] as CardId[],
-	"US": [ "8S", "9S", "10S", "JS", "QS", "KS" ] as CardId[]
+	LC: [ "AC", "2C", "3C", "4C", "5C", "6C" ] as CardId[],
+	LD: [ "AD", "2D", "3D", "4D", "5D", "6D" ] as CardId[],
+	UC: [ "8C", "9C", "10C", "JC", "QC", "KC" ] as CardId[],
+	UD: [ "8D", "9D", "10D", "JD", "QD", "KD" ] as CardId[],
+	LH: [ "AH", "2H", "3H", "4H", "5H", "6H" ] as CardId[],
+	UH: [ "8H", "9H", "10H", "JH", "QH", "KH" ] as CardId[],
+	LS: [ "AS", "2S", "3S", "4S", "5S", "6S" ] as CardId[],
+	US: [ "8S", "9S", "10S", "JS", "QS", "KS" ] as CardId[]
 } as const;
 
 /**
@@ -103,21 +78,10 @@ export function getBookForCard( card: CardId, bookType: BookType ) {
  */
 export function getBooksInHand( hand: readonly CardId[], bookType: BookType ) {
 	const books = new Set<Book>(
-		hand.map( cardId => getBookForCard( cardId, bookType ) ).filter( ( b ): b is NonNullable<typeof b> => !!b )
+		hand.map( cardId => getBookForCard( cardId, bookType ) )
+			.filter( ( b ): b is NonNullable<typeof b> => !!b )
 	);
 	return Array.from( books );
-}
-
-/**
- * Checks if a specific book is present in a player's hand.
- * @param hand - The player's hand of cards
- * @param book - The book to check for
- * @param bookType - The type of book to search in, either "NORMAL" or "CANADIAN"
- * @returns True if the book is in hand, false otherwise
- * @public
- */
-export function isBookInHand( hand: readonly CardId[], book: Book, bookType: BookType ) {
-	return getBooksInHand( hand, bookType ).includes( book );
 }
 
 /**
@@ -151,44 +115,6 @@ export function getCardsOfBook( book: Book, hand?: readonly CardId[] ) {
 		?? [];
 
 	return cards.filter( card => !hand || hand.includes( card ) );
-}
-
-/**
- * Return the team ID that a player belongs to.
- *
- * @param teams - The team data mapping team IDs to team info.
- * @param playerId - The player to look up.
- * @returns The team ID the player belongs to.
- */
-export function getTeamForPlayer( teams: TeamData, playerId: PlayerId ) {
-	return Object.keys( teams )
-		.find( tid => ( teams[ tid ]?.members ?? [] ).includes( playerId ) )!;
-}
-
-/**
- * Return all players on opposing teams.
- *
- * @param teams - The team data mapping team IDs to team info.
- * @param playerId - The player whose opponents to find.
- * @returns An array of opponent player IDs.
- */
-export function getOpponents( teams: TeamData, playerId: PlayerId ) {
-	const teamId = getTeamForPlayer( teams, playerId );
-	return Object.keys( teams )
-		.filter( tid => tid !== teamId )
-		.flatMap( tid => teams[ tid ]?.members ?? [] );
-}
-
-/**
- * Return all teammates of a player, excluding the player themselves.
- *
- * @param teams - The team data mapping team IDs to team info.
- * @param playerId - The player whose teammates to find.
- * @returns An array of teammate player IDs.
- */
-export function getTeammates( teams: TeamData, playerId: PlayerId ) {
-	const teamId = getTeamForPlayer( teams, playerId );
-	return ( teams[ teamId ]?.members ?? [] ).filter( pid => pid !== playerId );
 }
 
 const SUIT_SYMBOLS: Record<string, string> = { C: "♣", D: "♦", H: "♥", S: "♠" };
@@ -284,37 +210,135 @@ export function getTransferDescription(
 }
 
 /**
- * Return all books that have been claimed across all teams.
+ * How many sides a given seat count may be played in. Swish sides are equal-sized,
+ * so only a count that divides the seats evenly can be seated at all — `initialize`
+ * refuses the rest with `InvalidTeamConfig`, and this is what a client offers so the
+ * refusal never has to happen.
  *
- * @param state - The game state.
- * @returns An array of claimed book names.
+ * @param playerCount - How many seats the table has
+ * @returns The team counts that divide those seats evenly
  */
-export function getClaimedBooks( state: FishState ) {
-	return Object.values( state.teams ).flatMap( s => s.booksWon );
+export function teamCountsFor( playerCount: PlayerCount ) {
+	return TeamCount.literals.filter( count => playerCount % count === 0 );
 }
 
 /**
- * Build a FishConfig object from create game input parameters.
- * Determines book type, deck size, and book definitions based on the game variant.
- *
- * @param playerCount No of players
- * @param type Book Type for the game
- * @param teamCount No of teams
- * @returns A complete FishConfig object.
+ * Everything a fish table knows out loud: what has happened and how many cards
+ * each seat is holding. Both `FishState` and `FishView` satisfy it, which is the
+ * point — every derivation below runs the same on the server's record and on a
+ * client's view, so nobody has to reimplement the table's reasoning.
  */
-export function buildConfig( playerCount: PlayerCount, type: BookType, teamCount: TeamCount ) {
-	const isCanadian = type === "CANADIAN";
-	const books = ( isCanadian
-		? Object.keys( CANADIAN_BOOKS )
-		: Object.keys( NORMAL_BOOKS ) ) as Book[];
+export type PublicKnowledge = {
+	readonly cardCounts: Readonly<Record<PlayerId, number>>;
+	readonly moves: readonly FishMove[];
+};
 
-	return {
-		type,
-		playerCount,
-		teamCount,
-		deckType: isCanadian ? 48 as const : 52 as const,
-		books,
-		bookSize: isCanadian ? 6 as const : 4 as const,
-		autoStart: true
-	};
+/**
+ * The declarations out of a table's history, oldest first.
+ *
+ * @param known - The table's public knowledge.
+ * @returns Every declaration, in the order they were made.
+ */
+export const claimsOf = ( known: PublicKnowledge ) =>
+	known.moves.filter( ( move ): move is Claim => move._tag === "fish/Claim" );
+
+/**
+ * The side a declared book goes to.
+ *
+ * A correct declaration wins the book for the declaring side. A wrong one loses it
+ * to an opposing side — the one holding the most of the book's cards, per where
+ * they really were, with ties and a book that was entirely inside the declaring
+ * side both falling to the first opposing side in seat order.
+ *
+ * It is derived rather than stored so the answer cannot drift from the claim it
+ * came from: `success`, the declarer and `correctClaim` are all recorded on the
+ * event, and membership is fixed at `start` and unreachable by undo, so a rebuild
+ * from the log lands on the same side every time.
+ *
+ * @param claim - The declaration being scored
+ * @param context - The context holding membership and the seating order
+ * @returns The side that won the book, or `undefined` in a game without sides
+ */
+export function getBookWinner( claim: Claim, context: GameContext ) {
+	const declarer = teamOf( context, claim.playerId );
+	if ( claim.success ) {
+		return declarer;
+	}
+
+	const holders = Object.values( claim.correctClaim );
+	const held = new Map<TeamId, number>();
+
+	for ( const playerId of context.players ) {
+		const team = teamOf( context, playerId );
+		if ( team === undefined || team === declarer ) {
+			continue;
+		}
+
+		const count = holders.filter( holder => holder === playerId ).length;
+		held.set( team, ( held.get( team ) ?? 0 ) + count );
+	}
+
+	let winner: TeamId | undefined;
+	let best = -1;
+
+	for ( const [ team, count ] of held ) {
+		if ( count > best ) {
+			best = count;
+			winner = team;
+		}
+	}
+
+	return winner;
+}
+
+/**
+ * How many books each side has won so far. Folded from the declarations rather
+ * than held in the state, since every declaration takes its book out of play and
+ * `getBookWinner` says where it went.
+ *
+ * @param claims - The declarations made so far, in the order they happened
+ * @param context - The context holding membership and the seating order
+ * @param teams - The sides the config declares
+ * @returns Books won, one entry per side, zero for a side that has won none
+ */
+export function getTeamScores(
+	claims: readonly Claim[],
+	context: GameContext,
+	teams: readonly TeamId[]
+) {
+	const scores = Object.fromEntries(
+		teams.map( team => [ team, 0 ] )
+	) as Record<TeamId, number>;
+
+	for ( const claim of claims ) {
+		const winner = getBookWinner( claim, context );
+		if ( winner !== undefined && winner in scores ) {
+			scores[ winner ] += 1;
+		}
+	}
+
+	return scores;
+}
+
+/**
+ * Whether a seat may hand its turn to a teammate.
+ *
+ * Legal only directly after that seat's own successful declaration — the reward
+ * for getting one right is the choice of who plays next on your side, and it
+ * expires the moment anything else happens. Reading the *last* move is what makes
+ * it expire: the declaration stays in the history for the rest of the game, so
+ * asking whether it is in there at all would let a seat transfer long after.
+ *
+ * Both `FishState` and `FishView` carry the history this reads, so the client
+ * offers the move on exactly the condition the engine's `validate` allows it.
+ *
+ * @param known - The table's public knowledge.
+ * @param playerId - The seat being asked about.
+ * @returns `true` when that seat is holding a fresh successful declaration.
+ */
+export function canTransferTurn( known: PublicKnowledge, playerId: PlayerId ) {
+	const last = known.moves.at( -1 );
+	return last?._tag === "fish/Claim"
+		&& last.success
+		&& last.playerId === playerId;
 }

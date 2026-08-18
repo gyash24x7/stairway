@@ -1,6 +1,8 @@
-import type { QueryClient } from "@tanstack/react-query";
 import { createRootRouteWithContext, Outlet, useMatches } from "@tanstack/react-router";
-import { Fragment, type ReactNode } from "react";
+import { Fragment } from "react";
+
+import type { QueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 
 import { RAuthInfo } from "@/auth/client/auth-info.tsx";
 import { Login } from "@/auth/client/login.tsx";
@@ -60,8 +62,6 @@ function RootLayout() {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()( {
 	component: RootLayout,
 
-	// Errors and 404s keep the chrome even on a couch route: a TV showing an error
-	// with a way back home beats a bare black screen.
 	errorComponent: ( { error } ) => (
 		<AppLayout>
 			<ErrorState error={ error } action={ { label: "BACK HOME", to: "/" } }/>

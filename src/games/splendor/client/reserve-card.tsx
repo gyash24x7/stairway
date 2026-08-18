@@ -1,8 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+"use client";
+
 import { useState } from "react";
 import { useBoolean } from "usehooks-ts";
 
-import type { Card, Gem, ReserveCardInput, Tokens } from "@/games/splendor/shared/schema.ts";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
+import { SPLENDOR_MAX_TOKENS } from "@/games/splendor/shared/schema.ts";
+import { sumTokens } from "@/games/splendor/shared/utils.ts";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
@@ -13,36 +17,22 @@ import {
 	DrawerTitle
 } from "@/shared/ui/primitives/drawer.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { reserveCardFn } from "@/games/splendor/client/client.ts";
-import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
+
+import type { Card, Gem, Tokens } from "@/games/splendor/shared/schema.ts";
 
 type ReserveCardProps = {
-	gameId: string;
 	card: Card;
 	tokens: Tokens;
 	availableSlots: number;
 	isGoldAvailable: boolean;
-}
+};
 
 export function ReserveCard( props: ReserveCardProps ) {
+	const { reserveCard, isPending } = useSplendor();
 	const { value, setTrue, setFalse, toggle } = useBoolean();
 	const [ returned, setReturned ] = useState<Partial<Tokens>>( {} );
-	const queryClient = useQueryClient();
 
-	const reserveCard = useMutation( {
-		mutationFn: ( input: ReserveCardInput ) => reserveCardFn( props.gameId, input ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "splendor", "getState", props.gameId ]
-		} )
-	} );
-
-	const isPending = reserveCard.isPending;
-
-	const isReturnValid = Object.values( returned ).reduce( ( sum, v ) => sum + v, 0 ) === 1;
-
-	const openDrawer = () => {
-		setTrue();
-	};
+	const isReturnValid = sumTokens( returned ) === 1;
 
 	const closeDrawer = () => {
 		setFalse();
@@ -51,36 +41,37 @@ export function ReserveCard( props: ReserveCardProps ) {
 
 	const handleReserveClick = () => {
 		if ( value ) {
-			// The engine only ever accepts a non-gold gem back (you cannot return the
-			// gold you just gained), matching the reserveCard input schema.
-			const returnedToken = Object.keys( returned ).map( g => g as Exclude<Gem, "gold"> )
-				.find( g => ( returned[ g ] ?? 0 ) > 0 );
+			// The engine only ever accepts a non-gold gem back — you cannot return the
+			// gold the reservation just handed you.
+			const returnedToken = Object.keys( returned ).map( g => g as Gem )
+				.find( g => g !== "gold" && ( returned[ g ] ?? 0 ) > 0 );
 
-			reserveCard.mutate( {
+			reserveCard( {
 				cardId: props.card.id,
 				returnedToken,
 				withGold: props.isGoldAvailable
-			}, { onSuccess: closeDrawer } );
+			}, closeDrawer );
 			return;
 		}
 
-		const tokenCount = Object.values( props.tokens ).reduce( ( sum, val ) => sum + val, 0 );
-		if ( props.isGoldAvailable && ( tokenCount + 1 ) > 10 ) {
-			openDrawer();
+		// Taking the gold that comes with a reservation can carry the seat over the
+		// limit, and the return has to ride the same move — so ask first.
+		if ( props.isGoldAvailable && sumTokens( props.tokens ) + 1 > SPLENDOR_MAX_TOKENS ) {
+			setTrue();
 			return;
 		}
 
-		reserveCard.mutate( {
+		reserveCard( {
 			cardId: props.card.id,
 			withGold: props.isGoldAvailable
-		}, { onSuccess: closeDrawer } );
+		}, closeDrawer );
 	};
 
 	return (
 		<Drawer open={ value } onOpenChange={ toggle }>
 			<Button
 				onClick={ handleReserveClick }
-				disabled={ props.availableSlots <= 0 }
+				disabled={ props.availableSlots <= 0 || isPending }
 				className={ "w-full" }
 			>
 				RESERVE
@@ -88,17 +79,14 @@ export function ReserveCard( props: ReserveCardProps ) {
 			<DrawerContent>
 				<DrawerHeader>
 					<DrawerTitle>RETURN TOKEN</DrawerTitle>
-					<DrawerDescription>
-						Return a token to reserve with gold
-					</DrawerDescription>
+					<DrawerDescription>Return a token to reserve with gold</DrawerDescription>
 				</DrawerHeader>
-				<div className={ "px-4 flex flex-col gap-2" }>
+				<div className={ "px-4 flex flex-col gap-2 overflow-y-scroll max-h-100" }>
 					<TokenPicker
 						initialTokens={ props.tokens }
 						sourceText={ "AVAILABLE" }
 						sinkText={ "RETURN" }
 						pickLimit={ 1 }
-						allowGold
 						onPickChange={ setReturned }
 					/>
 				</div>

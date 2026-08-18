@@ -1,12 +1,8 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { useAuth } from "@/auth/client/use-auth.tsx";
-import { getTeammates } from "@/games/fish/shared/utils.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
-import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
+import { useFish } from "@/games/fish/client/context.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
@@ -18,52 +14,40 @@ import {
 } from "@/shared/ui/primitives/drawer.tsx";
 import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { transferTurnFn } from "@/games/fish/client/client.ts";
-import { useFish } from "@/games/fish/client/context.tsx";
+import { RPlayerInfo } from "@/swish/client/player-info.tsx";
+import { teamMatesOf } from "@/swish/shared/teams.ts";
+
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
 export function TransferTurn() {
-	const { data } = useFish();
-	const { authInfo } = useAuth();
-	const player = data.view;
+	const { data, transferTurn, isPending } = useFish();
 
 	const [ selectedPlayer, setSelectedPlayer ] = useState<PlayerId>();
 	const [ open, setOpen ] = useState( false );
 
-	const teammatesWithCards = getTeammates( data.view.teams, player.playerId )
-		.filter( pid => data.view.cardCounts[ pid ] > 0 );
+	const teammatesWithCards = teamMatesOf( data.context, data.view.playerId )
+		.filter( playerId => ( data.view.cardCounts[ playerId ] ?? 0 ) > 0 );
 
-	const openDrawer = () => setOpen( true );
 	const closeDrawer = () => {
 		setOpen( false );
 		setSelectedPlayer( undefined );
 	};
 
-	const queryClient = useQueryClient();
-
-	const transferTurn = useMutation( {
-		mutationFn: ( transferTo: PlayerId ) => transferTurnFn( data.id, { transferTo } ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "fish", "getState", data.id ]
-		} )
-	} );
-
 	const handleClick = () => {
-		if ( selectedPlayer && authInfo ) {
-			transferTurn.mutate( selectedPlayer, { onSuccess: closeDrawer } );
+		if ( selectedPlayer ) {
+			transferTurn( { transferTo: selectedPlayer }, closeDrawer );
 		}
 	};
 
 	return (
 		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDrawer() : setOpen( true ) }>
-			<Button className={ "flex-1 max-w-lg" } onClick={ openDrawer }>
-				TRANSFER TURN
-			</Button>
+			<Button onClick={ () => setOpen( true ) }>TRANSFER TURN</Button>
 			<DrawerContent>
 				<DrawerHeader>
-					<DrawerTitle>Transfer Turn</DrawerTitle>
+					<DrawerTitle>TRANSFER TURN</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "px-4" }>
+				<div className={ "px-4 overflow-y-scroll max-h-100" }>
 					<RadioSelect
 						options={ teammatesWithCards }
 						value={ selectedPlayer }
@@ -73,9 +57,9 @@ export function TransferTurn() {
 					/>
 				</div>
 				<DrawerFooter>
-					<Button onClick={ handleClick } disabled={ transferTurn.isPending }
-					        className={ "w-full" }>
-						{ transferTurn.isPending ? <Spinner/> : "TRANSFER TURN" }
+					<Button onClick={ handleClick } disabled={ isPending || !selectedPlayer }
+									className={ "w-full" }>
+						{ isPending ? <Spinner/> : "TRANSFER TURN" }
 					</Button>
 				</DrawerFooter>
 			</DrawerContent>

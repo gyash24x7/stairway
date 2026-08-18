@@ -1,563 +1,605 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import * as Effect from "effect/Effect";
 
-import { dictionaries } from "@/games/wordle/server/dictionary.ts";
 import { wordle } from "@/games/wordle/server/engine.ts";
-import type { WordleConfig, WordleState, WordLength } from "@/games/wordle/shared/schema.ts";
-import { GameCode, GameId, type PlayerId } from "@/shared/swish/schema.ts";
-import { makeMemory, type Memory, player, run, runFail } from "@tests/_helpers/swish.ts";
+import { dictionaries } from "@/games/wordle/shared/dictionary.ts";
+import { isValidWord } from "@/games/wordle/shared/utils.ts";
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
+import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import {
+	createInput,
+	publishedViews,
+	runGame,
+	tagsIn,
+	testClock
+} from "@tests/helpers/runner.ts";
 
-const GID = GameId.make( "g1" );
-const CODE = GameCode.make( "WRD123" );
+import type { WordleConfig, WordleState, WordleView } from "@/games/wordle/shared/schema.ts";
 
-const P1 = player( "p1" );
-/** Never joins — proves every command is gated on membership. */
-const STRANGER = player( "p9" );
+/** How soon the engine plays a machine seat once it is the one being waited on. */
+const BOT_DELAY_MS = 5_000;
 
-/** The shape the wordle client actually creates: one seat, one 5-letter word. */
-const WORDLE_CONFIG: WordleConfig = {
+const player = ( id: string ) => PlayerId.make( id );
+
+const [ a, b ] = [ player( "a" ), player( "b" ) ];
+
+const info = ( id: Player ) =>
+	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar" } );
+
+const configOf = ( over: Partial<WordleConfig> = {} ): WordleConfig => ( {
 	playerCount: 1,
 	autoStart: false,
 	wordCount: 1,
-	wordLength: 5
+	wordLength: 5,
+	...over
+} );
+
+/**
+ * Seats a table, starts it, and hands the body the words it is hiding — read
+ * straight out of the store, since a seat is never told them until the game is
+ * decided and a test has to know what it is chasing.
+ *
+ * @param body - What to play, given the engine and the hidden words.
+ * @param [config] - What the table is created with.
+ * @param [players] - Who takes the seats.
+ * @returns The run's result and collectors.
+ */
+const table = <A, E>(
+	body: (
+		engine: Effect.Success<typeof wordle>,
+		words: ReadonlyArray<string>
+	) => Effect.Effect<A, E>,
+	config: Partial<WordleConfig> = {},
+	players: ReadonlyArray<Player> = [ a ]
+) => {
+	const cells = new Map<string, unknown>();
+
+	return runGame( wordle, engine => Effect.gen( function* () {
+		yield* engine.initialize( createInput( configOf( {
+			...config,
+			playerCount: players.length
+		} ) ) );
+		yield* Effect.forEach( players, id => engine.join( info( id ) ) );
+		yield* engine.start( players[ 0 ]! );
+
+		const record = cells.get( "data" ) as { readonly state: WordleState };
+		return yield* body( engine, record.state.words );
+	} ), { cells } );
+};
+
+/** A dictionary word of the right length that is not one of the answers. */
+const decoy = ( words: ReadonlyArray<string>, length: 4 | 5 | 6 = 5 ) =>
+	dictionaries[ length ].find( word => !words.includes( word ) )!;
+
+
+describe( "setting up a board", () => {
+	test( "hides as many distinct words as the table asked for", () => {
+		const { result } = table(
+			( _engine, words ) => Effect.succeed( words ),
+			{ wordCount: 3 }
+		);
+
+		expect( result ).toHaveLength( 3 );
+		expect( new Set( result ).size ).toBe( 3 );
+	} );
+
+	test( "draws them at the length the table plays at", () => {
+		const { result } = table(
+			( _engine, words ) => Effect.succeed( words ),
+			{ wordLength: 6, wordCount: 2 }
+		);
+
+		expect( result.every( word => word.length === 6 ) ).toBe( true );
+		expect( result.every( word => dictionaries[ 6 ].includes( word ) ) ).toBe( true );
+	} );
+
+	test( "keeps them secret while the game is on", () => {
+		const { result } = table( engine => engine.getState( a ) );
+
+		expect( result.view.answers ).toBeUndefined();
+		expect( result.view.decided ).toBe( false );
+	} );
+
+	test( "opens one board per seat, in join order", () => {
+		const { result } = table( engine => engine.getState(), {}, [ a, b ] );
+
+		expect( result.view.boards.map( board => board.playerId ) ).toEqual( [ a, b ] );
+		expect( result.view.maxGuesses ).toBe( 6 );
+	} );
+} );
+
+
+describe( "playing a guess", () => {
+	test( "records it and scores the board", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: decoy( words ) }, a );
+			return yield* engine.getState( a );
+		} ) );
+
+		const own = result.view.boards[ 0 ]!;
+
+		expect( own.guessCount ).toBe( 1 );
+		expect( own.results[ 0 ] ).toHaveLength( 1 );
+	} );
+
+	test( "does not cost the seat its turn", () => {
+		// Every seat races the same words on its own board, so nobody waits. The
+		// cursor moves on to schedule whoever is next — with nobody else still
+		// playing, that is this seat again.
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: decoy( words ) }, a );
+			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			return yield* engine.getState( a );
+		} ) );
+
+		expect( result.view.boards[ 0 ]?.guessCount ).toBe( 2 );
+		expect( result.context.currentPlayer ).toBe( a );
+	} );
+
+	test( "hands the cursor to the next seat still playing", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.forfeit( {}, b );
+			yield* engine.guess( { guess: decoy( words ) }, a );
+			return yield* engine.getState( a );
+		} ), {}, [ a, b ] );
+
+		// `b` is done, so waiting on it would be waiting on a seat with no move.
+		expect( result.context.currentPlayer ).toBe( a );
+	} );
+
+	test( "any seat may guess, whoever the turn sits with", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: decoy( words ) }, b );
+			return yield* engine.getState( b );
+		} ), {}, [ a, b ] );
+
+		expect( result.context.currentPlayer ).toBe( a );
+		expect( result.view.boards[ 1 ]?.guessCount ).toBe( 1 );
+	} );
+
+	test( "accepts a guess typed in caps or padded with space", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: `  ${ words[ 0 ]!.toUpperCase() } ` }, a );
+			return yield* engine.getState( a );
+		} ) );
+
+		expect( result.view.boards[ 0 ]?.solvedWords ).toEqual( [ true ] );
+	} );
+
+	test( "refuses a guess of the wrong length", () => {
+		const { result } = table(
+			engine => engine.guess( { guess: "crate" }, a ).pipe( Effect.flip ),
+			{ wordLength: 6 }
+		);
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+		expect( ( result as { reason: string } ).reason ).toContain( "6 letters long" );
+	} );
+
+	test( "refuses a word the dictionary does not hold", () => {
+		const { result } = table( engine => engine.guess( { guess: "zzzzz" }, a ).pipe( Effect.flip ) );
+
+		expect( ( result as { reason: string } ).reason ).toBe( "The guess is not a valid word" );
+	} );
+
+	test( "refuses a seat that has already finished", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			return yield* engine.guess( { guess: decoy( words ) }, a ).pipe( Effect.flip );
+		} ), {}, [ a, b ] );
+
+		expect( ( result as { reason: string } ).reason ).toBe( "You have finished your board" );
+	} );
+
+	test( "refuses a guess from someone who holds no seat", () => {
+		const { result } = table( ( engine, words ) =>
+			engine.guess( { guess: decoy( words ) }, b ).pipe( Effect.flip )
+		);
+
+		expect( result._tag ).toBe( "swish/NotAMember" );
+	} );
+} );
+
+
+describe( "giving up", () => {
+	test( "retires the seat", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.forfeit( {}, b );
+			return yield* engine.getState( b );
+		} ), {}, [ a, b ] );
+
+		expect( result.view.boards[ 1 ]?.finished ).toBe( true );
+	} );
+
+	test( "charges the whole allowance rather than banking the rest", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			yield* engine.guess( { guess: decoy( words ) }, b );
+			yield* engine.forfeit( {}, b );
+			return yield* engine.getState();
+		} ), { wordCount: 2 }, [ a, b ] );
+
+		const gaveUp = result.view.boards[ 1 ]!;
+
+		expect( gaveUp.guessCount ).toBe( 1 );
+		expect( gaveUp.score ).toBe( 0 );
+	} );
+
+	test( "refuses a seat that is already done", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.forfeit( {}, b );
+			return yield* engine.forfeit( {}, b ).pipe( Effect.flip );
+		} ), {}, [ a, b ] );
+
+		expect( ( result as { reason: string } ).reason ).toBe( "You have finished your board" );
+	} );
+} );
+
+
+describe( "what one seat may read of another", () => {
+	const raced = <A, E>(
+		body: (
+			engine: Effect.Success<typeof wordle>,
+			words: ReadonlyArray<string>
+		) => Effect.Effect<A, E>
+	) => table( ( engine, words ) => Effect.gen( function* () {
+		yield* engine.guess( { guess: decoy( words ) }, a );
+		yield* engine.guess( { guess: decoy( words ) }, b );
+		return yield* body( engine, words );
+	} ), { wordCount: 2 }, [ a, b ] );
+
+	test( "its own rows, in full", () => {
+		const { result } = raced( engine => engine.getState( a ) );
+
+		expect( result.view.boards[ 0 ]?.guesses ).toHaveLength( 1 );
+		expect( result.view.boards[ 0 ]?.results[ 0 ] ).toHaveLength( 1 );
+	} );
+
+	test( "a rival's tallies, and none of its rows", () => {
+		const { result } = raced( engine => engine.getState( a ) );
+		const rival = result.view.boards[ 1 ]!;
+
+		expect( rival.guesses ).toEqual( [] );
+		expect( rival.results ).toEqual( [] );
+		expect( rival.guessCount ).toBe( 1 );
+	} );
+
+	test( "the table reads nobody's rows", () => {
+		const { result } = raced( engine => engine.getState() );
+
+		expect( result.view.boards.every( board => board.guesses.length === 0 ) ).toBe( true );
+		expect( result.view.playerId ).toBeUndefined();
+	} );
+} );
+
+
+describe( "how a game ends", () => {
+	test( "a solitaire board ends when its seat solves every word", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			for ( const word of words ) {
+				yield* engine.guess( { guess: word }, a );
+			}
+			return yield* engine.getState( a );
+		} ), { wordCount: 2 } );
+
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( result.view.decided ).toBe( true );
+	} );
+
+	test( "and reveals the answers, in the order the boards are laid out", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			for ( const word of words ) {
+				yield* engine.guess( { guess: word }, a );
+			}
+			return { words, view: yield* engine.getState( a ) };
+		} ), { wordCount: 2 } );
+
+		expect( result.view.view.answers ).toEqual( result.words );
+	} );
+
+	test( "a duel waits for every seat to be done", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			const halfway = yield* engine.getState();
+			yield* engine.forfeit( {}, b );
+			return { halfway, done: yield* engine.getState() };
+		} ), {}, [ a, b ] );
+
+		expect( result.halfway.status ).toBe( "IN_PROGRESS" );
+		expect( result.done.status ).toBe( "COMPLETED" );
+	} );
+
+	test( "a seat that runs its allowance out is done without solving", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			const wrong = dictionaries[ 5 ].filter( word => !words.includes( word ) ).slice( 0, 6 );
+			for ( const word of wrong ) {
+				yield* engine.guess( { guess: word }, a );
+			}
+			return yield* engine.getState( a );
+		} ) );
+
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( result.view.boards[ 0 ]?.solvedWords ).toEqual( [ false ] );
+		expect( result.view.boards[ 0 ]?.score ).toBe( 0 );
+	} );
+
+	test( "the winner is the seat strictly ahead", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			yield* engine.forfeit( {}, b );
+			return yield* engine.getState();
+		} ), {}, [ a, b ] );
+
+		expect( result.results?.winner ).toBe( a );
+		expect( result.results?.ranking[ 0 ] ).toMatchObject( { playerId: a, rank: 1 } );
+	} );
+
+	test( "a solo seat that leaves a word unsolved is not a winner", () => {
+		// A solitaire is won by solving it, not by outscoring an empty field. Solving
+		// one of two words still scores, so without this the lone seat was crowned
+		// for a puzzle it never finished.
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			yield* engine.forfeit( {}, a );
+			return yield* engine.getState();
+		} ), { wordCount: 2 } );
+
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( result.results?.ranking[ 0 ]?.score ).toBeGreaterThan( 0 );
+		expect( result.results?.winner ).toBeUndefined();
+	} );
+
+	test( "a solo seat that solves every word does win", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			for ( const word of words ) {
+				yield* engine.guess( { guess: word }, a );
+			}
+			return yield* engine.getState();
+		} ), { wordCount: 2 } );
+
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( result.results?.winner ).toBe( a );
+	} );
+
+	test( "two seats level on score leave the game with no winner", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.forfeit( {}, a );
+			yield* engine.forfeit( {}, b );
+			return yield* engine.getState();
+		} ), {}, [ a, b ] );
+
+		expect( result.results?.winner ).toBeUndefined();
+		expect( result.results?.ranking.every( standing => standing.rank === 1 ) ).toBe( true );
+	} );
+
+	test( "nobody solving anything leaves no winner either", () => {
+		// Refusing to guess must never win: a seat that solved nothing scores zero,
+		// whatever it spent.
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* engine.forfeit( {}, a );
+			yield* engine.forfeit( {}, b );
+			return yield* engine.getState();
+		} ), {}, [ a, b ] );
+
+		expect( result.results?.ranking.every( standing => standing.score === 0 ) ).toBe( true );
+	} );
+
+	test( "a finished game refuses further guesses", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			return yield* engine.guess( { guess: decoy( words ) }, a ).pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/GameNotInProgress" );
+	} );
+
+	test( "the finished game is archived with every seat's final board", () => {
+		const { saved } = table( ( engine, words ) => engine.guess( { guess: words[ 0 ]! }, a ) );
+		const archived = saved.get( "wordle:game-1" ) as
+			undefined | { readonly playerViews: Record<Player, { readonly answers?: unknown }> };
+
+		expect( [ ...saved.keys() ] ).toEqual( [ "wordle:game-1" ] );
+		// The words are out by then, so the archived views carry them.
+		expect( archived?.playerViews[ a ]?.answers ).toBeDefined();
+	} );
+} );
+
+
+describe( "taking a guess back", () => {
+	test( "a seat may undo its own guess", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: decoy( words ) }, a );
+			yield* engine.undo( a );
+			return yield* engine.getState( a );
+		} ) );
+
+		expect( result.view.boards[ 0 ]?.guessCount ).toBe( 0 );
+	} );
+
+	test( "but not a rival's", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: decoy( words ) }, b );
+			return yield* engine.undo( a ).pipe( Effect.flip );
+		} ), {}, [ a, b ] );
+
+		expect( result._tag ).toBe( "swish/UndoNotAllowed" );
+	} );
+
+	test( "and the same words come back on a redo", () => {
+		const { result } = table( ( engine, words ) => Effect.gen( function* () {
+			yield* engine.guess( { guess: decoy( words ) }, a );
+			const played = yield* engine.getState( a );
+			yield* engine.undo( a );
+			yield* engine.redo( a );
+			return { played, replayed: yield* engine.getState( a ) };
+		} ) );
+
+		expect( result.replayed.view ).toEqual( result.played.view );
+	} );
+} );
+
+
+/**
+ * The same table, seated by machines and run against a clock the body moves by
+ * hand. Nothing fires on its own: `playOut` advances past the bot's delay and
+ * then calls `alarm()`, which is what makes a bot's turn a step in a sequence
+ * rather than a wait.
+ *
+ * @param body - What to play, given the engine, the hidden words and the clock.
+ * @param [config] - What the table is created with.
+ * @param [players] - Who takes the seats.
+ * @param [bots] - Whether those seats are machines. Humans get handed over with
+ * 			`setAutoPlay` instead.
+ * @returns The run's result and collectors.
+ */
+const machineTable = <A, E>(
+	body: (
+		engine: Effect.Success<typeof wordle>,
+		clock: ReturnType<typeof testClock>,
+		words: ReadonlyArray<string>
+	) => Effect.Effect<A, E>,
+	config: Partial<WordleConfig> = {},
+	players: ReadonlyArray<Player> = [ a ],
+	bots = true
+) => {
+	const cells = new Map<string, unknown>();
+	const clock = testClock();
+
+	return runGame( wordle, engine => Effect.gen( function* () {
+		yield* engine.initialize( createInput( configOf( {
+			...config,
+			playerCount: players.length
+		} ) ) );
+
+		yield* Effect.forEach( players, id => engine.join(
+			PlayerInfo.make( { ...info( id ), isBot: bots } )
+		) );
+
+		yield* engine.start( players[ 0 ]! );
+
+		const record = cells.get( "data" ) as { readonly state: WordleState };
+		return yield* body( engine, clock, record.state.words );
+	} ), { cells, now: clock.now } );
 };
 
 /**
- * The record the fake `GameStore` holds. It is the ONLY place the answer words
- * exist — the view deliberately never carries them — so the tests read their
- * targets from here rather than from anything a client can see.
+ * Wakes the table until nobody is left to play, or the ceiling is hit. The
+ * ceiling only ever catches a bot that has stopped moving: a table of `n` seats
+ * spends at most `n · maxGuesses` guesses, and one wake-up plays one of them.
+ *
+ * @param engine - The engine to drive.
+ * @param clock - The clock to move past each armed delay.
+ * @param [limit] - The most wake-ups to spend.
+ * @returns The table's view once it stops.
  */
-const persisted = ( memory: Memory ) => memory.store.value as {
-	status: string;
-	config: WordleConfig;
-	state: WordleState;
-	context: { turn: number; currentPlayer: PlayerId };
-};
+const playOut = (
+	engine: Effect.Success<typeof wordle>,
+	clock: ReturnType<typeof testClock>,
+	limit = 100
+) =>
+	Effect.gen( function* () {
+		for ( let i = 0; i < limit; i++ ) {
+			const view = yield* engine.getState();
+			if ( view.status === "COMPLETED" ) {
+				break;
+			}
 
-/** The answer words the engine drew for this game. */
-const answers = ( memory: Memory ) => persisted( memory ).state.words;
-
-/** `count` dictionary words of the configured length that are NOT answers. */
-const wrongGuesses = ( memory: Memory, count: number ) => {
-	const { state, config } = persisted( memory );
-	return dictionaries[ config.wordLength ]
-		.filter( ( word ) => !state.words.includes( word ) )
-		.slice( 0, count );
-};
-
-/** The table + per-player payload of the most recent broadcast. */
-const lastBroadcast = ( memory: Memory ) => memory.broadcasts.at( -1 )! as {
-	channel: string;
-	snapshot: { table: { view: unknown }; playerViews: Record<string, unknown> };
-};
-
-/** Overwrite fields of the stored snapshot's game state, simulating drift. */
-const patchStoredState = ( memory: Memory, patch: Record<string, unknown> ) => {
-	const snap = memory.store.value as { state: Record<string, unknown> };
-	memory.store.value = { ...snap, state: { ...snap.state, ...patch } };
-};
-
-/** initialize → join p1 → (optionally) start. Wordle seats exactly one player. */
-async function bootWordle(
-	memory: Memory,
-	opts: { config?: Partial<WordleConfig>; start?: boolean; seed?: string } = {}
-) {
-	const engine = await run( memory, wordle );
-	const config = { ...WORDLE_CONFIG, ...opts.config };
-
-	await run( memory, engine.initialize( {
-		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
-	} ) );
-	await run( memory, engine.join( P1 ) );
-
-	if ( opts.start !== false ) {
-		await run( memory, engine.start( P1.id ) );
-	}
-
-	return engine;
-}
-
-// ===========================================================================
-describe( "wordle — setup & config", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "initialize draws the answers and sizes the board from the config", async () => {
-		await bootWordle( memory, { start: false } );
-		const { state, status } = persisted( memory );
-
-		expect( status ).toBe( "PLAYERS_READY" );
-		expect( state.words ).toHaveLength( 1 );
-		expect( state.guesses ).toEqual( [] );
-		// One guess budget per word plus one per letter.
-		expect( state.maxGuesses ).toBe( 6 );
-		// Every answer starts with an empty result list keyed by the word itself.
-		expect( state.guessResults ).toEqual( { [ state.words[ 0 ]! ]: [] } );
-	} );
-
-	test.each( [ 4, 5, 6 ] as WordLength[] )(
-		"a %i-letter game draws answers of that length from that dictionary",
-		async ( wordLength ) => {
-			await bootWordle( memory, { config: { wordLength }, start: false } );
-			const { state } = persisted( memory );
-
-			expect( state.words[ 0 ] ).toHaveLength( wordLength );
-			expect( dictionaries[ wordLength ] ).toContain( state.words[ 0 ]! );
-			expect( state.maxGuesses ).toBe( 1 + wordLength );
-		}
-	);
-
-	test.each( [ 1, 2, 4 ] )( "a %i-word game draws that many distinct answers", async ( wordCount ) => {
-		await bootWordle( memory, { config: { wordCount }, start: false } );
-		const { state } = persisted( memory );
-
-		expect( state.words ).toHaveLength( wordCount );
-		// `setup` fills a Set, so a game never hands out the same answer twice.
-		expect( new Set( state.words ).size ).toBe( wordCount );
-		expect( state.maxGuesses ).toBe( wordCount + 5 );
-		expect( Object.keys( state.guessResults ).sort() ).toEqual( [ ...state.words ].sort() );
-	} );
-
-	test( "the real client flow — one seat, autoStart — starts off the alarm", async () => {
-		const engine = await bootWordle( memory, { config: { autoStart: true }, start: false } );
-		expect( memory.scheduler.scheduled.map( ( s ) => s.alarm ) ).toContain( "auto-start" );
-
-		await run( memory, engine.alarm() );
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).status ).toBe( "IN_PROGRESS" );
-	} );
-
-	test( "start puts the single-seat game IN_PROGRESS with p1 to act", async () => {
-		const engine = await bootWordle( memory );
-		const state = await run( memory, engine.getState( P1.id ) );
-
-		expect( state.status ).toBe( "IN_PROGRESS" );
-		expect( state.context.currentPlayer ).toBe( P1.id );
-		expect( state.view.maxGuesses ).toBe( 6 );
-		expect( state.view.guesses ).toEqual( [] );
-	} );
-} );
-
-// ===========================================================================
-describe( "wordle — guess validation", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "a guess that is not a dictionary word is rejected", async () => {
-		const engine = await bootWordle( memory );
-		const error = await runFail( memory, engine.guess( { guess: "zzzzz" }, P1 ) );
-
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-		expect( error ).toMatchObject( { move: "guess", reason: "The guess is not a valid word" } );
-	} );
-
-	test.each( [ "cat", "crab", "cranes" ] )(
-		"a guess of the wrong length (%s) is rejected",
-		async ( guess ) => {
-			// There is no explicit length rule: a mis-sized guess simply cannot be in
-			// the length-keyed dictionary, so the same check catches it.
-			const engine = await bootWordle( memory );
-			const error = await runFail( memory, engine.guess( { guess }, P1 ) );
-			expect( error._tag ).toBe( "swish/InvalidMove" );
-		}
-	);
-
-	test( "an uppercase spelling of a real word is rejected — the dictionary is lowercase", async () => {
-		const engine = await bootWordle( memory );
-		const guess = wrongGuesses( memory, 1 )[ 0 ]!.toUpperCase();
-
-		const error = await runFail( memory, engine.guess( { guess }, P1 ) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a rejected guess costs nothing — no commit, no guess spent", async () => {
-		const engine = await bootWordle( memory );
-		const commits = memory.log.commits.length;
-
-		await runFail( memory, engine.guess( { guess: "zzzzz" }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( memory.log.commits ).toHaveLength( commits );
-		expect( state.view.guesses ).toEqual( [] );
-		expect( state.context.turn ).toBe( 0 );
-	} );
-
-	test( "the out-of-guesses guard rejects a guess when the budget is spent", async () => {
-		// Unreachable in normal play — `endIf` completes the game on the last guess,
-		// so a real player hits `GameNotInProgress` first (asserted below). Drive it
-		// by handing the engine a snapshot whose budget is already exhausted.
-		const engine = await bootWordle( memory );
-		patchStoredState( memory, { guesses: wrongGuesses( memory, 6 ) } );
-
-		const error = await runFail( memory, engine.guess( { guess: "crane" }, P1 ) );
-		expect( error._tag ).toBe( "swish/InvalidMove" );
-		expect( error ).toMatchObject( { move: "guess", reason: "No more guesses left" } );
-	} );
-
-	test( "a repeat of an earlier guess is accepted and spends another guess", async () => {
-		// Wordle declares no duplicate-guess rule, so the board simply records the
-		// same row twice.
-		const engine = await bootWordle( memory );
-		const [ guess ] = wrongGuesses( memory, 1 );
-
-		await run( memory, engine.guess( { guess: guess! }, P1 ) );
-		await run( memory, engine.guess( { guess: guess! }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.guesses ).toEqual( [ guess!, guess! ] );
-		expect( state.status ).toBe( "IN_PROGRESS" );
-	} );
-
-	test( "a non-member can neither read the board nor guess", async () => {
-		const engine = await bootWordle( memory );
-
-		expect( ( await runFail( memory, engine.getState( STRANGER.id ) ) )._tag )
-			.toBe( "swish/NotAMember" );
-		expect( ( await runFail( memory, engine.guess( { guess: "crane" }, STRANGER ) ) )._tag )
-			.toBe( "swish/NotAMember" );
-	} );
-
-	test( "a guess before the game starts fails with GameNotInProgress", async () => {
-		const engine = await bootWordle( memory, { start: false } );
-		const error = await runFail( memory, engine.guess( { guess: "crane" }, P1 ) );
-		expect( error._tag ).toBe( "swish/GameNotInProgress" );
-	} );
-} );
-
-// ===========================================================================
-describe( "wordle — guessing & the board", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "a wrong guess records one scored row and advances the turn", async () => {
-		const engine = await bootWordle( memory );
-		const [ guess ] = wrongGuesses( memory, 1 );
-		await run( memory, engine.guess( { guess: guess! }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.guesses ).toEqual( [ guess! ] );
-		expect( state.status ).toBe( "IN_PROGRESS" );
-		expect( state.context.turn ).toBe( 1 );
-		// One seat and no `resolveNextPlayer`, so the guesser keeps the board.
-		expect( state.context.currentPlayer ).toBe( P1.id );
-
-		const row = state.view.guessResults[ 0 ]![ 0 ]!;
-		expect( row.map( ( r ) => r.letter ).join( "" ) ).toBe( guess! );
-		// Some letters may land, but a non-answer can never score every position.
-		expect( row.every( ( r ) => r.status === "correct" ) ).toBe( false );
-	} );
-
-	test( "unplayed rows are padded to maxGuesses with blank absent cells", async () => {
-		const engine = await bootWordle( memory );
-		await run( memory, engine.guess( { guess: wrongGuesses( memory, 1 )[ 0 ]! }, P1 ) );
-
-		const board = ( await run( memory, engine.getState( P1.id ) ) ).view.guessResults[ 0 ]!;
-		expect( board ).toHaveLength( 6 );
-		expect( board.slice( 1 ) ).toEqual( Array.from(
-			{ length: 5 },
-			() => Array.from( { length: 5 }, () => ( { letter: "", status: "absent" as const } ) )
-		) );
-	} );
-
-	test( "guessing an answer scores that word all-correct", async () => {
-		const engine = await bootWordle( memory );
-		const answer = answers( memory )[ 0 ]!;
-		await run( memory, engine.guess( { guess: answer }, P1 ) );
-
-		const row = ( await run( memory, engine.getState( P1.id ) ) ).view.guessResults[ 0 ]![ 0 ]!;
-		expect( row.every( ( r ) => r.status === "correct" ) ).toBe( true );
-		expect( row.map( ( r ) => r.letter ).join( "" ) ).toBe( answer );
-	} );
-
-	test( "one guess is scored against every answer of a multi-word game", async () => {
-		const engine = await bootWordle( memory, { config: { wordCount: 3 } } );
-		const [ first ] = answers( memory );
-		await run( memory, engine.guess( { guess: first! }, P1 ) );
-
-		const board = ( await run( memory, engine.getState( P1.id ) ) ).view.guessResults;
-		expect( board ).toHaveLength( 3 );
-		// The guessed word is solved; the other two got their own scoring of it.
-		expect( board[ 0 ]![ 0 ]!.every( ( r ) => r.status === "correct" ) ).toBe( true );
-		for ( const word of board.slice( 1 ) ) {
-			expect( word[ 0 ]!.map( ( r ) => r.letter ).join( "" ) ).toBe( first! );
-		}
-	} );
-
-	test( "a solved word's rows stop at the solving guess and pad from there", async () => {
-		const engine = await bootWordle( memory, { config: { wordCount: 2 } } );
-		const [ first ] = answers( memory );
-		await run( memory, engine.guess( { guess: first! }, P1 ) );
-		await run( memory, engine.guess( { guess: wrongGuesses( memory, 1 )[ 0 ]! }, P1 ) );
-
-		const board = ( await run( memory, engine.getState( P1.id ) ) ).view.guessResults;
-		// maxGuesses = 2 words + 5 letters. The solved word keeps only its winning
-		// row; the unsolved one shows both guesses.
-		expect( board[ 0 ] ).toHaveLength( 7 );
-		expect( board[ 0 ]![ 1 ]!.every( ( r ) => r.letter === "" ) ).toBe( true );
-		expect( board[ 1 ]![ 1 ]!.map( ( r ) => r.letter ).join( "" ) ).not.toBe( "" );
-	} );
-} );
-
-// ===========================================================================
-describe( "wordle — view redaction (the answers must not leak)", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "the player view carries no answer word while the game runs", async () => {
-		const engine = await bootWordle( memory, { config: { wordCount: 3 } } );
-		const words = answers( memory );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		// The record the server holds does contain them — so this check has teeth.
-		expect( JSON.stringify( persisted( memory ).state ) ).toContain( words[ 0 ]! );
-		for ( const word of words ) {
-			expect( JSON.stringify( state.view ) ).not.toContain( word );
+			clock.advance( BOT_DELAY_MS + 1 );
+			yield* engine.alarm();
 		}
 
-		expect( state.view ).not.toHaveProperty( "words" );
-		// The whole public surface: the board, the budget, and who is looking.
-		expect( Object.keys( state.view ).sort() ).toEqual(
-			[ "_tag", "guessResults", "guesses", "maxGuesses", "playerId", "victory" ]
+		return yield* engine.getState();
+	} );
+
+
+describe( "the bot", () => {
+	test( "plays the seat a player hands it", () => {
+		const { result } = machineTable( ( engine, clock ) => Effect.gen( function* () {
+			yield* engine.setAutoPlay( a, true );
+			clock.advance( BOT_DELAY_MS + 1 );
+			yield* engine.alarm();
+			return yield* engine.getState( a );
+		} ), {}, [ a ], false );
+
+		expect( result.autoPlay[ a ] ).toBe( true );
+		expect( result.view.boards[ 0 ]?.guessCount ).toBe( 1 );
+	} );
+
+	test( "guesses only words the table would accept", () => {
+		const { result } = machineTable(
+			( engine, clock ) => playOut( engine, clock ),
+			{ wordCount: 3, wordLength: 6 }
 		);
+
+		const guesses = result.view.boards[ 0 ]!.guesses;
+
+		expect( guesses.length ).toBeGreaterThan( 0 );
+		expect( guesses.every( guess => isValidWord( guess, 6 ) ) ).toBe( true );
 	} );
 
-	test( "a lost game still withholds the answers", async () => {
-		const engine = await bootWordle( memory );
-		const [ answer ] = answers( memory );
-		for ( const guess of wrongGuesses( memory, 6 ) ) {
-			await run( memory, engine.guess( { guess }, P1 ) );
-		}
+	test( "never guesses the same word twice", () => {
+		const { result } = machineTable( ( engine, clock ) => playOut( engine, clock ), { wordCount: 4 } );
+		const guesses = result.view.boards[ 0 ]!.guesses;
 
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		expect( state.view.victory ).toBe( false );
-		// Losing reveals nothing: the word the player failed to find stays server-side.
-		expect( JSON.stringify( state.view ) ).not.toContain( answer! );
+		expect( new Set( guesses ).size ).toBe( guesses.length );
 	} );
 
-	test( "the broadcast table view is a spectator projection with no answers", async () => {
-		const engine = await bootWordle( memory );
-		const [ answer ] = answers( memory );
-		await run( memory, engine.guess( { guess: wrongGuesses( memory, 1 )[ 0 ]! }, P1 ) );
+	test( "solves the board it is given", () => {
+		const { result } = machineTable( ( engine, clock ) => playOut( engine, clock ) );
 
-		const last = lastBroadcast( memory );
-		expect( last.channel ).toBe( "wordle:g1" );
-		expect( JSON.stringify( last.snapshot.table.view ) ).not.toContain( answer! );
-		// The table audience gets the public board only; the player gets their own.
-		expect( last.snapshot.table.view ).toMatchObject( { _tag: "wordle/TableView" } );
-		expect( last.snapshot.table.view ).not.toHaveProperty( "playerId" );
-		expect( Object.keys( last.snapshot.playerViews ) ).toEqual( [ P1.id ] );
+		expect( result.view.boards[ 0 ]?.solvedWords ).toEqual( [ true ] );
+		expect( result.status ).toBe( "COMPLETED" );
 	} );
 
-	test( "the player view is tagged and keyed to the caller", async () => {
-		const engine = await bootWordle( memory );
-		const view = ( await run( memory, engine.getState( P1.id ) ) ).view;
+	test( "never gives up, whatever the board costs it", () => {
+		// Forfeiting charges the whole remaining allowance rather than banking it,
+		// so playing on is never worse — and might still solve a word.
+		const { result, cells } = machineTable(
+			( engine, clock ) => playOut( engine, clock ),
+			{ wordCount: 5 }
+		);
 
-		expect( view._tag ).toBe( "wordle/PlayerView" );
-		expect( view._tag === "wordle/PlayerView" && view.playerId ).toBe( P1.id );
-	} );
-} );
-
-// ===========================================================================
-describe( "wordle — completion", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "guessing the only word wins the game", async () => {
-		const engine = await bootWordle( memory );
-		await run( memory, engine.guess( { guess: answers( memory )[ 0 ]! }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		expect( state.view.victory ).toBe( true );
+		expect( tagsIn( cells ) ).not.toContain( "wordle/ev/Forfeited" );
+		expect( result.status ).toBe( "COMPLETED" );
 	} );
 
-	test( "the game runs on until every word of a multi-word game is found", async () => {
-		const engine = await bootWordle( memory, { config: { wordCount: 3 } } );
-		const words = answers( memory );
+	test( "plays every machine seat at the table, not just the one holding the cursor", () => {
+		const { result } = machineTable(
+			( engine, clock ) => playOut( engine, clock ),
+			{ wordCount: 2 },
+			[ a, b ]
+		);
 
-		await run( memory, engine.guess( { guess: words[ 0 ]! }, P1 ) );
-		await run( memory, engine.guess( { guess: words[ 1 ]! }, P1 ) );
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).status ).toBe( "IN_PROGRESS" );
-
-		await run( memory, engine.guess( { guess: words[ 2 ]! }, P1 ) );
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		expect( state.view.victory ).toBe( true );
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( result.view.boards.map( board => board.guessCount > 0 ) ).toEqual( [ true, true ] );
 	} );
 
-	test( "spending every guess loses the game", async () => {
-		const engine = await bootWordle( memory, { config: { wordLength: 4 } } );
-		const wrong = wrongGuesses( memory, 5 );
+	test( "keeps racing once the seat beside it has given up", () => {
+		const { result } = machineTable( ( engine, clock ) => Effect.gen( function* () {
+			yield* engine.forfeit( {}, a );
+			return yield* playOut( engine, clock );
+		} ), { wordCount: 2 }, [ a, b ] );
 
-		for ( const [ i, guess ] of wrong.entries() ) {
-			await run( memory, engine.guess( { guess }, P1 ) );
-			const mid = await run( memory, engine.getState( P1.id ) );
-			// maxGuesses = 1 word + 4 letters: the game only ends on the last one.
-			expect( mid.status ).toBe( i === 4 ? "COMPLETED" : "IN_PROGRESS" );
-		}
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.victory ).toBe( false );
-		expect( state.view.guesses ).toEqual( wrong );
+		// `a` is done, so the cursor belongs to `b` alone from here — a table that
+		// waited on the retired seat would never wake up again.
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( result.view.boards[ 1 ]?.guessCount ).toBeGreaterThan( 0 );
 	} );
 
-	test( "a completed game accepts no further guesses", async () => {
-		const engine = await bootWordle( memory );
-		await run( memory, engine.guess( { guess: answers( memory )[ 0 ]! }, P1 ) );
+	test( "learns nothing from a rival's board", () => {
+		// Every seat races the same words, so a rival's rows would be free scored
+		// probes. The policy reads the view the engine hands it, and that view has
+		// the rival redacted — this is the assertion that keeps it that way.
+		const { published } = machineTable(
+			( engine, clock ) => playOut( engine, clock ),
+			{ wordCount: 2 },
+			[ a, b ]
+		);
 
-		const error = await runFail( memory, engine.guess( { guess: "crane" }, P1 ) );
-		expect( error._tag ).toBe( "swish/GameNotInProgress" );
-	} );
+		const views = publishedViews<WordleView, WordleConfig>( published );
+		const mid = views[ Math.floor( views.length / 2 ) ]!;
 
-	test( "wordle declares no describe, so the action feed stays empty", async () => {
-		const engine = await bootWordle( memory );
-		await run( memory, engine.guess( { guess: wrongGuesses( memory, 1 )[ 0 ]! }, P1 ) );
-
-		expect( await run( memory, engine.getLog( P1.id ) ) ).toEqual( [] );
-	} );
-} );
-
-// ===========================================================================
-describe( "wordle — resolveResults", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "a solved puzzle crowns the only seat and scores the guesses spent", async () => {
-		const engine = await bootWordle( memory );
-		await run( memory, engine.guess( { guess: answers( memory )[ 0 ]! }, P1 ) );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.results ).toEqual( {
-			winner: P1.id,
-			ranking: [ { playerId: P1.id, rank: 1, score: 1 } ]
-		} );
-	} );
-
-	test( "running out of guesses still ranks the seat, but crowns nobody", async () => {
-		const engine = await bootWordle( memory, { config: { wordLength: 4 } } );
-		for ( const guess of wrongGuesses( memory, 5 ) ) {
-			await run( memory, engine.guess( { guess }, P1 ) );
-		}
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.victory ).toBe( false );
-		expect( state.results?.winner ).toBeUndefined();
-		expect( state.results?.ranking ).toEqual( [ { playerId: P1.id, rank: 1, score: 5 } ] );
-	} );
-
-	test( "an unfinished puzzle has no results", async () => {
-		const engine = await bootWordle( memory, { config: { wordCount: 3 } } );
-		await run( memory, engine.guess( { guess: answers( memory )[ 0 ]! }, P1 ) );
-
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
-	} );
-} );
-
-// ===========================================================================
-describe( "wordle — event sourcing (replay, undo, redo)", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "replaying the log rebuilds byte-identical state", async () => {
-		const engine = await bootWordle( memory, { config: { wordCount: 2 } } );
-		const wrong = wrongGuesses( memory, 3 );
-		await run( memory, engine.guess( { guess: wrong[ 0 ]! }, P1 ) );
-		await run( memory, engine.guess( { guess: wrong[ 1 ]! }, P1 ) );
-		await run( memory, engine.guess( { guess: wrong[ 2 ]! }, P1 ) );
-
-		const before = structuredClone( persisted( memory ) );
-
-		// Rewind to genesis and replay every commit — the refold must land exactly
-		// where the incremental fold did.
-		for ( let i = 0; i < 3; i++ ) {
-			await run( memory, engine.undo( P1 ) );
-		}
-
-		for ( let i = 0; i < 3; i++ ) {
-			await run( memory, engine.redo( P1 ) );
-		}
-
-		expect( persisted( memory ) ).toEqual( before );
-	} );
-
-	test( "the same seed draws the same answers", async () => {
-		// `setup` draws from the engine's seeded stream, so the same seed always
-		// picks the same answers and a genesis replay is reproducible.
-		const a = makeMemory();
-		const b = makeMemory();
-		await bootWordle( a, { start: false } );
-		await bootWordle( b, { start: false } );
-
-		expect( answers( a ) ).toEqual( answers( b ) );
-
-		// ...and a different seed draws different answers, so the assertion above
-		// is about the seed rather than a constant.
-		const c = makeMemory();
-		await bootWordle( c, { start: false, seed: "another-seed" } );
-		expect( answers( c ) ).not.toEqual( answers( a ) );
-	} );
-
-	test( "undo rewinds the last guess and its scored rows", async () => {
-		const engine = await bootWordle( memory );
-		const wrong = wrongGuesses( memory, 2 );
-		await run( memory, engine.guess( { guess: wrong[ 0 ]! }, P1 ) );
-		await run( memory, engine.guess( { guess: wrong[ 1 ]! }, P1 ) );
-
-		const snapshot = await run( memory, engine.undo( P1 ) );
-		expect( snapshot.view.guesses ).toEqual( [ wrong[ 0 ]! ] );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.guesses ).toEqual( [ wrong[ 0 ]! ] );
-		expect( state.context.turn ).toBe( 1 );
-		expect( persisted( memory ).state.guessResults[ answers( memory )[ 0 ]! ] )
-			.toHaveLength( 1 );
-	} );
-
-	test( "undo un-wins a won game and redo wins it again", async () => {
-		const engine = await bootWordle( memory );
-		await run( memory, engine.guess( { guess: answers( memory )[ 0 ]! }, P1 ) );
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).status ).toBe( "COMPLETED" );
-
-		const undone = await run( memory, engine.undo( P1 ) );
-		expect( undone.status ).toBe( "IN_PROGRESS" );
-		expect( undone.view.victory ).toBeUndefined();
-		expect( undone.view.guesses ).toEqual( [] );
-
-		const redone = await run( memory, engine.redo( P1 ) );
-		expect( redone.status ).toBe( "COMPLETED" );
-		expect( redone.view.victory ).toBe( true );
-	} );
-
-	test( "undo before the first guess fails with NothingToUndo", async () => {
-		// Wordle's only commits before a guess are `join` + `start`, and the floor
-		// sits at `start` — so the sole player is told there is nothing to undo
-		// rather than being rewound out of their own roster and locked out.
-		const engine = await bootWordle( memory );
-
-		expect( ( await runFail( memory, engine.undo( P1 ) ) )._tag ).toBe( "swish/NothingToUndo" );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "IN_PROGRESS" );
-		expect( Object.keys( state.players ) ).toEqual( [ P1.id ] );
-	} );
-
-	test( "a fresh guess after an undo drops the redo tail", async () => {
-		const engine = await bootWordle( memory );
-		const wrong = wrongGuesses( memory, 2 );
-		await run( memory, engine.guess( { guess: wrong[ 0 ]! }, P1 ) );
-		await run( memory, engine.undo( P1 ) );
-		await run( memory, engine.guess( { guess: wrong[ 1 ]! }, P1 ) );
-
-		expect( ( await runFail( memory, engine.redo( P1 ) ) )._tag ).toBe( "swish/NothingToRedo" );
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).view.guesses )
-			.toEqual( [ wrong[ 1 ]! ] );
-	} );
-
-	test( "cleanup clears the board", async () => {
-		const engine = await bootWordle( memory );
-		await run( memory, engine.cleanup() );
-
-		expect( memory.store.value ).toBeNull();
-		expect( ( await runFail( memory, engine.getState( P1.id ) ) )._tag )
-			.toBe( "swish/GameNotFound" );
+		expect( mid.players[ a ]!.view.boards.find( board => board.playerId === b )?.results )
+			.toEqual( [] );
 	} );
 } );

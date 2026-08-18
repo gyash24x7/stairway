@@ -1,11 +1,12 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useBoolean } from "usehooks-ts";
 
-import type { Gem, PickTokensInput, Tokens } from "@/games/splendor/shared/schema.ts";
-import { GEMS_WITH_GOLD } from "@/games/splendor/shared/utils.ts";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
+import { SPLENDOR_MAX_TOKENS } from "@/games/splendor/shared/schema.ts";
+import { ALL_GEMS, sumTokens } from "@/games/splendor/shared/utils.ts";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
@@ -16,47 +17,31 @@ import {
 	DrawerTitle
 } from "@/shared/ui/primitives/drawer.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { pickTokensFn } from "@/games/splendor/client/client.ts";
-import { useSplendor } from "@/games/splendor/client/context.tsx";
-import { TokenPicker } from "@/games/splendor/client/token-picker.tsx";
+
+import type { Tokens } from "@/games/splendor/shared/schema.ts";
 
 export function PickTokens() {
-	const { data } = useSplendor();
-	const queryClient = useQueryClient();
-
-	const pickTokens = useMutation( {
-		mutationFn: ( input: PickTokensInput ) => pickTokensFn( data.id, input ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "splendor", "getState", data.id ]
-		} )
-	} );
-
-	const availableTokens = data.view.tokens;
-	const playerTokens = data.view.playerData[ data.view.playerId ].tokens;
-	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === data.view.playerId;
+	const { data, playerId, isMyTurn, pickTokens, isPending } = useSplendor();
 
 	const { value, toggle, setTrue, setFalse } = useBoolean( false );
 	const [ selectedTokens, setSelectedTokens ] = useState<Partial<Tokens>>( {} );
 	const [ returnTokens, setReturnTokens ] = useState<Partial<Tokens>>( {} );
 
-	const isPending = pickTokens.isPending;
+	const availableTokens = data.view.tokens;
+	const playerTokens = playerId ? data.view.playerData[ playerId ]?.tokens : undefined;
 
-	const projectedTotal = useMemo( () => {
-		const currentTotal = GEMS_WITH_GOLD.reduce( ( sum, gem ) => sum + playerTokens[ gem ], 0 );
-		const pickedTotal = Object.values( selectedTokens )
-			.reduce( ( sum, val ) => sum + val, 0 );
+	const projectedTotal = useMemo(
+		() => sumTokens( playerTokens ?? {} ) + sumTokens( selectedTokens ),
+		[ playerTokens, selectedTokens ]
+	);
 
-		return currentTotal + pickedTotal;
-	}, [ playerTokens, selectedTokens ] );
-
-	const tokensAfterPick = useMemo( () => {
-		const result = { ...playerTokens };
-		for ( const gem of GEMS_WITH_GOLD ) {
-			result[ gem ] += ( selectedTokens[ gem as Gem ] ?? 0 );
-		}
-		return result;
-	}, [ playerTokens, selectedTokens ] );
+	const tokensAfterPick = useMemo(
+		() => Object.fromEntries( ALL_GEMS.map( gem => [
+			gem,
+			( playerTokens?.[ gem ] ?? 0 ) + ( selectedTokens[ gem ] ?? 0 )
+		] ) ) as Partial<Tokens>,
+		[ playerTokens, selectedTokens ]
+	);
 
 	const reset = () => {
 		setSelectedTokens( {} );
@@ -64,20 +49,23 @@ export function PickTokens() {
 		setFalse();
 	};
 
+	// Going over the limit has to be settled inside the same move, so a pick that
+	// would carry the seat past it opens the return sheet rather than being sent.
 	const handlePickClick = () => {
-		if ( projectedTotal <= 10 ) {
-			pickTokens.mutate( { tokens: selectedTokens }, { onSuccess: reset } );
+		if ( projectedTotal <= SPLENDOR_MAX_TOKENS ) {
+			pickTokens( { tokens: selectedTokens }, reset );
 		} else {
 			setTrue();
 		}
 	};
 
 	const handleReturnClick = () => {
-		pickTokens.mutate(
-			{ tokens: selectedTokens, returned: returnTokens },
-			{ onSuccess: reset }
-		);
+		pickTokens( { tokens: selectedTokens, returned: returnTokens }, reset );
 	};
+
+	if ( !playerTokens ) {
+		return null;
+	}
 
 	return (
 		<div className={ "flex flex-col gap-3 w-full" }>
@@ -89,7 +77,10 @@ export function PickTokens() {
 				onPickChange={ setSelectedTokens }
 				disabled={ !isMyTurn }
 				action={
-					<Button onClick={ handlePickClick } disabled={ isPending || !isMyTurn }>
+					<Button
+						onClick={ handlePickClick }
+						disabled={ isPending || !isMyTurn || sumTokens( selectedTokens ) === 0 }
+					>
 						{ isPending ? <Spinner/> : "PICK" }
 					</Button>
 				}
@@ -99,23 +90,24 @@ export function PickTokens() {
 					<DrawerHeader>
 						<DrawerTitle className={ "font-bold" }>RETURN TOKENS</DrawerTitle>
 						<DrawerDescription>
-							Return { projectedTotal - 10 } token(s)
+							Return { projectedTotal - SPLENDOR_MAX_TOKENS } token(s)
 						</DrawerDescription>
 					</DrawerHeader>
-					<div className={ "px-4 overflow-y-auto flex flex-col gap-2" }>
+					<div className={ "px-4 flex flex-col gap-2 overflow-y-scroll max-h-100" }>
 						<TokenPicker
 							sourceText={ "My Tokens" }
 							sinkText={ "Returning" }
 							initialTokens={ tokensAfterPick }
-							pickLimit={ projectedTotal - 10 }
+							pickLimit={ projectedTotal - SPLENDOR_MAX_TOKENS }
+							allowGold
 							onPickChange={ setReturnTokens }
 						/>
 					</div>
 					<DrawerFooter>
 						<Button
 							onClick={ handleReturnClick }
-							disabled={ isPending ||
-								Object.values( returnTokens ).reduce( ( acc, v ) => acc + v, 0 ) === 0 }
+							disabled={ isPending
+								|| sumTokens( returnTokens ) !== projectedTotal - SPLENDOR_MAX_TOKENS }
 							className={ "w-full" }
 						>
 							{ isPending ? <Spinner/> : "RETURN TOKENS" }

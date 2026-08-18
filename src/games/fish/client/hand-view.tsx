@@ -3,15 +3,19 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemo } from "react";
 
-import { getBookDisplayString, getBooksInHand, getCardsOfBook } from "@/games/fish/shared/utils.ts";
-import { RCard } from "@/shared/ui/components/card.tsx";
-import { cn } from "@/shared/ui/utils/cn.ts";
 import { useFish } from "@/games/fish/client/context.tsx";
+import {
+	getBookDisplayString,
+	getBooksInHand,
+	getCardsOfBook
+} from "@/games/fish/shared/utils.ts";
+import { RCard } from "@/shared/ui/components/card.tsx";
+import { SPRING } from "@/shared/ui/utils/animation.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
 
 export function HandView() {
 	const { data } = useFish();
-	const player = data.view;
-	const hand = player.hand;
+	const hand = data.view.hand;
 
 	const groupedCards = useMemo(
 		() => getBooksInHand( hand, data.config.type ).map(
@@ -65,7 +69,7 @@ export function HandView() {
 										animate={ {
 											opacity: 1,
 											scale: 1,
-											transition: { type: "spring", stiffness: 380, damping: 22 }
+											transition: SPRING
 										} }
 										exit={ {
 											opacity: 0,

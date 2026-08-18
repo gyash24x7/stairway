@@ -41,6 +41,10 @@ export function errorMessage( error: unknown ) {
 			return "There's nothing left to undo.";
 		case "swish/NothingToRedo":
 			return "There's nothing to redo.";
+		case "swish/UndoNotAllowed":
+			return "You can only take back your own last move.";
+		case "swish/RedoNotAllowed":
+			return "You can only replay a move you took back.";
 		case "swish/CorruptState":
 		case "swish/PhaseNotFound":
 			return "This game's state couldn't be read. Please refresh.";

@@ -2,25 +2,34 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
+	PlaceInput,
+	TicTacToeConfig,
+	TicTacToeCreateInput,
+	TicTacToeView
+} from "@/games/tictactoe/shared/schema.ts";
+import {
 	AddBotsApiEndpoint,
 	CreateGameApiEndpoint,
-	GetStateApiEndpoint,
-	GetTableStateApiEndpoint,
+	GetViewApiEndpoint,
 	JoinApiEndpoint,
+	MoveApiEndpoint,
+	RedoApiEndpoint,
+	SetAutoPlayApiEndpoint,
 	StartApiEndpoint,
-	MoveApiEndpoint
-} from "@/shared/swish/api.ts";
-import { PlaceInput, TicTacToeCreateInput, TicTacToeSnapshot } from "@/games/tictactoe/shared/schema.ts";
+	UndoApiEndpoint
+} from "@/swish/shared/contract.ts";
 
 export const TicTacToeApiGroup = HttpApiGroup.make( "tictactoe" )
 	.add(
 		CreateGameApiEndpoint( TicTacToeCreateInput ),
-		GetStateApiEndpoint( TicTacToeSnapshot ),
-		GetTableStateApiEndpoint( TicTacToeSnapshot ),
+		GetViewApiEndpoint( TicTacToeView, TicTacToeConfig ),
 		JoinApiEndpoint(),
 		StartApiEndpoint(),
 		AddBotsApiEndpoint(),
-		MoveApiEndpoint( "place", PlaceInput )
+		MoveApiEndpoint( "place", PlaceInput ),
+		SetAutoPlayApiEndpoint(),
+		UndoApiEndpoint(),
+		RedoApiEndpoint()
 	)
 	.prefix( "/tictactoe" )
 	.middleware( AuthMiddleware );

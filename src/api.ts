@@ -10,14 +10,12 @@ import { TicTacToeApiGroup } from "@/games/tictactoe/shared/contract.ts";
 import { WordleApiGroup } from "@/games/wordle/shared/contract.ts";
 
 export const StairwayAPI = HttpApi.make( "api" )
-	.add(
-		AuthApiGroup,
-		ChatApiGroup,
-		CallbreakApiGroup,
-		FishApiGroup,
-		KingdominoApiGroup,
-		SplendorApiGroup,
-		TicTacToeApiGroup,
-		WordleApiGroup
-	)
+	.add( AuthApiGroup )
+	.add( ChatApiGroup )
+	.add( CallbreakApiGroup )
+	.add( FishApiGroup )
+	.add( KingdominoApiGroup )
+	.add( SplendorApiGroup )
+	.add( TicTacToeApiGroup )
+	.add( WordleApiGroup )
 	.prefix( "/api" );

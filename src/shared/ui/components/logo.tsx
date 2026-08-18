@@ -1,4 +1,4 @@
-export function Logo( props: { url: string; classname?: string; } ) {
+export function Logo( props: { url: string; classname?: string } ) {
 	return (
 		<div
 			className={ props.classname }

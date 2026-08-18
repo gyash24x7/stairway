@@ -1,10 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import * as Schema from "effect/Schema";
+import { useCallback, useEffect } from "react";
 import { useWebSocket } from "react-use-websocket/dist/lib/use-websocket";
 
 import { getChatHistoryFn, sendChatMessageFn } from "@/chat/client/client.ts";
-import type { ChatBody, ChatFrame, ChatHistory, ChatMessage } from "@/chat/shared/schema.ts";
-import { wsUrl } from "@/sync.ts";
+import { ChannelId, ChatMessage } from "@/chat/shared/schema.ts";
+import { wsUrl } from "@/client.ts";
+
+import type { ChatBody, ChatHistory } from "@/chat/shared/schema.ts";
 
 /**
  * Deliberately its own cache key, separate from any game's snapshot key: a chat
@@ -12,13 +15,8 @@ import { wsUrl } from "@/sync.ts";
  */
 export const chatQueryKey = ( channelId: string ) => [ "chat", channelId ];
 
-/**
- * The chat subsystem's one hook. Loads the backlog over HTTP, then keeps it live
- * from the channel's own `/chat/{channelId}` socket — the same
- * `useQuery` + socket-overlay shape the game pages use, but on a wholly separate
- * connection to the `/sync/` one.
- */
-export function useChat( channelId: string ) {
+export function useChat( props: { channelId: string } ) {
+	const channelId = ChannelId.make( props.channelId );
 	const queryClient = useQueryClient();
 	const queryKey = chatQueryKey( channelId );
 
@@ -26,7 +24,6 @@ export function useChat( channelId: string ) {
 		queryKey,
 		queryFn: ( { signal } ) => getChatHistoryFn( channelId, signal ),
 		staleTime: Infinity,
-		// A channel that doesn't exist won't start existing on a retry.
 		retry: false
 	} );
 
@@ -35,22 +32,21 @@ export function useChat( channelId: string ) {
 		{ shouldReconnect: () => true }
 	);
 
-	/** Append unless we already hold it — the sender sees both the POST result and their own frame. */
-	const append = ( message: ChatMessage ) =>
+	const append = useCallback( ( message: ChatMessage ) =>
 		queryClient.setQueryData<ChatHistory>( queryKey, previous => {
 			if ( !previous || previous.messages.some( m => m.id === message.id ) ) {
 				return previous;
 			}
 
 			return { ...previous, messages: [ ...previous.messages, message ] };
-		} );
+		} ), [ queryClient, queryKey ] );
 
 	useEffect( () => {
-		const frame = lastJsonMessage as ChatFrame | null;
-		if ( frame?._tag === "chat/Frame" ) {
-			append( frame.message );
+		if ( lastJsonMessage !== null ) {
+			append( Schema.decodeUnknownSync( ChatMessage )( lastJsonMessage ) );
 		}
-	}, [ lastJsonMessage ] );
+
+	}, [ lastJsonMessage, append ] );
 
 	const send = useMutation( {
 		mutationFn: ( body: ChatBody ) => sendChatMessageFn( channelId, body ),

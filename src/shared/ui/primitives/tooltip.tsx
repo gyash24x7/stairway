@@ -1,4 +1,5 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
+
 import type { ComponentProps } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
@@ -22,7 +23,7 @@ export function TooltipContent( { className, ...props }: ComponentProps<typeof P
 		<TooltipPrimitive.Popup
 			data-slot="tooltip-content"
 			className={ cn(
-				"z-50 overflow-hidden rounded-base border-2 border-inverted-surface bg-background p-3",
+				"z-50 overflow-hidden rounded-base border-2 border-outline bg-background p-3",
 				"text-sm font-base text-neutral-dark animate-in fade-in-0 zoom-in-95",
 				"data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
 				"data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2",

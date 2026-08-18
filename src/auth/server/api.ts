@@ -1,37 +1,33 @@
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
+import { eq } from "drizzle-orm";
+import * as Effect from "effect/Effect";
+import { HttpApiBuilder } from "effect/unstable/httpapi";
+
 import type {
 	AuthenticationResponseJSON,
 	AuthenticatorTransportFuture,
 	RegistrationResponseJSON
 } from "@simplewebauthn/server";
-import * as Effect from "effect/Effect";
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import { eq } from "drizzle-orm";
 
 import { StairwayAPI } from "@/api.ts";
+import { SessionService } from "@/auth/server/session.ts";
+import { WebAuthnService } from "@/auth/server/webauthn.ts";
 import {
 	AuthenticationFailed,
 	AuthInfo,
 	EmailTaken,
-	RegistrationFailed
+	LoginFlow,
+	RegistrationFailed,
+	RegistrationFlow,
+	UserId
 } from "@/auth/shared/schema.ts";
-import { RegistrationFlow } from "@/auth/shared/schema.ts";
-import { LoginFlow } from "@/auth/shared/schema.ts";
 import { passkeys, users } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
-import { SessionService } from "@/auth/server/session.ts";
-import { WebAuthnService } from "@/auth/server/webauthn.ts";
+import { generateId } from "@/shared/utils/generator.ts";
 
-const newFlowId = () => crypto.randomUUID();
 
-// --- HTTP Api implementation -------------------------------------------------
+// --- Auth Http Api Implementation -------------------------------------------------
 
-/**
- * In-app passkey (WebAuthn) auth over the single `DrizzleDatabase` client. Each
- * ceremony is a begin (`/options`, stores a challenge keyed by `flowId`) + finish
- * (`/verify`, consumes the challenge, mutates the DB, issues the session cookie).
- * DB faults are defects (`orDie`) — the endpoints only surface auth-domain errors.
- */
 export const AuthApiLive = HttpApiBuilder.group( StairwayAPI, "auth", handlers =>
 	Effect.gen( function* () {
 		const db = yield* Database;
@@ -49,7 +45,7 @@ export const AuthApiLive = HttpApiBuilder.group( StairwayAPI, "auth", handlers =
 
 				const options = yield* webauthn.getRegisterOptions( payload.email );
 				const flow = RegistrationFlow.make( {
-					id: newFlowId(),
+					id: generateId(),
 					challenge: options.challenge,
 					name: payload.name,
 					email: payload.email
@@ -111,7 +107,7 @@ export const AuthApiLive = HttpApiBuilder.group( StairwayAPI, "auth", handlers =
 				yield* db.insert( passkeys ).values( passkey ).pipe( Effect.orDie );
 
 				const authInfo = AuthInfo.make( {
-					id: user.id,
+					id: UserId.make( user.id ),
 					name: user.name,
 					avatar: user.image ?? ""
 				} );
@@ -123,7 +119,7 @@ export const AuthApiLive = HttpApiBuilder.group( StairwayAPI, "auth", handlers =
 			.handle( "loginOptions", Effect.fn( function* () {
 				const options = yield* webauthn.getLoginOptions();
 				const flow = LoginFlow.make( {
-					id: newFlowId(),
+					id: generateId(),
 					challenge: options.challenge
 				} );
 
@@ -195,7 +191,7 @@ export const AuthApiLive = HttpApiBuilder.group( StairwayAPI, "auth", handlers =
 					.pipe( Effect.orDie );
 
 				const authInfo = AuthInfo.make( {
-					id: user.id,
+					id: UserId.make( user.id ),
 					name: user.name,
 					avatar: user.image ?? ""
 				} );

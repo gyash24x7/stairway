@@ -1,21 +1,34 @@
-import { ErrorState } from "@/shared/ui/components/error-state.tsx";
-import { CouchCanvas } from "@/shared/ui/couch/couch-canvas.tsx";
-import { useTableSnapshot } from "@/shared/ui/couch/use-table-snapshot.ts";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { getTableStateFn } from "@/games/kingdomino/client/client.ts";
-import { KingdominoTableProvider } from "@/games/kingdomino/client/context.tsx";
+import { useAuth } from "@/auth/client/use-auth.tsx";
+import { kingdominoApi } from "@/games/kingdomino/client/client.ts";
+import { KingdominoProvider } from "@/games/kingdomino/client/context.tsx";
 import { CouchView } from "@/games/kingdomino/client/couch-view.tsx";
+import { ErrorState } from "@/shared/ui/components/error-state.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { CouchCanvas } from "@/swish/client/couch-canvas.tsx";
+import { CouchSignedOut } from "@/swish/client/couch-shell.tsx";
+import { useTableSnapshot } from "@/swish/client/use-table-snapshot.ts";
+import { GameId } from "@/swish/shared/schema.ts";
 
 /**
  * The shared-screen page. The root layout's chrome is off for this route, so the
  * loading and error states have to fill the viewport themselves.
  */
-export function KingdominoCouchPage( { gameId }: { gameId: string } ) {
+export function KingdominoCouchPage( props: { gameId: string } ) {
+	const gameId = GameId.make( props.gameId );
+	const { authInfo, isLoading: isAuthLoading } = useAuth();
+
 	const { data, isLoading, isError, error, refetch } = useTableSnapshot( {
 		gameName: "kingdomino",
 		gameId,
-		getTableState: getTableStateFn
+		getTableState: kingdominoApi.getView,
+		enabled: !!authInfo
 	} );
+
+	// The read is session-gated, so a television nobody has signed in on gets the
+	// instruction rather than a 401 rendered as an error.
+	if ( !isAuthLoading && !authInfo ) {
+		return <CouchSignedOut/>;
+	}
 
 	if ( isError ) {
 		return (
@@ -43,8 +56,8 @@ export function KingdominoCouchPage( { gameId }: { gameId: string } ) {
 	}
 
 	return (
-		<KingdominoTableProvider data={ data }>
+		<KingdominoProvider data={ data } gameId={ gameId }>
 			<CouchView/>
-		</KingdominoTableProvider>
+		</KingdominoProvider>
 	);
 }

@@ -1,45 +1,43 @@
 import * as Cloudflare from "alchemy/Cloudflare";
-import * as Config from "effect/Config";
 import * as Effect from "effect/Effect";
+import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
-import * as Etag from "effect/unstable/http/Etag";
-import * as HttpPlatform from "effect/unstable/http/HttpPlatform";
-import * as HttpRouter from "effect/unstable/http/HttpRouter";
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import {
+	Etag,
+	HttpPlatform,
+	HttpRouter,
+	HttpServerRequest,
+	HttpServerResponse
+} from "effect/unstable/http";
+import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
 import { AuthApiLive } from "@/auth/server/api.ts";
 import { AuthMiddlewareLive } from "@/auth/server/middleware.ts";
-import { ChatApiLive, ChatChannelDO } from "@/chat/server/api.ts";
-import { CallbreakApiLive, CallbreakEngineDO } from "@/games/callbreak/server/api.ts";
-import { FishApiLive, FishEngineDO } from "@/games/fish/server/api.ts";
-import { KingdominoApiLive, KingdominoEngineDO } from "@/games/kingdomino/server/api.ts";
-import { SplendorApiLive, SplendorEngineDO } from "@/games/splendor/server/api.ts";
-import { TicTacToeApiLive, TicTacToeEngineDO } from "@/games/tictactoe/server/api.ts";
-import { WordleApiLive, WordleEngineDO } from "@/games/wordle/server/api.ts";
-import { WebAuthnStoreLive } from "@/platform/kv/webauthn.ts";
-import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { SessionServiceLive } from "@/auth/server/session.ts";
-import { WebAuthnServiceLive } from "@/auth/server/webauthn.ts";
-import { GameChannel } from "@/platform/do/sync.ts";
+import { RpConfig, WebAuthnServiceLive } from "@/auth/server/webauthn.ts";
+import { ChatApiLive } from "@/chat/server/api.ts";
+import { CallbreakApiLive, CallbreakGame } from "@/games/callbreak/server/api.ts";
+import { FishApiLive, FishGame } from "@/games/fish/server/api.ts";
+import { KingdominoApiLive, KingdominoGame } from "@/games/kingdomino/server/api.ts";
+import { SplendorApiLive, SplendorGame } from "@/games/splendor/server/api.ts";
+import { TicTacToeApiLive, TicTacToeGame } from "@/games/tictactoe/server/api.ts";
+import { WordleApiLive, WordleGame } from "@/games/wordle/server/api.ts";
+import { ChatChannel } from "@/platform/do/chat.ts";
+import { SessionStoreLive } from "@/platform/kv/session.ts";
+import { WebAuthnStoreLive } from "@/platform/kv/webauthn.ts";
 
-const HttpPlatformStub = Layer.succeed( HttpPlatform.HttpPlatform, {
-	fileResponse: () => Effect.die( "HttpPlatform.fileResponse not supported" ),
-	fileWebResponse: () => Effect.die( "HttpPlatform.fileWebResponse not supported" )
-} );
 
 const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
+	Layer.provide( AuthApiLive ),
+	Layer.provide( ChatApiLive ),
 	Layer.provide( CallbreakApiLive ),
 	Layer.provide( FishApiLive ),
 	Layer.provide( KingdominoApiLive ),
 	Layer.provide( SplendorApiLive ),
 	Layer.provide( TicTacToeApiLive ),
 	Layer.provide( WordleApiLive ),
-	Layer.provide( AuthApiLive ),
-	Layer.provide( ChatApiLive ),
 	Layer.provide( AuthMiddlewareLive ),
 	Layer.provide( SessionServiceLive ),
 	Layer.provide( WebAuthnServiceLive ),
@@ -49,30 +47,30 @@ const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
 	Layer.provide( Cloudflare.KV.ReadWriteNamespaceBinding )
 );
 
-const ApiWorker = Cloudflare.Worker(
+
+export default Cloudflare.Worker(
 	"ApiWorker",
 	{ main: import.meta.url, compatibility: { flags: [ "nodejs_compat" ] } },
 	Effect.gen( function* () {
-		const webOrigin = yield* Config.string( "WEBAUTHN_RP_ORIGIN" );
+		const { rpOrigin } = yield* RpConfig;
 
-		yield* Effect.all( [
-			WordleEngineDO,
-			TicTacToeEngineDO,
-			SplendorEngineDO,
-			KingdominoEngineDO,
-			FishEngineDO,
-			CallbreakEngineDO
-		] );
-
-		const channels = yield* GameChannel;
-		const chatChannels = yield* ChatChannelDO;
+		const channels = {
+			chat: yield* ChatChannel,
+			callbreak: yield* CallbreakGame,
+			fish: yield* FishGame,
+			kingdomino: yield* KingdominoGame,
+			splendor: yield* SplendorGame,
+			wordle: yield* WordleGame,
+			tictactoe: yield* TicTacToeGame
+		};
 
 		const ApiFetch = yield* HttpRouter.toHttpEffect(
 			ApiLive.pipe(
-				Layer.provide( [ Etag.layer, HttpPlatformStub, Path.layer ] ),
+				Layer.provide( [ Etag.layer, HttpPlatform.layer, Path.layer ] ),
+				Layer.provide( FileSystem.layerNoop( {} ) ),
 				Layer.provide(
 					HttpRouter.cors( {
-						allowedOrigins: [ webOrigin ],
+						allowedOrigins: [ rpOrigin ],
 						allowedMethods: [ "GET", "POST", "OPTIONS" ],
 						allowedHeaders: [ "Content-Type", "traceparent", "tracestate", "b3" ],
 						credentials: true
@@ -85,8 +83,13 @@ const ApiWorker = Cloudflare.Worker(
 			fetch: Effect.gen( function* () {
 				const request = yield* HttpServerRequest.HttpServerRequest;
 				const url = new URL( request.url, "http://sync" );
+				const [ _, prefix, name ] = url.pathname.split( "/" );
 
-				if ( url.pathname.startsWith( "/sync/" ) ) {
+				const channel = prefix && Object.hasOwn( channels, prefix )
+					? channels[ prefix as keyof typeof channels ]
+					: undefined;
+
+				if ( channel ) {
 					if ( request.headers[ "upgrade" ] !== "websocket" ) {
 						return HttpServerResponse.text(
 							"Expected Upgrade: websocket",
@@ -94,33 +97,11 @@ const ApiWorker = Cloudflare.Worker(
 						);
 					}
 
-					// /sync/{gameName}/{gameId}?playerId={playerId}
-					const [ _, _sync, gameName, gameId ] = url.pathname.split( "/" );
-					if ( !gameName || !gameId ) {
-						return HttpServerResponse.text( "Bad sync path", { status: 400 } );
+					if ( !name ) {
+						return HttpServerResponse.text( `Bad ${ prefix } path`, { status: 400 } );
 					}
 
-					const channel = `${ gameName }:${ gameId }`;
-					return yield* channels.getByName( channel ).fetch( request );
-				}
-
-				// The chat socket. The REST surface is `/api/chat/...` (the whole
-				// HttpApi is prefixed `/api`), so this only ever catches upgrades.
-				if ( url.pathname.startsWith( "/chat/" ) ) {
-					if ( request.headers[ "upgrade" ] !== "websocket" ) {
-						return HttpServerResponse.text(
-							"Expected Upgrade: websocket",
-							{ status: 426 }
-						);
-					}
-
-					// /chat/{channelId}
-					const [ _, _chat, channelId ] = url.pathname.split( "/" );
-					if ( !channelId ) {
-						return HttpServerResponse.text( "Bad chat path", { status: 400 } );
-					}
-
-					return yield* chatChannels.getByName( channelId ).fetch( request );
+					return yield* channel.getByName( name ).fetch( request );
 				}
 
 				return yield* ApiFetch;
@@ -128,5 +109,3 @@ const ApiWorker = Cloudflare.Worker(
 		};
 	} )
 );
-
-export default ApiWorker;

@@ -1,44 +1,41 @@
+import * as Match from "effect/Match";
+import { castDraft, produce } from "immer";
+
+import { decideFishMove } from "@/games/fish/server/bot/policy.ts";
+import { getClaimedBooks, getMetrics, isGameComplete } from "@/games/fish/server/utils.ts";
 import {
+	Ask,
 	AskCardInput,
 	BookClaimed,
 	CardAsked,
+	Claim,
 	ClaimBookInput,
-	CreateTeamsInput,
 	FishConfig,
 	FishEvent,
-	FishPlayerView,
 	FishState,
-	FishTableView,
 	FishView,
 	HandsDealt,
-	PlayerSeated,
-	TeamsCreated,
+	Transfer,
 	TransferTurnInput,
-	TurnTransferred,
-	WinningTeamDecided
+	TurnTransferred
 } from "@/games/fish/shared/schema.ts";
 import {
+	canTransferTurn,
+	claimsOf,
 	getBookForCard,
 	getCardsOfBook,
-	getClaimedBooks,
-	getOpponents,
-	getTeammates
+	getTeamScores
 } from "@/games/fish/shared/utils.ts";
-import type { CardId } from "@/shared/cards/schema.ts";
 import { CARD_RANKS, generateDeck, generateHands, getCardRank } from "@/shared/cards/utils.ts";
-import { makeEngine } from "@/shared/swish/engine.ts";
-import { InvalidMove } from "@/shared/swish/errors.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
-import { makeStandings } from "@/shared/swish/standings.ts";
-import { defineView } from "@/shared/swish/views.ts";
 import { remove } from "@/shared/utils/array.ts";
-import { generateId } from "@/shared/utils/generator.ts";
-import { apply } from "@/games/fish/server/utils.ts";
-import { decideFishMove } from "@/games/fish/server/bot/policy.ts";
+import { makeEngine } from "@/swish/server/engine.ts";
+import { playerIdFor } from "@/swish/server/utils.ts";
+import { InvalidMove, Standings } from "@/swish/shared/schema.ts";
+import { areTeammates, membersOf, opponentsOf, teamMatesOf } from "@/swish/shared/teams.ts";
 
-/** Whether a player has been seated (has playerData). */
-const playerSeated = ( state: typeof FishState.Type, pid: PlayerId ) =>
-	state.playerData[ pid ] !== undefined;
+import type { CardId } from "@/shared/cards/schema.ts";
+import type { PlayerId, TeamId } from "@/swish/shared/schema.ts";
+
 
 // --- Engine ----------------------------------------------------------------
 
@@ -50,150 +47,151 @@ export const fish = makeEngine( {
 		events: FishEvent,
 		view: FishView,
 		moves: {
-			createTeams: CreateTeamsInput,
 			askCard: AskCardInput,
 			claimBook: ClaimBookInput,
 			transferTurn: TransferTurnInput
 		}
 	},
 
-	setup: () => ( {
-		playerData: {},
-		teams: {},
-		hands: {},
-		cardCounts: {},
-		cardLocations: {},
-		askHistory: [],
-		claimHistory: [],
-		transferHistory: []
-	} ),
+	setup: () => FishState.make( { hands: {}, cardCounts: {}, moves: [] } ),
 
-	apply,
+	apply: ( state, event ) =>
+		produce( state, ( draft ) => {
+			Match.value( event ).pipe(
+				Match.tag( "fish/ev/HandsDealt", ( e ) => {
+					draft.hands = castDraft( e.hands );
+					draft.cardCounts = castDraft( e.cardCounts );
+				} ),
 
-	endIf: ( { state, config } ) => getClaimedBooks( state ).length === config.books.length,
+				Match.tag( "fish/ev/CardAsked", ( { ask } ) => {
+					if ( ask.success ) {
+						const askedPlayerHand = draft.hands[ ask.from ] ?? [];
+						draft.hands[ ask.from ] = askedPlayerHand.filter( c => c !== ask.cardId );
+						draft.cardCounts[ ask.from ] = ( draft.cardCounts[ ask.from ] ?? 0 ) - 1;
 
-	/**
-	 * Fish is played in teams, so a seat's result is its *team's* result: everyone
-	 * ranks on their team's book count and carries the team name. Teammates
-	 * therefore always tie, which is why the ranking is `dense` — with two teams of
-	 * three the losing side places 2nd, not 4th. `winner` is left unset: a fish
-	 * victory belongs to a team, and no single seat is the outright winner (the
-	 * winning team is `state.winningTeam`, decided in `onEnd`).
-	 */
-	resolveResults: ( { state, context } ) => {
-		const teamOf = ( id: PlayerId ) => state.teams[ state.playerData[ id ]?.teamId ?? "" ];
-		const standings = makeStandings( {
-			players: context.players,
-			ties: "dense",
-			compare: ( a, b ) => ( teamOf( b )?.score ?? 0 ) - ( teamOf( a )?.score ?? 0 ),
-			score: ( id ) => teamOf( id )?.score ?? 0,
-			team: ( id ) => teamOf( id )?.name
+						( draft.hands[ ask.playerId ] ??= [] ).push( ask.cardId );
+						draft.cardCounts[ ask.playerId ] = ( draft.cardCounts[ ask.playerId ] ?? 0 ) + 1;
+					}
+
+					draft.moves.push( castDraft( ask ) );
+				} ),
+
+				Match.tag( "fish/ev/BookClaimed", ( { claim } ) => {
+					const allBookCards = getCardsOfBook( claim.book );
+					for ( const [ pid, hand ] of Object.entries( draft.hands ) ) {
+						draft.hands[ pid as PlayerId ] = hand.filter( c => !allBookCards.includes( c ) );
+					}
+
+					for ( const card of allBookCards ) {
+						const owner = claim.correctClaim[ card ];
+						if ( owner ) {
+							draft.cardCounts[ owner ] = ( draft.cardCounts[ owner ] ?? 0 ) - 1;
+						}
+					}
+
+					draft.moves.push( castDraft( claim ) );
+				} ),
+
+				Match.tag( "fish/ev/TurnTransferred", ( e ) => {
+					draft.moves.push( castDraft( e.transfer ) );
+				} ),
+
+				Match.exhaustive
+			);
+		} ),
+
+	endIf: ( { state, config } ) => isGameComplete( state, config.books ),
+
+	resolveResults: ( { state, config, context } ) => {
+		const scores = getTeamScores( claimsOf( state ), context, config.teams );
+
+		// Stable, so sides level on books stay in the order the config declares them.
+		const ordered = [ ...config.teams ].sort( ( a, b ) => scores[ b ]! - scores[ a ]! );
+
+		const ranks = new Map<TeamId, number>();
+		let rank = 0;
+		let previous: number | undefined;
+
+		for ( const team of ordered ) {
+			if ( scores[ team ] !== previous ) {
+				rank = rank + 1;
+				previous = scores[ team ];
+			}
+
+			ranks.set( team, rank );
+		}
+
+		const ranking = ordered.flatMap( team => membersOf( context, team ).map( playerId => ( {
+			playerId,
+			rank: ranks.get( team )!,
+			score: scores[ team ]!,
+			team
+		} ) ) );
+
+		const teamRanking = ordered.map(
+			team => ( { team, rank: ranks.get( team )!, score: scores[ team ]! } )
+		);
+
+		const [ top, runnerUp ] = teamRanking;
+		const drawn = top === undefined || top.score === runnerUp?.score;
+
+		return Standings.make( {
+			ranking,
+			teamRanking,
+			...( drawn ? {} : { winningTeam: top.team } )
 		} );
-
-		return { ranking: standings.ranking, winner: undefined };
 	},
 
-	view: defineView( {
-		table: ( { state } ) => {
-			const { hands: _hands, ...rest } = state;
-			return FishTableView.make( rest );
-		},
-		player: ( { state }, id ) => {
-			const { hands: _hands, ...rest } = state;
-			return FishPlayerView.make( {
-				...rest,
-				playerId: id,
-				hand: [ ...( state.hands[ id ] ?? [] ) ]
-			} );
-		}
-	} ),
+	/**
+	 * The table as one audience sees it: everything public, plus that seat's own
+	 * cards — and, once the last book has been declared, how everyone played.
+	 *
+	 * The summary is folded here rather than stamped into the state at completion,
+	 * so it stays a projection of the histories: it cannot drift from them, and it
+	 * costs nothing on the turns nobody is reading it. It rides the same envelope
+	 * as everything else, so the archive keeps it too.
+	 */
+	view: ( { state, config, context }, audience ) => {
+		const { hands, ...rest } = state;
+		const playerId = playerIdFor( audience );
+		const hand = playerId ? hands[ playerId ] ?? [] : [];
+
+		const metrics = isGameComplete( state, config.books )
+			? getMetrics( state, context.players )
+			: undefined;
+
+		return FishView.make( { ...rest, playerId, hand, metrics } );
+	},
 
 	hooks: {
-		// A joining player's `playerData` seat is created here (mirrors old onJoin).
-		onJoin: ( { state }, playerId ) =>
-			state.playerData[ playerId ] ? [] : [ PlayerSeated.make( { playerId } ) ],
+		onStart: ( { config, context }, rng ) => {
+			let deck = generateDeck( rng( "deal" ).next );
+			if ( config.deckType === 48 ) {
+				deck = remove( card => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
+			}
 
-		onEnd: ( { state } ) => {
-			const teamIds = Object.keys( state.teams );
-			if ( teamIds.length === 0 ) {
+			const dealt = generateHands( deck, context.players.length );
+			if ( dealt.length !== context.players.length ) {
 				return [];
 			}
 
-			const best = teamIds.reduce( ( acc, tid ) =>
-				state.teams[ tid ].score > state.teams[ acc ].score ? tid : acc
-			);
+			const hands: Record<PlayerId, CardId[]> = {};
+			const cardCounts: Record<PlayerId, number> = {};
 
-			return [ WinningTeamDecided.make( { teamId: best } ) ];
+			for ( let i = 0; i < context.players.length; i++ ) {
+				hands[ context.players[ i ] ] = dealt[ i ];
+				cardCounts[ context.players[ i ] ] = dealt[ i ].length;
+			}
+
+			return [ HandsDealt.make( { hands, cardCounts } ) ];
 		}
 	},
 
-	initialPhase: "TEAM_CONFIG",
-
 	moves: {
-		createTeams: {
-			phase: "TEAM_CONFIG",
-
-			validate: ( { state, config }, _playerId, input ) => {
-				if ( Object.keys( state.teams ).length > 0 ) {
-					return new InvalidMove( {
-						move: "createTeams",
-						reason: "Teams have already been created!"
-					} );
-				}
-
-				const teamCount = Object.keys( input.teams ).length;
-				if ( teamCount !== config.teamCount ) {
-					return new InvalidMove( {
-						move: "createTeams",
-						reason: "Team count does not match the game config!"
-					} );
-				}
-
-				const playersSpecified = new Set( Object.values( input.teams ).flat() );
-				if ( playersSpecified.size !== config.playerCount ) {
-					return new InvalidMove( {
-						move: "createTeams",
-						reason: "Not all players are divided into teams!"
-					} );
-				}
-
-				const playersPerTeam = config.playerCount / teamCount;
-				for ( const teamName of Object.keys( input.teams ) ) {
-					const playerIds: ReadonlyArray<PlayerId> = input.teams[ teamName ] ?? [];
-					if ( playerIds.length !== playersPerTeam ) {
-						return new InvalidMove( {
-							move: "createTeams",
-							reason: `Invalid number of players in team ${ teamName }!`
-						} );
-					}
-
-					for ( const pid of playerIds ) {
-						if ( !playerSeated( state, pid ) ) {
-							return new InvalidMove( {
-								move: "createTeams",
-								reason: `Player ${ pid } is not part of the game!`
-							} );
-						}
-					}
-				}
-
-				return undefined;
-			},
-
-			execute: ( _data, _playerId, input ) =>
-				[
-					TeamsCreated.make( {
-						teams: Object.keys( input.teams ).map(
-							name => ( { id: generateId(), name, members: input.teams[ name ] } )
-						)
-					} )
-				]
-		},
 
 		askCard: {
-			phase: "PLAY",
 
-			validate: ( { state, config }, playerId, input ) => {
+			validate: ( { state, config, context }, playerId, input ) => {
 				const hand = state.hands[ playerId ];
 				if ( !hand || hand.length === 0 ) {
 					return new InvalidMove( {
@@ -202,7 +200,7 @@ export const fish = makeEngine( {
 					} );
 				}
 
-				const opponents = getOpponents( state.teams, playerId );
+				const opponents = opponentsOf( context, playerId );
 				if ( !opponents.includes( input.from ) ) {
 					return new InvalidMove( {
 						move: "askCard",
@@ -210,8 +208,15 @@ export const fish = makeEngine( {
 					} );
 				}
 
+				if ( ( state.hands[ input.from ] ?? [] ).length === 0 ) {
+					return new InvalidMove( {
+						move: "askCard",
+						reason: "That player has no cards left!"
+					} );
+				}
+
 				const book = getBookForCard( input.cardId, config.type );
-				if ( !book ) {
+				if ( !book || !config.books.includes( book ) ) {
 					return new InvalidMove( {
 						move: "askCard",
 						reason: "That card is not in this game's deck!"
@@ -244,14 +249,13 @@ export const fish = makeEngine( {
 			},
 
 			execute: ( { state }, playerId, input ) => {
-				const timestamp = Date.now();
 				const success = ( state.hands[ input.from ] ?? [] ).includes( input.cardId );
-				return [ CardAsked.make( { success, playerId, timestamp, ...input } ) ];
+				const ask = Ask.make( { success, playerId, ...input } );
+				return [ CardAsked.make( { ask } ) ];
 			}
 		},
 
 		claimBook: {
-			phase: "PLAY",
 
 			validate: ( { state, config, context }, playerId, input ) => {
 				const claimedCards = Object.keys( input.claim ) as CardId[];
@@ -262,10 +266,12 @@ export const fish = makeEngine( {
 					} );
 				}
 
-				// A card outside this variant's deck (a 7 in a CANADIAN game) belongs to
-				// no book. Reject it up front: a `Set` of `undefined` would otherwise
-				// pass the same-book check below and crash on the lookup.
-				if ( claimedCards.some( c => !getBookForCard( c, config.type ) ) ) {
+				const invalidCard = claimedCards.some( c => {
+					const cardBook = getBookForCard( c, config.type );
+					return !cardBook || !config.books.includes( cardBook );
+				} );
+
+				if ( invalidCard ) {
 					return new InvalidMove( {
 						move: "claimBook",
 						reason: "Claim contains a card that is not in this game's deck!"
@@ -288,8 +294,6 @@ export const fish = makeEngine( {
 					} );
 				}
 
-				// You can only call a book you are actually in: the claimer must hold
-				// at least one of its cards, exactly as `askCard` requires.
 				const hand = state.hands[ playerId ] ?? [];
 				if ( !hand.some( c => getBookForCard( c, config.type ) === book ) ) {
 					return new InvalidMove( {
@@ -323,17 +327,21 @@ export const fish = makeEngine( {
 							reason: `Player ${ pid } is not in this game!`
 						} );
 					}
+
+					if ( pid && pid !== playerId && !areTeammates( context, playerId, pid ) ) {
+						return new InvalidMove( {
+							move: "claimBook",
+							reason: "You can only claim cards held by your own team!"
+						} );
+					}
 				}
 
 				return undefined;
 			},
 			execute: ( { state, config }, playerId, input ) => {
-				const timestamp = Date.now();
 				const claimedCards = Object.keys( input.claim ) as CardId[];
-				// `validate` has already rejected any card without a book in this variant.
 				const book = getBookForCard( claimedCards[ 0 ], config.type )!;
 				const allBookCards = getCardsOfBook( book );
-				const playerTeamId = state.playerData[ playerId ].teamId;
 
 				const correctClaim: Record<string, PlayerId> = {};
 				for ( const card of allBookCards ) {
@@ -349,41 +357,23 @@ export const fish = makeEngine( {
 					input.claim[ card ] === correctClaim[ card ]
 				);
 
-				const winningTeamId = success
-					? playerTeamId
-					: Object.keys( state.teams ).find( tid => tid !== playerTeamId )!;
-
-				return [
-					BookClaimed.make( {
-						success,
-						playerId,
-						book,
-						winningTeamId,
-						correctClaim,
-						actualClaim: input.claim,
-						timestamp
-					} )
-				];
+				const actualClaim = input.claim;
+				const claim = Claim.make( { success, playerId, book, actualClaim, correctClaim } );
+				return [ BookClaimed.make( { claim } ) ];
 			}
 		},
 
 		transferTurn: {
-			phase: "PLAY",
 
-			validate: ( { state }, playerId, input ) => {
-				const lastClaimWasSuccessful = state.lastMoveType === "claim"
-					&& state.claimHistory.length > 0
-					&& state.claimHistory[ 0 ].success
-					&& state.claimHistory[ 0 ].playerId === playerId;
-
-				if ( !lastClaimWasSuccessful ) {
+			validate: ( { state, context }, playerId, input ) => {
+				if ( !canTransferTurn( state, playerId ) ) {
 					return new InvalidMove( {
 						move: "transferTurn",
 						reason: "You can only transfer turn after a successful claim!"
 					} );
 				}
 
-				const teamMates = getTeammates( state.teams, playerId );
+				const teamMates = teamMatesOf( context, playerId );
 				if ( !teamMates.includes( input.transferTo ) ) {
 					return new InvalidMove( {
 						move: "transferTurn",
@@ -401,99 +391,68 @@ export const fish = makeEngine( {
 				return undefined;
 			},
 			execute: ( _data, playerId, input ) => {
-				const timestamp = Date.now();
-				return [ TurnTransferred.make( { playerId, transferTo: input.transferTo, timestamp } ) ];
+				const transfer = Transfer.make( { playerId, transferTo: input.transferTo } );
+				return [ TurnTransferred.make( { transfer } ) ];
 			}
 		}
 	},
 
-	phases: {
-		TEAM_CONFIG: {
-			moves: [ "createTeams" ],
-			resolveNextPlayer: ( { context } ) => context.currentPlayer,
-			endIf: ( { state } ) => Object.keys( state.teams ).length > 0,
-			resolveNextPhase: () => "PLAY"
-		},
 
-		PLAY: {
-			moves: [ "askCard", "claimBook", "transferTurn" ],
+	/**
+	 * Who acts next: a hit keeps the turn, a miss hands it to whoever was asked, a
+	 * good declaration keeps it, a bad one gives it to the other side, and a
+	 * transfer sends it where it was addressed.
+	 *
+	 * It reads the move the engine just handed it rather than the history, and
+	 * the newest history entry: the acting player and the move are the arguments,
+	 * so only the *outcome* has to be looked up — and looking it up by move keeps
+	 * the two from ever disagreeing about which move this was.
+	 */
+	resolveNextPlayer: ( { state, context }, playerId, moveType ) => {
+		const holds = ( pid: PlayerId ) => ( state.hands[ pid ]?.length ?? 0 ) > 0;
 
-			// The deck shuffle/deal is nondeterministic — done here and captured in
-			// the HandsDealt event so replay is exact.
-			onEnter: ( { config, context, rng } ) => {
-				let deck = generateDeck( rng( "deal" ).next );
-				if ( config.deckType === 48 ) {
-					deck = remove( card => getCardRank( card ) === CARD_RANKS.SEVEN, deck );
+		let nextPlayer: PlayerId;
+
+		// The move that just landed is the last one in the history, whichever kind
+		// it was — which is the whole reason the three lists became one.
+		const last = state.moves.at( -1 );
+
+		switch ( moveType ) {
+			case "askCard": {
+				const ask = last?._tag === "fish/Ask" ? last : undefined;
+				nextPlayer = ask?.success === false ? ask.from : playerId;
+				break;
+			}
+
+			case "claimBook": {
+				const claim = last?._tag === "fish/Claim" ? last : undefined;
+				if ( claim?.success !== false ) {
+					nextPlayer = playerId;
+					break;
 				}
 
-				const dealt = generateHands( deck, context.players.length );
-				const hands: Record<PlayerId, CardId[]> = {};
-				const cardCounts: Record<PlayerId, number> = {};
+				nextPlayer = opponentsOf( context, playerId ).find( holds ) ?? context.players[ 0 ];
+				break;
+			}
 
-				for ( let i = 0; i < context.players.length; i++ ) {
-					hands[ context.players[ i ] ] = dealt[ i ];
-					cardCounts[ context.players[ i ] ] = dealt[ i ].length;
-				}
+			case "transferTurn": {
+				const transfer = last?._tag === "fish/Transfer" ? last : undefined;
+				nextPlayer = transfer?.transferTo ?? playerId;
+				break;
+			}
 
-				const cardLocations: Record<string, PlayerId[]> = {};
-				for ( const card of deck ) {
-					cardLocations[ card ] = [ ...context.players ];
-				}
-
-				return [ HandsDealt.make( { hands, cardCounts, cardLocations } ) ];
-			},
-
-			resolveNextPlayer: ( { state, context } ) => {
-				let nextPlayer: PlayerId;
-
-				switch ( state.lastMoveType ) {
-					case "ask": {
-						const lastAsk = state.askHistory[ 0 ];
-						nextPlayer = lastAsk.success ? lastAsk.playerId : lastAsk.from;
-						break;
-					}
-					case "claim": {
-						const lastClaim = state.claimHistory[ 0 ];
-						if ( lastClaim.success ) {
-							nextPlayer = lastClaim.playerId;
-							break;
-						}
-
-						const opponents = getOpponents( state.teams, lastClaim.playerId );
-						nextPlayer = opponents.find( pid => ( state.hands[ pid ].length ?? 0 ) > 0 )
-							?? context.players[ 0 ];
-
-						break;
-					}
-					case "transfer": {
-						const lastTransfer = state.transferHistory[ 0 ];
-						nextPlayer = lastTransfer.transferTo;
-						break;
-					}
-					default: {
-						nextPlayer = context.currentPlayer;
-					}
-				}
-
-				if ( ( state.hands[ nextPlayer ]?.length ?? 0 ) === 0 ) {
-					const teammateWithCards = getTeammates( state.teams, nextPlayer ).find(
-						pid => ( state.hands[ pid ]?.length ?? 0 ) > 0
-					);
-
-					if ( teammateWithCards ) {
-						return teammateWithCards;
-					}
-
-					return context.players.find( pid => ( state.hands[ pid ]?.length ?? 0 ) > 0 )
-						?? nextPlayer;
-				}
-
-				return nextPlayer;
-			},
-
-			endIf: () => false,
-			resolveNextPhase: () => "PLAY"
+			default: {
+				nextPlayer = context.currentPlayer;
+			}
 		}
+
+		if ( !holds( nextPlayer ) ) {
+			return teamMatesOf( context, nextPlayer ).find( holds )
+				?? context.players.find( holds )
+				?? nextPlayer;
+		}
+
+		return nextPlayer;
 	},
 
 	botMove: decideFishMove

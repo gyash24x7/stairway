@@ -1,19 +1,20 @@
 import { useNavigate } from "@tanstack/react-router";
 import { HomeIcon } from "lucide-react";
+
 import type { ReactNode } from "react";
 
+import { Logo } from "@/shared/ui/components/logo.tsx";
+import { ThemeSwitcher } from "@/shared/ui/components/theme-switcher.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import { Separator } from "@/shared/ui/primitives/separator.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { Logo } from "@/shared/ui/components/logo.tsx";
-import { ThemeSwitcher } from "@/shared/ui/components/theme-switcher.tsx";
 
-export function Navbar( props: { children: ReactNode; } ) {
+export function Navbar( props: { children: ReactNode } ) {
 	const navigate = useNavigate();
 	return (
 		<div
 			className={ cn(
-				"border-b-2 border-inverted-surface fixed z-1 left-0 right-0",
+				"border-b-2 border-outline fixed z-1 left-0 right-0",
 				"bg-background px-2 md:px-4 py-1 md:py-2 flex justify-center"
 			) }
 		>

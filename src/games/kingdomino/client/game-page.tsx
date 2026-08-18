@@ -1,21 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "@/auth/client/use-auth.tsx";
-import { ErrorState } from "@/shared/ui/components/error-state.tsx";
-import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { getKingdominoStateFn } from "@/games/kingdomino/client/client.ts";
+import { useGameSync } from "@/client.ts";
+import { kingdominoApi } from "@/games/kingdomino/client/client.ts";
 import { KingdominoProvider } from "@/games/kingdomino/client/context.tsx";
 import { GameView } from "@/games/kingdomino/client/game-view.tsx";
-import { useGameSync } from "@/sync.ts";
+import { ErrorState } from "@/shared/ui/components/error-state.tsx";
+import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
+import { GameId } from "@/swish/shared/schema.ts";
 
-export function KingdominoGamePage( { gameId }: { gameId: string } ) {
+export function KingdominoGamePage( props: { gameId: string } ) {
+	const gameId = GameId.make( props.gameId );
 	const { authInfo } = useAuth();
 
 	const queryKey = [ "kingdomino", "getState", gameId ];
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => getKingdominoStateFn( gameId, signal )
+		queryFn: ( { signal } ) => kingdominoApi.getView( gameId, signal )
 	} );
 
 	useGameSync( { gameName: "kingdomino", gameId, playerId: authInfo!.id, queryKey } );
@@ -36,7 +38,7 @@ export function KingdominoGamePage( { gameId }: { gameId: string } ) {
 	}
 
 	return (
-		<KingdominoProvider data={ data }>
+		<KingdominoProvider data={ data } gameId={ gameId }>
 			<GameView/>
 		</KingdominoProvider>
 	);

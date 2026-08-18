@@ -1,18 +1,19 @@
 import { motion } from "framer-motion";
 
-import type { PlayerData } from "@/games/kingdomino/shared/schema.ts";
-import type { PlayerInfo } from "@/shared/swish/schema.ts";
+import { RSmallBoard } from "@/games/kingdomino/client/board.tsx";
 import { CounterTween } from "@/shared/ui/components/counter-tween.tsx";
 import { FloatPlusN } from "@/shared/ui/components/float-plus-n.tsx";
-import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { RSmallBoard } from "@/games/kingdomino/client/board.tsx";
+import { RPlayerInfo } from "@/swish/client/player-info.tsx";
+
+import type { PlayerData } from "@/games/kingdomino/shared/schema.ts";
+import type { PlayerInfo } from "@/swish/shared/schema.ts";
 
 type PlayerScoreProps = {
 	player: PlayerData & PlayerInfo;
 	showBoard?: boolean;
 	isWinner?: boolean;
-}
+};
 
 export function PlayerScore( props: PlayerScoreProps ) {
 	const points = props.player.score.points ?? 0;
@@ -20,21 +21,10 @@ export function PlayerScore( props: PlayerScoreProps ) {
 		<motion.div
 			layout
 			className={ cn(
-				"flex flex-col gap-2 bg-background rounded-md",
+				"flex flex-col gap-2 bg-background rounded-md col-span-2 md:col-span-1",
 				props.showBoard && "p-3",
 				props.isWinner && "border-accent border-4"
 			) }
-			animate={ props.isWinner
-				? {
-					boxShadow: [
-						"0 0 0 0 rgba(0,0,0,0)",
-						"0 0 0 8px var(--color-accent)",
-						"0 0 0 0 rgba(0,0,0,0)"
-					]
-				}
-				: undefined
-			}
-			transition={ props.isWinner ? { duration: 1.6, repeat: 2 } : undefined }
 		>
 			<div className={ "flex flex-1 gap-2 items-center" }>
 				<RPlayerInfo player={ props.player }/>

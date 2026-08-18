@@ -2,6 +2,9 @@ import { useNavigate } from "@tanstack/react-router";
 import { LogInIcon } from "lucide-react";
 import { Fragment, useState, useTransition } from "react";
 
+import { loginPasskeyFn, registerPasskeyFn } from "@/auth/client/client.ts";
+import { useRefreshAuth } from "@/auth/client/use-auth.tsx";
+import { RegisterInput } from "@/auth/shared/schema.ts";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Dialog,
@@ -13,8 +16,6 @@ import {
 import { Input } from "@/shared/ui/primitives/input.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { loginPasskeyFn, registerPasskeyFn } from "@/auth/client/client.ts";
-import { useRefreshAuth } from "@/auth/client/use-auth.tsx";
 
 export function Login() {
 	const navigate = useNavigate();
@@ -26,7 +27,7 @@ export function Login() {
 	const [ name, setName ] = useState( "" );
 	const [ error, setError ] = useState<string | null>( null );
 
-	const finishAuth = async () => {
+	const finishAuth = async() => {
 		await refreshAuth();
 		setOpen( false );
 		await navigate( { to: "/" } );
@@ -36,16 +37,17 @@ export function Login() {
 		? !!name.trim() && /.+@.+/.test( email )
 		: true;
 
-	const submit = () => startTransition( async () => {
+	const submit = () => startTransition( async() => {
 		setError( null );
 		try {
 			if ( mode === "register" ) {
-				await registerPasskeyFn( { name: name.trim(), email: email.trim() } );
+				const input = RegisterInput.make( { name: name.trim(), email: email.trim() } );
+				await registerPasskeyFn( input );
 			} else {
 				await loginPasskeyFn();
 			}
 			await finishAuth();
-		} catch ( err ) {
+		} catch( err ) {
 			console.error( err );
 			setError( err instanceof Error ? err.message : "Something went wrong." );
 		}

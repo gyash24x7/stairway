@@ -1,5 +1,6 @@
-import type { ComponentProps } from "react";
 import { Toaster as Sonner } from "sonner";
+
+import type { ComponentProps } from "react";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
 

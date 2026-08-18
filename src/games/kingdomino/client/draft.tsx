@@ -1,14 +1,16 @@
 import { AnimatePresence, motion } from "framer-motion";
 
-import type { DraftEntry } from "@/games/kingdomino/shared/schema.ts";
-import type { Players } from "@/shared/swish/schema.ts";
-import { cn } from "@/shared/ui/utils/cn.ts";
 import { RDomino } from "@/games/kingdomino/client/domino.tsx";
+import { SPRING } from "@/shared/ui/utils/animation.ts";
+import { cn } from "@/shared/ui/utils/cn.ts";
+
+import type { DraftEntry } from "@/games/kingdomino/shared/schema.ts";
+import type { Roster } from "@/swish/shared/schema.ts";
 
 export type RDraftProps = {
 	draft: readonly DraftEntry[];
 	active?: boolean;
-	players: Players;
+	players: Roster;
 	/**
 	 * Television sizing — one entry per row at couch scale. The couch draft lives
 	 * in the narrow right rail, so it stacks rather than spreading across columns.
@@ -20,8 +22,15 @@ export type RDraftProps = {
 	 * viewport-driven breakpoint would spread four dominoes across it edge to edge.
 	 */
 	compact?: boolean;
+	/**
+	 * One entry per row, as a column. The full page stands the draft beside the
+	 * player's kingdom rather than under it, so it has a tall narrow space to fill
+	 * rather than a wide short one.
+	 */
+	vertical?: boolean;
 	onSelect?: ( dominoId: number ) => void;
-}
+	className?: string;
+};
 
 export function RDraft( props: RDraftProps ) {
 	const sorted = props.draft.toSorted( ( a, b ) => a.domino.id - b.domino.id );
@@ -32,7 +41,9 @@ export function RDraft( props: RDraftProps ) {
 				"grid grid-cols-2 lg:grid-cols-4 col-span-2",
 				"items-center gap-2 justify-center",
 				props.compact && "lg:grid-cols-2 col-span-1",
-				props.large && "grid-cols-1 lg:grid-cols-1 col-span-1 gap-4 p-5 rounded-xl"
+				props.vertical && "grid-cols-1 lg:grid-cols-1 col-span-1",
+				props.large && "grid-cols-1 lg:grid-cols-1 col-span-1 gap-4 p-5 rounded-xl",
+				props.className
 			) }
 			initial={ "initial" }
 			animate={ "animate" }
@@ -58,7 +69,7 @@ export function RDraft( props: RDraftProps ) {
 								animate: {
 									opacity: 1,
 									scale: 1,
-									transition: { type: "spring", stiffness: 380, damping: 22 }
+									transition: SPRING
 								}
 							} }
 							exit={ { opacity: 0, scale: 0.6, transition: { duration: 0.2 } } }
@@ -67,13 +78,13 @@ export function RDraft( props: RDraftProps ) {
 								className={ cn(
 									"flex justify-center items-center shrink-0",
 									"w-6 md:w-8 h-6 md:h-8 rounded-full bg-accent",
-									props.large && "w-14 md:w-14 h-14 md:h-14"
+									props.large && "w-18 md:w-18 h-18 md:h-18"
 								) }
 							>
 								<span
 									className={ cn(
-										"text-xs md:text-md",
-										props.large && "text-3xl font-heading text-neutral-dark"
+										"text-xs md:text-base",
+										props.large && "text-5xl font-heading text-neutral-dark"
 									) }
 								>
 									{ e.domino.id }
@@ -90,7 +101,7 @@ export function RDraft( props: RDraftProps ) {
 									<motion.img
 										key={ `avatar-${ pickedBy }` }
 										src={ avatar }
-										alt={ pickedBy ? props.players[ pickedBy ].name : "picked player" }
+										alt={ pickedBy ? props.players[ pickedBy ]?.name ?? "" : "" }
 										className={ cn(
 											"w-6 md:w-8 h-6 md:h-8 shrink-0",
 											"rounded-full border border-border object-cover bg-accent",
@@ -100,7 +111,7 @@ export function RDraft( props: RDraftProps ) {
 										animate={ {
 											scale: 1,
 											opacity: 1,
-											transition: { type: "spring", stiffness: 380, damping: 22 }
+											transition: SPRING
 										} }
 										exit={ { scale: 0, opacity: 0, transition: { duration: 0.15 } } }
 									/>

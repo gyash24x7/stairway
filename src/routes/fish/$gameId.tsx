@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { FishGamePage } from "@/games/fish/client/index.ts";
-import { RequireSession } from "@/shared/ui/components/require-session.tsx";
+import { RequireSession } from "@/auth/client/require-session.tsx";
+import { FishGamePage } from "@/games/fish/client/game-page.tsx";
 
 export const Route = createFileRoute( "/fish/$gameId" )( {
 	component: GameRoute

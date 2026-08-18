@@ -1,12 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ChevronRightIcon } from "lucide-react";
 import { Fragment } from "react";
 
+import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
 import { Avatar, AvatarImage } from "@/shared/ui/primitives/avatar.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { useKingdominoBoard } from "@/games/kingdomino/client/context.tsx";
 
 export type PickingOrderProps = {
 	/** Television sizing — readable from across a room. Used by the couch rail. */
@@ -27,7 +26,7 @@ export type PickingOrderProps = {
  * controller and the television — the order is public in Kingdomino.
  */
 export function PickingOrder( { large, className }: PickingOrderProps ) {
-	const { data } = useKingdominoBoard();
+	const { data } = useKingdomino();
 
 	const order = data.view.selectionOrder;
 	if ( order.length === 0 ) {
@@ -49,7 +48,7 @@ export function PickingOrder( { large, className }: PickingOrderProps ) {
 		>
 			<p
 				className={ cn(
-					"text-xs tracking-widest text-foreground/70 shrink-0",
+					"text-xs tracking-widest text-muted-foreground shrink-0",
 					large && "text-2xl"
 				) }
 			>
@@ -77,22 +76,11 @@ export function PickingOrder( { large, className }: PickingOrderProps ) {
 								/>
 							) }
 							<div className={ cn( "flex flex-col items-center gap-1 shrink-0" ) }>
-								<motion.div
-									animate={ isCurrent
-										? {
-											boxShadow: [
-												"0 0 0 0 rgba(0,0,0,0)",
-												"0 0 0 4px var(--color-accent)",
-												"0 0 0 0 rgba(0,0,0,0)"
-											]
-										}
-										: { boxShadow: "0 0 0 0 rgba(0,0,0,0)" }
-									}
-									transition={ isCurrent
-										? { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
-										: { duration: 0.3 }
-									}
-									className={ "rounded-full" }
+								<div
+									className={ cn(
+										"rounded-full transition-shadow",
+										isCurrent && "ring-4 ring-accent"
+									) }
 								>
 									<Avatar
 										className={ cn(
@@ -104,7 +92,7 @@ export function PickingOrder( { large, className }: PickingOrderProps ) {
 									>
 										<AvatarImage src={ player?.avatar } alt={ "" } className={ "bg-accent" }/>
 									</Avatar>
-								</motion.div>
+								</div>
 								{ large && (
 									<span
 										className={ cn(

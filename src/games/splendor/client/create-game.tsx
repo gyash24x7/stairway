@@ -2,25 +2,29 @@
 
 import { useState } from "react";
 
-import { CreateGame } from "@/shared/ui/components/create-game.tsx";
+import { splendorApi } from "@/games/splendor/client/client.ts";
+import {
+	SPLENDOR_DEFAULT_WINNING_POINTS,
+	SPLENDOR_PLAYER_COUNTS,
+	SPLENDOR_WINNING_POINTS
+} from "@/games/splendor/shared/schema.ts";
 import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
-import { createSplendorGameFn } from "@/games/splendor/client/client.ts";
+import { CreateGame } from "@/swish/client/create-game.tsx";
+
+import type { SplendorCreateInput } from "@/games/splendor/shared/schema.ts";
+
+type PlayerCount = SplendorCreateInput[ "playerCount" ];
+type WinningPoints = typeof SPLENDOR_WINNING_POINTS[number];
 
 export function SplendorCreateGame() {
-	const [ playerCount, setPlayerCount ] = useState<2 | 3 | 4>();
-	const [ winningPoints, setWinningPoints ] = useState<10 | 15 | 20>( 15 );
+	const [ playerCount, setPlayerCount ] = useState<PlayerCount>();
+	const [ winningPoints, setWinningPoints ] = useState<WinningPoints>(
+		SPLENDOR_DEFAULT_WINNING_POINTS
+	);
 
-	const createSplendorGame = async () => {
-		if ( !playerCount || !winningPoints ) {
-			return "";
-		}
-		const { id } = await createSplendorGameFn( {
-			playerCount,
-			autoStart: true,
-			winningPoints
-		} );
-		return id;
-	};
+	// The move clock and the manual start stay the server's to fix.
+	const createSplendorGame = () =>
+		splendorApi.createGame( { playerCount: playerCount!, winningPoints } );
 
 	return (
 		<CreateGame
@@ -29,20 +33,16 @@ export function SplendorCreateGame() {
 			createGame={ createSplendorGame }
 		>
 			<div className={ "flex flex-col gap-2" }>
-				<label className={ "text-sm text-muted-foreground" }>
-					Player Count
-				</label>
+				<label className={ "text-sm text-muted-foreground" }>Player Count</label>
 				<RadioSelect
-					options={ [ 2, 3, 4 ] as const }
+					options={ SPLENDOR_PLAYER_COUNTS }
 					value={ playerCount }
 					onChange={ setPlayerCount }
 				/>
 
-				<label className={ "text-sm text-muted-foreground" }>
-					Winning Points
-				</label>
+				<label className={ "text-sm text-muted-foreground" }>Winning Points</label>
 				<RadioSelect
-					options={ [ 10, 15, 20 ] as const }
+					options={ SPLENDOR_WINNING_POINTS }
 					value={ winningPoints }
 					onChange={ v => v !== undefined && setWinningPoints( v ) }
 					allowDeselect={ false }

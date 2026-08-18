@@ -13,13 +13,6 @@ import {
 
 
 // --- Chat Api Group -------------------------------------------------------
-// A standalone, game-agnostic channel API. A channel is addressed by its id and
-// nothing else: the handlers validate it against the `channels` table and never
-// consult a game, an engine, or a snapshot.
-//
-// Note the REST surface is `/api/chat/...` (the whole `HttpApi` is prefixed
-// `/api`) while the realtime socket is `/chat/{channelId}`, handled directly in
-// the worker's `fetch` — so the two never collide.
 
 const GetHistoryEndpoint = HttpApiEndpoint.get( "getHistory", "/:channelId", {
 	params: ChannelIdParams,

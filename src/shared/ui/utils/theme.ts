@@ -1,10 +1,15 @@
-import { type Theme, type ThemeMode, themeModes, themes } from "@/shared/ui/utils/cn.ts";
+import { themeModes, themes } from "@/shared/ui/utils/cn.ts";
+
+import type { Theme, ThemeMode } from "@/shared/ui/utils/cn.ts";
 
 const STORAGE_KEY = "theme";
 const DEFAULT_THEME: Theme = "apple";
 const DEFAULT_MODE: ThemeMode = "light";
 
-/** Reads the persisted theme/mode from localStorage, falling back to the defaults. */
+/**
+ * Reads the persisted theme/mode from localStorage,
+ * falling back to the defaults.
+ */
 export function readTheme() {
 	if ( typeof localStorage === "undefined" ) {
 		return { theme: DEFAULT_THEME, mode: DEFAULT_MODE };
@@ -17,7 +22,9 @@ export function readTheme() {
 	};
 }
 
-/** Persists the theme/mode and applies them as body classes. */
+/**
+ * Persists the theme/mode and applies them as body classes.
+ */
 export function applyTheme( theme: Theme, mode: ThemeMode ) {
 	localStorage.setItem( STORAGE_KEY, `${ theme }-${ mode }` );
 	document.body.classList.remove( ...themes, ...themeModes );

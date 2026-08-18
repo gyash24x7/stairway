@@ -1,33 +1,36 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { Fragment } from "react";
 
-import { DOMINO_DECK } from "@/games/kingdomino/shared/utils.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
-import { ChatPanel } from "@/chat/client/chat-panel.tsx";
-import { GameInfo } from "@/shared/ui/components/game-info.tsx";
-import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
-import { PlayerLobbyGrid } from "@/shared/ui/components/player-lobby.tsx";
-import { Button } from "@/shared/ui/primitives/button.tsx";
-import { CouchLinks } from "@/shared/ui/couch/couch-links.tsx";
-import { cn } from "@/shared/ui/utils/cn.ts";
+import { ActionPanel } from "@/games/kingdomino/client/action-panel.tsx";
 import { RBoard } from "@/games/kingdomino/client/board.tsx";
+import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
 import { RDomino } from "@/games/kingdomino/client/domino.tsx";
 import { RDraft } from "@/games/kingdomino/client/draft.tsx";
 import { PickingOrder } from "@/games/kingdomino/client/picking-order.tsx";
-import { PlayerBoards } from "@/games/kingdomino/client/player-boards.tsx";
 import { PlayerScore } from "@/games/kingdomino/client/player-score.tsx";
 import { useKingdominoTurn } from "@/games/kingdomino/client/use-turn.tsx";
-import { startGameFn } from "@/games/kingdomino/client/client.ts";
-import { StartGame } from "@/shared/ui/components/start-game.tsx";
+import { getDomino } from "@/games/kingdomino/shared/utils.ts";
+import { Button } from "@/shared/ui/primitives/button.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { GameInfo } from "@/swish/client/game-info.tsx";
+import { GameStandings } from "@/swish/client/game-standings.tsx";
+import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
+import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { AddBots } from "@/swish/client/seat-controls.tsx";
+import { StartGame } from "@/swish/client/start-game.tsx";
+import { StatBlock } from "@/swish/client/stat-block.tsx";
+import { TurnBanner } from "@/swish/client/turn-banner.tsx";
+
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
 export function GameView() {
 	const {
 		data,
-		player,
+		playerId,
+		seated,
+		board,
 		isMyTurn,
-		myPlayerInfo,
 		canSelect,
 		canPlace,
 		activeDomino,
@@ -35,178 +38,144 @@ export function GameView() {
 		placement
 	} = useKingdominoTurn();
 
+	const { addBots, startGame, isPending } = useKingdomino();
+
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
+	const nonBotPlayers = data.context.players.filter( pid => !data.players[ pid ].isBot );
 
-	// Placement comes from the engine's standings, so a shared victory (level on
-	// points, largest property and crowns) highlights every seat that tied for it,
-	// not just whichever one the stable sort happened to leave first.
-	const isWinner = ( pid: PlayerId ) =>
-		data.results?.ranking.some( ( s ) => s.playerId === pid && s.rank === 1 ) ?? false;
-
-	const getStatusMsg = () => {
-		switch ( data.status ) {
-			case "CREATED":
-				return "WAITING FOR PLAYERS...";
-			case "PLAYERS_READY":
-				return "WAITING FOR GAME TO START...";
-			// The standings above already name the winner (and report a shared
-			// victory honestly), so the strip only marks the state.
-			case "COMPLETED":
-				return "GAME OVER";
-			case "IN_PROGRESS": {
-				if ( data.context.phase === "SELECT" ) {
-					const currentName = data.players[ data.context.currentPlayer ]?.name;
-					return isMyTurn
-						? "YOUR TURN TO PICK"
-						: `${ currentName?.toUpperCase() ?? "OPPONENT" } IS PICKING`;
-				}
-				return "PLACEMENT IN PROGRESS";
-			}
-		}
-	};
+	const isWinner = ( pid: PlayerId ) => data.results?.ranking.some(
+		s => s.playerId === pid && s.rank === 1
+	) ?? false;
 
 	return (
 		<div className={ "flex flex-col gap-3 w-full max-w-6xl" }>
 			<GameInfo
+				id={ data.id }
 				code={ data.code }
 				name={ "kingdomino" }
 				additionalInfo={
 					<Fragment>
-						<div className={ "py-2 px-4" }>
-							<p className={ "text-xs md:text-sm" }>BOARD</p>
-							<h1 className={ "text-2xl md:text-4xl font-heading" }>
-								{ data.config.boardSize }x{ data.config.boardSize }
-							</h1>
-						</div>
-						<div className={ "py-2 px-4" }>
-							<p className={ "text-xs md:text-sm" }>PLAYERS</p>
-							<h1 className={ "text-2xl md:text-4xl font-heading" }>
-								{ data.config.playerCount }
-							</h1>
-						</div>
+						<StatBlock label={ "BOARD" }>
+							{ data.config.boardSize }x{ data.config.boardSize }
+						</StatBlock>
+						<StatBlock label={ "PLAYERS" }>{ data.config.playerCount }</StatBlock>
 					</Fragment>
 				}
 				completed={ data.status === "COMPLETED" }
-				actions={ <ChatPanel channelId={ data.id }/> }
+				deadline={ data.deadline }
+				couchSupport
+				showChat={ nonBotPlayers.length > 1 }
 			/>
-			<CouchLinks game={ "kingdomino" } gameId={ data.id }/>
 			{ isLobby ? (
 				<Fragment>
 					<PlayerLobbyGrid players={ data.context.players.map( id => data.players[ id ] ) }/>
-					<div className={ "p-2 w-full rounded-md bg-accent text-center" }>
-						<span className={ "text-2xl font-heading" }>{ getStatusMsg() }</span>
-					</div>
-					{ data.status === "PLAYERS_READY" && (
-						<div className={ "flex justify-center w-full" }>
-							<StartGame
-								gameId={ data.id }
-								queryKey={ [ "kingdomino", "getState", data.id ] }
-								startGame={ startGameFn }
-							/>
-						</div>
-					) }
+					<GameStatusPanel
+						status={ data.status }
+						seated={ data.context.players.length }
+						playerCount={ data.config.playerCount }
+					>
+						{ data.status === "CREATED" && seated && (
+							<AddBots addBots={ addBots } disabled={ isPending }/>
+						) }
+						{ data.status === "PLAYERS_READY" && seated && (
+							<StartGame startGame={ startGame } disabled={ isPending }/>
+						) }
+					</GameStatusPanel>
 				</Fragment>
 			) : (
 				<div
 					className={ cn(
-						"grid grid-cols-2 gap-2 justify-between mb-52",
+						"grid grid-cols-2 gap-2 justify-between",
 						data.status === "COMPLETED" && "grid-cols-1 md:grid-cols-2"
 					) }
 				>
-					{ data.results && (
+					{ !!data.results && (
 						<div className={ "col-span-2" }>
 							<GameStandings
 								results={ data.results }
 								players={ data.players }
-								playerId={ player.playerId }
+								playerId={ playerId }
 								scoreLabel={ "POINTS" }
 							/>
 						</div>
 					) }
-					<PlayerScore
-						player={ myPlayerInfo }
-						showBoard={ data.status === "COMPLETED" }
-						isWinner={ isWinner( myPlayerInfo.id ) }
-					/>
-					{ data.context.players.filter( pid => pid !== myPlayerInfo.id ).map( pid => (
-						<PlayerScore
-							key={ pid }
-							player={ {
-								...data.players[ pid ],
-								...data.view.playerData[ pid ]
-							} }
-							showBoard={ data.status === "COMPLETED" }
-							isWinner={ isWinner( pid ) }
+					<div className={ "col-span-2" }>
+						<TurnBanner
+							status={ data.status }
+							players={ data.players }
+							currentPlayer={ data.context.currentPlayer }
+							isMyTurn={ isMyTurn }
+							action={ data.context.phase === "SELECT" ? "PICKING A DOMINO" : "PLACING" }
 						/>
-					) ) }
+					</div>
+					{ data.context.players.map( pid => {
+						const other = data.view.playerData[ pid ];
+						const otherInfo = data.players[ pid ];
+						if ( !other || !otherInfo ) {
+							return null;
+						}
+
+						return (
+							<PlayerScore
+								key={ pid }
+								player={ { ...otherInfo, ...other } }
+								showBoard={ data.status === "COMPLETED" }
+								isWinner={ isWinner( pid ) }
+							/>
+						);
+					} ) }
 					{ data.status === "IN_PROGRESS" && (
-						<div
-							className={ cn(
-								"col-span-2 min-w-0 flex flex-col gap-2",
-								"bg-background p-2 items-center rounded-md"
-							) }
-						>
-							<div className={ "w-full overflow-x-auto" }>
-								<div className={ "w-fit mx-auto" }>
-									<RBoard
-										board={ myPlayerInfo.board }
-										boardSize={ data.config.boardSize }
-										isActive={ canPlace }
-										onCellClick={ canPlace ? placement.handleCellClick : undefined }
-										activeDominoId={ activeDomino }
-										getPreviewCoords={ canPlace ? placement.getPreviewCoords : undefined }
-										tentative={ placement.tentativeProp }
-									/>
-								</div>
-							</div>
-							{ canPlace && activeDomino && (
-								<div className={ "flex gap-2 items-center" }>
-									<RDomino domino={ DOMINO_DECK[ activeDomino - 1 ] }/>
-									{ placement.canDiscard && (
-										<Button
-											onClick={ placement.handleDiscard }
-											disabled={ placement.isPending }
-										>
-											Discard
-										</Button>
+						// The kingdom and the round's draft stand side by side, so the
+						// board a domino is going onto and the dominoes on offer are on
+						// screen together rather than a scroll apart.
+						<div className={ "col-span-2 min-w-0 flex flex-col md:flex-row gap-2 items-stretch" }>
+							{ !!seated && (
+								<div
+									className={ cn(
+										"min-w-0 flex-1 flex flex-col gap-2",
+										"bg-background p-2 items-center rounded-md"
+									) }
+								>
+									<div className={ "w-full overflow-x-auto" }>
+										<div className={ "w-fit mx-auto" }>
+											<RBoard
+												board={ board }
+												boardSize={ data.config.boardSize }
+												isActive={ canPlace }
+												onCellClick={ canPlace ? placement.handleCellClick : undefined }
+												activeDominoId={ activeDomino }
+												getPreviewCoords={ canPlace ? placement.getPreviewCoords : undefined }
+												tentative={ placement.tentativeProp }
+											/>
+										</div>
+									</div>
+									{ canPlace && !!activeDomino && (
+										<div className={ "flex gap-2 items-center" }>
+											<RDomino domino={ getDomino( activeDomino ) }/>
+											{ placement.canDiscard && (
+												<Button onClick={ placement.handleDiscard } disabled={ placement.isPending }>
+													DISCARD
+												</Button>
+											) }
+										</div>
 									) }
 								</div>
 							) }
-						</div>
-					) }
-					<div
-						className={ cn(
-							"col-span-2 p-2 w-full rounded-md bg-accent text-center overflow-hidden",
-							data.status === "COMPLETED" && "col-span-1 md:col-span-2"
-						) }
-					>
-						<AnimatePresence mode={ "wait" }>
-							<motion.span
-								key={ getStatusMsg() }
-								className={ "text-2xl font-heading inline-block" }
-								initial={ { opacity: 0, scale: 0.7 } }
-								animate={ { opacity: 1, scale: 1 } }
-								exit={ { opacity: 0, scale: 0.7 } }
-								transition={ { type: "spring", stiffness: 380, damping: 22 } }
-							>
-								{ getStatusMsg() }
-							</motion.span>
-						</AnimatePresence>
-					</div>
-					{ data.status !== "COMPLETED" && (
-						<Fragment>
-							<PickingOrder className={ "col-span-2" }/>
 							<RDraft
 								draft={ data.view.draft }
 								players={ data.players }
 								active={ canSelect }
+								vertical
 								onSelect={ handleDominoSelect }
+								className={ "md:max-w-xs shrink-0" }
 							/>
-							<div className={ "col-span-2" }>
-								<PlayerBoards/>
-							</div>
-						</Fragment>
+						</div>
 					) }
+					{ data.status !== "COMPLETED" && <PickingOrder className={ "col-span-2" }/> }
+					{ /* Spanning both columns so the bar's own spacer clears the whole grid. */ }
+					<div className={ "col-span-2" }>
+						<ActionPanel/>
+					</div>
 				</div>
 			) }
 		</div>

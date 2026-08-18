@@ -2,31 +2,38 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AuthMiddleware } from "@/auth/shared/middleware.ts";
 import {
-	CreateGameApiEndpoint,
-	GetStateApiEndpoint,
-	GetTableStateApiEndpoint,
-	JoinApiEndpoint,
-	StartApiEndpoint,
-	MoveApiEndpoint
-} from "@/shared/swish/api.ts";
-import {
 	DiscardDominoInput,
 	KingdominoConfig,
-	KingdominoSnapshot,
+	KingdominoCreateInput,
+	KingdominoView,
 	PlaceDominoInput,
 	SelectDominoInput
 } from "@/games/kingdomino/shared/schema.ts";
+import {
+	AddBotsApiEndpoint,
+	CreateGameApiEndpoint,
+	GetViewApiEndpoint,
+	JoinApiEndpoint,
+	MoveApiEndpoint,
+	RedoApiEndpoint,
+	SetAutoPlayApiEndpoint,
+	StartApiEndpoint,
+	UndoApiEndpoint
+} from "@/swish/shared/contract.ts";
 
 export const KingdominoApiGroup = HttpApiGroup.make( "kingdomino" )
 	.add(
-		CreateGameApiEndpoint( KingdominoConfig ),
-		GetStateApiEndpoint( KingdominoSnapshot ),
-		GetTableStateApiEndpoint( KingdominoSnapshot ),
+		CreateGameApiEndpoint( KingdominoCreateInput ),
+		GetViewApiEndpoint( KingdominoView, KingdominoConfig ),
 		JoinApiEndpoint(),
+		AddBotsApiEndpoint(),
 		StartApiEndpoint(),
 		MoveApiEndpoint( "selectDomino", SelectDominoInput ),
 		MoveApiEndpoint( "placeDomino", PlaceDominoInput ),
-		MoveApiEndpoint( "discardDomino", DiscardDominoInput )
+		MoveApiEndpoint( "discardDomino", DiscardDominoInput ),
+		SetAutoPlayApiEndpoint(),
+		UndoApiEndpoint(),
+		RedoApiEndpoint()
 	)
 	.prefix( "/kingdomino" )
 	.middleware( AuthMiddleware );

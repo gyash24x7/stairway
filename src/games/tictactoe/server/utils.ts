@@ -1,25 +1,7 @@
-import * as Match from "effect/Match";
 import type * as Types from "effect/Types";
-import { produce } from "immer";
 
-import type { PlayerId } from "@/shared/swish/schema.ts";
-import type {
-	Board,
-	CellValue,
-	TicTacToeEvent,
-	TicTacToeState
-} from "@/games/tictactoe/shared/schema.ts";
-
-/** Pure reducer — the ONLY place `state` changes. Mutations are on an immer draft. */
-export const apply = ( state: TicTacToeState, event: TicTacToeEvent ) =>
-	produce( state, ( draft ) => {
-		Match.value( event ).pipe(
-			Match.tag( "tictactoe/SymbolAssigned", ( e ) => { draft.symbols[ e.symbol ] = e.playerId; } ),
-			Match.tag( "tictactoe/Placed", ( e ) => { draft.board[ e.position ] = e.symbol; } ),
-			Match.tag( "tictactoe/WinnerDecided", ( e ) => { draft.winner = e.winner; } ),
-			Match.exhaustive
-		);
-	} );
+import type { Board, CellValue, TicTacToeState } from "@/games/tictactoe/shared/schema.ts";
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
 /** The X/O symbol assigned to a player. */
 export const symbolOf = ( symbols: TicTacToeState[ "symbols" ], playerId: PlayerId ) =>
@@ -29,7 +11,7 @@ export const symbolOf = ( symbols: TicTacToeState[ "symbols" ], playerId: Player
 export const WINNING_LINES = [
 	[ 0, 1, 2 ], [ 3, 4, 5 ], [ 6, 7, 8 ], // rows
 	[ 0, 3, 6 ], [ 1, 4, 7 ], [ 2, 5, 8 ], // columns
-	[ 0, 4, 8 ], [ 2, 4, 6 ]               // diagonals
+	[ 0, 4, 8 ], [ 2, 4, 6 ] // diagonals
 ];
 
 /**
@@ -122,6 +104,3 @@ export function findBestMove(
 
 	return bestPosition;
 }
-
-/** Registry slug for this game (also the DO name prefix). */
-export const GAME_NAME = "tic-tac-toe";

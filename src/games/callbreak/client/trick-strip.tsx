@@ -2,10 +2,12 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
+import { trickPlayOrder } from "@/games/callbreak/shared/utils.ts";
 import { RCard } from "@/shared/ui/components/card.tsx";
-import { RPlayerInfoStrip } from "@/shared/ui/components/player-info.tsx";
+import { SPRING } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
-import { useCallbreakBoard } from "@/games/callbreak/client/context.tsx";
+import { RPlayerInfoStrip } from "@/swish/client/player-info.tsx";
 
 /**
  * The controller's compact board context: what has been played into the trick so
@@ -17,14 +19,16 @@ import { useCallbreakBoard } from "@/games/callbreak/client/context.tsx";
  * flies it out of your hand and into the trick rather than popping it in.
  */
 export function TrickStrip() {
-	const { data } = useCallbreakBoard();
+	const { data } = useCallbreak();
 	const trick = data.view.activeDeal?.tricks[ 0 ];
 
 	if ( !trick ) {
 		return null;
 	}
 
-	const played = data.context.players.flatMap( playerId => {
+	// In the order they were played, starting from whoever led — the seating
+	// order is only the play order for the trick the first seat happens to lead.
+	const played = trickPlayOrder( trick, data.context.players ).flatMap( playerId => {
 		const cardId = trick.cards[ playerId ];
 		return cardId ? [ { playerId, cardId } ] : [];
 	} );
@@ -52,7 +56,7 @@ export function TrickStrip() {
 								initial={ { scale: 0.6, opacity: 0 } }
 								animate={ { scale: 1, opacity: 1 } }
 								exit={ { scale: 0.6, opacity: 0, transition: { duration: 0.25 } } }
-								transition={ { type: "spring", stiffness: 380, damping: 22 } }
+								transition={ SPRING }
 								className={ "flex flex-col gap-1 items-center" }
 							>
 								<RCard cardId={ cardId } small/>

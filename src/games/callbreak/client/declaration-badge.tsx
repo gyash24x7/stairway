@@ -4,23 +4,22 @@ import { motion } from "framer-motion";
 
 import { cn } from "@/shared/ui/utils/cn.ts";
 
+/**
+ * Hoisted out of render so the pulse keeps its own timeline. Framer restarts a
+ * keyframe animation when the target is a fresh array, and this component
+ * re-renders on every state push — which is what had four dotted slots flashing
+ * out of step and out of nowhere.
+ */
+const PULSE = { opacity: [ 0.4, 1, 0.4 ] };
+const PULSE_TRANSITION = { duration: 1.6, repeat: Infinity, ease: "easeInOut" } as const;
+
 export type DeclarationBadgeProps = {
-	/** How many tricks this seat declared, or `undefined` while they're still deciding. */
 	wins?: number;
-	/** Television sizing — matches the large card slot on the couch screen. */
+	pending?: boolean;
 	large?: boolean;
 };
 
-/**
- * A seat's declaration during the `DECLARING` phase, shown in the same slot the
- * played card will occupy once the deal starts — so the seat's geometry doesn't
- * change when the phase flips.
- *
- * The number lands with an overshoot rather than fading in: a declaration is the
- * one event of this phase, and on a television across a room a fade reads as
- * nothing happening at all.
- */
-export function DeclarationBadge( { wins, large }: DeclarationBadgeProps ) {
+export function DeclarationBadge( { wins, pending, large }: DeclarationBadgeProps ) {
 	const slot = cn(
 		"w-16 md:w-20 xl:w-24 h-24 md:h-30 xl:h-36",
 		"rounded-lg flex flex-col gap-1 items-center justify-center shrink-0",
@@ -30,11 +29,10 @@ export function DeclarationBadge( { wins, large }: DeclarationBadgeProps ) {
 	if ( wins === undefined ) {
 		return (
 			<motion.div
-				className={ cn( slot, "border-2 border-dotted border-inverted-surface bg-surface" ) }
-				initial={ { opacity: 0 } }
-				animate={ { opacity: [ 0.35, 0.75, 0.35 ] } }
-				exit={ { opacity: 0 } }
-				transition={ { duration: 1.6, repeat: Infinity, ease: "easeInOut" } }
+				className={ cn( slot, "border-2 border-dotted border-outline bg-surface" ) }
+				initial={ false }
+				animate={ pending ? PULSE : { opacity: 0.45 } }
+				transition={ pending ? PULSE_TRANSITION : { duration: 0.2 } }
 			>
 				<span
 					className={ cn(
@@ -42,7 +40,7 @@ export function DeclarationBadge( { wins, large }: DeclarationBadgeProps ) {
 						large && "text-5xl md:text-6xl"
 					) }
 				>
-					?
+					{ pending ? "?" : "" }
 				</span>
 			</motion.div>
 		);
@@ -50,11 +48,11 @@ export function DeclarationBadge( { wins, large }: DeclarationBadgeProps ) {
 
 	return (
 		<motion.div
-			className={ cn( slot, "bg-accent text-neutral-dark border-2 border-inverted-surface" ) }
+			className={ cn( slot, "bg-accent text-neutral-dark border-2 border-outline" ) }
 			initial={ { scale: 0, opacity: 0 } }
-			animate={ { scale: [ 0, 1.25, 1 ], opacity: [ 0, 1, 1 ] } }
+			animate={ { scale: 1, opacity: 1 } }
 			exit={ { scale: 0.6, opacity: 0, transition: { duration: 0.25 } } }
-			transition={ { duration: 0.65, times: [ 0, 0.55, 1 ], ease: "easeOut" } }
+			transition={ { type: "spring", stiffness: 420, damping: 18 } }
 		>
 			<span
 				className={ cn(

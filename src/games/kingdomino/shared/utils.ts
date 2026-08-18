@@ -1,25 +1,18 @@
+import { Coord } from "@/games/kingdomino/shared/schema.ts";
+
 import type {
 	Board,
 	BoardSize,
 	Castle,
 	Domino,
-	KingdominoState,
 	Placement,
-	PlayerData,
 	Rotation,
-	ScoreBreakdown,
 	Terrain,
 	Tile
 } from "@/games/kingdomino/shared/schema.ts";
-import { Coord, DraftEntry, Region } from "@/games/kingdomino/shared/schema.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
 
 /** Rectangular bounding box defined by min/max coordinates. */
 type Bounds = { minX: number; maxX: number; minY: number; maxY: number };
-
-const DRAFT_SIZE = 4;
-
-export const CASTLES = [ "red", "blue", "green", "yellow" ] as const;
 
 export const TILES: Record<Terrain, Tile[]> = {
 	castle: [ { terrain: "castle", crowns: 0 } ],
@@ -104,7 +97,12 @@ export const DOMINO_DECK: Domino[] = [
  */
 export const getDomino = ( dominoId: number ) => DOMINO_DECK[ dominoId - 1 ];
 
-const neighbors = [
+/**
+ * The four orthogonal steps, in rotation order: right, down, left, up. Doubling
+ * as the rotation table is why the order matters — index `n` is the offset for
+ * `ALL_ROTATIONS[ n ]`.
+ */
+export const NEIGHBOR_OFFSETS = [
 	{ x: 1, y: 0 },
 	{ x: 0, y: 1 },
 	{ x: -1, y: 0 },
@@ -137,10 +135,10 @@ export function parseCoordKey( key: string ) {
  */
 export function getPlacementCoordinates( { coord, rotation }: Omit<Placement, "dominoId"> ) {
 	const dirs = {
-		0: neighbors[ 0 ],
-		90: neighbors[ 1 ],
-		180: neighbors[ 2 ],
-		270: neighbors[ 3 ]
+		0: NEIGHBOR_OFFSETS[ 0 ],
+		90: NEIGHBOR_OFFSETS[ 1 ],
+		180: NEIGHBOR_OFFSETS[ 2 ],
+		270: NEIGHBOR_OFFSETS[ 3 ]
 	};
 	const d = dirs[ rotation ];
 
@@ -163,7 +161,7 @@ export function getPlacementCoordinates( { coord, rotation }: Omit<Placement, "d
  */
 function hasConnection( tiles: Board["tiles"], coord: Coord, terrain: Terrain ) {
 
-	for ( const { x: dx, y: dy } of neighbors ) {
+	for ( const { x: dx, y: dy } of NEIGHBOR_OFFSETS ) {
 		const cell = tiles[ coordKey( { x: coord.x + dx, y: coord.y + dy } ) ];
 		if ( !cell ) {
 			continue;
@@ -349,7 +347,7 @@ export function getCandidateCells( board: Board ) {
 	for ( const key in board.tiles ) {
 		const { x, y } = parseCoordKey( key );
 
-		for ( const { x: dx, y: dy } of neighbors ) {
+		for ( const { x: dx, y: dy } of NEIGHBOR_OFFSETS ) {
 			const coord = { x: x + dx, y: y + dy };
 			if ( !board.tiles[ coordKey( coord ) ] ) {
 				set.add( coord );
@@ -418,18 +416,6 @@ export function getPotentialCellsForDomino( board: Board, dominoId: number ) {
 	}
 
 	return [ ...occupied ].map( parseCoordKey );
-}
-
-/**
- * Get the exact bounds of the board based on its size.
- * This function returns the minimum and maximum x and y coordinates that define the board's area,
- * which can be used for rendering the grid or validating placements against the board limits.
- *
- * @param board - The current state of the board, including its size.
- * @return An object containing the minimum and maximum x and y coordinates of the board.
- */
-export function getExactBoardBounds( board: Board ) {
-	return { minX: 0, maxX: board.size - 1, minY: 0, maxY: board.size - 1 };
 }
 
 /**
@@ -541,12 +527,25 @@ export function getRowsAndCols( { minX, maxX, maxY, minY }: Bounds, possibleCell
  */
 export function getValidPlacements( board: Board, dominoId: number ) {
 	const placements: Placement[] = [];
-	const cells = getCandidateCells( board );
+	const seen = new Set<string>();
 
 	const rotations: Rotation[] = [ 0, 90, 180, 270 ];
 
-	for ( const coord of cells ) {
+	const anchors = getCandidateCells( board ).flatMap( coord => [
+		coord,
+		...rotations.map( rotation => getPlacementCoordinates( { coord, rotation } )[ 1 ] )
+	] );
+
+	for ( const coord of anchors ) {
 		for ( const rotation of rotations ) {
+			const key = `${ coordKey( coord ) }:${ rotation }`;
+
+			if ( seen.has( key ) ) {
+				continue;
+			}
+
+			seen.add( key );
+
 			const placement: Placement = {
 				dominoId,
 				coord,
@@ -560,151 +559,6 @@ export function getValidPlacements( board: Board, dominoId: number ) {
 	}
 
 	return placements;
-}
-
-/**
- * Apply a domino placement to the board, returning a new board state with the placement added.
- * This function updates the tiles mapping with the new domino's terrain and crowns,
- * and adds the placement to the list of placements on the board.
- *
- * @param board - The current state of the board, including existing placements and tiles.
- * @param placement - The placement to apply to the board.
- * @returns Updated board after applying the placement.
- */
-export function applyPlacement( board: Board, placement: Placement ) {
-	const domino = getDomino( placement.dominoId );
-
-	// Defence in depth: `canDominoBePlaced` already rejects an unknown id, so
-	// reaching here with one means validation was bypassed. Leave the board
-	// untouched rather than throwing — this runs inside `execute`, and a total
-	// function keeps a bad move a no-op instead of a crash.
-	if ( !domino ) {
-		return board;
-	}
-
-	const [ p1, p2 ] = getPlacementCoordinates( placement );
-
-	const newTiles = { ...board.tiles };
-
-	newTiles[ coordKey( p1 ) ] = domino.left;
-	newTiles[ coordKey( p2 ) ] = domino.right;
-
-	return {
-		...board,
-		placements: [ ...board.placements, placement ],
-		tiles: newTiles
-	};
-}
-
-/**
- * Explore a region of connected tiles of the same terrain type starting from a given coordinate.
- * This function uses a breadth-first search (BFS) approach to find all connected tiles,
- * counting the number of tiles and crowns in the region to calculate the score.
- *
- * @param board - The current state of the board, including existing placements and tiles.
- * @param start - The starting coordinate for the region exploration.
- * @param terrain - The terrain type to game for the region.
- * @param visited - A set of visited coordinates to avoid reprocessing tiles.
- * @returns A Region object representing the explored region, or null if no valid region is found.
- */
-function exploreRegion(
-	board: Board,
-	start: Coord,
-	terrain: Terrain,
-	visited: Set<string>
-) {
-
-	const queue: Coord[] = [ start ];
-	const coords: Coord[] = [];
-	let crowns = 0;
-
-	while ( queue.length ) {
-
-		const current = queue.shift()!;
-		const key = coordKey( current );
-
-		if ( visited.has( key ) ) {
-			continue;
-		}
-
-		const tile = board.tiles[ key ];
-		if ( !tile ) {
-			continue;
-		}
-		if ( tile.terrain !== terrain ) {
-			continue;
-		}
-
-		visited.add( key );
-		coords.push( current );
-
-		crowns += tile.crowns;
-
-		for ( const { x: dx, y: dy } of neighbors ) {
-			queue.push( {
-				x: current.x + dx,
-				y: current.y + dy
-			} );
-		}
-	}
-
-	if ( coords.length === 0 ) {
-		return null;
-	}
-
-	const tiles = coords.length;
-	const points = tiles * crowns;
-
-	return Region.make( {
-		id: `${ terrain }-${ coords[ 0 ].x }-${ coords[ 0 ].y }`,
-		terrain,
-		tiles,
-		placement: coords,
-		crowns,
-		points
-	} );
-}
-
-/**
- * Calculate the score for the current board state by identifying
- * all connected regions of tiles and summing their points.
- * This function iterates over all tiles on the board,
- * using the exploreRegion function to find connected regions
- * of the same terrain type, and accumulates the total points
- * based on the number of tiles and crowns in each region.
- *
- * @param board - The current state of the board, including existing placements and tiles.
- * @returns A ScoreBreakdown object containing the list of regions and the total points scored.
- */
-export function calculateScore( board: Board ) {
-
-	const visited = new Set<string>();
-	const regions: Region[] = [];
-
-	for ( const key in board.tiles ) {
-
-		if ( visited.has( key ) ) {
-			continue;
-		}
-
-		const coord = parseCoordKey( key );
-		const tile = board.tiles[ key ];
-
-		if ( tile.terrain === "castle" ) {
-			visited.add( key );
-			continue;
-		}
-
-		const region = exploreRegion( board, coord, tile.terrain, visited );
-
-		if ( region ) {
-			regions.push( region );
-		}
-	}
-
-	const points = regions.reduce( ( sum, r ) => sum + r.points, 0 );
-
-	return { regions, points };
 }
 
 /**
@@ -722,138 +576,3 @@ export function createBoard( castle: Castle, boardSize: BoardSize ) {
 		tiles: { [ coordKey( { x: 0, y: 0 } ) ]: { terrain: "castle" as const, crowns: 0 } }
 	};
 }
-
-/**
- * Draw dominoes from the deck to create a new draft, sorted by domino ID.
- * Mutates the deck by splicing dominoes from the front.
- *
- * @param deck - The remaining deck of dominoes (mutated in-place).
- * @returns An array of DraftEntry objects for the current round.
- */
-export function drawDraft( deck: Domino[] ) {
-	const count = Math.min( DRAFT_SIZE, deck.length );
-	return deck
-		.splice( 0, count )
-		.sort( ( a, b ) => a.id - b.id )
-		.map( domino => DraftEntry.make( { domino } ) );
-}
-
-/**
- * Get the number of domino selections each player makes per round.
- * In 2-player games, each player selects 2 dominoes; otherwise 1.
- *
- * @param playerCount - The number of players in the game.
- * @returns The number of selections per player per round.
- */
-export function getSelectionsPerPlayer( playerCount: number ) {
-	return playerCount <= 2 ? 2 : 1;
-}
-
-/**
- * Count how many dominoes a player has selected in the current draft.
- *
- * @param draft - The current draft entries.
- * @param playerId - The player to count selections for.
- * @returns The number of dominoes selected by this player.
- */
-export function getPlayerSelectionCount( draft: DraftEntry[], playerId: string ) {
-	return draft.filter( e => e.selectedBy === playerId ).length;
-}
-
-/**
- * Determine the player selection order for the next round based on the current draft.
- * Each selected draft entry contributes one slot, ordered by ascending domino id —
- * so a 2-player draft produces 4 slots (2 per player).
- *
- * @param draft - The current draft entries with selections.
- * @returns An ordered array of player IDs for the next round's selection order.
- */
-export const draftPlayerOrder = ( draft: readonly DraftEntry[] ) => draft
-	.filter( e => !!e.selectedBy )
-	.toSorted( ( a, b ) => a.domino.id - b.domino.id )
-	.map( e => e.selectedBy! );
-
-// --- Standings -------------------------------------------------------------
-
-/**
- * Tiles in the player's largest single property — the biggest connected area of
- * one terrain, crowned or not. The first tie-break at the end of the game.
- *
- * @param score The player's score breakdown (an unplayed kingdom scores zero).
- */
-export function largestProperty( score?: ScoreBreakdown ) {
-	return ( score?.regions ?? [] ).reduce( ( max, region ) => Math.max( max, region.tiles ), 0 );
-}
-
-/**
- * Every crown in the player's kingdom. The second tie-break. Crowns only ever
- * sit on scored terrain (the castle carries none), so summing the regions
- * counts them all.
- *
- * @param score The player's score breakdown (an unplayed kingdom scores zero).
- */
-export function totalCrowns( score?: ScoreBreakdown ) {
-	return ( score?.regions ?? [] ).reduce( ( sum, region ) => sum + region.crowns, 0 );
-}
-
-/**
- * Order two seats best-first at the end of a game, following the rulebook:
- * most points, then the largest property, then the most crowns. Seats level on
- * all three compare equal — the rules call that a shared victory, and a stable
- * sort leaves them in seating order.
- *
- * @param a The first player's data.
- * @param b The second player's data.
- * @returns Negative when `a` outranks `b`, positive when `b` outranks `a`.
- */
-export function compareStandings( a?: PlayerData, b?: PlayerData ) {
-	const byPoints = ( b?.score.points ?? 0 ) - ( a?.score.points ?? 0 );
-	if ( byPoints !== 0 ) {
-		return byPoints;
-	}
-
-	const byProperty = largestProperty( b?.score ) - largestProperty( a?.score );
-	if ( byProperty !== 0 ) {
-		return byProperty;
-	}
-
-	return totalCrowns( b?.score ) - totalCrowns( a?.score );
-}
-
-/**
- * Rank the roster best-first, applying the full tie-break chain. `toSorted` is
- * stable, so seats that tie on every key stay in seating order.
- *
- * @param players The roster, in seating order.
- * @param playerData Every seat's data.
- */
-export function rankPlayers(
-	players: ReadonlyArray<PlayerId>,
-	playerData: KingdominoState[ "playerData" ]
-) {
-	return players.toSorted( ( a, b ) => compareStandings( playerData[ a ], playerData[ b ] ) );
-}
-
-/**
- * The winner: the top of {@link rankPlayers}, or `undefined` for an empty roster.
- *
- * @param players The roster, in seating order.
- * @param playerData Every seat's data.
- */
-export function decideWinner(
-	players: ReadonlyArray<PlayerId>,
-	playerData: KingdominoState[ "playerData" ]
-) {
-	return rankPlayers( players, playerData )[ 0 ];
-}
-
-/** Pure, deterministic draft draw from a given deck (no mutation). */
-export const drawDraftPure = ( deck: ReadonlyArray<Domino> ) => {
-	const count = Math.min( DRAFT_SIZE, deck.length );
-	const drawn = deck.slice( 0, count )
-		.slice()
-		.sort( ( a, b ) => a.id - b.id )
-		.map( ( domino ) => ( { domino } ) );
-	const rest = deck.slice( count );
-	return { draft: drawn, deck: rest };
-};

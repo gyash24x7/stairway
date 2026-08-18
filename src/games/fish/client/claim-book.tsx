@@ -1,23 +1,17 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowBigRightDashIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
 
-import { useAuth } from "@/auth/client/use-auth.tsx";
-import type { Book, ClaimBookInput } from "@/games/fish/shared/schema.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 import {
 	getBookDisplayString,
 	getBooksInHand,
 	getCardsOfBook,
-	getMissingCards,
-	getTeammates
+	getMissingCards
 } from "@/games/fish/shared/utils.ts";
-import type { CardId } from "@/shared/cards/schema.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
 import { RCard } from "@/shared/ui/components/card.tsx";
-import { RPlayerInfoStrip } from "@/shared/ui/components/player-info.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
@@ -29,33 +23,47 @@ import {
 } from "@/shared/ui/primitives/drawer.tsx";
 import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { claimBookFn } from "@/games/fish/client/client.ts";
-import { useFish } from "@/games/fish/client/context.tsx";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow
+} from "@/shared/ui/primitives/table.tsx";
+import { cn } from "@/shared/ui/utils/cn.ts";
+import { RPlayerInfoStrip } from "@/swish/client/player-info.tsx";
+import { membersOf, teamOf } from "@/swish/shared/teams.ts";
+
+import type { Book } from "@/games/fish/shared/schema.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
 export function ClaimBook() {
-	const { data } = useFish();
-	const { authInfo } = useAuth();
-	const player = data.view;
+	const { data, claimBook, isPending } = useFish();
+	const me = data.view.playerId;
+	const hand = data.view.hand;
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ claim, setClaim ] = useState( new Map<CardId, PlayerId>() );
 	const [ open, setOpen ] = useState( false );
+	const [ currentStep, { goToNextStep, goToPrevStep, reset } ] = useStep( 3 );
 
-	const teamMates = getTeammates( data.view.teams, player.playerId );
-	const selectedBookDisplayString = selectedBook
+	// A declaration names a holder for every card of the book, and only this side
+	// can hold them if the declaration is to be right — so the side is the roster.
+	const myTeam = teamOf( data.context, me );
+	const side = myTeam === undefined ? [ me ] : membersOf( data.context, myTeam );
+
+	const bookLabel = selectedBook
 		? getBookDisplayString( selectedBook, data.config.type )
 		: "";
 
 	const missingCards = selectedBook
-		? getMissingCards( player.hand, selectedBook, data.config.type )
+		? getMissingCards( hand, selectedBook, data.config.type )
 		: [];
 
-	const allAssigned = selectedBook
+	const allAssigned = !!selectedBook
 		&& claim.size === getCardsOfBook( selectedBook ).length;
-
-	const openDrawer = () => {
-		setOpen( true );
-	};
 
 	const closeDrawer = () => {
 		setSelectedBook( undefined );
@@ -68,95 +76,113 @@ export function ClaimBook() {
 		if ( !book ) {
 			setSelectedBook( undefined );
 			setClaim( new Map() );
-		} else {
-			setSelectedBook( book );
-			const newClaim = new Map<CardId, PlayerId>();
-			getCardsOfBook( book, player.hand ).forEach( cardId => {
-				newClaim.set( cardId, player.playerId );
-			} );
-			setClaim( newClaim );
-			goToNextStep();
+			return;
 		}
+
+		// Seed the claim with what you can see: your own cards are not in doubt.
+		const seeded = new Map<CardId, PlayerId>();
+		for ( const cardId of getCardsOfBook( book, hand ) ) {
+			seeded.set( cardId, me );
+		}
+
+		setSelectedBook( book );
+		setClaim( seeded );
+		goToNextStep();
 	};
 
-	const handleAssignCard = ( cardId: CardId ) => ( pid: PlayerId | undefined ) => {
+	const handleAssignCard = ( cardId: CardId, playerId: PlayerId ) => {
 		setClaim( prev => {
 			const next = new Map( prev );
-			if ( pid === undefined ) {
+			const current = next.get( cardId );
+			if ( playerId === current ) {
 				next.delete( cardId );
 			} else {
-				next.set( cardId, pid );
+				next.set( cardId, playerId );
 			}
 			return next;
 		} );
 	};
 
-	const queryClient = useQueryClient();
-
-	const claimBook = useMutation( {
-		mutationFn: ( input: ClaimBookInput ) => claimBookFn( data.id, input ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "fish", "getState", data.id ]
-		} )
-	} );
-
 	const handleClick = () => {
-		if ( selectedBook && allAssigned && authInfo ) {
-			claimBook.mutate( {
-				claim: claim.entries().reduce(
-					( acc, [ cardId, playerId ] ) => {
-						acc[ cardId ] = playerId;
-						return acc;
-					},
-					{} as Record<string, PlayerId>
-				)
-			}, { onSuccess: closeDrawer } );
+		if ( !selectedBook || !allAssigned ) {
+			return;
 		}
-	};
 
-	const [ currentStep, { goToNextStep, goToPrevStep, reset } ] = useStep( 3 );
+		const assignment: Record<string, PlayerId> = {};
+		for ( const [ cardId, playerId ] of claim ) {
+			assignment[ cardId ] = playerId;
+		}
+
+		claimBook( { claim: assignment }, closeDrawer );
+	};
 
 	return (
 		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDrawer() : setOpen( true ) }>
-			<Button onClick={ openDrawer } className={ "flex-1 max-w-lg" }>CLAIM BOOK</Button>
+			<Button onClick={ () => setOpen( true ) }>CLAIM BOOK</Button>
 			<DrawerContent>
 				<DrawerHeader>
 					<DrawerTitle>
 						{ currentStep === 1 && "SELECT BOOK TO CLAIM" }
 						{ currentStep === 2 && "ASSIGN MISSING CARDS TO TEAMMATES" }
-						{ currentStep === 3 && `CONFIRM CLAIM FOR ${ selectedBookDisplayString }` }
+						{ currentStep === 3 && `CONFIRM CLAIM FOR ${ bookLabel }` }
 					</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "px-4 overflow-y-auto" }>
+				<div className={ "px-4 overflow-y-scroll max-h-100" }>
 					{ currentStep === 1 && (
 						<RadioSelect
-							options={ Array.from( getBooksInHand( player.hand, data.config.type ) ) }
+							options={ getBooksInHand( hand, data.config.type ) }
 							value={ selectedBook }
 							onChange={ handleBookSelect }
 							className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }
-							renderOption={ ( book ) => (
-								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
+							renderOption={ book => (
+								<h1 className={ "text-base md:text-lg xl:text-xl font-semibold" }>
 									{ getBookDisplayString( book, data.config.type ) }
 								</h1>
 							) }
 						/>
 					) }
 					{ currentStep === 2 && (
-						<div className={ "grid grid-cols-2 gap-2 flex-wrap" }>
-							{ missingCards.map( cardId => (
-								<div key={ cardId } className={ "flex items-center gap-1" }>
-									<RCard cardId={ cardId } small/>
-									<ArrowBigRightDashIcon className={ "w-6 h-6 md:w-8 md:h-8 text-accent" }/>
-									<RadioSelect
-										options={ teamMates }
-										value={ claim.get( cardId ) }
-										onChange={ handleAssignCard( cardId ) }
-										className={ "flex flex-col gap-2 flex-wrap child-b-0" }
-										renderOption={ pid => <RPlayerInfoStrip player={ data.players[ pid ] }/> }
-									/>
-								</div>
-							) ) }
+						<div className={ "flex flex-col gap-2 flex-wrap" }>
+							{ missingCards.length !== 0 && (
+								<Table>
+									<TableHeader>
+										<TableRow>
+											<TableHead className={ "text-center" }>CARD</TableHead>
+											{ side.map( pid => (
+												<TableHead key={ pid } className={ "text-center w-1/4" }>
+													{ data.players[ pid ].name }
+												</TableHead>
+											) ) }
+										</TableRow>
+									</TableHeader>
+									<TableBody>
+										{ missingCards.map( cardId => (
+											<TableRow key={ cardId }>
+												<TableCell>
+													<div className={ "min-w-6 min-h-6 justify-self-center" }>
+														<RCard cardId={ cardId } small/>
+													</div>
+												</TableCell>
+												{ side.map( pid => (
+													<TableCell
+														key={ pid }
+														onClick={ () => handleAssignCard( cardId, pid ) }
+														className={ cn(
+															"cursor-pointer",
+															"hover:bg-accent/20 transition rounded-md"
+														) }
+													>
+														{ claim.get( cardId ) === pid && (
+															<CheckIcon className={ "w-8 h-8 justify-self-center" }/>
+														) }
+													</TableCell>
+												) ) }
+											</TableRow>
+										) ) }
+									</TableBody>
+								</Table>
+							) }
 							{ missingCards.length === 0 && (
 								<div className={ "col-span-2" }>
 									<p className={ "text-sm text-center opacity-60" }>
@@ -197,9 +223,8 @@ export function ClaimBook() {
 					{ currentStep === 3 && (
 						<div className={ "w-full flex gap-3" }>
 							<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
-							<Button onClick={ handleClick } disabled={ claimBook.isPending }
-							        className={ "flex-1" }>
-								{ claimBook.isPending ? <Spinner/> : "CLAIM BOOK" }
+							<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
+								{ isPending ? <Spinner/> : "CLAIM BOOK" }
 							</Button>
 						</div>
 					) }

@@ -13,11 +13,7 @@ import {
 } from "@/auth/shared/schema.ts";
 
 
-// --- Auth Api Group ---------------------------------------
-// Passkey (WebAuthn) auth, owned in-app. Two ceremonies, each a
-// begin (`/options`) + finish (`/verify`) round-trip; `verify` sets the session
-// cookie. `me`/`logout` read and clear it. All endpoints are public (they
-// establish the session); game groups sit behind `AuthMiddleware` instead.
+// --- Auth Api Endpoints ---------------------------------------
 
 const RegisterOptionsEndpoint = HttpApiEndpoint.post( "registerOptions", "/register/options", {
 	payload: RegisterInput,
@@ -48,6 +44,9 @@ const MeEndpoint = HttpApiEndpoint.get( "me", "/me", {
 const LogoutEndpoint = HttpApiEndpoint.post( "logout", "/logout", {
 	success: Schema.Void
 } );
+
+
+// --- Auth Api Group ---------------------------------------
 
 export const AuthApiGroup = HttpApiGroup.make( "auth" )
 	.add( RegisterOptionsEndpoint )

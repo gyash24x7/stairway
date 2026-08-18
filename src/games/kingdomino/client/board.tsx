@@ -2,16 +2,10 @@
 
 import { motion } from "framer-motion";
 import { CrownIcon } from "lucide-react";
-import { Fragment, type ReactNode, useState } from "react";
+import { Fragment, useState } from "react";
 
-import type {
-	Board,
-	BoardSize,
-	Castle,
-	Coord,
-	Rotation,
-	Tile
-} from "@/games/kingdomino/shared/schema.ts";
+import type { ReactNode } from "react";
+
 import {
 	canDominoBePlaced,
 	coordKey,
@@ -22,7 +16,17 @@ import {
 	getRowsAndCols
 } from "@/games/kingdomino/shared/utils.ts";
 import { Popover, PopoverContent } from "@/shared/ui/primitives/popover.tsx";
+import { SPRING } from "@/shared/ui/utils/animation.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
+
+import type {
+	Board,
+	BoardSize,
+	Castle,
+	Coord,
+	Rotation,
+	Tile
+} from "@/games/kingdomino/shared/schema.ts";
 
 export function CrownIndicator( { count, size = 12 }: { count: number; size?: number } ) {
 	if ( count <= 0 ) {
@@ -98,12 +102,10 @@ const SMALL_GAP_CLASS: Record<SmallBoardSize, string> = {
 
 export function RSmallBoard( { board, size = "sm" }: { board: Board; size?: SmallBoardSize } ) {
 	const possibleCells = getCandidateCells( board );
-	const { rows, cols } = getRowsAndCols(
-		getExpandedBoardBounds( board ),
-		possibleCells
+	const { rows, cols } = getRowsAndCols( getExpandedBoardBounds( board ), possibleCells
 	);
 
-	const cells = rows.flatMap( y => cols.map( x => ( {
+	const cells = rows.flatMap( ( y: number ) => cols.map( ( x: number ) => ( {
 		cell: getCellData( board, x, y ),
 		key: coordKey( { x, y } ),
 		coord: { x, y }
@@ -111,7 +113,10 @@ export function RSmallBoard( { board, size = "sm" }: { board: Board; size?: Smal
 
 	return (
 		<div
-			className={ cn( "inline-grid w-fit", SMALL_GAP_CLASS[ size ] ) }
+			// `min-w-max`, not `w-fit`: fit-content caps at the space available, so a
+			// large kingdom in a narrow container had its cells squeezed instead of
+			// overflowing into the caller's scroll area.
+			className={ cn( "inline-grid w-fit min-w-max", SMALL_GAP_CLASS[ size ] ) }
 			style={ { gridTemplateColumns: `repeat(${ cols.length }, minmax(0, 1fr))` } }
 		>
 			{ cells.map( ( { cell, key, coord } ) => !!cell
@@ -132,7 +137,7 @@ function SmallFilledCell(
 			animate={ { scale: 1, opacity: 1 } }
 			transition={ { type: "spring", stiffness: 360, damping: 22 } }
 			className={ cn(
-				"rounded border border-inverted-surface overflow-hidden p-0.5",
+				"rounded border border-outline overflow-hidden p-0.5",
 				"font-semibold flex flex-wrap justify-between items-center",
 				SMALL_CELL_CLASS[ size ],
 				cell.className
@@ -144,15 +149,15 @@ function SmallFilledCell(
 	);
 }
 
-function FilledCell( { cell, x, y }: { cell: CellData; x: number; y: number; } ) {
+function FilledCell( { cell, x, y }: { cell: CellData; x: number; y: number } ) {
 	return (
 		<motion.div
 			layout
 			initial={ { scale: 0.4, opacity: 0 } }
 			animate={ { scale: 1, opacity: 1 } }
-			transition={ { type: "spring", stiffness: 380, damping: 22 } }
+			transition={ SPRING }
 			className={ cn(
-				"w-14 h-14 rounded border border-inverted-surface p-1 text-[10px] overflow-hidden",
+				"w-14 h-14 rounded border border-outline p-1 text-[10px] overflow-hidden",
 				"font-semibold flex flex-col justify-between shrink-0",
 				cell.className
 			) }
@@ -207,7 +212,7 @@ function SmallEmptyCell( props: { coord: Coord; size: SmallBoardSize } ) {
 	return (
 		<div
 			className={ cn(
-				"rounded border border-dashed border-inverted-surface transition",
+				"rounded border border-dashed border-outline transition",
 				SMALL_CELL_CLASS[ props.size ]
 			) }
 			title={ `(${ props.coord.x }, ${ props.coord.y })` }
@@ -219,7 +224,7 @@ function EmptyCell( props: { coord: Coord; isPlacement: boolean } ) {
 	return (
 		<div
 			className={ cn(
-				"w-14 h-14 rounded border border-dashed border-inverted-surface transition shrink-0",
+				"w-14 h-14 rounded border border-dashed border-outline transition shrink-0",
 				props.isPlacement && "border-blue-200"
 			) }
 			title={ `(${ props.coord.x }, ${ props.coord.y })` }
@@ -233,13 +238,13 @@ function getCell( coord: Coord, board: Board, validCellKeys: Set<string> | null 
 	return {
 		cell: getCellData( board, coord.x, coord.y ),
 		key,
-		isPossible: possibleCells.some( c => c.x === coord.x && c.y === coord.y ),
+		isPossible: possibleCells.some( cell => cell.x === coord.x && cell.y === coord.y ),
 		isValidPlacement: validCellKeys ? validCellKeys.has( key ) : false,
 		coord
 	};
 }
 
-export type Tentative = {
+type Tentative = {
 	coords: Coord[];
 	anchor: Coord;
 	toolbar: ReactNode;
@@ -269,26 +274,28 @@ export function RBoard( props: RBoardProps ) {
 		: null;
 
 	const previewKeys = new Set( previewCoords?.map( c => coordKey( c ) ) ?? [] );
-	const tentativeKeys = new Set( props.tentative?.coords.map( c => coordKey( c ) ) ?? [] );
+	const tentativeKeys = new Set( props.tentative?.coords?.map( c => coordKey( c ) ) ?? [] );
 
 	const activeDomino = props.activeDominoId ? DOMINO_DECK[ props.activeDominoId - 1 ] : null;
 	const previewTiles: Record<string, Tile> = {};
 	if ( activeDomino ) {
 		const pair = props.tentative?.coords ?? previewCoords;
-		if ( pair && pair.length === 2 ) {
-			previewTiles[ coordKey( pair[ 0 ] ) ] = activeDomino.left;
-			previewTiles[ coordKey( pair[ 1 ] ) ] = activeDomino.right;
+		const [ left, right ] = pair ?? [];
+		if ( left && right ) {
+			previewTiles[ coordKey( left ) ] = activeDomino.left;
+			previewTiles[ coordKey( right ) ] = activeDomino.right;
 		}
 	}
 
 	// Cells valid at any rotation are clickable; rotation is chosen later in the popover
-	const validCellKeys = props.isActive && props.activeDominoId
-		? new Set( possibleCells
+	const activeDominoId = props.activeDominoId;
+	const validCellKeys = props.isActive && activeDominoId
+		? new Set<string>( possibleCells
 			.filter( coord => ALL_ROTATIONS.some( rotation => canDominoBePlaced(
 				props.board,
-				{ dominoId: props.activeDominoId!, coord, rotation }
+				{ dominoId: activeDominoId, coord, rotation }
 			) ) )
-			.map( c => coordKey( c ) ) )
+			.map( coord => coordKey( coord ) ) )
 		: null;
 
 	const { rows, cols } = getRowsAndCols( bounds, possibleCells );
@@ -297,9 +304,9 @@ export function RBoard( props: RBoardProps ) {
 
 	return (
 		<div className={ "flex flex-col gap-1" }>
-			{ rows.map( y => (
+			{ rows.map( ( y: number ) => (
 				<div className={ "flex gap-1" } key={ y }>
-					{ cols.map( x => {
+					{ cols.map( ( x: number ) => {
 						const data = getCell( { x, y }, props.board, validCellKeys );
 						const isAnchor = !!props.tentative
 							&& props.tentative.anchor.x === x

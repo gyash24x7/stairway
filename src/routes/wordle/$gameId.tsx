@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { WordleGamePage } from "@/games/wordle/client/index.ts";
-import { RequireSession } from "@/shared/ui/components/require-session.tsx";
+import { RequireSession } from "@/auth/client/require-session.tsx";
+import { WordleGamePage } from "@/games/wordle/client/game-page.tsx";
 
 export const Route = createFileRoute( "/wordle/$gameId" )( {
 	component: GameRoute

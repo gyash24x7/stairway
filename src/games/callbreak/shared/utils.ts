@@ -1,15 +1,16 @@
+import { getCardRank, getCardSuit } from "@/shared/cards/utils.ts";
+
 import type { Trick } from "@/games/callbreak/shared/schema.ts";
-import { CALLBREAK_PLAYER_COUNT, CALLBREAK_TRICKS_PER_DEAL, Deal } from "@/games/callbreak/shared/schema.ts";
 import type { CardId, CardRank, CardSuit } from "@/shared/cards/schema.ts";
-import { generateDeck, generateHands, getCardRank, getCardSuit } from "@/shared/cards/utils.ts";
-import { PlayerId } from "@/shared/swish/schema.ts";
-import { generateId } from "@/shared/utils/generator.ts";
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
 
-/** Re-exported from the schema, which pins the seat count for the API too. */
-export const PLAYER_COUNT = CALLBREAK_PLAYER_COUNT;
-export const TRICKS_PER_DEAL = CALLBREAK_TRICKS_PER_DEAL;
-export const RANK_ORDER: CardRank[] = [
+/**
+ * Trick-taking order, weakest first. Aces are high in Callbreak, which is why
+ * this is not the deck's own `A`-first ordering — `getCardValue` indexes into
+ * it, so the array *is* the ranking.
+ */
+export const RANK_ORDER: ReadonlyArray<CardRank> = [
 	"2",
 	"3",
 	"4",
@@ -25,128 +26,107 @@ export const RANK_ORDER: CardRank[] = [
 	"A"
 ];
 
-function getRankValue( rank: CardRank ) {
-	return RANK_ORDER.indexOf( rank );
-}
-
+/**
+ * Where a card sits in the trick-taking order.
+ * @param card - The card to rank.
+ * @returns Its index in {@link RANK_ORDER} — higher beats lower within a suit.
+ */
 export function getCardValue( card: CardId ) {
-	return getRankValue( getCardRank( card ) );
+	return RANK_ORDER.indexOf( getCardRank( card ) );
 }
 
-export function determineTrickWinner( trick: Trick, trump: CardSuit, players: PlayerId[] ) {
-	const leadCard = trick.cards[ trick.leadPlayer ]!;
-
-	let winningPlayer = trick.leadPlayer;
-	let winningCard = leadCard;
-
-	for ( const playerId of players ) {
-		if ( playerId === trick.leadPlayer ) {
-			continue;
-		}
-		const card = trick.cards[ playerId ];
-		if ( !card ) {
-			continue;
-		}
-
-		const cardSuit = getCardSuit( card );
-		const winningSuit = getCardSuit( winningCard );
-
-		if ( cardSuit === trump && winningSuit !== trump ) {
-			winningPlayer = playerId;
-			winningCard = card;
-		} else if ( cardSuit === winningSuit && getCardValue( card ) > getCardValue( winningCard ) ) {
-			winningPlayer = playerId;
-			winningCard = card;
-		}
-	}
-
-	return winningPlayer;
-}
-
-export function createNewDeal(
-	players: PlayerId[],
-	startingPlayer?: PlayerId,
-	rng?: () => number
-) {
-	const deck = generateDeck( rng );
-	const generatedHands = generateHands( deck, PLAYER_COUNT );
-	return Deal.make( {
-		id: generateId(),
-		startingPlayer: startingPlayer ?? players[ 0 ]!,
-		tricks: [],
-		...players.reduce(
-			( acc, pid, idx ) => {
-				acc.hands[ pid ] = generatedHands[ idx ]!;
-				acc.declarations[ pid ] = 0;
-				acc.wins[ pid ] = 0;
-				acc.scores[ pid ] = 0;
-				return acc;
-			},
-			{
-				declarations: {} as Record<PlayerId, number>,
-				wins: {} as Record<PlayerId, number>,
-				scores: {} as Record<PlayerId, number>,
-				hands: {} as Record<PlayerId, CardId[]>
-			}
-		)
-	} );
-}
-
-export function emptyTrick( leadPlayer: PlayerId = PlayerId.make( "" ) ) {
-	return { leadPlayer, cards: {} };
-}
-
-function getHighestCardValue( cards: CardId[], suit: string ) {
+/**
+ * The highest card of one suit among a set, as a rank value.
+ * @param cards - The cards to look through.
+ * @param suit - The suit to measure.
+ * @returns The best value of that suit, or `-1` when the suit is absent.
+ */
+export function getHighestCardValue( cards: ReadonlyArray<CardId>, suit: CardSuit ) {
 	return cards
-		.filter( c => getCardSuit( c ) === suit )
-		.reduce( ( max, c ) => Math.max( max, getCardValue( c ) ), -1 );
+		.filter( card => getCardSuit( card ) === suit )
+		.reduce( ( max, card ) => Math.max( max, getCardValue( card ) ), -1 );
 }
 
-export function getPlayableCards( hand: CardId[], trump: CardSuit, trick: Trick ) {
-	const trickCards = Object.values( trick.cards );
-
-	// Leading the trick — any card
-	if ( trickCards.length === 0 ) {
-		return hand;
+/**
+ * The seats of a trick in the order they actually played into it.
+ *
+ * `context.players` is the seating order, which is only the play order for the
+ * trick the first seat happens to lead. Every other trick starts wherever the
+ * previous one was won, so reading a trick in seat order shows the cards in an
+ * order nobody played them in — and the lead card, which decides what everyone
+ * else was allowed to follow with, lands in an arbitrary position.
+ *
+ * @param trick - The trick to read.
+ * @param players - The seating order to rotate.
+ * @returns The seats, starting at the trick's leader.
+ */
+export function trickPlayOrder( trick: Trick, players: ReadonlyArray<PlayerId> ) {
+	const lead = players.indexOf( trick.leadPlayer );
+	if ( lead < 0 ) {
+		return players;
 	}
 
-	const leadSuit = trick.suit!;
-	const suitCards = hand.filter( c => getCardSuit( c ) === leadSuit );
+	return [ ...players.slice( lead ), ...players.slice( 0, lead ) ];
+}
+
+/**
+ * The cards a seat may legally play into a trick. Callbreak is stricter than
+ * most trick-takers: following suit is not enough, you must head the trick when
+ * you can.
+ *
+ * - Leading, or holding nothing relevant: anything in hand.
+ * - Holding the led suit: play it, and play higher than everything of that suit
+ *   already down unless a trump has already taken the trick away.
+ * - Void in the led suit but holding trump: trump it, and overtrump if a trump
+ *   is already down. Unable to overtrump, the seat is free to throw anything.
+ *
+ * @param hand - The seat's cards.
+ * @param trump - The game's trump suit.
+ * @param trick - The trick being played into.
+ * @returns The subset of `hand` that may be played.
+ */
+export function getPlayableCards(
+	hand: ReadonlyArray<CardId>,
+	trump: CardSuit,
+	trick: Trick
+) {
+	const trickCards = Object.values( trick.cards );
+	const leadSuit = trick.suit;
+
+	// Leading the trick — any card.
+	if ( trickCards.length === 0 || !leadSuit ) {
+		return [ ...hand ];
+	}
+
+	const suitCards = hand.filter( card => getCardSuit( card ) === leadSuit );
 
 	if ( suitCards.length > 0 ) {
-		const trumpPlayed = trickCards.some( c => getCardSuit( c ) === trump );
-
-		// If trump has been played, any suit card is fine (can't beat trump with suit)
-		if ( trumpPlayed && leadSuit !== trump ) {
+		// A trump on a plain-suit trick has already taken it, so following suit
+		// is all that is left to do.
+		if ( leadSuit !== trump && trickCards.some( card => getCardSuit( card ) === trump ) ) {
 			return suitCards;
 		}
 
-		// Must play higher than current highest of that suit if possible
 		const highestPlayed = getHighestCardValue( trickCards, leadSuit );
-		const higherCards = suitCards.filter( c => getCardValue( c ) > highestPlayed );
+		const higherCards = suitCards.filter( card => getCardValue( card ) > highestPlayed );
 		return higherCards.length > 0 ? higherCards : suitCards;
 	}
 
-	// Can't follow suit — must trump
-	const trumpCards = hand.filter( c => getCardSuit( c ) === trump );
+	const trumpCards = hand.filter( card => getCardSuit( card ) === trump );
 
 	if ( trumpCards.length > 0 ) {
-		// If trump already played, must play higher trump if possible
 		const highestTrumpPlayed = getHighestCardValue( trickCards, trump );
-		if ( highestTrumpPlayed >= 0 ) {
-			const higherTrumps = trumpCards.filter( c => getCardValue( c ) > highestTrumpPlayed );
-			return higherTrumps.length > 0 ? higherTrumps : hand;
+		if ( highestTrumpPlayed < 0 ) {
+			return trumpCards;
 		}
-		return trumpCards;
+
+		const higherTrumps = trumpCards.filter(
+			card => getCardValue( card ) > highestTrumpPlayed
+		);
+
+		return higherTrumps.length > 0 ? higherTrumps : [ ...hand ];
 	}
 
-	// No suit cards, no trump — any card
-	return hand;
-}
-
-export function calculateRoundScore( call: number, won: number ) {
-	if ( won >= call ) {
-		return call * 10 + ( won - call ) * 2;
-	}
-	return -call * 10;
+	// Void in the led suit and holding no trump — nothing to enforce.
+	return [ ...hand ];
 }

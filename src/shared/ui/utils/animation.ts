@@ -1,4 +1,30 @@
-import type { Variants } from "framer-motion";
+import type { Transition, Variants } from "framer-motion";
+
+/**
+ * The one spring the app animates on.
+ *
+ * Four hand-tuned springs were in use for the same gesture (380/22, 400/18,
+ * 420/22, 500/20), which is a difference nobody can name but everybody can feel
+ * when two of them run side by side.
+ */
+export const SPRING: Transition = { type: "spring", stiffness: 380, damping: 22 };
+
+/** The same spring, snappier, for a figure ticking over rather than arriving. */
+export const SPRING_TIGHT: Transition = { type: "spring", stiffness: 420, damping: 24 };
+
+/**
+ * A pulse a seat's own row uses to say "this one is you".
+ *
+ * Reduced motion is handled globally in `styles.css`, which flattens every
+ * animation and transition — this keeps the shape in one place regardless.
+ */
+export const pulseRing = ( color = "var(--color-accent)" ) => ( {
+	boxShadow: [
+		"0 0 0 0 rgba(0,0,0,0)",
+		`0 0 0 6px ${ color }`,
+		"0 0 0 0 rgba(0,0,0,0)"
+	]
+} );
 
 export const popIn: Variants = {
 	initial: { scale: 0, opacity: 0 },

@@ -4,13 +4,13 @@ import * as Drizzle from "alchemy/Drizzle";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
-import { default as ApiWorker } from "@/worker.ts";
-import { ArchiveKV } from "@/platform/kv/archive.ts";
-import { WebAuthnKV } from "@/platform/kv/webauthn.ts";
-import { SessionKV } from "@/platform/kv/session.ts";
 import { StairwayDatabase } from "@/platform/database/service.ts";
+import { ArchiveKV } from "@/platform/kv/archive.ts";
+import { SessionKV } from "@/platform/kv/session.ts";
+import { WebAuthnKV } from "@/platform/kv/webauthn.ts";
+import { default as ApiWorker } from "@/worker.ts";
 
-const StairwayStack = Alchemy.Stack(
+export default Alchemy.Stack(
 	"Stairway",
 	{
 		providers: Layer.mergeAll(
@@ -31,7 +31,6 @@ const StairwayStack = Alchemy.Stack(
 			env: { VITE_API_URL: api.url.as<string>() }
 		} );
 
-
 		return {
 			api: { url: api.url },
 			web: { url: web.url },
@@ -47,5 +46,3 @@ const StairwayStack = Alchemy.Stack(
 		};
 	} )
 );
-
-export default StairwayStack;

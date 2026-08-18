@@ -1,41 +1,55 @@
-import { createContext, type ReactNode, useContext } from "react";
+"use client";
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext } from "react";
+
+import type { ReactNode } from "react";
+
+import { splendorApi } from "@/games/splendor/client/client.ts";
+import { SPLENDOR_NOBLE_VISIT } from "@/games/splendor/shared/schema.ts";
+import { hasLegalMove } from "@/games/splendor/shared/utils.ts";
 
 import type {
-	SplendorPlayerView,
-	SplendorSharedView,
-	SplendorSnapshot,
-	SplendorTableView
+	ClaimNobleInput,
+	PickTokensInput,
+	PurchaseCardInput,
+	ReserveCardInput,
+	SplendorConfig,
+	SplendorView
 } from "@/games/splendor/shared/schema.ts";
-
-/** The snapshot as seen by the seated player — `view` narrowed to the required PlayerView. */
-export type SplendorPlayerSnapshot = Omit<SplendorSnapshot, "view"> & { view: SplendorPlayerView };
-
-/** The snapshot as seen by the shared screen — `view` narrowed to the TableView. */
-export type SplendorTableSnapshot = Omit<SplendorSnapshot, "view"> & { view: SplendorTableView };
+import type { GameId, GameView, PlayerId } from "@/swish/shared/schema.ts";
 
 /**
- * What *every* audience can see: the envelope plus the public board fields.
+ * One context for all three screens.
  *
- * Both view variants are structural supersets of `SplendorSharedView` (the player
- * one only adds `playerId`), so either snapshot widens to this with no conversion.
- * Components that render the board read this and work unchanged on the phone and
- * on the television.
+ * The wire carries exactly one envelope, and Splendor's only hidden state is the
+ * order of the three decks — so a seat's view and a spectator's differ in
+ * `view.playerId` alone. `playerId` is therefore optional here and everything
+ * seat-shaped derives from it; the television gets `isMyTurn: false` and simply
+ * never renders a control.
  */
-export type SplendorBoardData = Omit<SplendorSnapshot, "view"> & { view: SplendorSharedView };
-
 type SplendorContextValue = {
-	data: SplendorPlayerSnapshot
-};
-
-type SplendorTableContextValue = {
-	data: SplendorTableSnapshot
+	data: GameView<SplendorView, SplendorConfig>;
+	/** The viewing seat, absent on a shared screen. */
+	playerId?: PlayerId;
+	isMyTurn: boolean;
+	/** Whether the rules leave this seat nothing to do but give up its turn. */
+	mustPass: boolean;
+	/** The noble frame waiting on this seat, if one is open. */
+	awaitingNoble: boolean;
+	pickTokens: ( input: PickTokensInput, onDone?: () => void ) => void;
+	reserveCard: ( input: ReserveCardInput, onDone?: () => void ) => void;
+	purchaseCard: ( input: PurchaseCardInput, onDone?: () => void ) => void;
+	claimNoble: ( input: ClaimNobleInput ) => void;
+	pass: () => void;
+	addBots: () => void;
+	startGame: () => void;
+	setAutoPlay: ( enabled: boolean ) => void;
+	isPending: boolean;
 };
 
 const SplendorContext = createContext<SplendorContextValue | null>( null );
-const SplendorTableContext = createContext<SplendorTableContextValue | null>( null );
-const SplendorBoardContext = createContext<SplendorBoardData | null>( null );
 
-/** The seated player's snapshot. Only available below `SplendorProvider`. */
 export function useSplendor() {
 	const ctx = useContext( SplendorContext );
 	if ( !ctx ) {
@@ -44,66 +58,99 @@ export function useSplendor() {
 	return ctx;
 }
 
-/** The shared screen's snapshot. Only available below `SplendorTableProvider`. */
-export function useSplendorTable() {
-	const ctx = useContext( SplendorTableContext );
-	if ( !ctx ) {
-		throw new Error( "useSplendorTable must be used within a SplendorTableProvider" );
-	}
-	return ctx;
-}
-
-/** The public board, whichever audience is being rendered. Available below either provider. */
-export function useSplendorBoard() {
-	const ctx = useContext( SplendorBoardContext );
-	if ( !ctx ) {
-		throw new Error( "useSplendorBoard must be used within a Splendor provider" );
-	}
-	return { data: ctx };
-}
-
 type SplendorProviderProps = {
-	data: SplendorSnapshot;
+	data: GameView<SplendorView, SplendorConfig>;
+	gameId: GameId;
 	children: ReactNode;
 };
 
-/**
- * Provides the seated player's snapshot, plus the board view beneath it. The page
- * fetches through the member-gated `getState`, so a non-player view here is an
- * invariant violation rather than a state to render.
- */
-export function SplendorProvider( { data, children }: SplendorProviderProps ) {
-	if ( data.view._tag !== "splendor/PlayerView" ) {
-		return null;
-	}
+export function SplendorProvider( { data, gameId, children }: SplendorProviderProps ) {
+	const queryClient = useQueryClient();
+	const invalidate = () => queryClient.invalidateQueries( {
+		queryKey: [ "splendor", "getState", gameId ]
+	} );
 
-	const playerData: SplendorPlayerSnapshot = { ...data, view: data.view };
+	const tokens = useMutation( {
+		mutationFn: ( input: PickTokensInput ) => splendorApi.pickTokens( gameId, input ),
+		onSuccess: invalidate
+	} );
+
+	const reserve = useMutation( {
+		mutationFn: ( input: ReserveCardInput ) => splendorApi.reserveCard( gameId, input ),
+		onSuccess: invalidate
+	} );
+
+	const purchase = useMutation( {
+		mutationFn: ( input: PurchaseCardInput ) => splendorApi.purchaseCard( gameId, input ),
+		onSuccess: invalidate
+	} );
+
+	const noble = useMutation( {
+		mutationFn: ( input: ClaimNobleInput ) => splendorApi.claimNoble( gameId, input ),
+		onSuccess: invalidate
+	} );
+
+	const giveUp = useMutation( {
+		mutationFn: () => splendorApi.pass( gameId ),
+		onSuccess: invalidate
+	} );
+
+	const bots = useMutation( {
+		mutationFn: () => splendorApi.addBots( gameId ),
+		onSuccess: invalidate
+	} );
+
+	const start = useMutation( {
+		mutationFn: () => splendorApi.start( gameId ),
+		onSuccess: invalidate
+	} );
+
+	const autoPlay = useMutation( {
+		mutationFn: ( enabled: boolean ) => splendorApi.setAutoPlay( gameId, { enabled } ),
+		onSuccess: invalidate
+	} );
+
+	const playerId = data.view.playerId;
+	const isMyTurn = data.status === "IN_PROGRESS" && data.context.currentPlayer === playerId;
+
+	const me = playerId ? data.view.playerData[ playerId ] : undefined;
+
+	// `hasLegalMove` is what the engine's `pass` validates against, run here so the
+	// button appears exactly when the command would be accepted.
+	const mustPass = isMyTurn && !!me && !hasLegalMove( data.view, me );
+
+	// A frame routes every move played while it is open, so the noble choice takes
+	// priority over the ordinary turn controls.
+	const [ frame ] = data.context.interactions.slice( -1 );
+	const awaitingNoble = !!playerId
+		&& frame?.kind === SPLENDOR_NOBLE_VISIT
+		&& frame.initiator === playerId;
 
 	return (
-		<SplendorContext value={ { data: playerData } }>
-			<SplendorBoardContext value={ playerData }>
-				{ children }
-			</SplendorBoardContext>
+		<SplendorContext value={ {
+			data,
+			playerId,
+			isMyTurn,
+			mustPass,
+			awaitingNoble,
+			pickTokens: ( input, onDone ) => tokens.mutate( input, { onSuccess: onDone } ),
+			reserveCard: ( input, onDone ) => reserve.mutate( input, { onSuccess: onDone } ),
+			purchaseCard: ( input, onDone ) => purchase.mutate( input, { onSuccess: onDone } ),
+			claimNoble: input => noble.mutate( input ),
+			pass: () => giveUp.mutate(),
+			addBots: () => bots.mutate(),
+			startGame: () => start.mutate(),
+			setAutoPlay: enabled => autoPlay.mutate( enabled ),
+			isPending: tokens.isPending
+				|| reserve.isPending
+				|| purchase.isPending
+				|| noble.isPending
+				|| giveUp.isPending
+				|| bots.isPending
+				|| start.isPending
+				|| autoPlay.isPending
+		} }>
+			{ children }
 		</SplendorContext>
-	);
-}
-
-/**
- * Provides the shared/couch snapshot, plus the board view beneath it. Note it
- * carries no mutations: nothing on a television can take a turn.
- */
-export function SplendorTableProvider( { data, children }: SplendorProviderProps ) {
-	if ( data.view._tag !== "splendor/TableView" ) {
-		return null;
-	}
-
-	const tableData: SplendorTableSnapshot = { ...data, view: data.view };
-
-	return (
-		<SplendorTableContext value={ { data: tableData } }>
-			<SplendorBoardContext value={ tableData }>
-				{ children }
-			</SplendorBoardContext>
-		</SplendorTableContext>
 	);
 }

@@ -2,7 +2,11 @@
 
 import { useBoolean } from "usehooks-ts";
 
-import type { Card } from "@/games/splendor/shared/schema.ts";
+import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { GameCard } from "@/games/splendor/client/game-card.tsx";
+import { PurchaseCard } from "@/games/splendor/client/purchase-card.tsx";
+import { ReserveCard } from "@/games/splendor/client/reserve-card.tsx";
+import { SPLENDOR_MAX_RESERVED } from "@/games/splendor/shared/schema.ts";
 import {
 	Drawer,
 	DrawerContent,
@@ -11,52 +15,36 @@ import {
 	DrawerHeader,
 	DrawerTitle
 } from "@/shared/ui/primitives/drawer.tsx";
-import { useSplendor } from "@/games/splendor/client/context.tsx";
-import { GameCard } from "@/games/splendor/client/game-card.tsx";
-import { PurchaseCard } from "@/games/splendor/client/purchase-card.tsx";
-import { ReserveCard } from "@/games/splendor/client/reserve-card.tsx";
 
-type CardActionsMenuProps = {
-	card: Card;
-}
+import type { Card } from "@/games/splendor/shared/schema.ts";
 
-export function CardActions( props: CardActionsMenuProps ) {
+export function CardActions( { card }: { card: Card } ) {
 	const { value, toggle, setTrue } = useBoolean();
-	const { data } = useSplendor();
+	const { data, playerId, isMyTurn } = useSplendor();
 
-	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === data.view.playerId;
-
-	const {
-		cards: discounts,
-		reserved,
-		tokens: playerTokens
-	} = data.view.playerData[ data.view.playerId ];
+	const me = playerId ? data.view.playerData[ playerId ] : undefined;
+	if ( !me ) {
+		return <GameCard card={ card } disabled/>;
+	}
 
 	return (
 		<Drawer open={ value } onOpenChange={ toggle }>
-			<GameCard card={ props.card } disabled={ !isMyTurn } onCardClick={ setTrue }/>
+			<GameCard card={ card } disabled={ !isMyTurn } onCardClick={ setTrue }/>
 			<DrawerContent>
 				<DrawerHeader>
 					<DrawerTitle>CARD ACTIONS</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "flex justify-center" }>
-					<GameCard card={ props.card }/>
+				<div className={ "flex justify-center overflow-y-scroll max-h-100" }>
+					<GameCard card={ card } disabled/>
 				</div>
 				<DrawerFooter>
 					<div className={ "w-full flex gap-3" }>
-						<PurchaseCard
-							gameId={ data.id }
-							card={ props.card }
-							tokens={ playerTokens }
-							discounts={ discounts }
-						/>
+						<PurchaseCard card={ card } tokens={ me.tokens } discounts={ me.cards }/>
 						<ReserveCard
-							gameId={ data.id }
-							card={ props.card }
-							tokens={ playerTokens }
-							availableSlots={ 3 - reserved.length }
+							card={ card }
+							tokens={ me.tokens }
+							availableSlots={ SPLENDOR_MAX_RESERVED - me.reserved.length }
 							isGoldAvailable={ data.view.tokens.gold > 0 }
 						/>
 					</div>

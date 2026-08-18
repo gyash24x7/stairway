@@ -1,22 +1,17 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useStep } from "usehooks-ts";
 
-import type { AskCardInput, Book } from "@/games/fish/shared/schema.ts";
+import { useFish } from "@/games/fish/client/context.tsx";
 import {
 	getBookDisplayString,
 	getBooksInHand,
 	getCardsOfBook,
-	getMissingCards,
-	getOpponents
+	getMissingCards
 } from "@/games/fish/shared/utils.ts";
-import type { CardId } from "@/shared/cards/schema.ts";
 import { getCardDisplayString } from "@/shared/cards/utils.ts";
-import type { PlayerId } from "@/shared/swish/schema.ts";
 import { RCard } from "@/shared/ui/components/card.tsx";
-import { RPlayerInfo } from "@/shared/ui/components/player-info.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
 import {
 	Drawer,
@@ -28,12 +23,16 @@ import {
 } from "@/shared/ui/primitives/drawer.tsx";
 import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
 import { Spinner } from "@/shared/ui/primitives/spinner.tsx";
-import { askCardFn } from "@/games/fish/client/client.ts";
-import { useFish } from "@/games/fish/client/context.tsx";
+import { RPlayerInfo } from "@/swish/client/player-info.tsx";
+import { opponentsOf } from "@/swish/shared/teams.ts";
+
+import type { Book } from "@/games/fish/shared/schema.ts";
+import type { CardId } from "@/shared/cards/schema.ts";
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
 export function AskCard() {
-	const { data } = useFish();
-	const player = data.view;
+	const { data, askCard, isPending } = useFish();
+	const hand = data.view.hand;
 
 	const [ selectedBook, setSelectedBook ] = useState<Book>();
 	const [ selectedCard, setSelectedCard ] = useState<CardId>();
@@ -41,24 +40,28 @@ export function AskCard() {
 	const [ open, setOpen ] = useState( false );
 	const [ currentStep, { reset, goToNextStep, goToPrevStep } ] = useStep( 4 );
 
-	const askableBooks = Array.from( getBooksInHand( player.hand, data.config.type ) )
-		.filter( book => {
-			const cards = getCardsOfBook( book, player.hand );
-			return cards.length !== data.config.bookSize;
-		} );
+	// A book you already hold in full is not askable — there is nothing missing.
+	const askableBooks = getBooksInHand( hand, data.config.type )
+		.filter( book => getCardsOfBook( book, hand ).length !== data.config.bookSize );
 
-	const opponentsWithCards = getOpponents( data.view.teams, player.playerId )
-		.map( memberId => ( { ...data.players[ memberId ], ...data.view.playerData[ memberId ] } ) )
-		.filter( member => !!data.view.cardCounts[ member.id ] );
+	const opponentsWithCards = opponentsOf( data.context, data.view.playerId )
+		.filter( playerId => ( data.view.cardCounts[ playerId ] ?? 0 ) > 0 );
 
-	const confirmAskDialogTitle = selectedPlayer && selectedCard
-		? `Ask ${ data.players[ selectedPlayer ].name } for ${ getCardDisplayString( selectedCard ) }`
+	const confirmTitle = selectedPlayer && selectedCard
+		? `Ask ${ data.players[ selectedPlayer ]?.name } for ${ getCardDisplayString( selectedCard ) }`
 		: "";
 
-	const openDialog = () => setOpen( true );
+	const closeDrawer = () => {
+		setSelectedBook( undefined );
+		setSelectedCard( undefined );
+		setSelectedPlayer( undefined );
+		reset();
+		setOpen( false );
+	};
 
 	const handleBookSelect = ( value: Book | undefined ) => {
 		setSelectedBook( value );
+		setSelectedCard( undefined );
 		if ( value !== undefined ) {
 			goToNextStep();
 		}
@@ -71,78 +74,59 @@ export function AskCard() {
 		}
 	};
 
-	const handlePlayerSelect = ( pid: PlayerId | undefined ) => {
-		setSelectedPlayer( pid );
-		if ( pid !== undefined ) {
+	const handlePlayerSelect = ( playerId: PlayerId | undefined ) => {
+		setSelectedPlayer( playerId );
+		if ( playerId !== undefined ) {
 			goToNextStep();
 		}
 	};
 
-	const closeDialog = () => {
-		setSelectedBook( undefined );
-		setSelectedCard( undefined );
-		setSelectedPlayer( undefined );
-		reset();
-		setOpen( false );
-	};
-
-	const queryClient = useQueryClient();
-
-	const askCard = useMutation( {
-		mutationFn: ( input: AskCardInput ) => askCardFn( data.id, input ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "fish", "getState", data.id ]
-		} )
-	} );
-
 	const handleClick = () => {
 		if ( selectedCard && selectedPlayer ) {
-			askCard.mutate(
-				{ cardId: selectedCard, from: selectedPlayer },
-				{ onSuccess: closeDialog }
-			);
+			askCard( { cardId: selectedCard, from: selectedPlayer } );
+			closeDrawer();
 		}
 	};
 
 	return (
-		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDialog() : setOpen( true ) }>
-			<Button onClick={ openDialog } className={ "flex-1 max-w-lg" }>ASK CARD</Button>
+		<Drawer open={ open } onOpenChange={ isOpen => !isOpen ? closeDrawer() : setOpen( true ) }>
+			<Button onClick={ () => setOpen( true ) }>ASK CARD</Button>
 			<DrawerContent>
 				<DrawerHeader>
 					<DrawerTitle>
-						{ currentStep === 1 && "Select Book to Ask from".toUpperCase() }
-						{ currentStep === 2 && "Select Card to Ask".toUpperCase() }
-						{ currentStep === 3 && "Select Player to Ask from".toUpperCase() }
-						{ currentStep === 4 && confirmAskDialogTitle.toUpperCase() }
+						{ currentStep === 1 && "SELECT BOOK TO ASK FROM" }
+						{ currentStep === 2 && "SELECT CARD TO ASK" }
+						{ currentStep === 3 && "SELECT PLAYER TO ASK FROM" }
+						{ currentStep === 4 && confirmTitle.toUpperCase() }
 					</DrawerTitle>
 					<DrawerDescription/>
 				</DrawerHeader>
-				<div className={ "px-4 overflow-y-auto" }>
+				<div className={ "px-4 overflow-y-scroll max-h-100" }>
 					{ currentStep === 1 && (
 						<RadioSelect
 							options={ askableBooks }
 							value={ selectedBook }
 							onChange={ handleBookSelect }
 							className={ "grid gap-3 grid-cols-3 md:grid-cols-4" }
-							renderOption={ ( book ) => (
-								<h1 className={ "text-md md:text-lg xl:text-xl font-semibold" }>
+							renderOption={ book => (
+								<h1 className={ "text-base md:text-lg xl:text-xl font-semibold" }>
 									{ getBookDisplayString( book, data.config.type ) }
 								</h1>
 							) }
 						/>
 					) }
-					{ currentStep === 2 && (
+					{ currentStep === 2 && !!selectedBook && (
 						<RadioSelect
-							options={ getMissingCards( player.hand, selectedBook!, data.config.type ) }
+							options={ getMissingCards( hand, selectedBook, data.config.type ) }
 							value={ selectedCard }
 							onChange={ handleCardSelect }
 							className={ "justify-center" }
-							renderOption={ ( cardId ) => <RCard cardId={ cardId }/> }
+							renderOption={ cardId => <RCard cardId={ cardId }/> }
 						/>
 					) }
 					{ currentStep === 3 && (
 						<RadioSelect
-							options={ opponentsWithCards.map( p => p.id ) }
+							options={ opponentsWithCards }
 							value={ selectedPlayer }
 							onChange={ handlePlayerSelect }
 							className={ "grid gap-3 grid-cols-3" }
@@ -175,8 +159,8 @@ export function AskCard() {
 					{ currentStep === 4 && (
 						<div className={ "w-full flex gap-3" }>
 							<Button onClick={ goToPrevStep } className={ "flex-1" }>BACK</Button>
-							<Button onClick={ handleClick } disabled={ askCard.isPending } className={ "flex-1" }>
-								{ askCard.isPending ? <Spinner/> : "ASK CARD" }
+							<Button onClick={ handleClick } disabled={ isPending } className={ "flex-1" }>
+								{ isPending ? <Spinner/> : "ASK CARD" }
 							</Button>
 						</div>
 					) }

@@ -1,59 +1,22 @@
-import { getClient, run } from "@/client.ts";
-import type {
-	AskCardInput,
-	ClaimBookInput,
-	CreateTeamsInput,
-	FishConfig,
-	TransferTurnInput
-} from "@/games/fish/shared/schema.ts";
-import {
-	GameCode,
-	GameIdParams,
-	JoinGameInput
-} from "@/shared/swish/schema.ts";
+import { client } from "@/client.ts";
+import { gameFn, gameInputFn, inputFn } from "@/swish/client/api.ts";
 
-const API_URL = import.meta.env[ "VITE_API_URL" ] ?? "http://localhost:8787";
-
-const client = getClient( API_URL ).fish;
-
-/** Build the branded `:gameId` path-param struct the endpoints expect. */
-const gameIdParams = ( gameId: string ) =>
-	GameIdParams.make( { gameId: GameIdParams.fields.gameId.make( gameId ) } );
-
-// --- Lifecycle -------------------------------------------------------------
-
-export const createFishGameFn = ( config: FishConfig ) =>
-	run( client.createGame( { payload: config } ) );
-
-export const joinFishGameFn = ( code: string ) =>
-	run( client.join( {
-		payload: JoinGameInput.make( { code: GameCode.make( code ) } )
-	} ) );
-
-/** Start a filled game sitting at `PLAYERS_READY`. */
-export const startGameFn = ( gameId: string ) =>
-	run( client.start( { params: gameIdParams( gameId ) } ) );
-
-export const addBotsFn = ( gameId: string ) =>
-	run( client.addBots( { params: gameIdParams( gameId ) } ) );
-
-// --- Moves -----------------------------------------------------------------
-
-export const createTeamsFn = ( gameId: string, input: CreateTeamsInput ) =>
-	run( client.createTeams( { params: gameIdParams( gameId ), payload: input } ) );
-
-export const askCardFn = ( gameId: string, input: AskCardInput ) =>
-	run( client.askCard( { params: gameIdParams( gameId ), payload: input } ) );
-
-export const claimBookFn = ( gameId: string, input: ClaimBookInput ) =>
-	run( client.claimBook( { params: gameIdParams( gameId ), payload: input } ) );
-
-export const transferTurnFn = ( gameId: string, input: TransferTurnInput ) =>
-	run( client.transferTurn( { params: gameIdParams( gameId ), payload: input } ) );
-
-// --- Queries ---------------------------------------------------------------
-
-export const getStateFn = ( gameId: string, signal?: AbortSignal ) =>
-	run( client.getState( {
-		params: gameIdParams( gameId )
-	} ), signal );
+/**
+ * Fish's endpoints, as calls a component can make. `joinTeam` and `nameTeam` are
+ * lobby-only — the engine refuses either once the game has started.
+ */
+export const fishApi = {
+	createGame: inputFn( client.fish.createGame ),
+	join: inputFn( client.fish.join ),
+	getView: gameFn( client.fish.getView ),
+	addBots: gameFn( client.fish.addBots ),
+	start: gameFn( client.fish.start ),
+	undo: gameFn( client.fish.undo ),
+	redo: gameFn( client.fish.redo ),
+	joinTeam: gameInputFn( client.fish.joinTeam ),
+	nameTeam: gameInputFn( client.fish.nameTeam ),
+	askCard: gameInputFn( client.fish.askCard ),
+	claimBook: gameInputFn( client.fish.claimBook ),
+	transferTurn: gameInputFn( client.fish.transferTurn ),
+	setAutoPlay: gameInputFn( client.fish.setAutoPlay )
+};

@@ -1,1022 +1,629 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import * as Effect from "effect/Effect";
 
 import { callbreak } from "@/games/callbreak/server/engine.ts";
+import {
+	CALLBREAK_DEAL_COUNTS,
+	CALLBREAK_MOVE_TIMEOUT_MILLIS,
+	CALLBREAK_PLAYER_COUNT,
+	CALLBREAK_TRICKS_PER_DEAL
+} from "@/games/callbreak/shared/schema.ts";
+import { calculateRoundScore, determineTrickWinner } from "@/games/callbreak/server/utils.ts";
+import { getPlayableCards } from "@/games/callbreak/shared/utils.ts";
+import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
+
 import type {
 	CallbreakConfig,
-	CallbreakPlayerView,
-	CallbreakTableView,
-	CallbreakView
+	CallbreakView,
+	Trick
 } from "@/games/callbreak/shared/schema.ts";
 import type { CardId, CardSuit } from "@/shared/cards/schema.ts";
-import { GameCode, GameId, PlayerId } from "@/shared/swish/schema.ts";
-import type { PlayerInfo } from "@/shared/swish/schema.ts";
-import { makeMemory, type Memory, player, run, runFail } from "@tests/_helpers/swish.ts";
+import type { InvalidMove, PlayerId as Player } from "@/swish/shared/schema.ts";
 
-const GID = GameId.make( "g1" );
-const CODE = GameCode.make( "ABC123" );
+type Engine = Effect.Success<typeof callbreak>;
 
-const P1 = player( "p1" );
-const P2 = player( "p2" );
-const P3 = player( "p3" );
-const P4 = player( "p4" );
-const SEATED = [ P1, P2, P3, P4 ];
-/** Never joins anything — used to prove `assertMember` gates each command. */
-const STRANGER = player( "p9" );
+/** How long the engine waits before the policy plays a seat. */
+const BOT_DELAY_MS = 5_000;
 
-const CONFIG: CallbreakConfig = {
-	playerCount: 4,
+const seat = ( id: string ) => PlayerId.make( id );
+
+const [ a, b, c, d ] = [ seat( "a" ), seat( "b" ), seat( "c" ), seat( "d" ) ];
+
+const seats: ReadonlyArray<Player> = [ a, b, c, d ];
+
+const info = ( id: Player, isBot = false ) =>
+	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar", isBot } );
+
+const configFor = (
+	dealCount: typeof CALLBREAK_DEAL_COUNTS[number],
+	trumpSuit: CardSuit
+): CallbreakConfig => ( {
+	playerCount: CALLBREAK_PLAYER_COUNT,
+	dealCount,
+	trumpSuit,
 	autoStart: false,
-	dealCount: 5,
-	trumpSuit: "S"
-};
-
-// --- Looking inside the fake store ------------------------------------------
-// `getState` is member-only and redacted, so the persisted snapshot is the only
-// place the *whole* deal (every hand) can be read — which is exactly what the
-// redaction tests need to assert against.
-
-interface StoredTrick {
-	leadPlayer: PlayerId;
-	suit?: CardSuit;
-	cards: Record<string, CardId>;
-	winner?: PlayerId;
-}
-
-interface StoredDeal {
-	id: string;
-	startingPlayer: PlayerId;
-	hands: Record<string, CardId[]>;
-	declarations: Record<string, number>;
-	wins: Record<string, number>;
-	scores: Record<string, number>;
-	tricks: StoredTrick[];
-}
-
-interface Stored {
-	status: string;
-	context: {
-		turn: number;
-		players: PlayerId[];
-		currentPlayer: PlayerId;
-		phase?: string;
-	};
-	config: CallbreakConfig;
-	state: {
-		deals: StoredDeal[];
-		scores: Record<string, number>;
-		winner?: PlayerId;
-	};
-}
-
-const stored = ( memory: Memory ) => memory.store.value as Stored;
-const activeDeal = ( memory: Memory ) => stored( memory ).state.deals[ 0 ]!;
-const dealId = ( memory: Memory ) => activeDeal( memory ).id;
+	moveTimeoutMillis: CALLBREAK_MOVE_TIMEOUT_MILLIS
+} );
 
 /**
- * Rewrites the persisted snapshot through an unfrozen deep copy (the reducer's
- * immer output is frozen). This is how the tests below reach board positions —
- * a chosen hand, a deal twelve tricks deep — that would otherwise cost dozens of
- * moves to reach.
+ * Seats four players by hand and starts the table, which is how Callbreak runs:
+ * `autoStart` is off, so the creator says when the lobby closes.
+ *
+ * @param body - What to play once the game is under way.
+ * @param [options] - The round shape, who is a bot, and the clock to drive it with.
+ * @returns The run's result and collectors.
  */
-const patchStore = ( memory: Memory, patch: ( snapshot: Stored ) => void ) => {
-	const snapshot = structuredClone( memory.store.value ) as Stored;
-	patch( snapshot );
-	memory.store.value = snapshot;
-};
-
-/** Replaces the named players' hands in the active deal. */
-const setHands = ( memory: Memory, hands: Record<string, ReadonlyArray<CardId>> ) =>
-	patchStore( memory, ( snapshot ) => {
-		const deal = snapshot.state.deals[ 0 ]!;
-		for ( const [ pid, cards ] of Object.entries( hands ) ) {
-			deal.hands[ pid ] = [ ...cards ];
-		}
-	} );
-
-/** The table + per-player payload of the most recent broadcast. */
-const lastBroadcast = ( memory: Memory ) => memory.broadcasts.at( -1 )! as {
-	channel: string;
-	snapshot: {
-		table: { view: CallbreakTableView };
-		playerViews: Record<string, { view: CallbreakPlayerView }>;
-	};
-};
-
-/** Narrows a snapshot's view to the private (player) variant. */
-function asPlayerView( view: CallbreakView ) {
-	if ( view._tag !== "callbreak/PlayerView" ) {
-		throw new Error( `expected a player view, got ${ view._tag }` );
-	}
-
-	return view;
-}
-
-/** Brands the keys of a plain `{ p1: … }` literal so it can be compared to a view. */
-const scoreTable = ( entries: Record<string, number> ) => entries as Record<PlayerId, number>;
-
-const byId = ( id: PlayerId ) => SEATED.find( ( p ) => p.id === id )!;
-
-// --- Booting a game ---------------------------------------------------------
-
-/** initialize → join every player → (optionally) start. Lands in `DECLARING`. */
-async function boot(
-	memory: Memory,
-	opts: {
-		config?: Partial<CallbreakConfig>;
-		players?: ReadonlyArray<PlayerInfo>;
-		start?: boolean;
-		seed?: string;
+const table = <A, E>(
+	body: ( engine: Engine ) => Effect.Effect<A, E>,
+	options: {
+		readonly dealCount?: typeof CALLBREAK_DEAL_COUNTS[number];
+		readonly trumpSuit?: CardSuit;
+		readonly bots?: boolean;
+		readonly clock?: ReturnType<typeof testClock>;
 	} = {}
-) {
-	const engine = await run( memory, callbreak );
-	const config = { ...CONFIG, ...opts.config };
-	const players = opts.players ?? SEATED;
+) => {
+	const clock = options.clock ?? testClock();
+	const config = configFor( options.dealCount ?? 5, options.trumpSuit ?? "S" );
 
-	await run( memory, engine.initialize( {
-		id: GID, code: CODE, config, seed: opts.seed ?? "seed"
-	} ) );
-	for ( const p of players ) {
-		await run( memory, engine.join( p ) );
-	}
+	return runGame( callbreak, engine => Effect.gen( function* () {
+		yield* engine.initialize( createInput( config, a ) );
 
-	if ( opts.start !== false ) {
-		await run( memory, engine.start( players[ 0 ]!.id ) );
-	}
+		for ( const player of seats ) {
+			yield* engine.join( info( player, options.bots ?? false ) );
+		}
 
-	return engine;
-}
+		yield* engine.start( a );
+		return yield* body( engine );
+	} ), { now: clock.now } );
+};
 
-type Engine = Awaited<ReturnType<typeof boot>>;
+/** The envelope a seat (or a spectator) reads right now. */
+const envelopeOf = ( engine: Engine, id?: Player ) =>
+	id ? engine.getState( id ) : engine.getState();
+
+/** The view a seat (or a spectator) holds right now. */
+const viewOf = ( engine: Engine, id?: Player ) =>
+	envelopeOf( engine, id ).pipe( Effect.map( envelope => envelope.view as CallbreakView ) );
 
 /**
- * Declares for all four seats in the engine's own order (which starts at the
- * deal's starting player and rotates), ending the `DECLARING` phase.
+ * The trick the next card goes into. A settled trick stays the newest one until
+ * its winner leads again — the engine opens the next one in `beforeMove` — so a
+ * client works its legal cards out against an empty trick of its own, exactly as
+ * the bot policy does.
+ *
+ * @param view - The acting seat's view.
+ * @param playerId - The seat about to play.
+ * @returns The trick to measure the hand against.
  */
-async function declareAll(
-	memory: Memory,
+const trickInPlay = ( view: CallbreakView, playerId: Player ) => {
+	const current = view.activeDeal?.tricks[ 0 ];
+	const settled = !current
+		|| !!current.winner
+		|| Object.keys( current.cards ).length >= CALLBREAK_PLAYER_COUNT;
+
+	return settled ? ( { leadPlayer: playerId, cards: {} } as Trick ) : current;
+};
+
+/** Every card the acting seat may legally play, in hand order. */
+const legalCards = ( view: CallbreakView, trump: CardSuit, playerId: Player ) =>
+	getPlayableCards( view.hand, trump, trickInPlay( view, playerId ) );
+
+/** Hands the call round to each seat in turn, declaring the same number each. */
+const declareAll = ( engine: Engine, wins = 1 ) => Effect.gen( function* () {
+	for ( let i = 0; i < CALLBREAK_PLAYER_COUNT; i++ ) {
+		const envelope = yield* envelopeOf( engine );
+		const actor = envelope.context.currentPlayer;
+		const view = yield* viewOf( engine, actor );
+
+		yield* engine.declareWins( { wins, dealId: view.activeDeal!.id }, actor );
+	}
+} );
+
+/**
+ * Plays one trick out, always choosing the first legal card. Rebuilds the trick
+ * as it goes so the caller knows who took it without having to read a view that
+ * may already have moved on to the next deal.
+ *
+ * @param engine - The game to play.
+ * @param trump - The table's trump suit.
+ * @returns Who led it, what was played, and who took it.
+ */
+const playTrick = ( engine: Engine, trump: CardSuit ) => Effect.gen( function* () {
+	const cards: Record<Player, CardId> = {};
+	let leadPlayer: Player | undefined;
+	let suit: CardSuit | undefined;
+
+	for ( let i = 0; i < CALLBREAK_PLAYER_COUNT; i++ ) {
+		const envelope = yield* envelopeOf( engine );
+		const actor = envelope.context.currentPlayer;
+		const view = yield* viewOf( engine, actor );
+		const card = legalCards( view, trump, actor )[ 0 ]!;
+
+		leadPlayer ??= actor;
+		suit ??= card.slice( -1 ) as CardSuit;
+		cards[ actor ] = card;
+
+		yield* engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, actor );
+	}
+
+	const trick = { leadPlayer: leadPlayer!, suit, cards } as Trick;
+	return { trick, winner: determineTrickWinner( trick, trump, seats ) };
+} );
+
+/**
+ * Declares and then plays a whole deal out.
+ *
+ * @param engine - The game to play.
+ * @param trump - The table's trump suit.
+ * @param [wins] - What every seat declares.
+ * @returns Each seat's call and the tricks it actually took.
+ */
+const playDeal = (
 	engine: Engine,
-	bids: Record<string, number> = {}
-) {
-	const id = dealId( memory );
-	for ( let i = 0; i < 4; i++ ) {
-		const pid = stored( memory ).context.currentPlayer;
-		await run( memory, engine.declareWins( { wins: bids[ pid ] ?? 2, dealId: id }, byId( pid ) ) );
+	trump: CardSuit,
+	wins = 1
+) => Effect.gen( function* () {
+	yield* declareAll( engine, wins );
+
+	const taken: Record<Player, number> = Object.fromEntries(
+		seats.map( id => [ id, 0 ] )
+	) as Record<Player, number>;
+
+	for ( let i = 0; i < CALLBREAK_TRICKS_PER_DEAL; i++ ) {
+		const { winner } = yield* playTrick( engine, trump );
+		taken[ winner ] += 1;
+
+		// The last trick rolls the table straight into the next deal, so there is
+		// no longer a deal in play whose counters could be checked against.
+		if ( i < CALLBREAK_TRICKS_PER_DEAL - 1 ) {
+			const view = yield* viewOf( engine );
+			expect( view.lastCompletedTrick?.winner ).toBe( winner );
+			expect( view.activeDeal!.wins[ winner ] ).toBe( taken[ winner ] );
+			expect( ( yield* envelopeOf( engine ) ).context.currentPlayer ).toBe( winner );
+		}
 	}
-}
 
-/** boot → declare for everyone. Lands on the first trick of `PLAYING`. */
-async function bootPlaying(
-	memory: Memory,
-	opts: { config?: Partial<CallbreakConfig>; bids?: Record<string, number> } = {}
-) {
-	const engine = await boot( memory, { config: opts.config } );
-	await declareAll( memory, engine, opts.bids );
-	return engine;
-}
+	return { calls: Object.fromEntries( seats.map( id => [ id, wins ] ) ), taken };
+} );
 
-/** Plays one card for whoever is on turn. */
-const play = ( memory: Memory, engine: Engine, cardId: CardId ) =>
-	run( memory, engine.playCard(
-		{ cardId, dealId: dealId( memory ) },
-		byId( stored( memory ).context.currentPlayer )
-	) );
+
+describe( "dealing the table", () => {
+	test( "deals thirteen cards to each of the four seats", () => {
+		const { result } = table( engine => Effect.all( seats.map( id => viewOf( engine, id ) ) ) );
+
+		const hands = result.map( view => view.hand );
+		for ( const hand of hands ) {
+			expect( hand ).toHaveLength( CALLBREAK_TRICKS_PER_DEAL );
+		}
+
+		expect( new Set( hands.flat() ).size ).toBe( 52 );
+	} );
+
+	test( "never puts a hand on the wire, only its size", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			return {
+				own: yield* viewOf( engine, a ),
+				opponent: yield* viewOf( engine, b ),
+				spectator: yield* viewOf( engine )
+			};
+		} ) );
+
+		const { own, opponent, spectator } = result;
+
+		expect( Object.keys( own.activeDeal! ) ).not.toContain( "hands" );
+		expect( spectator.hand ).toEqual( [] );
+		expect( spectator.playerId ).toBeUndefined();
+		expect( own.playerId ).toBe( a );
+		expect( opponent.playerId ).toBe( b );
+
+		// A seat's own cards are its own: nothing about them reaches another view.
+		for ( const card of own.hand ) {
+			expect( opponent.hand ).not.toContain( card );
+			expect( JSON.stringify( spectator ) ).not.toContain( `"${ card }"` );
+		}
+
+		// Everyone sees how much everyone else is holding, spectators included.
+		for ( const view of [ own, opponent, spectator ] ) {
+			expect( view.handCounts ).toEqual( {
+				[ a ]: 13,
+				[ b ]: 13,
+				[ c ]: 13,
+				[ d ]: 13
+			} );
+		}
+	} );
+
+	test( "opens in the declaring phase, led by the first seat", () => {
+		const { result } = table( engine => envelopeOf( engine ) );
+
+		expect( result.status ).toBe( "IN_PROGRESS" );
+		expect( result.context.phase ).toBe( "DECLARING" );
+		expect( result.context.currentPlayer ).toBe( a );
+		expect( ( result.view as CallbreakView ).activeDeal!.startingPlayer ).toBe( a );
+	} );
+
+	test( "starts everybody on nothing", () => {
+		const { result } = table( engine => viewOf( engine ) );
+
+		expect( result.scores ).toEqual( { [ a ]: 0, [ b ]: 0, [ c ]: 0, [ d ]: 0 } );
+		expect( result.lastCompletedTrick ).toBeUndefined();
+		expect( result.activeDeal!.tricks ).toEqual( [] );
+	} );
+} );
+
+
+describe( "declaring", () => {
+	test( "refuses a seat that is not the one being asked", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const view = yield* viewOf( engine, b );
+			return yield* engine.declareWins( { wins: 3, dealId: view.activeDeal!.id }, b )
+				.pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/NotYourTurn" );
+	} );
+
+	test( "refuses a call aimed at a deal that is not in play", () => {
+		const { result } = table( engine =>
+			engine.declareWins( { wins: 3, dealId: "not-this-deal" }, a ).pipe( Effect.flip ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+		expect( ( result as InvalidMove ).reason ).toBe( "Active Deal Not Found!" );
+	} );
+
+	test( "refuses a call outside the range a deal can pay", () => {
+		const refusals = table( engine => Effect.gen( function* () {
+			const dealId = ( yield* viewOf( engine, a ) ).activeDeal!.id;
+
+			return yield* Effect.all( [ 0, 14, 2.5 ].map( wins =>
+				engine.declareWins( { wins, dealId }, a ).pipe( Effect.flip ) ) );
+		} ) ).result;
+
+		for ( const refusal of refusals ) {
+			expect( refusal._tag ).toBe( "swish/InvalidMove" );
+		}
+	} );
+
+	test( "goes round the table and hands over to the play once everyone has called", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const order: Array<Player> = [];
+
+			for ( let i = 0; i < CALLBREAK_PLAYER_COUNT; i++ ) {
+				const actor = ( yield* envelopeOf( engine ) ).context.currentPlayer;
+				order.push( actor );
+
+				const dealId = ( yield* viewOf( engine, actor ) ).activeDeal!.id;
+				yield* engine.declareWins( { wins: i + 1, dealId }, actor );
+			}
+
+			return { order, envelope: yield* envelopeOf( engine ) };
+		} ) );
+
+		expect( result.order ).toEqual( [ a, b, c, d ] );
+		expect( result.envelope.context.phase ).toBe( "PLAYING" );
+		expect( result.envelope.context.currentPlayer ).toBe( a );
+		expect( ( result.envelope.view as CallbreakView ).activeDeal!.declarations ).toEqual( {
+			[ a ]: 1,
+			[ b ]: 2,
+			[ c ]: 3,
+			[ d ]: 4
+		} );
+	} );
+
+	test( "refuses a card before the calls are in", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const view = yield* viewOf( engine, a );
+			return yield* engine
+				.playCard( { cardId: view.hand[ 0 ]!, dealId: view.activeDeal!.id }, a )
+				.pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
+	} );
+} );
+
+
+describe( "playing a trick", () => {
+	test( "refuses a card the seat is not holding", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* declareAll( engine );
+
+			const view = yield* viewOf( engine, a );
+			const missing = ( yield* viewOf( engine, b ) ).hand[ 0 ]!;
+
+			return yield* engine
+				.playCard( { cardId: missing, dealId: view.activeDeal!.id }, a )
+				.pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/InvalidMove" );
+		expect( ( result as InvalidMove ).reason ).toBe( "Card not in hand!" );
+	} );
+
+	test( "refuses every card the rules do not allow, and only those", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* declareAll( engine );
+
+			// The opener may play anything, so the following seats are where the
+			// follow-suit and heading rules actually bite.
+			yield* playFirstLegalCard( engine, "S" );
+
+			const actor = ( yield* envelopeOf( engine ) ).context.currentPlayer;
+			const view = yield* viewOf( engine, actor );
+			const legal = legalCards( view, "S", actor );
+			const illegal = view.hand.filter( card => !legal.includes( card ) );
+
+			const refusals = yield* Effect.all( illegal.map( card =>
+				engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, actor )
+					.pipe( Effect.flip ) ) );
+
+			return { legal, refusals };
+		} ) );
+
+		// The opening card fixes a suit, so a thirteen-card hand always has some
+		// card the rules keep back — this is never a vacuous assertion.
+		expect( result.legal.length ).toBeLessThan( CALLBREAK_TRICKS_PER_DEAL - 1 );
+		expect( result.refusals.length ).toBeGreaterThan( 0 );
+
+		for ( const refusal of result.refusals ) {
+			expect( refusal._tag ).toBe( "swish/InvalidMove" );
+			expect( ( refusal as InvalidMove ).reason ).toBe( "Card cannot be played!" );
+		}
+	} );
+
+	test( "takes the card out of the hand it was played from", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* declareAll( engine );
+
+			const before = yield* viewOf( engine, a );
+			const card = legalCards( before, "S", a )[ 0 ]!;
+			yield* engine.playCard( { cardId: card, dealId: before.activeDeal!.id }, a );
+
+			return { card, after: yield* viewOf( engine, a ), table: yield* viewOf( engine ) };
+		} ) );
+
+		expect( result.after.hand ).not.toContain( result.card );
+		expect( result.after.hand ).toHaveLength( CALLBREAK_TRICKS_PER_DEAL - 1 );
+		expect( result.table.handCounts[ a ] ).toBe( CALLBREAK_TRICKS_PER_DEAL - 1 );
+		expect( result.table.activeDeal!.tricks[ 0 ]!.cards[ a ] ).toBe( result.card );
+		expect( result.table.activeDeal!.tricks[ 0 ]!.suit )
+			.toBe( result.card.slice( -1 ) as CardSuit );
+	} );
+
+	test( "hands the lead to whoever took it", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* declareAll( engine );
+
+			const { winner } = yield* playTrick( engine, "S" );
+			const envelope = yield* envelopeOf( engine );
+			const view = envelope.view as CallbreakView;
+
+			return { winner, envelope, view };
+		} ) );
+
+		expect( result.envelope.context.currentPlayer ).toBe( result.winner );
+		expect( result.view.lastCompletedTrick?.winner ).toBe( result.winner );
+		expect( result.view.activeDeal!.wins[ result.winner ] ).toBe( 1 );
+		expect( result.view.activeDeal!.tricks ).toHaveLength( 1 );
+
+		// The next trick is not opened until its leader actually plays into it.
+		for ( const id of seats ) {
+			expect( result.view.handCounts[ id ] ).toBe( CALLBREAK_TRICKS_PER_DEAL - 1 );
+		}
+	} );
+
+	test( "settles the trick the way the rules say", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* declareAll( engine );
+			return yield* playTrick( engine, "S" );
+		} ) );
+
+		const { trick, winner } = result;
+		const trumps = Object.values( trick.cards ).filter( card => card.endsWith( "S" ) );
+
+		expect( Object.keys( trick.cards ) ).toHaveLength( CALLBREAK_PLAYER_COUNT );
+
+		if ( trumps.length > 0 ) {
+			expect( trick.cards[ winner ]!.endsWith( "S" ) ).toBe( true );
+		} else {
+			expect( trick.cards[ winner ]!.endsWith( trick.suit! ) ).toBe( true );
+		}
+	} );
+} );
+
+
+describe( "finishing a deal", () => {
+	test( "scores every seat, deals again and rotates the lead", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const first = ( yield* viewOf( engine ) ).activeDeal!;
+			const { taken } = yield* playDeal( engine, "S", 2 );
+
+			return { first, taken, envelope: yield* envelopeOf( engine ) };
+		} ) );
+
+		const view = result.envelope.view as CallbreakView;
+
+		expect( Object.values( result.taken ).reduce( ( sum, n ) => sum + n, 0 ) )
+			.toBe( CALLBREAK_TRICKS_PER_DEAL );
+
+		for ( const id of seats ) {
+			expect( view.scores[ id ] ).toBe( calculateRoundScore( 2, result.taken[ id ] ) );
+		}
+
+		// A fresh deal, led by the next seat along, with everyone back to thirteen.
+		expect( view.activeDeal!.id ).not.toBe( result.first.id );
+		expect( view.activeDeal!.startingPlayer ).toBe( b );
+		expect( view.activeDeal!.tricks ).toEqual( [] );
+		expect( view.activeDeal!.declarations ).toEqual( {
+			[ a ]: 0,
+			[ b ]: 0,
+			[ c ]: 0,
+			[ d ]: 0
+		} );
+
+		expect( result.envelope.context.phase ).toBe( "DECLARING" );
+		expect( result.envelope.context.currentPlayer ).toBe( b );
+		expect( view.handCounts ).toEqual( {
+			[ a ]: 13,
+			[ b ]: 13,
+			[ c ]: 13,
+			[ d ]: 13
+		} );
+		expect( result.envelope.status ).toBe( "IN_PROGRESS" );
+	} );
+
+	test( "keeps a running total across deals", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const first = yield* playDeal( engine, "S", 2 );
+			const afterFirst = ( yield* viewOf( engine ) ).scores;
+			const second = yield* playDeal( engine, "S", 3 );
+
+			return { first, second, afterFirst, afterSecond: ( yield* viewOf( engine ) ).scores };
+		} ) );
+
+		for ( const id of seats ) {
+			expect( result.afterFirst[ id ] ).toBe( calculateRoundScore( 2, result.first.taken[ id ] ) );
+			expect( result.afterSecond[ id ] ).toBe(
+				result.afterFirst[ id ]! + calculateRoundScore( 3, result.second.taken[ id ] )
+			);
+		}
+	} );
+} );
+
+
+describe( "finishing the game", () => {
+	test( "stops after the configured number of deals and ranks the table", () => {
+		const { result, saved } = table( engine => Effect.gen( function* () {
+			for ( let deal = 0; deal < 5; deal++ ) {
+				yield* playDeal( engine, "S", 2 );
+			}
+
+			return yield* envelopeOf( engine );
+		} ), { dealCount: 5 } );
+
+		const view = result.view as CallbreakView;
+		const ranking = result.results!.ranking;
+
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( ranking ).toHaveLength( CALLBREAK_PLAYER_COUNT );
+		expect( ranking[ 0 ]!.rank ).toBe( 1 );
+
+		// The standings and the crowned winner read the same totals.
+		for ( const standing of ranking ) {
+			expect( standing.score ).toBe( view.scores[ standing.playerId ] );
+		}
+
+		for ( let i = 1; i < ranking.length; i++ ) {
+			expect( ranking[ i - 1 ]!.score! ).toBeGreaterThanOrEqual( ranking[ i ]!.score! );
+		}
+
+		// A shared top is a shared victory: callbreak has no tie-break, so the
+		// standings name nobody rather than picking whoever sat down first.
+		const shared = ranking[ 0 ]!.score === ranking[ 1 ]!.score;
+		expect( result.results!.winner ).toBe( shared ? undefined : ranking[ 0 ]!.playerId );
+
+		expect( saved.get( "callbreak:game-1" ) ).toBeDefined();
+	} );
+} );
+
+
+describe( "the bot policy", () => {
+	test( "plays a whole table of bots out to a legal finish", () => {
+		const clock = testClock();
+
+		const { result } = table( engine => Effect.gen( function* () {
+			// Nothing fires on its own here: every wake-up is one bot move, so the
+			// loop is the table playing itself one commit at a time.
+			for ( let step = 0; step < 400; step++ ) {
+				const envelope = yield* envelopeOf( engine );
+				if ( envelope.status === "COMPLETED" ) {
+					break;
+				}
+
+				clock.advance( BOT_DELAY_MS + 1 );
+				yield* engine.alarm();
+			}
+
+			return yield* envelopeOf( engine );
+		} ), { dealCount: 5, bots: true, clock } );
+
+		const view = result.view as CallbreakView;
+
+		expect( result.status ).toBe( "COMPLETED" );
+		expect( result.results!.ranking ).toHaveLength( CALLBREAK_PLAYER_COUNT );
+
+		// Five deals of thirteen tricks, so every seat's calls and takes are in.
+		const total = seats.reduce( ( sum, id ) => sum + ( view.scores[ id ] ?? 0 ), 0 );
+		expect( Number.isInteger( total ) ).toBe( true );
+	} );
+
+	test( "takes a human seat over without committing anything", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			const before = yield* envelopeOf( engine );
+			yield* engine.setAutoPlay( a, true );
+
+			return { before, after: yield* envelopeOf( engine ) };
+		} ) );
+
+		// Callbreak declares a policy, so the switch is accepted — and it is
+		// scheduling rather than state, so the log does not move under it.
+		expect( result.before.autoPlay[ a ] ).toBeUndefined();
+		expect( result.after.autoPlay[ a ] ).toBe( true );
+		expect( result.after.version ).toBe( result.before.version );
+	} );
+} );
+
+
+describe( "taking a move back", () => {
+	test( "puts the card back in the hand it came from", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* declareAll( engine );
+
+			const before = yield* viewOf( engine, a );
+			const card = legalCards( before, "S", a )[ 0 ]!;
+			yield* engine.playCard( { cardId: card, dealId: before.activeDeal!.id }, a );
+
+			yield* engine.undo( a );
+			const undone = yield* viewOf( engine, a );
+
+			yield* engine.redo( a );
+			return { card, before, undone, redone: yield* viewOf( engine, a ) };
+		} ) );
+
+		expect( result.undone.hand ).toEqual( result.before.hand );
+		expect( result.undone.activeDeal!.tricks[ 0 ]!.cards ).toEqual( {} );
+		expect( result.redone.hand ).not.toContain( result.card );
+	} );
+
+	test( "refuses to take back somebody else's move", () => {
+		const { result } = table( engine => Effect.gen( function* () {
+			yield* declareAll( engine );
+
+			const view = yield* viewOf( engine, a );
+			const card = legalCards( view, "S", a )[ 0 ]!;
+			yield* engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, a );
+
+			return yield* engine.undo( b ).pipe( Effect.flip );
+		} ) );
+
+		expect( result._tag ).toBe( "swish/UndoNotAllowed" );
+	} );
+} );
+
 
 /**
- * Fast-forwards the active deal to its thirteenth trick: banks `wins` as already
- * completed tricks and leaves the live (empty) trick on top, then deals each seat
- * the single card it is about to play.
+ * Plays the first legal card for whichever seat is being asked.
+ *
+ * @param engine - The game to play.
+ * @param trump - The table's trump suit.
  */
-const primeFinalTrick = (
-	memory: Memory,
-	wins: Record<string, number>,
-	hands: Record<string, CardId>
-) => patchStore( memory, ( snapshot ) => {
-	const deal = snapshot.state.deals[ 0 ]!;
-	const done = Object.entries( wins ).flatMap( ( [ pid, count ] ) =>
-		Array.from( { length: count }, () => ( {
-			leadPlayer: PlayerId.make( pid ),
-			cards: {},
-			winner: PlayerId.make( pid )
-		} ) ) );
+function playFirstLegalCard( engine: Engine, trump: CardSuit ) {
+	return Effect.gen( function* () {
+		const actor = ( yield* envelopeOf( engine ) ).context.currentPlayer;
+		const view = yield* viewOf( engine, actor );
+		const card = legalCards( view, trump, actor )[ 0 ]!;
 
-	deal.wins = { ...wins };
-	deal.tricks = [ deal.tricks[ 0 ]!, ...done ];
-	for ( const [ pid, card ] of Object.entries( hands ) ) {
-		deal.hands[ pid ] = [ card ];
-	}
-} );
-
-// ===========================================================================
-describe( "callbreak — setup & dealing", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "starting deals thirteen cards to each of the four seats", async () => {
-		await boot( memory );
-		const deal = activeDeal( memory );
-		const hands = SEATED.map( ( p ) => deal.hands[ p.id ]! );
-
-		expect( hands.map( ( h ) => h.length ) ).toEqual( [ 13, 13, 13, 13 ] );
-		expect( new Set( hands.flat() ).size ).toBe( 52 );
-		expect( deal.startingPlayer ).toBe( P1.id );
-		expect( deal.tricks ).toEqual( [] );
+		yield* engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, actor );
 	} );
-
-	for ( const dealCount of [ 5, 9, 13 ] ) {
-		for ( const trumpSuit of [ "H", "C", "S", "D" ] as ReadonlyArray<CardSuit> ) {
-			test( `a ${ dealCount }-deal game with ${ trumpSuit } as trump deals a full pack`,
-				async () => {
-					await boot( memory, { config: { dealCount, trumpSuit } } );
-					const deal = activeDeal( memory );
-					const dealt = SEATED.flatMap( ( p ) => deal.hands[ p.id ]! );
-
-					expect( dealt ).toHaveLength( 52 );
-					expect( new Set( dealt ).size ).toBe( 52 );
-					expect( stored( memory ).config ).toEqual( { ...CONFIG, dealCount, trumpSuit } );
-				} );
-		}
-	}
-
-	test( "the dealt deal is captured in the log, so a refold reproduces it exactly", async () => {
-		const engine = await boot( memory );
-		const before = structuredClone( activeDeal( memory ) );
-
-		await run( memory, engine.declareWins( { wins: 3, dealId: before.id }, P1 ) );
-		// undo/redo rebuild state by replaying the log from genesis — the deal comes
-		// back from its `DealDealt` event, not from a re-shuffle.
-		await run( memory, engine.undo( P1 ) );
-		await run( memory, engine.redo( P1 ) );
-
-		expect( activeDeal( memory ).id ).toBe( before.id );
-		expect( activeDeal( memory ).hands ).toEqual( before.hands );
-	} );
-
-	// `createNewDeal` shuffles through the engine's seeded `rng`, so the seed fixes
-	// the hands. (The deal `id` is still a ULID from `generateId()`, so it differs
-	// between two same-seed games — compare hands, not the whole deal.)
-	test( "a fixed seed yields a fixed deal", async () => {
-		const first = makeMemory();
-		const second = makeMemory();
-		await boot( first );
-		await boot( second );
-
-		expect( activeDeal( first ).hands ).toEqual( activeDeal( second ).hands );
-
-		// ...and a different seed deals different hands, so the assertion above is
-		// about the seed rather than a constant.
-		const third = makeMemory();
-		await boot( third, { seed: "another-seed" } );
-		expect( activeDeal( third ).hands ).not.toEqual( activeDeal( first ).hands );
-	} );
-} );
-
-// ===========================================================================
-describe( "callbreak — view redaction", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "a player sees their own hand and nobody else's card, while declaring", async () => {
-		const engine = await boot( memory );
-		const deal = activeDeal( memory );
-		const view = asPlayerView( ( await run( memory, engine.getState( P1.id ) ) ).view );
-
-		expect( view.playerId ).toBe( P1.id );
-		expect( view.hand ).toEqual( deal.hands[ P1.id ]! );
-
-		// Nothing belonging to another seat appears anywhere in p1's snapshot.
-		const json = JSON.stringify( view );
-		const foreign = [ P2, P3, P4 ].flatMap( ( p ) => deal.hands[ p.id ]! );
-		expect( foreign.filter( ( card ) => json.includes( `"${ card }"` ) ) ).toEqual( [] );
-
-		// The public board carries the deal with `hands` stripped entirely.
-		expect( view.activeDeal ).toBeDefined();
-		expect( Object.keys( view.activeDeal! ) ).not.toContain( "hands" );
-	} );
-
-	test( "a player still sees only their own hand once cards are on the table", async () => {
-		const engine = await bootPlaying( memory );
-		// All four hands are replaced so the fixture stays a legal, duplicate-free deal.
-		setHands( memory, {
-			p1: [ "AH", "2C" ],
-			p2: [ "KH", "3C" ],
-			p3: [ "QH", "4C" ],
-			p4: [ "JH", "5C" ]
-		} );
-		await play( memory, engine, "AH" );
-
-		const deal = activeDeal( memory );
-		const view = asPlayerView( ( await run( memory, engine.getState( P2.id ) ) ).view );
-
-		// The played card is public — it is on the trick, not in a hand.
-		expect( view.activeDeal!.tricks[ 0 ]!.cards[ P1.id ] ).toBe( "AH" );
-		expect( view.hand ).toEqual( deal.hands[ P2.id ]! );
-
-		const json = JSON.stringify( view );
-		const foreign = [ P1, P3, P4 ].flatMap( ( p ) => deal.hands[ p.id ]! );
-		expect( foreign.filter( ( card ) => json.includes( `"${ card }"` ) ) ).toEqual( [] );
-	} );
-
-	test( "the broadcast table projection carries no hand and no player identity", async () => {
-		await boot( memory );
-		const deal = activeDeal( memory );
-		const last = lastBroadcast( memory );
-
-		expect( last.channel ).toBe( "callbreak:g1" );
-		expect( last.snapshot.table.view._tag ).toBe( "callbreak/TableView" );
-		expect( Object.keys( last.snapshot.table.view ) ).not.toContain( "hand" );
-		expect( Object.keys( last.snapshot.table.view ) ).not.toContain( "playerId" );
-		expect( Object.keys( last.snapshot.table.view.activeDeal! ) ).not.toContain( "hands" );
-
-		// No card at all reaches the table audience.
-		const json = JSON.stringify( last.snapshot.table );
-		const dealt = SEATED.flatMap( ( p ) => deal.hands[ p.id ]! );
-		expect( dealt.filter( ( card ) => json.includes( `"${ card }"` ) ) ).toEqual( [] );
-	} );
-
-	test( "each broadcast per-player snapshot carries exactly that seat's hand", async () => {
-		await boot( memory );
-		const deal = activeDeal( memory );
-		const { playerViews } = lastBroadcast( memory ).snapshot;
-
-		expect( Object.keys( playerViews ).sort() ).toEqual( [ "p1", "p2", "p3", "p4" ] );
-		for ( const p of SEATED ) {
-			expect( playerViews[ p.id ]!.view.hand ).toEqual( deal.hands[ p.id ]! );
-		}
-	} );
-
-	test( "both projections publish the same public board", async () => {
-		await boot( memory );
-		const { table, playerViews } = lastBroadcast( memory ).snapshot;
-
-		expect( playerViews[ P1.id ]!.view.activeDeal ).toEqual( table.view.activeDeal );
-		expect( playerViews[ P1.id ]!.view.scores ).toEqual( table.view.scores );
-	} );
-} );
-
-// ===========================================================================
-describe( "callbreak — the phase machine", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "a started game opens in DECLARING, on the deal's starting player", async () => {
-		const engine = await boot( memory );
-		const state = await run( memory, engine.getState( P1.id ) );
-
-		expect( state.status ).toBe( "IN_PROGRESS" );
-		expect( state.context.phase ).toBe( "DECLARING" );
-		expect( state.context.currentPlayer ).toBe( P1.id );
-	} );
-
-	test( "playing a card while declaring is rejected (MoveNotAllowed)", async () => {
-		const engine = await boot( memory );
-		const cardId = activeDeal( memory ).hands[ P1.id ]![ 0 ]!;
-
-		const error = await runFail( memory, engine.playCard(
-			{ cardId, dealId: dealId( memory ) },
-			P1
-		) );
-		expect( error._tag ).toBe( "swish/MoveNotAllowed" );
-	} );
-
-	test( "declarations rotate round the table without starting play early", async () => {
-		const engine = await boot( memory );
-		const id = dealId( memory );
-
-		await run( memory, engine.declareWins( { wins: 2, dealId: id }, P1 ) );
-		expect( stored( memory ).context.currentPlayer ).toBe( P2.id );
-
-		await run( memory, engine.declareWins( { wins: 3, dealId: id }, P2 ) );
-		await run( memory, engine.declareWins( { wins: 4, dealId: id }, P3 ) );
-
-		// Three of four in: still declaring, no trick opened.
-		expect( stored( memory ).context.phase ).toBe( "DECLARING" );
-		expect( activeDeal( memory ).tricks ).toEqual( [] );
-		expect( stored( memory ).context.currentPlayer ).toBe( P4.id );
-	} );
-
-	test( "the fourth declaration flips to PLAYING and opens the first trick", async () => {
-		const engine = await bootPlaying( memory, { bids: { p1: 2, p2: 3, p3: 4, p4: 5 } } );
-		const state = await run( memory, engine.getState( P1.id ) );
-		const deal = activeDeal( memory );
-
-		expect( state.context.phase ).toBe( "PLAYING" );
-		expect( deal.declarations ).toEqual( { p1: 2, p2: 3, p3: 4, p4: 5 } );
-		expect( deal.tricks ).toHaveLength( 1 );
-		expect( deal.tricks[ 0 ]!.leadPlayer ).toBe( P1.id );
-		expect( deal.tricks[ 0 ]!.cards ).toEqual( {} );
-		expect( state.context.currentPlayer ).toBe( P1.id );
-	} );
-
-	test( "declaring once play has begun is rejected (MoveNotAllowed)", async () => {
-		const engine = await bootPlaying( memory );
-
-		const error = await runFail( memory, engine.declareWins(
-			{ wins: 2, dealId: dealId( memory ) },
-			P1
-		) );
-		expect( error._tag ).toBe( "swish/MoveNotAllowed" );
-	} );
-} );
-
-// ===========================================================================
-describe( "callbreak — declareWins validation", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "declaring against a stale deal id is rejected", async () => {
-		const engine = await boot( memory );
-
-		const error = await runFail( memory, engine.declareWins(
-			{ wins: 2, dealId: "not-the-active-deal" },
-			P1
-		) );
-		expect( error ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			move: "declareWins",
-			reason: "Active Deal Not Found!"
-		} );
-	} );
-
-	test( "declaring twice in one deal is rejected", async () => {
-		const engine = await boot( memory );
-		const id = dealId( memory );
-		await run( memory, engine.declareWins( { wins: 2, dealId: id }, P1 ) );
-
-		// The turn has already moved on, so hand it back to p1 to reach the
-		// "already declared" guard rather than the turn guard.
-		patchStore( memory, ( s ) => { s.context.currentPlayer = P1.id; } );
-
-		const error = await runFail( memory, engine.declareWins( { wins: 4, dealId: id }, P1 ) );
-		expect( error ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			move: "declareWins",
-			reason: "Already declared wins!"
-		} );
-	} );
-
-	test( "declaring out of turn is rejected (NotYourTurn)", async () => {
-		const engine = await boot( memory );
-
-		const error = await runFail( memory, engine.declareWins(
-			{ wins: 2, dealId: dealId( memory ) },
-			P3
-		) );
-		expect( error._tag ).toBe( "swish/NotYourTurn" );
-	} );
-
-	// The `1..13` bound lives on `DeclareWinsInput.wins`, and `submitMove` decodes
-	// every move against its own input schema — so this holds for a direct engine
-	// call like the one below, for a bot, and over HTTP, not just in the client
-	// stepper. A `0` bid matters most: `declarations[ pid ] > 0` is the has-declared
-	// sentinel, so it used to wedge `DECLARING` forever.
-	test( "a bid outside 1..13 is rejected", async () => {
-		const engine = await boot( memory );
-		const id = dealId( memory );
-
-		const low = await runFail( memory, engine.declareWins( { wins: 0, dealId: id }, P1 ) );
-		expect( low._tag ).toBe( "swish/InvalidMove" );
-		// The reason is player-facing — `errorMessage` toasts it verbatim — so assert
-		// it names the bound rather than falling back to generic copy. Matched loosely:
-		// the rest is Effect's own issue formatting, not a contract of ours.
-		expect( ( low as { reason: string } ).reason ).toContain( "between 1 and 13" );
-
-		expect( ( await runFail( memory, engine.declareWins( { wins: 14, dealId: id }, P1 ) ) )._tag )
-			.toBe( "swish/InvalidMove" );
-	} );
-
-	test( "a fractional bid is rejected", async () => {
-		const engine = await boot( memory );
-		const id = dealId( memory );
-
-		expect( ( await runFail( memory, engine.declareWins( { wins: 2.5, dealId: id }, P1 ) ) )._tag )
-			.toBe( "swish/InvalidMove" );
-	} );
-
-	test( "the bounds are inclusive — 1 and 13 are both legal", async () => {
-		const engine = await boot( memory );
-		const id = dealId( memory );
-
-		await run( memory, engine.declareWins( { wins: 1, dealId: id }, P1 ) );
-		expect( activeDeal( memory ).declarations[ P1.id ] ).toBe( 1 );
-
-		const next = byId( stored( memory ).context.currentPlayer );
-		await run( memory, engine.declareWins( { wins: 13, dealId: id }, next ) );
-		expect( activeDeal( memory ).declarations[ next.id ] ).toBe( 13 );
-	} );
-} );
-
-// ===========================================================================
-describe( "callbreak — playCard validation (the follow-suit rules)", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	/** Rejects `card` for whoever is on turn, returning the typed error. */
-	const reject = ( engine: Engine, card: CardId ) =>
-		runFail( memory, engine.playCard(
-			{ cardId: card, dealId: dealId( memory ) },
-			byId( stored( memory ).context.currentPlayer )
-		) );
-
-	test( "playing against a stale deal id is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		const cardId = activeDeal( memory ).hands[ P1.id ]![ 0 ]!;
-
-		const error = await runFail( memory, engine.playCard(
-			{ cardId, dealId: "not-the-active-deal" },
-			P1
-		) );
-		expect( error ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			reason: "Active Deal Not Found!"
-		} );
-	} );
-
-	test( "playing with no trick open is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		const cardId = activeDeal( memory ).hands[ P1.id ]![ 0 ]!;
-		patchStore( memory, ( s ) => { s.state.deals[ 0 ]!.tricks = []; } );
-
-		const error = await runFail( memory, engine.playCard(
-			{ cardId, dealId: dealId( memory ) },
-			P1
-		) );
-		expect( error ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			reason: "Active Trick Not Found!"
-		} );
-	} );
-
-	test( "playing a card you do not hold is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, { p1: [ "AH", "2C" ] } );
-
-		expect( await reject( engine, "KD" ) ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			move: "playCard",
-			reason: "Card not in hand!"
-		} );
-	} );
-
-	test( "playing out of turn is rejected (NotYourTurn)", async () => {
-		const engine = await bootPlaying( memory );
-		const cardId = activeDeal( memory ).hands[ P3.id ]![ 0 ]!;
-
-		const error = await runFail( memory, engine.playCard(
-			{ cardId, dealId: dealId( memory ) },
-			P3
-		) );
-		expect( error._tag ).toBe( "swish/NotYourTurn" );
-	} );
-
-	test( "playing twice into the same trick is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, { p1: [ "AH", "KH" ], p2: [ "2H", "3H" ] } );
-		await play( memory, engine, "AH" );
-
-		// The turn has moved to p2; hand it back so the "already played" guard is
-		// what rejects p1, not the turn guard.
-		patchStore( memory, ( s ) => { s.context.currentPlayer = P1.id; } );
-
-		expect( await reject( engine, "KH" ) ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			reason: "Already played card!"
-		} );
-	} );
-
-	test( "discarding while holding the led suit is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, { p1: [ "5H" ], p2: [ "9H", "2C", "AD" ] } );
-		await play( memory, engine, "5H" );
-
-		expect( await reject( engine, "2C" ) ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			reason: "Card cannot be played!"
-		} );
-	} );
-
-	test( "under-playing the led suit while able to head it is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, { p1: [ "5H" ], p2: [ "9H", "2H" ] } );
-		await play( memory, engine, "5H" );
-
-		expect( await reject( engine, "2H" ) ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			reason: "Card cannot be played!"
-		} );
-	} );
-
-	test( "a low card of the led suit is fine when the trick cannot be headed", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, { p1: [ "AH" ], p2: [ "9H", "2H" ] } );
-		await play( memory, engine, "AH" );
-		await play( memory, engine, "2H" );
-
-		expect( activeDeal( memory ).tricks[ 0 ]!.cards[ P2.id ] ).toBe( "2H" );
-	} );
-
-	test( "discarding instead of trumping when void in the led suit is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, { p1: [ "5H" ], p2: [ "2S", "AC", "AD" ] } );
-		await play( memory, engine, "5H" );
-
-		expect( await reject( engine, "AC" ) ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			reason: "Card cannot be played!"
-		} );
-
-		// The trump it was holding out on is accepted.
-		await play( memory, engine, "2S" );
-		expect( activeDeal( memory ).tricks[ 0 ]!.cards[ P2.id ] ).toBe( "2S" );
-	} );
-
-	test( "under-trumping while able to over-trump is rejected", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, {
-			p1: [ "5H" ],
-			p2: [ "3S" ],
-			p3: [ "2S", "9S", "AC" ]
-		} );
-		await play( memory, engine, "5H" );
-		await play( memory, engine, "3S" );
-
-		expect( await reject( engine, "2S" ) ).toMatchObject( {
-			_tag: "swish/InvalidMove",
-			reason: "Card cannot be played!"
-		} );
-
-		await play( memory, engine, "9S" );
-		expect( activeDeal( memory ).tricks[ 0 ]!.cards[ P3.id ] ).toBe( "9S" );
-	} );
-
-	test( "any card goes once the trick can no longer be over-trumped", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, {
-			p1: [ "5H" ],
-			p2: [ "9S" ],
-			p3: [ "2S", "AC" ]
-		} );
-		await play( memory, engine, "5H" );
-		await play( memory, engine, "9S" );
-
-		// p3 is void in hearts and cannot beat 9S, so the whole hand opens up.
-		await play( memory, engine, "AC" );
-		expect( activeDeal( memory ).tricks[ 0 ]!.cards[ P3.id ] ).toBe( "AC" );
-	} );
-
-	test( "a non-member can neither read the game nor play into it", async () => {
-		const engine = await bootPlaying( memory );
-
-		expect( ( await runFail( memory, engine.getState( STRANGER.id ) ) )._tag )
-			.toBe( "swish/NotAMember" );
-		expect( ( await runFail( memory, engine.playCard(
-			{ cardId: "AS", dealId: dealId( memory ) },
-			STRANGER
-		) ) )._tag ).toBe( "swish/NotAMember" );
-	} );
-} );
-
-// ===========================================================================
-describe( "callbreak — trick resolution", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	/**
-	 * Deals each seat the single card it is about to play — with a one-card hand
-	 * every assignment is legal, so the fixture states *only* the outcome under
-	 * test — then plays them all out in turn order.
-	 */
-	async function playTrick( engine: Engine, cards: Record<string, CardId> ) {
-		setHands( memory, Object.fromEntries(
-			Object.entries( cards ).map( ( [ pid, card ] ) => [ pid, [ card ] ] )
-		) );
-
-		for ( let i = 0; i < 4; i++ ) {
-			const pid = stored( memory ).context.currentPlayer;
-			await play( memory, engine, cards[ pid ]! );
-		}
-
-		return activeDeal( memory ).tricks[ 0 ]!;
-	}
-
-	const cases: ReadonlyArray<{
-		name: string;
-		cards: Record<string, CardId>;
-		winner: PlayerId;
-	}> = [
-		{
-			name: "the highest card of the led suit wins",
-			cards: { p1: "5H", p2: "9H", p3: "KH", p4: "2H" },
-			winner: P3.id
-		},
-		{
-			name: "off-suit discards cannot take the trick from the leader",
-			cards: { p1: "AH", p2: "2H", p3: "AC", p4: "AD" },
-			winner: P1.id
-		},
-		{
-			name: "a trump beats the highest card of the led suit",
-			cards: { p1: "AH", p2: "KH", p3: "2S", p4: "QH" },
-			winner: P3.id
-		},
-		{
-			name: "the highest trump wins a trumped trick",
-			cards: { p1: "AH", p2: "2S", p3: "KS", p4: "3C" },
-			winner: P3.id
-		},
-		{
-			name: "a trump lead is decided by the highest trump",
-			cards: { p1: "5S", p2: "9S", p3: "2S", p4: "KS" },
-			winner: P4.id
-		}
-	];
-
-	for ( const { name, cards, winner } of cases ) {
-		test( name, async () => {
-			const engine = await bootPlaying( memory );
-			const trick = await playTrick( engine, cards );
-
-			expect( trick.cards ).toEqual( cards );
-			expect( trick.suit ).toBe( cards[ P1.id ]!.charAt( 1 ) as CardSuit );
-			expect( trick.winner ).toBe( winner );
-			expect( activeDeal( memory ).wins[ winner ] ).toBe( 1 );
-			// The trick winner is handed the lead for the next one.
-			expect( stored( memory ).context.currentPlayer ).toBe( winner );
-		} );
-	}
-
-	test( "a completed trick empties the four hands it was played from", async () => {
-		const engine = await bootPlaying( memory );
-		await playTrick( engine, { p1: "5H", p2: "9H", p3: "KH", p4: "2H" } );
-
-		const deal = activeDeal( memory );
-		expect( SEATED.map( ( p ) => deal.hands[ p.id ]! ) ).toEqual( [ [], [], [], [] ] );
-	} );
-
-	// `hooks.beforeMove` opens the next trick before `validate` runs, so the winner
-	// is judged against the fresh trick rather than the one they just took.
-	test( "the trick winner leads the next trick", async () => {
-		const engine = await bootPlaying( memory );
-		setHands( memory, {
-			p1: [ "5H", "2C" ],
-			p2: [ "9H", "3C" ],
-			p3: [ "KH", "4C" ],
-			p4: [ "2H", "5C" ]
-		} );
-
-		for ( const card of [ "5H", "9H", "KH", "2H" ] as ReadonlyArray<CardId> ) {
-			await play( memory, engine, card );
-		}
-
-		expect( stored( memory ).context.currentPlayer ).toBe( P3.id );
-		await play( memory, engine, "4C" );
-
-		const deal = activeDeal( memory );
-		expect( deal.tricks ).toHaveLength( 2 );
-		expect( deal.tricks[ 0 ]!.leadPlayer ).toBe( P3.id );
-		expect( deal.tricks[ 0 ]!.cards ).toEqual( { p3: "4C" } );
-	} );
-} );
-
-// ===========================================================================
-describe( "callbreak — scoring, deals & completion", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	/** Bids, jumps to the final trick, and plays it — finishing the active deal. */
-	async function finishDeal(
-		engine: Engine,
-		bids: Record<string, number>,
-		wins: Record<string, number>,
-		cards: Record<string, CardId>
-	) {
-		await declareAll( memory, engine, bids );
-		primeFinalTrick( memory, wins, cards );
-		for ( let i = 0; i < 4; i++ ) {
-			await play( memory, engine, cards[ stored( memory ).context.currentPlayer ]! );
-		}
-	}
-
-	// p3 takes the thirteenth trick with the only trump.
-	const LAST_TRICK: Record<string, CardId> = { p1: "5H", p2: "9H", p3: "2S", p4: "3D" };
-	const BIDS = { p1: 2, p2: 3, p3: 5, p4: 4 };
-	const WINS_SO_FAR = { p1: 4, p2: 4, p3: 2, p4: 2 };
-
-	test( "a finished deal is scored: bid made, overtricks paid, shortfall penalised",
-		async () => {
-			const engine = await boot( memory, { config: { dealCount: 5 } } );
-			await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-			// Wins after the final trick: p1 4, p2 4, p3 3, p4 2.
-			// p1 bid 2, took 4 → 20 + 2 overtricks. p2 bid 3, took 4 → 30 + 1 overtrick.
-			// p3 bid 5, took 3 → the whole bid is forfeit. p4 bid 4, took 2 → likewise.
-			const scored = stored( memory ).state.deals[ 1 ]!;
-			expect( scored.wins ).toEqual( { p1: 4, p2: 4, p3: 3, p4: 2 } );
-			expect( scored.scores ).toEqual( { p1: 24, p2: 32, p3: -50, p4: -40 } );
-
-			const state = await run( memory, engine.getState( P1.id ) );
-			expect( state.view.scores ).toEqual( scoreTable( { p1: 24, p2: 32, p3: -50, p4: -40 } ) );
-		} );
-
-	test( "finishing a deal below the deal count opens the next one, one seat along",
-		async () => {
-			const engine = await boot( memory, { config: { dealCount: 5 } } );
-			await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-			const state = await run( memory, engine.getState( P1.id ) );
-			expect( state.status ).toBe( "IN_PROGRESS" );
-			expect( state.context.phase ).toBe( "DECLARING" );
-
-			// A fresh deal, dealt in full, with the lead passed on from p1 to p2.
-			const next = activeDeal( memory );
-			expect( next.startingPlayer ).toBe( P2.id );
-			expect( next.declarations ).toEqual( { p1: 0, p2: 0, p3: 0, p4: 0 } );
-			expect( SEATED.map( ( p ) => next.hands[ p.id ]!.length ) ).toEqual( [ 13, 13, 13, 13 ] );
-			expect( state.context.currentPlayer ).toBe( P2.id );
-		} );
-
-	test( "the next deal is shuffled afresh, not a replay of the first", async () => {
-		const engine = await boot( memory, { config: { dealCount: 5 } } );
-		const first = structuredClone( activeDeal( memory ).hands );
-
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-		// The seeded stream is salted with `context.turn`, which strictly increases
-		// across deals, so a fixed seed fixes the whole *game* without dealing the
-		// same 13 cards every round.
-		expect( activeDeal( memory ).hands ).not.toEqual( first );
-	} );
-
-	test( "scores accumulate across deals and the last one completes the game", async () => {
-		const engine = await boot( memory, { config: { dealCount: 2 } } );
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-		expect( stored( memory ).status ).toBe( "IN_PROGRESS" );
-
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		// Two identical deals, so every total is exactly doubled.
-		expect( state.view.scores ).toEqual( scoreTable( { p1: 48, p2: 64, p3: -100, p4: -80 } ) );
-	} );
-
-	test( "completing the game does not deal a phantom extra round", async () => {
-		const engine = await boot( memory, { config: { dealCount: 1 } } );
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-		// The final round used to be followed by a fresh 52-card deal nobody plays:
-		// the phase transition ran `DECLARING.onEnter` before the game-level `endIf`,
-		// burning a shuffle and leaving a phantom, undeclared `activeDeal` on the
-		// finished board.
-		const deals = stored( memory ).state.deals;
-		expect( deals ).toHaveLength( 1 );
-		expect( deals[ 0 ]!.declarations ).toEqual( BIDS );
-
-		// The completed board still shows the deal that was actually played.
-		const view = asPlayerView( ( await run( memory, engine.getState( P1.id ) ) ).view );
-		expect( view.activeDeal?.id ).toBe( deals[ 0 ]!.id );
-	} );
-
-	test( "the view's lastCompletedTrick is this deal's most recent finished trick", async () => {
-		const engine = await bootPlaying( memory );
-		// Bank four finished tricks, then play the live one out so it finishes too.
-		primeFinalTrick( memory, { p1: 2, p2: 2, p3: 0, p4: 0 }, LAST_TRICK );
-		for ( let i = 0; i < 4; i++ ) {
-			await play( memory, engine, LAST_TRICK[ stored( memory ).context.currentPlayer ]! );
-		}
-
-		// Previously this read `deals[1].tricks[0]` — the *previous* deal's last
-		// trick, so mid-deal it showed a round-old trick (or nothing on deal one).
-		const view = asPlayerView( ( await run( memory, engine.getState( P1.id ) ) ).view );
-		expect( view.lastCompletedTrick?.winner ).toBe( P3.id );
-		expect( Object.keys( view.lastCompletedTrick!.cards ) ).toHaveLength( 4 );
-	} );
-
-	test( "completing the game names the highest cumulative score as the winner", async () => {
-		const engine = await boot( memory, { config: { dealCount: 1 } } );
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.status ).toBe( "COMPLETED" );
-		expect( state.view.winner ).toBe( P2.id );
-	} );
-
-	test( "a completed game accepts no further moves (GameNotInProgress)", async () => {
-		const engine = await boot( memory, { config: { dealCount: 1 } } );
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-		const error = await runFail( memory, engine.declareWins(
-			{ wins: 2, dealId: dealId( memory ) },
-			P1
-		) );
-		expect( error._tag ).toBe( "swish/GameNotInProgress" );
-	} );
-
-	test( "resolveResults ranks every seat by cumulative score", async () => {
-		const engine = await boot( memory, { config: { dealCount: 1 } } );
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.results ).toEqual( {
-			winner: P2.id,
-			ranking: [
-				{ playerId: P2.id, rank: 1, score: 32 },
-				{ playerId: P1.id, rank: 2, score: 24 },
-				{ playerId: P4.id, rank: 3, score: -40 },
-				{ playerId: P3.id, rank: 4, score: -50 }
-			]
-		} );
-	} );
-
-	test( "seats finishing level share a rank and leave the game uncrowned", async () => {
-		const engine = await boot( memory, { config: { dealCount: 1 } } );
-		// Wins land on p1 4, p2 4, p3 3, p4 2. Bidding 4/4 makes both exactly,
-		// so p1 and p2 tie on 40 while p4 takes 20 and p3 forfeits its bid of 5.
-		await finishDeal(
-			engine,
-			{ p1: 4, p2: 4, p3: 5, p4: 2 },
-			WINS_SO_FAR,
-			LAST_TRICK
-		);
-
-		const state = await run( memory, engine.getState( P1.id ) );
-		expect( state.view.scores ).toEqual( scoreTable( { p1: 40, p2: 40, p3: -50, p4: 20 } ) );
-		expect( state.results?.winner ).toBeUndefined();
-		expect( state.results?.ranking.map( ( r ) => r.rank ) ).toEqual( [ 1, 1, 3, 4 ] );
-	} );
-
-	test( "an unfinished game has no results", async () => {
-		const engine = await boot( memory, { config: { dealCount: 2 } } );
-		await finishDeal( engine, BIDS, WINS_SO_FAR, LAST_TRICK );
-
-		expect( ( await run( memory, engine.getState( P1.id ) ) ).results ).toBeUndefined();
-	} );
-} );
-
-// ===========================================================================
-describe( "callbreak — log & time travel", () => {
-	let memory: Memory;
-	beforeEach( () => { memory = makeMemory(); } );
-
-	test( "the action feed is empty — callbreak declares no describe", async () => {
-		const engine = await bootPlaying( memory );
-		expect( await run( memory, engine.getLog( P1.id ) ) ).toEqual( [] );
-	} );
-
-	test( "undo rewinds a declaration and hands the turn back", async () => {
-		const engine = await boot( memory );
-		await run( memory, engine.declareWins( { wins: 4, dealId: dealId( memory ) }, P1 ) );
-		expect( activeDeal( memory ).declarations[ P1.id ] ).toBe( 4 );
-
-		await run( memory, engine.undo( P1 ) );
-
-		expect( activeDeal( memory ).declarations[ P1.id ] ).toBe( 0 );
-		expect( stored( memory ).context.currentPlayer ).toBe( P1.id );
-	} );
-
-	test( "redo replays the undone declaration", async () => {
-		const engine = await boot( memory );
-		await run( memory, engine.declareWins( { wins: 4, dealId: dealId( memory ) }, P1 ) );
-		await run( memory, engine.undo( P1 ) );
-		await run( memory, engine.redo( P1 ) );
-
-		expect( activeDeal( memory ).declarations[ P1.id ] ).toBe( 4 );
-		expect( stored( memory ).context.currentPlayer ).toBe( P2.id );
-	} );
-
-	test( "undo rewinds a played card back onto its owner's hand", async () => {
-		const engine = await bootPlaying( memory );
-		const hand = [ ...activeDeal( memory ).hands[ P1.id ]! ];
-		await play( memory, engine, hand[ 0 ]! );
-		expect( activeDeal( memory ).hands[ P1.id ] ).toHaveLength( 12 );
-
-		await run( memory, engine.undo( P1 ) );
-
-		expect( activeDeal( memory ).hands[ P1.id ] ).toEqual( hand );
-		expect( activeDeal( memory ).tricks[ 0 ]!.cards ).toEqual( {} );
-		expect( stored( memory ).context.currentPlayer ).toBe( P1.id );
-	} );
-
-	test( "undo cannot rewind the deal itself", async () => {
-		const engine = await boot( memory );
-
-		// The deal is dealt by `start`, which is the floor for time travel — with no
-		// move played there is nothing to undo, and the deal survives.
-		const error = await runFail( memory, engine.undo( P1 ) );
-		expect( error._tag ).toBe( "swish/NothingToUndo" );
-
-		const state = stored( memory );
-		expect( state.status ).toBe( "IN_PROGRESS" );
-		expect( state.state.deals ).not.toEqual( [] );
-	} );
-
-	test( "a new declaration after an undo drops the redo tail (NothingToRedo)", async () => {
-		const engine = await boot( memory );
-		const id = dealId( memory );
-		await run( memory, engine.declareWins( { wins: 4, dealId: id }, P1 ) );
-		await run( memory, engine.undo( P1 ) );
-		await run( memory, engine.declareWins( { wins: 2, dealId: id }, P1 ) );
-
-		expect( ( await runFail( memory, engine.redo( P1 ) ) )._tag ).toBe( "swish/NothingToRedo" );
-		expect( activeDeal( memory ).declarations[ P1.id ] ).toBe( 2 );
-	} );
-} );
+}

@@ -1,474 +1,301 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-	CardPurchasedEvent,
-	CardReservedEvent,
-	GameDealtEvent,
-	PlayerDataInitializedEvent,
-	TokensPickedEvent,
-	WinnerDecidedEvent
-} from "@/games/splendor/shared/schema.ts";
-import type {
-	Card,
-	Cost,
-	Noble,
-	PlayerData,
-	SplendorState,
-	Tokens
-} from "@/games/splendor/shared/schema.ts";
-import {
-	apply,
-	checkNobleVisit,
 	costToString,
-	DEFAULT_TOKENS,
-	discountedCost,
-	findNobleVisit,
-	findOpenCard,
-	GEMS,
 	generateDecks,
 	generateNobles,
-	sumTokens
+	standingsFor
 } from "@/games/splendor/server/utils.ts";
 import {
-	canPurchaseCard,
-	compareStandings,
-	decideWinner,
-	developmentCardCount,
+	discountedCost,
+	hasLegalMove,
 	isValidPayment,
-	rankPlayers
+	paymentFor,
+	qualifyingNobles,
+	sumTokens
 } from "@/games/splendor/shared/utils.ts";
-import { PlayerId } from "@/shared/swish/schema.ts";
+import { makeRng } from "@/shared/utils/rng.ts";
 
-// --- Fixtures --------------------------------------------------------------
+import type { Card, Cost, PlayerData, Tokens } from "@/games/splendor/shared/schema.ts";
+import type { PlayerId } from "@/swish/shared/schema.ts";
 
-const P1 = PlayerId.make( "p1" );
+const player = ( id: string ) => id as PlayerId;
 
-/** A full token map; every gem defaults to zero. */
-const tokens = ( over: Partial<Tokens> = {} ) => ( { ...DEFAULT_TOKENS, ...over } );
-
-/** A full cost map; every gem defaults to zero. */
-const cost = ( over: Partial<Cost> = {} ) =>
+const cost = ( over: Partial<Cost> = {} ): Cost =>
 	( { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, ...over } );
 
-/** A card with sane defaults — override only what a test cares about. */
-const card = ( id: string, over: Partial<Card> = {} ) => {
-	const base: Card = { id, level: 1, points: 0, cost: cost(), bonus: "diamond" };
-	return { ...base, ...over };
-};
+const tokens = ( over: Partial<Tokens> = {} ): Tokens =>
+	( { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0, ...over } );
 
-/** A noble whose requirement is the given (partial) cost. */
-const noble = ( id: string, over: Partial<Cost> = {} ) => {
-	const result: Noble = { id, points: 3, cost: cost( over ) };
-	return result;
-};
+const card = ( over: Partial<Card> = {} ): Card => ( {
+	id: "card",
+	level: 1,
+	points: 0,
+	cost: cost(),
+	bonus: "diamond",
+	...over
+} );
 
-/** An undealt board: no tokens, no open cards, no nobles, empty decks. */
-const emptyState = () => {
-	const state: SplendorState = {
-		tokens: tokens(),
-		cards: { 1: [], 2: [], 3: [] },
-		nobles: [],
-		decks: { 1: [], 2: [], 3: [] },
-		playerData: {}
-	};
-	return state;
-};
+const seat = ( over: Partial<PlayerData> = {} ): PlayerData => ( {
+	tokens: tokens(),
+	cards: [],
+	nobles: [],
+	reserved: [],
+	points: 0,
+	...over
+} );
 
-/** An undealt board with `p1` already seated (the shape `onJoin` leaves behind). */
-const seatedState = () => apply(
-	emptyState(),
-	PlayerDataInitializedEvent.make( { playerId: P1 } )
-);
 
-// ===========================================================================
-describe( "splendor/utils — deck & noble generation", () => {
+describe( "the development decks", () => {
+	const decks = generateDecks( makeRng( 1 ).next );
 
-	test( "the three decks hold the canonical 40 / 30 / 20 cards", () => {
-		const decks = generateDecks();
+	test( "hold the printed 40 / 30 / 20 split", () => {
 		expect( decks[ 1 ] ).toHaveLength( 40 );
 		expect( decks[ 2 ] ).toHaveLength( 30 );
 		expect( decks[ 3 ] ).toHaveLength( 20 );
 	} );
 
-	test( "every generated card id is unique and self-describing", () => {
-		const decks = generateDecks();
-		const all = [ ...decks[ 1 ], ...decks[ 2 ], ...decks[ 3 ] ];
+	test( "give every card an id of its own", () => {
+		const ids = [ ...decks[ 1 ], ...decks[ 2 ], ...decks[ 3 ] ].map( c => c.id );
+		expect( new Set( ids ).size ).toBe( ids.length );
+	} );
 
-		expect( new Set( all.map( c => c.id ) ).size ).toBe( all.length );
-		for ( const c of all ) {
-			// `L<level>-P<points>-<cost>-B<bonus initial>` — the id encodes the card.
-			expect( c.id ).toBe( `L${ c.level }-P${ c.points }-${ costToString( c.cost ) }-B${ c.bonus[ 0 ] }` );
-			expect( c.level ).toBe( c.id.startsWith( "L1" ) ? 1 : c.level );
+	test( "spread the bonuses evenly across the five gems", () => {
+		for ( const [ level, perGem ] of [ [ 1, 8 ], [ 2, 6 ], [ 3, 4 ] ] as const ) {
+			const counts = new Map<string, number>();
+			for ( const c of decks[ level ] ) {
+				counts.set( c.bonus, ( counts.get( c.bonus ) ?? 0 ) + 1 );
+			}
+
+			expect( [ ...counts.values() ] ).toEqual( [ perGem, perGem, perGem, perGem, perGem ] );
 		}
 	} );
 
-	test( "each deck's cards carry that deck's level", () => {
-		const decks = generateDecks();
-		for ( const level of [ 1, 2, 3 ] as const ) {
-			expect( decks[ level ].every( c => c.level === level ) ).toBe( true );
-		}
+	test( "carry the prestige each level is printed with", () => {
+		expect( new Set( decks[ 1 ].map( c => c.points ) ) ).toEqual( new Set( [ 0, 1 ] ) );
+		expect( new Set( decks[ 2 ].map( c => c.points ) ) ).toEqual( new Set( [ 1, 2, 3 ] ) );
+		expect( new Set( decks[ 3 ].map( c => c.points ) ) ).toEqual( new Set( [ 3, 4, 5 ] ) );
 	} );
 
-	test( "generateNobles deals playerCount + 1 distinct 3-point nobles", () => {
+	test( "come out the same for the same seed, and differently for another", () => {
+		const same = generateDecks( makeRng( 1 ).next );
+		const other = generateDecks( makeRng( 2 ).next );
+
+		expect( same[ 1 ].map( c => c.id ) ).toEqual( decks[ 1 ].map( c => c.id ) );
+		expect( other[ 1 ].map( c => c.id ) ).not.toEqual( decks[ 1 ].map( c => c.id ) );
+	} );
+} );
+
+
+describe( "the nobles", () => {
+	test( "come one to a seat, plus one", () => {
 		for ( const playerCount of [ 2, 3, 4 ] ) {
-			const nobles = generateNobles( playerCount );
-			expect( nobles ).toHaveLength( playerCount + 1 );
-			expect( new Set( nobles.map( n => n.id ) ).size ).toBe( nobles.length );
-			expect( nobles.every( n => n.points === 3 ) ).toBe( true );
-			// Every noble is either a 4/4 pair or a 3/3/3 triple.
-			expect( nobles.every( n => {
-				const total = GEMS.reduce( ( sum, gem ) => sum + n.cost[ gem ], 0 );
-				return total === 8 || total === 9;
-			} ) ).toBe( true );
+			expect( generateNobles( playerCount, makeRng( 7 ).next ) ).toHaveLength( playerCount + 1 );
 		}
 	} );
 
-	test( "the noble pool is exhausted at 20, so a huge table gets no more", () => {
-		expect( generateNobles( 100 ) ).toHaveLength( 20 );
+	test( "are distinct and worth three apiece", () => {
+		const nobles = generateNobles( 4, makeRng( 7 ).next );
+
+		expect( new Set( nobles.map( n => n.id ) ).size ).toBe( nobles.length );
+		expect( nobles.every( n => n.points === 3 ) ).toBe( true );
 	} );
 
-	test( "costToString renders a stable gem-initial encoding", () => {
+	test( "ask for two fours or three threes and nothing else", () => {
+		const nobles = generateNobles( 4, makeRng( 11 ).next );
+
+		for ( const noble of nobles ) {
+			const asked = Object.values( noble.cost ).filter( n => n > 0 );
+			expect( [ [ 4, 4 ], [ 3, 3, 3 ] ] ).toContainEqual( asked );
+		}
+	} );
+
+	test( "come to whoever's bought cards satisfy them, all of them", () => {
+		const owned = [
+			card( { id: "a", bonus: "diamond" } ),
+			card( { id: "b", bonus: "diamond" } ),
+			card( { id: "c", bonus: "diamond" } ),
+			card( { id: "d", bonus: "sapphire" } ),
+			card( { id: "e", bonus: "sapphire" } ),
+			card( { id: "f", bonus: "sapphire" } ),
+			card( { id: "g", bonus: "emerald" } ),
+			card( { id: "h", bonus: "emerald" } ),
+			card( { id: "i", bonus: "emerald" } )
+		];
+
+		const reachable = {
+			id: "n1",
+			points: 3,
+			cost: cost( { diamond: 3, sapphire: 3, emerald: 3 } )
+		};
+
+		const out = { id: "n2", points: 3, cost: cost( { ruby: 4, onyx: 4 } ) };
+
+		expect( qualifyingNobles( owned, [ out, reachable ] ) ).toEqual( [ reachable ] );
+		expect( qualifyingNobles( owned.slice( 0, 8 ), [ out, reachable ] ) ).toEqual( [] );
+	} );
+
+	test( "name themselves after the price they ask", () => {
 		expect( costToString( cost( { diamond: 4, onyx: 4 } ) ) ).toBe( "d4-s0-e0-r0-o4" );
 	} );
 } );
 
-// ===========================================================================
-describe( "splendor/utils — pure helpers", () => {
 
-	test( "sumTokens totals a partial token map, ignoring absent gems", () => {
-		expect( sumTokens( {} ) ).toBe( 0 );
+describe( "pricing a card", () => {
+	const target = card( { cost: cost( { diamond: 3, sapphire: 2 } ) } );
+
+	test( "discounts it by the bonuses already bought, never below zero", () => {
+		const owned = [
+			card( { id: "1", bonus: "diamond" } ),
+			card( { id: "2", bonus: "sapphire" } ),
+			card( { id: "3", bonus: "sapphire" } ),
+			card( { id: "4", bonus: "sapphire" } )
+		];
+
+		expect( discountedCost( target, owned ) ).toEqual( cost( { diamond: 2 } ) );
+	} );
+
+	test( "spends gems first and gold only for the shortfall", () => {
+		expect( paymentFor( target, tokens( { diamond: 1, gold: 5 } ), [] ) )
+			.toEqual( { diamond: 1, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 4 } );
+	} );
+
+	test( "refuses a card the gold cannot bridge", () => {
+		expect( paymentFor( target, tokens( { diamond: 1, gold: 3 } ), [] ) ).toBeUndefined();
+	} );
+
+	test( "accepts a payment that settles the cost exactly", () => {
+		expect( isValidPayment( target, { diamond: 3, sapphire: 2 }, [] ) ).toBe( true );
+		expect( isValidPayment( target, { diamond: 1, gold: 4 }, [] ) ).toBe( true );
+	} );
+
+	test( "rejects an overpayment, in gems or in gold", () => {
+		expect( isValidPayment( target, { diamond: 4, sapphire: 2 }, [] ) ).toBe( false );
+		expect( isValidPayment( target, { diamond: 3, sapphire: 2, gold: 1 }, [] ) ).toBe( false );
+	} );
+
+	test( "rejects a payment that leaves the cost short", () => {
+		expect( isValidPayment( target, { diamond: 3, sapphire: 1 }, [] ) ).toBe( false );
+	} );
+
+	test( "totals a partial token map, absences and all", () => {
 		expect( sumTokens( { diamond: 2, gold: 1 } ) ).toBe( 3 );
-		expect( sumTokens( tokens( { ruby: 5 } ) ) ).toBe( 5 );
-	} );
-
-	test( "findOpenCard searches every level and returns undefined when absent", () => {
-		const cards = { 1: [ card( "a" ) ], 2: [], 3: [ card( "c", { level: 3 } ) ] };
-		expect( findOpenCard( "a", cards )?.id ).toBe( "a" );
-		expect( findOpenCard( "c", cards )?.id ).toBe( "c" );
-		expect( findOpenCard( "missing", cards ) ).toBeUndefined();
-	} );
-
-	test( "discountedCost subtracts one per owned bonus card and floors at zero", () => {
-		const target = card( "t", { cost: cost( { diamond: 3, onyx: 1 } ) } );
-		const owned = [ card( "d1" ), card( "d2" ), card( "d3" ), card( "d4" ) ];
-
-		// Four diamond bonuses against a cost of three → floored at 0, not -1.
-		expect( discountedCost( target, owned ) ).toEqual( cost( { onyx: 1 } ) );
-		expect( discountedCost( target, [] ) ).toEqual( cost( { diamond: 3, onyx: 1 } ) );
-	} );
-
-	test( "findNobleVisit returns the first qualifying noble, else null", () => {
-		const nobles = [ noble( "n1", { diamond: 3 } ), noble( "n2", { onyx: 1 } ) ];
-		const diamonds = [ card( "d1" ), card( "d2" ), card( "d3" ) ];
-
-		expect( findNobleVisit( diamonds, nobles )?.id ).toBe( "n1" );
-		expect( findNobleVisit( [ card( "o1", { bonus: "onyx" } ) ], nobles )?.id ).toBe( "n2" );
-		expect( findNobleVisit( [], nobles ) ).toBeNull();
-	} );
-
-	test( "checkNobleVisit answers the same question off a PlayerData", () => {
-		const player = {
-			tokens: tokens(),
-			cards: [ card( "d1" ), card( "d2" ), card( "d3" ) ],
-			nobles: [],
-			reserved: [],
-			points: 0
-		};
-
-		expect( checkNobleVisit( player, [ noble( "n1", { diamond: 3 } ) ] ) ).toBe( "n1" );
-		expect( checkNobleVisit( player, [ noble( "n1", { onyx: 1 } ) ] ) ).toBeUndefined();
+		expect( sumTokens( {} ) ).toBe( 0 );
 	} );
 } );
 
-// ===========================================================================
-describe( "splendor/utils — client affordability helpers", () => {
 
-	test( "canPurchaseCard accepts an exact hand and a discounted one", () => {
-		const target = card( "t", { cost: cost( { diamond: 2, onyx: 1 } ) } );
+describe( "the final standings", () => {
+	const [ a, b, c ] = [ player( "a" ), player( "b" ), player( "c" ) ];
 
-		expect( canPurchaseCard( target, tokens( { diamond: 2, onyx: 1 } ), [] ) ).toBe( true );
-		expect( canPurchaseCard( target, tokens( { onyx: 1 } ), [ card( "d1" ), card( "d2" ) ] ) )
-			.toBe( true );
-		expect( canPurchaseCard( target, tokens( { diamond: 1 } ), [] ) ).toBe( false );
-	} );
-
-	test( "canPurchaseCard covers the shortfall with gold", () => {
-		const target = card( "t", { cost: cost( { diamond: 2, onyx: 1 } ) } );
-
-		expect( canPurchaseCard( target, tokens( { diamond: 1, gold: 2 } ), [] ) ).toBe( true );
-		expect( canPurchaseCard( target, tokens( { diamond: 1, gold: 1 } ), [] ) ).toBe( false );
-	} );
-
-	test( "isValidPayment demands exact change — no over- or under-payment", () => {
-		const target = card( "t", { cost: cost( { diamond: 2, onyx: 1 } ) } );
-
-		expect( isValidPayment( target, { diamond: 2, onyx: 1 }, [] ) ).toBe( true );
-		// Gold makes up exactly the shortfall...
-		expect( isValidPayment( target, { diamond: 1, onyx: 1, gold: 1 }, [] ) ).toBe( true );
-		// ...but never more than it.
-		expect( isValidPayment( target, { diamond: 2, onyx: 1, gold: 1 }, [] ) ).toBe( false );
-		expect( isValidPayment( target, { diamond: 3, onyx: 1 }, [] ) ).toBe( false );
-		expect( isValidPayment( target, { diamond: 1, onyx: 1 }, [] ) ).toBe( false );
-	} );
-
-	test( "isValidPayment applies discounts before demanding change", () => {
-		const target = card( "t", { cost: cost( { diamond: 2, onyx: 1 } ) } );
-		const owned = [ card( "d1" ), card( "d2" ) ];
-
-		expect( isValidPayment( target, { onyx: 1 }, owned ) ).toBe( true );
-		expect( isValidPayment( target, { diamond: 1, onyx: 1 }, owned ) ).toBe( false );
-	} );
-} );
-
-// ===========================================================================
-describe( "splendor/utils — apply (the pure reducer)", () => {
-
-	test( "PlayerDataInitialized seeds an empty slice per player", () => {
-		const next = seatedState();
-		expect( next.playerData[ P1 ] ).toEqual( {
-			tokens: tokens(),
-			cards: [],
-			nobles: [],
-			reserved: [],
-			points: 0
+	test( "rank by prestige, most first", () => {
+		const { ranking, winner } = standingsFor( [ a, b ], {
+			[ a ]: seat( { points: 12 } ),
+			[ b ]: seat( { points: 15 } )
 		} );
+
+		expect( ranking.map( r => r.playerId ) ).toEqual( [ b, a ] );
+		expect( ranking.map( r => r.score ) ).toEqual( [ 15, 12 ] );
+		expect( winner ).toBe( b );
 	} );
 
-	test( "apply never mutates the state it is handed", () => {
-		const state = emptyState();
-		const next = apply( state, PlayerDataInitializedEvent.make( { playerId: P1 } ) );
+	test( "break a prestige tie in favour of fewer development cards", () => {
+		const { ranking, winner } = standingsFor( [ a, b ], {
+			[ a ]: seat( { points: 15, cards: [ card(), card(), card() ] } ),
+			[ b ]: seat( { points: 15, cards: [ card(), card() ] } )
+		} );
 
-		expect( next ).not.toBe( state );
-		expect( Object.keys( state.playerData ) ).toHaveLength( 0 );
+		expect( ranking.map( r => r.playerId ) ).toEqual( [ b, a ] );
+		expect( winner ).toBe( b );
 	} );
 
-	test( "GameDealt replaces the whole board in one event", () => {
-		const dealt = apply( seatedState(), GameDealtEvent.make( {
-			tokens: tokens( { diamond: 5, gold: 5 } ),
-			nobles: [ noble( "n1" ) ],
-			cards: { 1: [ card( "a" ) ], 2: [], 3: [] },
-			decks: { 1: [ card( "b" ) ], 2: [], 3: [] }
-		} ) );
+	test( "name nobody when the top two are level on both keys", () => {
+		const { ranking, winner } = standingsFor( [ a, b ], {
+			[ a ]: seat( { points: 15, cards: [ card() ] } ),
+			[ b ]: seat( { points: 15, cards: [ card() ] } )
+		} );
 
-		expect( dealt.tokens ).toEqual( tokens( { diamond: 5, gold: 5 } ) );
-		expect( dealt.nobles.map( n => n.id ) ).toEqual( [ "n1" ] );
-		expect( dealt.cards[ 1 ].map( c => c.id ) ).toEqual( [ "a" ] );
-		expect( dealt.decks[ 1 ].map( c => c.id ) ).toEqual( [ "b" ] );
-		// The deal does not touch the already-seeded player slices.
-		expect( dealt.playerData[ P1 ]!.points ).toBe( 0 );
+		expect( ranking.map( r => r.rank ) ).toEqual( [ 1, 1 ] );
+		expect( winner ).toBeUndefined();
 	} );
 
-	test( "TokensPicked moves tokens off the board and returns the overflow", () => {
-		const board = apply( seatedState(), GameDealtEvent.make( {
-			tokens: tokens( { diamond: 5, sapphire: 5, emerald: 5 } ),
-			nobles: [],
-			cards: { 1: [], 2: [], 3: [] },
-			decks: { 1: [], 2: [], 3: [] }
-		} ) );
+	test( "let tied seats share a place and the next one skip it", () => {
+		const { ranking } = standingsFor( [ a, b, c ], {
+			[ a ]: seat( { points: 15 } ),
+			[ b ]: seat( { points: 15 } ),
+			[ c ]: seat( { points: 3 } )
+		} );
 
-		const picked = apply( board, TokensPickedEvent.make( {
-			playerId: P1,
-			tokens: { diamond: 1, sapphire: 1, emerald: 1 },
-			returned: { diamond: 1 }
-		} ) );
-
-		expect( picked.playerData[ P1 ]!.tokens ).toEqual( tokens( { sapphire: 1, emerald: 1 } ) );
-		expect( picked.tokens ).toEqual( tokens( { diamond: 5, sapphire: 4, emerald: 4 } ) );
-	} );
-
-	test( "CardReserved takes the card, refills the slot, and pays out a gold", () => {
-		const board = apply( seatedState(), GameDealtEvent.make( {
-			tokens: tokens( { gold: 5, diamond: 5 } ),
-			nobles: [],
-			cards: { 1: [ card( "open" ) ], 2: [], 3: [] },
-			decks: { 1: [ card( "next" ), card( "later" ) ], 2: [], 3: [] }
-		} ) );
-
-		// The player must already hold the token they hand back — `validate` is what
-		// guarantees that upstream, so the fixture funds them first.
-		const funded = apply( board, TokensPickedEvent.make( {
-			playerId: P1,
-			tokens: { diamond: 1 }
-		} ) );
-
-		const reserved = apply( funded, CardReservedEvent.make( {
-			playerId: P1,
-			card: card( "open" ),
-			replacement: card( "next" ),
-			withGold: true,
-			returnedToken: "diamond"
-		} ) );
-
-		expect( reserved.playerData[ P1 ]!.reserved.map( c => c.id ) ).toEqual( [ "open" ] );
-		expect( reserved.cards[ 1 ].map( c => c.id ) ).toEqual( [ "next" ] );
-		expect( reserved.decks[ 1 ].map( c => c.id ) ).toEqual( [ "later" ] );
-		expect( reserved.playerData[ P1 ]!.tokens ).toEqual( tokens( { gold: 1 } ) );
-		expect( reserved.tokens ).toEqual( tokens( { gold: 4, diamond: 5 } ) );
-	} );
-
-	test( "CardReserved with an exhausted deck empties the slot instead of refilling", () => {
-		const board = apply( seatedState(), GameDealtEvent.make( {
-			tokens: tokens(),
-			nobles: [],
-			cards: { 1: [ card( "open" ), card( "other" ) ], 2: [], 3: [] },
-			decks: { 1: [], 2: [], 3: [] }
-		} ) );
-
-		const reserved = apply( board, CardReservedEvent.make( {
-			playerId: P1,
-			card: card( "open" ),
-			replacement: null,
-			withGold: false
-		} ) );
-
-		expect( reserved.cards[ 1 ].map( c => c.id ) ).toEqual( [ "other" ] );
-	} );
-
-	test( "CardPurchased pays the board, banks the card, and refills the slot", () => {
-		const board = apply( seatedState(), GameDealtEvent.make( {
-			tokens: tokens( { diamond: 3 } ),
-			nobles: [],
-			cards: { 1: [ card( "open", { points: 1 } ) ], 2: [], 3: [] },
-			decks: { 1: [ card( "next" ) ], 2: [], 3: [] }
-		} ) );
-
-		const funded = apply( board, TokensPickedEvent.make( {
-			playerId: P1,
-			tokens: { diamond: 2 }
-		} ) );
-
-		const bought = apply( funded, CardPurchasedEvent.make( {
-			playerId: P1,
-			card: card( "open", { points: 1 } ),
-			fromReserved: false,
-			replacement: card( "next" ),
-			payment: { diamond: 2 },
-			noble: null
-		} ) );
-
-		expect( bought.playerData[ P1 ]!.cards.map( c => c.id ) ).toEqual( [ "open" ] );
-		expect( bought.playerData[ P1 ]!.points ).toBe( 1 );
-		expect( bought.playerData[ P1 ]!.tokens.diamond ).toBe( 0 );
-		expect( bought.tokens.diamond ).toBe( 3 );
-		expect( bought.cards[ 1 ].map( c => c.id ) ).toEqual( [ "next" ] );
-		expect( bought.decks[ 1 ] ).toHaveLength( 0 );
-	} );
-
-	test( "CardPurchased from reserve leaves the open rows alone", () => {
-		const board = apply( seatedState(), GameDealtEvent.make( {
-			tokens: tokens(),
-			nobles: [],
-			cards: { 1: [ card( "open" ) ], 2: [], 3: [] },
-			decks: { 1: [ card( "next" ) ], 2: [], 3: [] }
-		} ) );
-
-		const held = apply( board, CardReservedEvent.make( {
-			playerId: P1,
-			card: card( "open" ),
-			replacement: card( "next" ),
-			withGold: false
-		} ) );
-
-		const bought = apply( held, CardPurchasedEvent.make( {
-			playerId: P1,
-			card: card( "open" ),
-			fromReserved: true,
-			replacement: null,
-			payment: {},
-			noble: null
-		} ) );
-
-		expect( bought.playerData[ P1 ]!.reserved ).toHaveLength( 0 );
-		expect( bought.playerData[ P1 ]!.cards.map( c => c.id ) ).toEqual( [ "open" ] );
-		expect( bought.cards[ 1 ].map( c => c.id ) ).toEqual( [ "next" ] );
-	} );
-
-	test( "CardPurchased with a noble moves the noble and scores both", () => {
-		const visiting = noble( "n1", { diamond: 1 } );
-		const board = apply( seatedState(), GameDealtEvent.make( {
-			tokens: tokens(),
-			nobles: [ visiting, noble( "n2", { onyx: 4 } ) ],
-			cards: { 1: [ card( "open", { points: 2 } ) ], 2: [], 3: [] },
-			decks: { 1: [], 2: [], 3: [] }
-		} ) );
-
-		const bought = apply( board, CardPurchasedEvent.make( {
-			playerId: P1,
-			card: card( "open", { points: 2 } ),
-			fromReserved: false,
-			replacement: null,
-			payment: {},
-			noble: visiting
-		} ) );
-
-		expect( bought.nobles.map( n => n.id ) ).toEqual( [ "n2" ] );
-		expect( bought.playerData[ P1 ]!.nobles.map( n => n.id ) ).toEqual( [ "n1" ] );
-		// 2 for the card + 3 for the noble.
-		expect( bought.playerData[ P1 ]!.points ).toBe( 5 );
-	} );
-
-	test( "WinnerDecided records the winner on the board", () => {
-		const decided = apply( seatedState(), WinnerDecidedEvent.make( { winner: P1 } ) );
-		expect( decided.winner ).toBe( P1 );
+		expect( ranking.map( r => r.rank ) ).toEqual( [ 1, 1, 3 ] );
 	} );
 } );
 
-// ===========================================================================
-describe( "splendor/utils — standings", () => {
 
-	const P2 = PlayerId.make( "p2" );
-	const P3 = PlayerId.make( "p3" );
+describe( "having a move to make", () => {
+	const bank = ( over: Partial<Tokens> = {} ) => ( { tokens: tokens( over ), cards: board() } );
+	const board = ( over: Partial<Record<1 | 2 | 3, Array<Card>>> = {} ) =>
+		( { 1: [], 2: [], 3: [], ...over } );
 
-	/** A seat holding `points` and `cardCount` bought development cards. */
-	const seat = ( points: number, cardCount: number, over: Partial<PlayerData> = {} ) => {
-		const data: PlayerData = {
-			tokens: tokens(),
-			cards: Array.from( { length: cardCount }, ( _, i ) => card( `c${ i }` ) ),
-			nobles: [],
-			reserved: [],
-			points,
-			...over
-		};
-		return data;
-	};
+	/** Three cards nothing could pay for out of an empty purse. */
+	const dear = [ 1, 2, 3 ].map( n =>
+		card( { id: `dear-${ n }`, cost: cost( { onyx: 7 } ) } ) );
 
-	test( "developmentCardCount counts only bought cards", () => {
-		expect( developmentCardCount( seat( 5, 3 ) ) ).toBe( 3 );
-		expect( developmentCardCount( seat( 5, 0, {
-			nobles: [ noble( "n1" ) ],
-			reserved: [ card( "r1" ), card( "r2" ) ]
-		} ) ) ).toBe( 0 );
-		expect( developmentCardCount( undefined ) ).toBe( 0 );
+	test( "a gem left in the bank is a move, whatever else is true", () => {
+		const table = { tokens: tokens( { diamond: 1 } ), cards: board() };
+		expect( hasLegalMove( table, seat( { reserved: dear } ) ) ).toBe( true );
 	} );
 
-	test( "compareStandings ranks on points first", () => {
-		// Fewer cards but a point behind: the lead still wins.
-		expect( compareStandings( seat( 6, 9 ), seat( 5, 1 ) ) ).toBeLessThan( 0 );
-		expect( compareStandings( seat( 5, 1 ), seat( 6, 9 ) ) ).toBeGreaterThan( 0 );
+	test( "gold alone is not — it is only ever taken with a reservation", () => {
+		const table = { tokens: tokens( { gold: 5 } ), cards: board() };
+		expect( hasLegalMove( table, seat( { reserved: dear } ) ) ).toBe( false );
 	} );
 
-	test( "compareStandings breaks a points tie on the fewest cards", () => {
-		expect( compareStandings( seat( 15, 8 ), seat( 15, 12 ) ) ).toBeLessThan( 0 );
-		expect( compareStandings( seat( 15, 12 ), seat( 15, 8 ) ) ).toBeGreaterThan( 0 );
-		// Level on both keys — the caller's order decides.
-		expect( compareStandings( seat( 15, 8 ), seat( 15, 8 ) ) ).toBe( 0 );
+	test( "an empty bank still leaves a card to reserve", () => {
+		const table = { ...bank(), cards: board( { 1: [ card( { cost: cost( { onyx: 7 } ) } ) ] } ) };
+		expect( hasLegalMove( table, seat() ) ).toBe( true );
 	} );
 
-	test( "rankPlayers orders the roster and keeps seating order on a dead draw", () => {
-		const data = { [ P1 ]: seat( 15, 12 ), [ P2 ]: seat( 15, 9 ), [ P3 ]: seat( 16, 14 ) };
-		expect( rankPlayers( [ P1, P2, P3 ], data ) ).toEqual( [ P3, P2, P1 ] );
-
-		const drawn = { [ P1 ]: seat( 15, 9 ), [ P2 ]: seat( 15, 9 ) };
-		expect( rankPlayers( [ P2, P1 ], drawn ) ).toEqual( [ P2, P1 ] );
+	test( "reserving needs something on the board to take", () => {
+		expect( hasLegalMove( bank(), seat() ) ).toBe( false );
 	} );
 
-	test( "decideWinner takes the top of the ranking, and nothing from an empty roster", () => {
-		const data = { [ P1 ]: seat( 15, 12 ), [ P2 ]: seat( 15, 9 ) };
-		expect( decideWinner( [ P1, P2 ], data ) ).toBe( P2 );
-		expect( decideWinner( [], {} ) ).toBeUndefined();
+	test( "reserving needs room under the three-card limit", () => {
+		const table = { ...bank(), cards: board( { 1: [ card( { cost: cost( { onyx: 7 } ) } ) ] } ) };
+		expect( hasLegalMove( table, seat( { reserved: dear } ) ) ).toBe( false );
 	} );
 
-	test( "a seat with no data ranks last", () => {
-		expect( decideWinner( [ P1, P2 ], { [ P2 ]: seat( 1, 5 ) } ) ).toBe( P2 );
+	test( "a card on the board the seat can pay for is a move", () => {
+		const table = { ...bank(), cards: board( { 1: [ card( { cost: cost( { ruby: 2 } ) } ) ] } ) };
+		const player = seat( { reserved: dear, tokens: tokens( { ruby: 2 } ) } );
+
+		expect( hasLegalMove( table, player ) ).toBe( true );
+	} );
+
+	test( "so is one the seat is already holding", () => {
+		const held = card( { id: "held", cost: cost( { ruby: 2 } ) } );
+		const player = seat( {
+			reserved: [ ...dear.slice( 0, 2 ), held ],
+			tokens: tokens( { ruby: 2 } )
+		} );
+
+		expect( hasLegalMove( bank(), player ) ).toBe( true );
+	} );
+
+	test( "counts the discounts the seat's bought cards give it", () => {
+		const held = card( { id: "held", cost: cost( { diamond: 3 } ) } );
+		const bought = [ 1, 2, 3 ].map( n => card( { id: `b${ n }`, bonus: "diamond" } ) );
+
+		// Three diamond bonuses cover the price outright, with no tokens at all.
+		expect( hasLegalMove( bank(), seat( { reserved: [ held ], cards: bought } ) ) ).toBe( true );
+		expect( hasLegalMove( bank(), seat( { reserved: [ held ] } ) ) ).toBe( false );
+	} );
+
+	test( "counts gold toward the shortfall", () => {
+		const held = card( { id: "held", cost: cost( { diamond: 3 } ) } );
+
+		expect( hasLegalMove( bank(), seat( { reserved: [ held ], tokens: tokens( { gold: 3 } ) } ) ) )
+			.toBe( true );
+		expect( hasLegalMove( bank(), seat( { reserved: [ held ], tokens: tokens( { gold: 2 } ) } ) ) )
+			.toBe( false );
 	} );
 } );

@@ -1,8 +1,9 @@
 import { defineRelations } from "drizzle-orm";
-import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator.ts";
 
 import type { ChatPolicy } from "@/chat/shared/schema.ts";
-import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator.ts";
 
 const now = () => new Date();
 
@@ -60,6 +61,29 @@ export const games = sqliteTable(
 	table => [ index( "idx_games_code" ).on( table.code ) ]
 );
 
+/**
+ * The players table tracking the players who joined
+ * a particular game. Doesn't include bots.
+ */
+export const players = sqliteTable(
+	"players",
+	{
+		id: text( "id" ).$default( () => generateId() ),
+		name: text( "name" ).notNull(),
+		avatar: text( "image" ).$default( () => generateAvatar() ),
+		gameId: text( "gameId" ).references( () => games.id, { onDelete: "cascade" } )
+	},
+	table => [
+		primaryKey( { name: "players_pk", columns: [ table.id, table.gameId ] } ),
+		index( "idx_players_id" ).on( table.id ),
+		index( "idx_players_gameId" ).on( table.gameId )
+	]
+);
+
+/**
+ * The channels table tracking all the chat channels
+ * created.
+ */
 export const channels = sqliteTable(
 	"channels",
 	{
@@ -74,13 +98,19 @@ export const channels = sqliteTable(
 );
 
 export const relations = defineRelations(
-	{ users, passkeys, games, channels },
+	{ users, passkeys, games, players, channels },
 	t => ( {
 		users: {
 			passkeys: t.many.passkeys()
 		},
 		passkeys: {
 			user: t.one.users( { from: t.passkeys.userId, to: t.users.id } )
+		},
+		players: {
+			game: t.one.games( { from: t.players.gameId, to: t.games.id } )
+		},
+		games: {
+			players: t.many.players()
 		}
 	} )
 );

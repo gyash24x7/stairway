@@ -1,11 +1,10 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
-import { selectDominoFn } from "@/games/kingdomino/client/client.ts";
 import { useKingdomino } from "@/games/kingdomino/client/context.tsx";
 import { usePlacement } from "@/games/kingdomino/client/use-placement.tsx";
+import { createBoard } from "@/games/kingdomino/shared/utils.ts";
 
 /**
  * Everything a seated player needs to take a Kingdomino turn: which of the two
@@ -14,52 +13,47 @@ import { usePlacement } from "@/games/kingdomino/client/use-placement.tsx";
  * Lifted out of `game-view` so the full page and the couch-mode controller drive
  * the same logic instead of two copies that drift — the controller renders a
  * different layout, not different rules.
+ *
+ * Safe below the shared context even without a seat: `seated` is false there and
+ * every affordance it gates is off, so a spectator screen mounting a component
+ * that calls this gets a read-only one.
  */
 export function useKingdominoTurn() {
-	const { data } = useKingdomino();
-	const player = data.view;
-
-	const isMyTurn = data.status === "IN_PROGRESS"
-		&& data.context.currentPlayer === player.playerId;
-
-	const myPlayerInfo = {
-		...data.players[ player.playerId ],
-		...data.view.playerData[ player.playerId ]
-	};
-
-	const queryClient = useQueryClient();
-	const selectDomino = useMutation( {
-		mutationFn: ( dominoId: number ) => selectDominoFn( data.id, { dominoId } ),
-		onSuccess: () => queryClient.invalidateQueries( {
-			queryKey: [ "kingdomino", "getState", data.id ]
-		} )
-	} );
-
-	const isSelectPending = selectDomino.isPending;
+	const { data, playerId, selectDomino, isSelectPending } = useKingdomino();
 	const [ selectedDominoId, setSelectedDominoId ] = useState<number | null>( null );
 
-	const canSelect = isMyTurn && data.context.phase === "SELECT" && !isSelectPending;
+	const seat = playerId ? data.view.playerData[ playerId ] : undefined;
+	const info = playerId ? data.players[ playerId ] : undefined;
+	const seated = !!playerId && !!seat && !!info;
+
+	const isMyTurn = data.status === "IN_PROGRESS" && data.context.currentPlayer === playerId;
+
+	// A placeholder kingdom for a screen with no seat, so the placement machinery
+	// below stays unconditional — every affordance it drives is gated on `seated`.
+	const board = seat?.board ?? createBoard( "red", data.config.boardSize );
+	const queue = seat?.queue ?? [];
+
+	const canSelect = seated && isMyTurn && data.context.phase === "SELECT" && !isSelectPending;
 
 	// Deliberately not gated on `isMyTurn`: placement order is resolved from the
 	// draft, so holding a queued domino is the affordance. The server is the
 	// authority either way.
-	const canPlace = data.status === "IN_PROGRESS"
+	const canPlace = seated
+		&& data.status === "IN_PROGRESS"
 		&& data.context.phase === "PLACE"
-		&& myPlayerInfo.queue.length > 0;
+		&& queue.length > 0;
 
 	const activeDomino = selectedDominoId
-		?? ( canPlace ? myPlayerInfo.queue.toSorted( ( a, b ) => a - b )[ 0 ] : null );
+		?? ( canPlace ? queue.toSorted( ( a, b ) => a - b )[ 0 ] ?? null : null );
 
 	const handleDominoSelect = ( dominoId: number ) => {
-		if ( !canSelect ) {
-			return;
+		if ( canSelect ) {
+			selectDomino( { dominoId } );
 		}
-		selectDomino.mutate( dominoId );
 	};
 
 	const placement = usePlacement( {
-		gameId: data.id,
-		board: myPlayerInfo.board,
+		board,
 		activeDominoId: activeDomino,
 		canPlace: canPlace && !isSelectPending,
 		onClear: () => setSelectedDominoId( null )
@@ -67,9 +61,12 @@ export function useKingdominoTurn() {
 
 	return {
 		data,
-		player,
+		playerId,
+		seated,
+		seat,
+		info,
+		board,
 		isMyTurn,
-		myPlayerInfo,
 		canSelect,
 		canPlace,
 		activeDomino,

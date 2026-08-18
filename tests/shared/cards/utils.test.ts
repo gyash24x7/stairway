@@ -174,7 +174,8 @@ describe( "generateHands", () => {
 	} );
 
 	it( "deals contiguous slices of the deck", () => {
-		expect( generateHands( [ "AC", "2C", "3C", "4C" ], 2 ) ).toEqual( [ [ "AC", "2C" ], [ "3C", "4C" ] ] );
+		const hands = generateHands( [ "AC", "2C", "3C", "4C" ], 2 );
+		expect( hands ).toEqual( [ [ "AC", "2C" ], [ "3C", "4C" ] ] );
 	} );
 
 	it( "returns a single hand holding the whole deck for a hand count of 1", () => {

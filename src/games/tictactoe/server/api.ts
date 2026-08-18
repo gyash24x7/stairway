@@ -1,130 +1,46 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
-import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
-import { AuthContext } from "@/auth/shared/middleware.ts";
-import { toPlayerInfo } from "@/client.ts";
-import {
-	TICTACTOE_PLAYER_COUNT,
-	TicTacToeConfig,
-	TicTacToeInitializeInput
-} from "@/games/tictactoe/shared/schema.ts";
-import { channels, games } from "@/platform/database/schema.ts";
-import { Database } from "@/platform/database/service.ts";
-import { DurableSchedulerLive } from "@/platform/do/scheduler.ts";
-import { DurableEventStoreLive, DurableGameStoreLive } from "@/platform/do/stores.ts";
-import { DurableSyncLive, GameChannel } from "@/platform/do/sync.ts";
-import { GameArchiveLive } from "@/platform/kv/archive.ts";
-import { ArchiveKV } from "@/platform/kv/archive.ts";
-import { GameNotFound } from "@/shared/swish/errors.ts";
-import { GameCode, GameId, PlayerId } from "@/shared/swish/schema.ts";
 import { tictactoe } from "@/games/tictactoe/server/engine.ts";
+import {
+	TICTACTOE_MOVE_TIMEOUT_MILLIS,
+	TICTACTOE_PLAYER_COUNT,
+	TicTacToeConfig
+} from "@/games/tictactoe/shared/schema.ts";
+import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
+
 
 // --- Durable Object ----------------------------------------------------------
 
-export class TicTacToeEngineDO extends Cloudflare.DurableObject<TicTacToeEngineDO>()(
-	"TicTacToeEngineDO",
-	Effect.gen( function* () {
-		const channels = yield* GameChannel;
-		const state = yield* Cloudflare.DurableObjectState;
-		const kv = yield* Cloudflare.KV.ReadWriteNamespace( ArchiveKV );
-		return tictactoe.pipe(
-			Effect.provide(
-				Layer.mergeAll(
-					DurableGameStoreLive( state ),
-					DurableEventStoreLive( state ),
-					DurableSyncLive( channels ),
-					DurableSchedulerLive( state ),
-					GameArchiveLive( kv )
-				)
-			)
-		);
-	} ).pipe( Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding ) )
+export class TicTacToeGame extends Cloudflare.DurableObject<TicTacToeGame>()(
+	"TicTacToeGame",
+	SwishDurableObject( tictactoe )
 ) {}
+
 
 // --- HTTP Api implementation -------------------------------------------------
 
 export const TicTacToeApiLive = HttpApiBuilder.group( StairwayAPI, "tictactoe", handlers =>
 	Effect.gen( function* () {
-		const db = yield* Database;
-		const ns = yield* TicTacToeEngineDO;
+		const api = yield* makeGameApi( { game: "tictactoe", ns: yield* TicTacToeGame } );
+
 		return handlers
-			.handle( "createGame", () => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const game = yield* db.insert( games ).values( { game: "tic-tac-toe" } ).returning()
-					.pipe( Effect.map( v => v[ 0 ] ), Effect.orDie );
-
-				yield* db.insert( channels ).values( {
-					id: game.id,
-					refType: "game",
-					refId: game.id,
-					label: "tictactoe",
-					policy: { text: true, reactions: true }
-				} ).pipe( Effect.orDie );
-
-				// Both seats and `autoStart` are fixed server-side — the client has
-				// no say in the roster size.
-				const input = TicTacToeInitializeInput.make( {
-					id: GameId.make( game.id ),
-					code: GameCode.make( game.code ),
-					config: TicTacToeConfig.make( {
-						playerCount: TICTACTOE_PLAYER_COUNT,
-						autoStart: true
-					} )
-				} );
-
-				const client = ns.getByName( game.id );
-				const response = yield* client.initialize( input );
-				yield* client.join( toPlayerInfo( user ) );
-
-				return response;
-			} ) )
-
-			.handle( "join", ( { payload } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-
-				const game = yield* db.query.games
-					.findFirst( { where: { game: "tic-tac-toe", code: payload.code } } )
-					.pipe( Effect.orDie );
-
-				if ( !game ) {
-					return yield* new GameNotFound( { code: payload.code } );
-				}
-
-				const client = ns.getByName( game.id );
-				return yield* client.join( toPlayerInfo( user ) );
-			} ) )
-
-			.handle( "addBots", ( { params } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.addBots( PlayerId.make( user.id ) );
-			} ) )
-
-			.handle( "start", ( { params } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.start( PlayerId.make( user.id ) );
-			} ) )
-
-			.handle( "getState", ( { params } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.getState( PlayerId.make( user.id ) );
-			} ) )
-
-			.handle( "getTableState", ( { params } ) => Effect.gen( function* () {
-				yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.getTableState();
-			} ) )
-
-			.handle( "place", ( { params, payload } ) => Effect.gen( function* () {
-				const { user } = yield* AuthContext;
-				const client = ns.getByName( params.gameId );
-				return yield* client.place( payload, toPlayerInfo( user ) );
-			} ) );
+			.handle( "createGame", api.createGame( client => client.initialize, () => Effect.succeed(
+				TicTacToeConfig.make( {
+					playerCount: TICTACTOE_PLAYER_COUNT,
+					autoStart: false,
+					moveTimeoutMillis: TICTACTOE_MOVE_TIMEOUT_MILLIS
+				} )
+			) ) )
+			.handle( "join", api.join )
+			.handle( "getView", api.getView( client => client.getState ) )
+			.handle( "addBots", api.addBots )
+			.handle( "start", api.start )
+			.handle( "place", api.move( client => client.place ) )
+			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "undo", api.undo )
+			.handle( "redo", api.redo );
 	} )
 );

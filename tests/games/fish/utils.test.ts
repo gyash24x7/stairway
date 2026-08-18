@@ -1,394 +1,389 @@
 import { describe, expect, test } from "bun:test";
 
-import { apply } from "@/games/fish/server/utils.ts";
-import type { FishState } from "@/games/fish/shared/schema.ts";
 import {
-	BookClaimed,
-	CardAsked,
-	HandsDealt,
-	PlayerSeated,
-	TeamsCreated,
-	TurnTransferred,
-	WinningTeamDecided
-} from "@/games/fish/shared/schema.ts";
+	buildBeliefs,
+	holdsBookProbability,
+	probability
+} from "@/games/fish/server/bot/beliefs.ts";
 import {
 	buildConfig,
-	getAskDescription,
-	getBookDisplayString,
-	getBookForCard,
-	getBooksInHand,
-	getBookSuit,
-	getCardsOfBook,
-	getClaimDescription,
-	getClaimedBooks,
-	getMissingCards,
-	getOpponents,
-	getTeamForPlayer,
-	getTeammates,
-	getTransferDescription,
-	isBookInHand
-} from "@/games/fish/shared/utils.ts";
+	FISH_TEAMS,
+	getLiveBooks,
+	getMetrics,
+	isGameComplete,
+	possibleHolders
+} from "@/games/fish/server/utils.ts";
+import type { PublicKnowledge } from "@/games/fish/shared/utils.ts";
+import { getBookWinner, getTeamScores, teamCountsFor } from "@/games/fish/shared/utils.ts";
+import type { GameContext, PlayerId as Player } from "@/swish/shared/schema.ts";
+import { PlayerId, TeamId } from "@/swish/shared/schema.ts";
+
+import type { Ask, Claim, NormalBook } from "@/games/fish/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
-import type { PlayerId, PlayerInfo } from "@/shared/swish/schema.ts";
-import { player } from "@tests/_helpers/swish.ts";
 
-/** Retypes a plain object literal as one of the branded `PlayerId`-keyed maps. */
-const byPlayer = <T>( o: Record<string, T> ) => o as Record<PlayerId, T>;
+const [ a, b, c, d ] = [ "a", "b", "c", "d" ].map( id => PlayerId.make( id ) );
 
-const P1 = player( "p1" );
-const P2 = player( "p2" );
-const P3 = player( "p3" );
-const P4 = player( "p4" );
+const [ RED, BLUE ] = [ TeamId.make( "red" ), TeamId.make( "blue" ) ];
 
-const ROSTER: Record<PlayerId, PlayerInfo> = {
-	[ P1.id ]: P1,
-	[ P2.id ]: P2,
-	[ P3.id ]: P3,
-	[ P4.id ]: P4
-};
+const config = buildConfig( 4, "NORMAL", 2 );
 
-const TEAMS = {
-	T1: { id: "T1", name: "Red", members: [ P1.id, P3.id ], score: 0, booksWon: [] },
-	T2: { id: "T2", name: "Blue", members: [ P2.id, P4.id ], score: 0, booksWon: [] }
-};
+const ask = ( playerId: Player, from: Player, cardId: CardId, success: boolean ): Ask =>
+	( { _tag: "fish/Ask", playerId, from, cardId, success } );
 
-const NO_METRICS = {
-	totalAsks: 0,
-	cardsGiven: 0,
-	cardsTaken: 0,
-	totalClaims: 0,
-	successfulClaims: 0
-};
-
-/** The state `setup` produces, optionally patched for the case under test. */
-const makeState = ( over: Partial<FishState> = {} ) => ( {
-	playerData: {},
-	teams: {},
-	hands: {},
-	cardCounts: {},
-	cardLocations: {},
-	askHistory: [],
-	claimHistory: [],
-	transferHistory: [],
-	...over
-} as FishState );
-
-/** A dealt, team-assigned state — the shape every PLAY-phase event folds onto. */
-const dealtState = ( hands: Record<PlayerId, CardId[]> ) => {
-	const players = Object.keys( hands ) as PlayerId[];
-	const cardCounts: Record<string, number> = {};
-	const cardLocations: Record<string, PlayerId[]> = {};
-	const playerData: Record<string, { teamId: string; metrics: typeof NO_METRICS }> = {};
-
-	for ( const pid of players ) {
-		cardCounts[ pid ] = hands[ pid ]!.length;
-		playerData[ pid ] = {
-			teamId: TEAMS.T1.members.includes( pid ) ? "T1" : "T2",
-			metrics: { ...NO_METRICS }
-		};
-
-		for ( const card of hands[ pid ]! ) {
-			cardLocations[ card ] = [ ...players ];
-		}
-	}
-
-	return makeState( {
-		hands,
-		cardCounts: byPlayer( cardCounts ),
-		cardLocations,
-		playerData: byPlayer( playerData ),
-		teams: { ...TEAMS }
-	} );
-};
-
-// ===========================================================================
-describe( "fish/apply — seating & setup events", () => {
-	test( "PlayerSeated creates an unassigned seat with zeroed metrics", () => {
-		const next = apply( makeState(), PlayerSeated.make( { playerId: P1.id } ) );
-		expect( next.playerData[ P1.id ] ).toEqual( { teamId: "", metrics: NO_METRICS } );
-	} );
-
-	test( "TeamsCreated stamps every member with its team id", () => {
-		let state = makeState();
-		for ( const p of [ P1, P2, P3, P4 ] ) {
-			state = apply( state, PlayerSeated.make( { playerId: p.id } ) );
-		}
-
-		const next = apply( state, TeamsCreated.make( {
-			teams: [
-				{ id: "T1", name: "Red", members: [ P1.id, P3.id ] },
-				{ id: "T2", name: "Blue", members: [ P2.id, P4.id ] }
-			]
-		} ) );
-
-		expect( next.teams[ "T1" ] ).toEqual( {
-			id: "T1", name: "Red", members: [ P1.id, P3.id ], score: 0, booksWon: []
-		} );
-		expect( next.playerData[ P1.id ]!.teamId ).toBe( "T1" );
-		expect( next.playerData[ P2.id ]!.teamId ).toBe( "T2" );
-	} );
-
-	test( "HandsDealt installs the deal verbatim (replay is exact)", () => {
-		const hands = { [ P1.id ]: [ "AC" ], [ P2.id ]: [ "AD" ] } as Record<PlayerId, CardId[]>;
-		const next = apply( makeState(), HandsDealt.make( {
-			hands,
-			cardCounts: { [ P1.id ]: 1, [ P2.id ]: 1 },
-			cardLocations: { AC: [ P1.id, P2.id ], AD: [ P1.id, P2.id ] }
-		} ) );
-
-		expect( next.hands ).toEqual( hands );
-		expect( next.cardCounts ).toEqual( byPlayer( { p1: 1, p2: 1 } ) );
-	} );
-
-	test( "WinningTeamDecided records the winner", () => {
-		const next = apply( makeState(), WinningTeamDecided.make( { teamId: "T1" } ) );
-		expect( next.winningTeam ).toBe( "T1" );
-	} );
-
-	test( "TurnTransferred prepends to the transfer history", () => {
-		const next = apply( makeState(), TurnTransferred.make( {
-			playerId: P1.id, transferTo: P3.id, timestamp: 1
-		} ) );
-
-		expect( next.lastMoveType ).toBe( "transfer" );
-		expect( next.transferHistory ).toEqual( [
-			{ playerId: P1.id, transferTo: P3.id, timestamp: 1 }
-		] );
-	} );
+const known = (
+	asks: readonly Ask[] = [],
+	claims: readonly Claim[] = [],
+	counts: Partial<Record<Player, number>> = {}
+): PublicKnowledge => ( {
+	cardCounts: { [ a ]: 13, [ b ]: 13, [ c ]: 13, [ d ]: 13, ...counts },
+	moves: [ ...asks, ...claims ]
 } );
 
-// ===========================================================================
-describe( "fish/apply — CardAsked", () => {
-	const hands = {
-		[ P1.id ]: [ "AC", "2C" ],
-		[ P2.id ]: [ "AD", "2D" ],
-		[ P3.id ]: [ "AH", "2H" ],
-		[ P4.id ]: [ "AS", "2S" ]
-	} as Record<PlayerId, CardId[]>;
+// A real thirteen-card hand — four seats, fifty-two cards — so the counts and the
+// hand describe the same table. The fitting has both margins to satisfy at once
+// and cannot if they disagree.
+const HAND: CardId[] = [
+	"2H", "2C", "2S", "2D",
+	"3H", "3C", "3S", "3D",
+	"4H", "4C", "4S", "4D",
+	"5H"
+];
 
-	test( "a successful ask moves the card and pins its location", () => {
-		const next = apply( dealtState( hands ), CardAsked.make( {
-			success: true, playerId: P1.id, from: P2.id, cardId: "AD" as CardId, timestamp: 1
-		} ) );
-
-		expect( next.hands[ P1.id ] ).toEqual( [ "AC", "2C", "AD" ] as CardId[] );
-		expect( next.hands[ P2.id ] ).toEqual( [ "2D" ] as CardId[] );
-		expect( next.cardCounts ).toEqual( byPlayer( { p1: 3, p2: 1, p3: 2, p4: 2 } ) );
-		expect( next.cardLocations[ "AD" ] ).toEqual( [ P1.id ] );
-		expect( next.playerData[ P1.id ]!.metrics ).toMatchObject( {
-			totalAsks: 1, cardsTaken: 1
-		} );
-		expect( next.playerData[ P2.id ]!.metrics.cardsGiven ).toBe( 1 );
+describe( "teamCountsFor", () => {
+	test( "offers only the counts that split the seats evenly", () => {
+		// Sides are equal-sized, so `initialize` refuses anything else — this is
+		// what a client offers so that refusal never has to happen.
+		expect( teamCountsFor( 4 ) ).toEqual( [ 2, 4 ] );
+		expect( teamCountsFor( 6 ) ).toEqual( [ 2, 3 ] );
+		expect( teamCountsFor( 8 ) ).toEqual( [ 2, 4 ] );
 	} );
 
-	test( "a failed ask rules out both the asker and the asked", () => {
-		const next = apply( dealtState( hands ), CardAsked.make( {
-			success: false, playerId: P1.id, from: P2.id, cardId: "AH" as CardId, timestamp: 1
-		} ) );
-
-		expect( next.cardLocations[ "AH" ] ).toEqual( [ P3.id, P4.id ] );
-		expect( next.hands ).toEqual( hands );
-		expect( next.playerData[ P1.id ]!.metrics ).toMatchObject( {
-			totalAsks: 1, cardsTaken: 0
-		} );
-		expect( next.askHistory[ 0 ]!.success ).toBe( false );
-	} );
-
-	test( "emptying a player drops them from every remaining card's owners", () => {
-		const thin = {
-			[ P1.id ]: [ "AC" ],
-			[ P2.id ]: [ "AD" ],
-			[ P3.id ]: [ "AH" ],
-			[ P4.id ]: [ "AS" ]
-		} as Record<PlayerId, CardId[]>;
-
-		const next = apply( dealtState( thin ), CardAsked.make( {
-			success: true, playerId: P1.id, from: P2.id, cardId: "AD" as CardId, timestamp: 1
-		} ) );
-
-		expect( next.cardCounts[ P2.id ] ).toBe( 0 );
-		for ( const card of [ "AC", "AH", "AS" ] ) {
-			expect( next.cardLocations[ card ] ).not.toContain( P2.id );
+	test( "two sides always work, whatever the table seats", () => {
+		for ( const count of [ 4, 6, 8 ] as const ) {
+			expect( teamCountsFor( count ) ).toContain( 2 );
 		}
 	} );
 } );
 
-// ===========================================================================
-describe( "fish/apply — BookClaimed", () => {
-	// The 7 matters: `bookTypeOf` infers the variant from whether a seven is still
-	// tracked, so a NORMAL fixture has to keep one in play.
-	const hands = {
-		[ P1.id ]: [ "AC", "AD", "2C" ],
-		[ P2.id ]: [ "AH", "2D" ],
-		[ P3.id ]: [ "AS", "2H" ],
-		[ P4.id ]: [ "2S", "7C" ]
-	} as Record<PlayerId, CardId[]>;
+describe( "buildConfig", () => {
+	test( "a normal table deals the whole deck when the seats divide it", () => {
+		const built = buildConfig( 4, "NORMAL", 2 );
 
-	const correctClaim = { AC: P1.id, AD: P1.id, AH: P2.id, AS: P3.id };
+		expect( built.deckType ).toBe( 52 );
+		expect( built.books ).toHaveLength( 13 );
+		expect( built.bookSize ).toBe( 4 );
+	} );
 
-	test( "a correct claim scores the claimer's team and clears the book", () => {
-		const next = apply( dealtState( hands ), BookClaimed.make( {
-			success: true,
-			playerId: P1.id,
-			book: "ACES",
-			winningTeamId: "T1",
-			correctClaim,
-			actualClaim: correctClaim,
-			timestamp: 1
-		} ) );
+	test( "a normal table drops the sevens when they would not divide", () => {
+		const built = buildConfig( 8, "NORMAL", 2 );
 
-		expect( next.teams[ "T1" ]!.score ).toBe( 1 );
-		expect( next.teams[ "T1" ]!.booksWon ).toEqual( [ "ACES" ] );
-		expect( next.teams[ "T2" ]!.score ).toBe( 0 );
-		expect( next.hands[ P1.id ] ).toEqual( [ "2C" ] as CardId[] );
-		expect( next.cardCounts ).toEqual( byPlayer( { p1: 1, p2: 1, p3: 1, p4: 2 } ) );
-		for ( const card of [ "AC", "AD", "AH", "AS" ] ) {
-			expect( next.cardLocations[ card ] ).toBeUndefined();
+		expect( built.deckType ).toBe( 48 );
+		expect( built.books ).not.toContain( "SEVENS" );
+		expect( built.books ).toHaveLength( 12 );
+	} );
+
+	test( "a canadian table always plays forty-eight, in eight half-suits", () => {
+		for ( const count of [ 4, 6, 8 ] as const ) {
+			const built = buildConfig( count, "CANADIAN", 2 );
+
+			expect( built.deckType ).toBe( 48 );
+			expect( built.books ).toHaveLength( 8 );
+			expect( built.bookSize ).toBe( 6 );
 		}
-
-		expect( next.lastMoveType ).toBe( "claim" );
-		expect( next.playerData[ P1.id ]!.metrics ).toMatchObject( {
-			totalClaims: 1, successfulClaims: 1
-		} );
 	} );
 
-	test( "a wrong claim scores the other team but still clears the book", () => {
-		const next = apply( dealtState( hands ), BookClaimed.make( {
-			success: false,
-			playerId: P1.id,
-			book: "ACES",
-			winningTeamId: "T2",
-			correctClaim,
-			actualClaim: { AC: P1.id, AD: P1.id, AH: P3.id, AS: P2.id },
-			timestamp: 1
-		} ) );
+	test( "the books always account for the whole deck", () => {
+		for ( const type of [ "NORMAL", "CANADIAN" ] as const ) {
+			for ( const count of [ 4, 6, 8 ] as const ) {
+				const built = buildConfig( count, type, 2 );
 
-		expect( next.teams[ "T2" ]!.score ).toBe( 1 );
-		expect( next.teams[ "T1" ]!.score ).toBe( 0 );
-		expect( next.playerData[ P1.id ]!.metrics ).toMatchObject( {
-			totalClaims: 1, successfulClaims: 0
-		} );
-		expect( next.claimHistory[ 0 ]!.success ).toBe( false );
-	} );
-} );
-
-// ===========================================================================
-describe( "fish/utils — books", () => {
-	test( "getBookForCard maps a card to its rank book or suit half", () => {
-		expect( getBookForCard( "AC" as CardId, "NORMAL" ) ).toBe( "ACES" );
-		expect( getBookForCard( "10S" as CardId, "NORMAL" ) ).toBe( "TENS" );
-		expect( getBookForCard( "AC" as CardId, "CANADIAN" ) ).toBe( "LC" );
-		expect( getBookForCard( "KH" as CardId, "CANADIAN" ) ).toBe( "UH" );
-	} );
-
-	test( "getBooksInHand de-duplicates the books a hand touches", () => {
-		const hand = [ "AC", "AD", "2C" ] as CardId[];
-		expect( getBooksInHand( hand, "NORMAL" ) ).toEqual( [ "ACES", "TWOS" ] );
-		expect( getBooksInHand( hand, "CANADIAN" ) ).toEqual( [ "LC", "LD" ] );
-	} );
-
-	test( "isBookInHand answers for both variants", () => {
-		const hand = [ "AC", "2C" ] as CardId[];
-		expect( isBookInHand( hand, "ACES", "NORMAL" ) ).toBe( true );
-		expect( isBookInHand( hand, "KINGS", "NORMAL" ) ).toBe( false );
-	} );
-
-	test( "getMissingCards lists what the hand still needs", () => {
-		expect( getMissingCards( [ "AC", "AD" ] as CardId[], "ACES", "NORMAL" ) )
-			.toEqual( [ "AH", "AS" ] as CardId[] );
-		expect( getMissingCards( [ "AC" ] as CardId[], "LC", "CANADIAN" ) )
-			.toEqual( [ "2C", "3C", "4C", "5C", "6C" ] as CardId[] );
-	} );
-
-	test( "getCardsOfBook optionally intersects with a hand", () => {
-		expect( getCardsOfBook( "ACES" ) ).toHaveLength( 4 );
-		expect( getCardsOfBook( "LC" ) ).toHaveLength( 6 );
-		expect( getCardsOfBook( "ACES", [ "AC", "2C" ] as CardId[] ) )
-			.toEqual( [ "AC" ] as CardId[] );
-	} );
-
-	test( "getBookDisplayString and getBookSuit render the Canadian halves", () => {
-		expect( getBookDisplayString( "ACES", "NORMAL" ) ).toBe( "ACES" );
-		expect( getBookDisplayString( "LC", "CANADIAN" ) ).toBe( "LOW ♣" );
-		expect( getBookDisplayString( "UH", "CANADIAN" ) ).toBe( "HIGH ♥" );
-		expect( getBookSuit( "ACES", "NORMAL" ) ).toBeUndefined();
-		expect( getBookSuit( "US", "CANADIAN" ) ).toBe( "S" );
-	} );
-
-	test( "getClaimedBooks pools every team's winnings", () => {
-		const state = makeState( {
-			teams: {
-				T1: { ...TEAMS.T1, booksWon: [ "ACES" ] },
-				T2: { ...TEAMS.T2, booksWon: [ "KINGS", "TWOS" ] }
+				expect( built.books.length * built.bookSize ).toBe( built.deckType );
 			}
-		} );
+		}
+	} );
 
-		expect( getClaimedBooks( state ).sort() ).toEqual( [ "ACES", "KINGS", "TWOS" ] );
+	test( "takes as many sides as it was asked for, in order", () => {
+		expect( buildConfig( 6, "CANADIAN", 3 ).teams ).toHaveLength( 3 );
+		expect( buildConfig( 4, "NORMAL", 2 ).teams ).toEqual( FISH_TEAMS.slice( 0, 2 ) );
+	} );
+
+	test( "a table starts by hand, so a lobby has time to pick sides", () => {
+		expect( buildConfig( 4, "NORMAL", 2 ).autoStart ).toBe( false );
 	} );
 } );
 
-// ===========================================================================
-describe( "fish/utils — teams", () => {
-	test( "getTeamForPlayer finds the owning team", () => {
-		expect( getTeamForPlayer( TEAMS, P1.id ) ).toBe( "T1" );
-		expect( getTeamForPlayer( TEAMS, P4.id ) ).toBe( "T2" );
+describe( "getBookWinner", () => {
+	const context = {
+		players: [ a, b, c, d ],
+		teams: { [ a ]: RED, [ b ]: BLUE, [ c ]: RED, [ d ]: BLUE }
+	} as unknown as GameContext;
+
+	const claim = (
+		playerId: Player,
+		success: boolean,
+		correctClaim: Record<string, Player>
+	): Claim =>
+		( { _tag: "fish/Claim", success, playerId, book: "ACES", correctClaim, actualClaim: {} } );
+
+	test( "a correct declaration wins the book for the declarer's side", () => {
+		expect( getBookWinner( claim( a, true, {} ), context ) ).toBe( RED );
 	} );
 
-	test( "getTeammates excludes the player themselves", () => {
-		expect( getTeammates( TEAMS, P1.id ) ).toEqual( [ P3.id ] );
+	test( "a wrong one gives it to whichever other side held most of it", () => {
+		const held = { AH: b, AC: b, AS: b, AD: a };
+
+		expect( getBookWinner( claim( a, false, held ), context ) ).toBe( BLUE );
 	} );
 
-	test( "getOpponents lists every member of every other team", () => {
-		expect( getOpponents( TEAMS, P1.id ).sort() ).toEqual( [ P2.id, P4.id ] );
+	test( "a wrong one always costs the declarer's side the book, held or not", () => {
+		// The declarer's own side held every card, and still loses it: a bad
+		// declaration hands the book over rather than leaving it unawarded.
+		const held = { AH: a, AC: c, AS: a, AD: c };
+
+		expect( getBookWinner( claim( a, false, held ), context ) ).toBe( BLUE );
+	} );
+
+	test( "with more than two sides it goes to whichever held most of it", () => {
+		const GREEN = TeamId.make( "green" );
+		const threeWay = {
+			players: [ a, b, c ],
+			teams: { [ a ]: RED, [ b ]: BLUE, [ c ]: GREEN }
+		} as unknown as GameContext;
+
+		const held = { AH: c, AC: c, AS: b, AD: a };
+
+		expect( getBookWinner( claim( a, false, held ), threeWay ) ).toBe( GREEN );
+	} );
+
+	test( "a game without sides has no side to award it to", () => {
+		const sideless = { players: [ a, b ], teams: {} } as unknown as GameContext;
+
+		expect( getBookWinner( claim( a, true, {} ), sideless ) ).toBeUndefined();
 	} );
 } );
 
-// ===========================================================================
-describe( "fish/utils — descriptions & config", () => {
-	test( "an ask reads differently depending on whether it landed", () => {
-		const ask = {
-			success: true, playerId: P1.id, from: P2.id, cardId: "AH" as CardId, timestamp: 1
-		};
+describe( "getTeamScores", () => {
+	const context = {
+		players: [ a, b, c, d ],
+		teams: { [ a ]: RED, [ b ]: BLUE, [ c ]: RED, [ d ]: BLUE }
+	} as unknown as GameContext;
 
-		expect( getAskDescription( ask, ROSTER ) )
-			.toBe( "P1 asked P2 for ACE OF HEARTS and got the card!" );
-		expect( getAskDescription( { ...ask, success: false }, ROSTER ) )
-			.toBe( "P1 asked P2 for ACE OF HEARTS and was declined!" );
+	const won = ( playerId: Player, book: NormalBook ): Claim =>
+		( { _tag: "fish/Claim", success: true, playerId, book, correctClaim: {}, actualClaim: {} } );
+
+	test( "counts the books each side took", () => {
+		const scores = getTeamScores(
+			[ won( a, "ACES" ), won( b, "TWOS" ), won( c, "THREES" ) ],
+			context,
+			[ RED, BLUE ]
+		);
+
+		expect( scores ).toEqual( { [ RED ]: 2, [ BLUE ]: 1 } );
 	} );
 
-	test( "a claim reads with the book's display name", () => {
-		const claim = {
+	test( "a side that took none is reported at zero rather than omitted", () => {
+		const scores = getTeamScores( [ won( a, "ACES" ) ], context, [ RED, BLUE ] );
+
+		expect( scores[ BLUE ] ).toBe( 0 );
+	} );
+
+	test( "no declarations at all leave every side on nothing", () => {
+		expect( getTeamScores( [], context, [ RED, BLUE ] ) ).toEqual( { [ RED ]: 0, [ BLUE ]: 0 } );
+	} );
+} );
+
+describe( "the books still in play", () => {
+	const claim = ( book: NormalBook ): Claim =>
+		( { _tag: "fish/Claim", success: true, playerId: a, book, correctClaim: {}, actualClaim: {} } );
+
+	test( "a fresh table has every book of its variant live", () => {
+		expect( getLiveBooks( known(), config.books ) ).toEqual( config.books );
+		expect( isGameComplete( known(), config.books ) ).toBe( false );
+	} );
+
+	test( "a declaration takes its book out, right or wrong", () => {
+		const live = getLiveBooks( known( [], [ claim( "ACES" ) ] ), config.books );
+
+		expect( live ).not.toContain( "ACES" );
+		expect( live ).toHaveLength( config.books.length - 1 );
+	} );
+
+	test( "the table is played out once no book is left", () => {
+		const all = config.books.map( book => claim( book as NormalBook ) );
+
+		expect( isGameComplete( known( [], all ), config.books ) ).toBe( true );
+	} );
+} );
+
+describe( "possibleHolders", () => {
+	test( "starts with everyone holding cards, and only them", () => {
+		const holders = possibleHolders( known( [], [], { [ d ]: 0 } ), config.books );
+
+		expect( holders.get( "AH" ) ).toEqual( [ a, b, c ] );
+		expect( holders.size ).toBe( config.books.length * config.bookSize );
+	} );
+
+	test( "a failed ask rules out both seats, for good", () => {
+		const holders = possibleHolders( known( [ ask( a, b, "AH", false ) ] ), config.books );
+
+		expect( holders.get( "AH" ) ).toEqual( [ c, d ] );
+	} );
+
+	test( "a successful ask pins the card to whoever asked", () => {
+		const holders = possibleHolders( known( [ ask( a, b, "AH", true ) ] ), config.books );
+
+		expect( holders.get( "AH" ) ).toEqual( [ a ] );
+	} );
+
+	test( "a refusal after a pin narrows it rather than undoing it", () => {
+		// c asks a for the card a took off b, and misses — a must have passed it on.
+		const holders = possibleHolders(
+			known( [ ask( a, b, "AH", true ), ask( c, a, "AH", false ) ] ),
+			config.books
+		);
+
+		expect( holders.get( "AH" ) ).toEqual( [] );
+	} );
+
+	test( "a declared book leaves play entirely", () => {
+		const claim: Claim = {
+			_tag: "fish/Claim",
 			success: true,
-			playerId: P1.id,
+			playerId: a,
 			book: "ACES",
 			correctClaim: {},
-			actualClaim: {},
-			timestamp: 1
+			actualClaim: {}
 		};
 
-		expect( getClaimDescription( claim, ROSTER, "NORMAL" ) ).toBe( "P1 declared ACES correctly!" );
-		expect( getClaimDescription( { ...claim, success: false, book: "LC" }, ROSTER, "CANADIAN" ) )
-			.toBe( "P1 declared LOW ♣ incorrectly!" );
+		const holders = possibleHolders( known( [], [ claim ] ), config.books );
+
+		expect( holders.get( "AH" ) ).toBeUndefined();
+		expect( getLiveBooks( known( [], [ claim ] ), config.books ) ).not.toContain( "ACES" );
+	} );
+} );
+
+describe( "getMetrics", () => {
+	const claim = ( playerId: Player, book: NormalBook, success: boolean ): Claim =>
+		( { _tag: "fish/Claim", success, playerId, book, correctClaim: {}, actualClaim: {} } );
+
+	test( "counts both sides of every ask, and how declarations came out", () => {
+		const metrics = getMetrics(
+			known(
+				[
+					ask( a, b, "AH", true ),
+					ask( a, b, "AC", false ),
+					ask( c, a, "AH", true )
+				],
+				[ claim( a, "ACES", true ), claim( b, "TWOS", false ) ]
+			),
+			[ a, b, c, d ]
+		);
+
+		expect( metrics[ a ] ).toEqual( {
+			totalAsks: 2,
+			cardsTaken: 1,
+			cardsGiven: 1,
+			totalClaims: 1,
+			successfulClaims: 1
+		} );
+
+		expect( metrics[ b ] ).toEqual( {
+			totalAsks: 0,
+			cardsTaken: 0,
+			cardsGiven: 1,
+			totalClaims: 1,
+			successfulClaims: 0
+		} );
+
+		// A seat that never acted is reported, not omitted.
+		expect( metrics[ d ] ).toEqual( {
+			totalAsks: 0,
+			cardsTaken: 0,
+			cardsGiven: 0,
+			totalClaims: 0,
+			successfulClaims: 0
+		} );
 	} );
 
-	test( "a transfer names both players", () => {
-		expect( getTransferDescription(
-			{ playerId: P1.id, transferTo: P3.id, timestamp: 1 },
-			ROSTER
-		) ).toBe( "P1 transferred the turn to P3" );
+	test( "cards taken and cards given are the same cards, counted twice", () => {
+		const asks = [ ask( a, b, "AH", true ), ask( c, d, "2H", true ), ask( a, c, "3H", false ) ];
+		const metrics = getMetrics( known( asks ), [ a, b, c, d ] );
+
+		const taken = Object.values( metrics ).reduce( ( sum, row ) => sum + row.cardsTaken, 0 );
+		const given = Object.values( metrics ).reduce( ( sum, row ) => sum + row.cardsGiven, 0 );
+
+		expect( taken ).toBe( given );
+		expect( taken ).toBe( asks.filter( a => a.success ).length );
+	} );
+} );
+
+describe( "beliefs", () => {
+	const seat = ( hand: CardId[] = HAND ) => ( { playerId: a, hand, complete: true } );
+
+	test( "a seat's own cards are proven, and nobody else can hold them", () => {
+		const beliefs = buildBeliefs( known(), config, seat() );
+
+		expect( beliefs.owner.get( "2H" ) ).toBe( a );
+		expect( probability( beliefs, "2H", a ) ).toBe( 1 );
+		expect( probability( beliefs, "2H", b ) ).toBe( 0 );
 	} );
 
-	test( "buildConfig derives the deck and books from the variant", () => {
-		const normal = buildConfig( 4, "NORMAL", 2 );
-		expect( normal ).toMatchObject( {
-			playerCount: 4, teamCount: 2, deckType: 52, bookSize: 4, autoStart: true
-		} );
-		expect( normal.books ).toHaveLength( 13 );
+	test( "the table's own model proves nothing and spreads everything", () => {
+		const beliefs = buildBeliefs( known(), config );
 
-		const canadian = buildConfig( 6, "CANADIAN", 3 );
-		expect( canadian ).toMatchObject( {
-			playerCount: 6, teamCount: 3, deckType: 48, bookSize: 6
-		} );
-		expect( canadian.books ).toHaveLength( 8 );
+		expect( beliefs.self ).toBeUndefined();
+		expect( beliefs.owner.size ).toBe( 0 );
+		expect( probability( beliefs, "AH", a ) ).toBeCloseTo( 0.25, 6 );
+	} );
+
+	test( "every card's probabilities sum to one, and every hand's to its size", () => {
+		const beliefs = buildBeliefs( known(), config, seat() );
+
+		for ( const row of beliefs.prob.values() ) {
+			const total = [ ...row.values() ].reduce( ( sum, value ) => sum + value, 0 );
+			expect( total ).toBeCloseTo( 1, 6 );
+		}
+
+		// The column margin is what `holdsBookProbability` conditions on, so it has
+		// to hold at the same time as the rows rather than merely nearly.
+		for ( const [ pid, slots ] of beliefs.slots ) {
+			let column = 0;
+			for ( const row of beliefs.prob.values() ) {
+				column = column + ( row.get( pid ) ?? 0 );
+			}
+
+			expect( column ).toBeCloseTo( slots, 6 );
+		}
+	} );
+
+	test( "holding one card of a book makes another less likely, not independent", () => {
+		const beliefs = buildBeliefs( known(), config, seat() );
+
+		const cards: CardId[] = [ "AH", "AC", "AS", "AD" ];
+		const independent = 1 - cards.reduce(
+			( none, card ) => none * ( 1 - probability( beliefs, card, b ) ),
+			1
+		);
+
+		const conditional = holdsBookProbability( beliefs, "ACES", b );
+
+		// A hand of a fixed size makes the cards of a book compete for its slots, so
+		// being in the book at all is likelier than independence would say.
+		expect( conditional ).toBeGreaterThan( independent );
+		expect( conditional ).toBeLessThanOrEqual( 1 );
+	} );
+
+	test( "a proven card of a book settles the question", () => {
+		const beliefs = buildBeliefs( known(), config, seat( [ ...HAND.slice( 1 ), "AH" ] ) );
+
+		expect( holdsBookProbability( beliefs, "ACES", a ) ).toBe( 1 );
+	} );
+
+	test( "a seat out of cards holds nothing", () => {
+		const counts = { [ b ]: 19, [ c ]: 20, [ d ]: 0 };
+		const beliefs = buildBeliefs( known( [], [], counts ), config, seat() );
+
+		expect( probability( beliefs, "AC", d ) ).toBe( 0 );
+		expect( holdsBookProbability( beliefs, "ACES", d ) ).toBe( 0 );
 	} );
 } );

@@ -1,56 +1,60 @@
 "use client";
 
-import { RCardSuit } from "@/shared/ui/components/card.tsx";
-import { GameStandings } from "@/shared/ui/components/game-standings.tsx";
-import { CouchLobby } from "@/shared/ui/couch/couch-lobby.tsx";
-import { CouchShell } from "@/shared/ui/couch/couch-shell.tsx";
-import { PLAYER_COUNT } from "@/games/callbreak/shared/utils.ts";
-import { useCallbreakTable } from "@/games/callbreak/client/context.tsx";
+import { useCallbreak } from "@/games/callbreak/client/context.tsx";
 import { DealView } from "@/games/callbreak/client/deal-view.tsx";
 import { Scores } from "@/games/callbreak/client/scores.tsx";
+import { CALLBREAK_TRICKS_PER_DEAL } from "@/games/callbreak/shared/schema.ts";
+import { RCardSuit } from "@/shared/ui/components/card.tsx";
+import { CouchLobby } from "@/swish/client/couch-lobby.tsx";
+import { CouchShell } from "@/swish/client/couch-shell.tsx";
+import { GameStandings } from "@/swish/client/game-standings.tsx";
+import { StatBlock } from "@/swish/client/stat-block.tsx";
+import { turnText } from "@/swish/client/turn-banner.tsx";
 
 /**
- * The shared screen. `DealView` and `Scores` read the public view only, so both
- * are reused verbatim from the phone — there is no hand on this projection to leak.
+ * The shared screen. `DealView` and `Scores` read the public part of the view
+ * only, so both are reused verbatim from the phone — there is no hand on this
+ * screen to leak.
  */
 export function CouchView() {
-	const { data } = useCallbreakTable();
+	const { data } = useCallbreak();
 
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
 	const isPlaying = data.status === "IN_PROGRESS";
 	const isCompleted = data.status === "COMPLETED";
 
-	const currentName = ( data.players[ data.context.currentPlayer ]?.name ?? "" ).toUpperCase();
-
-	const turn = isLobby
-		? ( data.status === "CREATED"
-			? "WAITING FOR PLAYERS — ADD BOTS FROM A PHONE"
-			: "START FROM ANY PHONE" )
-		: isPlaying
-			? ( data.context.phase === "DECLARING"
-				? `${ currentName } IS DECLARING`
-				: `${ currentName }'S TURN` )
-			: "GAME OVER";
+	const activeDeal = data.view.activeDeal;
+	const completedTricks = activeDeal?.tricks.filter( t => !!t.winner ) ?? [];
+	const turn = turnText( {
+		status: data.status,
+		players: data.players,
+		currentPlayer: data.context.currentPlayer,
+		action: data.context.phase === "DECLARING" ? "DECLARING" : undefined,
+		seated: data.context.players.length,
+		playerCount: data.config.playerCount,
+		couch: true
+	} );
 
 	return (
 		<CouchShell
 			game={ "callbreak" }
 			code={ data.code }
 			turn={ turn }
-			// In play the seats fill the stage; once it's over the standings do.
+			deadline={ data.deadline }
+			currentPlayer={ data.status === "IN_PROGRESS" ? data.context.currentPlayer : undefined }
+			players={ data.players }
 			stretch={ !isLobby }
 			headerInfo={
-				<div className={ "flex gap-12 justify-center" }>
-					<div className={ "text-center" }>
-						<p className={ "text-2xl tracking-widest text-foreground/70" }>TRUMP</p>
+				<div className={ "flex gap-12" }>
+					<StatBlock label={ "TRUMP" } large>
 						<RCardSuit suit={ data.config.trumpSuit } large themed className={ "md:text-6xl" }/>
-					</div>
-					<div className={ "text-center" }>
-						<p className={ "text-2xl tracking-widest text-foreground/70" }>DEALS</p>
-						<p className={ "text-6xl font-heading leading-none" }>
-							{ data.config.dealCount }
-						</p>
-					</div>
+					</StatBlock>
+					<StatBlock label={ "COMPLETED DEALS" } large>
+						{ data.view.dealsPlayed }/{ data.config.dealCount }
+					</StatBlock>
+					<StatBlock label={ "COMPLETED TRICKS" } large>
+						{ completedTricks.length }/{ CALLBREAK_TRICKS_PER_DEAL }
+					</StatBlock>
 				</div>
 			}
 			// The running scoreboard belongs to a game in progress. Once it's over the
@@ -59,10 +63,8 @@ export function CouchView() {
 		>
 			{ isLobby && (
 				<CouchLobby
-					game={ "callbreak" }
-					code={ data.code }
 					players={ data.context.players.map( id => data.players[ id ] ) }
-					seats={ PLAYER_COUNT }
+					seats={ data.config.playerCount }
 				/>
 			) }
 			{ isPlaying && !!data.view.activeDeal && <DealView fill/> }
