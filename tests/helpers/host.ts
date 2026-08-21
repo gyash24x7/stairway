@@ -7,8 +7,8 @@ import { DurableSchedule } from "@/platform/do/schedule.ts";
 import type { DurableTransaction } from "@/platform/do/storage.ts";
 import { DurableStorage } from "@/platform/do/storage.ts";
 import { SwishStorageLive, SwishTimersLive } from "@/platform/do/swish.ts";
-import type { GameAddress } from "@/swish/server/services.ts";
-import { SwishArchive, SwishSync } from "@/swish/server/services.ts";
+import type { GameAddress, LedgerEntry } from "@/swish/server/services.ts";
+import { SwishArchive, SwishLedger, SwishSync } from "@/swish/server/services.ts";
 
 /**
  * `DurableStorage` over a plain `Map`. The commit log's key layout, its
@@ -82,6 +82,23 @@ export const InMemorySwishArchive = ( saved: Map<string, unknown> = new Map() ) 
 		)
 	} ) );
 
+/** One completion as `SwishLedger` received it. */
+export type PostedResult = {
+	readonly address: GameAddress;
+	readonly entries: ReadonlyArray<LedgerEntry>;
+	readonly completedAt: number;
+};
+
+/**
+ * `SwishLedger` that keeps every posting, so a test can assert on the ranks,
+ * scores and winner a completed game reported without needing a database.
+ */
+export const InMemorySwishLedger = ( posted: Array<PostedResult> = [] ) =>
+	Layer.succeed( SwishLedger, SwishLedger.of( {
+		record: ( address, entries, completedAt ) =>
+			Effect.sync( () => void posted.push( { address, entries, completedAt } ) )
+	} ) );
+
 /** `SwishSync` that keeps every push, so a test can assert on what was broadcast. */
 export const InMemorySwishSync = ( published: Array<unknown> = [] ) =>
 	Layer.succeed( SwishSync, SwishSync.of( {
@@ -91,14 +108,15 @@ export const InMemorySwishSync = ( published: Array<unknown> = [] ) =>
 /**
  * Every host capability an engine needs, backed by memory: the real commit log
  * and the real timer multiplexing over in-memory primitives, plus recording
- * fakes for the archive and the fan-out.
+ * fakes for the archive, the ledger and the fan-out.
  *
  * @param [options] - Collectors to inspect after a run, and the clock to read.
- * @returns One layer providing all four swish services.
+ * @returns One layer providing all five swish services.
  */
 export const TestHost = ( options: {
 	readonly cells?: Map<string, unknown>;
 	readonly saved?: Map<string, unknown>;
+	readonly posted?: Array<PostedResult>;
 	readonly published?: Array<unknown>;
 	readonly pending?: Map<string, number>;
 	readonly now?: () => number;
@@ -108,5 +126,6 @@ export const TestHost = ( options: {
 		Layer.provide( InMemoryDurableSchedule( options.now, options.pending ) )
 	),
 	InMemorySwishArchive( options.saved ),
+	InMemorySwishLedger( options.posted ),
 	InMemorySwishSync( options.published )
 );

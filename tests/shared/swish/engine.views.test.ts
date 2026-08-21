@@ -2,8 +2,10 @@ import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import type { PlayerId as Player } from "@/swish/shared/schema.ts";
-import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import { GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 import { createInput, publishedViews, runGame } from "@tests/helpers/runner.ts";
+import type { ParleyConfig } from "@tests/helpers/games/parley.ts";
+import { parleyEngine } from "@tests/helpers/games/parley.ts";
 import type { ScribeConfig, ScribeView } from "@tests/helpers/games/scribe.ts";
 import { scribeEngine } from "@tests/helpers/games/scribe.ts";
 import type { TallyConfig } from "@tests/helpers/games/tally.ts";
@@ -250,6 +252,75 @@ describe( "the archive", () => {
 		const { saved } = finished();
 
 		expect( saved.size ).toBe( 1 );
+	} );
+} );
+
+
+describe( "the ledger", () => {
+	const finished = ( options: Parameters<typeof runGame>[ 2 ] = {} ) =>
+		scribe( engine => Effect.gen( function* () {
+			yield* engine.note( { text: "one" }, a );
+			for ( const seat of seats ) {
+				yield* engine.finish( {}, seat );
+			}
+		} ), options );
+
+	test( "a finished game is posted under its game and id", () => {
+		const { posted } = finished();
+
+		expect( posted ).toHaveLength( 1 );
+		expect( posted[ 0 ]?.address ).toEqual( { game: "scribe", id: GameId.make( "game-1" ) } );
+	} );
+
+	test( "one line per seat, carrying the rank and score it finished on", () => {
+		const { posted } = finished();
+		const entries = posted[ 0 ]?.entries ?? [];
+
+		expect( entries.map( entry => entry.playerId ) ).toEqual( seats );
+		expect( entries.every( entry => entry.rank === 1 ) ).toBe( true );
+		expect( entries.find( entry => entry.playerId === a )?.score ).toBe( 1 );
+	} );
+
+	test( "a game that names nobody leaves every line unwon", () => {
+		const { posted } = finished();
+
+		expect( posted[ 0 ]?.entries.every( entry => !entry.winner ) ).toBe( true );
+	} );
+
+	test( "the completion is stamped from the engine's clock", () => {
+		const { posted } = finished( { now: () => 1_700_000_000_000 } );
+
+		expect( posted[ 0 ]?.completedAt ).toBe( 1_700_000_000_000 );
+	} );
+
+	test( "nothing is posted while the game is still on", () => {
+		const { posted } = scribe( engine => engine.note( { text: "one" }, a ) );
+
+		expect( posted ).toHaveLength( 0 );
+	} );
+
+	test( "it is posted once, on the commit that completed the game", () => {
+		const { posted } = finished();
+
+		expect( posted ).toHaveLength( 1 );
+	} );
+
+	test( "a game that ranks nobody still posts its completion, with no lines", () => {
+		const config: ParleyConfig = { playerCount: 4, autoStart: false, target: 1 };
+
+		const { posted } = runGame( parleyEngine, engine => Effect.gen( function* () {
+			yield* engine.initialize( createInput( config ) );
+			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
+			yield* engine.start( a );
+
+			yield* engine.open( { kind: "duel" }, a );
+			for ( const seat of [ b, c, d ] ) {
+				yield* engine.reply( { value: true }, seat );
+			}
+		} ) );
+
+		expect( posted ).toHaveLength( 1 );
+		expect( posted[ 0 ]?.entries ).toEqual( [] );
 	} );
 } );
 

@@ -5,6 +5,8 @@ import type { PlayerId as Player, TeamId as Team } from "@/swish/shared/schema.t
 import { GameCode, GameId, PlayerId, PlayerInfo, TeamId } from "@/swish/shared/schema.ts";
 import { teamOf } from "@/swish/shared/teams.ts";
 import { TestHost } from "@tests/helpers/host.ts";
+
+import type { PostedResult } from "@tests/helpers/host.ts";
 import type { TallyConfig } from "@tests/helpers/games/tally.ts";
 import { tallyEngine } from "@tests/helpers/games/tally.ts";
 
@@ -26,21 +28,22 @@ const configOf = ( teams?: ReadonlyArray<Team> ): TallyConfig =>
 
 /**
  * Drives the toy game against in-memory host services. Everything a test needs
- * to reach — the commit log and the archive — is handed back alongside the
- * engine's commands.
+ * to reach — the commit log, the archive and the ledger — is handed back
+ * alongside the engine's commands.
  */
 const run = <A, E>(
 	body: ( engine: Effect.Success<typeof tallyEngine> ) => Effect.Effect<A, E>
 ) => {
 	const cells = new Map<string, unknown>();
 	const saved = new Map<string, unknown>();
+	const posted: Array<PostedResult> = [];
 
 	const program = Effect.gen( function* () {
 		const engine = yield* tallyEngine;
 		return yield* body( engine );
-	} ).pipe( Effect.provide( TestHost( { cells, saved } ) ) );
+	} ).pipe( Effect.provide( TestHost( { cells, saved, posted } ) ) );
 
-	return { result: Effect.runSync( program ), cells, saved };
+	return { result: Effect.runSync( program ), cells, saved, posted };
 };
 
 const create = ( config: TallyConfig ) => ( {
@@ -596,5 +599,25 @@ describe( "results", () => {
 			undefined | { context: { teams: Record<Player, Team> } };
 
 		expect( Object.keys( archived?.context.teams ?? {} ) ).toHaveLength( 4 );
+	} );
+
+	test( "posts every line to the ledger under the side it played for", () => {
+		const { posted } = completed();
+		const entries = posted[ 0 ]?.entries ?? [];
+
+		expect( entries ).toHaveLength( 4 );
+		for ( const entry of entries ) {
+			expect( entry.team ).toBe( entry.playerId === a || entry.playerId === c ? RED : BLUE );
+		}
+	} );
+
+	test( "a side's win is every one of its seats' win", () => {
+		const { posted } = completed();
+		const entries = posted[ 0 ]?.entries ?? [];
+
+		// The standings name a `winningTeam` and no `winner`, so reading the latter
+		// alone would post a partnership game as one nobody won.
+		expect( entries.filter( entry => entry.winner ).map( entry => entry.playerId ) )
+			.toEqual( [ a, c ] );
 	} );
 } );

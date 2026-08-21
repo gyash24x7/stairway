@@ -3,7 +3,7 @@ import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
 
-import type { GameId, PlayerId } from "@/swish/shared/schema.ts";
+import type { GameId, PlayerId, TeamId } from "@/swish/shared/schema.ts";
 
 /**
  * Where one game lives, as far as a host is concerned: which game it is, and
@@ -177,6 +177,56 @@ export class SwishArchive extends Context.Service<SwishArchive, {
 	readonly load: <T>( address: GameAddress ) => Effect.Effect<Option.Option<T>>;
 
 }>()( "swish/Archive" ) {}
+
+
+/**
+ * One seat's line in a finished game: where it placed, what it scored, which
+ * side it played for, and whether it won.
+ *
+ * The engine flattens `Standings` into these rather than handing the ledger the
+ * standings themselves, because "did this seat win" is a question only the
+ * engine can answer — a flat game names a single `winner`, a team game names a
+ * `winningTeam` and leaves `winner` unset — and a store that had to re-derive it
+ * would be re-implementing the rule.
+ */
+export type LedgerEntry = {
+	readonly playerId: PlayerId;
+	readonly rank: number;
+	readonly score?: number;
+	readonly team?: TeamId;
+	readonly winner: boolean;
+};
+
+/**
+ * The warm record of an outcome. When a game completes the engine files the full
+ * game with {@link SwishArchive} and posts the result here — one line per seat,
+ * plus the fact that the game is over — so a leaderboard, a profile or a
+ * head-to-head is a query rather than a scan of cold storage.
+ *
+ * Game-agnostic: an entry is ranks and scores, never game state, so the store
+ * never touches a game's schemas.
+ *
+ * `record` is the whole service because a completion is one fact: the lines and
+ * the game's own "finished" flag have to land together, or a game reads as still
+ * in play while its results sit beside it. It is also expected to be idempotent
+ * — a Durable Object call may be retried after its write landed — so posting the
+ * same completion twice must leave the same rows rather than a second set.
+ */
+export class SwishLedger extends Context.Service<SwishLedger, {
+
+	/**
+	 * Posts a finished game's result.
+	 * @param address - The game that completed.
+	 * @param entries - One line per ranked seat. Empty when the game ranks nobody.
+	 * @param completedAt - When it finished, as read from the engine's clock.
+	 */
+	readonly record: (
+		address: GameAddress,
+		entries: ReadonlyArray<LedgerEntry>,
+		completedAt: number
+	) => Effect.Effect<void>;
+
+}>()( "swish/Ledger" ) {}
 
 
 /**

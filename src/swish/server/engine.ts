@@ -4,7 +4,13 @@ import * as Schema from "effect/Schema";
 
 import { generateBotInfo, generateId, generateTeamName } from "@/shared/utils/generator.ts";
 import { hashSeed, makeRng } from "@/shared/utils/rng.ts";
-import { SwishArchive, SwishStorage, SwishSync, SwishTimers } from "@/swish/server/services.ts";
+import {
+	SwishArchive,
+	SwishLedger,
+	SwishStorage,
+	SwishSync,
+	SwishTimers
+} from "@/swish/server/services.ts";
 import { Accumulator } from "@/swish/server/utils.ts";
 import {
 	ArchivedGame,
@@ -263,6 +269,7 @@ export const makeEngine = <
 	return Effect.gen( function* () {
 		const storage = yield* SwishStorage;
 		const archive = yield* SwishArchive;
+		const ledger = yield* SwishLedger;
 		const sync = yield* SwishSync;
 		const timers = yield* SwishTimers;
 
@@ -516,6 +523,51 @@ export const makeEngine = <
 			const { state, seed, ...header } = data;
 			const completed = ArchiveSchema.make( { ...header, view: tableView, playerViews } );
 			yield* archive.save( addressOf( data ), completed );
+		} );
+
+		/**
+		 * Posts a finished game's result to the ledger: one line per ranked seat,
+		 * and the game itself marked over.
+		 *
+		 * Whether a seat *won* is decided here rather than by the store, because
+		 * the answer depends on how the game was played — a team game's verdict is
+		 * its `winningTeam` and leaves `winner` unset, so asking after `winner`
+		 * alone would report a partnership game as having nobody win it. A game
+		 * that declares no `resolveResults` ranks nobody: it posts no lines, and
+		 * the ledger records only that the game finished.
+		 *
+		 * @param data - The completed game's record.
+		 */
+		const postResults = Effect.fn( function* ( data: GameRecord<State, Config> ) {
+			const results = data.results;
+
+			const entries = results?.ranking.map( standing => ( {
+				playerId: standing.playerId,
+				rank: standing.rank,
+				score: standing.score,
+				team: standing.team,
+				winner: results.winningTeam !== undefined
+					? standing.team === results.winningTeam
+					: results.winner === standing.playerId
+			} ) ) ?? [];
+
+			yield* ledger.record( addressOf( data ), entries, yield* Clock.currentTimeMillis );
+		} );
+
+		/**
+		 * Closes out a game the moment it completes: the whole game goes to cold
+		 * storage, and its result to the ledger.
+		 *
+		 * Both run after the completing commit has landed and been broadcast, so a
+		 * store that is down costs the table its record of the game rather than the
+		 * game itself — the log already holds the outcome, and replaying the
+		 * completion is what would fill either back in.
+		 *
+		 * @param data - The completed game's record.
+		 */
+		const completeGame = Effect.fn( function* ( data: GameRecord<State, Config> ) {
+			yield* archiveGame( data );
+			yield* postResults( data );
 		} );
 
 		/**
@@ -1149,7 +1201,7 @@ export const makeEngine = <
 			yield* commitAndSave( acc, { command: "submitMove", actor: playerId, moveType: move } );
 
 			if ( acc.work.status === "COMPLETED" ) {
-				yield* archiveGame( acc.work );
+				yield* completeGame( acc.work );
 			}
 		} );
 
@@ -1356,7 +1408,7 @@ export const makeEngine = <
 			yield* commitAndSave( acc, { command: "alarm" } );
 
 			if ( acc.work.status === "COMPLETED" ) {
-				yield* archiveGame( acc.work );
+				yield* completeGame( acc.work );
 			}
 		} );
 
@@ -1423,7 +1475,7 @@ export const makeEngine = <
 				yield* commitAndSave( acc, { command: "alarm", actor: actorId } );
 
 				if ( acc.work.status === "COMPLETED" ) {
-					yield* archiveGame( acc.work );
+					yield* completeGame( acc.work );
 				}
 
 				return;

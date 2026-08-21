@@ -3,14 +3,32 @@ import * as Effect from "effect/Effect";
 
 import { SessionServiceLive } from "@/auth/server/session.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
+import { SwishLedgerLive } from "@/platform/database/ledger.ts";
 import { channels, games, players } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { SwishStorageLive, SwishSyncLive, SwishTimersLive } from "@/platform/do/swish.ts";
-import type { WebSocketDurableObjectServices } from "@/platform/do/ws.ts";
 import { WebSocketDurableObject } from "@/platform/do/ws.ts";
 import { ArchiveKV, SwishArchiveLive } from "@/platform/kv/archive.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { toPlayerInfo } from "@/swish/server/utils.ts";
+import {
+	GameCode,
+	GameId,
+	GameNotFound,
+
+	PlayerId
+} from "@/swish/shared/schema.ts";
+
+import type { ChatPolicy } from "@/chat/shared/schema.ts";
+import type { WebSocketDurableObjectServices } from "@/platform/do/ws.ts";
+import type {
+	SwishArchive,
+	SwishLedger,
+	SwishStorage,
+	SwishSync,
+	SwishTimers
+} from "@/swish/server/services.ts";
+import type { JoinGameInput } from "@/swish/shared/schema.ts";
 import type {
 	AutoPlayError,
 	BaseGameConfig,
@@ -30,32 +48,17 @@ import type {
 	TeamError,
 	UndoError
 } from "@/swish/shared/schema.ts";
-import {
-	GameCode,
-	GameId,
-	GameNotFound,
-	PlayerId,
-	type JoinGameInput
-} from "@/swish/shared/schema.ts";
-
-import type { ChatPolicy } from "@/chat/shared/schema.ts";
-import type {
-	SwishArchive,
-	SwishStorage,
-	SwishSync,
-	SwishTimers
-} from "@/swish/server/services.ts";
 
 
 // --- Durable Object ----------------------------------------------------------
 
 /** The host services an engine asks for, all of which this object supplies. */
-type SwishHostServices = SwishStorage | SwishSync | SwishArchive | SwishTimers;
+type SwishHostServices = SwishStorage | SwishSync | SwishArchive | SwishLedger | SwishTimers;
 
 /**
- * The Durable Object body every game shares: the engine, with the four host
- * services bound to this object's own storage, its sockets and the archive
- * namespace, wrapped in the auth-gated WebSocket base.
+ * The Durable Object body every game shares: the engine, with the five host
+ * services bound to this object's own storage, its sockets, the archive
+ * namespace and the shared database, wrapped in the auth-gated WebSocket base.
  *
  * Only the class declaration stays per-game — `Cloudflare.DurableObject` needs a
  * distinct class name and its own self type, and that name is what the binding
@@ -68,6 +71,7 @@ export const SwishDurableObject = <Shape extends object>(
 	engine: Effect.Effect<Shape, never, SwishHostServices | WebSocketDurableObjectServices>
 ) => Effect.gen( function* () {
 	const archive = yield* Cloudflare.KV.ReadWriteNamespace( ArchiveKV );
+	const db = yield* Database;
 
 	return yield* WebSocketDurableObject(
 		engine.pipe(
@@ -75,6 +79,7 @@ export const SwishDurableObject = <Shape extends object>(
 				SwishStorageLive,
 				SwishSyncLive,
 				SwishArchiveLive( archive ),
+				SwishLedgerLive( db ),
 				SwishTimersLive
 			] )
 		)
@@ -82,6 +87,7 @@ export const SwishDurableObject = <Shape extends object>(
 } ).pipe(
 	Effect.provide( SessionServiceLive ),
 	Effect.provide( SessionStoreLive ),
+	Effect.provide( Cloudflare.D1.QueryDatabaseBinding ),
 	Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding )
 );
 

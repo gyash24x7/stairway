@@ -1,5 +1,5 @@
 import { defineRelations } from "drizzle-orm";
-import { index, integer, primaryKey, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator.ts";
 
@@ -81,6 +81,43 @@ export const players = sqliteTable(
 );
 
 /**
+ * The results table: one row per seat of a finished game, written once when the
+ * engine completes it. This is the warm record of an outcome — what a profile,
+ * a leaderboard or a head-to-head is queried from — while the archive namespace
+ * keeps the cold, full game beside it.
+ *
+ * Keyed on the game and the seat together, so recording a completion twice
+ * (a retried Durable Object call, a re-run alarm) lands the same rows rather
+ * than a second set beside the first.
+ *
+ * `playerId` carries no foreign key on purpose: a bot holds a seat and is ranked
+ * like anyone else, but never has a row in `players`. A query about people joins
+ * `players` and drops the machines; a query about the table does not have to.
+ *
+ * `score` is `real` because a game's points are only a number — the engine's
+ * `Standings` never promises they are whole, and a game scoring in fractions
+ * would otherwise be silently truncated on the way in.
+ */
+export const gameResults = sqliteTable(
+	"game_results",
+	{
+		gameId: text( "game_id" ).notNull().references( () => games.id, { onDelete: "cascade" } ),
+		game: text( "game" ).notNull(),
+		playerId: text( "player_id" ).notNull(),
+		rank: integer( "rank" ).notNull(),
+		score: real( "score" ),
+		team: text( "team" ),
+		winner: integer( "winner", { mode: "boolean" } ).notNull().default( false ),
+		completedAt: integer( "completed_at", { mode: "timestamp" } ).notNull().$default( now )
+	},
+	table => [
+		primaryKey( { name: "game_results_pk", columns: [ table.gameId, table.playerId ] } ),
+		index( "idx_game_results_player_id" ).on( table.playerId ),
+		index( "idx_game_results_game" ).on( table.game )
+	]
+);
+
+/**
  * The channels table tracking all the chat channels
  * created.
  */
@@ -98,7 +135,7 @@ export const channels = sqliteTable(
 );
 
 export const relations = defineRelations(
-	{ users, passkeys, games, players, channels },
+	{ users, passkeys, games, players, channels, gameResults },
 	t => ( {
 		users: {
 			passkeys: t.many.passkeys()
@@ -110,7 +147,11 @@ export const relations = defineRelations(
 			game: t.one.games( { from: t.players.gameId, to: t.games.id } )
 		},
 		games: {
-			players: t.many.players()
+			players: t.many.players(),
+			results: t.many.gameResults()
+		},
+		gameResults: {
+			gameRow: t.one.games( { from: t.gameResults.gameId, to: t.games.id } )
 		}
 	} )
 );

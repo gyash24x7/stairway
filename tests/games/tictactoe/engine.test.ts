@@ -8,7 +8,7 @@ import {
 	TICTACTOE_PLAYER_COUNT
 } from "@/games/tictactoe/shared/schema.ts";
 import type { PlayerId as Player } from "@/swish/shared/schema.ts";
-import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import { GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
@@ -219,6 +219,24 @@ describe( "how a duel ends", () => {
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotInProgress" );
+	} );
+
+	test( "the ledger gets a line per seat, with the win on the winner's", () => {
+		const { posted } = duel( engine => playOut( engine, [ 0, 3, 1, 4, 2 ] ) );
+		const entries = posted[ 0 ]?.entries ?? [];
+
+		expect( posted[ 0 ]?.address )
+			.toEqual( { game: "tictactoe", id: GameId.make( "game-1" ) } );
+		expect( entries.find( entry => entry.playerId === x ) )
+			.toMatchObject( { rank: 1, winner: true } );
+		expect( entries.find( entry => entry.playerId === o ) )
+			.toMatchObject( { rank: 2, winner: false } );
+	} );
+
+	test( "a draw is posted with nobody winning it", () => {
+		const { posted } = duel( engine => playOut( engine, [ 0, 2, 1, 3, 5, 4, 6, 7, 8 ] ) );
+
+		expect( posted[ 0 ]?.entries.every( entry => !entry.winner ) ).toBe( true );
 	} );
 
 	test( "the finished duel is archived with both seats' views", () => {
