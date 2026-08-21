@@ -6,20 +6,11 @@ import { AuthContext } from "@/auth/shared/middleware.ts";
 import { channels, games, players } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { SwishStorageLive, SwishSyncLive, SwishTimersLive } from "@/platform/do/swish.ts";
+import type { WebSocketDurableObjectServices } from "@/platform/do/ws.ts";
 import { WebSocketDurableObject } from "@/platform/do/ws.ts";
 import { ArchiveKV, SwishArchiveLive } from "@/platform/kv/archive.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { toPlayerInfo } from "@/swish/server/utils.ts";
-import { GameCode, GameId, GameNotFound, PlayerId } from "@/swish/shared/schema.ts";
-
-import type { ChatPolicy } from "@/chat/shared/schema.ts";
-import type { WebSocketDurableObjectServices } from "@/platform/do/ws.ts";
-import type {
-	SwishArchive,
-	SwishStorage,
-	SwishSync,
-	SwishTimers
-} from "@/swish/server/services.ts";
 import type {
 	AutoPlayError,
 	BaseGameConfig,
@@ -39,6 +30,21 @@ import type {
 	TeamError,
 	UndoError
 } from "@/swish/shared/schema.ts";
+import {
+	GameCode,
+	GameId,
+	GameNotFound,
+	PlayerId,
+	type JoinGameInput
+} from "@/swish/shared/schema.ts";
+
+import type { ChatPolicy } from "@/chat/shared/schema.ts";
+import type {
+	SwishArchive,
+	SwishStorage,
+	SwishSync,
+	SwishTimers
+} from "@/swish/server/services.ts";
 
 
 // --- Durable Object ----------------------------------------------------------
@@ -164,7 +170,10 @@ export const makeGameApi = <Client extends SwishCommands>(
 	} );
 
 	/** Runs `f` against the named game's engine, as the authenticated caller. */
-	const withGame = <A, E, R>( f: ( client: Client, playerId: PlayerId ) => Effect.Effect<A, E, R> ) =>
+	const withGame = <A, E, R>( f: (
+		client: Client,
+		playerId: PlayerId
+	) => Effect.Effect<A, E, R> ) =>
 		Effect.fn( function* ( { params }: { readonly params: GameIdParams } ) {
 			const { user } = yield* AuthContext;
 			const row = yield* findGame( params.gameId );
@@ -239,7 +248,7 @@ export const makeGameApi = <Client extends SwishCommands>(
 		 * re-join as a silent no-op, while `players` is keyed on the player and the
 		 * game together and would throw on the second attempt.
 		 */
-		join: Effect.fn( function* ( { payload }: { readonly payload: { readonly code: GameCode } } ) {
+		join: Effect.fn( function* ( { payload }: { readonly payload: JoinGameInput } ) {
 			const { user } = yield* AuthContext;
 
 			const row = yield* db.query.games
