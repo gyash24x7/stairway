@@ -1,0 +1,13 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		// `webworker` and `dom` both declare a global `self`, `caches`, `fetch`
+		// and friends with different types, so they cannot live in one program.
+		// The service worker therefore gets its own, where `dom` is dropped.
+		"lib": [ "webworker", "esnext" ],
+		"types": [ "vite/client" ]
+	},
+	"include": [ "src/sw.ts", "src/push/shared/protocol.ts" ],
+	"exclude": [ "node_modules" ]
+}

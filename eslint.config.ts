@@ -14,6 +14,9 @@ const client = [
 	"src/routes/**",
 	"src/main.*",
 	"src/routeTree.*",
+	// The service worker runs in the browser, so it is bound by the same rule
+	// as the rest of the client: it must never reach into server-only code.
+	"src/sw.*",
 	"src/shared/ui/**",
 	"src/*/client/**",
 	"src/games/*/client/**"
@@ -56,7 +59,13 @@ export default [
 		},
 		settings: {
 			"import-x/resolver": {
-				typescript: { project: "./tsconfig.json" }
+				// `src/sw.ts` is excluded from the root tsconfig (it needs the
+				// webworker lib), so the resolver needs its config too or its
+				// imports read as unresolved.
+				typescript: {
+					project: [ "./tsconfig.json", "./tsconfig.sw.json" ],
+					noWarnOnMultipleProjects: true
+				}
 			},
 			// Treat the "@/" path alias as internal so import-x/order groups it apart from npm packages.
 			"import-x/internal-regex": "^@/"

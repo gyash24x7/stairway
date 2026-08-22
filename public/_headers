@@ -1,0 +1,33 @@
+# Cache rules for the asset layer. Vite copies this into `dist/`, where Alchemy
+# reads it and folds it into the Worker's asset config — it is never uploaded as
+# an asset itself, so no `alchemy.run.ts` change is needed for anything here.
+
+# A cached service worker script is the classic way to strand every user on a
+# dead version. Browsers cap SW script caching at 24h regardless; do not rely on
+# that. The manifest and the HTML entry point carry the pointers to everything
+# else, so they revalidate too.
+/sw.js
+  Cache-Control: no-cache
+
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+/index.html
+  Cache-Control: no-cache
+
+# Vite content-hashes everything under /assets, so these are safe to pin
+# forever. Worth doing: the Workers-assets default is `max-age=0,
+# must-revalidate`, i.e. a round trip per file per load, across ~75 files.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Game art is NOT content-hashed — the filenames are stable and meaningful. A
+# week keeps it effectively free without making a re-cut card face permanent.
+/cards/*
+  Cache-Control: public, max-age=604800
+
+/logos/*
+  Cache-Control: public, max-age=604800
+
+/splendor/*
+  Cache-Control: public, max-age=604800

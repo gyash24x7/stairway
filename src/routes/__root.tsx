@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { RAuthInfo } from "@/auth/client/auth-info.tsx";
 import { Login } from "@/auth/client/login.tsx";
 import { useAuth } from "@/auth/client/use-auth.tsx";
+import { OfflineBanner } from "@/pwa/client/offline-banner.tsx";
 import { ErrorState } from "@/shared/ui/components/error-state.tsx";
 import { Navbar } from "@/shared/ui/components/navbar.tsx";
 import { Toaster } from "@/shared/ui/primitives/sonner.tsx";
@@ -28,6 +29,7 @@ function AppLayout( { children }: { children: ReactNode } ) {
 				{ children }
 			</div>
 			<Toaster position={ "top-center" } duration={ 4000 }/>
+			<OfflineBanner/>
 		</main>
 	);
 }
@@ -47,6 +49,7 @@ function RootLayout() {
 			<Fragment>
 				<Outlet/>
 				<Toaster position={ "top-center" } duration={ 4000 }/>
+				<OfflineBanner/>
 			</Fragment>
 		);
 	}

@@ -12,12 +12,22 @@
 		"noEmit": true,
 		"jsx": "react-jsx",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
-		"types": [ "bun", "vite/client" ],
+		// `vite-plugin-pwa/client` declares the `virtual:pwa-register` module.
+		"types": [ "bun", "vite/client", "vite-plugin-pwa/client" ],
 		"paths": {
 			"@tests/*": [ "./tests/*" ],
 			"@/*": [ "./src/*" ]
 		}
 	},
-	"include": [ "src", "tests", "alchemy.run.ts", "vite.config.ts", "eslint.config.ts" ],
-	"exclude": [ "node_modules" ]
+	"include": [
+		"src",
+		"tests",
+		"alchemy.run.ts",
+		"vite.config.ts",
+		"eslint.config.ts",
+		"pwa-assets.config.ts"
+	],
+	// `src/sw.ts` needs the webworker lib, which conflicts with `dom`. It is
+	// typechecked separately via `tsconfig.sw.json` — see the `typecheck` script.
+	"exclude": [ "node_modules", "src/sw.ts" ]
 }

@@ -23,10 +23,43 @@ export function readTheme() {
 }
 
 /**
+ * Points `<meta name="theme-color">` at whatever the current palette resolves
+ * `--background` to, so an installed app's status bar and title bar continue the
+ * navbar rather than cutting against it.
+ *
+ * Reads back from the CSSOM instead of keeping a table of hexes here: there are
+ * ten palettes in two modes, and the same lookup would have to be duplicated in
+ * the inline bootstrap in `index.html` (plain script, cannot import). That is
+ * forty hand-copied values guaranteed to drift from `styles.css`. Resolved
+ * custom properties already have `var()` substituted, so this reads a literal
+ * colour with no parsing.
+ *
+ * `--background` and not `--surface`: the element touching the top edge is the
+ * fixed navbar, which is `bg-background`. `--surface` scrolls underneath it.
+ */
+export function syncThemeColor() {
+	const meta = document.querySelector( "meta[name=\"theme-color\"]" );
+	if ( !meta ) {
+		return;
+	}
+
+	const colour = getComputedStyle( document.body )
+		.getPropertyValue( "--background" )
+		.trim();
+
+	if ( colour ) {
+		meta.setAttribute( "content", colour );
+	}
+}
+
+/**
  * Persists the theme/mode and applies them as body classes.
  */
 export function applyTheme( theme: Theme, mode: ThemeMode ) {
 	localStorage.setItem( STORAGE_KEY, `${ theme }-${ mode }` );
 	document.body.classList.remove( ...themes, ...themeModes );
 	document.body.classList.add( theme, mode );
+
+	// Last, so the classes above are already resolved when the colour is read.
+	syncThemeColor();
 }

@@ -17,7 +17,14 @@ export const Toaster = ( { ...props }: ComponentProps<typeof Sonner> ) => {
 					),
 					default: "bg-accent",
 					error: "bg-apple",
-					success: "bg-kiwi"
+					success: "bg-kiwi",
+					// `unstyled` means an action renders as a bare browser button
+					// unless it is styled here. The update prompt is the most-seen
+					// toast with an action, so it would look broken without this.
+					actionButton: cn(
+						"shrink-0 rounded-lg border-2 border-neutral-dark bg-background",
+						"px-3 py-1 text-xs font-semibold text-foreground cursor-pointer"
+					)
 				}
 			} }
 			{ ...props }

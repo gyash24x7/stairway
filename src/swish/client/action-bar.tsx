@@ -69,7 +69,12 @@ export function ActionBar( props: ActionBarProps ) {
 				ref={ barRef }
 				className={ cn(
 					"fixed left-0 right-0 bottom-0 bg-surface z-10",
-					"rounded-t-xl flex flex-col gap-2 px-3 py-5 items-center",
+					// `viewport-fit=cover` extends the viewport into the home
+					// indicator, so the bottom padding has to clear it or the
+					// primary controls sit underneath. The bar measures itself and
+					// renders a matching spacer, so this needs no per-game retuning.
+					"rounded-t-xl flex flex-col gap-2 px-3 items-center",
+					"pt-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]",
 					className
 				) }
 			>

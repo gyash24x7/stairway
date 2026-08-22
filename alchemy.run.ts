@@ -28,7 +28,23 @@ export default Alchemy.Stack(
 		const api = yield* ApiWorker;
 		const web = yield* Cloudflare.Website.Vite( "WebWorker", {
 			dev: { port: 5173 },
-			env: { VITE_API_URL: api.url.as<string>() }
+			env: {
+				VITE_API_URL: api.url.as<string>(),
+				// The browser needs the VAPID public key to call
+				// `pushManager.subscribe`, and so does the service worker when a
+				// push service rotates an endpoint — a context with no session, so
+				// it cannot fetch the key. Inlining it at build time covers both.
+				// This is the *public* half; the private key is a Worker secret.
+				VITE_VAPID_PUBLIC_KEY: process.env[ "VAPID_PUBLIC_KEY" ] ?? ""
+			},
+			assets: {
+				// Without this, `notFoundHandling` defaults to "none" and every deep
+				// link (`/callbreak/<id>/couch`) 404s on a cold load instead of
+				// booting the router. An installable app has to survive being
+				// launched straight into a URL.
+				htmlHandling: "auto-trailing-slash",
+				notFoundHandling: "single-page-application"
+			}
 		} );
 
 		return {

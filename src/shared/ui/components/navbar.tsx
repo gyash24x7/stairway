@@ -3,6 +3,7 @@ import { HomeIcon } from "lucide-react";
 
 import type { ReactNode } from "react";
 
+import { InstallButton } from "@/pwa/client/install-button.tsx";
 import { Logo } from "@/shared/ui/components/logo.tsx";
 import { ThemeSwitcher } from "@/shared/ui/components/theme-switcher.tsx";
 import { Button } from "@/shared/ui/primitives/button.tsx";
@@ -29,6 +30,8 @@ export function Navbar( props: { children: ReactNode } ) {
 					<Button size={ "icon" } onClick={ () => navigate( { to: "/" } ) }>
 						<HomeIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 					</Button>
+					{ /* Renders nothing once installed, or where install is impossible. */ }
+					<InstallButton/>
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
 					{ props.children }
 					<Separator orientation={ "vertical" } className={ "h-12" }/>

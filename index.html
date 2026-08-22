@@ -2,16 +2,54 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8"/>
-	<meta content="width=device-width, initial-scale=1" name="viewport"/>
+	<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
 	<title>Stairway</title>
-	<link href="/stairway.svg" rel="icon"/>
+	<meta content="Play Callbreak, Fish, Kingdomino, Splendor, Wordle and Tic Tac Toe with friends."
+		  name="description"/>
+
+	<!-- Overwritten on load and on every theme change by `syncThemeColor()`; this
+	     static value is the light default so the first frame is never wrong. -->
+	<meta content="#F3F4F6" name="theme-color"/>
+
+	<meta content="Stairway" name="application-name"/>
+	<meta content="yes" name="mobile-web-app-capable"/>
+	<meta content="yes" name="apple-mobile-web-app-capable"/>
+	<meta content="Stairway" name="apple-mobile-web-app-title"/>
+	<!-- "default" keeps the web view below the status bar. "black-translucent"
+	     looks better but needs safe-area padding on the fixed navbar first. -->
+	<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+
+	<!-- `stairway.svg` is intentionally not used here: it carries no fill (it is
+	     a CSS mask elsewhere) and renders invisible in a dark tab strip. -->
+	<link href="/favicon.ico" rel="icon" sizes="48x48"/>
+	<link href="/pwa-icon.svg" rel="icon" type="image/svg+xml"/>
+	<link href="/apple-touch-icon-180x180.png" rel="apple-touch-icon"/>
+
 	<script>
 		( function () {
-			const theme = localStorage.getItem( "theme" ) || "apple-light";
-			const parts = theme.split( "-" );
-			document.documentElement.dataset.themePending = theme;
+			const themes = [
+				"apple", "orange", "mango", "banana", "olive",
+				"kiwi", "ice", "blueberry", "grape", "strawberry"
+			];
+			const modes = [ "light", "dark" ];
+
+			const stored = ( localStorage.getItem( "theme" ) || "" ).split( "-" );
+			const theme = themes.indexOf( stored[ 0 ] ) >= 0 ? stored[ 0 ] : "apple";
+			const mode = modes.indexOf( stored[ 1 ] ) >= 0 ? stored[ 1 ] : "light";
+
+			document.documentElement.dataset.themePending = theme + "-" + mode;
 			document.addEventListener( "DOMContentLoaded", function () {
-				document.body.classList.add( parts[ 0 ], parts[ 1 ] );
+				document.body.classList.add( theme, mode );
+
+				// Match the status bar to the navbar, which is what actually touches
+				// the top edge. Read back from the CSSOM rather than duplicating the
+				// palette here — see `syncThemeColor` in shared/ui/utils/theme.ts.
+				const meta = document.querySelector( "meta[name=\"theme-color\"]" );
+				const colour = getComputedStyle( document.body )
+					.getPropertyValue( "--background" ).trim();
+				if ( meta && colour ) {
+					meta.setAttribute( "content", colour );
+				}
 			} );
 		} )();
 	</script>
