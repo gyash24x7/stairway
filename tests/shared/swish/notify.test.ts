@@ -117,9 +117,22 @@ describe( "decideNotice", () => {
 			.toEqual( [ UserId.make( "alice" ), UserId.make( "bob" ) ] );
 	} );
 
-	test( "announces the start with no prior state at all", () => {
+	test( "says nothing the first time it sees a game, but records where it stands", () => {
+		// Without a previous state there is no way to tell "just started" from
+		// "running for an hour" — and guessing wrong means every in-progress game
+		// shouting at its players the first time it publishes after a deploy.
+		// Nothing is lost: a game always publishes while being created.
 		const result = decideNotice( undefined, header(), {}, nobodyConnected );
-		expect( result.notice?.kind ).toBe( "start" );
+
+		expect( result.notice ).toBeUndefined();
+		expect( result.state ).toEqual( { status: "IN_PROGRESS", actor: alice } );
+	} );
+
+	test( "announces the start on the publish after that first sighting", () => {
+		const first = decideNotice( undefined, header( { status: "CREATED" } ), {}, nobodyConnected );
+		const second = decideNotice( first.state, header(), {}, nobodyConnected );
+
+		expect( second.notice?.kind ).toBe( "start" );
 	} );
 
 	test( "excludes bots and connected players from the start announcement", () => {

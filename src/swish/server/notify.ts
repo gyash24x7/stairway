@@ -87,9 +87,19 @@ export const decideNotice = (
 		return { state } satisfies NoticeDecision;
 	}
 
+	// First sighting of this game — nothing was recorded before now. Take note of
+	// where it stands and say nothing: without a previous state there is no way
+	// to tell "just started" from "has been running for an hour", and guessing
+	// wrong means every in-progress game shouting at its players the first time
+	// it publishes after a deploy. Nothing is lost, because a game always
+	// publishes at least once while being created, long before it goes live.
+	if ( !previous ) {
+		return { state } satisfies NoticeDecision;
+	}
+
 	// The table just went live. This is the one notice that reaches everyone, and
 	// the moment players are most likely to have put their phones down.
-	if ( previous?.status !== "IN_PROGRESS" ) {
+	if ( previous.status !== "IN_PROGRESS" ) {
 		const recipients = Object.keys( header.players )
 			.filter( id => isNotifiable( PlayerId.make( id ) ) )
 			.map( id => UserId.make( id ) );
