@@ -18,7 +18,7 @@ import type { CallbreakCreateInput } from "@/games/callbreak/shared/schema.ts";
 
 export class CallbreakGame extends Cloudflare.DurableObject<CallbreakGame>()(
 	"CallbreakGame",
-	SwishDurableObject( callbreak )
+	SwishDurableObject( "callbreak", callbreak )
 ) {}
 
 

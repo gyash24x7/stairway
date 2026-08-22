@@ -14,7 +14,7 @@ import type { WordleCreateInput } from "@/games/wordle/shared/schema.ts";
 
 export class WordleGame extends Cloudflare.DurableObject<WordleGame>()(
 	"WordleGame",
-	SwishDurableObject( wordle )
+	SwishDurableObject( "wordle", wordle )
 ) {}
 
 

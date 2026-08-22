@@ -6,6 +6,7 @@ import * as Layer from "effect/Layer";
 
 import { StairwayDatabase } from "@/platform/database/service.ts";
 import { ArchiveKV } from "@/platform/kv/archive.ts";
+import { PushKV } from "@/platform/kv/push.ts";
 import { SessionKV } from "@/platform/kv/session.ts";
 import { WebAuthnKV } from "@/platform/kv/webauthn.ts";
 import { default as ApiWorker } from "@/worker.ts";
@@ -23,6 +24,7 @@ export default Alchemy.Stack(
 		const sessionKv = yield* SessionKV;
 		const webauthnKv = yield* WebAuthnKV;
 		const archiveKv = yield* ArchiveKV;
+		const pushKv = yield* PushKV;
 		const db = yield* StairwayDatabase;
 
 		const api = yield* ApiWorker;
@@ -57,7 +59,8 @@ export default Alchemy.Stack(
 			kv: {
 				session: sessionKv.namespaceId,
 				webauthn: webauthnKv.namespaceId,
-				archive: archiveKv.namespaceId
+				archive: archiveKv.namespaceId,
+				push: pushKv.namespaceId
 			}
 		};
 	} )

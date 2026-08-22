@@ -3,12 +3,17 @@
 import type { ReactNode } from "react";
 
 import { ChatPanel } from "@/chat/client/chat-panel.tsx";
+import { useGameBadge } from "@/push/client/use-game-badge.ts";
 import { Logo } from "@/shared/ui/components/logo.tsx";
 import { ActionBar } from "@/swish/client/action-bar.tsx";
 import { TurnTimer } from "@/swish/client/turn-timer.tsx";
+import { useTurnHaptic } from "@/swish/client/use-haptics.ts";
+import { useWakeLock } from "@/swish/client/use-wake-lock.ts";
 
 export type ControllerShellProps = {
 	game: string;
+	/** The game's id, used to clear its notification badge while it is open. */
+	gameId?: string;
 	code: string;
 	isMyTurn: boolean;
 	waitingFor?: string;
@@ -31,6 +36,7 @@ export type ControllerShellProps = {
  */
 export function ControllerShell( {
 	game,
+	gameId,
 	code,
 	isMyTurn,
 	waitingFor,
@@ -41,6 +47,12 @@ export function ControllerShell( {
 	actions,
 	persistentActions
 }: ControllerShellProps ) {
+	// The phone is the screen a player stares at between turns, so it has at
+	// least as much claim to a wake lock as the television across the room does.
+	useWakeLock( !completed );
+	useTurnHaptic( isMyTurn );
+	useGameBadge( gameId );
+
 	return (
 		<div className={ "flex flex-col gap-3 items-center max-w-lg w-full" }>
 			<div className={ "flex gap-2 items-center w-full rounded-md bg-background p-2" }>

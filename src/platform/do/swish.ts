@@ -5,10 +5,12 @@ import * as Layer from "effect/Layer";
 import { DurableSchedule } from "@/platform/do/schedule.ts";
 import { DurableStorage } from "@/platform/do/storage.ts";
 import { WebSocketChannel } from "@/platform/do/ws.ts";
+import { decideNotice, SwishNotifier } from "@/swish/server/notify.ts";
 import { SwishStorage, SwishSync, SwishTimers } from "@/swish/server/services.ts";
 import { PlayerId } from "@/swish/shared/schema.ts";
 
 import type { DurableTransaction } from "@/platform/do/storage.ts";
+import type { NoticeState } from "@/swish/server/notify.ts";
 import type { AlarmKind } from "@/swish/server/services.ts";
 
 const KEY_GAME_DATA = "data";
@@ -17,6 +19,14 @@ const KEY_LOG_CURSOR = "log:cursor";
 const KEY_LOG_COUNT = "log:count";
 const KEY_LOG_START_COMMIT = "log:start-commit";
 const KEY_LOG_COMPLETE_COMMIT = "log:complete-commit";
+
+/**
+ * What the last publish told the notifier, so the next one can tell a real
+ * handover from a republish. Outside the commit log deliberately, alongside the
+ * other scheduling facts: undo rewinds the game, and re-announcing a turn the
+ * players already saw would be noise.
+ */
+const KEY_NOTIFY_LAST = "notify:last";
 
 /**
  * The commit log is one key per commit — `log:commit:<index>` — rather than one
@@ -243,6 +253,8 @@ export const SwishStorageLive = Layer.effect( SwishStorage, Effect.gen( function
  */
 export const SwishSyncLive = Layer.effect( SwishSync, Effect.gen( function* () {
 	const channel = yield* WebSocketChannel;
+	const storage = yield* DurableStorage;
+	const notifier = yield* SwishNotifier;
 
 	return SwishSync.of( {
 		publish: Effect.fn( function* ( views ) {
@@ -256,6 +268,32 @@ export const SwishSyncLive = Layer.effect( SwishSync, Effect.gen( function* () {
 			);
 
 			yield* channel.publishMessages( messages );
+
+			// Everything below is strictly after the fan-out, and cannot fail it.
+			// Connected clients are already up to date; this is only for the people
+			// who are not here to see it.
+			const previous = yield* storage.get<NoticeState>( KEY_NOTIFY_LAST );
+			const { notice, state } = decideNotice(
+				previous,
+				views.table,
+				views.table.autoPlay,
+				new Set( audience )
+			);
+
+			if (
+				previous?.status !== state.status
+				|| previous.actor !== state.actor
+			) {
+				yield* storage.put( KEY_NOTIFY_LAST, state );
+			}
+
+			if ( notice ) {
+				// Forked, not awaited: `publish` runs inside an engine command, which
+				// runs inside this object's serializing semaphore, which is on the
+				// HTTP response path for a move. Waiting on a fan of outbound HTTPS
+				// posts here would add that latency to every turn handover.
+				yield* Effect.forkDetach( notifier.announce( notice, views.table ) );
+			}
 		} )
 	} );
 } ) );

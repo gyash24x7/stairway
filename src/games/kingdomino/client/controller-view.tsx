@@ -54,6 +54,7 @@ export function ControllerView() {
 	return (
 		<ControllerShell
 			game={ "kingdomino" }
+			gameId={ data.id }
 			code={ data.code }
 			isMyTurn={ isLobby || ( isPlaying && ( isMyTurn || canPlace ) ) }
 			waitingFor={ waitingFor }

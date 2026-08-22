@@ -1,15 +1,19 @@
 import * as Cloudflare from "alchemy/Cloudflare";
 import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 
 import { SessionServiceLive } from "@/auth/server/session.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
 import { SwishLedgerLive } from "@/platform/database/ledger.ts";
 import { channels, games, players } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
+import { SwishNotifierLive, SwishNotifierNoop } from "@/platform/do/notify.ts";
 import { SwishStorageLive, SwishSyncLive, SwishTimersLive } from "@/platform/do/swish.ts";
 import { WebSocketDurableObject } from "@/platform/do/ws.ts";
 import { ArchiveKV, SwishArchiveLive } from "@/platform/kv/archive.ts";
+import { PushKV, PushStoreFrom } from "@/platform/kv/push.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
+import { PushSenderLive, VapidConfig } from "@/push/server/sender.ts";
 import { toPlayerInfo } from "@/swish/server/utils.ts";
 import {
 	GameCode,
@@ -64,20 +68,43 @@ type SwishHostServices = SwishStorage | SwishSync | SwishArchive | SwishLedger |
  * distinct class name and its own self type, and that name is what the binding
  * is keyed on.
  *
+ * @param game - The game's slug, used to address notifications back at it.
  * @param engine - The game's engine, built by `makeEngine`.
  * @returns The object body, for `Cloudflare.DurableObject`.
  */
 export const SwishDurableObject = <Shape extends object>(
+	game: string,
 	engine: Effect.Effect<Shape, never, SwishHostServices | WebSocketDurableObjectServices>
 ) => Effect.gen( function* () {
 	const archive = yield* Cloudflare.KV.ReadWriteNamespace( ArchiveKV );
+	const push = yield* Cloudflare.KV.ReadWriteNamespace( PushKV );
 	const db = yield* Database;
+
+	const vapid = yield* VapidConfig;
+	const hasVapid = vapid.subject._tag === "Some"
+		&& vapid.publicKey._tag === "Some"
+		&& vapid.privateKey._tag === "Some";
+
+	/**
+	 * Composed *into* the sync layer rather than merged beside it: the array
+	 * below is a merge, so siblings do not provide one another, and `SwishSync`
+	 * is the only thing that wants a notifier.
+	 *
+	 * Without VAPID keys — local dev, CI — the no-op binding takes over. A
+	 * missing notification key must never be able to fail a game command.
+	 */
+	const notifier = hasVapid
+		? SwishNotifierLive( game ).pipe(
+			Layer.provide( PushSenderLive ),
+			Layer.provide( PushStoreFrom( push ) )
+		)
+		: SwishNotifierNoop;
 
 	return yield* WebSocketDurableObject(
 		engine.pipe(
 			Effect.provide( [
 				SwishStorageLive,
-				SwishSyncLive,
+				SwishSyncLive.pipe( Layer.provide( notifier ) ),
 				SwishArchiveLive( archive ),
 				SwishLedgerLive( db ),
 				SwishTimersLive

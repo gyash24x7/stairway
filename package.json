@@ -11,6 +11,7 @@
 		"clean": "rm -rf ./node_modules/.vite",
 		"deploy": "alchemy deploy",
 		"icons": "bun scripts/make-pwa-icon.mjs && pwa-assets-generator",
+		"vapid": "bun scripts/generate-vapid-keys.mjs",
 		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.sw.json",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
@@ -18,7 +19,6 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "1.7.0",
-		"@block65/webcrypto-web-push": "1.0.2",
 		"@effect/platform-bun": "4.0.0-rc.108",
 		"@effect/platform-node": "4.0.0-rc.108",
 		"@effect/sql-d1": "4.0.0-rc.108",
@@ -44,7 +44,8 @@
 		"ulid": "3.0.2",
 		"unique-names-generator": "4.7.1",
 		"usehooks-ts": "3.1.1",
-		"vaul": "1.1.2"
+		"vaul": "1.1.2",
+		"web-push-neo": "^0.1.2"
 	},
 	"devDependencies": {
 		"@effect/eslint-plugin": "0.3.2",

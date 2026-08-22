@@ -67,6 +67,7 @@ import {
 	validateTeamConfig,
 	withTeamStandings
 } from "@/swish/shared/teams.ts";
+import { pendingActor as pendingActorOf } from "@/swish/shared/turn.ts";
 
 import type { GameStructure } from "@/swish/server/structure.ts";
 import type {
@@ -399,14 +400,8 @@ export const makeEngine = <
 		 * @param data - The record to inspect.
 		 * @returns The player expected to act, if there is one.
 		 */
-		const pendingActor = ( data: GameRecord<State, Config> ) => {
-			if ( data.context.interactions.length > 0 ) {
-				const [ active ] = data.context.interactions.slice( -1 );
-				return active.responders.find( ( id ) => !( id in active.responses ) );
-			}
-
-			return data.context.currentPlayer;
-		};
+		const pendingActor = ( data: GameRecord<State, Config> ) =>
+			pendingActorOf( data.context );
 
 		/**
 		 * Whether a seat is played by the machine rather than by a person — a bot,

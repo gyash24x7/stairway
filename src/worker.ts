@@ -25,13 +25,17 @@ import { SplendorApiLive, SplendorGame } from "@/games/splendor/server/api.ts";
 import { TicTacToeApiLive, TicTacToeGame } from "@/games/tictactoe/server/api.ts";
 import { WordleApiLive, WordleGame } from "@/games/wordle/server/api.ts";
 import { ChatChannel } from "@/platform/do/chat.ts";
+import { PushStoreLive } from "@/platform/kv/push.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { WebAuthnStoreLive } from "@/platform/kv/webauthn.ts";
+import { PushApiLive } from "@/push/server/api.ts";
+import { PushSenderLive } from "@/push/server/sender.ts";
 
 
 const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
 	Layer.provide( AuthApiLive ),
 	Layer.provide( ChatApiLive ),
+	Layer.provide( PushApiLive ),
 	Layer.provide( CallbreakApiLive ),
 	Layer.provide( FishApiLive ),
 	Layer.provide( KingdominoApiLive ),
@@ -41,6 +45,8 @@ const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
 	Layer.provide( AuthMiddlewareLive ),
 	Layer.provide( SessionServiceLive ),
 	Layer.provide( WebAuthnServiceLive ),
+	Layer.provide( PushSenderLive ),
+	Layer.provide( PushStoreLive ),
 	Layer.provide( SessionStoreLive ),
 	Layer.provide( WebAuthnStoreLive ),
 	Layer.provide( Cloudflare.D1.QueryDatabaseBinding ),

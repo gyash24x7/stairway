@@ -16,7 +16,7 @@ import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
 
 export class TicTacToeGame extends Cloudflare.DurableObject<TicTacToeGame>()(
 	"TicTacToeGame",
-	SwishDurableObject( tictactoe )
+	SwishDurableObject( "tictactoe", tictactoe )
 ) {}
 
 

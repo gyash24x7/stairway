@@ -17,7 +17,7 @@ import type { FishCreateInput } from "@/games/fish/shared/schema.ts";
 
 export class FishGame extends Cloudflare.DurableObject<FishGame>()(
 	"FishGame",
-	SwishDurableObject( fish )
+	SwishDurableObject( "fish", fish )
 ) {}
 
 

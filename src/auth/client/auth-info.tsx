@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { LogoutButton } from "@/auth/client/logout-button.tsx";
+import { NotificationsToggle } from "@/push/client/notifications-toggle.tsx";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/primitives/avatar.tsx";
 import { Dialog, DialogContent, DialogTrigger } from "@/shared/ui/primitives/dialog.tsx";
 
@@ -43,8 +44,13 @@ export function RAuthInfo( { authInfo }: { authInfo: AuthInfo } ) {
 								{ authInfo.name }
 							</h2>
 						</div>
-						<div className={ "flex justify-end" }>
-							<LogoutButton/>
+						<div className={ "flex flex-col gap-4" }>
+							{ /* Lives behind a click that has already happened, which is
+							     what makes it a legitimate place to ask for permission. */ }
+							<NotificationsToggle/>
+							<div className={ "flex justify-end" }>
+								<LogoutButton/>
+							</div>
 						</div>
 					</div>
 				</div>

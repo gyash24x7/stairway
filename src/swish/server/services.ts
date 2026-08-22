@@ -3,7 +3,13 @@ import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
 
-import type { GameId, PlayerId, TeamId } from "@/swish/shared/schema.ts";
+import type {
+	BaseGameConfig,
+	GameId,
+	GameView,
+	PlayerId,
+	TeamId
+} from "@/swish/shared/schema.ts";
 
 /**
  * Where one game lives, as far as a host is concerned: which game it is, and
@@ -253,9 +259,18 @@ export class SwishSync extends Context.Service<SwishSync, {
 
 	/**
 	 * Pushes one state change to everyone watching a game.
+	 *
+	 * Typed as `GameView` rather than a bare `View` so a host can read the
+	 * envelope the engine wraps every view in — status, roster, turn context. The
+	 * engine has always passed exactly this; saying so lets a host act on a turn
+	 * changing hands without casting, and still leaves the *game's* own view
+	 * shape opaque to the platform.
+	 *
 	 * @param views - The table's view and each player's own.
 	 */
-	readonly publish: <View>( views: AudienceViews<View> ) => Effect.Effect<void>;
+	readonly publish: <View, Config extends BaseGameConfig>(
+		views: AudienceViews<GameView<View, Config>>
+	) => Effect.Effect<void>;
 
 }>()( "swish/Sync" ) {}
 

@@ -18,7 +18,7 @@ import type { SplendorCreateInput } from "@/games/splendor/shared/schema.ts";
 
 export class SplendorGame extends Cloudflare.DurableObject<SplendorGame>()(
 	"SplendorGame",
-	SwishDurableObject( splendor )
+	SwishDurableObject( "splendor", splendor )
 ) {}
 
 

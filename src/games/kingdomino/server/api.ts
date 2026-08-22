@@ -18,7 +18,7 @@ import type { KingdominoCreateInput } from "@/games/kingdomino/shared/schema.ts"
 
 export class KingdominoGame extends Cloudflare.DurableObject<KingdominoGame>()(
 	"KingdominoGame",
-	SwishDurableObject( kingdomino )
+	SwishDurableObject( "kingdomino", kingdomino )
 ) {}
 
 
