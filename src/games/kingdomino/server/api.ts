@@ -46,6 +46,10 @@ export const KingdominoApiLive = HttpApiBuilder.group( StairwayAPI, "kingdomino"
 			.handle( "placeDomino", api.move( client => client.placeDomino ) )
 			.handle( "discardDomino", api.move( client => client.discardDomino ) )
 			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "rematch", api.rematch(
+				client => client.initialize,
+				client => client.getState
+			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );
 	} )

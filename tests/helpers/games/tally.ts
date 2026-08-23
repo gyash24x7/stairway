@@ -120,3 +120,26 @@ const reversedStructure: GameStructure<
 };
 
 export const reversedTallyEngine = makeEngine( reversedStructure );
+
+/**
+ * The same game, but silence means giving up rather than being played for.
+ *
+ * Declares `timeoutMove` alongside `botMove`, which is the combination worth
+ * testing: a seat that runs out its clock has the conceding move played once and
+ * stays its player's, while a seat handed over deliberately is still played by
+ * the policy. The two scores differ so a test can tell which one ran.
+ */
+const concedingStructure: GameStructure<
+	"tally",
+	TallyState,
+	TallyConfig,
+	{ score: typeof ScoreInput },
+	Record<string, never>,
+	TallyEvent,
+	TallyView
+> = {
+	...tallyStructure,
+	timeoutMove: () => ( { moveType: "score", input: { points: -1 } } )
+};
+
+export const concedingTallyEngine = makeEngine( concedingStructure );

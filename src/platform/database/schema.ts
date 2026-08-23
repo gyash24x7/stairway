@@ -1,5 +1,13 @@
 import { defineRelations } from "drizzle-orm";
-import { index, integer, primaryKey, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+	index,
+	integer,
+	primaryKey,
+	real,
+	sqliteTable,
+	text,
+	uniqueIndex
+} from "drizzle-orm/sqlite-core";
 
 import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator.ts";
 
@@ -48,6 +56,14 @@ export const passkeys = sqliteTable(
 /**
  * The games table tracking all game instances
  * with auto-generated IDs and join codes.
+ *
+ * `rematchOf` names the finished game this one was started from, and its unique
+ * index is what makes a rematch happen once. A table full of people all pressing
+ * the button at the end of a game is the ordinary case, not the rare one, so the
+ * insert that has to happen anyway is also the lock: whoever's row lands first
+ * owns the rematch, and everyone else reads it back and joins that game instead
+ * of starting a second one. NULLs are distinct under SQLite's UNIQUE, so every
+ * game that is nobody's rematch coexists happily.
  */
 export const games = sqliteTable(
 	"games",
@@ -56,9 +72,13 @@ export const games = sqliteTable(
 		code: text( "code" ).notNull().unique().$default( () => generateGameCode() ),
 		game: text( "game" ).notNull(),
 		completed: integer( "completed", { mode: "boolean" } ).notNull().default( false ),
+		rematchOf: text( "rematch_of" ),
 		createdAt: integer( "created_at", { mode: "timestamp" } ).notNull().$default( now )
 	},
-	table => [ index( "idx_games_code" ).on( table.code ) ]
+	table => [
+		index( "idx_games_code" ).on( table.code ),
+		uniqueIndex( "idx_games_rematch_of" ).on( table.rematchOf )
+	]
 );
 
 /**

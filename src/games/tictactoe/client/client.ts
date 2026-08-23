@@ -11,5 +11,6 @@ export const tictactoeApi = {
 	undo: gameFn( client.tictactoe.undo ),
 	redo: gameFn( client.tictactoe.redo ),
 	place: gameInputFn( client.tictactoe.place ),
-	setAutoPlay: gameInputFn( client.tictactoe.setAutoPlay )
+	setAutoPlay: gameInputFn( client.tictactoe.setAutoPlay ),
+	rematch: gameInputFn( client.tictactoe.rematch )
 };

@@ -11,7 +11,7 @@ import { ErrorState } from "@/shared/ui/components/error-state.tsx";
 import { GameView } from "@/swish/shared/schema.ts";
 
 import type { TicTacToeView } from "@/games/tictactoe/shared/schema.ts";
-import type { GameId } from "@/swish/shared/schema.ts";
+import type { GameId, GameRef, RematchInput } from "@/swish/shared/schema.ts";
 
 
 type TicTacToeContextValue = {
@@ -19,6 +19,7 @@ type TicTacToeContextValue = {
 	placeMove: ( position: number ) => void;
 	addBots: () => void;
 	startGame: () => void;
+	startRematch: ( input: RematchInput, onDone: ( ref: GameRef ) => void ) => void;
 	isPending: boolean;
 };
 
@@ -59,6 +60,14 @@ export function TicTacToeProvider( { data, gameId, children }: TicTacToeProvider
 		onSuccess: invalidate
 	} );
 
+	// Invalidates the finished game, not the new one. The server pushes the new
+	// ref onto every connected view over the socket, so this is the fallback for
+	// a client whose socket is down: its own screen becomes the join state.
+	const again = useMutation( {
+		mutationFn: ( input: RematchInput ) => tictactoeApi.rematch( gameId, input ),
+		onSuccess: invalidate
+	} );
+
 	if ( !data.view.playerId ) {
 		// A screen holding no seat — a spectator, or a stale link. These three games
 		// have only a seat's screen to offer, so say so rather than rendering blank.
@@ -80,7 +89,8 @@ export function TicTacToeProvider( { data, gameId, children }: TicTacToeProvider
 			placeMove: ( position: number ) => place.mutate( position ),
 			addBots: () => bots.mutate(),
 			startGame: () => start.mutate(),
-			isPending: place.isPending || bots.isPending || start.isPending
+			startRematch: ( input, onDone ) => again.mutate( input, { onSuccess: onDone } ),
+			isPending: place.isPending || bots.isPending || start.isPending || again.isPending
 		} }>
 			{ children }
 		</TicTacToeContext>

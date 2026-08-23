@@ -35,5 +35,6 @@ export const kingdominoApi = {
 	selectDomino: gameInputFn( client.kingdomino.selectDomino ),
 	placeDomino: gameInputFn( client.kingdomino.placeDomino ),
 	discardDomino: gameInputFn( client.kingdomino.discardDomino ),
-	setAutoPlay: gameInputFn( client.kingdomino.setAutoPlay )
+	setAutoPlay: gameInputFn( client.kingdomino.setAutoPlay ),
+	rematch: gameInputFn( client.kingdomino.rematch )
 };

@@ -9,5 +9,6 @@ export const wordleApi = {
 	addBots: gameFn( client.wordle.addBots ),
 	guess: gameInputFn( client.wordle.guess ),
 	forfeit: gameInputFn( client.wordle.forfeit ),
-	setAutoPlay: gameInputFn( client.wordle.setAutoPlay )
+	setAutoPlay: gameInputFn( client.wordle.setAutoPlay ),
+	rematch: gameInputFn( client.wordle.rematch )
 };

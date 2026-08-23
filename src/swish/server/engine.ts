@@ -47,13 +47,16 @@ import {
 	PlayerInfo,
 	PlayerJoined,
 	RedoNotAllowed,
+	RematchUnavailable,
 	ResultsResolved,
 	SeatOrderSet,
 	StatusChanged,
 	TableAudience,
 	TeamAssigned,
+	TeamLeft,
 	TeamName,
 	TeamNamed,
+	TeamsUnavailable,
 	TurnAdvanced,
 	UndoNotAllowed
 } from "@/swish/shared/schema.ts";
@@ -96,7 +99,9 @@ const RESERVED_COMMANDS = [
 	"redo",
 	"alarm",
 	"getState",
-	"setAutoPlay"
+	"setAutoPlay",
+	"setRematch",
+	"leaveTeam"
 ];
 
 /**
@@ -345,10 +350,12 @@ export const makeEngine = <
 
 		/**
 		 * Builds the wire envelope for one audience: the record minus its seed and
-		 * state, plus the view that audience may see and the engine's two
-		 * scheduling facts. Autoplay comes from the store and the deadline from the
-		 * timers, since neither is folded state, and every `GameView` carries them
-		 * whether it was pushed or fetched.
+		 * state, plus the view that audience may see and the three facts the engine
+		 * keeps beside the game rather than in it. Autoplay and the rematch come from
+		 * the store and the deadline from the timers, since none of them is folded
+		 * state, and every `GameView` carries them whether it was pushed or fetched —
+		 * which is what lets a reconnecting client and a live one learn about a
+		 * rematch identically.
 		 *
 		 * @param data - The record to project.
 		 * @returns A function turning one audience's view into its envelope.
@@ -356,10 +363,11 @@ export const makeEngine = <
 		const envelopeFor = Effect.fn( function* ( data: GameRecord<State, Config> ) {
 			const autoPlay = yield* storage.readAutoPlay();
 			const deadline = yield* timers.deadline();
+			const rematch = yield* storage.readRematch();
 			const { state, config, seed, ...header } = data;
 
 			return ( view: View ) =>
-				ViewSchema.make( { ...header, view, config, autoPlay, deadline } );
+				ViewSchema.make( { ...header, view, config, autoPlay, deadline, rematch } );
 		} );
 
 		/**
@@ -751,6 +759,44 @@ export const makeEngine = <
 			acc.accumulate( TeamAssigned.make( { playerId, team } ) );
 
 			yield* commitAndSave( acc, { command: "joinTeam", actor: playerId } );
+		} );
+
+		/**
+		 * Steps the caller off the side they are on, leaving the seat unassigned.
+		 *
+		 * The way out of a full side, and the reason there is one: sides are
+		 * equal-sized, so `joinTeam` can only move a seat somewhere with room, and a
+		 * table whose sides are all full has no way to rearrange itself at all. Someone
+		 * steps off, that side has space, someone else steps on.
+		 *
+		 * Leaving a side you do not hold does nothing, exactly as joining the side you
+		 * already hold does nothing — a client may call it freely rather than checking
+		 * first. Confined to the lobby like the rest of team formation: the seating
+		 * order is built from the sides, so giving one up mid-game would reshuffle the
+		 * table underneath everyone.
+		 *
+		 * @param playerId - The member stepping off their own side.
+		 */
+		const leaveTeam = Effect.fn( function* ( playerId: PlayerId ) {
+			const data = yield* load();
+			yield* assertMember( data, playerId );
+
+			if ( data.status !== "CREATED" && data.status !== "PLAYERS_READY" ) {
+				return yield* new GameNotJoinable( { status: data.status } );
+			}
+
+			if ( !data.config.teams ) {
+				return yield* new TeamsUnavailable( { game: structure.name } );
+			}
+
+			if ( teamOf( data.context, playerId ) === undefined ) {
+				return;
+			}
+
+			const acc = new Accumulator( data, structure.apply );
+			acc.accumulate( TeamLeft.make( { playerId } ) );
+
+			yield* commitAndSave( acc, { command: "leaveTeam", actor: playerId } );
 		} );
 
 		/**
@@ -1373,6 +1419,48 @@ export const makeEngine = <
 		} );
 
 		/**
+		 * Records the game this table plays next, and tells everyone watching.
+		 *
+		 * A rematch is not part of the game that was played — the log is closed, the
+		 * result is filed — so like autoplay it is stored beside the game rather than
+		 * committed to it: it does not move the version, and undo cannot reach it. It
+		 * rides the same envelope every read and every push already carries, which is
+		 * what turns one player's decision into the whole table's without anyone
+		 * reading a code out loud.
+		 *
+		 * Write-once, and the winner is handed back rather than refused. Which game a
+		 * table moved on to is settled before this is called, and a table full of
+		 * people all pressing the button at once is the ordinary end of a game, not a
+		 * conflict to report: everyone gets the same answer and ends up in the same
+		 * place.
+		 *
+		 * No clocks are armed. A finished game is waiting on nobody, and rearming here
+		 * would say this is a scheduling fact when it is a fact about what comes next.
+		 *
+		 * @param playerId - The member who asked for it.
+		 * @param ref - The game they built.
+		 * @returns The game this table plays next — theirs, or whoever got there first.
+		 */
+		const setRematch = Effect.fn( function* ( playerId: PlayerId, ref: GameRef ) {
+			const data = yield* load();
+			yield* assertMember( data, playerId );
+
+			if ( data.status !== "COMPLETED" ) {
+				return yield* new RematchUnavailable( { status: data.status } );
+			}
+
+			const existing = yield* storage.readRematch();
+			if ( existing ) {
+				return existing;
+			}
+
+			yield* storage.writeRematch( ref );
+			yield* broadcastState( data );
+
+			return ref;
+		} );
+
+		/**
 		 * Closes an open frame that cannot progress on its own: the interaction's
 		 * `onTimeout` settles it if it has one, otherwise `resolve` runs against
 		 * whatever responses did arrive. Parent frames this completes settle in the
@@ -1445,15 +1533,22 @@ export const makeEngine = <
 		} );
 
 		/**
-		 * Runs out a seat's move clock. With a bot policy the seat is handed to it
-		 * and stays there until its player switches it back, which is what stops
-		 * the same player stalling every subsequent turn.
+		 * Runs out a seat's move clock.
 		 *
-		 * A game that declares no policy has nothing that could play the seat, so
-		 * the turn is skipped and the seat is left exactly as it was. Handing it
-		 * over would be a lie the wire repeats — `autoPlay` would read `true` for a
-		 * seat nothing is playing — and it would cost that seat its clock on every
-		 * later turn, leaving the table with no pending timer at all.
+		 * A game that says what silence means — `timeoutMove` — has that played once,
+		 * for that seat, and the seat stays its player's. That is for a game where
+		 * playing on would decide something the player alone gets to decide: guessing
+		 * a word for someone is not helping them, it is finishing their game.
+		 *
+		 * Otherwise, with a bot policy the seat is handed to it and stays there until
+		 * its player switches it back, which is what stops the same player stalling
+		 * every subsequent turn.
+		 *
+		 * A game that declares no policy has nothing that could play the seat, so the
+		 * turn is skipped and the seat is left exactly as it was. Handing it over would
+		 * be a lie the wire repeats — `autoPlay` would read `true` for a seat nothing is
+		 * playing — and it would cost that seat its clock on every later turn, leaving
+		 * the table with no pending timer at all.
 		 *
 		 * @param data - The record whose current player ran out of time.
 		 */
@@ -1467,6 +1562,18 @@ export const makeEngine = <
 
 			if ( !actorId || !stillTheirs ) {
 				return;
+			}
+
+			if ( structure.timeoutMove ) {
+				const move = structure.timeoutMove( {
+					config: data.config,
+					context: data.context,
+					state: viewFor( data, PlayerAudience.make( { playerId: actorId } ) )
+				}, actorId );
+
+				if ( move ) {
+					return yield* submitMove( move.moveType, move.input, actorId ).pipe( Effect.orDie );
+				}
 			}
 
 			if ( !structure.botMove ) {
@@ -1565,6 +1672,7 @@ export const makeEngine = <
 			initialize,
 			join,
 			joinTeam,
+			leaveTeam,
 			nameTeam,
 			addBots,
 			start,
@@ -1574,7 +1682,8 @@ export const makeEngine = <
 			...moves,
 			alarm,
 			getState,
-			setAutoPlay
+			setAutoPlay,
+			setRematch
 		};
 	} );
 };

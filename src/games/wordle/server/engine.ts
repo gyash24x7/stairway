@@ -173,5 +173,7 @@ export const wordle = makeEngine( {
 		}
 	},
 
-	botMove: decideWordleMove
+	botMove: decideWordleMove,
+
+	timeoutMove: () => ( { moveType: "forfeit" as const, input: {} } )
 } );

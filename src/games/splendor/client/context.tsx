@@ -17,7 +17,7 @@ import type {
 	SplendorConfig,
 	SplendorView
 } from "@/games/splendor/shared/schema.ts";
-import type { GameId, GameView, PlayerId } from "@/swish/shared/schema.ts";
+import type { GameId, GameRef, GameView, PlayerId, RematchInput } from "@/swish/shared/schema.ts";
 
 /**
  * One context for all three screens.
@@ -45,6 +45,7 @@ type SplendorContextValue = {
 	addBots: () => void;
 	startGame: () => void;
 	setAutoPlay: ( enabled: boolean ) => void;
+	startRematch: ( input: RematchInput, onDone: ( ref: GameRef ) => void ) => void;
 	isPending: boolean;
 };
 
@@ -110,6 +111,14 @@ export function SplendorProvider( { data, gameId, children }: SplendorProviderPr
 		onSuccess: invalidate
 	} );
 
+	// Invalidates the finished game, not the new one. The server pushes the new
+	// ref onto every connected view over the socket, so this is the fallback for
+	// a client whose socket is down: its own screen becomes the join state.
+	const again = useMutation( {
+		mutationFn: ( input: RematchInput ) => splendorApi.rematch( gameId, input ),
+		onSuccess: invalidate
+	} );
+
 	const playerId = data.view.playerId;
 	const isMyTurn = data.status === "IN_PROGRESS" && data.context.currentPlayer === playerId;
 
@@ -141,6 +150,7 @@ export function SplendorProvider( { data, gameId, children }: SplendorProviderPr
 			addBots: () => bots.mutate(),
 			startGame: () => start.mutate(),
 			setAutoPlay: enabled => autoPlay.mutate( enabled ),
+			startRematch: ( input, onDone ) => again.mutate( input, { onSuccess: onDone } ),
 			isPending: tokens.isPending
 				|| reserve.isPending
 				|| purchase.isPending
@@ -149,6 +159,7 @@ export function SplendorProvider( { data, gameId, children }: SplendorProviderPr
 				|| bots.isPending
 				|| start.isPending
 				|| autoPlay.isPending
+				|| again.isPending
 		} }>
 			{ children }
 		</SplendorContext>

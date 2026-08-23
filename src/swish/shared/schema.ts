@@ -329,6 +329,15 @@ export const SeatView = <Fields extends Schema.Struct.Fields>( view: Schema.Stru
 	Schema.Struct( { ...view.fields, playerId: PlayerId } as SeatFields<Fields> );
 
 
+/**
+ * Points at a game. Returned by both create and join, which answer the same
+ * question — which game, and what code do I share to fill it.
+ * - id: Id of the game
+ * - code: Code used to join the game
+ */
+export type GameRef = typeof GameRef.Type;
+export const GameRef = Schema.Struct( { id: GameId, code: GameCode } );
+
 // --- Game Forms ------------------------------------------------------------
 
 /**
@@ -360,10 +369,17 @@ export type GameRecord<State, Config extends BaseGameConfig> = GameHeader & {
  * record minus the seed, with `state` replaced by the view built for that
  * audience. This is the only game shape that crosses the wire.
  *
- * It also carries the engine's two scheduling facts — who has handed their seat
- * to the bot policy, and when the pending actor's clock runs out. Neither is
- * game state, so neither lives on the record or in the commit log; the envelope
- * is where a client learns them.
+ * It also carries the three facts the engine keeps beside a game rather than
+ * inside it — who has handed their seat to the bot policy, when the pending
+ * actor's clock runs out, and which game this table agreed to play next. None
+ * of them is folded state, so none lives on the record or in the commit log;
+ * the envelope is where a client learns them.
+ *
+ * `rematch` is what carries one player's decision to the rest of the table. It
+ * rides the envelope rather than the view precisely because every audience
+ * needs it: a television is attached to the table audience, and a rematch
+ * redacted out of its view would leave the shared screen sitting on a finished
+ * game while every phone in the room had moved on.
  *
  * @param view - The game's view schema.
  * @param config - The game's config schema.
@@ -376,7 +392,8 @@ export const GameView =
 			config,
 			view,
 			autoPlay: Schema.Record( PlayerId, Schema.Boolean ),
-			deadline: Schema.optional( Schema.Number )
+			deadline: Schema.optional( Schema.Number ),
+			rematch: Schema.optional( GameRef )
 		} );
 
 export type GameView<View, Config extends BaseGameConfig> = GameHeader & {
@@ -384,6 +401,7 @@ export type GameView<View, Config extends BaseGameConfig> = GameHeader & {
 	readonly config: Config;
 	readonly autoPlay: Record<PlayerId, boolean>;
 	readonly deadline?: number;
+	readonly rematch?: GameRef;
 };
 
 /**
@@ -441,15 +459,6 @@ export type InitializeInput<Config extends BaseGameConfig> = BaseInitializeInput
 };
 
 /**
- * Points at a game. Returned by both create and join, which answer the same
- * question — which game, and what code do I share to fill it.
- * - id: Id of the game
- * - code: Code used to join the game
- */
-export type GameRef = typeof GameRef.Type;
-export const GameRef = Schema.Struct( { id: GameId, code: GameCode } );
-
-/**
  * The input required to join a game. The player joining
  * is extracted from the authentication information.
  * - code: Code of the game
@@ -484,6 +493,19 @@ export type SetAutoPlayInput = typeof SetAutoPlayInput.Type;
 export const SetAutoPlayInput = Schema.Struct( { enabled: Schema.Boolean } );
 
 /**
+ * The input required to start a rematch: another game of the same kind, with
+ * the same config and the same people around it.
+ * - keepTeams: `true` to seat everyone back on the side they just played
+ *
+ * A game without sides ignores the flag rather than being given an endpoint of
+ * its own. In one with them the choice is real and cannot be deferred: seats
+ * carried over come back full, so `false` is what leaves the new lobby free to
+ * form its sides again.
+ */
+export type RematchInput = typeof RematchInput.Type;
+export const RematchInput = Schema.Struct( { keepTeams: Schema.Boolean } );
+
+/**
  * The path params for per-game endpoints: the `gameId`.
  */
 export type GameIdParams = typeof GameIdParams.Type;
@@ -509,6 +531,20 @@ export type TeamAssigned = typeof TeamAssigned.Type;
 export const TeamAssigned = Schema.TaggedStruct(
 	"swish/ev/TeamAssigned",
 	{ playerId: PlayerId, team: TeamId }
+);
+
+/**
+ * Emitted when a player steps off the side they were on. Clears their team in
+ * the context, leaving the seat unassigned rather than moving it somewhere else.
+ *
+ * The inverse of `TeamAssigned`, and needed as its own event because sides are
+ * equal-sized: a seat can only move to a side with room, so the only way out of
+ * a full one is to leave it first and let someone take the space.
+ */
+export type TeamLeft = typeof TeamLeft.Type;
+export const TeamLeft = Schema.TaggedStruct(
+	"swish/ev/TeamLeft",
+	{ playerId: PlayerId }
 );
 
 /**
@@ -642,6 +678,7 @@ export type EngineEvent = typeof EngineEvent.Type;
 export const EngineEvent = Schema.Union( [
 	PlayerJoined,
 	TeamAssigned,
+	TeamLeft,
 	TeamNamed,
 	SeatOrderSet,
 	CurrentPlayerSet,
@@ -920,6 +957,17 @@ export class InvalidTeamConfig extends Schema.TaggedError<InvalidTeamConfig>()(
 ) {}
 
 /**
+ * A rematch was asked for on a game that has not finished. There is nothing to
+ * play again yet, so the request is refused rather than quietly starting a
+ * second game alongside one still in progress.
+ */
+export class RematchUnavailable extends Schema.TaggedError<RematchUnavailable>()(
+	"swish/RematchUnavailable",
+	{ status: Schema.String },
+	{ httpApiStatus: 409 }
+) {}
+
+/**
  * Union of the errors a `getState` can surface to the client.
  */
 export type GetStateError = typeof GetStateError.Type;
@@ -1030,3 +1078,32 @@ export const UndoError = Schema.Union( [ NothingToUndo, UndoNotAllowed, GetState
  */
 export type RedoError = typeof RedoError.Type;
 export const RedoError = Schema.Union( [ NothingToRedo, RedoNotAllowed, GetStateError ] );
+
+/**
+ * Union of the errors a `leaveTeam` can surface to the client. Stepping off a
+ * side you are not on is not one of them: like `joinTeam` re-joining the side
+ * you already hold, it is simply nothing happening.
+ */
+export type LeaveTeamError = typeof LeaveTeamError.Type;
+export const LeaveTeamError = Schema.Union( [
+	NotAMember,
+	TeamsUnavailable,
+	GameNotJoinable,
+	GameNotFound,
+	CorruptState
+] );
+
+/**
+ * Union of the errors a `rematch` can surface to the client.
+ *
+ * Deliberately narrow. Building the next game can fail in every way creating one
+ * can — a config the engine refuses, a seat it will not take, a side with no
+ * room — but none of those is a thing the caller did: the config and the roster
+ * came from a game this same engine accepted and ran to completion, so a failure
+ * there is a bug in the rematch, not a decision to report. Those are `orDie`d at
+ * the handler, and what is left is the three things a caller can actually get
+ * wrong — asking about a game that is not there, one they never sat at, or one
+ * that has not finished.
+ */
+export type RematchError = typeof RematchError.Type;
+export const RematchError = Schema.Union( [ RematchUnavailable, GetStateError ] );

@@ -10,6 +10,7 @@ import { PlayerId } from "@/swish/shared/schema.ts";
 
 import type { DurableTransaction } from "@/platform/do/storage.ts";
 import type { AlarmKind } from "@/swish/server/services.ts";
+import type { GameRef } from "@/swish/shared/schema.ts";
 
 const KEY_GAME_DATA = "data";
 const KEY_LOG_BASE = "log:base";
@@ -45,6 +46,13 @@ const KEY_LOG_CHECKPOINT_PREFIX = "log:ckpt";
  * which arms the alarm that enforces it.
  */
 const KEY_AUTO_PLAY = "prefs:auto-play";
+
+/**
+ * The game this table moved on to. Sits beside the autoplay flags rather than in
+ * the log for the same reason: a finished game's history is closed, and which
+ * game the same people played next is not part of what happened in this one.
+ */
+const KEY_REMATCH = "prefs:rematch";
 
 /**
  * How many commits a checkpoint covers, and so the most commits a rebuild ever
@@ -218,6 +226,10 @@ export const SwishStorageLive = Layer.effect( SwishStorage, Effect.gen( function
 				yield* txn.put( KEY_GAME_DATA, record );
 			} )
 		),
+
+		readRematch: () => storage.get<GameRef>( KEY_REMATCH ),
+
+		writeRematch: ref => storage.put( KEY_REMATCH, ref ),
 
 		readAutoPlay: () => readAutoPlayFrom( storage ),
 

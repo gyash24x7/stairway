@@ -17,6 +17,7 @@ import { GameInfo } from "@/swish/client/game-info.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
 import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { AddBots } from "@/swish/client/seat-controls.tsx";
 import { StartGame } from "@/swish/client/start-game.tsx";
 import { StatBlock } from "@/swish/client/stat-block.tsx";
@@ -38,7 +39,7 @@ export function GameView() {
 		placement
 	} = useKingdominoTurn();
 
-	const { addBots, startGame, isPending } = useKingdomino();
+	const { addBots, startGame, startRematch, isPending } = useKingdomino();
 
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
 	const nonBotPlayers = data.context.players.filter( pid => !data.players[ pid ].isBot );
@@ -97,6 +98,16 @@ export function GameView() {
 								playerId={ playerId }
 								scoreLabel={ "POINTS" }
 							/>
+
+							<Rematch
+								className={ "mt-3" }
+								game={ "kingdomino" }
+								completed={ data.status === "COMPLETED" }
+								rematch={ data.rematch }
+								startRematch={ playerId ? startRematch : undefined }
+								humans={ nonBotPlayers.length }
+								disabled={ isPending }
+							/>
 						</div>
 					) }
 					<div className={ "col-span-2" }>
@@ -129,7 +140,7 @@ export function GameView() {
 						// board a domino is going onto and the dominoes on offer are on
 						// screen together rather than a scroll apart.
 						<div className={ "col-span-2 min-w-0 flex flex-col md:flex-row gap-2 items-stretch" }>
-							{ !!seated && (
+							{ seated && (
 								<div
 									className={ cn(
 										"min-w-0 flex-1 flex flex-col gap-2",
@@ -153,7 +164,10 @@ export function GameView() {
 										<div className={ "flex gap-2 items-center" }>
 											<RDomino domino={ getDomino( activeDomino ) }/>
 											{ placement.canDiscard && (
-												<Button onClick={ placement.handleDiscard } disabled={ placement.isPending }>
+												<Button
+													onClick={ placement.handleDiscard }
+													disabled={ placement.isPending }
+												>
 													DISCARD
 												</Button>
 											) }

@@ -15,9 +15,11 @@ import {
 	GetViewApiEndpoint,
 	JoinApiEndpoint,
 	JoinTeamApiEndpoint,
+	LeaveTeamApiEndpoint,
 	MoveApiEndpoint,
 	NameTeamApiEndpoint,
 	RedoApiEndpoint,
+	RematchApiEndpoint,
 	SetAutoPlayApiEndpoint,
 	StartApiEndpoint,
 	UndoApiEndpoint
@@ -31,11 +33,13 @@ export const FishApiGroup = HttpApiGroup.make( "fish" )
 		AddBotsApiEndpoint(),
 		JoinTeamApiEndpoint(),
 		NameTeamApiEndpoint(),
+		LeaveTeamApiEndpoint(),
 		StartApiEndpoint(),
 		MoveApiEndpoint( "askCard", AskCardInput ),
 		MoveApiEndpoint( "claimBook", ClaimBookInput ),
 		MoveApiEndpoint( "transferTurn", TransferTurnInput ),
 		SetAutoPlayApiEndpoint(),
+		RematchApiEndpoint(),
 		UndoApiEndpoint(),
 		RedoApiEndpoint()
 	)

@@ -10,7 +10,7 @@ import { relayEngine } from "@tests/helpers/games/relay.ts";
 import type { ScribeConfig } from "@tests/helpers/games/scribe.ts";
 import { scribeEngine } from "@tests/helpers/games/scribe.ts";
 import type { TallyConfig } from "@tests/helpers/games/tally.ts";
-import { tallyEngine } from "@tests/helpers/games/tally.ts";
+import { concedingTallyEngine, tallyEngine } from "@tests/helpers/games/tally.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -239,6 +239,31 @@ describe( "the clocks a turn runs under", () => {
 
 
 describe( "a move clock that runs out", () => {
+	test( "a game that says what silence means plays that, and keeps the seat", () => {
+		const clock = testClock();
+
+		const { result } = runGame( concedingTallyEngine, engine => Effect.gen( function* () {
+			yield* engine.initialize( createInput(
+				tallyConfig( { moveTimeoutMillis: MOVE_TIMEOUT } )
+			) );
+			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
+			yield* engine.start( a );
+
+			const before = yield* engine.getState();
+			clock.advance( MOVE_TIMEOUT + 1 );
+			yield* engine.alarm();
+			return { before, after: yield* engine.getState() };
+		} ), { now: clock.now } );
+
+		// The conceding move ran, not the policy's — they score differently on purpose.
+		expect( result.after.view.points[ a ] ).toBe( -1 );
+
+		// And the seat is still its player's: they stalled one turn, they did not
+		// hand the game over.
+		expect( result.after.autoPlay[ a ] ).toBeUndefined();
+		expect( result.after.version ).toBeGreaterThan( result.before.version );
+	} );
+
 	test( "with a policy, the seat is handed over rather than skipped", () => {
 		const clock = testClock();
 

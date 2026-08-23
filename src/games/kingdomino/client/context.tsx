@@ -14,7 +14,13 @@ import type {
 	PlaceDominoInput,
 	SelectDominoInput
 } from "@/games/kingdomino/shared/schema.ts";
-import type { GameId, GameView, PlayerId } from "@/swish/shared/schema.ts";
+import type {
+	GameId,
+	GameRef,
+	GameView,
+	PlayerId,
+	RematchInput
+} from "@/swish/shared/schema.ts";
 
 /**
  * One context for all three screens.
@@ -36,6 +42,7 @@ type KingdominoContextValue = {
 	setAutoPlay: ( enabled: boolean ) => void;
 	isSelectPending: boolean;
 	isPlacePending: boolean;
+	startRematch: ( input: RematchInput, onDone: ( ref: GameRef ) => void ) => void;
 	isPending: boolean;
 };
 
@@ -91,6 +98,14 @@ export function KingdominoProvider( { data, gameId, children }: KingdominoProvid
 		onSuccess: invalidate
 	} );
 
+	// Invalidates the finished game, not the new one. The server pushes the new
+	// ref onto every connected view over the socket, so this is the fallback for
+	// a client whose socket is down: its own screen becomes the join state.
+	const again = useMutation( {
+		mutationFn: ( input: RematchInput ) => kingdominoApi.rematch( gameId, input ),
+		onSuccess: invalidate
+	} );
+
 	return (
 		<KingdominoContext value={ {
 			data,
@@ -103,12 +118,13 @@ export function KingdominoProvider( { data, gameId, children }: KingdominoProvid
 			setAutoPlay: enabled => autoPlay.mutate( enabled ),
 			isSelectPending: select.isPending,
 			isPlacePending: place.isPending || discard.isPending,
+			startRematch: ( input, onDone ) => again.mutate( input, { onSuccess: onDone } ),
 			isPending: select.isPending
 				|| place.isPending
 				|| discard.isPending
 				|| bots.isPending
 				|| start.isPending
-				|| autoPlay.isPending
+				|| autoPlay.isPending || again.isPending
 		} }>
 			{ children }
 		</KingdominoContext>

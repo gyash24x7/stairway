@@ -16,6 +16,7 @@ import {
 	JoinApiEndpoint,
 	MoveApiEndpoint,
 	RedoApiEndpoint,
+	RematchApiEndpoint,
 	SetAutoPlayApiEndpoint,
 	StartApiEndpoint,
 	UndoApiEndpoint
@@ -32,6 +33,7 @@ export const KingdominoApiGroup = HttpApiGroup.make( "kingdomino" )
 		MoveApiEndpoint( "placeDomino", PlaceDominoInput ),
 		MoveApiEndpoint( "discardDomino", DiscardDominoInput ),
 		SetAutoPlayApiEndpoint(),
+		RematchApiEndpoint(),
 		UndoApiEndpoint(),
 		RedoApiEndpoint()
 	)

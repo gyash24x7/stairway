@@ -15,6 +15,7 @@ import { cn } from "@/shared/ui/utils/cn.ts";
 import { ControllerShell } from "@/swish/client/controller-shell.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { AddBots, AutoPlayToggle } from "@/swish/client/seat-controls.tsx";
 import { StartGame } from "@/swish/client/start-game.tsx";
 
@@ -41,7 +42,9 @@ export function ControllerView() {
 		placement
 	} = useKingdominoTurn();
 
-	const { addBots, startGame, setAutoPlay, isPending } = useKingdomino();
+	const { addBots, startGame, setAutoPlay, startRematch, isPending } = useKingdomino();
+
+	const humans = data.context.players.filter( pid => !data.players[ pid ].isBot ).length;
 
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
 	const isPlaying = data.status === "IN_PROGRESS";
@@ -163,6 +166,16 @@ export function ControllerView() {
 						players={ data.players }
 						playerId={ playerId }
 						scoreLabel={ "POINTS" }
+					/>
+
+					<Rematch
+						game={ "kingdomino" }
+						screen={ "controller" }
+						completed
+						rematch={ data.rematch }
+						startRematch={ playerId ? startRematch : undefined }
+						humans={ humans }
+						disabled={ isPending }
 					/>
 				</div>
 			) }

@@ -26,6 +26,7 @@ import { GameInfo } from "@/swish/client/game-info.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
 import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { AddBots, AutoPlayToggle } from "@/swish/client/seat-controls.tsx";
 import { StartGame } from "@/swish/client/start-game.tsx";
 import { StatBlock } from "@/swish/client/stat-block.tsx";
@@ -41,6 +42,7 @@ export function GameView() {
 		addBots,
 		startGame,
 		setAutoPlay,
+		startRematch,
 		isPending
 	} = useSplendor();
 
@@ -75,6 +77,15 @@ export function GameView() {
 				players={ data.players }
 				playerId={ playerId }
 				scoreLabel={ "POINTS" }
+			/>
+
+			<Rematch
+				game={ "splendor" }
+				completed={ data.status === "COMPLETED" }
+				rematch={ data.rematch }
+				startRematch={ playerId ? startRematch : undefined }
+				humans={ nonBotPlayers.length }
+				disabled={ isPending }
 			/>
 			{ isLobby && (
 				<PlayerLobbyGrid players={ data.context.players.map( id => data.players[ id ] ) }/>

@@ -14,6 +14,7 @@ import {
 	JoinApiEndpoint,
 	MoveApiEndpoint,
 	RedoApiEndpoint,
+	RematchApiEndpoint,
 	SetAutoPlayApiEndpoint,
 	StartApiEndpoint,
 	UndoApiEndpoint
@@ -28,6 +29,7 @@ export const TicTacToeApiGroup = HttpApiGroup.make( "tictactoe" )
 		AddBotsApiEndpoint(),
 		MoveApiEndpoint( "place", PlaceInput ),
 		SetAutoPlayApiEndpoint(),
+		RematchApiEndpoint(),
 		UndoApiEndpoint(),
 		RedoApiEndpoint()
 	)

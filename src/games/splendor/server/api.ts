@@ -48,6 +48,10 @@ export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", ha
 			.handle( "pass", api.move( client => client.pass ) )
 			.handle( "claimNoble", api.move( client => client.claimNoble ) )
 			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "rematch", api.rematch(
+				client => client.initialize,
+				client => client.getState
+			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );
 	} )

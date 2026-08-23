@@ -12,6 +12,7 @@ import { GameInfo } from "@/swish/client/game-info.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
 import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { AddBots, AutoPlayToggle } from "@/swish/client/seat-controls.tsx";
 import { StatBlock } from "@/swish/client/stat-block.tsx";
 
@@ -23,6 +24,7 @@ export function GameView() {
 		addBots,
 		setAutoPlay,
 		autoPlaying,
+		startRematch,
 		isPending
 	} = useWordle();
 
@@ -72,6 +74,15 @@ export function GameView() {
 				players={ data.players }
 				playerId={ data.view.playerId }
 				scoreLabel={ "SCORE" }
+			/>
+
+			<Rematch
+				game={ "wordle" }
+				completed={ isCompleted }
+				rematch={ data.rematch }
+				startRematch={ startRematch }
+				humans={ nonBotPlayers.length }
+				disabled={ isPending }
 			/>
 
 			{ isDuel && inProgress && <DuelScoreboard/> }

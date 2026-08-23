@@ -14,6 +14,7 @@ import {
 	GetViewApiEndpoint,
 	JoinApiEndpoint,
 	MoveApiEndpoint,
+	RematchApiEndpoint,
 	SetAutoPlayApiEndpoint
 } from "@/swish/shared/contract.ts";
 
@@ -25,7 +26,8 @@ export const WordleApiGroup = HttpApiGroup.make( "wordle" )
 		AddBotsApiEndpoint(),
 		MoveApiEndpoint( "guess", GuessInput ),
 		MoveApiEndpoint( "forfeit", ForfeitInput ),
-		SetAutoPlayApiEndpoint()
+		SetAutoPlayApiEndpoint(),
+		RematchApiEndpoint()
 	)
 	.prefix( "/wordle" )
 	.middleware( AuthMiddleware );

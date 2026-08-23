@@ -17,13 +17,15 @@ import { ActionBar } from "@/swish/client/action-bar.tsx";
 import { GameInfo } from "@/swish/client/game-info.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { AddBots, AutoPlayToggle } from "@/swish/client/seat-controls.tsx";
 import { StartGame } from "@/swish/client/start-game.tsx";
 import { StatBlock } from "@/swish/client/stat-block.tsx";
 import { TurnBanner } from "@/swish/client/turn-banner.tsx";
 
 export function GameView() {
-	const { data, isMyTurn, isPending, addBots, startGame, setAutoPlay } = useFish();
+	const { data, isMyTurn, isPending, addBots, startGame, setAutoPlay, startRematch }
+		= useFish();
 
 	const me = data.view.playerId;
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
@@ -36,6 +38,14 @@ export function GameView() {
 
 	const seated = data.context.players.length;
 	const nonBotPlayers = data.context.players.filter( pid => !data.players[ pid ].isBot );
+
+	// A rematch that dissolved its sides lands here with every seat unassigned and
+	// the table already full, so `start` is live from the first frame — and whoever
+	// presses it balances everyone who has not chosen yet. Saying how many are still
+	// undecided is what makes that a decision rather than a surprise.
+	const undecided = data.context.players.filter(
+		pid => data.context.teams[ pid ] === undefined
+	).length;
 
 	return (
 		<div className={ "flex flex-col gap-3 items-center max-w-6xl w-full" }>
@@ -62,6 +72,16 @@ export function GameView() {
 				scoreLabel={ "BOOKS" }
 			/>
 
+			<Rematch
+				game={ "fish" }
+				completed={ isCompleted }
+				rematch={ data.rematch }
+				startRematch={ startRematch }
+				teams={ data.config.teams.length > 0 }
+				humans={ nonBotPlayers.length }
+				disabled={ isPending }
+			/>
+
 			{ isCompleted && <BooksTracker/> }
 			{ isCompleted && <GameMetrics/> }
 
@@ -71,7 +91,10 @@ export function GameView() {
 						status={ data.status }
 						seated={ seated }
 						playerCount={ data.config.playerCount }
-						hint={ "Pick a side below, or leave it and be split evenly when the game starts." }
+						hint={ undecided > 0
+							? `${ undecided } of ${ seated } haven't picked a side — `
+								+ "they'll be split evenly when the game starts."
+							: "Every seat has a side. Start when you're ready." }
 					/>
 					<TeamLobby/>
 				</div>

@@ -14,7 +14,7 @@ import type {
 	PlayCardInput
 } from "@/games/callbreak/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
-import type { GameId, GameView, PlayerId } from "@/swish/shared/schema.ts";
+import type { GameId, GameRef, GameView, PlayerId, RematchInput } from "@/swish/shared/schema.ts";
 
 /**
  * One context for all three screens.
@@ -40,6 +40,7 @@ type CallbreakContextValue = {
 		addBots: () => void;
 		startGame: () => void;
 		setAutoPlay: ( enabled: boolean ) => void;
+		startRematch: ( input: RematchInput, onDone: ( ref: GameRef ) => void ) => void;
 	};
 	isPending: boolean;
 };
@@ -96,6 +97,14 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 		onSuccess: invalidate
 	} );
 
+	// Invalidates the finished game, not the new one. The server pushes the new
+	// ref onto every connected view over the socket, so this is the fallback for
+	// a client whose socket is down: its own screen becomes the join state.
+	const again = useMutation( {
+		mutationFn: ( input: RematchInput ) => callbreakApi.rematch( gameId, input ),
+		onSuccess: invalidate
+	} );
+
 	const selectCard = useCallback( ( cardId: CardId ) => {
 		setSelectedCard( current => current === cardId ? undefined : cardId );
 	}, [] );
@@ -115,13 +124,15 @@ export function CallbreakProvider( { data, gameId, children }: CallbreakProvider
 				playCard: input => play.mutate( input ),
 				addBots: () => bots.mutate(),
 				startGame: () => start.mutate(),
-				setAutoPlay: enabled => autoPlay.mutate( enabled )
+				setAutoPlay: enabled => autoPlay.mutate( enabled ),
+				startRematch: ( input, onDone ) => again.mutate( input, { onSuccess: onDone } )
 			},
 			isPending: declare.isPending
 				|| play.isPending
 				|| bots.isPending
 				|| start.isPending
 				|| autoPlay.isPending
+				|| again.isPending
 		} }>
 			{ children }
 		</CallbreakContext>

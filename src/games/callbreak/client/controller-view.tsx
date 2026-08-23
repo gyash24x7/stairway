@@ -10,6 +10,7 @@ import { TrickStrip } from "@/games/callbreak/client/trick-strip.tsx";
 import { ControllerShell } from "@/swish/client/controller-shell.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { AddBots, AutoPlayToggle } from "@/swish/client/seat-controls.tsx";
 import { StartGame } from "@/swish/client/start-game.tsx";
 
@@ -29,6 +30,7 @@ export function ControllerView() {
 
 	const waitingFor = data.players[ data.context.currentPlayer ]?.name;
 	const autoPlaying = !!playerId && ( data.autoPlay[ playerId ] ?? false );
+	const humans = data.context.players.filter( pid => !data.players[ pid ].isBot ).length;
 
 	return (
 		<ControllerShell
@@ -83,6 +85,16 @@ export function ControllerView() {
 						players={ data.players }
 						playerId={ playerId }
 						scoreLabel={ "SCORE" }
+					/>
+
+					<Rematch
+						game={ "callbreak" }
+						screen={ "controller" }
+						completed
+						rematch={ data.rematch }
+						startRematch={ playerId ? actions.startRematch : undefined }
+						humans={ humans }
+						disabled={ isPending }
 					/>
 				</div>
 			) }
