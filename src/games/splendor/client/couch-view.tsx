@@ -8,6 +8,7 @@ import { TokenBar } from "@/games/splendor/client/token-bar.tsx";
 import { CouchLobby } from "@/swish/client/couch-lobby.tsx";
 import { CouchShell } from "@/swish/client/couch-shell.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
+import { RematchNotice, useFollowRematch } from "@/swish/client/rematch.tsx";
 import { StatBlock } from "@/swish/client/stat-block.tsx";
 import { turnText } from "@/swish/client/turn-banner.tsx";
 
@@ -18,6 +19,10 @@ import { turnText } from "@/swish/client/turn-banner.tsx";
  */
 export function CouchView() {
 	const { data } = useSplendor();
+
+	// The room moved on and this screen has no way to be told to follow, so it
+	// follows — after long enough for the standings it is showing to be read.
+	useFollowRematch( "splendor", data.rematch );
 
 	const isLobby = data.status === "CREATED" || data.status === "PLAYERS_READY";
 	const isPlaying = data.status === "IN_PROGRESS";
@@ -39,6 +44,7 @@ export function CouchView() {
 		<CouchShell
 			game={ "splendor" }
 			code={ data.code }
+			notice={ <RematchNotice rematch={ data.rematch }/> }
 			turn={ turn }
 			deadline={ data.deadline }
 			currentPlayer={ data.status === "IN_PROGRESS" ? data.context.currentPlayer : undefined }

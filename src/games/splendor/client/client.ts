@@ -22,5 +22,6 @@ export const splendorApi = {
 	purchaseCard: gameInputFn( client.splendor.purchaseCard ),
 	pass: gameInputFn( client.splendor.pass ),
 	claimNoble: gameInputFn( client.splendor.claimNoble ),
-	setAutoPlay: gameInputFn( client.splendor.setAutoPlay )
+	setAutoPlay: gameInputFn( client.splendor.setAutoPlay ),
+	rematch: gameInputFn( client.splendor.rematch )
 };

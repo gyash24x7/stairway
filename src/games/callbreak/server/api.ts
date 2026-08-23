@@ -46,6 +46,10 @@ export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", 
 			.handle( "declareWins", api.move( client => client.declareWins ) )
 			.handle( "playCard", api.move( client => client.playCard ) )
 			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "rematch", api.rematch(
+				client => client.initialize,
+				client => client.getState
+			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );
 	} )

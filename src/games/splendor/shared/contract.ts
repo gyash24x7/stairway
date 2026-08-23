@@ -18,6 +18,7 @@ import {
 	JoinApiEndpoint,
 	MoveApiEndpoint,
 	RedoApiEndpoint,
+	RematchApiEndpoint,
 	SetAutoPlayApiEndpoint,
 	StartApiEndpoint,
 	UndoApiEndpoint
@@ -36,6 +37,7 @@ export const SplendorApiGroup = HttpApiGroup.make( "splendor" )
 		MoveApiEndpoint( "pass", PassInput ),
 		MoveApiEndpoint( "claimNoble", ClaimNobleInput ),
 		SetAutoPlayApiEndpoint(),
+		RematchApiEndpoint(),
 		UndoApiEndpoint(),
 		RedoApiEndpoint()
 	)

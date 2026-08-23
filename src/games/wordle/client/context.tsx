@@ -12,7 +12,7 @@ import { ErrorState } from "@/shared/ui/components/error-state.tsx";
 import { GameView } from "@/swish/shared/schema.ts";
 
 import type { Board, WordleView } from "@/games/wordle/shared/schema.ts";
-import type { GameId } from "@/swish/shared/schema.ts";
+import type { GameId, GameRef, RematchInput } from "@/swish/shared/schema.ts";
 
 type WordleContextValue = {
 	data: GameView<WordleSeatView, WordleConfig>;
@@ -21,6 +21,7 @@ type WordleContextValue = {
 	currentGuess: string;
 	/** Whether the bot policy is playing this seat's board rather than its player. */
 	autoPlaying: boolean;
+	startRematch: ( input: RematchInput, onDone: ( ref: GameRef ) => void ) => void;
 	isPending: boolean;
 	invalidGuess: boolean;
 	lastRevealedRow: number | null;
@@ -104,6 +105,14 @@ export function WordleProvider( { data, gameId, children }: WordleProviderProps 
 
 	const autoPlay = useMutation( {
 		mutationFn: ( enabled: boolean ) => wordleApi.setAutoPlay( gameId, { enabled } ),
+		onSuccess: invalidate
+	} );
+
+	// Invalidates the finished game, not the new one. The server pushes the new
+	// ref onto every connected view over the socket, so this is the fallback for
+	// a client whose socket is down: its own screen becomes the join state.
+	const again = useMutation( {
+		mutationFn: ( input: RematchInput ) => wordleApi.rematch( gameId, input ),
 		onSuccess: invalidate
 	} );
 
@@ -205,10 +214,12 @@ export function WordleProvider( { data, gameId, children }: WordleProviderProps 
 			board,
 			currentGuess,
 			autoPlaying: data.autoPlay[ data.view.playerId ] ?? false,
+			startRematch: ( input, onDone ) => again.mutate( input, { onSuccess: onDone } ),
 			isPending: submitGuess.isPending
 				|| forfeit.isPending
 				|| bots.isPending
-				|| autoPlay.isPending,
+				|| autoPlay.isPending
+				|| again.isPending,
 			invalidGuess,
 			lastRevealedRow,
 			handleKeyPress,

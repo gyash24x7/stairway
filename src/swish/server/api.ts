@@ -15,12 +15,14 @@ import { PushKV, PushStoreFrom } from "@/platform/kv/push.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { PushSenderLive, VapidConfig } from "@/push/server/sender.ts";
 import { toPlayerInfo } from "@/swish/server/utils.ts";
+import { planRematch } from "@/swish/shared/rematch.ts";
 import {
 	GameCode,
 	GameId,
 	GameNotFound,
-
-	PlayerId
+	GameRef,
+	PlayerId,
+	RematchUnavailable
 } from "@/swish/shared/schema.ts";
 
 import type { ChatPolicy } from "@/chat/shared/schema.ts";
@@ -37,16 +39,19 @@ import type {
 	AutoPlayError,
 	BaseGameConfig,
 	GameIdParams,
-	GameRef,
+	GameView,
 	GetStateError,
 	InitializeError,
 	InitializeInput,
 	JoinError,
 	JoinTeamInput,
+	LeaveTeamError,
 	NameTeamError,
 	NameTeamInput,
 	PlayerInfo,
 	RedoError,
+	RematchError,
+	RematchInput,
 	SetAutoPlayInput,
 	StartError,
 	TeamError,
@@ -148,6 +153,11 @@ type SwishCommands = {
 		playerId: PlayerId,
 		enabled: boolean
 	) => Effect.Effect<void, AutoPlayError>;
+	readonly leaveTeam: ( playerId: PlayerId ) => Effect.Effect<void, LeaveTeamError>;
+	readonly setRematch: (
+		playerId: PlayerId,
+		ref: GameRef
+	) => Effect.Effect<GameRef, RematchError>;
 	readonly undo: ( playerId: PlayerId ) => Effect.Effect<void, UndoError>;
 	readonly redo: ( playerId: PlayerId ) => Effect.Effect<void, RedoError>;
 };
@@ -333,6 +343,146 @@ export const makeGameApi = <Client extends SwishCommands>(
 		/** Hands the caller's own seat to the game's `botMove` policy, or takes it back. */
 		setAutoPlay: withPayload( ( client, playerId, payload: SetAutoPlayInput ) =>
 			client.setAutoPlay( playerId, payload.enabled ) ),
+
+		/** Steps the caller off their own side, freeing the seat for someone else. */
+		leaveTeam: withGame( ( client, playerId ) => client.leaveTeam( playerId ) ),
+
+		/**
+		 * Plays the same people again: another game of this kind, with this game's
+		 * config over this game's roster.
+		 *
+		 * The ordering below is the whole design, and it is ordered around one
+		 * invariant — **the only write anyone else can observe is the last one, and
+		 * by then the new table is complete.** A rematch is announced by pushing a
+		 * pointer down every socket at the finished table, so announcing it before
+		 * the new game had rows and an initialized object would hand every client a
+		 * game that answers `GameNotFound`.
+		 *
+		 * Which means the announcement cannot also be the lock. The lock is the
+		 * `games` row instead: `rematch_of` is unique, so the insert that has to
+		 * happen anyway decides who owns the rematch, and a caller who loses reads
+		 * the winner's row back and returns *that*. Losing is answered rather than
+		 * refused on purpose — a table full of people all pressing the button at the
+		 * end of a game is the ordinary case, everyone should land in the same game,
+		 * and the client toasts every mutation error it sees.
+		 *
+		 * Nothing the new game's engine can raise is reported: its config and its
+		 * roster come from a game this same engine already accepted and ran to
+		 * completion, so a refusal there is a bug in the rematch rather than
+		 * something the caller did, and it dies instead of being dressed up as a
+		 * decision.
+		 *
+		 * @param pick - Names the engine's `initialize`, on the new game.
+		 * @param read - Names the engine's `getState`, on the finished one.
+		 * @returns The `rematch` handler.
+		 */
+		rematch: <V, C extends BaseGameConfig, A, R, R2>(
+			pick: ( client: Client ) => (
+				input: InitializeInput<C>
+			) => Effect.Effect<A, InitializeError, R>,
+			read: ( client: Client ) => (
+				playerId?: PlayerId
+			) => Effect.Effect<GameView<V, C>, GetStateError, R2>
+		) => Effect.fn( function* (
+			{ params, payload }: {
+				readonly params: GameIdParams;
+				readonly payload: RematchInput;
+			}
+		) {
+			const { user } = yield* AuthContext;
+			const playerId = PlayerId.make( user.id );
+			const row = yield* findGame( params.gameId );
+			const previous = ns.getByName( row.id );
+
+			// Read as the caller, and deliberately without `getView`'s fallback to the
+			// table view: here `NotAMember` is the gate. Anyone may watch a game; only
+			// someone who sat at it may call the next one.
+			const source = yield* read( previous )( playerId );
+
+			if ( source.status !== "COMPLETED" ) {
+				return yield* new RematchUnavailable( { status: source.status } );
+			}
+
+			const plan = planRematch( source, payload.keepTeams );
+
+			const [ created ] = yield* db.insert( games )
+				.values( { game, rematchOf: row.id } )
+				.onConflictDoNothing( { target: games.rematchOf } )
+				.returning()
+				.pipe( Effect.orDie );
+
+			// Somebody else got there first. The conflict is scoped to `rematch_of`
+			// rather than left bare, so a code collision cannot be misread as one.
+			if ( !created ) {
+				const existing = yield* db.query.games
+					.findFirst( { where: { rematchOf: row.id, game } } )
+					.pipe( Effect.orDie );
+
+				if ( !existing ) {
+					return yield* new GameNotFound( { id: params.gameId } );
+				}
+
+				return GameRef.make( {
+					id: GameId.make( existing.id ),
+					code: GameCode.make( existing.code )
+				} );
+			}
+
+			const ref = GameRef.make( {
+				id: GameId.make( created.id ),
+				code: GameCode.make( created.code )
+			} );
+
+			// Bots hold seats but never hold rows — a query about people joins
+			// `players` and drops the machines.
+			const humans = plan.players.filter( player => !player.isBot );
+			if ( humans.length > 0 ) {
+				yield* db.insert( players )
+					.values( humans.map( player => ( {
+						id: player.id,
+						name: player.name,
+						avatar: player.avatar,
+						gameId: created.id
+					} ) ) )
+					.onConflictDoNothing()
+					.pipe( Effect.orDie );
+			}
+
+			yield* db.insert( channels ).values( {
+				id: created.id,
+				refType: "game",
+				refId: created.id,
+				label: game,
+				policy: chat
+			} ).pipe( Effect.orDie );
+
+			const next = ns.getByName( created.id );
+			yield* pick( next )( {
+				id: ref.id,
+				code: ref.code,
+				creator: user.id,
+				config: source.config
+			} ).pipe( Effect.orDie );
+
+			// Each seat takes its side as it sits down rather than in a second pass.
+			// Filling the last seat of an auto-starting game arms its countdown, and a
+			// side claimed in the same breath as the seat cannot lose the race to it.
+			const sides = new Map( plan.teams.map( seat => [ seat.playerId, seat.team ] ) );
+			for ( const player of plan.players ) {
+				yield* next.join( player ).pipe( Effect.orDie );
+
+				const team = sides.get( player.id );
+				if ( team ) {
+					yield* next.joinTeam( player.id, team ).pipe( Effect.orDie );
+				}
+			}
+
+			for ( const named of plan.teamNames ) {
+				yield* next.nameTeam( named.by, named.team, named.name ).pipe( Effect.orDie );
+			}
+
+			return yield* previous.setRematch( playerId, ref ).pipe( Effect.orDie );
+		} ),
 
 		/** Steps the log cursor back over the caller's own newest move. */
 		undo: withGame( ( client, playerId ) => client.undo( playerId ) ),

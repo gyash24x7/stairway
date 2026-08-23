@@ -34,7 +34,14 @@ const queryClient = new QueryClient( {
 const router = createRouter( {
 	routeTree,
 	context: { queryClient },
-	defaultPreload: "intent"
+	defaultPreload: "intent",
+
+	// A route's params identify the thing it renders, not a detail of how. Two
+	// games are two games: without this a match keeps its component instance
+	// across `/fish/A` -> `/fish/B`, and every hook that captured the first game
+	// carries into the second. Nothing navigated between two ids until rematch
+	// did, which is why this went unnoticed.
+	defaultRemountDeps: ( { params } ) => params
 } );
 
 declare module "@tanstack/react-router" {

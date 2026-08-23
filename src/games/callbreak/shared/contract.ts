@@ -15,6 +15,7 @@ import {
 	JoinApiEndpoint,
 	MoveApiEndpoint,
 	RedoApiEndpoint,
+	RematchApiEndpoint,
 	SetAutoPlayApiEndpoint,
 	StartApiEndpoint,
 	UndoApiEndpoint
@@ -28,6 +29,7 @@ export const CallbreakApiGroup = HttpApiGroup.make( "callbreak" )
 		StartApiEndpoint(),
 		AddBotsApiEndpoint(),
 		SetAutoPlayApiEndpoint(),
+		RematchApiEndpoint(),
 		UndoApiEndpoint(),
 		RedoApiEndpoint(),
 		MoveApiEndpoint( "declareWins", DeclareWinsInput ),

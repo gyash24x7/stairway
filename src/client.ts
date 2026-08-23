@@ -45,8 +45,19 @@ type GameSyncOptions = {
 	queryKey: QueryKey;
 };
 
+/**
+ * Overlays a game's query entry with whatever the game channel pushes.
+ *
+ * The key is held in a ref so a fresh array on every render cannot re-fire the
+ * effect, and it is re-pointed on every render so the ref cannot outlive the
+ * game it was captured for. Both halves matter: a route that swaps one game id
+ * for another without remounting would otherwise keep writing the new game's
+ * frames into the old game's entry, and the board would simply stop moving.
+ */
 export function useGameSync( { gameName, gameId, playerId, queryKey }: GameSyncOptions ) {
 	const target = useRef( queryKey );
+	target.current = queryKey;
+
 	const queryClient = useQueryClient();
 	const url = wsUrl( `${ gameName }/${ gameId }` )
 		+ ( playerId ? `?playerId=${ playerId }` : "" );

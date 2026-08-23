@@ -4,7 +4,7 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
 import { wordle } from "@/games/wordle/server/engine.ts";
-import { WordleConfig } from "@/games/wordle/shared/schema.ts";
+import { WORDLE_MOVE_TIMEOUT_MILLIS, WordleConfig } from "@/games/wordle/shared/schema.ts";
 import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
 
 import type { WordleCreateInput } from "@/games/wordle/shared/schema.ts";
@@ -28,13 +28,21 @@ export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handle
 			.handle( "createGame", api.createGame(
 				client => client.initialize,
 				( payload: WordleCreateInput ) =>
-					Effect.succeed( WordleConfig.make( { ...payload, autoStart: true } ) )
+					Effect.succeed( WordleConfig.make( {
+						...payload,
+						autoStart: true,
+						moveTimeoutMillis: WORDLE_MOVE_TIMEOUT_MILLIS
+					} ) )
 			) )
 			.handle( "join", api.join )
 			.handle( "getView", api.getView( client => client.getState ) )
 			.handle( "addBots", api.addBots )
 			.handle( "guess", api.move( client => client.guess ) )
 			.handle( "forfeit", api.move( client => client.forfeit ) )
-			.handle( "setAutoPlay", api.setAutoPlay );
+			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "rematch", api.rematch(
+				client => client.initialize,
+				client => client.getState
+			) );
 	} )
 );

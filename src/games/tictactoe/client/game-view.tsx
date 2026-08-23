@@ -10,12 +10,13 @@ import { GameInfo } from "@/swish/client/game-info.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
 import { RPlayerInfoSmall } from "@/swish/client/player-info.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { AddBots } from "@/swish/client/seat-controls.tsx";
 import { StartGame } from "@/swish/client/start-game.tsx";
 import { TurnBanner } from "@/swish/client/turn-banner.tsx";
 
 export function GameView() {
-	const { data, addBots, startGame, isPending } = useTicTacToe();
+	const { data, addBots, startGame, startRematch, isPending } = useTicTacToe();
 	const players = Object.values( data.players );
 	const isActive = data.status === "IN_PROGRESS";
 	const isCompleted = data.status === "COMPLETED";
@@ -44,6 +45,15 @@ export function GameView() {
 				results={ data.results }
 				players={ data.players }
 				playerId={ data.view.playerId }
+			/>
+
+			<Rematch
+				game={ "tictactoe" }
+				completed={ isCompleted }
+				rematch={ data.rematch }
+				startRematch={ startRematch }
+				humans={ nonBotPlayers.length }
+				disabled={ isPending }
 			/>
 
 			<TurnBanner

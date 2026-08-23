@@ -26,9 +26,14 @@ const fallbackName = ( index: number ) => `TEAM ${ index + 1 }`;
  * Naming is deliberately one-shot: the first member of a side to choose is the
  * one who names it, and the server refuses a second attempt, so the input
  * disappears rather than pretending to be editable.
+ *
+ * Leaving is the counterpart to joining and exists because sides are
+ * equal-sized: a seat can only move somewhere with room, so a table whose sides
+ * are all taken — a rematch that carried them over, most obviously — could not
+ * rearrange itself at all without somebody stepping off first.
  */
 export function TeamLobby() {
-	const { data, joinTeam, nameTeam, isPending } = useFish();
+	const { data, joinTeam, nameTeam, leaveTeam, isPending } = useFish();
 
 	const teams = data.config.teams;
 	const size = teamSize( data.config ) ?? 0;
@@ -77,13 +82,23 @@ export function TeamLobby() {
 							<div className={ "flex gap-2 items-center" }>
 								{ isMine
 									? (
-										<span
-											className={ cn(
-												"flex items-center gap-1 text-sm font-heading text-accent"
-											) }
-										>
-											<CheckIcon className={ "w-4 h-4" }/> YOUR SIDE
-										</span>
+										<div className={ "flex items-center gap-2" }>
+											<span
+												className={ cn(
+													"flex items-center gap-1 text-sm font-heading text-accent"
+												) }
+											>
+												<CheckIcon className={ "w-4 h-4" }/> YOUR SIDE
+											</span>
+											<Button
+												size={ "sm" }
+												variant={ "neutral" }
+												onClick={ () => leaveTeam() }
+												disabled={ isPending }
+											>
+												LEAVE
+											</Button>
+										</div>
 									)
 									: (
 										<Button

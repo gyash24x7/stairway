@@ -6,6 +6,7 @@ import type * as Option from "effect/Option";
 import type {
 	BaseGameConfig,
 	GameId,
+	GameRef,
 	GameView,
 	PlayerId,
 	TeamId
@@ -153,6 +154,21 @@ export class SwishStorage extends Context.Service<SwishStorage, {
 	 * @param enabled - `true` to let the policy play it.
 	 */
 	readonly writeAutoPlay: ( playerId: PlayerId, enabled: boolean ) => Effect.Effect<void>;
+
+	/** Reads the game this table agreed to play next, if it agreed on one. */
+	readonly readRematch: () => Effect.Effect<GameRef | undefined>;
+
+	/**
+	 * Records the game this table plays next. Outside the log for the same reason
+	 * autoplay is: it is a fact about what happens after this game, not part of
+	 * the game that was played, so it neither moves the version nor rewinds.
+	 *
+	 * Written once and never overwritten — which game a table moved on to is
+	 * settled elsewhere, before this is called, and this only publishes it.
+	 *
+	 * @param ref - The game the table moved on to.
+	 */
+	readonly writeRematch: ( ref: GameRef ) => Effect.Effect<void>;
 
 	/** Erases the game: log, record and scheduling facts alike. */
 	readonly clear: () => Effect.Effect<void>;

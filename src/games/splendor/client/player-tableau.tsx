@@ -9,6 +9,7 @@ import { cn } from "@/shared/ui/utils/cn.ts";
 import { RPlayerInfoStrip } from "@/swish/client/player-info.tsx";
 
 import type { PlayerId } from "@/swish/shared/schema.ts";
+import { Noble } from "@/games/splendor/client/noble.tsx";
 
 export type PlayerTableauProps = {
 	playerId: PlayerId;
@@ -29,6 +30,7 @@ export function PlayerTableau( { playerId, large }: PlayerTableauProps ) {
 	const { data } = useSplendor();
 	const player = data.players[ playerId ];
 	const cards = data.view.playerData[ playerId ]?.cards ?? [];
+	const nobles = data.view.playerData[ playerId ]?.nobles ?? [];
 
 	return (
 		<div className={ cn( "flex flex-col bg-background rounded-md overflow-hidden" ) }>
@@ -55,12 +57,10 @@ export function PlayerTableau( { playerId, large }: PlayerTableauProps ) {
 									"flex flex-col rounded-md items-center justify-center gap-1",
 									"border-2 border-outline",
 									"text-2xl md:text-3xl font-heading text-neutral-dark",
-									large && "w-24 h-36 md:w-24 md:h-36 text-5xl gap-2 rounded-lg",
+									large && "w-20 h-30 md:w-20 md:h-30 text-5xl gap-2 rounded-lg",
 									gemLightColors[ gem ]
 								) }
 							>
-								{ /* The swatch names the gem the count belongs to — the tint
-								     alone was doing that job and two of them read alike. */ }
 								<img
 									src={ `/splendor/tokens/${ gem }.svg` }
 									className={
@@ -77,6 +77,15 @@ export function PlayerTableau( { playerId, large }: PlayerTableauProps ) {
 			) : (
 				<div className={ "p-4 text-xs md:text-sm text-center text-muted-foreground" }>
 					NO CARDS PURCHASED
+				</div>
+			) }
+			{ nobles.length > 0 ? (
+				<div className={ "flex flex-wrap gap-2 md:gap-3 justify-center p-4" }>
+					{ nobles.map( noble => <Noble noble={ noble } key={ noble.id } large={ large }/> ) }
+				</div>
+			) : (
+				<div className={ "p-4 text-xs md:text-sm text-center text-muted-foreground" }>
+					NO NOBLES VISITED
 				</div>
 			) }
 		</div>

@@ -201,6 +201,64 @@ describe( "playing a guess", () => {
 } );
 
 
+describe( "a seat that runs out its clock", () => {
+	const MOVE_TIMEOUT = 30_000;
+
+	/**
+	 * The point of the clock in this game. A wordle only ends once every board is
+	 * finished, so a seat that walks away holds the whole table forever — and the
+	 * other player has no way out, since `forfeit` retires only the caller and
+	 * autoplay switches only the caller's own seat.
+	 */
+	const stalled = <A, E>(
+		body: ( engine: Effect.Success<typeof wordle> ) => Effect.Effect<A, E>
+	) => {
+		const clock = testClock();
+
+		return runGame( wordle, engine => Effect.gen( function* () {
+			yield* engine.initialize( createInput( configOf( {
+				playerCount: 2,
+				moveTimeoutMillis: MOVE_TIMEOUT
+			} ) ) );
+			yield* Effect.forEach( [ a, b ], id => engine.join( info( id ) ) );
+			yield* engine.start( a );
+
+			clock.advance( MOVE_TIMEOUT + 1 );
+			yield* engine.alarm();
+
+			return yield* body( engine );
+		} ), { now: clock.now } );
+	};
+
+	test( "gives up rather than having a word guessed for it", () => {
+		const { result } = stalled( engine => engine.getState() );
+
+		const walked = result.view.boards.find( board => board.playerId === a )!;
+
+		expect( walked.finished ).toBe( true );
+		// Nothing was played on their behalf — giving up is not the same as being
+		// guessed for, and the difference is whose game it was.
+		expect( walked.guesses ).toEqual( [] );
+	} );
+
+	test( "keeps the seat its player's rather than handing it to the policy", () => {
+		const { result } = stalled( engine => engine.getState() );
+
+		expect( result.autoPlay[ a ] ).toBeUndefined();
+	} );
+
+	test( "lets the table finish, which is the whole point of the clock", () => {
+		const { result } = stalled( engine => Effect.gen( function* () {
+			// The seat that stayed can now end the game on its own. Before the clock
+			// existed this table could never reach `COMPLETED` at all.
+			yield* engine.forfeit( {}, b );
+			return yield* engine.getState();
+		} ) );
+
+		expect( result.status ).toBe( "COMPLETED" );
+	} );
+} );
+
 describe( "giving up", () => {
 	test( "retires the seat", () => {
 		const { result } = table( engine => Effect.gen( function* () {

@@ -46,6 +46,10 @@ export const engineApply =
 				draft.context.teams[ e.playerId ] = e.team;
 			} ) ),
 
+			Match.tag( "swish/ev/TeamLeft", ( e ) => produce( data, draft => {
+				delete draft.context.teams[ e.playerId ];
+			} ) ),
+
 			Match.tag( "swish/ev/TeamNamed", ( e ) => produce( data, draft => {
 				draft.context.teamNames ??= {};
 				draft.context.teamNames[ e.team ] = e.name;

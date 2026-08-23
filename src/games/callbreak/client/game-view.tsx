@@ -13,11 +13,12 @@ import { GameInfo } from "@/swish/client/game-info.tsx";
 import { GameStandings } from "@/swish/client/game-standings.tsx";
 import { GameStatusPanel } from "@/swish/client/game-status-panel.tsx";
 import { PlayerLobbyGrid } from "@/swish/client/player-lobby.tsx";
+import { Rematch } from "@/swish/client/rematch.tsx";
 import { StatBlock } from "@/swish/client/stat-block.tsx";
 import { TurnBanner } from "@/swish/client/turn-banner.tsx";
 
 export function GameView() {
-	const { data, playerId, isMyTurn } = useCallbreak();
+	const { data, playerId, isMyTurn, actions, isPending } = useCallbreak();
 
 	const isCompleted = data.status === "COMPLETED";
 	const activeDeal = data.view.activeDeal;
@@ -54,6 +55,15 @@ export function GameView() {
 					players={ data.players }
 					playerId={ playerId }
 					scoreLabel={ "SCORE" }
+				/>
+
+				<Rematch
+					game={ "callbreak" }
+					completed={ isCompleted }
+					rematch={ data.rematch }
+					startRematch={ playerId ? actions.startRematch : undefined }
+					humans={ nonBotPlayers.length }
+					disabled={ isPending }
 				/>
 
 				<TurnBanner

@@ -16,17 +16,25 @@ import type {
 	FishView,
 	TransferTurnInput
 } from "@/games/fish/shared/schema.ts";
-import type { GameId, TeamId, TeamName } from "@/swish/shared/schema.ts";
+import type {
+	GameId,
+	GameRef,
+	RematchInput,
+	TeamId,
+	TeamName
+} from "@/swish/shared/schema.ts";
 
 type FishContextValue = {
 	data: GameView<FishSeatView, FishConfig>;
 	isMyTurn: boolean;
+	startRematch: ( input: RematchInput, onDone: ( ref: GameRef ) => void ) => void;
 	isPending: boolean;
 	askCard: ( input: AskCardInput ) => void;
 	claimBook: ( input: ClaimBookInput, onDone?: () => void ) => void;
 	transferTurn: ( input: TransferTurnInput, onDone?: () => void ) => void;
 	joinTeam: ( team: TeamId ) => void;
 	nameTeam: ( team: TeamId, name: TeamName ) => void;
+	leaveTeam: () => void;
 	addBots: () => void;
 	startGame: () => void;
 	setAutoPlay: ( enabled: boolean ) => void;
@@ -74,6 +82,11 @@ export function FishProvider( { data, gameId, children }: FishProviderProps ) {
 		onSuccess: invalidate
 	} );
 
+	const leave = useMutation( {
+		mutationFn: () => fishApi.leaveTeam( gameId ),
+		onSuccess: invalidate
+	} );
+
 	const name = useMutation( {
 		mutationFn: ( input: { team: TeamId; name: TeamName } ) => fishApi.nameTeam( gameId, input ),
 		onSuccess: invalidate
@@ -91,6 +104,14 @@ export function FishProvider( { data, gameId, children }: FishProviderProps ) {
 
 	const autoPlay = useMutation( {
 		mutationFn: ( enabled: boolean ) => fishApi.setAutoPlay( gameId, { enabled } ),
+		onSuccess: invalidate
+	} );
+
+	// Invalidates the finished game, not the new one. The server pushes the new
+	// ref onto every connected view over the socket, so this is the fallback for
+	// a client whose socket is down: its own screen becomes the join state.
+	const again = useMutation( {
+		mutationFn: ( input: RematchInput ) => fishApi.rematch( gameId, input ),
 		onSuccess: invalidate
 	} );
 
@@ -118,19 +139,22 @@ export function FishProvider( { data, gameId, children }: FishProviderProps ) {
 		<FishContext value={ {
 			data: playerData,
 			isMyTurn,
+			startRematch: ( input, onDone ) => again.mutate( input, { onSuccess: onDone } ),
 			isPending: ask.isPending
 				|| claim.isPending
 				|| transfer.isPending
 				|| team.isPending
 				|| name.isPending
+				|| leave.isPending
 				|| bots.isPending
 				|| start.isPending
-				|| autoPlay.isPending,
+				|| autoPlay.isPending || again.isPending,
 			askCard: input => ask.mutate( input ),
 			claimBook: ( input, onDone ) => claim.mutate( input, { onSuccess: onDone } ),
 			transferTurn: ( input, onDone ) => transfer.mutate( input, { onSuccess: onDone } ),
 			joinTeam: id => team.mutate( id ),
 			nameTeam: ( id, teamName ) => name.mutate( { team: id, name: teamName } ),
+			leaveTeam: () => leave.mutate(),
 			addBots: () => bots.mutate(),
 			startGame: () => start.mutate(),
 			setAutoPlay: enabled => autoPlay.mutate( enabled )

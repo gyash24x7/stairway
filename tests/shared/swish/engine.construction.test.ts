@@ -87,7 +87,9 @@ describe( "move names", () => {
 		"redo",
 		"alarm",
 		"getState",
-		"setAutoPlay"
+		"setAutoPlay",
+		"setRematch",
+		"leaveTeam"
 	];
 
 	for ( const command of reserved ) {

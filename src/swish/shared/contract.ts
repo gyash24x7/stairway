@@ -12,10 +12,13 @@ import {
 	JoinError,
 	JoinGameInput,
 	JoinTeamInput,
+	LeaveTeamError,
 	MoveError,
 	NameTeamError,
 	NameTeamInput,
 	RedoError,
+	RematchError,
+	RematchInput,
 	SetAutoPlayInput,
 	StartError,
 	TeamError,
@@ -173,4 +176,42 @@ export const RedoApiEndpoint = () =>
 	HttpApiEndpoint.post( "redo", "/:gameId/redo", {
 		params: GameIdParams,
 		error: RedoError
+	} );
+
+/**
+ * `POST /:gameId/team/leave` — step off the caller's own side, leaving their
+ * seat unassigned. The way out of a full side: sides are equal-sized, so a seat
+ * can only move somewhere with room, and a table whose sides are all full — a
+ * rematch that carried them over, say — could otherwise never rearrange itself.
+ * Leaving a side the caller does not hold does nothing rather than failing, and
+ * like the rest of team formation it is legal only before the game starts.
+ *
+ * @returns The typed leave-team endpoint.
+ */
+export const LeaveTeamApiEndpoint = () =>
+	HttpApiEndpoint.post( "leaveTeam", "/:gameId/team/leave", {
+		params: GameIdParams,
+		error: LeaveTeamError
+	} );
+
+/**
+ * `POST /:gameId/rematch` — play the same people again.
+ *
+ * Only a member of a *finished* game may ask. The new game is this one's config
+ * over this one's roster: every seat, bots included, is taken in the order it
+ * sat here, so nobody has to be invited and no code has to be read out. The
+ * caller's `keepTeams` decides whether the sides come with them.
+ *
+ * There is exactly one rematch per game, and asking again is answered with the
+ * one that exists rather than refused — a whole table pressing the button at
+ * once is the ordinary end of a game, and everybody should land at the same one.
+ *
+ * @returns The typed rematch endpoint.
+ */
+export const RematchApiEndpoint = () =>
+	HttpApiEndpoint.post( "rematch", "/:gameId/rematch", {
+		params: GameIdParams,
+		payload: RematchInput,
+		success: GameRef,
+		error: RematchError
 	} );

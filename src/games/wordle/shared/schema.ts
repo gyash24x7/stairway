@@ -91,6 +91,18 @@ export const WordCount = Schema.Int.check(
 export const WORDLE_MAX_PLAYER_COUNT = 8;
 
 /**
+ * How long a seat may hold its turn.
+ *
+ * Generous on purpose, and longer than any other game's: a turn here is a word
+ * to be worked out, not a card to be played, and a table of people thinking is
+ * the game working rather than stalling. What the clock is really for is the
+ * seat that has stopped playing altogether — a wordle only ends once every board
+ * is finished, so without one an empty chair holds everyone else at the table
+ * forever.
+ */
+export const WORDLE_MOVE_TIMEOUT_MILLIS = 180_000;
+
+/**
  * How many players a table seats, bounded by `WORDLE_MAX_PLAYER_COUNT`.
  */
 export type WordlePlayerCount = typeof WordlePlayerCount.Type;

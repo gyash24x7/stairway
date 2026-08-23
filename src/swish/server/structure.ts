@@ -393,6 +393,33 @@ export type GameStructure<
 	}[keyof MoveInputs] | undefined;
 
 	/**
+	 * What to play for a seat whose clock ran out, instead of handing the seat to
+	 * the bot policy for good.
+	 *
+	 * The default when a game declares `botMove` is that a seat which times out
+	 * becomes the policy's and stays there, which is right for a game where playing
+	 * on is what a stalled player would want. It is wrong for one where the honest
+	 * reading of silence is that they have stopped playing — guessing a word on
+	 * someone's behalf decides their game for them. A game that says so here has
+	 * this move submitted once, for that seat, and keeps the seat its player's.
+	 *
+	 * Optional. Without it a timeout behaves as it always has.
+	 *
+	 * @param data - The stalled seat's data.
+	 * @param playerId - The seat whose clock ran out.
+	 * @returns The move to submit for them, or `undefined` to fall back to the policy.
+	 */
+	readonly timeoutMove?: (
+		data: GameData<View, Config>,
+		playerId: PlayerId
+	) => {
+		readonly [K in keyof MoveInputs]: {
+			readonly moveType: K;
+			readonly input: MoveInputs[K]["Type"];
+		}
+	}[keyof MoveInputs] | undefined;
+
+	/**
 	 * Flat Games only.
 	 * Chooses the next player after a turn-ending move.
 	 * Defaults to round-robin over the roster when absent.

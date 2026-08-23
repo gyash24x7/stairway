@@ -17,5 +17,6 @@ export const callbreakApi = {
 	redo: gameFn( client.callbreak.redo ),
 	declareWins: gameInputFn( client.callbreak.declareWins ),
 	playCard: gameInputFn( client.callbreak.playCard ),
-	setAutoPlay: gameInputFn( client.callbreak.setAutoPlay )
+	setAutoPlay: gameInputFn( client.callbreak.setAutoPlay ),
+	rematch: gameInputFn( client.callbreak.rematch )
 };

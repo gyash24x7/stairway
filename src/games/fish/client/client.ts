@@ -15,8 +15,10 @@ export const fishApi = {
 	redo: gameFn( client.fish.redo ),
 	joinTeam: gameInputFn( client.fish.joinTeam ),
 	nameTeam: gameInputFn( client.fish.nameTeam ),
+	leaveTeam: gameFn( client.fish.leaveTeam ),
 	askCard: gameInputFn( client.fish.askCard ),
 	claimBook: gameInputFn( client.fish.claimBook ),
 	transferTurn: gameInputFn( client.fish.transferTurn ),
-	setAutoPlay: gameInputFn( client.fish.setAutoPlay )
+	setAutoPlay: gameInputFn( client.fish.setAutoPlay ),
+	rematch: gameInputFn( client.fish.rematch )
 };

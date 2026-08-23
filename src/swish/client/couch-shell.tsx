@@ -30,6 +30,12 @@ export type CouchShellProps = {
 	 */
 	currentPlayer?: PlayerId;
 	players?: Roster;
+	/**
+	 * A full-width strip between the body and the turn footer, for a fact the room
+	 * has to act on somewhere else — the rematch and its code. Still not a control:
+	 * this screen has no pointer, so it states things rather than offering them.
+	 */
+	notice?: ReactNode;
 };
 
 /**
@@ -49,7 +55,8 @@ export function CouchShell( {
 	headerInfo,
 	stretch,
 	currentPlayer,
-	players
+	players,
+	notice
 }: CouchShellProps ) {
 	useWakeLock();
 
@@ -83,6 +90,8 @@ export function CouchShell( {
 						{ seats }
 					</div>
 				</div>
+
+				{ notice }
 
 					{ !!turn && (
 					<footer

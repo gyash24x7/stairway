@@ -40,6 +40,10 @@ export const TicTacToeApiLive = HttpApiBuilder.group( StairwayAPI, "tictactoe", 
 			.handle( "start", api.start )
 			.handle( "place", api.move( client => client.place ) )
 			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "rematch", api.rematch(
+				client => client.initialize,
+				client => client.getState
+			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );
 	} )

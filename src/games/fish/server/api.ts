@@ -52,11 +52,16 @@ export const FishApiLive = HttpApiBuilder.group( StairwayAPI, "fish", handlers =
 			.handle( "addBots", api.addBots )
 			.handle( "joinTeam", api.joinTeam )
 			.handle( "nameTeam", api.nameTeam )
+			.handle( "leaveTeam", api.leaveTeam )
 			.handle( "start", api.start )
 			.handle( "askCard", api.move( client => client.askCard ) )
 			.handle( "claimBook", api.move( client => client.claimBook ) )
 			.handle( "transferTurn", api.move( client => client.transferTurn ) )
 			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "rematch", api.rematch(
+				client => client.initialize,
+				client => client.getState
+			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );
 	} )

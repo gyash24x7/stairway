@@ -35,6 +35,12 @@ export function errorMessage( error: unknown ) {
 			return "You've already joined this game.";
 		case "swish/NotAMember":
 			return "You're not a player in this game.";
+		case "swish/NotOnTeam":
+			return "You're not on that side.";
+		case "swish/TeamFull":
+			return "That side is already full.";
+		case "swish/RematchUnavailable":
+			return "This game isn't finished yet.";
 		case "swish/GameNotFound":
 			return "Game not found. Check the code and try again.";
 		case "swish/NothingToUndo":
