@@ -3,13 +3,13 @@
 import { motion } from "framer-motion";
 
 import { useSplendor } from "@/games/splendor/client/context.tsx";
+import { Noble } from "@/games/splendor/client/noble.tsx";
 import { gemLightColors } from "@/games/splendor/client/utils.tsx";
 import { GEMS } from "@/games/splendor/shared/utils.ts";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { RPlayerInfoStrip } from "@/swish/client/player-info.tsx";
 
 import type { PlayerId } from "@/swish/shared/schema.ts";
-import { Noble } from "@/games/splendor/client/noble.tsx";
 
 export type PlayerTableauProps = {
 	playerId: PlayerId;
