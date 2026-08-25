@@ -37,39 +37,39 @@ const relay = <A, E>(
 /** Plays one full `passing` phase: every seat passes once, in rotation. */
 const passRound = ( engine: Effect.Success<typeof relayEngine> ) =>
 	Effect.forEach( seats, () => Effect.gen( function* () {
-		const view = yield* engine.getState();
+		const view = yield* engine.getView();
 		yield* engine.pass( {}, view.context.currentPlayer );
 	} ) );
 
 /** Plays one full `collecting` phase, whoever the turn happens to sit with. */
 const collectRound = ( engine: Effect.Success<typeof relayEngine>, amount = 1 ) =>
 	Effect.forEach( seats, () => Effect.gen( function* () {
-		const view = yield* engine.getState();
+		const view = yield* engine.getView();
 		yield* engine.collect( { amount }, view.context.currentPlayer );
 	} ) );
 
 
 describe( "entering the first phase", () => {
 	test( "start puts the game in the phase it declares", () => {
-		const { result } = relay( engine => engine.getState() );
+		const { result } = relay( engine => engine.getView() );
 
 		expect( result.context.phase ).toBe( "passing" );
 	} );
 
 	test( "the phase's entry hook runs, after the game's start hook", () => {
-		const { result } = relay( engine => engine.getState() );
+		const { result } = relay( engine => engine.getView() );
 
 		expect( result.view.trace ).toEqual( [ "start", "enter:passing" ] );
 	} );
 
 	test( "the phase chooses who opens", () => {
-		const { result } = relay( engine => engine.getState() );
+		const { result } = relay( engine => engine.getView() );
 
 		expect( result.context.currentPlayer ).toBe( a );
 	} );
 
 	test( "all of it lands in the start commit", () => {
-		const { cells } = relay( engine => engine.getState() );
+		const { cells } = relay( engine => engine.getView() );
 		const start = commitsIn( cells ).find( commit => commit.command === "start" );
 		const tags = start?.events.map( event => event._tag ) ?? [];
 
@@ -91,7 +91,7 @@ describe( "the moves a phase allows", () => {
 	test( "allows the move the phase names", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* engine.pass( {}, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.passes ).toEqual( [ a ] );
@@ -100,9 +100,9 @@ describe( "the moves a phase allows", () => {
 	test( "the gate follows the phase: what was refused becomes legal after the switch", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
-			const view = yield* engine.getState();
+			const view = yield* engine.getView();
 			yield* engine.collect( { amount: 3 }, view.context.currentPlayer );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.phase ).toBe( "collecting" );
@@ -116,7 +116,7 @@ describe( "who acts next inside a phase", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			const order: Array<Player> = [];
 			for ( let turn = 0; turn < 3; turn++ ) {
-				const view = yield* engine.getState();
+				const view = yield* engine.getView();
 				order.push( view.context.currentPlayer );
 				yield* engine.pass( {}, view.context.currentPlayer );
 			}
@@ -132,11 +132,11 @@ describe( "who acts next inside a phase", () => {
 		// is the only place it can be seen.
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
-			const entered = yield* engine.getState();
+			const entered = yield* engine.getView();
 
 			const holders: Array<Player> = [];
 			for ( let turn = 0; turn < 3; turn++ ) {
-				const view = yield* engine.getState();
+				const view = yield* engine.getView();
 				holders.push( view.context.currentPlayer );
 				yield* engine.collect( { amount: 1 }, view.context.currentPlayer );
 			}
@@ -150,7 +150,7 @@ describe( "who acts next inside a phase", () => {
 	test( "the seat that ended a phase carries into the next one when it names no opener", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		// `d` played the pass that ended the phase, and `collecting` chooses nobody.
@@ -163,7 +163,7 @@ describe( "leaving a phase", () => {
 	test( "runs the exit hook, then records the exit, then enters the next", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.trace ).toEqual( [
@@ -188,7 +188,7 @@ describe( "leaving a phase", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
 			yield* collectRound( engine );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), 2 );
 
 		expect( result.view.round ).toBe( 1 );
@@ -202,7 +202,7 @@ describe( "leaving a phase", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
 			yield* collectRound( engine );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), 2 );
 
 		expect( result.view.passes ).toEqual( [] );
@@ -216,7 +216,7 @@ describe( "a phase that ends the game", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
 			yield* collectRound( engine );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -227,7 +227,7 @@ describe( "a phase that ends the game", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
 			yield* collectRound( engine );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.trace ).toEqual( [
@@ -244,7 +244,7 @@ describe( "a phase that ends the game", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
 			yield* collectRound( engine, 2 );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		// `d` entered `collecting` and held it, so it collected all four times.
@@ -270,7 +270,7 @@ describe( "a phase that does not exist", () => {
 			yield* engine.initialize( createInput( config() ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a ).pipe( Effect.flip );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.status ).toBe( "PLAYERS_READY" );
@@ -294,7 +294,7 @@ describe( "a phase that does not exist", () => {
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
 			yield* engine.pass( {}, a ).pipe( Effect.flip );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.passes ).toEqual( [] );

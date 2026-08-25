@@ -33,14 +33,14 @@ const play = ( run: number, count: PlayerCount, type: BookType ) => {
 		yield* engine.start( players[ 0 ]! );
 
 		for ( let i = 0; i < 3000; i++ ) {
-			const view = yield* engine.getState();
+			const view = yield* engine.getView();
 			if ( view.status === "COMPLETED" ) {
 				break;
 			}
 			yield* engine.alarm();
 		}
 
-		const view = yield* engine.getState();
+		const view = yield* engine.getView();
 		const asks = asksOf( view.view );
 		const claims = claimsOf( view.view );
 

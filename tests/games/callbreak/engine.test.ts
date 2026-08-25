@@ -79,7 +79,7 @@ const table = <A, E>(
 
 /** The envelope a seat (or a spectator) reads right now. */
 const envelopeOf = ( engine: Engine, id?: Player ) =>
-	id ? engine.getState( id ) : engine.getState();
+	id ? engine.getView( id ) : engine.getView();
 
 /** The view a seat (or a spectator) holds right now. */
 const viewOf = ( engine: Engine, id?: Player ) =>
@@ -560,7 +560,7 @@ describe( "the bot policy", () => {
 	test( "takes a human seat over without committing anything", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const before = yield* envelopeOf( engine );
-			yield* engine.setAutoPlay( a, true );
+			yield* engine.autoPlay( a, true );
 
 			return { before, after: yield* envelopeOf( engine ) };
 		} ) );

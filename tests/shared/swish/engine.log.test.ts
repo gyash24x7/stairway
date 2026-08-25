@@ -54,11 +54,11 @@ const logOf = ( notes: number ) => {
 
 /** Reads the game back out of a store a previous run left behind. */
 const reread = ( cells: Map<string, unknown> ) =>
-	runGame( scribeEngine, engine => engine.getState(), { cells } );
+	runGame( scribeEngine, engine => engine.getView(), { cells } );
 
 /** Reads it back expecting to fail, which is how corruption surfaces. */
 const rereadFailing = ( cells: Map<string, unknown> ) =>
-	runGame( scribeEngine, engine => engine.getState().pipe( Effect.flip ), { cells } );
+	runGame( scribeEngine, engine => engine.getView().pipe( Effect.flip ), { cells } );
 
 /**
  * Puts the materialized record out of step with the cursor, which is the only
@@ -114,7 +114,7 @@ describe( "the version and the cursor", () => {
 
 			const versions: Array<[ number, number ]> = [];
 			const record = () => Effect.gen( function* () {
-				const view = yield* engine.getState();
+				const view = yield* engine.getView();
 				versions.push( [ view.version, cells.get( "log:cursor" ) as number ] );
 			} );
 

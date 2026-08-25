@@ -39,16 +39,16 @@ export const KingdominoApiLive = HttpApiBuilder.group( StairwayAPI, "kingdomino"
 				} ) )
 			) )
 			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getState ) )
+			.handle( "getView", api.getView( client => client.getView ) )
 			.handle( "addBots", api.addBots )
 			.handle( "start", api.start )
 			.handle( "selectDomino", api.move( client => client.selectDomino ) )
 			.handle( "placeDomino", api.move( client => client.placeDomino ) )
 			.handle( "discardDomino", api.move( client => client.discardDomino ) )
-			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "setAutoPlay", api.autoPlay )
 			.handle( "rematch", api.rematch(
 				client => client.initialize,
-				client => client.getState
+				client => client.getView
 			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );

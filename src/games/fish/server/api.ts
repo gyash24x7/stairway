@@ -48,7 +48,7 @@ export const FishApiLive = HttpApiBuilder.group( StairwayAPI, "fish", handlers =
 				} )
 			) )
 			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getState ) )
+			.handle( "getView", api.getView( client => client.getView ) )
 			.handle( "addBots", api.addBots )
 			.handle( "joinTeam", api.joinTeam )
 			.handle( "nameTeam", api.nameTeam )
@@ -57,10 +57,10 @@ export const FishApiLive = HttpApiBuilder.group( StairwayAPI, "fish", handlers =
 			.handle( "askCard", api.move( client => client.askCard ) )
 			.handle( "claimBook", api.move( client => client.claimBook ) )
 			.handle( "transferTurn", api.move( client => client.transferTurn ) )
-			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "setAutoPlay", api.autoPlay )
 			.handle( "rematch", api.rematch(
 				client => client.initialize,
-				client => client.getState
+				client => client.getView
 			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );

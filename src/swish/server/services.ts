@@ -3,43 +3,17 @@ import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
 
-import type { GameId, GameRef, PlayerId, TeamId } from "@/swish/shared/schema.ts";
-
-/**
- * Where one game lives, as far as a host is concerned: which game it is, and
- * which table. Both the fan-out and the cold store address a game this way, so
- * the string form — a channel name, an archive key — is theirs to choose rather
- * than something the engine formats and they parse back.
- */
-export type GameAddress = {
-	readonly game: string;
-	readonly id: GameId;
-};
-
-/**
- * A rebuild shortcut the store found for the engine: the record as of one
- * commit, and the position that commit sits at. A checkpoint left over from a
- * history that has since been forked away is never handed back, so the engine
- * may fold straight from `index + 1` onwards.
- */
-export type Checkpoint<Data> = {
-	readonly index: number;
-	readonly data: Data;
-};
-
-/**
- * One command's write to the log.
- * - commit: The commit to append, identified so a checkpoint can be matched to it.
- * - stamp: Builds the record to materialize, given the version the log assigned.
- * - marksStart: `true` when this commit is the one that started the game.
- * - marksComplete: `true` when this commit is the one that completed it.
- */
-export type CommitWrite<Data, Commit> = {
-	readonly commit: Commit;
-	readonly stamp: ( version: number ) => Data;
-	readonly marksStart: boolean;
-	readonly marksComplete: boolean;
-};
+import type {
+	AlarmKind,
+	AudienceViews,
+	Checkpoint,
+	CommitWrite,
+	GameAddress,
+	GameRef,
+	LedgerEntry,
+	PlayerId,
+	TurnTimers
+} from "@/swish/shared/schema.ts";
 
 /**
  * The engine's store: the commit log, the record the log folds into, and the
@@ -193,25 +167,6 @@ export class SwishArchive extends Context.Service<SwishArchive, {
 
 }>()( "swish/Archive" ) {}
 
-
-/**
- * One seat's line in a finished game: where it placed, what it scored, which
- * side it played for, and whether it won.
- *
- * The engine flattens `Standings` into these rather than handing the ledger the
- * standings themselves, because "did this seat win" is a question only the
- * engine can answer — a flat game names a single `winner`, a team game names a
- * `winningTeam` and leaves `winner` unset — and a store that had to re-derive it
- * would be re-implementing the rule.
- */
-export type LedgerEntry = {
-	readonly playerId: PlayerId;
-	readonly rank: number;
-	readonly score?: number;
-	readonly team?: TeamId;
-	readonly winner: boolean;
-};
-
 /**
  * The warm record of an outcome. When a game completes the engine files the full
  * game with {@link SwishArchive} and posts the result here — one line per seat,
@@ -243,18 +198,6 @@ export class SwishLedger extends Context.Service<SwishLedger, {
 
 }>()( "swish/Ledger" ) {}
 
-
-/**
- * Every view one state change produced: the table's, and one per seated player.
- * They always travel together — a push that delivered one without the other
- * would leave half the table a turn behind — so they are one payload rather than
- * two calls the caller has to remember to pair.
- */
-export type AudienceViews<View> = {
-	readonly table: View;
-	readonly players: Record<PlayerId, View>;
-};
-
 /**
  * Realtime fan-out. After every state-changing command the engine hands the host
  * a fresh `GameView` per audience; the host pushes each connected client the view
@@ -273,28 +216,6 @@ export class SwishSync extends Context.Service<SwishSync, {
 	readonly publish: <View>( views: AudienceViews<View> ) => Effect.Effect<void>;
 
 }>()( "swish/Sync" ) {}
-
-/**
- * The kinds of deferred wake-up the engine schedules.
- */
-export type AlarmKind = "auto-start" | "bot" | "interaction-timeout" | "move-timeout";
-
-/**
- * The clocks one turn runs under. Every field is optional and absence means "no
- * such clock this turn", so the empty object is a turn nothing is waiting on.
- * - bot: How long until the machine plays the pending seat.
- * - moveTimeout: How long the pending seat has to play for itself.
- * - frameDeadline: When the open interaction frame expires, as an absolute time.
- *
- * A turn arms at most one of `bot` and `moveTimeout` — the seat is either being
- * played for or playing — while `frameDeadline` runs alongside either, since a
- * frame outlives whichever responder is being waited on.
- */
-export type TurnTimers = {
-	readonly bot?: number;
-	readonly moveTimeout?: number;
-	readonly frameDeadline?: number;
-};
 
 /**
  * Deferred work: multiple named timers, each firing an `AlarmKind`. The host

@@ -11,11 +11,17 @@ import type {
 	BaseGameConfig,
 	GameContext,
 	PlayerId,
+	PlayerInfo,
+	RematchPlan,
+	RematchSource,
+	RematchTeam,
+	RematchTeamNameConfig,
 	Standing,
 	Standings,
 	TeamId,
 	TeamStanding
 } from "@/swish/shared/schema.ts";
+
 
 /**
  * What a side calls itself, if it named itself at all. A side is named at most
@@ -409,4 +415,85 @@ export const rankTeams = ( teams: ReadonlyArray<TeamId>, ranking: ReadonlyArray<
 	const winningTeam = top && top.score !== runnerUp?.score ? top.team : undefined;
 
 	return { teamRanking, winningTeam };
+};
+
+/**
+ * Who the game is waiting on: the next responder yet to answer while an
+ * interaction is open, otherwise the current player.
+ *
+ * Lives here rather than inside the engine because two places need the same
+ * answer and they must not be allowed to drift. The engine uses it to decide
+ * whose move to accept and when to arm a turn timer; the host uses it to decide
+ * who to notify when a turn changes hands. A second, host-local reimplementation
+ * would look right and quietly disagree the moment interactions are involved.
+ *
+ * Takes the context rather than the whole record so it stays usable from the
+ * published view, which carries a `GameContext` in its header but no state.
+ *
+ * @param context - The turn context to inspect.
+ * @returns The player expected to act, if there is one.
+ */
+export const pendingActorOf = ( context: GameContext ) => {
+	if ( context.interactions.length > 0 ) {
+		const [ active ] = context.interactions.slice( -1 );
+		return active.responders.find( ( id ) => !( id in active.responses ) );
+	}
+
+	return context.currentPlayer;
+};
+
+
+/**
+ * Works out the next game from the one that just finished.
+ *
+ * Pure, and the only place a rematch decides anything: the handler that builds
+ * the new table is a loop over what this returns. That split is deliberate —
+ * seating a table touches the database, two Durable Objects and half a dozen
+ * engine commands, none of which can be tested here, while every rule worth
+ * getting right is in this function.
+ *
+ * Seats are read from `context.players` rather than the roster's keys, because
+ * that array is the seating *order* — in a team game the interleaved one
+ * `SeatOrderSet` wrote — and because a roster round-tripped through structured
+ * clone does not promise its key order back. The same table means the same
+ * chairs, so the order is replayed as it stood.
+ *
+ * Bots are carried across whole rather than re-minted. `addBots` would generate
+ * fresh ids, names and avatars, and a rematch against "the same bots" that
+ * quietly swaps them for strangers is not the thing anyone asked for.
+ *
+ * Sides are only carried when asked for. When they are not, nothing is
+ * assigned and nothing is named: a name belongs to the people who chose it and
+ * played under it, so a table that has just dissolved its sides starts naming
+ * them over. Whoever then picks nothing is balanced in at `start`.
+ *
+ * @param source - The finished game's roster, context and config.
+ * @param keepTeams - Whether to seat everyone back on the side they just played.
+ * @returns The seats, sides and names the next game is built from.
+ */
+export const planRematch = ( source: RematchSource, keepTeams: boolean ) => {
+	const players = source.context.players
+		.map( playerId => source.players[ playerId ] )
+		.filter( ( player ): player is PlayerInfo => player !== undefined );
+
+	const sides = source.config.teams;
+	if ( !keepTeams || !sides ) {
+		return { players, teams: [], teamNames: [] } satisfies RematchPlan;
+	}
+
+	const teams = players
+		.map( player => ( { playerId: player.id, team: teamOf( source.context, player.id ) } ) )
+		.filter( ( seat ): seat is RematchTeam =>
+			seat.team !== undefined && sides.includes( seat.team ) );
+
+	const teamNames = sides
+		.map( team => ( {
+			team,
+			name: nameOf( source.context, team ),
+			by: teams.find( seat => seat.team === team )?.playerId
+		} ) )
+		.filter( ( named ): named is RematchTeamNameConfig =>
+			named.name !== undefined && named.by !== undefined );
+
+	return { players, teams, teamNames } satisfies RematchPlan;
 };

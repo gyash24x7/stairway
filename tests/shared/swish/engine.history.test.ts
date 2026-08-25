@@ -42,9 +42,9 @@ describe( "undoing a move", () => {
 	test( "rewinds the state, the version and the cursor together", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
 			yield* engine.note( { text: "one" }, a );
-			const played = yield* engine.getState();
+			const played = yield* engine.getView();
 			yield* engine.undo( a );
-			return { played, rewound: yield* engine.getState() };
+			return { played, rewound: yield* engine.getView() };
 		} ) );
 
 		expect( result.played.view.notes[ a ] ).toBe( 1 );
@@ -58,7 +58,7 @@ describe( "undoing a move", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
 			yield* engine.note( { text: "one" }, a );
 			yield* engine.undo( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( cells.get( "log:count" ) ).toBe( result.version + 1 );
@@ -70,7 +70,7 @@ describe( "undoing a move", () => {
 			yield* engine.note( { text: "one" }, a );
 			yield* engine.note( { text: "two" }, a );
 			yield* engine.undo( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.notes[ a ] ).toBe( 1 );
@@ -175,10 +175,10 @@ describe( "redoing a move", () => {
 	test( "puts back what undo took", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.note( { text: "one" }, a );
-			const played = yield* engine.getState();
+			const played = yield* engine.getView();
 			yield* engine.undo( a );
 			yield* engine.redo( a );
-			return { played, replayed: yield* engine.getState() };
+			return { played, replayed: yield* engine.getView() };
 		} ) );
 
 		expect( result.replayed.version ).toBe( result.played.version );
@@ -191,10 +191,10 @@ describe( "redoing a move", () => {
 			yield* engine.note( { text: "one" }, a );
 			yield* engine.note( { text: "two" }, a );
 			yield* engine.finish( {}, a );
-			const played = yield* engine.getState();
+			const played = yield* engine.getView();
 			yield* engine.undo( a );
 			yield* engine.redo( a );
-			return { played, rebuilt: yield* engine.getState() };
+			return { played, rebuilt: yield* engine.getView() };
 		} ) );
 
 		expect( result.rebuilt ).toEqual( result.played );
@@ -256,10 +256,10 @@ describe( "committing after an undo", () => {
 	test( "the new move lands where the old one was", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
 			yield* engine.note( { text: "one" }, a );
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.undo( a );
 			yield* engine.note( { text: "other" }, a );
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ) );
 
 		expect( result.after.version ).toBe( result.before.version );
@@ -294,7 +294,7 @@ describe( "committing after an undo", () => {
 			yield* engine.undo( a );
 			yield* engine.undo( a );
 			yield* engine.note( { text: "other" }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.notes[ a ] ).toBe( 1 );
@@ -322,7 +322,7 @@ describe( "undo and the clocks", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.finish( {}, a );
 			yield* engine.undo( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: 30_000 } } );
 
 		expect( result.deadline ).toBeGreaterThan( Date.now() );

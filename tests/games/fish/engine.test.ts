@@ -81,7 +81,7 @@ const playOut = ( engine: Effect.Success<typeof fish>, limit = 2000 ) =>
 		let previous = -1;
 
 		for ( let turn = 0; turn < limit; turn++ ) {
-			const view = yield* engine.getState();
+			const view = yield* engine.getView();
 			if ( view.status === "COMPLETED" ) {
 				return { view, stalled: false };
 			}
@@ -94,7 +94,7 @@ const playOut = ( engine: Effect.Success<typeof fish>, limit = 2000 ) =>
 			yield* engine.alarm();
 		}
 
-		return { view: yield* engine.getState(), stalled: true };
+		return { view: yield* engine.getView(), stalled: true };
 	} );
 
 describe( "a dealt table", () => {
@@ -109,7 +109,7 @@ describe( "a dealt table", () => {
 		] as ReadonlyArray<[ PlayerCount, BookType ]> ) {
 			const { result } = run( engine => Effect.gen( function* () {
 				const players = yield* table( engine, count, type );
-				const view = yield* engine.getState( players[ 0 ] );
+				const view = yield* engine.getView( players[ 0 ] );
 				return { view, config: buildConfig( count, type, 2 ) };
 			} ) );
 
@@ -128,8 +128,8 @@ describe( "a dealt table", () => {
 	test( "seats the sides so they alternate, and hands one seat its own view only", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			const players = yield* table( engine, 6, "CANADIAN" );
-			const own = yield* engine.getState( players[ 0 ] );
-			const table_ = yield* engine.getState();
+			const own = yield* engine.getView( players[ 0 ] );
+			const table_ = yield* engine.getView();
 			return { own, table: table_, context: own.context };
 		} ) );
 
@@ -149,7 +149,7 @@ describe( "a dealt table", () => {
 	test( "carries no metrics while the game is still on", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			const players = yield* table( engine, 6, "CANADIAN" );
-			return yield* engine.getState( players[ 0 ] );
+			return yield* engine.getView( players[ 0 ] );
 		} ) );
 
 		expect( result.view.metrics ).toBeUndefined();
@@ -160,7 +160,7 @@ describe( "the rules", () => {
 	const startedTable = ( engine: Effect.Success<typeof fish> ) =>
 		Effect.gen( function* () {
 			const players = yield* table( engine, 6, "CANADIAN" );
-			const view = yield* engine.getState();
+			const view = yield* engine.getView();
 			return { players, current: view.context.currentPlayer, context: view.context };
 		} );
 
@@ -168,7 +168,7 @@ describe( "the rules", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			const { current, context } = yield* startedTable( engine );
 			const mate = teamMatesOf( context, current )[ 0 ]!;
-			const own = yield* engine.getState( current );
+			const own = yield* engine.getView( current );
 
 			return yield* engine
 				.askCard( { from: mate, cardId: own.view.hand[ 0 ]! }, current )
@@ -181,7 +181,7 @@ describe( "the rules", () => {
 	test( "refuses a claim that names an opponent as a holder", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			const { current, context } = yield* startedTable( engine );
-			const own = yield* engine.getState( current );
+			const own = yield* engine.getView( current );
 			const rival = opponentsOf( context, current )[ 0 ]!;
 
 			const book = getBookForCard( own.view.hand[ 0 ]!, "CANADIAN" )!;

@@ -3,14 +3,17 @@ import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import type * as Schema from "effect/Schema";
 
 import {
+	AddBotsError,
 	AutoPlayError,
+	AutoPlayInput,
 	GameIdParams,
 	GameRef,
 	GameView,
-	GetStateError,
+	GetViewError,
 	InitializeError,
 	JoinError,
 	JoinGameInput,
+	JoinTeamError,
 	JoinTeamInput,
 	LeaveTeamError,
 	MoveError,
@@ -19,9 +22,7 @@ import {
 	RedoError,
 	RematchError,
 	RematchInput,
-	SetAutoPlayInput,
 	StartError,
-	TeamError,
 	UndoError
 } from "@/swish/shared/schema.ts";
 
@@ -74,7 +75,7 @@ export const GetViewApiEndpoint =
 		HttpApiEndpoint.get( "getView", "/:gameId/view", {
 			params: GameIdParams,
 			success: GameView( view, config ),
-			error: GetStateError
+			error: GetViewError
 		} );
 
 /** `POST /join` — seat a player by game code. */
@@ -101,7 +102,7 @@ export const JoinTeamApiEndpoint = () =>
 	HttpApiEndpoint.post( "joinTeam", "/:gameId/team", {
 		params: GameIdParams,
 		payload: JoinTeamInput,
-		error: TeamError
+		error: JoinTeamError
 	} );
 
 /**
@@ -124,7 +125,7 @@ export const NameTeamApiEndpoint = () =>
 export const AddBotsApiEndpoint = () =>
 	HttpApiEndpoint.post( "addBots", "/:gameId/add-bots", {
 		params: GameIdParams,
-		error: JoinError
+		error: AddBotsError
 	} );
 
 /**
@@ -140,7 +141,7 @@ export const AddBotsApiEndpoint = () =>
 export const SetAutoPlayApiEndpoint = () =>
 	HttpApiEndpoint.post( "setAutoPlay", "/:gameId/auto-play", {
 		params: GameIdParams,
-		payload: SetAutoPlayInput,
+		payload: AutoPlayInput,
 		error: AutoPlayError
 	} );
 

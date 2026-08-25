@@ -40,15 +40,15 @@ export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", 
 				} ) )
 			) )
 			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getState ) )
+			.handle( "getView", api.getView( client => client.getView ) )
 			.handle( "addBots", api.addBots )
 			.handle( "start", api.start )
 			.handle( "declareWins", api.move( client => client.declareWins ) )
 			.handle( "playCard", api.move( client => client.playCard ) )
-			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "setAutoPlay", api.autoPlay )
 			.handle( "rematch", api.rematch(
 				client => client.initialize,
-				client => client.getState
+				client => client.getView
 			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );

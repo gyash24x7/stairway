@@ -86,8 +86,8 @@ describe( "move names", () => {
 		"undo",
 		"redo",
 		"alarm",
-		"getState",
-		"setAutoPlay",
+		"getView",
+		"autoPlay",
 		"setRematch",
 		"leaveTeam"
 	];

@@ -35,14 +35,14 @@ export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handle
 					} ) )
 			) )
 			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getState ) )
+			.handle( "getView", api.getView( client => client.getView ) )
 			.handle( "addBots", api.addBots )
 			.handle( "guess", api.move( client => client.guess ) )
 			.handle( "forfeit", api.move( client => client.forfeit ) )
-			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "setAutoPlay", api.autoPlay )
 			.handle( "rematch", api.rematch(
 				client => client.initialize,
-				client => client.getState
+				client => client.getView
 			) );
 	} )
 );

@@ -98,8 +98,8 @@ const RESERVED_COMMANDS = [
 	"undo",
 	"redo",
 	"alarm",
-	"getState",
-	"setAutoPlay",
+	"getView",
+	"autoPlay",
 	"setRematch",
 	"leaveTeam"
 ];
@@ -110,7 +110,7 @@ const RESERVED_COMMANDS = [
  * - Lifecycle: initialize, join, addBots, start, cleanup
  * - Play: one command per move the structure declares
  * - History: undo, redo
- * - Reads: getState
+ * - Reads: getView
  * - Host callback: alarm
  *
  * Throws while being constructed if the game is named `swish`, or if a move is
@@ -665,7 +665,7 @@ export const makeEngine = <
 		 * @param [playerId] - The player asking. Omit for the spectator view.
 		 * @returns The game as that audience sees it, without the seed.
 		 */
-		const getState = Effect.fn( function* ( playerId?: PlayerId ) {
+		const getView = Effect.fn( function* ( playerId?: PlayerId ) {
 			const data = yield* load();
 			const envelope = yield* envelopeFor( data );
 
@@ -1405,7 +1405,7 @@ export const makeEngine = <
 		 * @param playerId - The member switching their own seat.
 		 * @param enabled - `true` to let the policy play for them.
 		 */
-		const setAutoPlay = Effect.fn( function* ( playerId: PlayerId, enabled: boolean ) {
+		const autoPlay = Effect.fn( function* ( playerId: PlayerId, enabled: boolean ) {
 			const data = yield* load();
 			yield* assertMember( data, playerId );
 
@@ -1681,8 +1681,8 @@ export const makeEngine = <
 			redo,
 			...moves,
 			alarm,
-			getState,
-			setAutoPlay,
+			getView,
+			autoPlay,
 			setRematch
 		};
 	} );

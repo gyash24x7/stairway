@@ -75,14 +75,14 @@ const table = <A, E>(
 
 /** The view a seat holds right now. */
 const viewOf = ( engine: Effect.Success<typeof kingdomino>, id?: Player ) =>
-	( id ? engine.getState( id ) : engine.getState() ).pipe(
+	( id ? engine.getView( id ) : engine.getView() ).pipe(
 		Effect.map( envelope => envelope.view as KingdominoView )
 	);
 
 /** Claims the row in the order the game asks for, one seat at a time. */
 const claimRow = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( function* () {
 	while ( true ) {
-		const envelope = yield* engine.getState();
+		const envelope = yield* engine.getView();
 		if ( envelope.context.phase !== "SELECT" || envelope.status !== "IN_PROGRESS" ) {
 			return envelope;
 		}
@@ -97,9 +97,9 @@ const claimRow = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( fu
 
 /** Plays whatever the policy would play for the seat the engine is waiting on. */
 const policyMove = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( function* () {
-	const envelope = yield* engine.getState();
+	const envelope = yield* engine.getView();
 	const seat = envelope.context.currentPlayer;
-	const view = ( yield* engine.getState( seat ) ).view as KingdominoView;
+	const view = ( yield* engine.getView( seat ) ).view as KingdominoView;
 	const move = decideMove( view, envelope.context )!;
 
 	switch ( move.moveType ) {
@@ -115,7 +115,7 @@ const policyMove = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( 
 /** Runs the policy until the game is over, or until it plainly is not going to be. */
 const playOut = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( function* () {
 	for ( let move = 0; move < 400; move++ ) {
-		const envelope = yield* engine.getState();
+		const envelope = yield* engine.getView();
 		if ( envelope.status === "COMPLETED" ) {
 			return envelope;
 		}
@@ -123,7 +123,7 @@ const playOut = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( fun
 		yield* policyMove( engine );
 	}
 
-	return yield* engine.getState();
+	return yield* engine.getView();
 } );
 
 
@@ -182,7 +182,7 @@ describe( "laying the table out", () => {
 	} );
 
 	test( "opens in the draft, with the first claimant on turn", () => {
-		const { result } = table( engine => engine.getState() );
+		const { result } = table( engine => engine.getView() );
 		const view = result.view as KingdominoView;
 
 		expect( result.status ).toBe( "IN_PROGRESS" );
@@ -222,14 +222,14 @@ describe( "laying the table out", () => {
 describe( "claiming a domino", () => {
 	test( "queues the domino and hands the turn to the next slot", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			const view = before.view as KingdominoView;
 			const seat = before.context.currentPlayer;
 			const [ open ] = view.draft;
 
 			yield* engine.selectDomino( { dominoId: open!.domino.id }, seat );
 
-			return { seat, order: view.selectionOrder, after: yield* engine.getState() };
+			return { seat, order: view.selectionOrder, after: yield* engine.getView() };
 		} ) );
 
 		const after = result.after.view as KingdominoView;
@@ -241,7 +241,7 @@ describe( "claiming a domino", () => {
 
 	test( "refuses a claim out of turn", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const view = envelope.view as KingdominoView;
 			const other = [ a, b ].find( seat => seat !== envelope.context.currentPlayer )!;
 
@@ -254,13 +254,13 @@ describe( "claiming a domino", () => {
 
 	test( "refuses a domino somebody has already claimed", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const view = envelope.view as KingdominoView;
 			const taken = view.draft[ 0 ]!.domino.id;
 
 			yield* engine.selectDomino( { dominoId: taken }, envelope.context.currentPlayer );
 
-			const next = yield* engine.getState();
+			const next = yield* engine.getView();
 			return yield* engine.selectDomino( { dominoId: taken }, next.context.currentPlayer )
 				.pipe( Effect.flip );
 		} ) );
@@ -270,7 +270,7 @@ describe( "claiming a domino", () => {
 
 	test( "refuses a domino that is not in the row", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const view = envelope.view as KingdominoView;
 			const offered = view.draft.map( entry => entry.domino.id );
 			const absent = Array.from( { length: KINGDOMINO_DECK_SIZE }, ( _, i ) => i + 1 )
@@ -285,7 +285,7 @@ describe( "claiming a domino", () => {
 
 	test( "refuses a domino number the box does not hold, at the decode boundary", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			return yield* engine.selectDomino(
 				{ dominoId: KINGDOMINO_DECK_SIZE + 1 },
 				envelope.context.currentPlayer
@@ -301,13 +301,13 @@ describe( "claiming a domino", () => {
 		// itself rather than through the turn.
 		const { result } = table( engine => Effect.gen( function* () {
 			for ( let claim = 0; claim < 2; claim++ ) {
-				const envelope = yield* engine.getState();
+				const envelope = yield* engine.getView();
 				const view = envelope.view as KingdominoView;
 				const open = view.draft.find( entry => !entry.selectedBy )!;
 				yield* engine.selectDomino( { dominoId: open.domino.id }, envelope.context.currentPlayer );
 			}
 
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const view = envelope.view as KingdominoView;
 			const seated = view.draft.filter( entry => entry.selectedBy === a );
 
@@ -345,7 +345,7 @@ describe( "laying a domino", () => {
 
 	test( "lands the domino, scores the kingdom and moves the turn on", () => {
 		const { result } = placing( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const seat = envelope.context.currentPlayer;
 			const view = envelope.view as KingdominoView;
 			const dominoId = Math.min( ...view.playerData[ seat ]!.queue );
@@ -353,7 +353,7 @@ describe( "laying a domino", () => {
 
 			yield* engine.placeDomino( { placement: placement! }, seat );
 
-			return { seat, dominoId, after: yield* engine.getState() };
+			return { seat, dominoId, after: yield* engine.getView() };
 		} ) );
 
 		const after = result.after.view as KingdominoView;
@@ -367,7 +367,7 @@ describe( "laying a domino", () => {
 
 	test( "refuses a placement that touches nothing", () => {
 		const { result } = placing( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const seat = envelope.context.currentPlayer;
 			const view = envelope.view as KingdominoView;
 			const dominoId = Math.min( ...view.playerData[ seat ]!.queue );
@@ -382,7 +382,7 @@ describe( "laying a domino", () => {
 
 	test( "refuses a placement outside the coordinates a kingdom can reach", () => {
 		const { result } = placing( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const seat = envelope.context.currentPlayer;
 			const view = envelope.view as KingdominoView;
 			const dominoId = Math.min( ...view.playerData[ seat ]!.queue );
@@ -397,7 +397,7 @@ describe( "laying a domino", () => {
 
 	test( "refuses a domino the seat is not holding", () => {
 		const { result } = placing( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const seat = envelope.context.currentPlayer;
 			const view = envelope.view as KingdominoView;
 			const held = view.playerData[ seat ]!.queue;
@@ -414,7 +414,7 @@ describe( "laying a domino", () => {
 
 	test( "lets a seat lay while it is not the one being waited on", () => {
 		const { result } = placing( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const seat = envelope.context.currentPlayer;
 			const other = [ a, b ].find( id => id !== seat )!;
 			const view = envelope.view as KingdominoView;
@@ -426,7 +426,7 @@ describe( "laying a domino", () => {
 			// ever advisory through this phase.
 			yield* engine.placeDomino( { placement: placement! }, other );
 
-			return { other, after: yield* engine.getState() };
+			return { other, after: yield* engine.getView() };
 		} ) );
 
 		const view = result.after.view as KingdominoView;
@@ -438,7 +438,7 @@ describe( "laying a domino", () => {
 
 	test( "refuses a discard while the domino can still be laid", () => {
 		const { result } = placing( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const seat = envelope.context.currentPlayer;
 			const view = envelope.view as KingdominoView;
 
@@ -453,7 +453,7 @@ describe( "laying a domino", () => {
 
 	test( "makes a duel lay its two dominoes in the order it claimed them", () => {
 		const { result } = placing( engine => Effect.gen( function* () {
-			const envelope = yield* engine.getState();
+			const envelope = yield* engine.getView();
 			const seat = envelope.context.currentPlayer;
 			const view = envelope.view as KingdominoView;
 			const queue = view.playerData[ seat ]!.queue;
@@ -476,12 +476,12 @@ describe( "laying a domino", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			yield* claimRow( engine );
 
-			const placed = yield* engine.getState();
+			const placed = yield* engine.getView();
 			const order = draftPlayerOrder( ( placed.view as KingdominoView ).draft );
 
 			// Play the round out with the policy, which lays every claimed domino.
 			for ( let move = 0; move < 8; move++ ) {
-				const envelope = yield* engine.getState();
+				const envelope = yield* engine.getView();
 				if ( envelope.context.phase !== "PLACE" ) {
 					break;
 				}
@@ -489,7 +489,7 @@ describe( "laying a domino", () => {
 				yield* policyMove( engine );
 			}
 
-			return { order, after: yield* engine.getState() };
+			return { order, after: yield* engine.getView() };
 		} ) );
 
 		const after = result.after.view as KingdominoView;
@@ -715,14 +715,14 @@ describe( "the policy", () => {
 describe( "history and scheduling", () => {
 	test( "takes back the claim a seat just made", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			const seat = before.context.currentPlayer;
 			const view = before.view as KingdominoView;
 
 			yield* engine.selectDomino( { dominoId: view.draft[ 0 ]!.domino.id }, seat );
 			yield* engine.undo( seat );
 
-			return { seat, after: yield* engine.getState() };
+			return { seat, after: yield* engine.getView() };
 		} ) );
 
 		const after = result.after.view as KingdominoView;
@@ -734,8 +734,8 @@ describe( "history and scheduling", () => {
 
 	test( "hands a seat to the policy on request, since the game declares one", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.setAutoPlay( a, true );
-			return yield* engine.getState();
+			yield* engine.autoPlay( a, true );
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.autoPlay[ a ] ).toBe( true );
@@ -745,14 +745,14 @@ describe( "history and scheduling", () => {
 		const clock = testClock();
 
 		const { result } = table( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			const view = before.view as KingdominoView;
 
 			// Whoever the shuffle put first is a bot either way — both seats are.
 			clock.advance( 10_000 );
 			yield* engine.alarm();
 
-			return { before: view, after: yield* engine.getState() };
+			return { before: view, after: yield* engine.getView() };
 		} ), { bots: [ a, b ], clock } );
 
 		const after = result.after.view as KingdominoView;

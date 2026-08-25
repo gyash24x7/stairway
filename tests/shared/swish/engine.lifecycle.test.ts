@@ -54,7 +54,7 @@ describe( "initialize", () => {
 	test( "starts at version 0, with no seats taken", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig() ) );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.version ).toBe( 0 );
@@ -69,7 +69,7 @@ describe( "initialize", () => {
 		// stand in — the creator is what fills it until the first join does.
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig(), "zara" ) );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( String( result.context.currentPlayer ) ).toBe( "zara" );
@@ -78,7 +78,7 @@ describe( "initialize", () => {
 	test( "keeps the seed out of every form that leaves the engine", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig() ) );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		const stored = cells.get( "data" ) as { seed?: string };
@@ -92,7 +92,7 @@ describe( "initialize", () => {
 		// factory was handed a working rng rather than a stub.
 		const { result } = runGame( scribeEngine, engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( scribeConfig() ) );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.log[ 0 ] ).toMatch( /^setup:\d+$/ );
@@ -112,7 +112,7 @@ describe( "join", () => {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* engine.join( info( a ) );
 			yield* engine.join( info( b ) );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( Object.keys( result.players ) ).toEqual( [ a, b ] );
@@ -133,7 +133,7 @@ describe( "join", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig(), "zara" ) );
 			yield* engine.join( info( b ) );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.currentPlayer ).toBe( b );
@@ -143,9 +143,9 @@ describe( "join", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* engine.join( info( a ) );
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.join( info( a ) );
-			const after = yield* engine.getState();
+			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
 
@@ -181,9 +181,9 @@ describe( "join", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* seatAll( engine, [ a, b, c ] );
-			const partial = yield* engine.getState();
+			const partial = yield* engine.getView();
 			yield* engine.join( info( d ) );
-			const full = yield* engine.getState();
+			const full = yield* engine.getView();
 			return { partial, full };
 		} ) );
 
@@ -195,7 +195,7 @@ describe( "join", () => {
 		const { result, pending } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig( { autoStart: true } ) ) );
 			yield* seatAll( engine, [ a, b, c, d ] );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.status ).toBe( "CREATED" );
@@ -241,7 +241,7 @@ describe( "addBots", () => {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* engine.join( info( a ) );
 			yield* engine.addBots( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		const roster = Object.values( result.players );
@@ -255,9 +255,9 @@ describe( "addBots", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* seatAll( engine, [ a, b, c, d ] );
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.addBots( a );
-			const after = yield* engine.getState();
+			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
 
@@ -290,7 +290,7 @@ describe( "addBots", () => {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* engine.join( info( a ) );
 			yield* engine.addBots( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( new Set( Object.keys( result.players ) ).size ).toBe( 4 );
@@ -304,7 +304,7 @@ describe( "start", () => {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* seatAll( engine, [ a, b, c, d ] );
 			yield* engine.start( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.status ).toBe( "IN_PROGRESS" );
@@ -361,7 +361,7 @@ describe( "start", () => {
 			yield* engine.initialize( createInput( scribeConfig() ) );
 			yield* Effect.forEach( [ a, b, c, d ], id => engine.join( info( id ) ) );
 			yield* engine.start( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		const startCommit = commitsIn( cells ).find( commit => commit.command === "start" );
@@ -397,7 +397,7 @@ describe( "start", () => {
 } );
 
 
-describe( "getState", () => {
+describe( "getView", () => {
 	const started = <A, E>(
 		body: ( engine: Effect.Success<typeof tallyEngine> ) => Effect.Effect<A, E>
 	) => run( engine => Effect.gen( function* () {
@@ -408,44 +408,44 @@ describe( "getState", () => {
 	} ) );
 
 	test( "the table's view names no player", () => {
-		const { result } = started( engine => engine.getState() );
+		const { result } = started( engine => engine.getView() );
 
 		expect( result.view.playerId ).toBeUndefined();
 	} );
 
 	test( "a player's view names them", () => {
-		const { result } = started( engine => engine.getState( b ) );
+		const { result } = started( engine => engine.getView( b ) );
 
 		expect( result.view.playerId ).toBe( b );
 	} );
 
 	test( "refuses a private read to someone who holds no seat", () => {
-		const { result } = started( engine => engine.getState( e ).pipe( Effect.flip ) );
+		const { result } = started( engine => engine.getView( e ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
 	} );
 
 	test( "a table read needs no seat at all", () => {
-		const { result } = started( engine => engine.getState() );
+		const { result } = started( engine => engine.getView() );
 
 		expect( result.status ).toBe( "IN_PROGRESS" );
 	} );
 
 	test( "fails on a game that was never created", () => {
-		const { result } = run( engine => engine.getState().pipe( Effect.flip ) );
+		const { result } = run( engine => engine.getView().pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/GameNotFound" );
 	} );
 
 	test( "carries the scheduling facts that are not game state", () => {
-		const { result } = started( engine => engine.getState() );
+		const { result } = started( engine => engine.getView() );
 
 		expect( result.autoPlay ).toEqual( {} );
 		expect( result.deadline ).toBeUndefined();
 	} );
 
 	test( "carries the config it was created with", () => {
-		const { result } = started( engine => engine.getState() );
+		const { result } = started( engine => engine.getView() );
 
 		expect( result.config.playerCount ).toBe( 4 );
 		expect( result.config.autoStart ).toBe( false );
@@ -460,7 +460,7 @@ describe( "cleanup", () => {
 			yield* seatAll( engine, [ a, b, c, d ] );
 			yield* engine.start( a );
 			yield* engine.cleanup();
-			return yield* engine.getState().pipe( Effect.flip );
+			return yield* engine.getView().pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotFound" );

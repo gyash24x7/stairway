@@ -42,7 +42,7 @@ const play = ( run: number, wordCount: WordCount, wordLength: WordLength ) => {
 		yield* engine.start( seat );
 
 		for ( let i = 0; i < 100; i++ ) {
-			const view = yield* engine.getState();
+			const view = yield* engine.getView();
 			if ( view.status === "COMPLETED" ) {
 				break;
 			}
@@ -50,7 +50,7 @@ const play = ( run: number, wordCount: WordCount, wordLength: WordLength ) => {
 			yield* engine.alarm();
 		}
 
-		const view = yield* engine.getState( seat );
+		const view = yield* engine.getView( seat );
 		const board = view.view.boards[ 0 ]!;
 
 		return {

@@ -39,7 +39,7 @@ export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", ha
 				} ) )
 			) )
 			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getState ) )
+			.handle( "getView", api.getView( client => client.getView ) )
 			.handle( "addBots", api.addBots )
 			.handle( "start", api.start )
 			.handle( "pickTokens", api.move( client => client.pickTokens ) )
@@ -47,10 +47,10 @@ export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", ha
 			.handle( "purchaseCard", api.move( client => client.purchaseCard ) )
 			.handle( "pass", api.move( client => client.pass ) )
 			.handle( "claimNoble", api.move( client => client.claimNoble ) )
-			.handle( "setAutoPlay", api.setAutoPlay )
+			.handle( "setAutoPlay", api.autoPlay )
 			.handle( "rematch", api.rematch(
 				client => client.initialize,
-				client => client.getState
+				client => client.getView
 			) )
 			.handle( "undo", api.undo )
 			.handle( "redo", api.redo );

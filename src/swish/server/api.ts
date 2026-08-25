@@ -11,7 +11,6 @@ import { WebSocketDurableObject } from "@/platform/do/ws.ts";
 import { ArchiveKV, SwishArchiveLive } from "@/platform/kv/archive.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { toPlayerInfo } from "@/swish/server/utils.ts";
-import { planRematch } from "@/swish/shared/rematch.ts";
 import {
 	GameCode,
 	GameId,
@@ -20,6 +19,7 @@ import {
 	PlayerId,
 	RematchUnavailable
 } from "@/swish/shared/schema.ts";
+import { planRematch } from "@/swish/shared/teams.ts";
 
 import type { ChatPolicy } from "@/chat/shared/schema.ts";
 import type { WebSocketDurableObjectServices } from "@/platform/do/ws.ts";
@@ -30,16 +30,19 @@ import type {
 	SwishSync,
 	SwishTimers
 } from "@/swish/server/services.ts";
-import type { JoinGameInput } from "@/swish/shared/schema.ts";
 import type {
+	AddBotsError,
 	AutoPlayError,
+	AutoPlayInput,
 	BaseGameConfig,
 	GameIdParams,
 	GameView,
-	GetStateError,
+	GetViewError,
 	InitializeError,
 	InitializeInput,
 	JoinError,
+	JoinGameInput,
+	JoinTeamError,
 	JoinTeamInput,
 	LeaveTeamError,
 	NameTeamError,
@@ -48,9 +51,7 @@ import type {
 	RedoError,
 	RematchError,
 	RematchInput,
-	SetAutoPlayInput,
 	StartError,
-	TeamError,
 	UndoError
 } from "@/swish/shared/schema.ts";
 
@@ -103,7 +104,7 @@ export const SwishDurableObject = <Shape extends object>(
  * The engine commands whose shape is the same in every game, so the handlers
  * below can call them without being told which they are.
  *
- * `initialize`, `getState` and the moves are deliberately absent: their input or
+ * `initialize`, `getView` and the moves are deliberately absent: their input or
  * their success is the game's own, and a structural type here would flatten it.
  * Those three are reached through a picker instead — a `client => client.<name>`
  * the game passes in, typed at its own call site — which is what keeps the
@@ -111,18 +112,18 @@ export const SwishDurableObject = <Shape extends object>(
  */
 type SwishCommands = {
 	readonly join: ( player: PlayerInfo ) => Effect.Effect<GameRef, JoinError>;
-	readonly addBots: ( playerId: PlayerId ) => Effect.Effect<void, JoinError>;
+	readonly addBots: ( playerId: PlayerId ) => Effect.Effect<void, AddBotsError>;
 	readonly start: ( playerId: PlayerId ) => Effect.Effect<void, StartError>;
 	readonly joinTeam: (
 		playerId: PlayerId,
 		team: JoinTeamInput[ "team" ]
-	) => Effect.Effect<void, TeamError>;
+	) => Effect.Effect<void, JoinTeamError>;
 	readonly nameTeam: (
 		playerId: PlayerId,
 		team: NameTeamInput[ "team" ],
 		name: NameTeamInput[ "name" ]
 	) => Effect.Effect<void, NameTeamError>;
-	readonly setAutoPlay: (
+	readonly autoPlay: (
 		playerId: PlayerId,
 		enabled: boolean
 	) => Effect.Effect<void, AutoPlayError>;
@@ -290,11 +291,11 @@ export const makeGameApi = <Client extends SwishCommands>(
 		 * watch: the engine builds the table view for an absent audience, which is
 		 * every private region redacted.
 		 *
-		 * @param pick - Names the engine's `getState`.
+		 * @param pick - Names the engine's `getView`.
 		 * @returns The `getView` handler.
 		 */
 		getView: <A, R>(
-			pick: ( client: Client ) => ( playerId?: PlayerId ) => Effect.Effect<A, GetStateError, R>
+			pick: ( client: Client ) => ( playerId?: PlayerId ) => Effect.Effect<A, GetViewError, R>
 		) => withGame( ( client, playerId ) => pick( client )( playerId ).pipe(
 			Effect.catchTag( "swish/NotAMember", () => pick( client )() )
 		) ),
@@ -314,8 +315,8 @@ export const makeGameApi = <Client extends SwishCommands>(
 			client.nameTeam( playerId, payload.team, payload.name ) ),
 
 		/** Hands the caller's own seat to the game's `botMove` policy, or takes it back. */
-		setAutoPlay: withPayload( ( client, playerId, payload: SetAutoPlayInput ) =>
-			client.setAutoPlay( playerId, payload.enabled ) ),
+		autoPlay: withPayload( ( client, playerId, payload: AutoPlayInput ) =>
+			client.autoPlay( playerId, payload.enabled ) ),
 
 		/** Steps the caller off their own side, freeing the seat for someone else. */
 		leaveTeam: withGame( ( client, playerId ) => client.leaveTeam( playerId ) ),
@@ -346,7 +347,7 @@ export const makeGameApi = <Client extends SwishCommands>(
 		 * decision.
 		 *
 		 * @param pick - Names the engine's `initialize`, on the new game.
-		 * @param read - Names the engine's `getState`, on the finished one.
+		 * @param read - Names the engine's `getView`, on the finished one.
 		 * @returns The `rematch` handler.
 		 */
 		rematch: <V, C extends BaseGameConfig, A, R, R2>(
@@ -355,7 +356,7 @@ export const makeGameApi = <Client extends SwishCommands>(
 			) => Effect.Effect<A, InitializeError, R>,
 			read: ( client: Client ) => (
 				playerId?: PlayerId
-			) => Effect.Effect<GameView<V, C>, GetStateError, R2>
+			) => Effect.Effect<GameView<V, C>, GetViewError, R2>
 		) => Effect.fn( function* (
 			{ params, payload }: {
 				readonly params: GameIdParams;

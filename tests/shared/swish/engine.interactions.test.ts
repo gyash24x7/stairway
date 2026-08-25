@@ -34,7 +34,7 @@ describe( "opening a frame", () => {
 	test( "a move's execute pushes it onto the stack", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
 			yield* engine.open( { kind: "duel" }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		const frame = topFrame( result.context.interactions )!;
@@ -48,9 +48,9 @@ describe( "opening a frame", () => {
 
 	test( "the turn does not move on while it is open", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.open( { kind: "duel" }, a );
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ) );
 
 		expect( result.after.context.currentPlayer ).toBe( a );
@@ -60,7 +60,7 @@ describe( "opening a frame", () => {
 	test( "the move's own events land alongside the frame", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
 			yield* engine.open( { kind: "duel" }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.log ).toEqual( [ "open:duel" ] );
@@ -72,7 +72,7 @@ describe( "the deadline a frame opens with", () => {
 	const deadlineOf = ( over: Partial<ParleyConfig>, kind: "duel" | "vote" = "duel" ) =>
 		parley( engine => Effect.gen( function* () {
 			yield* engine.open( { kind }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), over ).result.context.interactions[ 0 ]?.deadline;
 
 	test( "is stamped from the config, since a game's execute has no clock", () => {
@@ -94,7 +94,7 @@ describe( "the deadline a frame opens with", () => {
 	test( "a game that sets one itself keeps it", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
 			yield* engine.open( { kind: "duel", deadline: 12_345 }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { interactionTimeoutMillis: 60_000 } );
 
 		expect( result.context.interactions[ 0 ]?.deadline ).toBe( 12_345 );
@@ -130,7 +130,7 @@ describe( "who may answer a sequential frame", () => {
 	test( "the next responder in order", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
 			yield* engine.reply( { value: true }, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( topFrame( result.context.interactions )?.responses ).toEqual( {
@@ -163,7 +163,7 @@ describe( "who may answer a sequential frame", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
 			yield* engine.reply( { value: true }, b );
 			yield* engine.reply( { value: false }, c );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( Object.keys( topFrame( result.context.interactions )?.responses ?? {} ) )
@@ -183,7 +183,7 @@ describe( "who may answer a simultaneous frame", () => {
 	test( "any responder, in any order", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
 			yield* engine.reply( { value: true }, d );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( topFrame( result.context.interactions )?.responses ).toEqual( {
@@ -219,11 +219,11 @@ describe( "a frame that names its own responder", () => {
 	test( "the named player answers, though they are not next in order", () => {
 		// `audit` names its second responder, so `c` answers ahead of `b`.
 		const { result } = audited( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.reply( { value: true }, c );
 			return {
 				target: topFrame( before.context.interactions )?.target,
-				after: yield* engine.getState()
+				after: yield* engine.getView()
 			};
 		} ) );
 
@@ -273,7 +273,7 @@ describe( "the moves a frame routes", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
 			yield* engine.open( { kind: "duel" }, a );
 			yield* engine.reply( { value: true, token: "bad" }, b ).pipe( Effect.flip );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( topFrame( result.context.interactions )?.responses ).toEqual( {} );
@@ -295,7 +295,7 @@ describe( "resolving a frame", () => {
 			yield* engine.reply( { value: true }, b );
 			yield* engine.reply( { value: true }, c );
 			yield* engine.reply( { value: false }, d );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.interactions ).toEqual( [] );
@@ -308,7 +308,7 @@ describe( "resolving a frame", () => {
 			yield* engine.open( { kind: "vote" }, a );
 			yield* engine.reply( { value: true }, b );
 			yield* engine.reply( { value: true }, c );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.interactions ).toEqual( [] );
@@ -334,7 +334,7 @@ describe( "resolving a frame", () => {
 			yield* engine.reply( { value: true }, b );
 			yield* engine.reply( { value: true }, c );
 			yield* engine.reply( { value: true }, d );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		// `a` opened it, so the turn is `a`'s to hand on — the seat after `a`.
@@ -346,7 +346,7 @@ describe( "resolving a frame", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
 			yield* engine.open( { kind: "duel" }, a );
 			yield* engine.reply( { value: true }, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.currentPlayer ).toBe( a );
@@ -357,7 +357,7 @@ describe( "resolving a frame", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
 			yield* engine.open( { kind: "audit" }, a );
 			yield* engine.reply( { value: true }, c );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { target: 1 } );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -368,7 +368,7 @@ describe( "resolving a frame", () => {
 			yield* engine.open( { kind: "audit" }, a );
 			yield* engine.reply( { value: true }, c );
 			yield* engine.pass( {}, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.log ).toContain( `pass:${ b }` );
@@ -395,7 +395,7 @@ describe( "a frame of a kind the game does not declare", () => {
 			yield* engine.reply( { value: true }, b );
 			yield* engine.reply( { value: true }, c );
 			yield* engine.reply( { value: true }, d );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.interactions.map( frame => frame.kind ) ).toEqual( [ "ghost" ] );
@@ -420,21 +420,21 @@ describe( "a resolution that opens another frame", () => {
 	} ), over );
 
 	test( "the frame it opened is what the table is left waiting on", () => {
-		const { result } = nested( engine => engine.getState() );
+		const { result } = nested( engine => engine.getView() );
 
 		expect( result.context.interactions.map( frame => frame.kind ) ).toEqual( [ "vote" ] );
 		expect( result.view.log ).toContain( "nested" );
 	} );
 
 	test( "the frame it resolved is gone, and is never resolved twice", () => {
-		const { result } = nested( engine => engine.getState() );
+		const { result } = nested( engine => engine.getView() );
 
 		expect( result.view.log.filter( entry => entry === "nested" ) ).toHaveLength( 1 );
 		expect( result.view.log.some( entry => entry.startsWith( "resolved:duel" ) ) ).toBe( false );
 	} );
 
 	test( "the turn is suspended rather than advanced", () => {
-		const { result } = nested( engine => engine.getState() );
+		const { result } = nested( engine => engine.getView() );
 
 		expect( result.context.currentPlayer ).toBe( a );
 		expect( result.context.turn ).toBe( 0 );
@@ -443,7 +443,7 @@ describe( "a resolution that opens another frame", () => {
 	test( "the nested frame routes responses of its own", () => {
 		const { result } = nested( engine => Effect.gen( function* () {
 			yield* engine.reply( { value: true }, d );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( topFrame( result.context.interactions )?.responses ).toEqual( {
@@ -456,7 +456,7 @@ describe( "a resolution that opens another frame", () => {
 			// `vote` settles on two answers of its own.
 			yield* engine.reply( { value: true }, b );
 			yield* engine.reply( { value: true }, c );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.interactions ).toEqual( [] );
@@ -467,7 +467,7 @@ describe( "a resolution that opens another frame", () => {
 	} );
 
 	test( "the handover and the frame it opened land in one commit", () => {
-		const { cells } = nested( engine => engine.getState() );
+		const { cells } = nested( engine => engine.getView() );
 		const tags = commitsIn( cells ).at( -1 )?.events.map( event => event._tag ) ?? [];
 
 		// The parent closes before the child opens, which is the whole fix: the
@@ -479,10 +479,10 @@ describe( "a resolution that opens another frame", () => {
 	test( "a rebuild from the log lands on the same stack", () => {
 		// The events are what a replay folds, so the nesting has to survive one.
 		const { result } = nested( engine => Effect.gen( function* () {
-			const played = yield* engine.getState();
+			const played = yield* engine.getView();
 			yield* engine.undo( d );
 			yield* engine.redo( d );
-			return { played, rebuilt: yield* engine.getState() };
+			return { played, rebuilt: yield* engine.getView() };
 		} ) );
 
 		expect( result.rebuilt.context.interactions ).toEqual( result.played.context.interactions );
@@ -490,7 +490,7 @@ describe( "a resolution that opens another frame", () => {
 	} );
 
 	test( "the nested frame runs a clock of its own", () => {
-		const { result } = nested( engine => engine.getState(), {
+		const { result } = nested( engine => engine.getView(), {
 			interactionTimeoutMillis: 60_000
 		} );
 

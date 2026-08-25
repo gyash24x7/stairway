@@ -43,7 +43,7 @@ const lastPush = ( published: ReadonlyArray<unknown> ) =>
 describe( "one view, many audiences", () => {
 	test( "the table's view hides what is private to a seat", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			return { table: yield* engine.getState(), own: yield* engine.getState( b ) };
+			return { table: yield* engine.getView(), own: yield* engine.getView( b ) };
 		} ) );
 
 		expect( result.table.view.playerId ).toBeUndefined();
@@ -52,7 +52,7 @@ describe( "one view, many audiences", () => {
 
 	test( "every other field is the same shape whoever is watching", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			return { table: yield* engine.getState(), own: yield* engine.getState( b ) };
+			return { table: yield* engine.getView(), own: yield* engine.getView( b ) };
 		} ) );
 
 		expect( result.own.view.log ).toEqual( result.table.view.log );
@@ -63,7 +63,7 @@ describe( "one view, many audiences", () => {
 	test( "a read and a push carry the same envelope", () => {
 		const published: Array<unknown> = [];
 
-		const { result } = scribe( engine => engine.getState( b ), { published } );
+		const { result } = scribe( engine => engine.getView( b ), { published } );
 
 		// One envelope shape however it arrived: what a read hands back is what the
 		// fan-out pushed, field for field.
@@ -73,7 +73,7 @@ describe( "one view, many audiences", () => {
 	test( "the seed is on neither", () => {
 		const published: Array<unknown> = [];
 
-		const { result } = scribe( engine => engine.getState( b ), { published } );
+		const { result } = scribe( engine => engine.getView( b ), { published } );
 
 		expect( result ).not.toHaveProperty( "seed" );
 		expect( lastPush( published ).table ).not.toHaveProperty( "seed" );
@@ -81,7 +81,7 @@ describe( "one view, many audiences", () => {
 	} );
 
 	test( "so is the unredacted state", () => {
-		const { result } = scribe( engine => engine.getState( b ) );
+		const { result } = scribe( engine => engine.getView( b ) );
 
 		expect( result ).not.toHaveProperty( "state" );
 		expect( result.view ).toBeDefined();
@@ -143,8 +143,8 @@ describe( "what a state change publishes", () => {
 
 		const { result } = scribe( engine => Effect.gen( function* () {
 			const before = published.length;
-			yield* engine.getState();
-			yield* engine.getState( a );
+			yield* engine.getView();
+			yield* engine.getView( a );
 			yield* engine.note( { text: "" }, a ).pipe( Effect.flip );
 			return { before, after: published.length };
 		} ), { published } );
@@ -172,7 +172,7 @@ describe( "what a state change publishes", () => {
 
 describe( "the scheduling facts on the envelope", () => {
 	test( "autoplay rides the envelope rather than the context", () => {
-		const { result } = scribe( engine => engine.getState( a ) );
+		const { result } = scribe( engine => engine.getView( a ) );
 
 		expect( result.autoPlay ).toEqual( {} );
 		expect( result.context ).not.toHaveProperty( "autoPlay" );
@@ -183,10 +183,10 @@ describe( "the scheduling facts on the envelope", () => {
 			yield* engine.initialize( createInput( { ...tallyConfig, moveTimeoutMillis: 30_000 } ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
-		const withoutClock = scribe( engine => engine.getState() );
+		const withoutClock = scribe( engine => engine.getView() );
 
 		expect( withClock.result.deadline ).toBeGreaterThan( Date.now() );
 		expect( withoutClock.result.deadline ).toBeUndefined();
@@ -200,7 +200,7 @@ describe( "the archive", () => {
 		for ( const seat of seats ) {
 			yield* engine.finish( {}, seat );
 		}
-		return yield* engine.getState();
+		return yield* engine.getView();
 	} ) );
 
 	type Archived = {
@@ -337,7 +337,7 @@ describe( "the standings", () => {
 			yield* engine.score( { points: 9 }, b );
 			yield* engine.score( { points: 5 }, c );
 			yield* engine.score( { points: 3 }, d );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.results?.ranking.map( standing => standing.playerId ) )
@@ -352,7 +352,7 @@ describe( "the standings", () => {
 			for ( const seat of seats ) {
 				yield* engine.finish( {}, seat );
 			}
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.results?.ranking.every( standing => standing.rank === 1 ) ).toBe( true );

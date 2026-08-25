@@ -4,17 +4,6 @@ import { UserId } from "@/auth/shared/schema.ts";
 
 export const PositiveInt = Schema.Int.check( Schema.isGreaterThanOrEqualTo( 0 ) );
 
-/**
- * A schema the engine can decode unaided: one that asks for no services to do it.
- *
- * `Schema.Top` leaves a schema free to require arbitrary services when it decodes,
- * and the engine cannot honour that — a move's input is decoded inside the rpc
- * server, where there is nothing to provide and no caller left to ask. Saying so
- * in the constraint keeps that requirement from reappearing as an unsatisfiable
- * `unknown` in the layer stack the host assembles.
- */
-export type SelfDecoding = Schema.Top & Schema.Codec<any, any>;
-
 // --- Branded Ids -----------------------------------------------------------
 
 export type PlayerId = typeof PlayerId.Type;
@@ -1129,13 +1118,13 @@ export class RematchUnavailable extends Schema.TaggedError<RematchUnavailable>()
 ) {}
 
 /**
- * Union of the errors a `getState` can surface to the client.
+ * Union of the errors a `getView` can surface to the client.
  */
 export type GetViewError = typeof GetViewError.Type;
 export const GetViewError = Schema.Union( [ NotAMember, GameNotFound, CorruptState ] );
 
 /**
- * Union of the errors a `setAutoPlay` can surface to the client.
+ * Union of the errors an `autoPlay` can surface to the client.
  */
 export type AutoPlayError = typeof AutoPlayError.Type;
 export const AutoPlayError = Schema.Union( [

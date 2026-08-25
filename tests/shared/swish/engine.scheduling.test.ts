@@ -113,12 +113,12 @@ describe( "starting a table by itself", () => {
 		const { result } = runGame( tallyEngine, engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig( { autoStart: true } ) ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
-			const waiting = yield* engine.getState();
+			const waiting = yield* engine.getView();
 
 			clock.advance( AUTO_START_DELAY_MS + 1 );
 			yield* engine.alarm();
 
-			return { waiting, started: yield* engine.getState() };
+			return { waiting, started: yield* engine.getView() };
 		} ), { now: clock.now } );
 
 		expect( result.waiting.status ).toBe( "CREATED" );
@@ -132,12 +132,12 @@ describe( "starting a table by itself", () => {
 			yield* engine.initialize( createInput( tallyConfig( { autoStart: true } ) ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
-			const started = yield* engine.getState();
+			const started = yield* engine.getView();
 
 			clock.advance( AUTO_START_DELAY_MS + 1 );
 			yield* engine.alarm();
 
-			return { started, after: yield* engine.getState() };
+			return { started, after: yield* engine.getView() };
 		} ), { now: clock.now } );
 
 		expect( result.after.version ).toBe( result.started.version );
@@ -150,8 +150,8 @@ describe( "starting a table by itself", () => {
 		const { pending } = runGame( tallyEngine, engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig( { autoStart: true } ) ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
-			// `setAutoPlay` rearms the turn's clocks, which must leave this alone.
-			yield* engine.setAutoPlay( a, true );
+			// `autoPlay` rearms the turn's clocks, which must leave this alone.
+			yield* engine.autoPlay( a, true );
 		} ), { now: clock.now } );
 
 		expect( pending.has( "auto-start" ) ).toBe( true );
@@ -163,7 +163,7 @@ describe( "the clocks a turn runs under", () => {
 	test( "a human seat runs the move clock, and its deadline is published", () => {
 		const clock = testClock();
 
-		const { result, pending } = tally( engine => engine.getState(), {
+		const { result, pending } = tally( engine => engine.getView(), {
 			now: clock.now,
 			config: { moveTimeoutMillis: MOVE_TIMEOUT }
 		} );
@@ -175,7 +175,7 @@ describe( "the clocks a turn runs under", () => {
 	test( "a machine-played seat runs the bot delay instead", () => {
 		const clock = testClock();
 
-		const { result, pending } = tally( engine => engine.getState(), {
+		const { result, pending } = tally( engine => engine.getView(), {
 			now: clock.now,
 			bots: [ a ],
 			config: { moveTimeoutMillis: MOVE_TIMEOUT }
@@ -189,7 +189,7 @@ describe( "the clocks a turn runs under", () => {
 	test( "a game with no policy never arms the bot, even for a bot seat", () => {
 		const clock = testClock();
 
-		const { pending } = scribe( engine => engine.getState(), {
+		const { pending } = scribe( engine => engine.getView(), {
 			now: clock.now,
 			bots: [ a ],
 			config: { moveTimeoutMillis: MOVE_TIMEOUT }
@@ -203,7 +203,7 @@ describe( "the clocks a turn runs under", () => {
 	test( "a table with no clocks configured arms nothing", () => {
 		const clock = testClock();
 
-		const { pending } = tally( engine => engine.getState(), { now: clock.now } );
+		const { pending } = tally( engine => engine.getView(), { now: clock.now } );
 
 		expect( pending.size ).toBe( 0 );
 	} );
@@ -224,10 +224,10 @@ describe( "the clocks a turn runs under", () => {
 		const clock = testClock();
 
 		const { result, pending } = tally( engine => Effect.gen( function* () {
-			const first = yield* engine.getState();
+			const first = yield* engine.getView();
 			clock.advance( 1_000 );
 			yield* engine.score( { points: 1 }, a );
-			return { first, second: yield* engine.getState() };
+			return { first, second: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( pending.size ).toBe( 1 );
@@ -247,10 +247,10 @@ describe( "a move clock that runs out", () => {
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
 
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			clock.advance( MOVE_TIMEOUT + 1 );
 			yield* engine.alarm();
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now } );
 
 		// The conceding move ran, not the policy's — they score differently on purpose.
@@ -266,10 +266,10 @@ describe( "a move clock that runs out", () => {
 		const clock = testClock();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			clock.advance( MOVE_TIMEOUT + 1 );
 			yield* engine.alarm();
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( result.after.autoPlay[ a ] ).toBe( true );
@@ -284,12 +284,12 @@ describe( "a move clock that runs out", () => {
 		const { result } = tally( engine => Effect.gen( function* () {
 			clock.advance( MOVE_TIMEOUT + 1 );
 			yield* engine.alarm();
-			const handed = yield* engine.getState();
+			const handed = yield* engine.getView();
 
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
 
-			return { handed, played: yield* engine.getState() };
+			return { handed, played: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( result.played.version ).toBe( result.handed.version + 1 );
@@ -305,10 +305,10 @@ describe( "a move clock that runs out", () => {
 			yield* engine.alarm();
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
-			const afterPlay = yield* engine.getState();
+			const afterPlay = yield* engine.getView();
 
-			yield* engine.setAutoPlay( a, false );
-			return { afterPlay, restored: yield* engine.getState() };
+			yield* engine.autoPlay( a, false );
+			return { afterPlay, restored: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( result.afterPlay.autoPlay[ a ] ).toBe( true );
@@ -319,10 +319,10 @@ describe( "a move clock that runs out", () => {
 		const clock = testClock();
 
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			clock.advance( MOVE_TIMEOUT + 1 );
 			yield* engine.alarm();
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( result.after.context.currentPlayer ).toBe( b );
@@ -349,7 +349,7 @@ describe( "a move clock that runs out", () => {
 			clock.advance( MOVE_TIMEOUT + 1 );
 			yield* engine.alarm();
 
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now } );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -360,10 +360,10 @@ describe( "a move clock that runs out", () => {
 		const clock = testClock();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			clock.advance( MOVE_TIMEOUT + 1 );
 			yield* engine.alarm();
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now, bots: [ a ], config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		// A bot seat never ran a move clock, so the wake-up is the bot's.
@@ -378,10 +378,10 @@ describe( "the bot delay", () => {
 		const clock = testClock();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now, bots: [ a ] } );
 
 		expect( result.after.view.points[ a ] ).toBe( 0 );
@@ -392,10 +392,10 @@ describe( "the bot delay", () => {
 		const clock = testClock();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			yield* engine.setAutoPlay( a, true );
+			yield* engine.autoPlay( a, true );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now } );
 
 		expect( result.view.points[ a ] ).toBe( 0 );
@@ -406,10 +406,10 @@ describe( "the bot delay", () => {
 		const clock = testClock();
 
 		const { result } = parleyOn( parleyEngine, engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now, bots: [ a ], config: { passive: true } } );
 
 		expect( result.after.version ).toBe( result.before.version );
@@ -419,9 +419,9 @@ describe( "the bot delay", () => {
 		const clock = testClock();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.alarm();
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now, bots: [ a ] } );
 
 		expect( result.after.version ).toBe( result.before.version );
@@ -442,7 +442,7 @@ describe( "the clock an open frame runs", () => {
 	test( "runs instead of the pending responder's move clock", () => {
 		const clock = testClock();
 
-		const { pending } = opened( parleyEngine, engine => engine.getState(), {
+		const { pending } = opened( parleyEngine, engine => engine.getView(), {
 			now: clock.now,
 			config: { interactionTimeoutMillis: FRAME_TIMEOUT, moveTimeoutMillis: MOVE_TIMEOUT }
 		} );
@@ -453,7 +453,7 @@ describe( "the clock an open frame runs", () => {
 	test( "runs alongside the bot delay when the machine answers", () => {
 		const clock = testClock();
 
-		const { pending } = opened( parleyEngine, engine => engine.getState(), {
+		const { pending } = opened( parleyEngine, engine => engine.getView(), {
 			now: clock.now,
 			bots: [ b ],
 			config: { interactionTimeoutMillis: FRAME_TIMEOUT }
@@ -469,7 +469,7 @@ describe( "the clock an open frame runs", () => {
 
 		const { pending } = parleyOn( parleyEngine, engine => Effect.gen( function* () {
 			yield* engine.open( { kind: "duel", deadline: 1 }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( pending.size ).toBe( 0 );
@@ -480,12 +480,12 @@ describe( "the clock an open frame runs", () => {
 
 		const { result } = opened( parleyEngine, engine => Effect.gen( function* () {
 			yield* engine.reply( { value: true }, b );
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 
 			clock.advance( FRAME_TIMEOUT + 1 );
 			yield* engine.alarm();
 
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT } } );
 
 		expect( result.after.autoPlay ).toEqual( { [ c ]: true, [ d ]: true } );
@@ -506,7 +506,7 @@ describe( "the clock an open frame runs", () => {
 				yield* engine.alarm();
 			}
 
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT } } );
 
 		expect( result.context.interactions ).toEqual( [] );
@@ -520,7 +520,7 @@ describe( "the clock an open frame runs", () => {
 			yield* engine.reply( { value: true }, b );
 			clock.advance( FRAME_TIMEOUT + 1 );
 			yield* engine.alarm();
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT } } );
 
 		// `duel` has no `onTimeout`, so `resolve` runs on the one answer that came in.
@@ -538,7 +538,7 @@ describe( "the clock an open frame runs", () => {
 			// `vote` overrides the config with a five-second window of its own.
 			clock.advance( 5_001 );
 			yield* engine.alarm();
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT } } );
 
 		expect( result.view.log ).toContain( "resolved:vote:timeout:1" );
@@ -554,7 +554,7 @@ describe( "the clock an open frame runs", () => {
 				yield* engine.open( { kind: "duel", nest: true }, a );
 				clock.advance( FRAME_TIMEOUT + 1 );
 				yield* engine.alarm();
-				return yield* engine.getState();
+				return yield* engine.getView();
 			} ),
 			{ now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT } }
 		);
@@ -572,7 +572,7 @@ describe( "the clock an open frame runs", () => {
 		const { result } = opened( policylessParleyEngine, engine => Effect.gen( function* () {
 			clock.advance( FRAME_TIMEOUT + 1 );
 			yield* engine.alarm();
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT } } );
 
 		expect( result.context.currentPlayer ).toBe( b );
@@ -585,7 +585,7 @@ describe( "the clock an open frame runs", () => {
 		const { result, saved } = opened( policylessParleyEngine, engine => Effect.gen( function* () {
 			clock.advance( FRAME_TIMEOUT + 1 );
 			yield* engine.alarm();
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT, target: 1 } } );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -600,10 +600,10 @@ describe( "handing a seat to the policy", () => {
 		const cells = new Map<string, unknown>();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			const cursor = cells.get( "log:cursor" );
-			yield* engine.setAutoPlay( a, true );
-			return { before, cursor, after: yield* engine.getState() };
+			yield* engine.autoPlay( a, true );
+			return { before, cursor, after: yield* engine.getView() };
 		} ), { now: clock.now, cells } );
 
 		expect( result.after.version ).toBe( result.before.version );
@@ -615,8 +615,8 @@ describe( "handing a seat to the policy", () => {
 		const clock = testClock();
 
 		const { result, pending } = tally( engine => Effect.gen( function* () {
-			yield* engine.setAutoPlay( a, true );
-			return yield* engine.getState();
+			yield* engine.autoPlay( a, true );
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( [ ...pending.keys() ] ).toEqual( [ "bot" ] );
@@ -627,9 +627,9 @@ describe( "handing a seat to the policy", () => {
 		const clock = testClock();
 
 		const { result, pending } = tally( engine => Effect.gen( function* () {
-			yield* engine.setAutoPlay( a, true );
-			yield* engine.setAutoPlay( a, false );
-			return yield* engine.getState();
+			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( a, false );
+			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( [ ...pending.keys() ] ).toEqual( [ "move-timeout" ] );
@@ -641,16 +641,16 @@ describe( "handing a seat to the policy", () => {
 
 		const { result } = tally( engine => Effect.gen( function* () {
 			yield* engine.score( { points: 1 }, a );
-			yield* engine.setAutoPlay( a, true );
+			yield* engine.autoPlay( a, true );
 			yield* engine.undo( a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { now: clock.now } );
 
 		expect( result.autoPlay[ a ] ).toBe( true );
 	} );
 
 	test( "refuses a game with no policy to hand it to", () => {
-		const { result } = scribe( engine => engine.setAutoPlay( a, true ).pipe( Effect.flip ) );
+		const { result } = scribe( engine => engine.autoPlay( a, true ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/AutoPlayUnavailable" );
 		expect( ( result as { game: string } ).game ).toBe( "scribe" );
@@ -658,8 +658,8 @@ describe( "handing a seat to the policy", () => {
 
 	test( "but switching it off there always works", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.setAutoPlay( a, false );
-			return yield* engine.getState();
+			yield* engine.autoPlay( a, false );
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.autoPlay[ a ] ).toBe( false );
@@ -667,7 +667,7 @@ describe( "handing a seat to the policy", () => {
 
 	test( "refuses a caller who holds no seat", () => {
 		const { result } = tally(
-			engine => engine.setAutoPlay( player( "stranger" ), true ).pipe( Effect.flip )
+			engine => engine.autoPlay( player( "stranger" ), true ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
@@ -677,7 +677,7 @@ describe( "handing a seat to the policy", () => {
 		const published: Array<unknown> = [];
 		const clock = testClock();
 
-		tally( engine => engine.setAutoPlay( a, true ), { now: clock.now, published } );
+		tally( engine => engine.autoPlay( a, true ), { now: clock.now, published } );
 
 		const push = published.at( -1 ) as { table: { autoPlay: Record<Player, boolean> } };
 
@@ -693,12 +693,12 @@ describe( "an alarm with nothing to do", () => {
 		const { result } = runGame( tallyEngine, engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 
 			clock.advance( 10 * MOVE_TIMEOUT );
 			yield* engine.alarm();
 
-			return { before, after: yield* engine.getState() };
+			return { before, after: yield* engine.getView() };
 		} ), { now: clock.now } );
 
 		expect( result.after.version ).toBe( result.before.version );
@@ -711,12 +711,12 @@ describe( "an alarm with nothing to do", () => {
 			for ( const seat of seats ) {
 				yield* engine.score( { points: 1 }, seat );
 			}
-			const done = yield* engine.getState();
+			const done = yield* engine.getView();
 
 			clock.advance( 10 * MOVE_TIMEOUT );
 			yield* engine.alarm();
 
-			return { done, after: yield* engine.getState() };
+			return { done, after: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
 		expect( result.after.version ).toBe( result.done.version );

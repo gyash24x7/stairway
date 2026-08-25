@@ -82,7 +82,7 @@ const table = <A, E>(
 
 /** The view a seat holds right now. */
 const viewOf = ( engine: Effect.Success<typeof splendor>, id?: Player ) =>
-	( id ? engine.getState( id ) : engine.getState() ).pipe(
+	( id ? engine.getView( id ) : engine.getView() ).pipe(
 		Effect.map( envelope => envelope.view as SplendorView )
 	);
 
@@ -92,13 +92,13 @@ const take = ( ...gems: ReadonlyArray<string> ) =>
 
 /** Plays whatever the policy would play for the seat whose turn it is. */
 const policyMove = ( engine: Effect.Success<typeof splendor> ) => Effect.gen( function* () {
-	const envelope = yield* engine.getState();
+	const envelope = yield* engine.getView();
 	const [ frame ] = envelope.context.interactions.slice( -1 );
 	const seat = frame
 		? frame.responders.find( id => !( id in frame.responses ) )!
 		: envelope.context.currentPlayer;
 
-	const view = ( yield* engine.getState( seat ) ).view as SplendorView;
+	const view = ( yield* engine.getView( seat ) ).view as SplendorView;
 	const move = decideMove( view, envelope.context )!;
 
 	switch ( move.moveType ) {
@@ -209,7 +209,7 @@ describe( "taking gems", () => {
 	test( "hands the turn to the next seat", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.currentPlayer ).toBe( b );
@@ -687,7 +687,7 @@ describe( "the noble visit", () => {
 
 			const { result } = table( engine => Effect.gen( function* () {
 				for ( let tick = 0; tick < 1200; tick++ ) {
-					const state = yield* engine.getState();
+					const state = yield* engine.getView();
 					if ( state.status === "COMPLETED" ) {
 						return undefined;
 					}
@@ -717,13 +717,13 @@ describe( "the noble visit", () => {
 	test( "opens a frame on the buyer alone and holds the table there", () => {
 		const result = atNobleChoice( ( engine, frame ) => Effect.gen( function* () {
 			const offered = frame.payload as ReadonlyArray<string>;
-			const state = yield* engine.getState();
+			const state = yield* engine.getView();
 			const other = state.context.players.find( id => id !== frame.initiator )!;
 
 			return {
 				frame,
 				offered,
-				view: ( yield* engine.getState( frame.initiator ) ).view as SplendorView,
+				view: ( yield* engine.getView( frame.initiator ) ).view as SplendorView,
 
 				// Anything but a response is refused outright...
 				otherMove: yield* engine
@@ -759,7 +759,7 @@ describe( "the noble visit", () => {
 
 	test( "sends in the one the buyer named, and only that one", () => {
 		const result = atNobleChoice( ( engine, frame ) => Effect.gen( function* () {
-			const before = ( yield* engine.getState( frame.initiator ) ).view as SplendorView;
+			const before = ( yield* engine.getView( frame.initiator ) ).view as SplendorView;
 			const offered = frame.payload as ReadonlyArray<string>;
 
 			// The second, so a resolution that just took the first would show up.
@@ -770,7 +770,7 @@ describe( "the noble visit", () => {
 				chosen,
 				seat: frame.initiator,
 				before,
-				after: yield* engine.getState( frame.initiator )
+				after: yield* engine.getView( frame.initiator )
 			};
 		} ) );
 
@@ -793,14 +793,14 @@ describe( "the noble visit", () => {
 
 	test( "settles itself when the buyer never answers", () => {
 		const result = atNobleChoice( ( engine, frame, clock ) => Effect.gen( function* () {
-			const before = ( yield* engine.getState( frame.initiator ) ).view as SplendorView;
+			const before = ( yield* engine.getView( frame.initiator ) ).view as SplendorView;
 
 			// The seat is machine-played, so the alarm the frame is waiting on hands
 			// it to the policy — which answers rather than leaving the table stuck.
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
 
-			return { seat: frame.initiator, before, after: yield* engine.getState( frame.initiator ) };
+			return { seat: frame.initiator, before, after: yield* engine.getView( frame.initiator ) };
 		} ) );
 
 		const { seat, before, after } = result;
@@ -922,11 +922,11 @@ describe( "a table played by the policy", () => {
 		winningPoints?: WinningPoints
 	) => table( engine => Effect.gen( function* () {
 		// Both seats to the machine: `b` is a bot outright, `a` hands its seat over.
-		yield* engine.setAutoPlay( a, true );
+		yield* engine.autoPlay( a, true );
 		const boundaries: Array<number> = [];
 
 		for ( let tick = 0; tick < 800; tick++ ) {
-			const state = yield* engine.getState();
+			const state = yield* engine.getView();
 			if ( state.status === "COMPLETED" ) {
 				return { state, boundaries };
 			}
@@ -943,7 +943,7 @@ describe( "a table played by the policy", () => {
 			yield* engine.alarm();
 		}
 
-		return { state: yield* engine.getState(), boundaries };
+		return { state: yield* engine.getView(), boundaries };
 	} ), { bots: [ b ], clock, winningPoints } );
 
 	test( "runs to a finish with a legal move every turn", () => {
@@ -1009,8 +1009,8 @@ describe( "a table played by the policy", () => {
 
 	test( "plays a seat that hands itself over", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.setAutoPlay( a, true );
-			return yield* engine.getState();
+			yield* engine.autoPlay( a, true );
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.autoPlay[ a ] ).toBe( true );
@@ -1019,7 +1019,7 @@ describe( "a table played by the policy", () => {
 	test( "picks a move for the seat whose turn it is, by hand too", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			yield* policyMove( engine );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.turn ).toBe( 1 );

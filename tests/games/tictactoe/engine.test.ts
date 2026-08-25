@@ -75,12 +75,12 @@ describe( "seating a duel", () => {
 			yield* engine.initialize( createInput( config, x ) );
 			yield* engine.join( info( x ) );
 			yield* engine.join( info( o ) );
-			const waiting = yield* engine.getState();
+			const waiting = yield* engine.getView();
 
 			clock.advance( AUTO_START_DELAY_MS + 1 );
 			yield* engine.alarm();
 
-			return { waiting, started: yield* engine.getState() };
+			return { waiting, started: yield* engine.getView() };
 		} ), { now: clock.now } );
 
 		expect( result.waiting.status ).toBe( "CREATED" );
@@ -88,20 +88,20 @@ describe( "seating a duel", () => {
 	} );
 
 	test( "the first seat plays X and the second O", () => {
-		const { result } = duel( engine => engine.getState() );
+		const { result } = duel( engine => engine.getView() );
 
 		expect( result.view.symbols ).toEqual( { X: x, O: o } );
 	} );
 
 	test( "X opens", () => {
-		const { result } = duel( engine => engine.getState() );
+		const { result } = duel( engine => engine.getView() );
 
 		expect( result.context.currentPlayer ).toBe( x );
 		expect( result.status ).toBe( "IN_PROGRESS" );
 	} );
 
 	test( "the board starts empty and stays nine cells long", () => {
-		const { result } = duel( engine => engine.getState() );
+		const { result } = duel( engine => engine.getView() );
 
 		expect( result.view.board ).toHaveLength( 9 );
 		expect( result.view.board.every( cell => cell === null ) ).toBe( true );
@@ -109,7 +109,7 @@ describe( "seating a duel", () => {
 
 	test( "the table has nothing to hide, so both views agree", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
-			return { table: yield* engine.getState(), own: yield* engine.getState( x ) };
+			return { table: yield* engine.getView(), own: yield* engine.getView( x ) };
 		} ) );
 
 		expect( result.own.view.board ).toEqual( result.table.view.board );
@@ -123,7 +123,7 @@ describe( "placing a mark", () => {
 	test( "writes the caller's own symbol into the cell", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			yield* engine.place( { position: 4 } as PlaceInput, x );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.board[ 4 ] ).toBe( "X" );
@@ -132,7 +132,7 @@ describe( "placing a mark", () => {
 	test( "hands the turn to the other seat", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			yield* engine.place( { position: 4 } as PlaceInput, x );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.currentPlayer ).toBe( o );
@@ -181,7 +181,7 @@ describe( "how a duel ends", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			// X takes the top row, O the middle two.
 			yield* playOut( engine, [ 0, 3, 1, 4, 2 ] );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -191,7 +191,7 @@ describe( "how a duel ends", () => {
 	test( "the loser is ranked behind the winner", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			yield* playOut( engine, [ 0, 3, 1, 4, 2 ] );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		const ranking = result.results?.ranking ?? [];
@@ -204,7 +204,7 @@ describe( "how a duel ends", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			// X: 0,1,5,6,8   O: 2,3,4,7 — every cell taken, no line.
 			yield* playOut( engine, [ 0, 2, 1, 3, 5, 4, 6, 7, 8 ] );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -259,7 +259,7 @@ describe( "the bot", () => {
 			yield* engine.place( { position: 0 } as PlaceInput, x );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { clock, bots: [ o ] } );
 
 		expect( result.view.board.filter( cell => cell === "O" ) ).toHaveLength( 1 );
@@ -273,7 +273,7 @@ describe( "the bot", () => {
 			yield* engine.place( { position: 0 } as PlaceInput, x );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { clock, bots: [ o ] } );
 
 		expect( result.view.board[ 4 ] ).toBe( "O" );
@@ -284,7 +284,7 @@ describe( "the bot", () => {
 
 		const { result } = duel( engine => Effect.gen( function* () {
 			for ( let turn = 0; turn < 12; turn++ ) {
-				const view = yield* engine.getState();
+				const view = yield* engine.getView();
 				if ( view.status === "COMPLETED" ) {
 					return view;
 				}
@@ -293,7 +293,7 @@ describe( "the bot", () => {
 				yield* engine.alarm();
 			}
 
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { clock, bots: [ x, o ] } );
 
 		// Perfect play both ways can only be a draw.
@@ -308,12 +308,12 @@ describe( "the bot", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			clock.advance( TICTACTOE_MOVE_TIMEOUT_MILLIS + 1 );
 			yield* engine.alarm();
-			const handed = yield* engine.getState();
+			const handed = yield* engine.getView();
 
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
 
-			return { handed, played: yield* engine.getState() };
+			return { handed, played: yield* engine.getView() };
 		} ), { clock } );
 
 		expect( result.handed.autoPlay[ x ] ).toBe( true );
@@ -328,7 +328,7 @@ describe( "taking a move back", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			yield* engine.place( { position: 4 } as PlaceInput, x );
 			yield* engine.undo( x );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.board[ 4 ] ).toBeNull();
@@ -347,10 +347,10 @@ describe( "taking a move back", () => {
 	test( "and a redo puts it back exactly", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			yield* engine.place( { position: 4 } as PlaceInput, x );
-			const played = yield* engine.getState();
+			const played = yield* engine.getView();
 			yield* engine.undo( x );
 			yield* engine.redo( x );
-			return { played, replayed: yield* engine.getState() };
+			return { played, replayed: yield* engine.getView() };
 		} ) );
 
 		expect( result.replayed.view ).toEqual( result.played.view );

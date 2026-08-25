@@ -44,7 +44,7 @@ describe( "who may move", () => {
 	test( "the current player may", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.finish( {}, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.finished ).toEqual( [ a ] );
@@ -66,7 +66,7 @@ describe( "who may move", () => {
 	test( "a move with its own canMove may be played out of turn", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.peek( {}, c );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.log ).toContain( `peek:${ c }` );
@@ -114,9 +114,9 @@ describe( "seats that are out of play", () => {
 	test( "the rotation skips it", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.fold( {}, a );
-			const afterFold = yield* engine.getState();
+			const afterFold = yield* engine.getView();
 			yield* engine.fold( {}, afterFold.context.currentPlayer );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		// a folded and handed over to b; b folded and the turn skipped past a to c.
@@ -127,10 +127,10 @@ describe( "seats that are out of play", () => {
 	test( "with nobody left to act the turn stays where it was", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			for ( let turn = 0; turn < seats.length; turn++ ) {
-				const view = yield* engine.getState();
+				const view = yield* engine.getView();
 				yield* engine.fold( {}, view.context.currentPlayer );
 			}
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( Object.values( result.context.seats ) )
@@ -152,7 +152,7 @@ describe( "moves the config switches off", () => {
 		const { result } = scribe(
 			engine => Effect.gen( function* () {
 				yield* engine.special( {}, a );
-				return yield* engine.getState();
+				return yield* engine.getView();
 			} ),
 			{ allowSpecial: true }
 		);
@@ -181,9 +181,9 @@ describe( "input and validation", () => {
 
 	test( "a rejected move commits nothing", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.note( { text: "" }, a ).pipe( Effect.flip );
-			const after = yield* engine.getState();
+			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
 
@@ -196,7 +196,7 @@ describe( "input and validation", () => {
 		// when the move is refused — and must go nowhere.
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.note( { text: "" }, a ).pipe( Effect.flip );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.log ).not.toContain( "before:note" );
@@ -214,7 +214,7 @@ describe( "hooks around a move", () => {
 	test( "runs before the move, then the move, then after it", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.note( { text: "hello" }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		const log = result.view.log;
@@ -232,7 +232,7 @@ describe( "hooks around a move", () => {
 			for ( const seat of seats ) {
 				yield* engine.finish( {}, seat );
 			}
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.log.filter( entry => entry === "end" ) ).toHaveLength( 1 );
@@ -242,7 +242,7 @@ describe( "hooks around a move", () => {
 	test( "the hooks fire for an out-of-turn move too", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.peek( {}, c );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.view.log ).toContain( "before:peek" );
@@ -254,10 +254,10 @@ describe( "hooks around a move", () => {
 describe( "whether a move ends the turn", () => {
 	test( "a move declared not to leaves the turn and the counter alone", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.note( { text: "one" }, a );
 			yield* engine.note( { text: "two" }, a );
-			const after = yield* engine.getState();
+			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
 
@@ -268,9 +268,9 @@ describe( "whether a move ends the turn", () => {
 
 	test( "a move that does hands the turn on and counts it", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			const before = yield* engine.getState();
+			const before = yield* engine.getView();
 			yield* engine.finish( {}, a );
-			const after = yield* engine.getState();
+			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
 
@@ -281,7 +281,7 @@ describe( "whether a move ends the turn", () => {
 	test( "a move that decides per input keeps the turn when it says so", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.wager( { amount: 0 }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.currentPlayer ).toBe( a );
@@ -291,7 +291,7 @@ describe( "whether a move ends the turn", () => {
 	test( "and gives it up when it does not", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.wager( { amount: 5 }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.currentPlayer ).toBe( b );
@@ -305,9 +305,9 @@ describe( "whether a move ends the turn", () => {
 				yield* engine.finish( {}, seat );
 			}
 			yield* engine.wager( { amount: 0 }, d );
-			const stillOn = yield* engine.getState();
+			const stillOn = yield* engine.getView();
 			yield* engine.finish( {}, d );
-			return { stillOn, done: yield* engine.getState() };
+			return { stillOn, done: yield* engine.getView() };
 		} ) );
 
 		expect( result.stillOn.status ).toBe( "IN_PROGRESS" );
@@ -323,7 +323,7 @@ describe( "randomness inside a move", () => {
 	test( "comes from the game's seed, so a move can roll for its outcome", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.wager( { amount: 5 }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( rollIn( result.view.log ) ).toMatch( /^wager:5:\d+$/ );
@@ -334,10 +334,10 @@ describe( "randomness inside a move", () => {
 		// randomness inside a move safe.
 		const { result } = scribe( engine => Effect.gen( function* () {
 			yield* engine.wager( { amount: 5 }, a );
-			const played = yield* engine.getState();
+			const played = yield* engine.getView();
 			yield* engine.undo( a );
 			yield* engine.redo( a );
-			return { played, rebuilt: yield* engine.getState() };
+			return { played, rebuilt: yield* engine.getView() };
 		} ) );
 
 		expect( rollIn( result.rebuilt.view.log ) ).toBe( rollIn( result.played.view.log )! );
@@ -347,7 +347,7 @@ describe( "randomness inside a move", () => {
 		const rolls = Array.from( { length: 4 }, () => {
 			const { result } = scribe( engine => Effect.gen( function* () {
 				yield* engine.wager( { amount: 5 }, a );
-				return yield* engine.getState();
+				return yield* engine.getView();
 			} ) );
 
 			return rollIn( result.view.log );
@@ -367,12 +367,12 @@ describe( "the turn order", () => {
 
 			const order: Array<Player> = [];
 			for ( const seat of seats ) {
-				const view = yield* engine.getState();
+				const view = yield* engine.getView();
 				order.push( view.context.currentPlayer );
 				yield* engine.score( { points: 1 }, seat );
 			}
 
-			return { order, final: yield* engine.getState() };
+			return { order, final: yield* engine.getView() };
 		} ) );
 
 		expect( result.order ).toEqual( seats );
@@ -386,7 +386,7 @@ describe( "the turn order", () => {
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
 			yield* engine.score( { points: 1 }, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.context.currentPlayer ).toBe( d );

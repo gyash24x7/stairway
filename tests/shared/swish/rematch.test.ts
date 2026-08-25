@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { planRematch } from "@/swish/shared/rematch.ts";
 import {
 	BaseGameConfig,
 	GameContext,
@@ -10,8 +9,9 @@ import {
 	TeamId,
 	TeamName
 } from "@/swish/shared/schema.ts";
+import { planRematch } from "@/swish/shared/teams.ts";
 
-import type { RematchSource } from "@/swish/shared/rematch.ts";
+import type { RematchSource } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 const team = ( id: string ) => TeamId.make( id );

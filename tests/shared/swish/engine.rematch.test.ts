@@ -59,8 +59,8 @@ describe( "setRematch", () => {
 			yield* engine.setRematch( a, NEXT );
 
 			return {
-				table: yield* engine.getState(),
-				seat: yield* engine.getState( a )
+				table: yield* engine.getView(),
+				seat: yield* engine.getView( a )
 			};
 		} ) );
 
@@ -71,7 +71,7 @@ describe( "setRematch", () => {
 	test( "carries no pointer before anyone has asked", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ) );
 
 		expect( result.rematch ).toBeUndefined();
@@ -106,9 +106,9 @@ describe( "setRematch", () => {
 	test( "commits nothing: the finished game's history is untouched", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			const before = yield* engine.getState( a );
+			const before = yield* engine.getView( a );
 			yield* engine.setRematch( a, NEXT );
-			return { before, after: yield* engine.getState( a ) };
+			return { before, after: yield* engine.getView( a ) };
 		} ) );
 
 		expect( result.after.version ).toBe( result.before.version );
@@ -202,7 +202,7 @@ describe( "leaveTeam", () => {
 			yield* engine.leaveTeam( b );
 			yield* engine.joinTeam( c, RED );
 
-			const state = yield* engine.getState( a );
+			const state = yield* engine.getView( a );
 			return { refused, teams: state.context.teams };
 		} ) );
 
@@ -216,9 +216,9 @@ describe( "leaveTeam", () => {
 			yield* engine.initialize( createInput( teamed() ) );
 			yield* Effect.forEach( [ a, b, c, d ], id => engine.join( info( id ) ) );
 
-			const before = yield* engine.getState( a );
+			const before = yield* engine.getView( a );
 			yield* engine.leaveTeam( a );
-			return { before, after: yield* engine.getState( a ) };
+			return { before, after: yield* engine.getView( a ) };
 		} ) );
 
 		expect( result.after.version ).toBe( result.before.version );

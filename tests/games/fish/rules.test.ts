@@ -52,7 +52,7 @@ const riggedTable = <A, E>(
 		yield* Effect.forEach( players, id => engine.join( seat( id ) ) );
 		yield* engine.start( players[ 0 ]! );
 
-		const opened = yield* engine.getState();
+		const opened = yield* engine.getView();
 		const record = cells.get( "data" ) as StoredRecord;
 		const rigged = { ...record.state, ...rig( opened.context, record.state ) };
 
@@ -240,7 +240,7 @@ describe( "asking for a card", () => {
 			( engine, context ) => Effect.gen( function* () {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				yield* engine.askCard( { from: target, cardId: "AH" }, context.currentPlayer );
-				return { asker: context.currentPlayer, view: yield* engine.getState() };
+				return { asker: context.currentPlayer, view: yield* engine.getView() };
 			} )
 		);
 
@@ -264,7 +264,7 @@ describe( "asking for a card", () => {
 			( engine, context ) => Effect.gen( function* () {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				yield* engine.askCard( { from: target, cardId: "AH" }, context.currentPlayer );
-				return { target, view: yield* engine.getState() };
+				return { target, view: yield* engine.getView() };
 			} )
 		);
 
@@ -414,7 +414,7 @@ describe( "declaring a book", () => {
 					claim: { AC: caller, AD: caller, AH: mate, AS: mate }
 				}, caller );
 
-				return { caller, view: yield* engine.getState() };
+				return { caller, view: yield* engine.getView() };
 			} )
 		);
 
@@ -450,7 +450,7 @@ describe( "declaring a book", () => {
 					claim: { AC: caller, AD: mate, AH: mate, AS: caller }
 				}, caller );
 
-				return { caller, rival, view: yield* engine.getState() };
+				return { caller, rival, view: yield* engine.getView() };
 			} )
 		);
 
@@ -528,7 +528,7 @@ describe( "handing the turn to a teammate", () => {
 			( engine, context ) => Effect.gen( function* () {
 				const mate = teamMatesOf( context, context.currentPlayer )[ 0 ]!;
 				yield* engine.transferTurn( { transferTo: mate }, context.currentPlayer );
-				return { mate, view: yield* engine.getState() };
+				return { mate, view: yield* engine.getView() };
 			} )
 		);
 
@@ -563,7 +563,7 @@ describe( "a turn handed to a seat that cannot take it", () => {
 					claim: { AC: caller, AD: caller, AH: mate, AS: mate }
 				}, caller );
 
-				return { mate, view: yield* engine.getState() };
+				return { mate, view: yield* engine.getView() };
 			} )
 		);
 

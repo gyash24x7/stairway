@@ -90,14 +90,14 @@ describe( "setting up a board", () => {
 	} );
 
 	test( "keeps them secret while the game is on", () => {
-		const { result } = table( engine => engine.getState( a ) );
+		const { result } = table( engine => engine.getView( a ) );
 
 		expect( result.view.answers ).toBeUndefined();
 		expect( result.view.decided ).toBe( false );
 	} );
 
 	test( "opens one board per seat, in join order", () => {
-		const { result } = table( engine => engine.getState(), {}, [ a, b ] );
+		const { result } = table( engine => engine.getView(), {}, [ a, b ] );
 
 		expect( result.view.boards.map( board => board.playerId ) ).toEqual( [ a, b ] );
 		expect( result.view.maxGuesses ).toBe( 6 );
@@ -109,7 +109,7 @@ describe( "playing a guess", () => {
 	test( "records it and scores the board", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: decoy( words ) }, a );
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ) );
 
 		const own = result.view.boards[ 0 ]!;
@@ -125,7 +125,7 @@ describe( "playing a guess", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: decoy( words ) }, a );
 			yield* engine.guess( { guess: words[ 0 ]! }, a );
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ) );
 
 		expect( result.view.boards[ 0 ]?.guessCount ).toBe( 2 );
@@ -136,7 +136,7 @@ describe( "playing a guess", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.forfeit( {}, b );
 			yield* engine.guess( { guess: decoy( words ) }, a );
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ), {}, [ a, b ] );
 
 		// `b` is done, so waiting on it would be waiting on a seat with no move.
@@ -146,7 +146,7 @@ describe( "playing a guess", () => {
 	test( "any seat may guess, whoever the turn sits with", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: decoy( words ) }, b );
-			return yield* engine.getState( b );
+			return yield* engine.getView( b );
 		} ), {}, [ a, b ] );
 
 		expect( result.context.currentPlayer ).toBe( a );
@@ -156,7 +156,7 @@ describe( "playing a guess", () => {
 	test( "accepts a guess typed in caps or padded with space", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: `  ${ words[ 0 ]!.toUpperCase() } ` }, a );
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ) );
 
 		expect( result.view.boards[ 0 ]?.solvedWords ).toEqual( [ true ] );
@@ -227,7 +227,7 @@ describe( "a seat that runs out its clock", () => {
 	};
 
 	test( "gives up rather than having a word guessed for it", () => {
-		const { result } = stalled( engine => engine.getState() );
+		const { result } = stalled( engine => engine.getView() );
 
 		const walked = result.view.boards.find( board => board.playerId === a )!;
 
@@ -238,7 +238,7 @@ describe( "a seat that runs out its clock", () => {
 	} );
 
 	test( "keeps the seat its player's rather than handing it to the policy", () => {
-		const { result } = stalled( engine => engine.getState() );
+		const { result } = stalled( engine => engine.getView() );
 
 		expect( result.autoPlay[ a ] ).toBeUndefined();
 	} );
@@ -248,7 +248,7 @@ describe( "a seat that runs out its clock", () => {
 			// The seat that stayed can now end the game on its own. Before the clock
 			// existed this table could never reach `COMPLETED` at all.
 			yield* engine.forfeit( {}, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ) );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -259,7 +259,7 @@ describe( "giving up", () => {
 	test( "retires the seat", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			yield* engine.forfeit( {}, b );
-			return yield* engine.getState( b );
+			return yield* engine.getView( b );
 		} ), {}, [ a, b ] );
 
 		expect( result.view.boards[ 1 ]?.finished ).toBe( true );
@@ -270,7 +270,7 @@ describe( "giving up", () => {
 			yield* engine.guess( { guess: words[ 0 ]! }, a );
 			yield* engine.guess( { guess: decoy( words ) }, b );
 			yield* engine.forfeit( {}, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { wordCount: 2 }, [ a, b ] );
 
 		const gaveUp = result.view.boards[ 1 ]!;
@@ -303,14 +303,14 @@ describe( "what one seat may read of another", () => {
 	} ), { wordCount: 2 }, [ a, b ] );
 
 	test( "its own rows, in full", () => {
-		const { result } = raced( engine => engine.getState( a ) );
+		const { result } = raced( engine => engine.getView( a ) );
 
 		expect( result.view.boards[ 0 ]?.guesses ).toHaveLength( 1 );
 		expect( result.view.boards[ 0 ]?.results[ 0 ] ).toHaveLength( 1 );
 	} );
 
 	test( "a rival's tallies, and none of its rows", () => {
-		const { result } = raced( engine => engine.getState( a ) );
+		const { result } = raced( engine => engine.getView( a ) );
 		const rival = result.view.boards[ 1 ]!;
 
 		expect( rival.guesses ).toEqual( [] );
@@ -319,7 +319,7 @@ describe( "what one seat may read of another", () => {
 	} );
 
 	test( "the table reads nobody's rows", () => {
-		const { result } = raced( engine => engine.getState() );
+		const { result } = raced( engine => engine.getView() );
 
 		expect( result.view.boards.every( board => board.guesses.length === 0 ) ).toBe( true );
 		expect( result.view.playerId ).toBeUndefined();
@@ -333,7 +333,7 @@ describe( "how a game ends", () => {
 			for ( const word of words ) {
 				yield* engine.guess( { guess: word }, a );
 			}
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ), { wordCount: 2 } );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -345,7 +345,7 @@ describe( "how a game ends", () => {
 			for ( const word of words ) {
 				yield* engine.guess( { guess: word }, a );
 			}
-			return { words, view: yield* engine.getState( a ) };
+			return { words, view: yield* engine.getView( a ) };
 		} ), { wordCount: 2 } );
 
 		expect( result.view.view.answers ).toEqual( result.words );
@@ -354,9 +354,9 @@ describe( "how a game ends", () => {
 	test( "a duel waits for every seat to be done", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: words[ 0 ]! }, a );
-			const halfway = yield* engine.getState();
+			const halfway = yield* engine.getView();
 			yield* engine.forfeit( {}, b );
-			return { halfway, done: yield* engine.getState() };
+			return { halfway, done: yield* engine.getView() };
 		} ), {}, [ a, b ] );
 
 		expect( result.halfway.status ).toBe( "IN_PROGRESS" );
@@ -369,7 +369,7 @@ describe( "how a game ends", () => {
 			for ( const word of wrong ) {
 				yield* engine.guess( { guess: word }, a );
 			}
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ) );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -381,7 +381,7 @@ describe( "how a game ends", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: words[ 0 ]! }, a );
 			yield* engine.forfeit( {}, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), {}, [ a, b ] );
 
 		expect( result.results?.winner ).toBe( a );
@@ -395,7 +395,7 @@ describe( "how a game ends", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: words[ 0 ]! }, a );
 			yield* engine.forfeit( {}, a );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { wordCount: 2 } );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -408,7 +408,7 @@ describe( "how a game ends", () => {
 			for ( const word of words ) {
 				yield* engine.guess( { guess: word }, a );
 			}
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), { wordCount: 2 } );
 
 		expect( result.status ).toBe( "COMPLETED" );
@@ -419,7 +419,7 @@ describe( "how a game ends", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			yield* engine.forfeit( {}, a );
 			yield* engine.forfeit( {}, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), {}, [ a, b ] );
 
 		expect( result.results?.winner ).toBeUndefined();
@@ -432,7 +432,7 @@ describe( "how a game ends", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			yield* engine.forfeit( {}, a );
 			yield* engine.forfeit( {}, b );
-			return yield* engine.getState();
+			return yield* engine.getView();
 		} ), {}, [ a, b ] );
 
 		expect( result.results?.ranking.every( standing => standing.score === 0 ) ).toBe( true );
@@ -464,7 +464,7 @@ describe( "taking a guess back", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: decoy( words ) }, a );
 			yield* engine.undo( a );
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ) );
 
 		expect( result.view.boards[ 0 ]?.guessCount ).toBe( 0 );
@@ -482,10 +482,10 @@ describe( "taking a guess back", () => {
 	test( "and the same words come back on a redo", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			yield* engine.guess( { guess: decoy( words ) }, a );
-			const played = yield* engine.getState( a );
+			const played = yield* engine.getView( a );
 			yield* engine.undo( a );
 			yield* engine.redo( a );
-			return { played, replayed: yield* engine.getState( a ) };
+			return { played, replayed: yield* engine.getView( a ) };
 		} ) );
 
 		expect( result.replayed.view ).toEqual( result.played.view );
@@ -503,7 +503,7 @@ describe( "taking a guess back", () => {
  * @param [config] - What the table is created with.
  * @param [players] - Who takes the seats.
  * @param [bots] - Whether those seats are machines. Humans get handed over with
- * 			`setAutoPlay` instead.
+ * 			`autoPlay` instead.
  * @returns The run's result and collectors.
  */
 const machineTable = <A, E>(
@@ -553,7 +553,7 @@ const playOut = (
 ) =>
 	Effect.gen( function* () {
 		for ( let i = 0; i < limit; i++ ) {
-			const view = yield* engine.getState();
+			const view = yield* engine.getView();
 			if ( view.status === "COMPLETED" ) {
 				break;
 			}
@@ -562,17 +562,17 @@ const playOut = (
 			yield* engine.alarm();
 		}
 
-		return yield* engine.getState();
+		return yield* engine.getView();
 	} );
 
 
 describe( "the bot", () => {
 	test( "plays the seat a player hands it", () => {
 		const { result } = machineTable( ( engine, clock ) => Effect.gen( function* () {
-			yield* engine.setAutoPlay( a, true );
+			yield* engine.autoPlay( a, true );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
-			return yield* engine.getState( a );
+			return yield* engine.getView( a );
 		} ), {}, [ a ], false );
 
 		expect( result.autoPlay[ a ] ).toBe( true );
