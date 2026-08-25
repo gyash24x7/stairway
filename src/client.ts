@@ -27,8 +27,8 @@ export const client = Effect.runSync(
  * domain error itself rather than a wrapping `FiberFailure` so `error` in the
  * query/mutation is the tagged error the endpoint declares.
  */
-export async function run<A, E>( effect: Effect.Effect<A, E>, signal?: AbortSignal ) {
-	const exit = await Effect.runPromiseExit( effect, { signal } );
+export async function run<A, E>( effect: Effect.Effect<A, E> ) {
+	const exit = await Effect.runPromiseExit( effect );
 	if ( Exit.isSuccess( exit ) ) {
 		return exit.value;
 	}

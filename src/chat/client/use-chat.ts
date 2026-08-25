@@ -22,7 +22,7 @@ export function useChat( props: { channelId: string } ) {
 
 	const query = useQuery( {
 		queryKey,
-		queryFn: ( { signal } ) => getChatHistoryFn( channelId, signal ),
+		queryFn: () => getChatHistoryFn( channelId ),
 		staleTime: Infinity,
 		retry: false
 	} );

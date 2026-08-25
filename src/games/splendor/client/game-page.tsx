@@ -17,7 +17,7 @@ export function SplendorGamePage( props: { gameId: string } ) {
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => splendorApi.getView( gameId, signal )
+		queryFn: () => splendorApi.getView( gameId )
 	} );
 
 	useGameSync( { gameName: "splendor", gameId, playerId: authInfo!.id, queryKey } );

@@ -17,7 +17,7 @@ export function KingdominoGamePage( props: { gameId: string } ) {
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => kingdominoApi.getView( gameId, signal )
+		queryFn: () => kingdominoApi.getView( gameId )
 	} );
 
 	useGameSync( { gameName: "kingdomino", gameId, playerId: authInfo!.id, queryKey } );

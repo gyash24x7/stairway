@@ -10,7 +10,7 @@ export type UseTableSnapshotOptions<Snapshot> = {
 	/** The engine name (`structure.name`), e.g. `"splendor"`. */
 	gameName: string;
 	gameId: GameId;
-	getTableState: ( gameId: GameId, signal?: AbortSignal ) => Promise<Snapshot>;
+	getTableState: ( gameId: GameId ) => Promise<Snapshot>;
 	/** Hold the read back until the session is known — it is session-gated server-side. */
 	enabled?: boolean;
 };
@@ -36,7 +36,7 @@ export function useTableSnapshot<Snapshot>( {
 	const query = useQuery( {
 		queryKey,
 		enabled,
-		queryFn: ( { signal } ) => getTableState( gameId, signal )
+		queryFn: () => getTableState( gameId )
 	} );
 
 	// No `playerId`: the channel attaches a `TableAudience` to this socket. The key

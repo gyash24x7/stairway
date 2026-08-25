@@ -21,7 +21,7 @@ export function CallbreakControllerPage( props: { gameId: string } ) {
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => callbreakApi.getView( gameId, signal )
+		queryFn: () => callbreakApi.getView( gameId )
 	} );
 
 	useGameSync( { gameName: "callbreak", gameId, playerId: authInfo!.id, queryKey } );

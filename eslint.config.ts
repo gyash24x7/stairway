@@ -1,7 +1,5 @@
 import effectPlugin from "@effect/eslint-plugin";
 import stylistic from "@stylistic/eslint-plugin";
-import pluginQuery from "@tanstack/eslint-plugin-query";
-import pluginRouter from "@tanstack/eslint-plugin-router";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import importPlugin from "eslint-plugin-import-x";
@@ -213,9 +211,5 @@ export default [
 			"react-hooks/rules-of-hooks": "error",
 			"react-hooks/exhaustive-deps": "error"
 		}
-	},
-
-	// TanStack Query / Router lint their own hooks and route definitions.
-	...pluginQuery.configs[ "flat/recommended" ].map( config => ( { ...config, files: client } ) ),
-	...pluginRouter.configs[ "flat/recommended" ].map( config => ( { ...config, files: client } ) )
+	}
 ];

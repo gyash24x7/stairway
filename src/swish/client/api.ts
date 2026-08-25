@@ -25,8 +25,8 @@ type GameParams = { readonly params: { readonly gameId: GameId } };
  * `forfeit` says everything by being played.
  */
 type PayloadArgs<Payload> = {} extends Payload
-	? [ payload?: Payload, signal?: AbortSignal ]
-	: [ payload: Payload, signal?: AbortSignal ];
+	? [ payload?: Payload ]
+	: [ payload: Payload ];
 
 /** Fills in the payload an endpoint taking the empty struct was called without. */
 const orEmpty = <Payload>( payload: Payload | undefined ) => payload ?? ( {} as Payload );
@@ -40,8 +40,8 @@ const orEmpty = <Payload>( payload: Payload | undefined ) => payload ?? ( {} as 
  */
 export const inputFn = <Payload, A, E>(
 	endpoint: ( request: { readonly payload: Payload } ) => Effect.Effect<A, E>
-) => ( ...[ payload, signal ]: PayloadArgs<Payload> ) =>
-	run( endpoint( { payload: orEmpty( payload ) } ), signal );
+) => ( ...[ payload ]: PayloadArgs<Payload> ) =>
+	run( endpoint( { payload: orEmpty( payload ) } ) );
 
 /**
  * Wraps an endpoint whose request is only the game it addresses — `getView`,
@@ -53,8 +53,8 @@ export const inputFn = <Payload, A, E>(
  */
 export const gameFn = <A, E>(
 	endpoint: ( request: GameParams ) => Effect.Effect<A, E>
-) => ( gameId: GameId, signal?: AbortSignal ) =>
-	run( endpoint( { params: { gameId } } ), signal );
+) => ( gameId: GameId ) =>
+	run( endpoint( { params: { gameId } } ) );
 
 /**
  * Wraps an endpoint that addresses a game and carries a payload — every move,
@@ -65,5 +65,5 @@ export const gameFn = <A, E>(
  */
 export const gameInputFn = <Payload, A, E>(
 	endpoint: ( request: GameParams & { readonly payload: Payload } ) => Effect.Effect<A, E>
-) => ( gameId: GameId, ...[ payload, signal ]: PayloadArgs<Payload> ) =>
-	run( endpoint( { params: { gameId }, payload: orEmpty( payload ) } ), signal );
+) => ( gameId: GameId, ...[ payload ]: PayloadArgs<Payload> ) =>
+	run( endpoint( { params: { gameId }, payload: orEmpty( payload ) } ) );

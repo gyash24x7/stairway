@@ -17,7 +17,7 @@ export function FishGamePage( props: { gameId: string } ) {
 	const { data, isLoading, isError, error, refetch } = useQuery( {
 		queryKey,
 		enabled: !!authInfo,
-		queryFn: ( { signal } ) => fishApi.getView( gameId, signal )
+		queryFn: () => fishApi.getView( gameId )
 	} );
 
 	useGameSync( { gameName: "fish", gameId, playerId: authInfo!.id, queryKey } );
