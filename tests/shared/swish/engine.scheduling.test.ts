@@ -1,16 +1,14 @@
+import { ParleyConfig, parleyEngine, policylessParleyEngine } from "@tests/helpers/games/parley.ts";
+import { relayEngine } from "@tests/helpers/games/relay.ts";
+import { ScribeConfig, scribeEngine } from "@tests/helpers/games/scribe.ts";
+import { concedingTallyEngine, TallyConfig, tallyEngine } from "@tests/helpers/games/tally.ts";
+import { commitsIn, createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { commitsIn, createInput, runGame, testClock } from "@tests/helpers/runner.ts";
-import type { ParleyConfig } from "@tests/helpers/games/parley.ts";
-import { parleyEngine, policylessParleyEngine } from "@tests/helpers/games/parley.ts";
-import { relayEngine } from "@tests/helpers/games/relay.ts";
-import type { ScribeConfig } from "@tests/helpers/games/scribe.ts";
-import { scribeEngine } from "@tests/helpers/games/scribe.ts";
-import type { TallyConfig } from "@tests/helpers/games/tally.ts";
-import { concedingTallyEngine, tallyEngine } from "@tests/helpers/games/tally.ts";
+
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -32,8 +30,8 @@ const FRAME_TIMEOUT = 60_000;
 
 // --- tally: a flat game with a bot policy ----------------------------------
 
-const tallyConfig = ( over: Partial<TallyConfig> = {} ): TallyConfig =>
-	( { playerCount: 4, autoStart: false, ...over } );
+const tallyConfig = ( over: Partial<TallyConfig> = {} ) =>
+	TallyConfig.make( { playerCount: 4, autoStart: false, ...over } );
 
 const tally = <A, E>(
 	body: ( engine: Effect.Success<typeof tallyEngine> ) => Effect.Effect<A, E>,
@@ -53,8 +51,8 @@ const tally = <A, E>(
 
 // --- scribe: a flat game with no policy at all -----------------------------
 
-const scribeConfig = ( over: Partial<ScribeConfig> = {} ): ScribeConfig =>
-	( { playerCount: 4, autoStart: false, allowSpecial: false, ...over } );
+const scribeConfig = ( over: Partial<ScribeConfig> = {} ) =>
+	ScribeConfig.make( { playerCount: 4, autoStart: false, allowSpecial: false, ...over } );
 
 const scribe = <A, E>(
 	body: ( engine: Effect.Success<typeof scribeEngine> ) => Effect.Effect<A, E>,
@@ -74,8 +72,8 @@ const scribe = <A, E>(
 
 // --- parley: reaction windows, with and without a policy -------------------
 
-const parleyConfig = ( over: Partial<ParleyConfig> = {} ): ParleyConfig =>
-	( { playerCount: 4, autoStart: false, target: 99, ...over } );
+const parleyConfig = ( over: Partial<ParleyConfig> = {} ) =>
+	ParleyConfig.make( { playerCount: 4, autoStart: false, target: 99, ...over } );
 
 const parleyOn = <A, E>(
 	engine: typeof parleyEngine,

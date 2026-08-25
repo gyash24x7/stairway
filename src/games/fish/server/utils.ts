@@ -9,7 +9,14 @@ import {
 	NORMAL_BOOKS
 } from "@/games/fish/shared/utils.ts";
 
-import type { Ask, Book, BookType, Metrics, PlayerCount, TeamCount } from "@/games/fish/shared/schema.ts";
+import type {
+	Ask,
+	Book,
+	BookType,
+	Metrics,
+	PlayerCount,
+	TeamCount
+} from "@/games/fish/shared/schema.ts";
 import type { PublicKnowledge } from "@/games/fish/shared/utils.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
 import type { PlayerId, TeamId } from "@/swish/shared/schema.ts";

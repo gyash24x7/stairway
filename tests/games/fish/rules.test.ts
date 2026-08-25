@@ -1,16 +1,18 @@
+import { createInput, runGame } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import { fish } from "@/games/fish/server/engine.ts";
 import { asksOf, buildConfig } from "@/games/fish/server/utils.ts";
+import { Claim } from "@/games/fish/shared/schema.ts";
 import { claimsOf, getCardsOfBook } from "@/games/fish/shared/utils.ts";
-import type { GameContext, PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 import { opponentsOf, teamMatesOf } from "@/swish/shared/teams.ts";
-import { createInput, runGame } from "@tests/helpers/runner.ts";
 
-import type { BookType, Claim, FishState, PlayerCount } from "@/games/fish/shared/schema.ts";
+import type { Book } from "@/games/fish/shared/schema.ts";
+import type { BookType, FishState, PlayerCount } from "@/games/fish/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
+import type { GameContext, PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const seat = ( id: Player ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar" } );
@@ -87,14 +89,8 @@ const withoutBook = ( hands: FishState[ "hands" ], book: string ) => {
 };
 
 /** A declaration of a book, as the history records one. */
-const claimOf = ( playerId: Player, book: string ): Claim => ( {
-	_tag: "fish/Claim",
-	success: true,
-	playerId,
-	book: book as Claim[ "book" ],
-	correctClaim: {},
-	actualClaim: {}
-} );
+const claimOf = ( playerId: Player, book: Book ) =>
+	Claim.make( { success: true, playerId, book, correctClaim: {}, actualClaim: {} } );
 
 const reasonOf = ( error: unknown ) => ( error as { readonly reason: string } ).reason;
 

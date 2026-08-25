@@ -1,11 +1,13 @@
+import { scribeEngine } from "@tests/helpers/games/scribe.ts";
+import { commitsIn, createInput, runGame } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
-import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { commitsIn, createInput, runGame } from "@tests/helpers/runner.ts";
 import type { ScribeConfig, ScribeState } from "@tests/helpers/games/scribe.ts";
-import { scribeEngine } from "@tests/helpers/games/scribe.ts";
+
+import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -23,7 +25,7 @@ const CHECKPOINT_INTERVAL = 32;
 type StoredRecord = {
 	readonly version: number;
 	readonly state: ScribeState;
-	readonly seed: string
+	readonly seed: string;
 };
 type StoredCheckpoint = { readonly commitId: string; readonly data: StoredRecord };
 

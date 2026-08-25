@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { CALLBREAK_TRICKS_PER_DEAL } from "@/games/callbreak/shared/schema.ts";
 import {
 	calculateRoundScore,
 	createNewDeal,
@@ -9,6 +8,7 @@ import {
 	rankPlayers,
 	standingsFor
 } from "@/games/callbreak/server/utils.ts";
+import { CALLBREAK_TRICKS_PER_DEAL } from "@/games/callbreak/shared/schema.ts";
 import {
 	getCardValue,
 	getHighestCardValue,

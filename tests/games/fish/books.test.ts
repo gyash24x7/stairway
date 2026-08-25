@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { isBookInHand } from "@/games/fish/server/utils.ts";
+import { Ask, Claim, Transfer } from "@/games/fish/shared/schema.ts";
 import {
 	CANADIAN_BOOKS,
 	getAskDescription,
@@ -14,11 +15,11 @@ import {
 	getTransferDescription,
 	NORMAL_BOOKS
 } from "@/games/fish/shared/utils.ts";
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 
-import type { Ask, Book, Claim, Transfer } from "@/games/fish/shared/schema.ts";
+import type { Book } from "@/games/fish/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -170,8 +171,8 @@ describe( "getBookSuit", () => {
 
 
 describe( "describing what happened", () => {
-	const ask = ( success: boolean ): Ask =>
-		( { _tag: "fish/Ask", success, playerId: alice, from: bob, cardId: "AH" } );
+	const ask = ( success: boolean ) =>
+		Ask.make( { success, playerId: alice, from: bob, cardId: "AH" } );
 
 	test( "an ask that landed", () => {
 		expect( getAskDescription( ask( true ), roster ) )
@@ -184,35 +185,33 @@ describe( "describing what happened", () => {
 	} );
 
 	test( "a declaration that came out right", () => {
-		const claim: Claim = {
-			_tag: "fish/Claim",
+		const claim = Claim.make( {
 			success: true,
 			playerId: alice,
 			book: "ACES",
 			correctClaim: {},
 			actualClaim: {}
-		};
+		} );
 
 		expect( getClaimDescription( claim, roster, "NORMAL" ) )
 			.toBe( "Alice declared ACES correctly!" );
 	} );
 
 	test( "a declaration that did not, in the variant's own words", () => {
-		const claim: Claim = {
-			_tag: "fish/Claim",
+		const claim = Claim.make( {
 			success: false,
 			playerId: bob,
 			book: "UH",
 			correctClaim: {},
 			actualClaim: {}
-		};
+		} );
 
 		expect( getClaimDescription( claim, roster, "CANADIAN" ) )
 			.toBe( "Bob declared HIGH ♥ incorrectly!" );
 	} );
 
 	test( "a turn handed to a teammate", () => {
-		const transfer: Transfer = { _tag: "fish/Transfer", playerId: alice, transferTo: bob };
+		const transfer = Transfer.make( { playerId: alice, transferTo: bob } );
 
 		expect( getTransferDescription( transfer, roster ) )
 			.toBe( "Alice transferred the turn to Bob" );

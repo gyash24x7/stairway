@@ -1,12 +1,15 @@
 import { describe, expect, test } from "bun:test";
+import * as Schema from "effect/Schema";
 
-import type { BaseGameConfig, GameRecord } from "@/swish/shared/schema.ts";
+import { Accumulator, engineApply, playerIdFor, toPlayerInfo } from "@/swish/server/utils.ts";
 import {
+	BaseGameConfig,
 	CurrentPlayerSet,
 	GameCode,
 	GameCompleted,
 	GameContext,
 	GameId,
+	GameRecord,
 	InteractionFrame,
 	InteractionOpened,
 	InteractionResolved,
@@ -27,7 +30,6 @@ import {
 	TeamNamed,
 	TurnAdvanced
 } from "@/swish/shared/schema.ts";
-import { Accumulator, engineApply, playerIdFor, toPlayerInfo } from "@/swish/server/utils.ts";
 
 import type { AuthInfo } from "@/auth/shared/schema.ts";
 
@@ -42,28 +44,30 @@ const BLUE = team( "blue" );
 
 const [ a, b, c, d ] = [ player( "a" ), player( "b" ), player( "c" ), player( "d" ) ];
 
-const recordOf = (
-	context: Partial<GameContext> = {}
-): GameRecord<State, BaseGameConfig> => ( {
-	id: GameId.make( "game-1" ),
-	code: GameCode.make( "CODE" ),
-	version: 0,
-	status: "CREATED",
-	players: {},
-	seed: "seed",
-	state: { folded: [] },
-	config: { playerCount: 4, autoStart: false },
-	context: GameContext.make( {
-		turn: 0,
-		players: [ a, b, c, d ],
-		currentPlayer: a,
-		interactions: [],
-		seats: {},
-		teams: {},
-		teamNames: {},
-		...context
-	} )
-} );
+const recordOf = ( context: Partial<GameContext> = {} ) =>
+	GameRecord(
+		Schema.Struct( { folded: Schema.Array( Schema.String ) } ),
+		BaseGameConfig
+	).make( {
+		id: GameId.make( "game-1" ),
+		code: GameCode.make( "CODE" ),
+		version: 0,
+		status: "CREATED",
+		players: {},
+		seed: "seed",
+		state: { folded: [] },
+		config: { playerCount: 4, autoStart: false },
+		context: GameContext.make( {
+			turn: 0,
+			players: [ a, b, c, d ],
+			currentPlayer: a,
+			interactions: [],
+			seats: {},
+			teams: {},
+			teamNames: {},
+			...context
+		} )
+	} );
 
 describe( "engineApply — TeamAssigned", () => {
 	test( "records the side for that player alone", () => {

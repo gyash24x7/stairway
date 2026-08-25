@@ -1,8 +1,8 @@
 import * as Schema from "effect/Schema";
 
 import { makeEngine } from "@/swish/server/engine.ts";
-import { BaseGameConfig, InvalidMove, PlayerId, SeatStatusChanged } from "@/swish/shared/schema.ts";
 import { playerIdFor } from "@/swish/server/utils.ts";
+import { BaseGameConfig, InvalidMove, PlayerId, SeatStatusChanged } from "@/swish/shared/schema.ts";
 
 import type { GameStructure } from "@/swish/server/structure.ts";
 
@@ -72,8 +72,8 @@ type ScribeMoves = {
 	finish: typeof EmptyInput;
 };
 
-const logged = ( state: ScribeState, entry: string ): ScribeState =>
-	( { ...state, log: [ ...state.log, entry ] } );
+const logged = ( state: ScribeState, entry: string ) =>
+	ScribeState.make( { ...state, log: [ ...state.log, entry ] } );
 
 export const scribeStructure: GameStructure<
 	"scribe",

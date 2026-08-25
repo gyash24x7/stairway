@@ -1,15 +1,17 @@
+import { parleyEngine } from "@tests/helpers/games/parley.ts";
+import { scribeEngine } from "@tests/helpers/games/scribe.ts";
+import { tallyEngine } from "@tests/helpers/games/tally.ts";
+import { createInput, publishedViews, runGame } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
-import { GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { createInput, publishedViews, runGame } from "@tests/helpers/runner.ts";
 import type { ParleyConfig } from "@tests/helpers/games/parley.ts";
-import { parleyEngine } from "@tests/helpers/games/parley.ts";
 import type { ScribeConfig, ScribeView } from "@tests/helpers/games/scribe.ts";
-import { scribeEngine } from "@tests/helpers/games/scribe.ts";
 import type { TallyConfig } from "@tests/helpers/games/tally.ts";
-import { tallyEngine } from "@tests/helpers/games/tally.ts";
+
+import { GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 

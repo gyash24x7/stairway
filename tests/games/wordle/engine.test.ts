@@ -1,20 +1,15 @@
+import { createInput, publishedViews, runGame, tagsIn, testClock } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import { wordle } from "@/games/wordle/server/engine.ts";
 import { dictionaries } from "@/games/wordle/shared/dictionary.ts";
+import { WordleConfig } from "@/games/wordle/shared/schema.ts";
 import { isValidWord } from "@/games/wordle/shared/utils.ts";
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import {
-	createInput,
-	publishedViews,
-	runGame,
-	tagsIn,
-	testClock
-} from "@tests/helpers/runner.ts";
 
-import type { WordleConfig, WordleState, WordleView } from "@/games/wordle/shared/schema.ts";
+import type { WordleState, WordleView } from "@/games/wordle/shared/schema.ts";
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 /** How soon the engine plays a machine seat once it is the one being waited on. */
 const BOT_DELAY_MS = 5_000;
@@ -26,13 +21,14 @@ const [ a, b ] = [ player( "a" ), player( "b" ) ];
 const info = ( id: Player ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar" } );
 
-const configOf = ( over: Partial<WordleConfig> = {} ): WordleConfig => ( {
-	playerCount: 1,
-	autoStart: false,
-	wordCount: 1,
-	wordLength: 5,
-	...over
-} );
+const configOf = ( over: Partial<WordleConfig> = {} ) =>
+	WordleConfig.make( {
+		playerCount: 1,
+		autoStart: false,
+		wordCount: 1,
+		wordLength: 5,
+		...over
+	} );
 
 /**
  * Seats a table, starts it, and hands the body the words it is hiding — read
@@ -596,7 +592,10 @@ describe( "the bot", () => {
 	} );
 
 	test( "never guesses the same word twice", () => {
-		const { result } = machineTable( ( engine, clock ) => playOut( engine, clock ), { wordCount: 4 } );
+		const { result } = machineTable(
+			( engine, clock ) => playOut( engine, clock ),
+			{ wordCount: 4 }
+		);
 		const guesses = result.view.boards[ 0 ]!.guesses;
 
 		expect( new Set( guesses ).size ).toBe( guesses.length );

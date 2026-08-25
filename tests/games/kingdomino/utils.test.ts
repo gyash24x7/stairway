@@ -1,17 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-	Board,
-	DraftEntry,
-	KingdominoState,
-	PlayerData,
-	Tile
-} from "@/games/kingdomino/shared/schema.ts";
-import {
-	KINGDOMINO_DECK_SIZE,
-	KINGDOMINO_DRAFT_SIZE,
-	KINGDOMINO_PLAYER_COUNTS
-} from "@/games/kingdomino/shared/schema.ts";
 import {
 	applyPlacement,
 	calculateScore,
@@ -27,6 +15,15 @@ import {
 	standingsFor,
 	totalCrowns
 } from "@/games/kingdomino/server/utils.ts";
+import {
+	Board,
+	DraftEntry,
+	KINGDOMINO_DECK_SIZE,
+	KINGDOMINO_DRAFT_SIZE,
+	KINGDOMINO_PLAYER_COUNTS,
+	PlayerData,
+	Tile
+} from "@/games/kingdomino/shared/schema.ts";
 import {
 	ALL_ROTATIONS,
 	calculateShift,
@@ -49,22 +46,24 @@ import {
 } from "@/games/kingdomino/shared/utils.ts";
 import { PlayerId } from "@/swish/shared/schema.ts";
 
+import type { KingdominoState } from "@/games/kingdomino/shared/schema.ts";
+
 const player = ( id: string ) => PlayerId.make( id );
 
 const [ a, b, c ] = [ player( "a" ), player( "b" ), player( "c" ) ];
 
 /** A kingdom holding whatever tiles the test names, castle included. */
-const kingdom = ( tiles: Record<string, Tile>, size: 5 | 7 = 5 ): Board => ( {
+const kingdom = ( tiles: Record<string, Tile>, size: 5 | 7 = 5 ) => Board.make( {
 	size,
 	castle: "red",
 	placements: [],
 	tiles: { "0,0": { terrain: "castle", crowns: 0 }, ...tiles }
 } );
 
-const tile = ( terrain: Tile[ "terrain" ], crowns = 0 ): Tile => ( { terrain, crowns } );
+const tile = ( terrain: Tile[ "terrain" ], crowns = 0 ) => Tile.make( { terrain, crowns } );
 
 /** A seat whose kingdom is described by its regions rather than its tiles. */
-const seat = ( regions: ReadonlyArray<{ tiles: number; crowns: number }> ): PlayerData => ( {
+const seat = ( regions: ReadonlyArray<{ tiles: number; crowns: number }> ) => PlayerData.make( {
 	board: createBoard( "red", 5 ),
 	queue: [],
 	score: {
@@ -80,8 +79,8 @@ const seat = ( regions: ReadonlyArray<{ tiles: number; crowns: number }> ): Play
 	}
 } );
 
-const claimed = ( id: number, by?: typeof a ): DraftEntry =>
-	( { domino: getDomino( id )!, selectedBy: by } );
+const claimed = ( id: number, by?: typeof a ) =>
+	DraftEntry.make( { domino: getDomino( id )!, selectedBy: by } );
 
 
 describe( "the box", () => {

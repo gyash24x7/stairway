@@ -12,7 +12,7 @@ export function LogoutButton() {
 	const refreshAuth = useRefreshAuth();
 	const [ isPending, startTransition ] = useTransition();
 
-	const handleLogout = () => startTransition( async() => {
+	const handleLogout = () => startTransition( async () => {
 		await logoutFn();
 		await refreshAuth();
 		await navigate( { to: "/" } );

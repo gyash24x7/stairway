@@ -1,12 +1,13 @@
+import { TallyConfig, tallyEngine } from "@tests/helpers/games/tally.ts";
+import { commitsIn, createInput, publishedViews, runGame } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
+import type { TallyView } from "@tests/helpers/games/tally.ts";
+
+import { GameCode, GameId, GameRef, PlayerId, PlayerInfo, TeamId } from "@/swish/shared/schema.ts";
+
 import type { PlayerId as Player } from "@/swish/shared/schema.ts";
-import { GameCode, GameId, GameRef, PlayerId, PlayerInfo, TeamId }
-	from "@/swish/shared/schema.ts";
-import { commitsIn, createInput, publishedViews, runGame } from "@tests/helpers/runner.ts";
-import type { TallyConfig, TallyView } from "@tests/helpers/games/tally.ts";
-import { tallyEngine } from "@tests/helpers/games/tally.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -15,8 +16,8 @@ const [ a, b, c, d, e ] = [ "a", "b", "c", "d", "e" ].map( player );
 const info = ( id: Player ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar" } );
 
-const config = ( over: Partial<TallyConfig> = {} ): TallyConfig =>
-	( { playerCount: 2, autoStart: false, ...over } );
+const config = ( over: Partial<TallyConfig> = {} ) =>
+	TallyConfig.make( { playerCount: 2, autoStart: false, ...over } );
 
 const refTo = ( id: string, code: string ) =>
 	GameRef.make( { id: GameId.make( id ), code: GameCode.make( code ) } );
@@ -183,8 +184,8 @@ describe( "leaveTeam", () => {
 	const RED = team( "red" );
 	const BLUE = team( "blue" );
 
-	const teamed = (): TallyConfig =>
-		( { playerCount: 4, autoStart: false, teams: [ RED, BLUE ] } );
+	const teamed = () =>
+		TallyConfig.make( { playerCount: 4, autoStart: false, teams: [ RED, BLUE ] } );
 
 	test( "frees a seat on a side that was full", () => {
 		const { result } = run( engine => Effect.gen( function* () {

@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 
 import { makeEngine } from "@/swish/server/engine.ts";
-import type { GameData, InteractionFrame as Frame } from "@/swish/shared/schema.ts";
+import { playerIdFor } from "@/swish/server/utils.ts";
 import {
 	BaseGameConfig,
 	InteractionFrame,
@@ -9,8 +9,9 @@ import {
 	InvalidMove,
 	PlayerId
 } from "@/swish/shared/schema.ts";
-import { playerIdFor } from "@/swish/server/utils.ts";
+
 import type { GameStructure } from "@/swish/server/structure.ts";
+import type { InteractionFrame as Frame, GameData } from "@/swish/shared/schema.ts";
 
 /**
  * A four-seat game whose whole purpose is reaction windows. One move opens a

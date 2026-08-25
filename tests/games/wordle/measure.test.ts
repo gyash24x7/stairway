@@ -1,9 +1,9 @@
+import { TestHost } from "@tests/helpers/host.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import { wordle } from "@/games/wordle/server/engine.ts";
 import { GameCode, GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { TestHost } from "@tests/helpers/host.ts";
 
 import type { UserId } from "@/auth/shared/schema.ts";
 import type { WordCount, WordLength } from "@/games/wordle/shared/schema.ts";

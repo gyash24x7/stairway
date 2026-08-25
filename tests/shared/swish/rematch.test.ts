@@ -1,10 +1,17 @@
 import { describe, expect, test } from "bun:test";
 
 import { planRematch } from "@/swish/shared/rematch.ts";
-import { GameContext, PlayerId, PlayerInfo, TeamId, TeamName } from "@/swish/shared/schema.ts";
+import {
+	BaseGameConfig,
+	GameContext,
+	PlayerId,
+	PlayerInfo,
+	Roster,
+	TeamId,
+	TeamName
+} from "@/swish/shared/schema.ts";
 
 import type { RematchSource } from "@/swish/shared/rematch.ts";
-import type { BaseGameConfig, Roster } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 const team = ( id: string ) => TeamId.make( id );
@@ -20,8 +27,9 @@ const human = ( id: PlayerId ) =>
 const bot = ( id: PlayerId ) =>
 	PlayerInfo.make( { id, name: `bot ${ id }`, avatar: `bot-avatar-${ id }`, isBot: true } );
 
-const rosterOf = ( ...people: ReadonlyArray<PlayerInfo> ): Roster =>
-	Object.fromEntries( people.map( person => [ person.id, person ] ) );
+const rosterOf = ( ...people: ReadonlyArray<PlayerInfo> ) => Roster.make(
+	Object.fromEntries( people.map( person => [ person.id, person ] ) )
+);
 
 const contextOf = ( options: {
 	readonly players: ReadonlyArray<PlayerId>;
@@ -37,8 +45,8 @@ const contextOf = ( options: {
 	teamNames: options.teamNames ?? {}
 } );
 
-const configOf = ( teams?: ReadonlyArray<TeamId> ): BaseGameConfig =>
-	( { playerCount: 4, autoStart: false, ...( teams ? { teams } : {} ) } );
+const configOf = ( teams?: ReadonlyArray<TeamId> ) =>
+	BaseGameConfig.make( { playerCount: 4, autoStart: false, ...( teams ? { teams } : {} ) } );
 
 const sourceOf = ( source: RematchSource ) => source;
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test";
 
-import type { CardId } from "@/shared/cards/schema.ts";
 import {
 	CARD_IDS,
 	CARD_RANKS,
@@ -14,6 +13,8 @@ import {
 	SORTED_DECK
 } from "@/shared/cards/utils.ts";
 import { mulberry32 } from "@/shared/utils/rng.ts";
+
+import type { CardId } from "@/shared/cards/schema.ts";
 
 describe( "SORTED_DECK", () => {
 	it( "contains 52 unique cards", () => {

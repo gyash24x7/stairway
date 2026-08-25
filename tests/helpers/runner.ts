@@ -1,16 +1,10 @@
+import { TestHost } from "@tests/helpers/host.ts";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 
-import type {
-	BaseGameConfig,
-	GameView,
-	InteractionFrame,
-	PlayerId
-} from "@/swish/shared/schema.ts";
-import { GameCode, GameId } from "@/swish/shared/schema.ts";
-import { TestHost } from "@tests/helpers/host.ts";
-
 import type { PostedResult } from "@tests/helpers/host.ts";
+
+import { GameCode, GameId } from "@/swish/shared/schema.ts";
 
 import type { UserId } from "@/auth/shared/schema.ts";
 import type {
@@ -20,6 +14,12 @@ import type {
 	SwishSync,
 	SwishTimers
 } from "@/swish/server/services.ts";
+import type {
+	BaseGameConfig,
+	GameView,
+	InteractionFrame,
+	PlayerId
+} from "@/swish/shared/schema.ts";
 
 /** Everything an engine asks of its host, which `TestHost` provides in memory. */
 export type HostServices =
@@ -38,7 +38,7 @@ export type HostServices =
  * @param now - The reading both the engine and the schedule share.
  * @returns The clock service to provide.
  */
-const clockReading = ( now: () => number ): Clock.Clock => {
+const clockReading = ( now: () => number ) => {
 	const nanos = () => BigInt( Math.trunc( now() ) ) * 1_000_000n;
 
 	return {

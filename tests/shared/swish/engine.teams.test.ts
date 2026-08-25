@@ -1,16 +1,15 @@
+import { TallyConfig, tallyEngine } from "@tests/helpers/games/tally.ts";
+import { TestHost } from "@tests/helpers/host.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PlayerId as Player, TeamId as Team } from "@/swish/shared/schema.ts";
+import type { PostedResult } from "@tests/helpers/host.ts";
+
 import { GameCode, GameId, PlayerId, PlayerInfo, TeamId } from "@/swish/shared/schema.ts";
 import { teamOf } from "@/swish/shared/teams.ts";
-import { TestHost } from "@tests/helpers/host.ts";
-
-import type { PostedResult } from "@tests/helpers/host.ts";
-import type { TallyConfig } from "@tests/helpers/games/tally.ts";
-import { tallyEngine } from "@tests/helpers/games/tally.ts";
 
 import type { UserId } from "@/auth/shared/schema.ts";
+import type { PlayerId as Player, TeamId as Team } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 const team = ( id: string ) => TeamId.make( id );
@@ -23,8 +22,8 @@ const [ a, b, c, d ] = [ player( "a" ), player( "b" ), player( "c" ), player( "d
 const info = ( id: Player ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar" } );
 
-const configOf = ( teams?: ReadonlyArray<Team> ): TallyConfig =>
-	( { playerCount: 4, autoStart: false, ...( teams ? { teams } : {} ) } );
+const configOf = ( teams?: ReadonlyArray<Team> ) =>
+	TallyConfig.make( { playerCount: 4, autoStart: false, ...( teams ? { teams } : {} ) } );
 
 /**
  * Drives the toy game against in-memory host services. Everything a test needs
@@ -349,15 +348,13 @@ describe( "naming a side", () => {
 			}
 			yield* engine.start( a );
 			const named = yield* engine.getState();
-			const refusal = yield* engine
+			return yield* engine
 				.nameTeam(
 					named.context.players[ 0 ]!,
 					named.context.teams[ named.context.players[ 0 ]! ]!,
 					"Too Late"
 				)
 				.pipe( Effect.flip );
-
-			return refusal;
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotJoinable" );

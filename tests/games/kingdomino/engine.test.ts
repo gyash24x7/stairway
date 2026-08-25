@@ -1,15 +1,18 @@
+import { createInput, runGame, tagsIn, testClock } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import { decideMove } from "@/games/kingdomino/server/bot.ts";
 import { kingdomino } from "@/games/kingdomino/server/engine.ts";
+import { calculateScore, CASTLES, draftPlayerOrder } from "@/games/kingdomino/server/utils.ts";
 import {
 	KINGDOMINO_DECK_SIZE,
-	KINGDOMINO_DRAFT_SIZE,
 	KINGDOMINO_DEFAULT_BOARD_SIZE,
-	KINGDOMINO_MOVE_TIMEOUT_MILLIS
+	KINGDOMINO_DRAFT_SIZE,
+	KINGDOMINO_MOVE_TIMEOUT_MILLIS,
+	KingdominoConfig,
+	KingdominoView
 } from "@/games/kingdomino/shared/schema.ts";
-import { calculateScore, CASTLES, draftPlayerOrder } from "@/games/kingdomino/server/utils.ts";
 import {
 	canDominoBePlaced,
 	createBoard,
@@ -17,15 +20,8 @@ import {
 	getValidPlacements
 } from "@/games/kingdomino/shared/utils.ts";
 import { GameContext, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { createInput, runGame, tagsIn, testClock } from "@tests/helpers/runner.ts";
 
-import type {
-	Board,
-	BoardSize,
-	KingdominoConfig,
-	KingdominoView,
-	Placement
-} from "@/games/kingdomino/shared/schema.ts";
+import type { Board, BoardSize, Placement } from "@/games/kingdomino/shared/schema.ts";
 import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
@@ -38,7 +34,7 @@ const info = ( id: Player, isBot = false ) =>
 const configFor = (
 	playerCount: 2 | 3 | 4,
 	boardSize: BoardSize = KINGDOMINO_DEFAULT_BOARD_SIZE
-): KingdominoConfig => ( {
+) => KingdominoConfig.make( {
 	playerCount,
 	boardSize,
 	autoStart: false,
@@ -644,7 +640,7 @@ describe( "the policy", () => {
 		board: Board,
 		queue: ReadonlyArray<number>,
 		draft: ReadonlyArray<{ id: number; by?: Player }> = []
-	): KingdominoView => ( {
+	) => KingdominoView.make( {
 		playerData: { [ a ]: { board, queue, score: calculateScore( board ) } },
 		draft: draft.map( entry => ( { domino: getDomino( entry.id )!, selectedBy: entry.by } ) ),
 		selectionOrder: [ a ],

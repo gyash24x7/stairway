@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 
-import { dictionaries } from "@/games/wordle/shared/dictionary.ts";
 import {
 	boardFor,
 	computeRow,
@@ -17,15 +16,15 @@ import {
 	solvedWordsFor,
 	solvePoints
 } from "@/games/wordle/server/utils.ts";
+import { dictionaries } from "@/games/wordle/shared/dictionary.ts";
+import { WordleConfig, WordleState } from "@/games/wordle/shared/schema.ts";
 import { PlayerAudience, PlayerId, TableAudience } from "@/swish/shared/schema.ts";
-
-import type { WordleConfig, WordleState } from "@/games/wordle/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
 const [ a, b ] = [ player( "a" ), player( "b" ) ];
 
-const configOf = ( over: Partial<WordleConfig> = {} ): WordleConfig => ( {
+const configOf = ( over: Partial<WordleConfig> = {} ) => WordleConfig.make( {
 	playerCount: 2,
 	autoStart: false,
 	wordCount: 1,
@@ -33,7 +32,7 @@ const configOf = ( over: Partial<WordleConfig> = {} ): WordleConfig => ( {
 	...over
 } );
 
-const stateOf = ( over: Partial<WordleState> = {} ): WordleState => ( {
+const stateOf = ( over: Partial<WordleState> = {} ) => WordleState.make( {
 	words: [ "crane" ],
 	guesses: {},
 	forfeited: [],

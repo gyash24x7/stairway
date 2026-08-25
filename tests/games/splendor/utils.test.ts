@@ -6,6 +6,7 @@ import {
 	generateNobles,
 	standingsFor
 } from "@/games/splendor/server/utils.ts";
+import { Card, Cost, PlayerData, Tokens } from "@/games/splendor/shared/schema.ts";
 import {
 	discountedCost,
 	hasLegalMove,
@@ -16,35 +17,21 @@ import {
 } from "@/games/splendor/shared/utils.ts";
 import { makeRng } from "@/shared/utils/rng.ts";
 
-import type { Card, Cost, PlayerData, Tokens } from "@/games/splendor/shared/schema.ts";
 import type { PlayerId } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => id as PlayerId;
 
-const cost = ( over: Partial<Cost> = {} ): Cost =>
-	( { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, ...over } );
+const cost = ( over: Partial<Cost> = {} ) =>
+	Cost.make( { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, ...over } );
 
-const tokens = ( over: Partial<Tokens> = {} ): Tokens =>
-	( { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0, ...over } );
+const tokens = ( over: Partial<Tokens> = {} ) =>
+	Tokens.make( { diamond: 0, sapphire: 0, emerald: 0, ruby: 0, onyx: 0, gold: 0, ...over } );
 
-const card = ( over: Partial<Card> = {} ): Card => ( {
-	id: "card",
-	level: 1,
-	points: 0,
-	cost: cost(),
-	bonus: "diamond",
-	...over
-} );
+const card = ( over: Partial<Card> = {} ) =>
+	Card.make( { id: "card", level: 1, points: 0, cost: cost(), bonus: "diamond", ...over } );
 
-const seat = ( over: Partial<PlayerData> = {} ): PlayerData => ( {
-	tokens: tokens(),
-	cards: [],
-	nobles: [],
-	reserved: [],
-	points: 0,
-	...over
-} );
-
+const seat = ( over: Partial<PlayerData> = {} ) =>
+	PlayerData.make( { tokens: tokens(), cards: [], nobles: [], reserved: [], points: 0, ...over } );
 
 describe( "the development decks", () => {
 	const decks = generateDecks( makeRng( 1 ).next );

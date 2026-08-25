@@ -1,11 +1,16 @@
+import {
+	ghostNextPhaseEngine,
+	ghostStartEngine,
+	RelayConfig,
+	relayEngine
+} from "@tests/helpers/games/relay.ts";
+import { commitsIn, createInput, runGame } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { commitsIn, createInput, runGame } from "@tests/helpers/runner.ts";
-import type { RelayConfig } from "@tests/helpers/games/relay.ts";
-import { ghostNextPhaseEngine, ghostStartEngine, relayEngine } from "@tests/helpers/games/relay.ts";
+
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -15,8 +20,8 @@ const seats = [ a, b, c, d ];
 const info = ( id: Player ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar" } );
 
-const config = ( rounds = 1 ): RelayConfig =>
-	( { playerCount: 4, autoStart: false, rounds } );
+const config = ( rounds = 1 ) =>
+	RelayConfig.make( { playerCount: 4, autoStart: false, rounds } );
 
 /** Seats four players at a relay table and starts it, then runs the body. */
 const relay = <A, E>(

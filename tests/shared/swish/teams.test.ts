@@ -1,12 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
-import type {
-	BaseGameConfig,
-	PlayerId as Player,
+import {
+	GameContext,
+	PlayerId,
 	Standing,
-	TeamId as Team
+	TeamId
 } from "@/swish/shared/schema.ts";
-import { GameContext, PlayerId, TeamId } from "@/swish/shared/schema.ts";
 import {
 	areTeammates,
 	balanceTeams,
@@ -19,6 +18,12 @@ import {
 	teamSize,
 	validateTeamConfig
 } from "@/swish/shared/teams.ts";
+
+import type {
+	BaseGameConfig,
+	PlayerId as Player,
+	TeamId as Team
+} from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 const team = ( id: string ) => TeamId.make( id );
@@ -257,8 +262,12 @@ describe( "membership lookups", () => {
 } );
 
 describe( "rankTeams", () => {
-	const standing = ( id: string, rank: number, side: Team, score?: number ): Standing =>
-		( { playerId: player( id ), rank, team: side, ...( score === undefined ? {} : { score } ) } );
+	const standing = ( id: string, rank: number, side: Team, score?: number ) =>
+		Standing.make( {
+			playerId: player( id ), rank, team: side, ...( score === undefined
+				? {}
+				: { score } )
+		} );
 
 	test( "sums the scores on each side", () => {
 		const { teamRanking, winningTeam } = rankTeams( [ RED, BLUE ], [

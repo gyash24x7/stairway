@@ -13,13 +13,13 @@ import {
 	isGameComplete,
 	possibleHolders
 } from "@/games/fish/server/utils.ts";
-import type { PublicKnowledge } from "@/games/fish/shared/utils.ts";
+import { Ask, Claim } from "@/games/fish/shared/schema.ts";
 import { getBookWinner, getTeamScores, teamCountsFor } from "@/games/fish/shared/utils.ts";
-import type { GameContext, PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, TeamId } from "@/swish/shared/schema.ts";
 
-import type { Ask, Claim, NormalBook } from "@/games/fish/shared/schema.ts";
+import type { NormalBook } from "@/games/fish/shared/schema.ts";
 import type { CardId } from "@/shared/cards/schema.ts";
+import type { GameContext, PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const [ a, b, c, d ] = [ "a", "b", "c", "d" ].map( id => PlayerId.make( id ) );
 
@@ -27,14 +27,14 @@ const [ RED, BLUE ] = [ TeamId.make( "red" ), TeamId.make( "blue" ) ];
 
 const config = buildConfig( 4, "NORMAL", 2 );
 
-const ask = ( playerId: Player, from: Player, cardId: CardId, success: boolean ): Ask =>
-	( { _tag: "fish/Ask", playerId, from, cardId, success } );
+const ask = ( playerId: Player, from: Player, cardId: CardId, success: boolean ) =>
+	Ask.make( { playerId, from, cardId, success } );
 
 const known = (
 	asks: readonly Ask[] = [],
 	claims: readonly Claim[] = [],
 	counts: Partial<Record<Player, number>> = {}
-): PublicKnowledge => ( {
+) => ( {
 	cardCounts: { [ a ]: 13, [ b ]: 13, [ c ]: 13, [ d ]: 13, ...counts },
 	moves: [ ...asks, ...claims ]
 } );
@@ -118,12 +118,8 @@ describe( "getBookWinner", () => {
 		teams: { [ a ]: RED, [ b ]: BLUE, [ c ]: RED, [ d ]: BLUE }
 	} as unknown as GameContext;
 
-	const claim = (
-		playerId: Player,
-		success: boolean,
-		correctClaim: Record<string, Player>
-	): Claim =>
-		( { _tag: "fish/Claim", success, playerId, book: "ACES", correctClaim, actualClaim: {} } );
+	const claim = ( playerId: Player, success: boolean, correctClaim: Record<string, Player> ) =>
+		Claim.make( { success, playerId, book: "ACES", correctClaim, actualClaim: {} } );
 
 	test( "a correct declaration wins the book for the declarer's side", () => {
 		expect( getBookWinner( claim( a, true, {} ), context ) ).toBe( RED );
@@ -168,8 +164,8 @@ describe( "getTeamScores", () => {
 		teams: { [ a ]: RED, [ b ]: BLUE, [ c ]: RED, [ d ]: BLUE }
 	} as unknown as GameContext;
 
-	const won = ( playerId: Player, book: NormalBook ): Claim =>
-		( { _tag: "fish/Claim", success: true, playerId, book, correctClaim: {}, actualClaim: {} } );
+	const won = ( playerId: Player, book: NormalBook ) =>
+		Claim.make( { success: true, playerId, book, correctClaim: {}, actualClaim: {} } );
 
 	test( "counts the books each side took", () => {
 		const scores = getTeamScores(
@@ -193,8 +189,8 @@ describe( "getTeamScores", () => {
 } );
 
 describe( "the books still in play", () => {
-	const claim = ( book: NormalBook ): Claim =>
-		( { _tag: "fish/Claim", success: true, playerId: a, book, correctClaim: {}, actualClaim: {} } );
+	const claim = ( book: NormalBook ) =>
+		Claim.make( { success: true, playerId: a, book, correctClaim: {}, actualClaim: {} } );
 
 	test( "a fresh table has every book of its variant live", () => {
 		expect( getLiveBooks( known(), config.books ) ).toEqual( config.books );
@@ -246,14 +242,13 @@ describe( "possibleHolders", () => {
 	} );
 
 	test( "a declared book leaves play entirely", () => {
-		const claim: Claim = {
-			_tag: "fish/Claim",
+		const claim = Claim.make( {
 			success: true,
 			playerId: a,
 			book: "ACES",
 			correctClaim: {},
 			actualClaim: {}
-		};
+		} );
 
 		const holders = possibleHolders( known( [], [ claim ] ), config.books );
 
@@ -263,8 +258,8 @@ describe( "possibleHolders", () => {
 } );
 
 describe( "getMetrics", () => {
-	const claim = ( playerId: Player, book: NormalBook, success: boolean ): Claim =>
-		( { _tag: "fish/Claim", success, playerId, book, correctClaim: {}, actualClaim: {} } );
+	const claim = ( playerId: Player, book: NormalBook, success: boolean ) =>
+		Claim.make( { success, playerId, book, correctClaim: {}, actualClaim: {} } );
 
 	test( "counts both sides of every ask, and how declarations came out", () => {
 		const metrics = getMetrics(

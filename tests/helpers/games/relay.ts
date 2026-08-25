@@ -1,8 +1,8 @@
 import * as Schema from "effect/Schema";
 
 import { makeEngine } from "@/swish/server/engine.ts";
-import { BaseGameConfig, InvalidMove, PlayerId } from "@/swish/shared/schema.ts";
 import { playerIdFor } from "@/swish/server/utils.ts";
+import { BaseGameConfig, InvalidMove, PlayerId } from "@/swish/shared/schema.ts";
 
 import type { GameStructure } from "@/swish/server/structure.ts";
 
@@ -64,7 +64,7 @@ export const CollectInput = Schema.Struct( { amount: Schema.Number } );
 type RelayMoves = { pass: typeof PassInput; collect: typeof CollectInput };
 type RelayPhases = { passing: readonly [ "pass" ]; collecting: readonly [ "collect" ] };
 
-const apply = ( state: RelayState, event: RelayEvent ): RelayState => {
+const apply = ( state: RelayState, event: RelayEvent ) => {
 	switch ( event._tag ) {
 		case "relay/ev/Passed":
 			return { ...state, passes: [ ...state.passes, event.playerId ] };

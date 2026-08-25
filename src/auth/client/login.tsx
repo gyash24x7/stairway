@@ -27,7 +27,7 @@ export function Login() {
 	const [ name, setName ] = useState( "" );
 	const [ error, setError ] = useState<string | null>( null );
 
-	const finishAuth = async() => {
+	const finishAuth = async () => {
 		await refreshAuth();
 		setOpen( false );
 		await navigate( { to: "/" } );
@@ -37,7 +37,7 @@ export function Login() {
 		? !!name.trim() && /.+@.+/.test( email )
 		: true;
 
-	const submit = () => startTransition( async() => {
+	const submit = () => startTransition( async () => {
 		setError( null );
 		try {
 			if ( mode === "register" ) {
@@ -47,7 +47,7 @@ export function Login() {
 				await loginPasskeyFn();
 			}
 			await finishAuth();
-		} catch( err ) {
+		} catch ( err ) {
 			console.error( err );
 			setError( err instanceof Error ? err.message : "Something went wrong." );
 		}

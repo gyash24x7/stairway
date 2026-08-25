@@ -1,15 +1,11 @@
+import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import { decideMove } from "@/games/splendor/server/bot.ts";
 import { splendor } from "@/games/splendor/server/engine.ts";
-import type {
-	Card,
-	PickTokensInput,
-	SplendorConfig,
-	SplendorView
-} from "@/games/splendor/shared/schema.ts";
 import {
+	PickTokensInput,
 	SPLENDOR_DEFAULT_WINNING_POINTS,
 	SPLENDOR_GOLD_SUPPLY,
 	SPLENDOR_MAX_RESERVED,
@@ -17,12 +13,17 @@ import {
 	SPLENDOR_NOBLE_VISIT,
 	SPLENDOR_OPEN_CARDS,
 	SPLENDOR_TOKEN_SUPPLY,
-	SPLENDOR_WINNING_POINTS
+	SPLENDOR_WINNING_POINTS,
+	SplendorConfig
 } from "@/games/splendor/shared/schema.ts";
 import { discountedCost, GEMS, paymentFor, sumTokens } from "@/games/splendor/shared/utils.ts";
+import { GameContext, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+
+import type {
+	Card,
+	SplendorView
+} from "@/games/splendor/shared/schema.ts";
 import type { InteractionFrame, InvalidMove, PlayerId as Player } from "@/swish/shared/schema.ts";
-import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -40,7 +41,7 @@ type WinningPoints = typeof SPLENDOR_WINNING_POINTS[number];
 const configFor = (
 	playerCount: 2 | 3 | 4,
 	winningPoints: WinningPoints = SPLENDOR_DEFAULT_WINNING_POINTS
-): SplendorConfig => ( {
+) => SplendorConfig.make( {
 	playerCount,
 	winningPoints,
 	autoStart: false,
@@ -86,8 +87,8 @@ const viewOf = ( engine: Effect.Success<typeof splendor>, id?: Player ) =>
 	);
 
 /** A `pickTokens` input taking one of each named gem. */
-const take = ( ...gems: ReadonlyArray<string> ): PickTokensInput =>
-	( { tokens: Object.fromEntries( gems.map( gem => [ gem, 1 ] ) ) } );
+const take = ( ...gems: ReadonlyArray<string> ) =>
+	PickTokensInput.make( { tokens: Object.fromEntries( gems.map( gem => [ gem, 1 ] ) ) } );
 
 /** Plays whatever the policy would play for the seat whose turn it is. */
 const policyMove = ( engine: Effect.Success<typeof splendor> ) => Effect.gen( function* () {
@@ -855,8 +856,7 @@ describe( "passing a turn", () => {
 	} );
 
 	/** A context with nothing pending, which is what a normal turn looks like. */
-	const openTurn = {
-		_tag: "swish/GameContext" as const,
+	const openTurn = GameContext.make( {
 		turn: 4,
 		players: [ a, b ],
 		currentPlayer: a,
@@ -864,7 +864,7 @@ describe( "passing a turn", () => {
 		seats: {},
 		teams: {},
 		teamNames: {}
-	};
+	} );
 
 	test( "is refused while the seat still has a move to make", () => {
 		const { result } = table( engine => engine.pass( {}, a ).pipe( Effect.flip ) );

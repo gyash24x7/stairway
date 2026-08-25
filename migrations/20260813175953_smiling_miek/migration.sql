@@ -7,7 +7,9 @@ CREATE TABLE `channels`
     `policy`     text    NOT NULL,
     `created_at` integer NOT NULL
 );
+
 --> statement-breakpoint
+
 CREATE TABLE `games`
 (
     `id`         text PRIMARY KEY,
@@ -16,7 +18,9 @@ CREATE TABLE `games`
     `completed`  integer DEFAULT false NOT NULL,
     `created_at` integer               NOT NULL
 );
+
 --> statement-breakpoint
+
 CREATE TABLE `passkeys`
 (
     `id`            text PRIMARY KEY,
@@ -32,7 +36,9 @@ CREATE TABLE `passkeys`
     `created_at`    integer,
     CONSTRAINT `fk_passkeys_user_id_users_id_fk` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 );
+
 --> statement-breakpoint
+
 CREATE TABLE `players`
 (
     `id`     text,
@@ -42,7 +48,9 @@ CREATE TABLE `players`
     CONSTRAINT `players_pk` PRIMARY KEY (`id`, `gameId`),
     CONSTRAINT `fk_players_gameId_games_id_fk` FOREIGN KEY (`gameId`) REFERENCES `games` (`id`) ON DELETE CASCADE
 );
+
 --> statement-breakpoint
+
 CREATE TABLE `users`
 (
     `id`             text PRIMARY KEY,
@@ -53,10 +61,27 @@ CREATE TABLE `users`
     `created_at`     integer               NOT NULL,
     `updated_at`     integer               NOT NULL
 );
+
 --> statement-breakpoint
-CREATE INDEX `idx_channels_ref` ON `channels` (`ref_type`, `ref_id`);--> statement-breakpoint
-CREATE INDEX `idx_games_code` ON `games` (`code`);--> statement-breakpoint
-CREATE INDEX `passkey_user_id_idx` ON `passkeys` (`user_id`);--> statement-breakpoint
-CREATE INDEX `passkey_credential_id_idx` ON `passkeys` (`credential_id`);--> statement-breakpoint
-CREATE INDEX `idx_players_id` ON `players` (`id`);--> statement-breakpoint
+
+CREATE INDEX `idx_channels_ref` ON `channels` (`ref_type`, `ref_id`);
+
+--> statement-breakpoint
+
+CREATE INDEX `idx_games_code` ON `games` (`code`);
+
+--> statement-breakpoint
+
+CREATE INDEX `passkey_user_id_idx` ON `passkeys` (`user_id`);
+
+--> statement-breakpoint
+
+CREATE INDEX `passkey_credential_id_idx` ON `passkeys` (`credential_id`);
+
+--> statement-breakpoint
+
+CREATE INDEX `idx_players_id` ON `players` (`id`);
+
+--> statement-breakpoint
+
 CREATE INDEX `idx_players_gameId` ON `players` (`gameId`);

@@ -1,15 +1,16 @@
+import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import { tictactoe } from "@/games/tictactoe/server/engine.ts";
-import type { PlaceInput, TicTacToeConfig } from "@/games/tictactoe/shared/schema.ts";
 import {
 	TICTACTOE_MOVE_TIMEOUT_MILLIS,
 	TICTACTOE_PLAYER_COUNT
 } from "@/games/tictactoe/shared/schema.ts";
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 import { GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
+
+import type { PlaceInput, TicTacToeConfig } from "@/games/tictactoe/shared/schema.ts";
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 

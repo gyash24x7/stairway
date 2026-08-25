@@ -17,7 +17,7 @@ export const fetchMeFn = () => run( client.auth.me() );
  * ceremony, then verify server-side. `registerVerify` creates the account and
  * sets the session cookie, so the user is logged in on success.
  */
-export const registerPasskeyFn = async( input: RegisterInput ) => {
+export const registerPasskeyFn = async ( input: RegisterInput ) => {
 	const { flowId, options } = await run( client.auth.registerOptions( { payload: input } ) );
 	const response = await startRegistration( {
 		optionsJSON: options as PublicKeyCredentialCreationOptionsJSON
@@ -30,7 +30,7 @@ export const registerPasskeyFn = async( input: RegisterInput ) => {
  * Passkey login: fetch request options, run the browser assertion ceremony,
  * then verify server-side. `loginVerify` sets the session cookie on success.
  */
-export const loginPasskeyFn = async() => {
+export const loginPasskeyFn = async () => {
 	const { flowId, options } = await run( client.auth.loginOptions() );
 	const response = await startAuthentication( {
 		optionsJSON: options as PublicKeyCredentialRequestOptionsJSON

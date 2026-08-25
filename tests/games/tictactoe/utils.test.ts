@@ -7,9 +7,10 @@ import {
 	symbolOf,
 	WINNING_LINES
 } from "@/games/tictactoe/server/utils.ts";
+import { Board } from "@/games/tictactoe/shared/schema.ts";
 import { PlayerId } from "@/swish/shared/schema.ts";
 
-import type { Board, CellValue } from "@/games/tictactoe/shared/schema.ts";
+import type { CellValue } from "@/games/tictactoe/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -22,10 +23,9 @@ const [ x, o ] = [ player( "x" ), player( "o" ) ];
  * @param sketch - Nine characters, row-major.
  * @returns The board.
  */
-const boardOf = ( sketch: string ): Board =>
-	[ ...sketch.replaceAll( /\s/g, "" ) ].map( cell =>
-		cell === "." ? null : cell as CellValue
-	);
+const boardOf = ( sketch: string ) => Board.make(
+	[ ...sketch.replaceAll( /\s/g, "" ) ].map( cell => cell === "." ? null : cell as CellValue )
+);
 
 const EMPTY = boardOf( "........." );
 

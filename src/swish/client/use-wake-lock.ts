@@ -21,7 +21,7 @@ export function useWakeLock( enabled = true ) {
 		let sentinel: WakeLockSentinel | undefined;
 		let released = false;
 
-		const acquire = async() => {
+		const acquire = async () => {
 			if ( released || document.visibilityState !== "visible" ) {
 				return;
 			}

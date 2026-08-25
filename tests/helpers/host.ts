@@ -2,13 +2,13 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 
-import type { ScheduledEntry } from "@/platform/do/schedule.ts";
 import { DurableSchedule } from "@/platform/do/schedule.ts";
-import type { DurableTransaction } from "@/platform/do/storage.ts";
 import { DurableStorage } from "@/platform/do/storage.ts";
 import { SwishStorageLive, SwishTimersLive } from "@/platform/do/swish.ts";
-import type { GameAddress, LedgerEntry } from "@/swish/server/services.ts";
 import { SwishArchive, SwishLedger, SwishSync } from "@/swish/server/services.ts";
+
+import type { DurableTransaction } from "@/platform/do/storage.ts";
+import type { GameAddress, LedgerEntry } from "@/swish/server/services.ts";
 
 /**
  * `DurableStorage` over a plain `Map`. The commit log's key layout, its
@@ -58,7 +58,7 @@ export const InMemoryDurableSchedule = (
 		cancel: id => Effect.sync( () => void pending.delete( id ) ),
 		list: () => Effect.sync( () =>
 			[ ...pending.entries() ]
-				.map( ( [ id, at ] ): ScheduledEntry => ( { id, at } ) )
+				.map( ( [ id, at ] ) => ( { id, at } ) )
 				.sort( ( a, b ) => a.at - b.at )
 		),
 		due: () => Effect.sync( () => {

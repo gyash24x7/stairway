@@ -4,6 +4,17 @@ import { UserId } from "@/auth/shared/schema.ts";
 
 export const PositiveInt = Schema.Int.check( Schema.isGreaterThanOrEqualTo( 0 ) );
 
+/**
+ * A schema the engine can decode unaided: one that asks for no services to do it.
+ *
+ * `Schema.Top` leaves a schema free to require arbitrary services when it decodes,
+ * and the engine cannot honour that — a move's input is decoded inside the rpc
+ * server, where there is nothing to provide and no caller left to ask. Saying so
+ * in the constraint keeps that requirement from reappearing as an unsatisfiable
+ * `unknown` in the layer stack the host assembles.
+ */
+export type SelfDecoding = Schema.Top & Schema.Codec<any, any>;
+
 // --- Branded Ids -----------------------------------------------------------
 
 export type PlayerId = typeof PlayerId.Type;
@@ -273,6 +284,47 @@ export type GameData<State, Config extends BaseGameConfig> = {
 	readonly context: GameContext;
 };
 
+// --- Rematch Structs -------------------------------------------------------------
+
+/**
+ * The finished game a rematch is built from — everything about it the next one
+ * needs, and nothing else. Deliberately structural rather than a `GameView`:
+ * this is the whole input to the decision, and naming exactly the three fields
+ * it reads is what keeps the plan testable without a game to build it from.
+ */
+export type RematchSource = typeof RematchSource.Type;
+export const RematchSource = Schema.Struct( {
+	players: Roster,
+	context: GameContext,
+	config: BaseGameConfig
+} );
+
+export type RematchTeam = typeof RematchTeam.Type;
+export const RematchTeam = Schema.Struct( { playerId: PlayerId, team: TeamId } );
+
+export type RematchTeamNameConfig = typeof RematchTeamNameConfig.Type;
+export const RematchTeamNameConfig = Schema.Struct( {
+	team: TeamId,
+	name: TeamName,
+	by: PlayerId
+} );
+
+/**
+ * What the next game is made of: who sits at it, in what order, on which side,
+ * and what those sides call themselves.
+ *
+ * Every field is a list rather than a record because the engine takes them one
+ * command at a time and the order it takes them in matters — seats are dealt in
+ * this order, and a side is named by someone already on it.
+ */
+export type RematchPlan = typeof RematchPlan.Type;
+export const RematchPlan = Schema.Struct( {
+	players: Schema.Array( PlayerInfo ),
+	teams: Schema.Array( RematchTeam ),
+	teamNames: Schema.Array( RematchTeamNameConfig )
+} );
+
+
 // --- Audiences -------------------------------------------------------------
 
 /**
@@ -337,6 +389,24 @@ export const SeatView = <Fields extends Schema.Struct.Fields>( view: Schema.Stru
  */
 export type GameRef = typeof GameRef.Type;
 export const GameRef = Schema.Struct( { id: GameId, code: GameCode } );
+
+/**
+ * Every view one state change produced: the table's, and one per seated player.
+ * They always travel together — a push that delivered one without the other
+ * would leave half the table a turn behind — so they are one payload rather than
+ * two calls the caller has to remember to pair.
+ */
+export const AudienceViews = <View extends Schema.Top>( view: View ) =>
+	Schema.Struct( {
+		table: view,
+		players: Schema.Record( PlayerId, view )
+	} );
+
+export type AudienceViews<View> = {
+	readonly table: View;
+	readonly players: Record<PlayerId, View>;
+};
+
 
 // --- Game Forms ------------------------------------------------------------
 
@@ -428,6 +498,93 @@ export type ArchivedGame<View, Config extends BaseGameConfig> = GameHeader & {
 };
 
 
+// --- Service Schemas -------------------------------------------------------------
+
+/**
+ * The kinds of deferred wake-up the engine schedules.
+ */
+export type AlarmKind = typeof AlarmKind.Type;
+export const AlarmKind = Schema.Literals( [
+	"auto-start",
+	"bot",
+	"move-timeout",
+	"interaction-timeout"
+] );
+
+/**
+ * The clocks one turn runs under. Every field is optional and absence means "no
+ * such clock this turn", so the empty object is a turn nothing is waiting on.
+ * - bot: How long until the machine plays the pending seat.
+ * - moveTimeout: How long the pending seat has to play for itself.
+ * - frameDeadline: When the open interaction frame expires, as an absolute time.
+ *
+ * A turn arms at most one of `bot` and `moveTimeout` — the seat is either being
+ * played for or playing — while `frameDeadline` runs alongside either, since a
+ * frame outlives whichever responder is being waited on.
+ */
+export type TurnTimers = typeof TurnTimers.Type;
+export const TurnTimers = Schema.Struct( {
+	bot: Schema.optional( PositiveInt ),
+	moveTimeout: Schema.optional( PositiveInt ),
+	frameDeadline: Schema.optional( PositiveInt )
+} );
+
+/**
+ * One seat's line in a finished game: where it placed, what it scored, which
+ * side it played for, and whether it won.
+ *
+ * The engine flattens `Standings` into these rather than handing the ledger the
+ * standings themselves, because "did this seat win" is a question only the
+ * engine can answer — a flat game names a single `winner`, a team game names a
+ * `winningTeam` and leaves `winner` unset — and a store that had to re-derive it
+ * would be re-implementing the rule.
+ */
+export type LedgerEntry = typeof LedgerEntry.Type;
+export const LedgerEntry = Schema.Struct( {
+	playerId: PlayerId,
+	rank: PositiveInt,
+	score: Schema.optional( Schema.Int ),
+	winner: Schema.Boolean,
+	team: Schema.optional( TeamId )
+} );
+
+/**
+ * Where one game lives, as far as a host is concerned: which game it is, and
+ * which table. Both the fan-out and the cold store address a game this way, so
+ * the string form — a channel name, an archive key — is theirs to choose rather
+ * than something the engine formats and they parse back.
+ */
+export type GameAddress = typeof GameAddress.Type;
+export const GameAddress = Schema.Struct( {
+	game: Schema.NonEmptyString,
+	id: GameId
+} );
+
+/**
+ * A rebuild shortcut the store found for the engine: the record as of one
+ * commit, and the position that commit sits at. A checkpoint left over from a
+ * history that has since been forked away is never handed back, so the engine
+ * may fold straight from `index + 1` onwards.
+ */
+export type Checkpoint<Data> = { readonly index: number; readonly data: Data };
+export const Checkpoint = <Data extends Schema.Top>( data: Data ) =>
+	Schema.Struct( { index: PositiveInt, data } );
+
+/**
+ * One command's write to the log.
+ * - commit: The commit to append, identified so a checkpoint can be matched to it.
+ * - stamp: Builds the record to materialize, given the version the log assigned.
+ * - marksStart: `true` when this commit is the one that started the game.
+ * - marksComplete: `true` when this commit is the one that completed it.
+ */
+export type CommitWrite<Data, Commit> = {
+	readonly commit: Commit;
+	readonly stamp: ( version: number ) => Data;
+	readonly marksStart: boolean;
+	readonly marksComplete: boolean;
+};
+
+
 // --- API Inputs & Responses ---------------------------------------------
 
 /**
@@ -489,8 +646,8 @@ export const NameTeamInput = Schema.Struct( { team: TeamId, name: TeamName } );
  * information.
  * - enabled: `true` to let the game's `botMove` play this seat
  */
-export type SetAutoPlayInput = typeof SetAutoPlayInput.Type;
-export const SetAutoPlayInput = Schema.Struct( { enabled: Schema.Boolean } );
+export type AutoPlayInput = typeof AutoPlayInput.Type;
+export const AutoPlayInput = Schema.Struct( { enabled: Schema.Boolean } );
 
 /**
  * The input required to start a rematch: another game of the same kind, with
@@ -510,6 +667,10 @@ export const RematchInput = Schema.Struct( { keepTeams: Schema.Boolean } );
  */
 export type GameIdParams = typeof GameIdParams.Type;
 export const GameIdParams = Schema.Struct( { gameId: GameId } );
+
+export type WithPlayerId<Input> = { playerId: PlayerId; input: Input };
+export const WithPlayerId = <Input extends Schema.Top>( input: Input ) =>
+	Schema.Struct( { input, playerId: PlayerId } );
 
 
 // --- Engine events ---------------------------------------------------------
@@ -970,8 +1131,8 @@ export class RematchUnavailable extends Schema.TaggedError<RematchUnavailable>()
 /**
  * Union of the errors a `getState` can surface to the client.
  */
-export type GetStateError = typeof GetStateError.Type;
-export const GetStateError = Schema.Union( [ NotAMember, GameNotFound, CorruptState ] );
+export type GetViewError = typeof GetViewError.Type;
+export const GetViewError = Schema.Union( [ NotAMember, GameNotFound, CorruptState ] );
 
 /**
  * Union of the errors a `setAutoPlay` can surface to the client.
@@ -985,27 +1146,27 @@ export const AutoPlayError = Schema.Union( [
 ] );
 
 /**
- * Union of the errors a `join` can surface to the client. Includes the team
- * errors, since a join may carry the side the player is taking.
+ * Union of the errors a `join` can surface to the client.
  */
 export type JoinError = typeof JoinError.Type;
 export const JoinError = Schema.Union( [
-	NotAMember,
 	GameFull,
-	AlreadyJoined,
 	GameNotJoinable,
 	GameNotFound,
-	CorruptState,
-	TeamsUnavailable,
-	TeamNotFound,
-	TeamFull
+	CorruptState
 ] );
+
+/**
+ * Union of the errors a `addBots` can surface to the client.
+ */
+export type AddBotsError = typeof AddBotsError.Type;
+export const AddBotsError = Schema.Union( [ JoinError, NotAMember ] );
 
 /**
  * Union of the errors a `joinTeam` can surface to the client.
  */
-export type TeamError = typeof TeamError.Type;
-export const TeamError = Schema.Union( [
+export type JoinTeamError = typeof JoinTeamError.Type;
+export const JoinTeamError = Schema.Union( [
 	NotAMember,
 	TeamsUnavailable,
 	TeamNotFound,
@@ -1071,13 +1232,13 @@ export const MoveError = Schema.Union( [
  * Union of the errors a `undo` can surface to the client.
  */
 export type UndoError = typeof UndoError.Type;
-export const UndoError = Schema.Union( [ NothingToUndo, UndoNotAllowed, GetStateError ] );
+export const UndoError = Schema.Union( [ NothingToUndo, UndoNotAllowed, GetViewError ] );
 
 /**
  * Union of the errors a `redo` can surface to the client.
  */
 export type RedoError = typeof RedoError.Type;
-export const RedoError = Schema.Union( [ NothingToRedo, RedoNotAllowed, GetStateError ] );
+export const RedoError = Schema.Union( [ NothingToRedo, RedoNotAllowed, GetViewError ] );
 
 /**
  * Union of the errors a `leaveTeam` can surface to the client. Stepping off a
@@ -1106,4 +1267,4 @@ export const LeaveTeamError = Schema.Union( [
  * that has not finished.
  */
 export type RematchError = typeof RematchError.Type;
-export const RematchError = Schema.Union( [ RematchUnavailable, GetStateError ] );
+export const RematchError = Schema.Union( [ RematchUnavailable, GetViewError ] );

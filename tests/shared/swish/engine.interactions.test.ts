@@ -1,11 +1,11 @@
+import { ParleyConfig, parleyEngine } from "@tests/helpers/games/parley.ts";
+import { commitsIn, createInput, runGame, topFrame } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { commitsIn, createInput, runGame, topFrame } from "@tests/helpers/runner.ts";
-import type { ParleyConfig } from "@tests/helpers/games/parley.ts";
-import { parleyEngine } from "@tests/helpers/games/parley.ts";
+
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -15,8 +15,8 @@ const seats = [ a, b, c, d ];
 const info = ( id: Player ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar" } );
 
-const config = ( over: Partial<ParleyConfig> = {} ): ParleyConfig =>
-	( { playerCount: 4, autoStart: false, target: 99, ...over } );
+const config = ( over: Partial<ParleyConfig> = {} ) =>
+	ParleyConfig.make( { playerCount: 4, autoStart: false, target: 99, ...over } );
 
 /** Seats four players at a parley table and starts it, then runs the body. */
 const parley = <A, E>(

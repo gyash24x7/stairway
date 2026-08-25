@@ -1,21 +1,22 @@
+import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
 import { callbreak } from "@/games/callbreak/server/engine.ts";
+import { calculateRoundScore, determineTrickWinner } from "@/games/callbreak/server/utils.ts";
 import {
-	CALLBREAK_DEAL_COUNTS,
 	CALLBREAK_MOVE_TIMEOUT_MILLIS,
 	CALLBREAK_PLAYER_COUNT,
-	CALLBREAK_TRICKS_PER_DEAL
+	CALLBREAK_TRICKS_PER_DEAL,
+	CallbreakConfig
 } from "@/games/callbreak/shared/schema.ts";
-import { calculateRoundScore, determineTrickWinner } from "@/games/callbreak/server/utils.ts";
 import { getPlayableCards } from "@/games/callbreak/shared/utils.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { createInput, runGame, testClock } from "@tests/helpers/runner.ts";
 
 import type {
-	CallbreakConfig,
+	CALLBREAK_DEAL_COUNTS,
 	CallbreakView,
+	DealCount,
 	Trick
 } from "@/games/callbreak/shared/schema.ts";
 import type { CardId, CardSuit } from "@/shared/cards/schema.ts";
@@ -35,16 +36,14 @@ const seats: ReadonlyArray<Player> = [ a, b, c, d ];
 const info = ( id: Player, isBot = false ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar", isBot } );
 
-const configFor = (
-	dealCount: typeof CALLBREAK_DEAL_COUNTS[number],
-	trumpSuit: CardSuit
-): CallbreakConfig => ( {
-	playerCount: CALLBREAK_PLAYER_COUNT,
-	dealCount,
-	trumpSuit,
-	autoStart: false,
-	moveTimeoutMillis: CALLBREAK_MOVE_TIMEOUT_MILLIS
-} );
+const configFor = ( dealCount: DealCount, trumpSuit: CardSuit ) =>
+	CallbreakConfig.make( {
+		playerCount: CALLBREAK_PLAYER_COUNT,
+		dealCount,
+		trumpSuit,
+		autoStart: false,
+		moveTimeoutMillis: CALLBREAK_MOVE_TIMEOUT_MILLIS
+	} );
 
 /**
  * Seats four players by hand and starts the table, which is how Callbreak runs:

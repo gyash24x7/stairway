@@ -104,11 +104,13 @@ export function GameStandings( props: GameStandingsProps ) {
 	} ) );
 
 	const columns: StandingsColumn<FinalRow>[] = showScore
-		? [ {
-			key: "score",
-			label: props.scoreLabel ?? "SCORE",
-			render: ( row ) => row.score ?? "—"
-		} ]
+		? [
+			{
+				key: "score",
+				label: props.scoreLabel ?? "SCORE",
+				render: ( row ) => row.score ?? "—"
+			}
+		]
 		: [];
 
 	return (

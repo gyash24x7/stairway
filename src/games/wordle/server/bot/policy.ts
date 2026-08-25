@@ -120,7 +120,9 @@ const byCoverage = ( pool: ReadonlyArray<string>, limit: number ) => {
 	);
 
 	return [ ...pool ]
-		.sort( ( a, b ) => ( coverage.get( b ) ?? 0 ) - ( coverage.get( a ) ?? 0 ) || a.localeCompare( b ) )
+		.sort( ( a, b ) => ( coverage.get( b ) ?? 0 ) -
+			( coverage.get( a ) ?? 0 ) ||
+			a.localeCompare( b ) )
 		.slice( 0, limit );
 };
 

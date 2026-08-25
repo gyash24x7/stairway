@@ -1,13 +1,12 @@
+import { ScribeConfig, scribeEngine } from "@tests/helpers/games/scribe.ts";
+import { TallyConfig, tallyEngine } from "@tests/helpers/games/tally.ts";
+import { commitsIn, createInput, runGame } from "@tests/helpers/runner.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
-import { commitsIn, createInput, runGame } from "@tests/helpers/runner.ts";
-import type { ScribeConfig } from "@tests/helpers/games/scribe.ts";
-import { scribeEngine } from "@tests/helpers/games/scribe.ts";
-import type { TallyConfig } from "@tests/helpers/games/tally.ts";
-import { tallyEngine } from "@tests/helpers/games/tally.ts";
+
+import type { PlayerId as Player } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -16,11 +15,11 @@ const [ a, b, c, d, e ] = [ "a", "b", "c", "d", "e" ].map( player );
 const info = ( id: Player, isBot = false ) =>
 	PlayerInfo.make( { id, name: `player ${ id }`, avatar: "avatar", isBot } );
 
-const tallyConfig = ( over: Partial<TallyConfig> = {} ): TallyConfig =>
-	( { playerCount: 4, autoStart: false, ...over } );
+const tallyConfig = ( over: Partial<TallyConfig> = {} ) =>
+	TallyConfig.make( { playerCount: 4, autoStart: false, ...over } );
 
-const scribeConfig = ( over: Partial<ScribeConfig> = {} ): ScribeConfig =>
-	( { playerCount: 4, autoStart: false, allowSpecial: false, ...over } );
+const scribeConfig = ( over: Partial<ScribeConfig> = {} ) =>
+	ScribeConfig.make( { playerCount: 4, autoStart: false, allowSpecial: false, ...over } );
 
 const run = <A, E>(
 	body: ( engine: Effect.Success<typeof tallyEngine> ) => Effect.Effect<A, E>,

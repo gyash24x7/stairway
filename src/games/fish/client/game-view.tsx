@@ -93,7 +93,7 @@ export function GameView() {
 						playerCount={ data.config.playerCount }
 						hint={ undecided > 0
 							? `${ undecided } of ${ seated } haven't picked a side — `
-								+ "they'll be split evenly when the game starts."
+							+ "they'll be split evenly when the game starts."
 							: "Every seat has a side. Start when you're ready." }
 					/>
 					<TeamLobby/>

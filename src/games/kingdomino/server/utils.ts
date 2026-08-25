@@ -19,8 +19,9 @@ import type {
 	KingdominoState,
 	Placement,
 	PlayerData,
-	ScoreBreakdown
-, Terrain } from "@/games/kingdomino/shared/schema.ts";
+	ScoreBreakdown,
+	Terrain
+} from "@/games/kingdomino/shared/schema.ts";
 import type { PlayerId } from "@/swish/shared/schema.ts";
 
 // --- Pure reducer ----------------------------------------------------------

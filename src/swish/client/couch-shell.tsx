@@ -93,7 +93,7 @@ export function CouchShell( {
 
 				{ notice }
 
-					{ !!turn && (
+				{ !!turn && (
 					<footer
 						className={ cn(
 							"bg-accent text-neutral-dark rounded-lg px-8 py-5",
