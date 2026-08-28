@@ -6,7 +6,8 @@ import * as Option from "effect/Option";
 import { withRuntime } from "@/platform/utils/runtime.ts";
 import { SwishArchive } from "@/swish/server/services.ts";
 
-import type { GameAddress } from "@/swish/server/services.ts";
+import type { GameAddress } from "@/swish/shared/schema.ts";
+
 
 export const ArchiveKV = Cloudflare.KV.Namespace( "ArchiveKV" );
 

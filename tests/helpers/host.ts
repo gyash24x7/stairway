@@ -8,7 +8,7 @@ import { SwishStorageLive, SwishTimersLive } from "@/platform/do/swish.ts";
 import { SwishArchive, SwishLedger, SwishSync } from "@/swish/server/services.ts";
 
 import type { DurableTransaction } from "@/platform/do/storage.ts";
-import type { GameAddress, LedgerEntry } from "@/swish/server/services.ts";
+import type { GameAddress, LedgerEntry } from "@/swish/shared/schema.ts";
 
 /**
  * `DurableStorage` over a plain `Map`. The commit log's key layout, its

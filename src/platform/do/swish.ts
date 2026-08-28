@@ -9,7 +9,7 @@ import { SwishStorage, SwishSync, SwishTimers } from "@/swish/server/services.ts
 import { PlayerId } from "@/swish/shared/schema.ts";
 
 import type { DurableTransaction } from "@/platform/do/storage.ts";
-import type { AlarmKind } from "@/swish/server/services.ts";
+import type { AlarmKind } from "@/swish/shared/schema.ts";
 import type { GameRef } from "@/swish/shared/schema.ts";
 
 const KEY_GAME_DATA = "data";
