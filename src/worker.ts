@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect";
 import * as FileSystem from "effect/FileSystem";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
+import * as Stream from "effect/Stream";
 import {
 	Etag,
 	HttpPlatform,
@@ -29,6 +30,8 @@ import { ChatChannel } from "@/platform/do/chat.ts";
 import { SwishArchiveLive } from "@/platform/kv/archive.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { WebAuthnStoreLive } from "@/platform/kv/webauthn.ts";
+import { OutboxQueue } from "@/platform/queue/outbox.ts";
+import { OutboxConsumerLive } from "@/swish/server/outbox.ts";
 
 
 const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
@@ -52,11 +55,33 @@ const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
 );
 
 
+/**
+ * Everything the outbox consumer needs, resolved once when the worker boots
+ * rather than per batch: the archive namespace and the database, over their
+ * Cloudflare bindings.
+ */
+const OutboxConsumer = OutboxConsumerLive.pipe(
+	Effect.provide( SwishArchiveLive ),
+	Effect.provide( SwishDatabaseLive ),
+	Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding ),
+	Effect.provide( Cloudflare.D1.QueryDatabaseBinding )
+);
+
+
 export default Cloudflare.Worker(
 	"ApiWorker",
 	{ main: import.meta.url, compatibility: { flags: [ "nodejs_compat" ] } },
 	Effect.gen( function* () {
 		const { rpOrigin } = yield* RpConfig;
+
+		const outboxQueue = yield* OutboxQueue;
+		const closeOutGame = yield* OutboxConsumer;
+
+		yield* Cloudflare.Queues.consumeQueueMessages(
+			outboxQueue,
+			{ batchSize: 1, maxWaitTime: "10 seconds", maxRetries: 5, retryDelay: "30 seconds" },
+			stream => Stream.runForEach( stream, message => closeOutGame( message.body ) )
+		);
 
 		const channels = {
 			chat: yield* ChatChannel,
@@ -111,5 +136,5 @@ export default Cloudflare.Worker(
 				return yield* ApiFetch;
 			} )
 		};
-	} )
+	} ).pipe( Effect.provide( Cloudflare.Queues.EventSourceLive ) )
 );

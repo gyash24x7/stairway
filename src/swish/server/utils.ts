@@ -3,7 +3,7 @@ import { produce } from "immer";
 
 import type * as Types from "effect/Types";
 
-import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import { LedgerEntry, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 
 import type {
 	Audience,
@@ -160,3 +160,27 @@ export const playerIdFor = ( audience: Audience ) =>
 		Match.tag( "swish/TableAudience", () => undefined ),
 		Match.exhaustive
 	);
+
+/**
+ * Flattens a finished game's standings into one line per ranked seat.
+ *
+ * Whether a seat *won* is decided here rather than by whatever stores the lines,
+ * because the answer depends on how the game was played: a team game's verdict
+ * is its `winningTeam` and leaves `winner` unset, so asking after `winner` alone
+ * would report a partnership game as having nobody win it. A game that declares
+ * no `resolveResults` ranks nobody and yields no lines — its completion is still
+ * a fact worth recording, it simply has no places to record.
+ *
+ * @param results - The standings the completed game resolved, if it resolved any.
+ * @returns One entry per ranked seat, in ranking order.
+ */
+export const toLedgerEntries = ( results: Standings | undefined ) =>
+	results?.ranking.map( standing => LedgerEntry.make( {
+		playerId: standing.playerId,
+		rank: standing.rank,
+		score: standing.score,
+		team: standing.team,
+		winner: results.winningTeam !== undefined
+			? standing.team === results.winningTeam
+			: results.winner === standing.playerId
+	} ) ) ?? [];

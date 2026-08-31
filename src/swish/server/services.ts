@@ -149,7 +149,6 @@ export class SwishStorage extends Context.Service<SwishStorage, {
 
 }>()( "swish/Storage" ) {}
 
-
 /**
  * Realtime fan-out. After every state-changing command the engine hands the host
  * a fresh `GameView` per audience; the host pushes each connected client the view
@@ -217,11 +216,36 @@ export class SwishTimers extends Context.Service<SwishTimers, {
 
 }>()( "swish/Timers" ) {}
 
+/**
+ * The one thing that happens when a game ends.
+ *
+ * A completed game has to be filed in cold storage and its result recorded, and
+ * neither belongs on the command a table is waiting on: both are somebody
+ * else's store, either can be slow or down, and the game is already over by the
+ * time they matter. So the engine hands the finished game here and returns —
+ * one hop — and whatever is on the other end does the filing at its own pace.
+ *
+ * The engine hands over the whole {@link ArchivedGame} and nothing else, which
+ * is what lets the far end stay game-agnostic: everything a store needs is
+ * derivable from it, and the outbox is free to decide what to do with the rest.
+ *
+ * Delivery is expected to be at-least-once and may be late, so an
+ * implementation must settle anything time- or rule-dependent *here*, where the
+ * game just ended — a consumer that read its own clock, or re-derived its own
+ * verdict, would answer differently on a redelivery than it did the first time.
+ */
 export class SwishOutbox extends Context.Service<SwishOutbox, {
+
+	/**
+	 * Hands over a finished game.
+	 * @param address - The game that completed.
+	 * @param data - The archived game, with its standings on it.
+	 */
 	readonly publishArchive: <V, C extends BaseGameConfig>(
 		address: GameAddress,
 		data: ArchivedGame<V, C>
 	) => Effect.Effect<void>;
+
 }>()( "swish/Outbox" ) {}
 
 /**
@@ -319,10 +343,11 @@ export class SwishDatabase extends Context.Service<SwishDatabase, {
 }>()( "swish/Database" ) {}
 
 /**
- * The cold store for finished games. Once a game completes the engine writes the
- * archived game here, addressed by game and id — what that becomes as a key is
- * the store's business. Game-agnostic: values crossing this boundary are already
- * schema-*encoded* (plain JSON).
+ * The cold store for finished games, addressed by game and id — what that
+ * becomes as a key is the store's business. Written once, by whatever consumes
+ * a {@link SwishOutbox} completion, and read by the HTTP handlers when somebody
+ * asks after a game that is over. Game-agnostic: values crossing this boundary
+ * are already schema-*encoded* (plain JSON).
  */
 export class SwishArchive extends Context.Service<SwishArchive, {
 

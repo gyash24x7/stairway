@@ -524,17 +524,21 @@ export const TurnTimers = Schema.Struct( {
  * One seat's line in a finished game: where it placed, what it scored, which
  * side it played for, and whether it won.
  *
- * The engine flattens `Standings` into these rather than handing the ledger the
- * standings themselves, because "did this seat win" is a question only the
- * engine can answer — a flat game names a single `winner`, a team game names a
+ * `Standings` are flattened into these on the way out of the game rather than at
+ * the store, because "did this seat win" is a question only the completed game
+ * can answer — a flat game names a single `winner`, a team game names a
  * `winningTeam` and leaves `winner` unset — and a store that had to re-derive it
  * would be re-implementing the rule.
+ *
+ * `score` is as wide as {@link Standing}'s, because it *is* that score: the
+ * column behind it is a real, and narrowing here would reject a game that scores
+ * in fractions on the way to a store that would have taken it.
  */
 export type LedgerEntry = typeof LedgerEntry.Type;
 export const LedgerEntry = Schema.Struct( {
 	playerId: PlayerId,
 	rank: PositiveInt,
-	score: Schema.optional( Schema.Int ),
+	score: Schema.optional( Schema.Number ),
 	winner: Schema.Boolean,
 	team: Schema.optional( TeamId )
 } );
@@ -549,6 +553,31 @@ export type GameAddress = typeof GameAddress.Type;
 export const GameAddress = Schema.Struct( {
 	game: Schema.NonEmptyString,
 	id: GameId
+} );
+
+/**
+ * A finished game, as it leaves the table.
+ *
+ * This is the message the outbox carries: everything closing out a game needs,
+ * settled at the moment it ended rather than at the moment somebody gets round
+ * to filing it. The queue is at-least-once and its delivery may be minutes late,
+ * so nothing downstream may read a clock or re-derive a verdict of its own —
+ * both are stamped here, and a redelivery therefore writes exactly what the
+ * first attempt would have.
+ *
+ * - address: Which game, and which table.
+ * - completedAt: When it ended, read from the engine's clock.
+ * - entries: One line per ranked seat. Empty when the game ranks nobody.
+ * - archive: The whole {@link ArchivedGame}, opaque from here on — the outbox
+ *   files it verbatim and never looks inside, which is what keeps the one queue
+ *   game-agnostic rather than needing a shape per game.
+ */
+export type GameCompletion = typeof GameCompletion.Type;
+export const GameCompletion = Schema.Struct( {
+	address: GameAddress,
+	completedAt: PositiveInt,
+	entries: Schema.Array( LedgerEntry ),
+	archive: Schema.Unknown
 } );
 
 /**
@@ -1258,7 +1287,7 @@ export const LeaveTeamError = Schema.Union( [
  * that has not finished.
  */
 export type RematchError = typeof RematchError.Type;
-export const RematchError = Schema.Union( [ RematchUnavailable, GetViewError, InvalidTeamConfig ] );
+export const RematchError = Schema.Union( [ RematchUnavailable, GetViewError, InitializeError ] );
 
 export type BaseMoveClientShape = Record<string, unknown>;
 
@@ -1267,7 +1296,7 @@ export type MoveClient<Moves extends BaseMoveClientShape> = {
 };
 
 export type EngineClient<View, Moves extends BaseMoveClientShape, Config extends BaseGameConfig> = {
-	readonly initialize: ( payload: InitializeInput<Config> ) => Effect.Effect<GameRef, InvalidTeamConfig>;
+	readonly initialize: ( payload: InitializeInput<Config> ) => Effect.Effect<GameRef, InitializeError>;
 	readonly getView: ( playerId?: PlayerId ) => Effect.Effect<GameView<View, Config>, GetViewError>;
 	readonly join: ( player: PlayerInfo ) => Effect.Effect<GameRef, JoinError>;
 	readonly addBots: ( playerId: PlayerId ) => Effect.Effect<void, AddBotsError>;

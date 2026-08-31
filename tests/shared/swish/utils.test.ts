@@ -1,7 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import * as Schema from "effect/Schema";
 
-import { Accumulator, engineApply, playerIdFor, toPlayerInfo } from "@/swish/server/utils.ts";
+import {
+	Accumulator,
+	engineApply,
+	playerIdFor,
+	toLedgerEntries,
+	toPlayerInfo
+} from "@/swish/server/utils.ts";
 import {
 	BaseGameConfig,
 	CurrentPlayerSet,
@@ -371,5 +377,65 @@ describe( "Accumulator", () => {
 		// re-reduced, or the first would have been applied three times over.
 		expect( acc.work.state.folded ).toEqual( [ "test/Counted", "test/Counted" ] );
 		expect( acc.events ).toHaveLength( 3 );
+	} );
+} );
+
+
+describe( "toLedgerEntries", () => {
+	const [ a, b, c, d ] = [ player( "a" ), player( "b" ), player( "c" ), player( "d" ) ];
+	const [ RED, BLUE ] = [ team( "red" ), team( "blue" ) ];
+
+	test( "a game that ranked nobody yields no lines", () => {
+		expect( toLedgerEntries( undefined ) ).toEqual( [] );
+	} );
+
+	test( "one line per seat, in ranking order, carrying its rank and score", () => {
+		const entries = toLedgerEntries( {
+			ranking: [
+				{ playerId: b, rank: 1, score: 9 },
+				{ playerId: a, rank: 2, score: 4 }
+			],
+			winner: b
+		} );
+
+		expect( entries.map( entry => entry.playerId ) ).toEqual( [ b, a ] );
+		expect( entries[ 0 ] ).toMatchObject( { rank: 1, score: 9 } );
+		expect( entries[ 1 ] ).toMatchObject( { rank: 2, score: 4 } );
+	} );
+
+	test( "a flat game's win lands on the seat the standings name", () => {
+		const entries = toLedgerEntries( {
+			ranking: [ { playerId: b, rank: 1 }, { playerId: a, rank: 2 } ],
+			winner: b
+		} );
+
+		expect( entries.filter( entry => entry.winner ).map( entry => entry.playerId ) )
+			.toEqual( [ b ] );
+	} );
+
+	test( "a team game's win lands on every seat of the winning side", () => {
+		// The verdict is `winningTeam` and `winner` is unset, so reading the latter
+		// alone would report a partnership game as one nobody won.
+		const entries = toLedgerEntries( {
+			ranking: [
+				{ playerId: a, rank: 1, team: RED },
+				{ playerId: c, rank: 1, team: RED },
+				{ playerId: b, rank: 2, team: BLUE },
+				{ playerId: d, rank: 2, team: BLUE }
+			],
+			winningTeam: RED
+		} );
+
+		expect( entries.filter( entry => entry.winner ).map( entry => entry.playerId ) )
+			.toEqual( [ a, c ] );
+		expect( entries.map( entry => entry.team ) ).toEqual( [ RED, RED, BLUE, BLUE ] );
+	} );
+
+	test( "a game nobody won leaves every line unwon", () => {
+		const entries = toLedgerEntries( {
+			ranking: [ { playerId: a, rank: 1 }, { playerId: b, rank: 1 } ]
+		} );
+
+		expect( entries.every( entry => !entry.winner ) ).toBe( true );
 	} );
 } );

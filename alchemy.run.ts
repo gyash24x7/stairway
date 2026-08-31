@@ -8,6 +8,7 @@ import { StairwayDatabase } from "@/platform/database/service.ts";
 import { ArchiveKV } from "@/platform/kv/archive.ts";
 import { SessionKV } from "@/platform/kv/session.ts";
 import { WebAuthnKV } from "@/platform/kv/webauthn.ts";
+import { OutboxQueue } from "@/platform/queue/outbox.ts";
 import { default as ApiWorker } from "@/worker.ts";
 
 export default Alchemy.Stack(
@@ -23,6 +24,7 @@ export default Alchemy.Stack(
 		const sessionKv = yield* SessionKV;
 		const webauthnKv = yield* WebAuthnKV;
 		const archiveKv = yield* ArchiveKV;
+		const outboxQueue = yield* OutboxQueue;
 		const db = yield* StairwayDatabase;
 
 		const api = yield* ApiWorker;
@@ -42,6 +44,9 @@ export default Alchemy.Stack(
 				session: sessionKv.namespaceId,
 				webauthn: webauthnKv.namespaceId,
 				archive: archiveKv.namespaceId
+			},
+			queue: {
+				outbox: outboxQueue.queueId
 			}
 		};
 	} )

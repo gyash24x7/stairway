@@ -98,6 +98,32 @@ describe( "initialize", () => {
 		expect( result.view.log[ 0 ] ).toMatch( /^setup:\d+$/ );
 	} );
 
+	test( "falls back to the structure's defaults when the caller names no config", () => {
+		// The create endpoint sends no config for a game configured entirely by its
+		// rules, so the record has to be built from the merged config rather than
+		// the caller's — storing the payload verbatim writes `undefined` and the
+		// genesis record fails to build at all.
+		const { result } = run( engine => Effect.gen( function* () {
+			yield* engine.initialize( { ...createInput( tallyConfig() ), config: undefined } );
+			return yield* engine.getView();
+		} ) );
+
+		expect( result.config ).toEqual( tallyConfig() );
+	} );
+
+	test( "merges a partial config over those defaults", () => {
+		const { result } = run( engine => Effect.gen( function* () {
+			yield* engine.initialize( {
+				...createInput( tallyConfig() ),
+				config: { autoStart: true }
+			} );
+
+			return yield* engine.getView();
+		} ) );
+
+		expect( result.config ).toEqual( tallyConfig( { autoStart: true } ) );
+	} );
+
 	test( "commits nothing — creating a game is not a move", () => {
 		const { cells } = run( engine => engine.initialize( createInput( tallyConfig() ) ) );
 

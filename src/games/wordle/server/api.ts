@@ -29,7 +29,7 @@ export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handle
 		);
 
 		return handlers
-			.handle( "createGame", () => api.createGame() )
+			.handle( "createGame", ( { payload } ) => api.createGame( payload ) )
 			.handle( "join", ( { payload } ) => api.joinGame( payload ) )
 			.handle( "getView", ( { params } ) => api.getView( params ) )
 			.handle( "addBots", ( { params } ) => api.addBots( params ) )

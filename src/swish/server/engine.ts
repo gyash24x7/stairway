@@ -8,7 +8,6 @@ import { SwishOutbox, SwishStorage, SwishSync, SwishTimers } from "@/swish/serve
 import { Accumulator } from "@/swish/server/utils.ts";
 import {
 	ArchivedGame,
-
 	AutoPlayUnavailable,
 	CannotStart,
 	CorruptState,
@@ -30,7 +29,6 @@ import {
 	InvalidMove,
 	InvalidTeamName,
 	MoveNotAllowed,
-
 	NotAMember,
 	NothingToRedo,
 	NothingToUndo,
@@ -68,14 +66,15 @@ import {
 } from "@/swish/shared/teams.ts";
 
 import type { GameStructure } from "@/swish/server/structure.ts";
-import type { AutoPlayInput, NameTeamInput } from "@/swish/shared/schema.ts";
 import type {
 	Audience,
+	AutoPlayInput,
 	BaseGameConfig,
 	BaseGameEvent,
 	CommitMeta,
 	InitializeInput,
 	JoinTeamInput,
+	NameTeamInput,
 	WithPlayerId
 } from "@/swish/shared/schema.ts";
 
@@ -606,7 +605,7 @@ export const makeEngine = <
 					teamNames: {}
 				} ),
 				players: {},
-				config: payload.config,
+				config,
 				state: initialState
 			} );
 

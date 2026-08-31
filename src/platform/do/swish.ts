@@ -5,7 +5,7 @@ import * as Layer from "effect/Layer";
 import { DurableSchedule } from "@/platform/do/schedule.ts";
 import { DurableStorage } from "@/platform/do/storage.ts";
 import { WebSocketChannel } from "@/platform/do/ws.ts";
-import { SwishOutbox, SwishStorage, SwishSync, SwishTimers } from "@/swish/server/services.ts";
+import { SwishStorage, SwishSync, SwishTimers } from "@/swish/server/services.ts";
 import { PlayerId } from "@/swish/shared/schema.ts";
 
 import type { DurableTransaction } from "@/platform/do/storage.ts";
@@ -355,8 +355,4 @@ export const SwishTimersLive = Layer.effect( SwishTimers, Effect.gen( function* 
 		 */
 		due: () => schedule.due().pipe( Effect.map( ids => ids.filter( isAlarmKind ) ) )
 	} );
-} ) );
-
-export const SwishOutboxLive = Layer.succeed( SwishOutbox, SwishOutbox.of( {
-	publishArchive: ( _addresss, _data ) => Effect.gen( function* () {} )
 } ) );

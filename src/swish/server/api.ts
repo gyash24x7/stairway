@@ -4,14 +4,10 @@ import * as Option from "effect/Option";
 
 import { SessionServiceLive } from "@/auth/server/session.ts";
 import { AuthContext } from "@/auth/shared/middleware.ts";
-import {
-	SwishOutboxLive,
-	SwishStorageLive,
-	SwishSyncLive,
-	SwishTimersLive
-} from "@/platform/do/swish.ts";
+import { SwishStorageLive, SwishSyncLive, SwishTimersLive } from "@/platform/do/swish.ts";
 import { WebSocketDurableObject } from "@/platform/do/ws.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
+import { OutboxQueue, SwishOutboxLive } from "@/platform/queue/outbox.ts";
 import { generateGameCode } from "@/shared/utils/generator.ts";
 import { SwishArchive, SwishDatabase } from "@/swish/server/services.ts";
 import { toPlayerInfo } from "@/swish/server/utils.ts";
@@ -50,9 +46,9 @@ import type {
 type SwishHostServices = SwishStorage | SwishSync | SwishOutbox | SwishTimers;
 
 /**
- * The Durable Object body every game shares: the engine, with the five host
- * services bound to this object's own storage, its sockets, the archive
- * namespace and the shared database, wrapped in the auth-gated WebSocket base.
+ * The Durable Object body every game shares: the engine, with its four host
+ * services bound to this object's own storage, its sockets, its alarm and the
+ * outbox queue, wrapped in the auth-gated WebSocket base.
  *
  * Only the class declaration stays per-game — `Cloudflare.DurableObject` needs a
  * distinct class name and its own self type, and that name is what the binding
@@ -64,6 +60,7 @@ type SwishHostServices = SwishStorage | SwishSync | SwishOutbox | SwishTimers;
 export const SwishDurableObject = <Shape extends object>(
 	engine: Effect.Effect<Shape, never, SwishHostServices | WebSocketDurableObjectServices>
 ) => Effect.gen( function* () {
+	const queue = yield* Cloudflare.Queues.WriteQueue( OutboxQueue );
 
 	return yield* WebSocketDurableObject(
 		engine.pipe(
@@ -71,14 +68,15 @@ export const SwishDurableObject = <Shape extends object>(
 				SwishStorageLive,
 				SwishSyncLive,
 				SwishTimersLive,
-				SwishOutboxLive
+				SwishOutboxLive( queue )
 			] )
 		)
 	);
 } ).pipe(
 	Effect.provide( SessionServiceLive ),
 	Effect.provide( SessionStoreLive ),
-	Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding )
+	Effect.provide( Cloudflare.KV.ReadWriteNamespaceBinding ),
+	Effect.provide( Cloudflare.Queues.WriteQueueBinding )
 );
 
 
