@@ -43,7 +43,7 @@ const tallyConfig = ( over: Partial<TallyConfig> = {} ) =>
 describe( "who may move", () => {
 	test( "the current player may", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.finish( {}, a );
+			yield* engine.finish( { input: {}, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -51,21 +51,27 @@ describe( "who may move", () => {
 	} );
 
 	test( "refuses anyone else, and names who the table is waiting on", () => {
-		const { result } = scribe( engine => engine.finish( {}, b ).pipe( Effect.flip ) );
+		const { result } = scribe( engine => engine.finish( {
+			input: {},
+			playerId: b
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
 		expect( result ).toMatchObject( { playerId: b, currentPlayer: a } );
 	} );
 
 	test( "refuses someone who holds no seat", () => {
-		const { result } = scribe( engine => engine.finish( {}, e ).pipe( Effect.flip ) );
+		const { result } = scribe( engine => engine.finish( {
+			input: {},
+			playerId: e
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
 	} );
 
 	test( "a move with its own canMove may be played out of turn", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.peek( {}, c );
+			yield* engine.peek( { input: {}, playerId: c } );
 			return yield* engine.getView();
 		} ) );
 
@@ -78,7 +84,7 @@ describe( "who may move", () => {
 		const { result } = runGame( scribeEngine, engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( scribeConfig() ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
-			return yield* engine.finish( {}, a ).pipe( Effect.flip );
+			return yield* engine.finish( { input: {}, playerId: a } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotInProgress" );
@@ -88,9 +94,9 @@ describe( "who may move", () => {
 	test( "refuses a move once the game is over", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			for ( const seat of seats ) {
-				yield* engine.finish( {}, seat );
+				yield* engine.finish( { input: {}, playerId: seat } );
 			}
-			return yield* engine.peek( {}, a ).pipe( Effect.flip );
+			return yield* engine.peek( { input: {}, playerId: a } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotInProgress" );
@@ -102,9 +108,9 @@ describe( "who may move", () => {
 describe( "seats that are out of play", () => {
 	test( "a folded seat may not move again", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.fold( {}, a );
+			yield* engine.fold( { input: {}, playerId: a } );
 			// Even `peek`, which anyone may play at any time, is barred.
-			return yield* engine.peek( {}, a ).pipe( Effect.flip );
+			return yield* engine.peek( { input: {}, playerId: a } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
@@ -113,9 +119,9 @@ describe( "seats that are out of play", () => {
 
 	test( "the rotation skips it", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.fold( {}, a );
+			yield* engine.fold( { input: {}, playerId: a } );
 			const afterFold = yield* engine.getView();
-			yield* engine.fold( {}, afterFold.context.currentPlayer );
+			yield* engine.fold( { input: {}, playerId: afterFold.context.currentPlayer } );
 			return yield* engine.getView();
 		} ) );
 
@@ -128,7 +134,7 @@ describe( "seats that are out of play", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			for ( let turn = 0; turn < seats.length; turn++ ) {
 				const view = yield* engine.getView();
-				yield* engine.fold( {}, view.context.currentPlayer );
+				yield* engine.fold( { input: {}, playerId: view.context.currentPlayer } );
 			}
 			return yield* engine.getView();
 		} ) );
@@ -142,7 +148,10 @@ describe( "seats that are out of play", () => {
 
 describe( "moves the config switches off", () => {
 	test( "refuses a move this table was not created with", () => {
-		const { result } = scribe( engine => engine.special( {}, a ).pipe( Effect.flip ) );
+		const { result } = scribe( engine => engine.special( {
+			input: {},
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
 		expect( ( result as { move: string } ).move ).toBe( "special" );
@@ -151,7 +160,7 @@ describe( "moves the config switches off", () => {
 	test( "allows it when the config asks for it", () => {
 		const { result } = scribe(
 			engine => Effect.gen( function* () {
-				yield* engine.special( {}, a );
+				yield* engine.special( { input: {}, playerId: a } );
 				return yield* engine.getView();
 			} ),
 			{ allowSpecial: true }
@@ -161,7 +170,10 @@ describe( "moves the config switches off", () => {
 	} );
 
 	test( "the gate is central: even a seat whose turn it is not is refused the same way", () => {
-		const { result } = scribe( engine => engine.special( {}, b ).pipe( Effect.flip ) );
+		const { result } = scribe( engine => engine.special( {
+			input: {},
+			playerId: b
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
 	} );
@@ -171,7 +183,7 @@ describe( "moves the config switches off", () => {
 describe( "input and validation", () => {
 	test( "an input the schema refuses never reaches the game", () => {
 		const { result, cells } = scribe( engine =>
-			engine.note( { text: 7 } as unknown as NoteInput, a ).pipe( Effect.flip )
+			engine.note( { input: { text: 7 } as unknown as NoteInput, playerId: a } ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -182,7 +194,7 @@ describe( "input and validation", () => {
 	test( "a rejected move commits nothing", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
 			const before = yield* engine.getView();
-			yield* engine.note( { text: "" }, a ).pipe( Effect.flip );
+			yield* engine.note( { input: { text: "" }, playerId: a } ).pipe( Effect.flip );
 			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
@@ -195,7 +207,7 @@ describe( "input and validation", () => {
 		// The hook runs before `validate`, so its events exist in the accumulator
 		// when the move is refused — and must go nowhere.
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "" }, a ).pipe( Effect.flip );
+			yield* engine.note( { input: { text: "" }, playerId: a } ).pipe( Effect.flip );
 			return yield* engine.getView();
 		} ) );
 
@@ -203,7 +215,10 @@ describe( "input and validation", () => {
 	} );
 
 	test( "carries the game's own reason", () => {
-		const { result } = scribe( engine => engine.note( { text: "" }, a ).pipe( Effect.flip ) );
+		const { result } = scribe( engine => engine.note( {
+			input: { text: "" },
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( ( result as { reason: string } ).reason ).toBe( "A note needs text." );
 	} );
@@ -213,7 +228,7 @@ describe( "input and validation", () => {
 describe( "hooks around a move", () => {
 	test( "runs before the move, then the move, then after it", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "hello" }, a );
+			yield* engine.note( { input: { text: "hello" }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -230,7 +245,7 @@ describe( "hooks around a move", () => {
 	test( "runs the end hook once, as the game completes", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			for ( const seat of seats ) {
-				yield* engine.finish( {}, seat );
+				yield* engine.finish( { input: {}, playerId: seat } );
 			}
 			return yield* engine.getView();
 		} ) );
@@ -241,7 +256,7 @@ describe( "hooks around a move", () => {
 
 	test( "the hooks fire for an out-of-turn move too", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.peek( {}, c );
+			yield* engine.peek( { input: {}, playerId: c } );
 			return yield* engine.getView();
 		} ) );
 
@@ -255,8 +270,8 @@ describe( "whether a move ends the turn", () => {
 	test( "a move declared not to leaves the turn and the counter alone", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			const before = yield* engine.getView();
-			yield* engine.note( { text: "one" }, a );
-			yield* engine.note( { text: "two" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
+			yield* engine.note( { input: { text: "two" }, playerId: a } );
 			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
@@ -269,7 +284,7 @@ describe( "whether a move ends the turn", () => {
 	test( "a move that does hands the turn on and counts it", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
 			const before = yield* engine.getView();
-			yield* engine.finish( {}, a );
+			yield* engine.finish( { input: {}, playerId: a } );
 			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
@@ -280,7 +295,7 @@ describe( "whether a move ends the turn", () => {
 
 	test( "a move that decides per input keeps the turn when it says so", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.wager( { amount: 0 }, a );
+			yield* engine.wager( { input: { amount: 0 }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -290,7 +305,7 @@ describe( "whether a move ends the turn", () => {
 
 	test( "and gives it up when it does not", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.wager( { amount: 5 }, a );
+			yield* engine.wager( { input: { amount: 5 }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -302,11 +317,11 @@ describe( "whether a move ends the turn", () => {
 		// `endIf` is checked either way — only the rotation is skipped.
 		const { result } = scribe( engine => Effect.gen( function* () {
 			for ( const seat of seats.slice( 0, 3 ) ) {
-				yield* engine.finish( {}, seat );
+				yield* engine.finish( { input: {}, playerId: seat } );
 			}
-			yield* engine.wager( { amount: 0 }, d );
+			yield* engine.wager( { input: { amount: 0 }, playerId: d } );
 			const stillOn = yield* engine.getView();
-			yield* engine.finish( {}, d );
+			yield* engine.finish( { input: {}, playerId: d } );
 			return { stillOn, done: yield* engine.getView() };
 		} ) );
 
@@ -322,7 +337,7 @@ describe( "randomness inside a move", () => {
 
 	test( "comes from the game's seed, so a move can roll for its outcome", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.wager( { amount: 5 }, a );
+			yield* engine.wager( { input: { amount: 5 }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -333,7 +348,7 @@ describe( "randomness inside a move", () => {
 		// Replay folds events and never re-runs `execute`, which is what makes
 		// randomness inside a move safe.
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.wager( { amount: 5 }, a );
+			yield* engine.wager( { input: { amount: 5 }, playerId: a } );
 			const played = yield* engine.getView();
 			yield* engine.undo( a );
 			yield* engine.redo( a );
@@ -346,7 +361,7 @@ describe( "randomness inside a move", () => {
 	test( "two tables roll differently, since each has a seed of its own", () => {
 		const rolls = Array.from( { length: 4 }, () => {
 			const { result } = scribe( engine => Effect.gen( function* () {
-				yield* engine.wager( { amount: 5 }, a );
+				yield* engine.wager( { input: { amount: 5 }, playerId: a } );
 				return yield* engine.getView();
 			} ) );
 
@@ -369,7 +384,7 @@ describe( "the turn order", () => {
 			for ( const seat of seats ) {
 				const view = yield* engine.getView();
 				order.push( view.context.currentPlayer );
-				yield* engine.score( { points: 1 }, seat );
+				yield* engine.score( { input: { points: 1 }, playerId: seat } );
 			}
 
 			return { order, final: yield* engine.getView() };
@@ -385,7 +400,7 @@ describe( "the turn order", () => {
 			yield* engine.initialize( createInput( tallyConfig() ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
-			yield* engine.score( { points: 1 }, a );
+			yield* engine.score( { input: { points: 1 }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -396,7 +411,7 @@ describe( "the turn order", () => {
 
 describe( "what a move records", () => {
 	test( "the commit names the command, the actor and the move", () => {
-		const { cells } = scribe( engine => engine.finish( {}, a ) );
+		const { cells } = scribe( engine => engine.finish( { input: {}, playerId: a } ) );
 		const commit = commitsIn( cells ).at( -1 );
 
 		expect( commit?.command ).toBe( "submitMove" );
@@ -405,7 +420,7 @@ describe( "what a move records", () => {
 	} );
 
 	test( "one move is one commit, however many events it produced", () => {
-		const { cells } = scribe( engine => engine.fold( {}, a ) );
+		const { cells } = scribe( engine => engine.fold( { input: {}, playerId: a } ) );
 		const commit = commitsIn( cells ).at( -1 );
 
 		// The fold itself, the seat change, and the two hooks around them.
@@ -414,7 +429,7 @@ describe( "what a move records", () => {
 	} );
 
 	test( "the turn tail rides the same commit as the move", () => {
-		const { cells } = scribe( engine => engine.finish( {}, a ) );
+		const { cells } = scribe( engine => engine.finish( { input: {}, playerId: a } ) );
 		const tags = commitsIn( cells ).at( -1 )?.events.map( event => event._tag ) ?? [];
 
 		expect( tags ).toContain( "swish/ev/TurnAdvanced" );

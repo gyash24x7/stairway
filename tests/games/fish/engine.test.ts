@@ -171,7 +171,7 @@ describe( "the rules", () => {
 			const own = yield* engine.getView( current );
 
 			return yield* engine
-				.askCard( { from: mate, cardId: own.view.hand[ 0 ]! }, current )
+				.askCard( { input: { from: mate, cardId: own.view.hand[ 0 ]! }, playerId: current } )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -189,7 +189,7 @@ describe( "the rules", () => {
 				getCardsOfBook( book ).map( id => [ id, rival ] )
 			);
 
-			return yield* engine.claimBook( { claim }, current ).pipe( Effect.flip );
+			return yield* engine.claimBook( { input: { claim }, playerId: current } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );

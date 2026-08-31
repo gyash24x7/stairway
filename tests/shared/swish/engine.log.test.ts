@@ -45,7 +45,7 @@ const logOf = ( notes: number ) => {
 		yield* engine.start( a );
 		yield* Effect.forEach(
 			Array.from( { length: notes }, ( _, index ) => index ),
-			index => engine.note( { text: `n${ index }` }, a )
+			index => engine.note( { input: { text: `n${ index }` }, playerId: a } )
 		);
 	} ), { cells } );
 
@@ -126,7 +126,7 @@ describe( "the version and the cursor", () => {
 
 			yield* engine.start( a );
 			yield* record();
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			yield* record();
 
 			return versions;

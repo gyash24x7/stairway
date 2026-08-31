@@ -3,13 +3,11 @@ import { TestHost } from "@tests/helpers/host.ts";
 import { describe, expect, test } from "bun:test";
 import * as Effect from "effect/Effect";
 
-import type { PostedResult } from "@tests/helpers/host.ts";
-
 import { GameCode, GameId, PlayerId, PlayerInfo, TeamId } from "@/swish/shared/schema.ts";
 import { teamOf } from "@/swish/shared/teams.ts";
 
 import type { UserId } from "@/auth/shared/schema.ts";
-import type { PlayerId as Player, TeamId as Team } from "@/swish/shared/schema.ts";
+import type { PlayerId as Player, Standings, TeamId as Team } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 const team = ( id: string ) => TeamId.make( id );
@@ -27,22 +25,21 @@ const configOf = ( teams?: ReadonlyArray<Team> ) =>
 
 /**
  * Drives the toy game against in-memory host services. Everything a test needs
- * to reach — the commit log, the archive and the ledger — is handed back
- * alongside the engine's commands.
+ * to reach — the commit log and the archives the outbox received — is handed
+ * back alongside the engine's commands.
  */
 const run = <A, E>(
 	body: ( engine: Effect.Success<typeof tallyEngine> ) => Effect.Effect<A, E>
 ) => {
 	const cells = new Map<string, unknown>();
 	const saved = new Map<string, unknown>();
-	const posted: Array<PostedResult> = [];
 
 	const program = Effect.gen( function* () {
 		const engine = yield* tallyEngine;
 		return yield* body( engine );
-	} ).pipe( Effect.provide( TestHost( { cells, saved, posted } ) ) );
+	} ).pipe( Effect.provide( TestHost( { cells, saved } ) ) );
 
-	return { result: Effect.runSync( program ), cells, saved, posted };
+	return { result: Effect.runSync( program ), cells, saved };
 };
 
 const create = ( config: TallyConfig ) => ( {
@@ -85,7 +82,7 @@ describe( "a game without teams", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf() ) );
 			yield* engine.join( info( a ) );
-			return yield* engine.joinTeam( a, RED ).pipe( Effect.flip );
+			return yield* engine.joinTeam( { playerId: a, input: { team: RED } } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/TeamsUnavailable" );
@@ -126,7 +123,7 @@ describe( "taking a side in the lobby", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			yield* engine.joinTeam( a, BLUE );
+			yield* engine.joinTeam( { playerId: a, input: { team: BLUE } } );
 			return yield* engine.getView();
 		} ) );
 
@@ -137,8 +134,8 @@ describe( "taking a side in the lobby", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			yield* engine.joinTeam( a, BLUE );
-			yield* engine.joinTeam( a, RED );
+			yield* engine.joinTeam( { playerId: a, input: { team: BLUE } } );
+			yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
 			return yield* engine.getView();
 		} ) );
 
@@ -149,9 +146,9 @@ describe( "taking a side in the lobby", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			yield* engine.joinTeam( a, RED );
+			yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
 			const before = yield* engine.getView();
-			yield* engine.joinTeam( a, RED );
+			yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
 			const after = yield* engine.getView();
 			return { before, after };
 		} ) );
@@ -167,7 +164,7 @@ describe( "taking a side in the lobby", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			yield* engine.joinTeam( a, RED );
+			yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
 			yield* engine.join( info( a ) );
 			return yield* engine.getView();
 		} ) );
@@ -179,7 +176,10 @@ describe( "taking a side in the lobby", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			return yield* engine.joinTeam( a, team( "green" ) ).pipe( Effect.flip );
+			return yield* engine.joinTeam( {
+				playerId: a,
+				input: { team: team( "green" ) }
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/TeamNotFound" );
@@ -189,11 +189,11 @@ describe( "taking a side in the lobby", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			yield* engine.joinTeam( a, RED );
+			yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
 			yield* engine.join( info( b ) );
-			yield* engine.joinTeam( b, RED );
+			yield* engine.joinTeam( { playerId: b, input: { team: RED } } );
 			yield* engine.join( info( c ) );
-			return yield* engine.joinTeam( c, RED ).pipe( Effect.flip );
+			return yield* engine.joinTeam( { playerId: c, input: { team: RED } } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/TeamFull" );
@@ -203,7 +203,7 @@ describe( "taking a side in the lobby", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			return yield* engine.joinTeam( b, RED ).pipe( Effect.flip );
+			return yield* engine.joinTeam( { playerId: b, input: { team: RED } } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
@@ -216,7 +216,7 @@ describe( "taking a side in the lobby", () => {
 				yield* engine.join( info( seat ) );
 			}
 			yield* engine.start( a );
-			return yield* engine.joinTeam( a, RED ).pipe( Effect.flip );
+			return yield* engine.joinTeam( { playerId: a, input: { team: RED } } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotJoinable" );
@@ -232,15 +232,15 @@ describe( "naming a side", () => {
 			yield* engine.join( info( seat ) );
 		}
 
-		yield* engine.joinTeam( a, RED );
-		yield* engine.joinTeam( b, BLUE );
-		yield* engine.joinTeam( c, RED );
+		yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
+		yield* engine.joinTeam( { playerId: b, input: { team: BLUE } } );
+		yield* engine.joinTeam( { playerId: c, input: { team: RED } } );
 		return yield* body( engine );
 	} ) );
 
 	test( "a member names their own side", () => {
 		const { result } = lobby( engine => Effect.gen( function* () {
-			yield* engine.nameTeam( a, RED, "The Aces" );
+			yield* engine.nameTeam( { playerId: a, input: { team: RED, name: "The Aces" } } );
 			return yield* engine.getView();
 		} ) );
 
@@ -250,8 +250,8 @@ describe( "naming a side", () => {
 
 	test( "the name rides the wire on the context", () => {
 		const { result } = lobby( engine => Effect.gen( function* () {
-			yield* engine.nameTeam( a, RED, "The Aces" );
-			yield* engine.nameTeam( b, BLUE, "The Kings" );
+			yield* engine.nameTeam( { playerId: a, input: { team: RED, name: "The Aces" } } );
+			yield* engine.nameTeam( { playerId: b, input: { team: BLUE, name: "The Kings" } } );
 			return yield* engine.getView( a );
 		} ) );
 
@@ -260,8 +260,11 @@ describe( "naming a side", () => {
 
 	test( "a second attempt on the same side is refused, name unchanged", () => {
 		const { result } = lobby( engine => Effect.gen( function* () {
-			yield* engine.nameTeam( a, RED, "The Aces" );
-			const refusal = yield* engine.nameTeam( a, RED, "The Aces Again" ).pipe( Effect.flip );
+			yield* engine.nameTeam( { playerId: a, input: { team: RED, name: "The Aces" } } );
+			const refusal = yield* engine.nameTeam( {
+				playerId: a,
+				input: { team: RED, name: "The Aces Again" }
+			} ).pipe( Effect.flip );
 			const after = yield* engine.getView();
 			return { refusal, after };
 		} ) );
@@ -272,9 +275,12 @@ describe( "naming a side", () => {
 
 	test( "a teammate cannot rename it either", () => {
 		const { result } = lobby( engine => Effect.gen( function* () {
-			yield* engine.nameTeam( a, RED, "The Aces" );
+			yield* engine.nameTeam( { playerId: a, input: { team: RED, name: "The Aces" } } );
 			// `c` is on red too — set-once binds the side, not the player.
-			const refusal = yield* engine.nameTeam( c, RED, "The Jokers" ).pipe( Effect.flip );
+			const refusal = yield* engine.nameTeam( {
+				playerId: c,
+				input: { team: RED, name: "The Jokers" }
+			} ).pipe( Effect.flip );
 			const after = yield* engine.getView();
 			return { refusal, after };
 		} ) );
@@ -285,7 +291,7 @@ describe( "naming a side", () => {
 
 	test( "refuses naming a side the caller does not play on", () => {
 		const { result } = lobby( engine =>
-			engine.nameTeam( a, BLUE, "Wrong Side" ).pipe( Effect.flip )
+			engine.nameTeam( { playerId: a, input: { team: BLUE, name: "Wrong Side" } } ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/NotOnTeam" );
@@ -295,7 +301,10 @@ describe( "naming a side", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			return yield* engine.nameTeam( a, RED, "The Aces" ).pipe( Effect.flip );
+			return yield* engine.nameTeam( {
+				playerId: a,
+				input: { team: RED, name: "The Aces" }
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/NotOnTeam" );
@@ -303,7 +312,10 @@ describe( "naming a side", () => {
 
 	test( "refuses a side the config does not declare", () => {
 		const { result } = lobby( engine =>
-			engine.nameTeam( a, team( "green" ), "Nowhere" ).pipe( Effect.flip )
+			engine.nameTeam( {
+				playerId: a,
+				input: { team: team( "green" ), name: "Nowhere" }
+			} ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/TeamNotFound" );
@@ -311,7 +323,7 @@ describe( "naming a side", () => {
 
 	test( "refuses a player who holds no seat", () => {
 		const { result } = lobby( engine =>
-			engine.nameTeam( d, RED, "Gatecrasher" ).pipe( Effect.flip )
+			engine.nameTeam( { playerId: d, input: { team: RED, name: "Gatecrasher" } } ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
@@ -319,8 +331,14 @@ describe( "naming a side", () => {
 
 	test( "refuses a name the schema will not take", () => {
 		const { result } = lobby( engine => Effect.gen( function* () {
-			const empty = yield* engine.nameTeam( a, RED, "" ).pipe( Effect.flip );
-			const long = yield* engine.nameTeam( a, RED, "x".repeat( 33 ) ).pipe( Effect.flip );
+			const empty = yield* engine.nameTeam( {
+				playerId: a,
+				input: { team: RED, name: "" }
+			} ).pipe( Effect.flip );
+			const long = yield* engine.nameTeam( {
+				playerId: a,
+				input: { team: RED, name: "x".repeat( 33 ) }
+			} ).pipe( Effect.flip );
 			const after = yield* engine.getView();
 			return { empty, long, after };
 		} ) );
@@ -333,7 +351,7 @@ describe( "naming a side", () => {
 
 	test( "accepts a name exactly at the cap", () => {
 		const { result } = lobby( engine => Effect.gen( function* () {
-			yield* engine.nameTeam( a, RED, "x".repeat( 32 ) );
+			yield* engine.nameTeam( { playerId: a, input: { team: RED, name: "x".repeat( 32 ) } } );
 			return yield* engine.getView();
 		} ) );
 
@@ -350,9 +368,10 @@ describe( "naming a side", () => {
 			const named = yield* engine.getView();
 			return yield* engine
 				.nameTeam(
-					named.context.players[ 0 ]!,
-					named.context.teams[ named.context.players[ 0 ]! ]!,
-					"Too Late"
+					{
+						playerId: named.context.players[ 0 ]!,
+						input: { team: named.context.teams[ named.context.players[ 0 ]! ]!, name: "Too Late" }
+					}
 				)
 				.pipe( Effect.flip );
 		} ) );
@@ -364,8 +383,8 @@ describe( "naming a side", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 			yield* engine.join( info( a ) );
-			yield* engine.joinTeam( a, RED );
-			yield* engine.nameTeam( a, RED, "The Aces" );
+			yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
+			yield* engine.nameTeam( { playerId: a, input: { team: RED, name: "The Aces" } } );
 			for ( const seat of [ b, c, d ] ) {
 				yield* engine.join( info( seat ) );
 			}
@@ -378,8 +397,8 @@ describe( "naming a side", () => {
 
 	test( "the name stays with the side when its namer switches away", () => {
 		const { result } = lobby( engine => Effect.gen( function* () {
-			yield* engine.nameTeam( a, RED, "The Aces" );
-			yield* engine.joinTeam( a, BLUE );
+			yield* engine.nameTeam( { playerId: a, input: { team: RED, name: "The Aces" } } );
+			yield* engine.joinTeam( { playerId: a, input: { team: BLUE } } );
 			return yield* engine.getView();
 		} ) );
 
@@ -398,7 +417,7 @@ describe( "start", () => {
 
 				const pick = picks[ seat ];
 				if ( pick ) {
-					yield* engine.joinTeam( seat, pick );
+					yield* engine.joinTeam( { playerId: seat, input: { team: pick } } );
 				}
 			}
 			yield* engine.start( a );
@@ -475,7 +494,7 @@ describe( "turn order", () => {
 			for ( const seat of order ) {
 				const before = yield* engine.getView();
 				sides.push( teamOf( before.context, before.context.currentPlayer ) );
-				yield* engine.score( { points: 1 }, seat );
+				yield* engine.score( { input: { points: 1 }, playerId: seat } );
 			}
 
 			return sides;
@@ -497,7 +516,7 @@ describe( "history", () => {
 			yield* engine.start( a );
 
 			const before = yield* engine.getView();
-			yield* engine.score( { points: 3 }, before.context.players[ 0 ]! );
+			yield* engine.score( { input: { points: 3 }, playerId: before.context.players[ 0 ]! } );
 
 			// Undo and redo both refold the record from the log, so a round trip
 			// through them rebuilds the very state the events were folded into.
@@ -525,7 +544,7 @@ describe( "history", () => {
 			const opening = yield* engine.getView();
 			const first = opening.context.players[ 0 ]!;
 
-			yield* engine.score( { points: 3 }, first );
+			yield* engine.score( { input: { points: 3 }, playerId: first } );
 			yield* engine.undo( first );
 
 			const rewound = yield* engine.getView();
@@ -545,14 +564,20 @@ describe( "results", () => {
 		yield* engine.initialize( create( configOf( [ RED, BLUE ] ) ) );
 		for ( const seat of [ a, b, c, d ] ) {
 			yield* engine.join( info( seat ) );
-			yield* engine.joinTeam( seat, seat === a || seat === c ? RED : BLUE );
+			yield* engine.joinTeam( {
+				playerId: seat,
+				input: { team: seat === a || seat === c ? RED : BLUE }
+			} );
 		}
 		yield* engine.start( a );
 
 		const opening = yield* engine.getView();
 		for ( const seat of opening.context.players ) {
 			// Red scores 10 apiece, blue 1.
-			yield* engine.score( { points: teamOf( opening.context, seat ) === RED ? 10 : 1 }, seat );
+			yield* engine.score( {
+				input: { points: teamOf( opening.context, seat ) === RED ? 10 : 1 },
+				playerId: seat
+			} );
 		}
 
 		return yield* engine.getView();
@@ -590,31 +615,35 @@ describe( "results", () => {
 		expect( resolved?.results.teamRanking ).toHaveLength( 2 );
 	} );
 
-	test( "archives the completed game with its sides intact", () => {
-		const { saved } = completed();
-		const archived = saved.get( "tally:game-1" ) as
-			undefined | { context: { teams: Record<Player, Team> } };
+	/** The tally archive as the outbox received it, with only the fields tests read. */
+	const archived = () => completed().saved.get( "tally:game-1" ) as undefined | {
+		readonly context: { readonly teams: Record<Player, Team> };
+		readonly results?: Standings;
+	};
 
-		expect( Object.keys( archived?.context.teams ?? {} ) ).toHaveLength( 4 );
+	test( "archives the completed game with its sides intact", () => {
+		expect( Object.keys( archived()?.context.teams ?? {} ) ).toHaveLength( 4 );
 	} );
 
-	test( "posts every line to the ledger under the side it played for", () => {
-		const { posted } = completed();
-		const entries = posted[ 0 ]?.entries ?? [];
+	test( "files every standing under the side it played for", () => {
+		const ranking = archived()?.results?.ranking ?? [];
 
-		expect( entries ).toHaveLength( 4 );
-		for ( const entry of entries ) {
-			expect( entry.team ).toBe( entry.playerId === a || entry.playerId === c ? RED : BLUE );
+		expect( ranking ).toHaveLength( 4 );
+		for ( const standing of ranking ) {
+			expect( standing.team )
+				.toBe( standing.playerId === a || standing.playerId === c ? RED : BLUE );
 		}
 	} );
 
-	test( "a side's win is every one of its seats' win", () => {
-		const { posted } = completed();
-		const entries = posted[ 0 ]?.entries ?? [];
+	test( "a side's win is the verdict, and no single seat is named", () => {
+		const results = archived()?.results;
 
-		// The standings name a `winningTeam` and no `winner`, so reading the latter
-		// alone would post a partnership game as one nobody won.
-		expect( entries.filter( entry => entry.winner ).map( entry => entry.playerId ) )
-			.toEqual( [ a, c ] );
+		// A partnership game's verdict is its `winningTeam`; `winner` names one
+		// player and stays unset, so whoever reads the archive has to go through the
+		// side to find out who won.
+		expect( results?.winningTeam ).toBe( RED );
+		expect( results?.winner ).toBeUndefined();
+		expect( results?.ranking.filter( standing => standing.team === results.winningTeam )
+			.map( standing => standing.playerId ) ).toEqual( [ a, c ] );
 	} );
 } );

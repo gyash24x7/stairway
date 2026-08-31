@@ -33,7 +33,7 @@ const parley = <A, E>(
 describe( "opening a frame", () => {
 	test( "a move's execute pushes it onto the stack", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -49,7 +49,7 @@ describe( "opening a frame", () => {
 	test( "the turn does not move on while it is open", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
 			const before = yield* engine.getView();
-			yield* engine.open( { kind: "duel" }, a );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
 			return { before, after: yield* engine.getView() };
 		} ) );
 
@@ -59,7 +59,7 @@ describe( "opening a frame", () => {
 
 	test( "the move's own events land alongside the frame", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -71,7 +71,7 @@ describe( "opening a frame", () => {
 describe( "the deadline a frame opens with", () => {
 	const deadlineOf = ( over: Partial<ParleyConfig>, kind: "duel" | "vote" = "duel" ) =>
 		parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind }, a );
+			yield* engine.open( { input: { kind }, playerId: a } );
 			return yield* engine.getView();
 		} ), over ).result.context.interactions[ 0 ]?.deadline;
 
@@ -93,7 +93,7 @@ describe( "the deadline a frame opens with", () => {
 
 	test( "a game that sets one itself keeps it", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel", deadline: 12_345 }, a );
+			yield* engine.open( { input: { kind: "duel", deadline: 12_345 }, playerId: a } );
 			return yield* engine.getView();
 		} ), { interactionTimeoutMillis: 60_000 } );
 
@@ -105,7 +105,7 @@ describe( "the deadline a frame opens with", () => {
 	} );
 
 	test( "the deadline rides the event, so a rebuild folds the same instant", () => {
-		const { cells } = parley( engine => engine.open( { kind: "duel" }, a ), {
+		const { cells } = parley( engine => engine.open( { input: { kind: "duel" }, playerId: a } ), {
 			interactionTimeoutMillis: 60_000
 		} );
 
@@ -123,13 +123,13 @@ describe( "who may answer a sequential frame", () => {
 	const opened = <A, E>(
 		body: ( engine: Effect.Success<typeof parleyEngine> ) => Effect.Effect<A, E>
 	) => parley( engine => Effect.gen( function* () {
-		yield* engine.open( { kind: "duel" }, a );
+		yield* engine.open( { input: { kind: "duel" }, playerId: a } );
 		return yield* body( engine );
 	} ) );
 
 	test( "the next responder in order", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, b );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
 			return yield* engine.getView();
 		} ) );
 
@@ -139,21 +139,27 @@ describe( "who may answer a sequential frame", () => {
 	} );
 
 	test( "and nobody further down the list", () => {
-		const { result } = opened( engine => engine.reply( { value: true }, c ).pipe( Effect.flip ) );
+		const { result } = opened( engine => engine.reply( {
+			input: { value: true },
+			playerId: c
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
 	} );
 
 	test( "not the player who opened it", () => {
-		const { result } = opened( engine => engine.reply( { value: true }, a ).pipe( Effect.flip ) );
+		const { result } = opened( engine => engine.reply( {
+			input: { value: true },
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
 	} );
 
 	test( "and not the same responder twice", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, b );
-			return yield* engine.reply( { value: false }, b ).pipe( Effect.flip );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			return yield* engine.reply( { input: { value: false }, playerId: b } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
@@ -161,8 +167,8 @@ describe( "who may answer a sequential frame", () => {
 
 	test( "answers accumulate in order until the frame is full", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, b );
-			yield* engine.reply( { value: false }, c );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			yield* engine.reply( { input: { value: false }, playerId: c } );
 			return yield* engine.getView();
 		} ) );
 
@@ -176,13 +182,13 @@ describe( "who may answer a simultaneous frame", () => {
 	const opened = <A, E>(
 		body: ( engine: Effect.Success<typeof parleyEngine> ) => Effect.Effect<A, E>
 	) => parley( engine => Effect.gen( function* () {
-		yield* engine.open( { kind: "vote" }, a );
+		yield* engine.open( { input: { kind: "vote" }, playerId: a } );
 		return yield* body( engine );
 	} ) );
 
 	test( "any responder, in any order", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, d );
+			yield* engine.reply( { input: { value: true }, playerId: d } );
 			return yield* engine.getView();
 		} ) );
 
@@ -193,15 +199,18 @@ describe( "who may answer a simultaneous frame", () => {
 
 	test( "but only once each", () => {
 		const { result } = opened( engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, d );
-			return yield* engine.reply( { value: false }, d ).pipe( Effect.flip );
+			yield* engine.reply( { input: { value: true }, playerId: d } );
+			return yield* engine.reply( { input: { value: false }, playerId: d } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
 	} );
 
 	test( "and never the initiator", () => {
-		const { result } = opened( engine => engine.reply( { value: true }, a ).pipe( Effect.flip ) );
+		const { result } = opened( engine => engine.reply( {
+			input: { value: true },
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
 	} );
@@ -212,7 +221,7 @@ describe( "a frame that names its own responder", () => {
 	const audited = <A, E>(
 		body: ( engine: Effect.Success<typeof parleyEngine> ) => Effect.Effect<A, E>
 	) => parley( engine => Effect.gen( function* () {
-		yield* engine.open( { kind: "audit" }, a );
+		yield* engine.open( { input: { kind: "audit" }, playerId: a } );
 		return yield* body( engine );
 	} ) );
 
@@ -220,7 +229,7 @@ describe( "a frame that names its own responder", () => {
 		// `audit` names its second responder, so `c` answers ahead of `b`.
 		const { result } = audited( engine => Effect.gen( function* () {
 			const before = yield* engine.getView();
-			yield* engine.reply( { value: true }, c );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
 			return {
 				target: topFrame( before.context.interactions )?.target,
 				after: yield* engine.getView()
@@ -232,7 +241,10 @@ describe( "a frame that names its own responder", () => {
 	} );
 
 	test( "and the one who would otherwise be next is refused", () => {
-		const { result } = audited( engine => engine.reply( { value: true }, b ).pipe( Effect.flip ) );
+		const { result } = audited( engine => engine.reply( {
+			input: { value: true },
+			playerId: b
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
 	} );
@@ -242,8 +254,8 @@ describe( "a frame that names its own responder", () => {
 describe( "the moves a frame routes", () => {
 	test( "refuses a move that is not a response to it", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
-			return yield* engine.pass( {}, b ).pipe( Effect.flip );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
+			return yield* engine.pass( { input: {}, playerId: b } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
@@ -252,8 +264,8 @@ describe( "the moves a frame routes", () => {
 
 	test( "refuses it from the current player too — the frame outranks the turn", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
-			return yield* engine.pass( {}, a ).pipe( Effect.flip );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
+			return yield* engine.pass( { input: {}, playerId: a } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
@@ -261,8 +273,11 @@ describe( "the moves a frame routes", () => {
 
 	test( "a response still runs the move's own validation", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
-			return yield* engine.reply( { value: true, token: "bad" }, b ).pipe( Effect.flip );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
+			return yield* engine.reply( {
+				input: { value: true, token: "bad" },
+				playerId: b
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -271,8 +286,8 @@ describe( "the moves a frame routes", () => {
 
 	test( "a refused response leaves the frame untouched", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
-			yield* engine.reply( { value: true, token: "bad" }, b ).pipe( Effect.flip );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
+			yield* engine.reply( { input: { value: true, token: "bad" }, playerId: b } ).pipe( Effect.flip );
 			return yield* engine.getView();
 		} ) );
 
@@ -280,7 +295,10 @@ describe( "the moves a frame routes", () => {
 	} );
 
 	test( "the response move outside any frame is just a move, and validates as one", () => {
-		const { result } = parley( engine => engine.reply( { value: true }, a ).pipe( Effect.flip ) );
+		const { result } = parley( engine => engine.reply( {
+			input: { value: true },
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 		expect( ( result as { reason: string } ).reason ).toBe( "Nothing to reply to." );
@@ -291,10 +309,10 @@ describe( "the moves a frame routes", () => {
 describe( "resolving a frame", () => {
 	test( "settles once every responder has answered", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
-			yield* engine.reply( { value: true }, b );
-			yield* engine.reply( { value: true }, c );
-			yield* engine.reply( { value: false }, d );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
+			yield* engine.reply( { input: { value: false }, playerId: d } );
 			return yield* engine.getView();
 		} ) );
 
@@ -305,9 +323,9 @@ describe( "resolving a frame", () => {
 	test( "an interaction may settle early on its own rule", () => {
 		// `vote` resolves on two answers, so `d` never has to be waited on.
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "vote" }, a );
-			yield* engine.reply( { value: true }, b );
-			yield* engine.reply( { value: true }, c );
+			yield* engine.open( { input: { kind: "vote" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
 			return yield* engine.getView();
 		} ) );
 
@@ -317,8 +335,8 @@ describe( "resolving a frame", () => {
 
 	test( "the last response and the resolution land in one commit", () => {
 		const { cells } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "audit" }, a );
-			yield* engine.reply( { value: true }, c );
+			yield* engine.open( { input: { kind: "audit" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
 		} ) );
 
 		const tags = commitsIn( cells ).at( -1 )?.events.map( event => event._tag ) ?? [];
@@ -330,10 +348,10 @@ describe( "resolving a frame", () => {
 
 	test( "the turn advances from whoever opened the frame, not whoever answered last", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
-			yield* engine.reply( { value: true }, b );
-			yield* engine.reply( { value: true }, c );
-			yield* engine.reply( { value: true }, d );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
+			yield* engine.reply( { input: { value: true }, playerId: d } );
 			return yield* engine.getView();
 		} ) );
 
@@ -344,8 +362,8 @@ describe( "resolving a frame", () => {
 
 	test( "the turn stays put until the frame settles", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel" }, a );
-			yield* engine.reply( { value: true }, b );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
 			return yield* engine.getView();
 		} ) );
 
@@ -355,8 +373,8 @@ describe( "resolving a frame", () => {
 
 	test( "a resolution can be what ends the game", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "audit" }, a );
-			yield* engine.reply( { value: true }, c );
+			yield* engine.open( { input: { kind: "audit" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
 			return yield* engine.getView();
 		} ), { target: 1 } );
 
@@ -365,9 +383,9 @@ describe( "resolving a frame", () => {
 
 	test( "play carries on normally once the stack is empty", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "audit" }, a );
-			yield* engine.reply( { value: true }, c );
-			yield* engine.pass( {}, b );
+			yield* engine.open( { input: { kind: "audit" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
+			yield* engine.pass( { input: {}, playerId: b } );
 			return yield* engine.getView();
 		} ) );
 
@@ -380,8 +398,8 @@ describe( "resolving a frame", () => {
 describe( "a frame of a kind the game does not declare", () => {
 	test( "no response is routed to it", () => {
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "ghost" }, a );
-			return yield* engine.reply( { value: true }, b ).pipe( Effect.flip );
+			yield* engine.open( { input: { kind: "ghost" }, playerId: a } );
+			return yield* engine.reply( { input: { value: true }, playerId: b } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
@@ -391,10 +409,10 @@ describe( "a frame of a kind the game does not declare", () => {
 		// The duel above it settles; the frame beneath has no definition, so the
 		// engine stops there rather than guessing at how to resolve it.
 		const { result } = parley( engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel", beneath: true }, a );
-			yield* engine.reply( { value: true }, b );
-			yield* engine.reply( { value: true }, c );
-			yield* engine.reply( { value: true }, d );
+			yield* engine.open( { input: { kind: "duel", beneath: true }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
+			yield* engine.reply( { input: { value: true }, playerId: d } );
 			return yield* engine.getView();
 		} ) );
 
@@ -412,10 +430,10 @@ describe( "a resolution that opens another frame", () => {
 		body: ( engine: Effect.Success<typeof parleyEngine> ) => Effect.Effect<A, E>,
 		over: Partial<ParleyConfig> = {}
 	) => parley( engine => Effect.gen( function* () {
-		yield* engine.open( { kind: "duel", nest: true }, a );
-		yield* engine.reply( { value: false }, b );
-		yield* engine.reply( { value: false }, c );
-		yield* engine.reply( { value: false }, d );
+		yield* engine.open( { input: { kind: "duel", nest: true }, playerId: a } );
+		yield* engine.reply( { input: { value: false }, playerId: b } );
+		yield* engine.reply( { input: { value: false }, playerId: c } );
+		yield* engine.reply( { input: { value: false }, playerId: d } );
 		return yield* body( engine );
 	} ), over );
 
@@ -442,7 +460,7 @@ describe( "a resolution that opens another frame", () => {
 
 	test( "the nested frame routes responses of its own", () => {
 		const { result } = nested( engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, d );
+			yield* engine.reply( { input: { value: true }, playerId: d } );
 			return yield* engine.getView();
 		} ) );
 
@@ -454,8 +472,8 @@ describe( "a resolution that opens another frame", () => {
 	test( "settling it unwinds the stack and hands the turn on at last", () => {
 		const { result } = nested( engine => Effect.gen( function* () {
 			// `vote` settles on two answers of its own.
-			yield* engine.reply( { value: true }, b );
-			yield* engine.reply( { value: true }, c );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			yield* engine.reply( { input: { value: true }, playerId: c } );
 			return yield* engine.getView();
 		} ) );
 

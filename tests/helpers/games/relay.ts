@@ -106,6 +106,8 @@ export const relayStructure: GameStructure<
 		moves: { pass: PassInput, collect: CollectInput }
 	},
 
+	defaultConfig: () => RelayConfig.make( { playerCount: 4, autoStart: false, rounds: 1 } ),
+
 	setup: () => ( { round: 0, passes: [], collects: [], collected: {}, trace: [] } ),
 
 	apply,

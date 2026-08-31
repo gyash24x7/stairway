@@ -1,14 +1,13 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 
 import { DurableSchedule } from "@/platform/do/schedule.ts";
 import { DurableStorage } from "@/platform/do/storage.ts";
 import { SwishStorageLive, SwishTimersLive } from "@/platform/do/swish.ts";
-import { SwishArchive, SwishLedger, SwishSync } from "@/swish/server/services.ts";
+import { SwishOutbox, SwishSync } from "@/swish/server/services.ts";
 
 import type { DurableTransaction } from "@/platform/do/storage.ts";
-import type { GameAddress, LedgerEntry } from "@/swish/shared/schema.ts";
+import type { GameAddress } from "@/swish/shared/schema.ts";
 
 /**
  * `DurableStorage` over a plain `Map`. The commit log's key layout, its
@@ -72,31 +71,18 @@ export const InMemoryDurableSchedule = (
 	} ) );
 };
 
-/** `SwishArchive` over a `Map`, so a completed game can be read back. */
-export const InMemorySwishArchive = ( saved: Map<string, unknown> = new Map() ) =>
-	Layer.succeed( SwishArchive, SwishArchive.of( {
-		save: ( address: GameAddress, encoded: unknown ) =>
-			Effect.sync( () => void saved.set( `${ address.game }:${ address.id }`, encoded ) ),
-		load: <T>( address: GameAddress ) => Effect.sync( () =>
-			Option.fromNullishOr( saved.get( `${ address.game }:${ address.id }` ) as T | undefined )
-		)
-	} ) );
-
-/** One completion as `SwishLedger` received it. */
-export type PostedResult = {
-	readonly address: GameAddress;
-	readonly entries: ReadonlyArray<LedgerEntry>;
-	readonly completedAt: number;
-};
-
 /**
- * `SwishLedger` that keeps every posting, so a test can assert on the ranks,
- * scores and winner a completed game reported without needing a database.
+ * `SwishOutbox` over a `Map`, keyed by game and id, so a test can read back the
+ * archive a completed game published.
+ *
+ * The outbox is the engine's only exit for a finished game — the whole archive,
+ * standings included, goes through this one call — so recording what it receives
+ * is all a test needs to assert on what completion produced.
  */
-export const InMemorySwishLedger = ( posted: Array<PostedResult> = [] ) =>
-	Layer.succeed( SwishLedger, SwishLedger.of( {
-		record: ( address, entries, completedAt ) =>
-			Effect.sync( () => void posted.push( { address, entries, completedAt } ) )
+export const InMemorySwishOutbox = ( saved: Map<string, unknown> = new Map() ) =>
+	Layer.succeed( SwishOutbox, SwishOutbox.of( {
+		publishArchive: ( address: GameAddress, data: unknown ) =>
+			Effect.sync( () => void saved.set( `${ address.game }:${ address.id }`, data ) )
 	} ) );
 
 /** `SwishSync` that keeps every push, so a test can assert on what was broadcast. */
@@ -108,15 +94,14 @@ export const InMemorySwishSync = ( published: Array<unknown> = [] ) =>
 /**
  * Every host capability an engine needs, backed by memory: the real commit log
  * and the real timer multiplexing over in-memory primitives, plus recording
- * fakes for the archive, the ledger and the fan-out.
+ * fakes for the outbox and the fan-out.
  *
  * @param [options] - Collectors to inspect after a run, and the clock to read.
- * @returns One layer providing all five swish services.
+ * @returns One layer providing all four swish services.
  */
 export const TestHost = ( options: {
 	readonly cells?: Map<string, unknown>;
 	readonly saved?: Map<string, unknown>;
-	readonly posted?: Array<PostedResult>;
 	readonly published?: Array<unknown>;
 	readonly pending?: Map<string, number>;
 	readonly now?: () => number;
@@ -125,7 +110,6 @@ export const TestHost = ( options: {
 	SwishTimersLive.pipe(
 		Layer.provide( InMemoryDurableSchedule( options.now, options.pending ) )
 	),
-	InMemorySwishArchive( options.saved ),
-	InMemorySwishLedger( options.posted ),
+	InMemorySwishOutbox( options.saved ),
 	InMemorySwishSync( options.published )
 );

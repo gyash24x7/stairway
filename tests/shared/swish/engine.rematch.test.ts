@@ -36,8 +36,8 @@ const playOut = ( engine: Effect.Success<typeof tallyEngine> ) => Effect.gen( fu
 	yield* engine.join( info( a ) );
 	yield* engine.join( info( b ) );
 	yield* engine.start( a );
-	yield* engine.score( { points: 2 }, a );
-	yield* engine.score( { points: 1 }, b );
+	yield* engine.score( { input: { points: 2 }, playerId: a } );
+	yield* engine.score( { input: { points: 1 }, playerId: b } );
 } );
 
 
@@ -46,7 +46,7 @@ describe( "setRematch", () => {
 	test( "records the game the table moved on to, and answers with it", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			return yield* engine.setRematch( a, NEXT );
+			return yield* engine.setRematch( { playerId: a, input: NEXT } );
 		} ) );
 
 		expect( result ).toEqual( NEXT );
@@ -56,7 +56,7 @@ describe( "setRematch", () => {
 	test( "puts the pointer on the envelope every audience reads", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			yield* engine.setRematch( a, NEXT );
+			yield* engine.setRematch( { playerId: a, input: NEXT } );
 
 			return {
 				table: yield* engine.getView(),
@@ -80,7 +80,7 @@ describe( "setRematch", () => {
 	test( "pushes it to the table and to every seat", () => {
 		const { published } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			yield* engine.setRematch( a, NEXT );
+			yield* engine.setRematch( { playerId: a, input: NEXT } );
 		} ) );
 
 		const views = publishedViews<TallyView, TallyConfig>( published );
@@ -94,8 +94,8 @@ describe( "setRematch", () => {
 	test( "is write-once: a second asker is handed the first one's game", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			yield* engine.setRematch( a, NEXT );
-			return yield* engine.setRematch( b, OTHER );
+			yield* engine.setRematch( { playerId: a, input: NEXT } );
+			return yield* engine.setRematch( { playerId: b, input: OTHER } );
 		} ) );
 
 		// Everyone lands in the same game — the second ref is answered, not stored.
@@ -107,7 +107,7 @@ describe( "setRematch", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
 			const before = yield* engine.getView( a );
-			yield* engine.setRematch( a, NEXT );
+			yield* engine.setRematch( { playerId: a, input: NEXT } );
 			return { before, after: yield* engine.getView( a ) };
 		} ) );
 
@@ -118,7 +118,7 @@ describe( "setRematch", () => {
 	test( "arms no clock — a finished game is waiting on nobody", () => {
 		const { pending } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			yield* engine.setRematch( a, NEXT );
+			yield* engine.setRematch( { playerId: a, input: NEXT } );
 		} ) );
 
 		expect( [ ...pending.keys() ] ).toEqual( [] );
@@ -130,7 +130,7 @@ describe( "setRematch", () => {
 			yield* engine.join( info( a ) );
 			yield* engine.join( info( b ) );
 			yield* engine.start( a );
-			return yield* engine.setRematch( a, NEXT ).pipe( Effect.flip );
+			return yield* engine.setRematch( { playerId: a, input: NEXT } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/RematchUnavailable" );
@@ -141,7 +141,7 @@ describe( "setRematch", () => {
 		const { result } = run( engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( config() ) );
 			yield* engine.join( info( a ) );
-			return yield* engine.setRematch( a, NEXT ).pipe( Effect.flip );
+			return yield* engine.setRematch( { playerId: a, input: NEXT } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/RematchUnavailable" );
@@ -151,7 +151,7 @@ describe( "setRematch", () => {
 	test( "refuses a caller who never sat at the table", () => {
 		const { result, cells } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			return yield* engine.setRematch( e, NEXT ).pipe( Effect.flip );
+			return yield* engine.setRematch( { playerId: e, input: NEXT } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
@@ -161,7 +161,7 @@ describe( "setRematch", () => {
 	test( "lives outside the log, beside the other facts undo cannot reach", () => {
 		const { cells } = run( engine => Effect.gen( function* () {
 			yield* playOut( engine );
-			yield* engine.setRematch( a, NEXT );
+			yield* engine.setRematch( { playerId: a, input: NEXT } );
 		} ) );
 
 		// Under `prefs:`, where autoplay lives — not under `log:` and not folded into
@@ -192,15 +192,18 @@ describe( "leaveTeam", () => {
 			yield* engine.initialize( createInput( teamed() ) );
 			yield* Effect.forEach( [ a, b, c, d ], id => engine.join( info( id ) ) );
 
-			yield* engine.joinTeam( a, RED );
-			yield* engine.joinTeam( b, RED );
+			yield* engine.joinTeam( { playerId: a, input: { team: RED } } );
+			yield* engine.joinTeam( { playerId: b, input: { team: RED } } );
 
 			// `red` holds both its seats, so `c` cannot take one...
-			const refused = yield* engine.joinTeam( c, RED ).pipe( Effect.flip );
+			const refused = yield* engine.joinTeam( {
+				playerId: c,
+				input: { team: RED }
+			} ).pipe( Effect.flip );
 
 			// ...until somebody steps off it.
 			yield* engine.leaveTeam( b );
-			yield* engine.joinTeam( c, RED );
+			yield* engine.joinTeam( { playerId: c, input: { team: RED } } );
 
 			const state = yield* engine.getView( a );
 			return { refused, teams: state.context.teams };

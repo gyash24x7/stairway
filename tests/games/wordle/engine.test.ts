@@ -108,7 +108,7 @@ describe( "setting up a board", () => {
 describe( "playing a guess", () => {
 	test( "records it and scores the board", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: decoy( words ) }, a );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: a } );
 			return yield* engine.getView( a );
 		} ) );
 
@@ -123,8 +123,8 @@ describe( "playing a guess", () => {
 		// cursor moves on to schedule whoever is next — with nobody else still
 		// playing, that is this seat again.
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: decoy( words ) }, a );
-			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: a } );
+			yield* engine.guess( { input: { guess: words[ 0 ]! }, playerId: a } );
 			return yield* engine.getView( a );
 		} ) );
 
@@ -134,8 +134,8 @@ describe( "playing a guess", () => {
 
 	test( "hands the cursor to the next seat still playing", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.forfeit( {}, b );
-			yield* engine.guess( { guess: decoy( words ) }, a );
+			yield* engine.forfeit( { input: {}, playerId: b } );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: a } );
 			return yield* engine.getView( a );
 		} ), {}, [ a, b ] );
 
@@ -145,7 +145,7 @@ describe( "playing a guess", () => {
 
 	test( "any seat may guess, whoever the turn sits with", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: decoy( words ) }, b );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: b } );
 			return yield* engine.getView( b );
 		} ), {}, [ a, b ] );
 
@@ -155,7 +155,7 @@ describe( "playing a guess", () => {
 
 	test( "accepts a guess typed in caps or padded with space", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: `  ${ words[ 0 ]!.toUpperCase() } ` }, a );
+			yield* engine.guess( { input: { guess: `  ${ words[ 0 ]!.toUpperCase() } ` }, playerId: a } );
 			return yield* engine.getView( a );
 		} ) );
 
@@ -164,7 +164,7 @@ describe( "playing a guess", () => {
 
 	test( "refuses a guess of the wrong length", () => {
 		const { result } = table(
-			engine => engine.guess( { guess: "crate" }, a ).pipe( Effect.flip ),
+			engine => engine.guess( { input: { guess: "crate" }, playerId: a } ).pipe( Effect.flip ),
 			{ wordLength: 6 }
 		);
 
@@ -173,15 +173,21 @@ describe( "playing a guess", () => {
 	} );
 
 	test( "refuses a word the dictionary does not hold", () => {
-		const { result } = table( engine => engine.guess( { guess: "zzzzz" }, a ).pipe( Effect.flip ) );
+		const { result } = table( engine => engine.guess( {
+			input: { guess: "zzzzz" },
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( ( result as { reason: string } ).reason ).toBe( "The guess is not a valid word" );
 	} );
 
 	test( "refuses a seat that has already finished", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: words[ 0 ]! }, a );
-			return yield* engine.guess( { guess: decoy( words ) }, a ).pipe( Effect.flip );
+			yield* engine.guess( { input: { guess: words[ 0 ]! }, playerId: a } );
+			return yield* engine.guess( {
+				input: { guess: decoy( words ) },
+				playerId: a
+			} ).pipe( Effect.flip );
 		} ), {}, [ a, b ] );
 
 		expect( ( result as { reason: string } ).reason ).toBe( "You have finished your board" );
@@ -189,7 +195,7 @@ describe( "playing a guess", () => {
 
 	test( "refuses a guess from someone who holds no seat", () => {
 		const { result } = table( ( engine, words ) =>
-			engine.guess( { guess: decoy( words ) }, b ).pipe( Effect.flip )
+			engine.guess( { input: { guess: decoy( words ) }, playerId: b } ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
@@ -247,7 +253,7 @@ describe( "a seat that runs out its clock", () => {
 		const { result } = stalled( engine => Effect.gen( function* () {
 			// The seat that stayed can now end the game on its own. Before the clock
 			// existed this table could never reach `COMPLETED` at all.
-			yield* engine.forfeit( {}, b );
+			yield* engine.forfeit( { input: {}, playerId: b } );
 			return yield* engine.getView();
 		} ) );
 
@@ -258,7 +264,7 @@ describe( "a seat that runs out its clock", () => {
 describe( "giving up", () => {
 	test( "retires the seat", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.forfeit( {}, b );
+			yield* engine.forfeit( { input: {}, playerId: b } );
 			return yield* engine.getView( b );
 		} ), {}, [ a, b ] );
 
@@ -267,9 +273,9 @@ describe( "giving up", () => {
 
 	test( "charges the whole allowance rather than banking the rest", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: words[ 0 ]! }, a );
-			yield* engine.guess( { guess: decoy( words ) }, b );
-			yield* engine.forfeit( {}, b );
+			yield* engine.guess( { input: { guess: words[ 0 ]! }, playerId: a } );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: b } );
+			yield* engine.forfeit( { input: {}, playerId: b } );
 			return yield* engine.getView();
 		} ), { wordCount: 2 }, [ a, b ] );
 
@@ -281,8 +287,8 @@ describe( "giving up", () => {
 
 	test( "refuses a seat that is already done", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.forfeit( {}, b );
-			return yield* engine.forfeit( {}, b ).pipe( Effect.flip );
+			yield* engine.forfeit( { input: {}, playerId: b } );
+			return yield* engine.forfeit( { input: {}, playerId: b } ).pipe( Effect.flip );
 		} ), {}, [ a, b ] );
 
 		expect( ( result as { reason: string } ).reason ).toBe( "You have finished your board" );
@@ -297,8 +303,8 @@ describe( "what one seat may read of another", () => {
 			words: ReadonlyArray<string>
 		) => Effect.Effect<A, E>
 	) => table( ( engine, words ) => Effect.gen( function* () {
-		yield* engine.guess( { guess: decoy( words ) }, a );
-		yield* engine.guess( { guess: decoy( words ) }, b );
+		yield* engine.guess( { input: { guess: decoy( words ) }, playerId: a } );
+		yield* engine.guess( { input: { guess: decoy( words ) }, playerId: b } );
 		return yield* body( engine, words );
 	} ), { wordCount: 2 }, [ a, b ] );
 
@@ -331,7 +337,7 @@ describe( "how a game ends", () => {
 	test( "a solitaire board ends when its seat solves every word", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			for ( const word of words ) {
-				yield* engine.guess( { guess: word }, a );
+				yield* engine.guess( { input: { guess: word }, playerId: a } );
 			}
 			return yield* engine.getView( a );
 		} ), { wordCount: 2 } );
@@ -343,7 +349,7 @@ describe( "how a game ends", () => {
 	test( "and reveals the answers, in the order the boards are laid out", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			for ( const word of words ) {
-				yield* engine.guess( { guess: word }, a );
+				yield* engine.guess( { input: { guess: word }, playerId: a } );
 			}
 			return { words, view: yield* engine.getView( a ) };
 		} ), { wordCount: 2 } );
@@ -353,9 +359,9 @@ describe( "how a game ends", () => {
 
 	test( "a duel waits for every seat to be done", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: words[ 0 ]! }, a );
+			yield* engine.guess( { input: { guess: words[ 0 ]! }, playerId: a } );
 			const halfway = yield* engine.getView();
-			yield* engine.forfeit( {}, b );
+			yield* engine.forfeit( { input: {}, playerId: b } );
 			return { halfway, done: yield* engine.getView() };
 		} ), {}, [ a, b ] );
 
@@ -367,7 +373,7 @@ describe( "how a game ends", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			const wrong = dictionaries[ 5 ].filter( word => !words.includes( word ) ).slice( 0, 6 );
 			for ( const word of wrong ) {
-				yield* engine.guess( { guess: word }, a );
+				yield* engine.guess( { input: { guess: word }, playerId: a } );
 			}
 			return yield* engine.getView( a );
 		} ) );
@@ -379,8 +385,8 @@ describe( "how a game ends", () => {
 
 	test( "the winner is the seat strictly ahead", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: words[ 0 ]! }, a );
-			yield* engine.forfeit( {}, b );
+			yield* engine.guess( { input: { guess: words[ 0 ]! }, playerId: a } );
+			yield* engine.forfeit( { input: {}, playerId: b } );
 			return yield* engine.getView();
 		} ), {}, [ a, b ] );
 
@@ -393,8 +399,8 @@ describe( "how a game ends", () => {
 		// one of two words still scores, so without this the lone seat was crowned
 		// for a puzzle it never finished.
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: words[ 0 ]! }, a );
-			yield* engine.forfeit( {}, a );
+			yield* engine.guess( { input: { guess: words[ 0 ]! }, playerId: a } );
+			yield* engine.forfeit( { input: {}, playerId: a } );
 			return yield* engine.getView();
 		} ), { wordCount: 2 } );
 
@@ -406,7 +412,7 @@ describe( "how a game ends", () => {
 	test( "a solo seat that solves every word does win", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
 			for ( const word of words ) {
-				yield* engine.guess( { guess: word }, a );
+				yield* engine.guess( { input: { guess: word }, playerId: a } );
 			}
 			return yield* engine.getView();
 		} ), { wordCount: 2 } );
@@ -417,8 +423,8 @@ describe( "how a game ends", () => {
 
 	test( "two seats level on score leave the game with no winner", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.forfeit( {}, a );
-			yield* engine.forfeit( {}, b );
+			yield* engine.forfeit( { input: {}, playerId: a } );
+			yield* engine.forfeit( { input: {}, playerId: b } );
 			return yield* engine.getView();
 		} ), {}, [ a, b ] );
 
@@ -430,8 +436,8 @@ describe( "how a game ends", () => {
 		// Refusing to guess must never win: a seat that solved nothing scores zero,
 		// whatever it spent.
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.forfeit( {}, a );
-			yield* engine.forfeit( {}, b );
+			yield* engine.forfeit( { input: {}, playerId: a } );
+			yield* engine.forfeit( { input: {}, playerId: b } );
 			return yield* engine.getView();
 		} ), {}, [ a, b ] );
 
@@ -440,15 +446,21 @@ describe( "how a game ends", () => {
 
 	test( "a finished game refuses further guesses", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: words[ 0 ]! }, a );
-			return yield* engine.guess( { guess: decoy( words ) }, a ).pipe( Effect.flip );
+			yield* engine.guess( { input: { guess: words[ 0 ]! }, playerId: a } );
+			return yield* engine.guess( {
+				input: { guess: decoy( words ) },
+				playerId: a
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotInProgress" );
 	} );
 
 	test( "the finished game is archived with every seat's final board", () => {
-		const { saved } = table( ( engine, words ) => engine.guess( { guess: words[ 0 ]! }, a ) );
+		const { saved } = table( ( engine, words ) => engine.guess( {
+			input: { guess: words[ 0 ]! },
+			playerId: a
+		} ) );
 		const archived = saved.get( "wordle:game-1" ) as
 			undefined | { readonly playerViews: Record<Player, { readonly answers?: unknown }> };
 
@@ -462,7 +474,7 @@ describe( "how a game ends", () => {
 describe( "taking a guess back", () => {
 	test( "a seat may undo its own guess", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: decoy( words ) }, a );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: a } );
 			yield* engine.undo( a );
 			return yield* engine.getView( a );
 		} ) );
@@ -472,7 +484,7 @@ describe( "taking a guess back", () => {
 
 	test( "but not a rival's", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: decoy( words ) }, b );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: b } );
 			return yield* engine.undo( a ).pipe( Effect.flip );
 		} ), {}, [ a, b ] );
 
@@ -481,7 +493,7 @@ describe( "taking a guess back", () => {
 
 	test( "and the same words come back on a redo", () => {
 		const { result } = table( ( engine, words ) => Effect.gen( function* () {
-			yield* engine.guess( { guess: decoy( words ) }, a );
+			yield* engine.guess( { input: { guess: decoy( words ) }, playerId: a } );
 			const played = yield* engine.getView( a );
 			yield* engine.undo( a );
 			yield* engine.redo( a );
@@ -569,7 +581,7 @@ const playOut = (
 describe( "the bot", () => {
 	test( "plays the seat a player hands it", () => {
 		const { result } = machineTable( ( engine, clock ) => Effect.gen( function* () {
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
 			return yield* engine.getView( a );
@@ -633,7 +645,7 @@ describe( "the bot", () => {
 
 	test( "keeps racing once the seat beside it has given up", () => {
 		const { result } = machineTable( ( engine, clock ) => Effect.gen( function* () {
-			yield* engine.forfeit( {}, a );
+			yield* engine.forfeit( { input: {}, playerId: a } );
 			return yield* playOut( engine, clock );
 		} ), { wordCount: 2 }, [ a, b ] );
 

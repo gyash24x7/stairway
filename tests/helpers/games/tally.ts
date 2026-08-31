@@ -57,6 +57,8 @@ export const tallyStructure: GameStructure<
 		moves: { score: ScoreInput }
 	},
 
+	defaultConfig: () => TallyConfig.make( { playerCount: 4, autoStart: false } ),
+
 	setup: () => ( { points: {} } ),
 
 	apply: ( state, event ) => ( {

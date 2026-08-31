@@ -91,7 +91,7 @@ const claimRow = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( fu
 		const view = envelope.view as KingdominoView;
 		const open = view.draft.find( entry => !entry.selectedBy )!;
 
-		yield* engine.selectDomino( { dominoId: open.domino.id }, seat );
+		yield* engine.selectDomino( { input: { dominoId: open.domino.id }, playerId: seat } );
 	}
 } );
 
@@ -104,11 +104,11 @@ const policyMove = ( engine: Effect.Success<typeof kingdomino> ) => Effect.gen( 
 
 	switch ( move.moveType ) {
 		case "selectDomino":
-			return yield* engine.selectDomino( move.input, seat );
+			return yield* engine.selectDomino( { input: move.input, playerId: seat } );
 		case "placeDomino":
-			return yield* engine.placeDomino( move.input, seat );
+			return yield* engine.placeDomino( { input: move.input, playerId: seat } );
 		case "discardDomino":
-			return yield* engine.discardDomino( move.input, seat );
+			return yield* engine.discardDomino( { input: move.input, playerId: seat } );
 	}
 } );
 
@@ -227,7 +227,7 @@ describe( "claiming a domino", () => {
 			const seat = before.context.currentPlayer;
 			const [ open ] = view.draft;
 
-			yield* engine.selectDomino( { dominoId: open!.domino.id }, seat );
+			yield* engine.selectDomino( { input: { dominoId: open!.domino.id }, playerId: seat } );
 
 			return { seat, order: view.selectionOrder, after: yield* engine.getView() };
 		} ) );
@@ -245,7 +245,10 @@ describe( "claiming a domino", () => {
 			const view = envelope.view as KingdominoView;
 			const other = [ a, b ].find( seat => seat !== envelope.context.currentPlayer )!;
 
-			return yield* engine.selectDomino( { dominoId: view.draft[ 0 ]!.domino.id }, other )
+			return yield* engine.selectDomino( {
+				input: { dominoId: view.draft[ 0 ]!.domino.id },
+				playerId: other
+			} )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -258,10 +261,16 @@ describe( "claiming a domino", () => {
 			const view = envelope.view as KingdominoView;
 			const taken = view.draft[ 0 ]!.domino.id;
 
-			yield* engine.selectDomino( { dominoId: taken }, envelope.context.currentPlayer );
+			yield* engine.selectDomino( {
+				input: { dominoId: taken },
+				playerId: envelope.context.currentPlayer
+			} );
 
 			const next = yield* engine.getView();
-			return yield* engine.selectDomino( { dominoId: taken }, next.context.currentPlayer )
+			return yield* engine.selectDomino( {
+				input: { dominoId: taken },
+				playerId: next.context.currentPlayer
+			} )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -276,7 +285,10 @@ describe( "claiming a domino", () => {
 			const absent = Array.from( { length: KINGDOMINO_DECK_SIZE }, ( _, i ) => i + 1 )
 				.find( id => !offered.includes( id ) )!;
 
-			return yield* engine.selectDomino( { dominoId: absent }, envelope.context.currentPlayer )
+			return yield* engine.selectDomino( {
+				input: { dominoId: absent },
+				playerId: envelope.context.currentPlayer
+			} )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -287,8 +299,7 @@ describe( "claiming a domino", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const envelope = yield* engine.getView();
 			return yield* engine.selectDomino(
-				{ dominoId: KINGDOMINO_DECK_SIZE + 1 },
-				envelope.context.currentPlayer
+				{ input: { dominoId: KINGDOMINO_DECK_SIZE + 1 }, playerId: envelope.context.currentPlayer }
 			).pipe( Effect.flip );
 		} ) );
 
@@ -304,7 +315,10 @@ describe( "claiming a domino", () => {
 				const envelope = yield* engine.getView();
 				const view = envelope.view as KingdominoView;
 				const open = view.draft.find( entry => !entry.selectedBy )!;
-				yield* engine.selectDomino( { dominoId: open.domino.id }, envelope.context.currentPlayer );
+				yield* engine.selectDomino( {
+					input: { dominoId: open.domino.id },
+					playerId: envelope.context.currentPlayer
+				} );
 			}
 
 			const envelope = yield* engine.getView();
@@ -351,7 +365,7 @@ describe( "laying a domino", () => {
 			const dominoId = Math.min( ...view.playerData[ seat ]!.queue );
 			const [ placement ] = getValidPlacements( view.playerData[ seat ]!.board, dominoId );
 
-			yield* engine.placeDomino( { placement: placement! }, seat );
+			yield* engine.placeDomino( { input: { placement: placement! }, playerId: seat } );
 
 			return { seat, dominoId, after: yield* engine.getView() };
 		} ) );
@@ -372,9 +386,9 @@ describe( "laying a domino", () => {
 			const view = envelope.view as KingdominoView;
 			const dominoId = Math.min( ...view.playerData[ seat ]!.queue );
 
-			return yield* engine.placeDomino( {
+			return yield* engine.placeDomino( { input: {
 				placement: { dominoId, coord: { x: 3, y: 3 }, rotation: 0 }
-			}, seat ).pipe( Effect.flip );
+			}, playerId: seat } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -387,9 +401,9 @@ describe( "laying a domino", () => {
 			const view = envelope.view as KingdominoView;
 			const dominoId = Math.min( ...view.playerData[ seat ]!.queue );
 
-			return yield* engine.placeDomino( {
+			return yield* engine.placeDomino( { input: {
 				placement: { dominoId, coord: { x: 400, y: 0 }, rotation: 0 }
-			}, seat ).pipe( Effect.flip );
+			}, playerId: seat } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -404,9 +418,9 @@ describe( "laying a domino", () => {
 			const other = Array.from( { length: KINGDOMINO_DECK_SIZE }, ( _, i ) => i + 1 )
 				.find( id => !held.includes( id ) )!;
 
-			return yield* engine.placeDomino( {
+			return yield* engine.placeDomino( { input: {
 				placement: { dominoId: other, coord: { x: 1, y: 0 }, rotation: 0 }
-			}, seat ).pipe( Effect.flip );
+			}, playerId: seat } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -424,7 +438,7 @@ describe( "laying a domino", () => {
 			// A kingdom is the seat's own business — nothing it lays can reach
 			// another one — so laying is simultaneous and `currentPlayer` is only
 			// ever advisory through this phase.
-			yield* engine.placeDomino( { placement: placement! }, other );
+			yield* engine.placeDomino( { input: { placement: placement! }, playerId: other } );
 
 			return { other, after: yield* engine.getView() };
 		} ) );
@@ -443,8 +457,7 @@ describe( "laying a domino", () => {
 			const view = envelope.view as KingdominoView;
 
 			return yield* engine.discardDomino(
-				{ dominoId: Math.min( ...view.playerData[ seat ]!.queue ) },
-				seat
+				{ input: { dominoId: Math.min( ...view.playerData[ seat ]!.queue ) }, playerId: seat }
 			).pipe( Effect.flip );
 		} ) );
 
@@ -464,7 +477,10 @@ describe( "laying a domino", () => {
 
 			return {
 				held: queue.length,
-				error: yield* engine.placeDomino( { placement: placement! }, seat ).pipe( Effect.flip )
+				error: yield* engine.placeDomino( {
+					input: { placement: placement! },
+					playerId: seat
+				} ).pipe( Effect.flip )
 			};
 		} ) );
 
@@ -719,7 +735,10 @@ describe( "history and scheduling", () => {
 			const seat = before.context.currentPlayer;
 			const view = before.view as KingdominoView;
 
-			yield* engine.selectDomino( { dominoId: view.draft[ 0 ]!.domino.id }, seat );
+			yield* engine.selectDomino( {
+				input: { dominoId: view.draft[ 0 ]!.domino.id },
+				playerId: seat
+			} );
 			yield* engine.undo( seat );
 
 			return { seat, after: yield* engine.getView() };
@@ -734,7 +753,7 @@ describe( "history and scheduling", () => {
 
 	test( "hands a seat to the policy on request, since the game declares one", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 			return yield* engine.getView();
 		} ) );
 

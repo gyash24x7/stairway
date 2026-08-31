@@ -115,7 +115,7 @@ const declareAll = ( engine: Engine, wins = 1 ) => Effect.gen( function* () {
 		const actor = envelope.context.currentPlayer;
 		const view = yield* viewOf( engine, actor );
 
-		yield* engine.declareWins( { wins, dealId: view.activeDeal!.id }, actor );
+		yield* engine.declareWins( { input: { wins, dealId: view.activeDeal!.id }, playerId: actor } );
 	}
 } );
 
@@ -143,7 +143,10 @@ const playTrick = ( engine: Engine, trump: CardSuit ) => Effect.gen( function* (
 		suit ??= card.slice( -1 ) as CardSuit;
 		cards[ actor ] = card;
 
-		yield* engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, actor );
+		yield* engine.playCard( {
+			input: { cardId: card, dealId: view.activeDeal!.id },
+			playerId: actor
+		} );
 	}
 
 	const trick = { leadPlayer: leadPlayer!, suit, cards } as Trick;
@@ -256,7 +259,10 @@ describe( "declaring", () => {
 	test( "refuses a seat that is not the one being asked", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const view = yield* viewOf( engine, b );
-			return yield* engine.declareWins( { wins: 3, dealId: view.activeDeal!.id }, b )
+			return yield* engine.declareWins( {
+				input: { wins: 3, dealId: view.activeDeal!.id },
+				playerId: b
+			} )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -265,7 +271,10 @@ describe( "declaring", () => {
 
 	test( "refuses a call aimed at a deal that is not in play", () => {
 		const { result } = table( engine =>
-			engine.declareWins( { wins: 3, dealId: "not-this-deal" }, a ).pipe( Effect.flip ) );
+			engine.declareWins( {
+				input: { wins: 3, dealId: "not-this-deal" },
+				playerId: a
+			} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 		expect( ( result as InvalidMove ).reason ).toBe( "Active Deal Not Found!" );
@@ -276,7 +285,7 @@ describe( "declaring", () => {
 			const dealId = ( yield* viewOf( engine, a ) ).activeDeal!.id;
 
 			return yield* Effect.all( [ 0, 14, 2.5 ].map( wins =>
-				engine.declareWins( { wins, dealId }, a ).pipe( Effect.flip ) ) );
+				engine.declareWins( { input: { wins, dealId }, playerId: a } ).pipe( Effect.flip ) ) );
 		} ) ).result;
 
 		for ( const refusal of refusals ) {
@@ -293,7 +302,7 @@ describe( "declaring", () => {
 				order.push( actor );
 
 				const dealId = ( yield* viewOf( engine, actor ) ).activeDeal!.id;
-				yield* engine.declareWins( { wins: i + 1, dealId }, actor );
+				yield* engine.declareWins( { input: { wins: i + 1, dealId }, playerId: actor } );
 			}
 
 			return { order, envelope: yield* envelopeOf( engine ) };
@@ -314,7 +323,7 @@ describe( "declaring", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const view = yield* viewOf( engine, a );
 			return yield* engine
-				.playCard( { cardId: view.hand[ 0 ]!, dealId: view.activeDeal!.id }, a )
+				.playCard( { input: { cardId: view.hand[ 0 ]!, dealId: view.activeDeal!.id }, playerId: a } )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -332,7 +341,7 @@ describe( "playing a trick", () => {
 			const missing = ( yield* viewOf( engine, b ) ).hand[ 0 ]!;
 
 			return yield* engine
-				.playCard( { cardId: missing, dealId: view.activeDeal!.id }, a )
+				.playCard( { input: { cardId: missing, dealId: view.activeDeal!.id }, playerId: a } )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -354,7 +363,7 @@ describe( "playing a trick", () => {
 			const illegal = view.hand.filter( card => !legal.includes( card ) );
 
 			const refusals = yield* Effect.all( illegal.map( card =>
-				engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, actor )
+				engine.playCard( { input: { cardId: card, dealId: view.activeDeal!.id }, playerId: actor } )
 					.pipe( Effect.flip ) ) );
 
 			return { legal, refusals };
@@ -377,7 +386,10 @@ describe( "playing a trick", () => {
 
 			const before = yield* viewOf( engine, a );
 			const card = legalCards( before, "S", a )[ 0 ]!;
-			yield* engine.playCard( { cardId: card, dealId: before.activeDeal!.id }, a );
+			yield* engine.playCard( {
+				input: { cardId: card, dealId: before.activeDeal!.id },
+				playerId: a
+			} );
 
 			return { card, after: yield* viewOf( engine, a ), table: yield* viewOf( engine ) };
 		} ) );
@@ -560,7 +572,7 @@ describe( "the bot policy", () => {
 	test( "takes a human seat over without committing anything", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const before = yield* envelopeOf( engine );
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 
 			return { before, after: yield* envelopeOf( engine ) };
 		} ) );
@@ -581,7 +593,10 @@ describe( "taking a move back", () => {
 
 			const before = yield* viewOf( engine, a );
 			const card = legalCards( before, "S", a )[ 0 ]!;
-			yield* engine.playCard( { cardId: card, dealId: before.activeDeal!.id }, a );
+			yield* engine.playCard( {
+				input: { cardId: card, dealId: before.activeDeal!.id },
+				playerId: a
+			} );
 
 			yield* engine.undo( a );
 			const undone = yield* viewOf( engine, a );
@@ -601,7 +616,7 @@ describe( "taking a move back", () => {
 
 			const view = yield* viewOf( engine, a );
 			const card = legalCards( view, "S", a )[ 0 ]!;
-			yield* engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, a );
+			yield* engine.playCard( { input: { cardId: card, dealId: view.activeDeal!.id }, playerId: a } );
 
 			return yield* engine.undo( b ).pipe( Effect.flip );
 		} ) );
@@ -623,6 +638,9 @@ function playFirstLegalCard( engine: Engine, trump: CardSuit ) {
 		const view = yield* viewOf( engine, actor );
 		const card = legalCards( view, trump, actor )[ 0 ]!;
 
-		yield* engine.playCard( { cardId: card, dealId: view.activeDeal!.id }, actor );
+		yield* engine.playCard( {
+			input: { cardId: card, dealId: view.activeDeal!.id },
+			playerId: actor
+		} );
 	} );
 }

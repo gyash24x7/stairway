@@ -148,6 +148,8 @@ export const parleyStructure: GameStructure<
 		moves: { open: OpenInput, reply: ReplyInput, pass: PassInput }
 	},
 
+	defaultConfig: () => ParleyConfig.make( { playerCount: 4, autoStart: false, target: 1 } ),
+
 	setup: () => ( { log: [] } ),
 
 	apply: ( state, event ) => ( { log: [ ...state.log, event.note ] } ),

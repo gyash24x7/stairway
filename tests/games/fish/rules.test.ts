@@ -107,7 +107,7 @@ describe( "asking for a card", () => {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				const card = state.hands[ target ]![ 0 ]!;
 				return engine
-					.askCard( { from: target, cardId: card }, context.currentPlayer )
+					.askCard( { input: { from: target, cardId: card }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -122,7 +122,10 @@ describe( "asking for a card", () => {
 			( engine, context, state ) => {
 				const mate = teamMatesOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.askCard( { from: mate, cardId: state.hands[ mate ]![ 0 ]! }, context.currentPlayer )
+					.askCard( {
+						input: { from: mate, cardId: state.hands[ mate ]![ 0 ]! },
+						playerId: context.currentPlayer
+					} )
 					.pipe( Effect.flip );
 			}
 		);
@@ -141,7 +144,7 @@ describe( "asking for a card", () => {
 			( engine, context ) => {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.askCard( { from: target, cardId: "AH" }, context.currentPlayer )
+					.askCard( { input: { from: target, cardId: "AH" }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -156,7 +159,7 @@ describe( "asking for a card", () => {
 			( engine, context ) => {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.askCard( { from: target, cardId: "7C" }, context.currentPlayer )
+					.askCard( { input: { from: target, cardId: "7C" }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -175,7 +178,7 @@ describe( "asking for a card", () => {
 			( engine, context ) => {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.askCard( { from: target, cardId: "AH" }, context.currentPlayer )
+					.askCard( { input: { from: target, cardId: "AH" }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -190,7 +193,7 @@ describe( "asking for a card", () => {
 				const own = state.hands[ context.currentPlayer ]![ 0 ]!;
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.askCard( { from: target, cardId: own }, context.currentPlayer )
+					.askCard( { input: { from: target, cardId: own }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -216,7 +219,7 @@ describe( "asking for a card", () => {
 			( engine, context ) => {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.askCard( { from: target, cardId: "AH" }, context.currentPlayer )
+					.askCard( { input: { from: target, cardId: "AH" }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -239,7 +242,10 @@ describe( "asking for a card", () => {
 			},
 			( engine, context ) => Effect.gen( function* () {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
-				yield* engine.askCard( { from: target, cardId: "AH" }, context.currentPlayer );
+				yield* engine.askCard( {
+					input: { from: target, cardId: "AH" },
+					playerId: context.currentPlayer
+				} );
 				return { asker: context.currentPlayer, view: yield* engine.getView() };
 			} )
 		);
@@ -263,7 +269,10 @@ describe( "asking for a card", () => {
 			},
 			( engine, context ) => Effect.gen( function* () {
 				const target = opponentsOf( context, context.currentPlayer )[ 0 ]!;
-				yield* engine.askCard( { from: target, cardId: "AH" }, context.currentPlayer );
+				yield* engine.askCard( {
+					input: { from: target, cardId: "AH" },
+					playerId: context.currentPlayer
+				} );
 				return { target, view: yield* engine.getView() };
 			} )
 		);
@@ -282,7 +291,10 @@ describe( "declaring a book", () => {
 		const { result } = riggedTable(
 			4, "NORMAL", () => ( {} ),
 			( engine, context ) =>
-				engine.claimBook( { claim: {} }, context.currentPlayer ).pipe( Effect.flip )
+				engine.claimBook( {
+					input: { claim: {} },
+					playerId: context.currentPlayer
+				} ).pipe( Effect.flip )
 		);
 
 		expect( reasonOf( result ) ).toBe( "Claim cannot be empty!" );
@@ -292,7 +304,10 @@ describe( "declaring a book", () => {
 		const { result } = riggedTable(
 			6, "CANADIAN", () => ( {} ),
 			( engine, context ) => engine
-				.claimBook( { claim: { "7C": context.currentPlayer } }, context.currentPlayer )
+				.claimBook( {
+					input: { claim: { "7C": context.currentPlayer } },
+					playerId: context.currentPlayer
+				} )
 				.pipe( Effect.flip )
 		);
 
@@ -304,8 +319,10 @@ describe( "declaring a book", () => {
 			4, "NORMAL", () => ( {} ),
 			( engine, context ) => engine
 				.claimBook(
-					{ claim: { AH: context.currentPlayer, "2H": context.currentPlayer } },
-					context.currentPlayer
+					{
+						input: { claim: { AH: context.currentPlayer, "2H": context.currentPlayer } },
+						playerId: context.currentPlayer
+					}
 				)
 				.pipe( Effect.flip )
 		);
@@ -318,7 +335,10 @@ describe( "declaring a book", () => {
 			4, "NORMAL",
 			( context ) => ( { moves: [ claimOf( context.currentPlayer, "ACES" ) ] } ),
 			( engine, context ) => engine
-				.claimBook( { claim: wholeBook( "ACES", context.currentPlayer ) }, context.currentPlayer )
+				.claimBook( {
+					input: { claim: wholeBook( "ACES", context.currentPlayer ) },
+					playerId: context.currentPlayer
+				} )
 				.pipe( Effect.flip )
 		);
 
@@ -333,7 +353,10 @@ describe( "declaring a book", () => {
 				return { hands, cardCounts: countsOf( hands ) };
 			},
 			( engine, context ) => engine
-				.claimBook( { claim: wholeBook( "ACES", context.currentPlayer ) }, context.currentPlayer )
+				.claimBook( {
+					input: { claim: wholeBook( "ACES", context.currentPlayer ) },
+					playerId: context.currentPlayer
+				} )
 				.pipe( Effect.flip )
 		);
 
@@ -349,8 +372,10 @@ describe( "declaring a book", () => {
 			},
 			( engine, context ) => engine
 				.claimBook(
-					{ claim: { AC: context.currentPlayer, AH: context.currentPlayer } },
-					context.currentPlayer
+					{
+						input: { claim: { AC: context.currentPlayer, AH: context.currentPlayer } },
+						playerId: context.currentPlayer
+					}
 				)
 				.pipe( Effect.flip )
 		);
@@ -368,7 +393,10 @@ describe( "declaring a book", () => {
 			( engine, context ) => {
 				const stranger = PlayerId.make( "stranger" );
 				const claim = { ...wholeBook( "ACES", context.currentPlayer ), AH: stranger };
-				return engine.claimBook( { claim }, context.currentPlayer ).pipe( Effect.flip );
+				return engine.claimBook( {
+					input: { claim },
+					playerId: context.currentPlayer
+				} ).pipe( Effect.flip );
 			}
 		);
 
@@ -385,7 +413,10 @@ describe( "declaring a book", () => {
 			( engine, context ) => {
 				const rival = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				const claim = { ...wholeBook( "ACES", context.currentPlayer ), AH: rival };
-				return engine.claimBook( { claim }, context.currentPlayer ).pipe( Effect.flip );
+				return engine.claimBook( {
+					input: { claim },
+					playerId: context.currentPlayer
+				} ).pipe( Effect.flip );
 			}
 		);
 
@@ -410,9 +441,9 @@ describe( "declaring a book", () => {
 			( engine, context ) => Effect.gen( function* () {
 				const caller = context.currentPlayer;
 				const mate = teamMatesOf( context, caller )[ 0 ]!;
-				yield* engine.claimBook( {
+				yield* engine.claimBook( { input: {
 					claim: { AC: caller, AD: caller, AH: mate, AS: mate }
-				}, caller );
+				}, playerId: caller } );
 
 				return { caller, view: yield* engine.getView() };
 			} )
@@ -446,9 +477,9 @@ describe( "declaring a book", () => {
 				const mate = teamMatesOf( context, caller )[ 0 ]!;
 				const rival = opponentsOf( context, caller )[ 0 ]!;
 				// The rival holds two of them, so naming only the side is wrong.
-				yield* engine.claimBook( {
+				yield* engine.claimBook( { input: {
 					claim: { AC: caller, AD: mate, AH: mate, AS: caller }
-				}, caller );
+				}, playerId: caller } );
 
 				return { caller, rival, view: yield* engine.getView() };
 			} )
@@ -470,7 +501,7 @@ describe( "handing the turn to a teammate", () => {
 			( engine, context ) => {
 				const mate = teamMatesOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.transferTurn( { transferTo: mate }, context.currentPlayer )
+					.transferTurn( { input: { transferTo: mate }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -487,7 +518,7 @@ describe( "handing the turn to a teammate", () => {
 			( engine, context ) => {
 				const rival = opponentsOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.transferTurn( { transferTo: rival }, context.currentPlayer )
+					.transferTurn( { input: { transferTo: rival }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -511,7 +542,7 @@ describe( "handing the turn to a teammate", () => {
 			( engine, context ) => {
 				const mate = teamMatesOf( context, context.currentPlayer )[ 0 ]!;
 				return engine
-					.transferTurn( { transferTo: mate }, context.currentPlayer )
+					.transferTurn( { input: { transferTo: mate }, playerId: context.currentPlayer } )
 					.pipe( Effect.flip );
 			}
 		);
@@ -527,7 +558,7 @@ describe( "handing the turn to a teammate", () => {
 			} ),
 			( engine, context ) => Effect.gen( function* () {
 				const mate = teamMatesOf( context, context.currentPlayer )[ 0 ]!;
-				yield* engine.transferTurn( { transferTo: mate }, context.currentPlayer );
+				yield* engine.transferTurn( { input: { transferTo: mate }, playerId: context.currentPlayer } );
 				return { mate, view: yield* engine.getView() };
 			} )
 		);
@@ -559,9 +590,9 @@ describe( "a turn handed to a seat that cannot take it", () => {
 				const caller = context.currentPlayer;
 				const mate = teamMatesOf( context, caller )[ 0 ]!;
 
-				yield* engine.claimBook( {
+				yield* engine.claimBook( { input: {
 					claim: { AC: caller, AD: caller, AH: mate, AS: mate }
-				}, caller );
+				}, playerId: caller } );
 
 				return { mate, view: yield* engine.getView() };
 			} )

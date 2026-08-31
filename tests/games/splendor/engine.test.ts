@@ -103,13 +103,13 @@ const policyMove = ( engine: Effect.Success<typeof splendor> ) => Effect.gen( fu
 
 	switch ( move.moveType ) {
 		case "pickTokens":
-			return yield* engine.pickTokens( move.input, seat );
+			return yield* engine.pickTokens( { input: move.input, playerId: seat } );
 		case "reserveCard":
-			return yield* engine.reserveCard( move.input, seat );
+			return yield* engine.reserveCard( { input: move.input, playerId: seat } );
 		case "purchaseCard":
-			return yield* engine.purchaseCard( move.input, seat );
+			return yield* engine.purchaseCard( { input: move.input, playerId: seat } );
 		case "claimNoble":
-			return yield* engine.claimNoble( move.input, seat );
+			return yield* engine.claimNoble( { input: move.input, playerId: seat } );
 	}
 } );
 
@@ -166,10 +166,10 @@ describe( "dealing the table", () => {
 
 	test( "shows every seat the same table, itself included", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.reserveCard( {
+			yield* engine.reserveCard( { input: {
 				cardId: ( yield* viewOf( engine, a ) ).cards[ 1 ][ 0 ]!.id,
 				withGold: true
-			}, a );
+			}, playerId: a } );
 
 			return {
 				own: yield* viewOf( engine, a ),
@@ -194,7 +194,7 @@ describe( "dealing the table", () => {
 describe( "taking gems", () => {
 	test( "moves three different gems from the bank to the seat", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+			yield* engine.pickTokens( { input: take( "diamond", "sapphire", "emerald" ), playerId: a } );
 			return yield* viewOf( engine, a );
 		} ) );
 
@@ -208,7 +208,7 @@ describe( "taking gems", () => {
 
 	test( "hands the turn to the next seat", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+			yield* engine.pickTokens( { input: take( "diamond", "sapphire", "emerald" ), playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -218,7 +218,7 @@ describe( "taking gems", () => {
 
 	test( "refuses gold, which is only ever taken with a reservation", () => {
 		const { result } = table( engine =>
-			engine.pickTokens( { tokens: { gold: 1 } }, a ).pipe( Effect.flip ) );
+			engine.pickTokens( { input: { tokens: { gold: 1 } }, playerId: a } ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
@@ -227,7 +227,10 @@ describe( "taking gems", () => {
 		// A negative entry never reaches the rules: `sumTokens` would read it as a
 		// credit and wave the ten-token discard through, so the schema stops it.
 		const { result } = table( engine =>
-			engine.pickTokens( { tokens: { diamond: 1, sapphire: -5 } }, a ).pipe( Effect.flip ) );
+			engine.pickTokens( {
+				input: { tokens: { diamond: 1, sapphire: -5 } },
+				playerId: a
+			} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 		expect( ( result as InvalidMove ).reason )
@@ -236,7 +239,7 @@ describe( "taking gems", () => {
 
 	test( "refuses a fractional take at the decode boundary", () => {
 		const { result } = table( engine =>
-			engine.pickTokens( { tokens: { diamond: 1.5 } }, a ).pipe( Effect.flip ) );
+			engine.pickTokens( { input: { tokens: { diamond: 1.5 } }, playerId: a } ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
@@ -245,10 +248,13 @@ describe( "taking gems", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			// The two-seat bank holds exactly four, so the first double is legal and
 			// the second — against the two left — is not.
-			yield* engine.pickTokens( { tokens: { diamond: 2 } }, a );
-			yield* engine.pickTokens( take( "ruby", "onyx", "emerald" ), b );
+			yield* engine.pickTokens( { input: { tokens: { diamond: 2 } }, playerId: a } );
+			yield* engine.pickTokens( { input: take( "ruby", "onyx", "emerald" ), playerId: b } );
 
-			return yield* engine.pickTokens( { tokens: { diamond: 2 } }, a ).pipe( Effect.flip );
+			return yield* engine.pickTokens( {
+				input: { tokens: { diamond: 2 } },
+				playerId: a
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -256,21 +262,24 @@ describe( "taking gems", () => {
 
 	test( "insists on three different gems while three are still there", () => {
 		const { result } = table( engine =>
-			engine.pickTokens( take( "diamond" ), a ).pipe( Effect.flip ) );
+			engine.pickTokens( { input: take( "diamond" ), playerId: a } ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
 
 	test( "refuses a take of nothing", () => {
 		const { result } = table( engine =>
-			engine.pickTokens( { tokens: {} }, a ).pipe( Effect.flip ) );
+			engine.pickTokens( { input: { tokens: {} }, playerId: a } ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
 
 	test( "refuses a mix that is neither three different nor two alike", () => {
 		const { result } = table( engine =>
-			engine.pickTokens( { tokens: { diamond: 2, sapphire: 1 } }, a ).pipe( Effect.flip ) );
+			engine.pickTokens( {
+				input: { tokens: { diamond: 2, sapphire: 1 } },
+				playerId: a
+			} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
@@ -278,11 +287,14 @@ describe( "taking gems", () => {
 	test( "refuses to take more than the bank holds", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			// Two seats plus a double empties a four-token pile.
-			yield* engine.pickTokens( { tokens: { diamond: 2 } }, a );
-			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), b );
-			yield* engine.pickTokens( take( "diamond", "ruby", "onyx" ), a );
+			yield* engine.pickTokens( { input: { tokens: { diamond: 2 } }, playerId: a } );
+			yield* engine.pickTokens( { input: take( "diamond", "sapphire", "emerald" ), playerId: b } );
+			yield* engine.pickTokens( { input: take( "diamond", "ruby", "onyx" ), playerId: a } );
 
-			return yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), b )
+			return yield* engine.pickTokens( {
+				input: take( "diamond", "sapphire", "emerald" ),
+				playerId: b
+			} )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -293,14 +305,17 @@ describe( "taking gems", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			// Drains the diamond, sapphire and emerald piles between the two seats,
 			// which leaves only two types on the table.
-			yield* engine.pickTokens( { tokens: { diamond: 2 } }, a );
-			yield* engine.pickTokens( { tokens: { sapphire: 2 } }, b );
-			yield* engine.pickTokens( { tokens: { emerald: 2 } }, a );
-			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), b );
-			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+			yield* engine.pickTokens( { input: { tokens: { diamond: 2 } }, playerId: a } );
+			yield* engine.pickTokens( { input: { tokens: { sapphire: 2 } }, playerId: b } );
+			yield* engine.pickTokens( { input: { tokens: { emerald: 2 } }, playerId: a } );
+			yield* engine.pickTokens( { input: take( "diamond", "sapphire", "emerald" ), playerId: b } );
+			yield* engine.pickTokens( { input: take( "diamond", "sapphire", "emerald" ), playerId: a } );
 
-			const refused = yield* engine.pickTokens( take( "ruby" ), b ).pipe( Effect.flip );
-			yield* engine.pickTokens( take( "ruby", "onyx" ), b );
+			const refused = yield* engine.pickTokens( {
+				input: take( "ruby" ),
+				playerId: b
+			} ).pipe( Effect.flip );
+			yield* engine.pickTokens( { input: take( "ruby", "onyx" ), playerId: b } );
 
 			return { refused, view: yield* viewOf( engine, b ) };
 		} ) );
@@ -321,10 +336,13 @@ describe( "the ten-token limit", () => {
 		body: ( engine: Effect.Success<typeof splendor> ) => Effect.Effect<A, E>
 	) => table( engine => Effect.gen( function* () {
 		for ( let round = 0; round < 3; round++ ) {
-			yield* engine.pickTokens( take( "diamond", "sapphire", "emerald" ), a );
+			yield* engine.pickTokens( { input: take( "diamond", "sapphire", "emerald" ), playerId: a } );
 
 			const view = yield* viewOf( engine, b );
-			yield* engine.reserveCard( { cardId: view.cards[ 3 ][ round ]!.id, withGold: true }, b );
+			yield* engine.reserveCard( {
+				input: { cardId: view.cards[ 3 ][ round ]!.id, withGold: true },
+				playerId: b
+			} );
 		}
 
 		return yield* body( engine );
@@ -337,17 +355,20 @@ describe( "the ten-token limit", () => {
 
 	test( "refuses a take that would carry a seat past ten", () => {
 		const { result } = nearTheLimit( engine =>
-			engine.pickTokens( take( "ruby", "onyx", "diamond" ), a ).pipe( Effect.flip ) );
+			engine.pickTokens( {
+				input: take( "ruby", "onyx", "diamond" ),
+				playerId: a
+			} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
 
 	test( "accepts the same take with the excess handed back", () => {
 		const { result } = nearTheLimit( engine => Effect.gen( function* () {
-			yield* engine.pickTokens( {
+			yield* engine.pickTokens( { input: {
 				tokens: { ruby: 1, onyx: 1, diamond: 1 },
 				returned: { sapphire: 1, emerald: 1 }
-			}, a );
+			}, playerId: a } );
 
 			return yield* viewOf( engine, a );
 		} ) );
@@ -357,19 +378,19 @@ describe( "the ten-token limit", () => {
 	} );
 
 	test( "refuses a hand-back the seat does not hold", () => {
-		const { result } = nearTheLimit( engine => engine.pickTokens( {
+		const { result } = nearTheLimit( engine => engine.pickTokens( { input: {
 			tokens: { ruby: 1, onyx: 1, diamond: 1 },
 			returned: { gold: 2 }
-		}, a ).pipe( Effect.flip ) );
+		}, playerId: a } ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
 
 	test( "refuses a hand-back when the seat is not over the limit", () => {
-		const { result } = table( engine => engine.pickTokens( {
+		const { result } = table( engine => engine.pickTokens( { input: {
 			tokens: { diamond: 1, sapphire: 1, emerald: 1 },
 			returned: { diamond: 1 }
-		}, a ).pipe( Effect.flip ) );
+		}, playerId: a } ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
@@ -382,7 +403,7 @@ describe( "reserving a card", () => {
 			const before = yield* viewOf( engine, a );
 			const target = before.cards[ 1 ][ 0 ]!;
 
-			yield* engine.reserveCard( { cardId: target.id, withGold: true }, a );
+			yield* engine.reserveCard( { input: { cardId: target.id, withGold: true }, playerId: a } );
 
 			return { target, after: yield* viewOf( engine, a ) };
 		} ) );
@@ -400,7 +421,7 @@ describe( "reserving a card", () => {
 	test( "leaves the gold alone when the seat says so", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const target = ( yield* viewOf( engine, a ) ).cards[ 2 ][ 0 ]!;
-			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+			yield* engine.reserveCard( { input: { cardId: target.id, withGold: false }, playerId: a } );
 
 			return yield* viewOf( engine, a );
 		} ) );
@@ -413,12 +434,18 @@ describe( "reserving a card", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			for ( let i = 0; i < 3; i++ ) {
 				const view = yield* viewOf( engine, a );
-				yield* engine.reserveCard( { cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false }, a );
-				yield* engine.pickTokens( take( "ruby", "onyx", "emerald" ), b );
+				yield* engine.reserveCard( {
+					input: { cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false },
+					playerId: a
+				} );
+				yield* engine.pickTokens( { input: take( "ruby", "onyx", "emerald" ), playerId: b } );
 			}
 
 			const view = yield* viewOf( engine, a );
-			return yield* engine.reserveCard( { cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false }, a )
+			return yield* engine.reserveCard( {
+				input: { cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false },
+				playerId: a
+			} )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -427,7 +454,10 @@ describe( "reserving a card", () => {
 
 	test( "refuses a card that is not on the board", () => {
 		const { result } = table( engine =>
-			engine.reserveCard( { cardId: "no-such-card", withGold: false }, a ).pipe( Effect.flip ) );
+			engine.reserveCard( {
+				input: { cardId: "no-such-card", withGold: false },
+				playerId: a
+			} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
@@ -435,9 +465,12 @@ describe( "reserving a card", () => {
 	test( "refuses a card another seat already reserved", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const target = ( yield* viewOf( engine, a ) ).cards[ 1 ][ 0 ]!;
-			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+			yield* engine.reserveCard( { input: { cardId: target.id, withGold: false }, playerId: a } );
 
-			return yield* engine.reserveCard( { cardId: target.id, withGold: false }, b )
+			return yield* engine.reserveCard( {
+				input: { cardId: target.id, withGold: false },
+				playerId: b
+			} )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -463,8 +496,7 @@ describe( "buying a card", () => {
 
 			if ( view.playerData[ b ]!.reserved.length < SPLENDOR_MAX_RESERVED ) {
 				return yield* engine.reserveCard(
-					{ cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false },
-					b
+					{ input: { cardId: view.cards[ 3 ][ 0 ]!.id, withGold: false }, playerId: b }
 				);
 			}
 
@@ -473,8 +505,7 @@ describe( "buying a card", () => {
 				.slice( 0, 3 );
 
 			return yield* engine.pickTokens(
-				{ tokens: Object.fromEntries( picked.map( gem => [ gem, 1 ] ) ) },
-				b
+				{ input: { tokens: Object.fromEntries( picked.map( gem => [ gem, 1 ] ) ) }, playerId: b }
 			);
 		} );
 
@@ -507,10 +538,9 @@ describe( "buying a card", () => {
 					.slice( 0, Math.min( 3, available.length ) );
 
 				yield* engine.pickTokens(
-					double
+					{ input: double
 						? { tokens: { [ double ]: 2 } }
-						: { tokens: Object.fromEntries( picked.map( gem => [ gem, 1 ] ) ) },
-					a
+						: { tokens: Object.fromEntries( picked.map( gem => [ gem, 1 ] ) ) }, playerId: a }
 				);
 				yield* filler( engine, target );
 			}
@@ -526,7 +556,7 @@ describe( "buying a card", () => {
 			const payment = yield* fund( engine, target );
 
 			const before = yield* viewOf( engine, a );
-			yield* engine.purchaseCard( { cardId: target.id, payment: payment! }, a );
+			yield* engine.purchaseCard( { input: { cardId: target.id, payment: payment! }, playerId: a } );
 
 			return { target, payment: payment!, before, after: yield* viewOf( engine, a ) };
 		} ) );
@@ -549,7 +579,7 @@ describe( "buying a card", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const target = cheapest( yield* viewOf( engine, a ) );
 			const payment = yield* fund( engine, target );
-			yield* engine.purchaseCard( { cardId: target.id, payment: payment! }, a );
+			yield* engine.purchaseCard( { input: { cardId: target.id, payment: payment! }, playerId: a } );
 
 			const after = yield* viewOf( engine, a );
 			const priced = { ...target, cost: { ...target.cost, [ target.bonus ]: 2 } };
@@ -568,12 +598,12 @@ describe( "buying a card", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const target = cheapest( yield* viewOf( engine, a ) );
 
-			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+			yield* engine.reserveCard( { input: { cardId: target.id, withGold: false }, playerId: a } );
 			yield* filler( engine, target );
 
 			const payment = yield* fund( engine, target );
 			const before = yield* viewOf( engine, a );
-			yield* engine.purchaseCard( { cardId: target.id, payment: payment! }, a );
+			yield* engine.purchaseCard( { input: { cardId: target.id, payment: payment! }, playerId: a } );
 
 			return { target, before, after: yield* viewOf( engine, a ) };
 		} ) );
@@ -591,7 +621,7 @@ describe( "buying a card", () => {
 	test( "refuses a payment that leaves the cost short", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const target = cheapest( yield* viewOf( engine, a ) );
-			return yield* engine.purchaseCard( { cardId: target.id, payment: {} }, a )
+			return yield* engine.purchaseCard( { input: { cardId: target.id, payment: {} }, playerId: a } )
 				.pipe( Effect.flip );
 		} ) );
 
@@ -604,8 +634,10 @@ describe( "buying a card", () => {
 			const payment = yield* fund( engine, target );
 
 			return yield* engine.purchaseCard(
-				{ cardId: target.id, payment: { ...payment, gold: ( payment!.gold ?? 0 ) + 1 } },
-				a
+				{
+					input: { cardId: target.id, payment: { ...payment, gold: ( payment!.gold ?? 0 ) + 1 } },
+					playerId: a
+				}
 			).pipe( Effect.flip );
 		} ) );
 
@@ -614,7 +646,10 @@ describe( "buying a card", () => {
 
 	test( "refuses a card the seat neither sees nor holds", () => {
 		const { result } = table( engine =>
-			engine.purchaseCard( { cardId: "no-such-card", payment: {} }, a ).pipe( Effect.flip ) );
+			engine.purchaseCard( {
+				input: { cardId: "no-such-card", payment: {} },
+				playerId: a
+			} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 	} );
@@ -626,7 +661,10 @@ describe( "buying a card", () => {
 				diamond: 9, sapphire: 9, emerald: 9, ruby: 9, onyx: 9, gold: 9
 			}, [] )!;
 
-			return yield* engine.purchaseCard( { cardId: target.id, payment }, a ).pipe( Effect.flip );
+			return yield* engine.purchaseCard( {
+				input: { cardId: target.id, payment },
+				playerId: a
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -635,14 +673,17 @@ describe( "buying a card", () => {
 	test( "refuses another seat's reserved card", () => {
 		const { result } = table( engine => Effect.gen( function* () {
 			const target = cheapest( yield* viewOf( engine, a ) );
-			yield* engine.reserveCard( { cardId: target.id, withGold: false }, a );
+			yield* engine.reserveCard( { input: { cardId: target.id, withGold: false }, playerId: a } );
 
 			const payment = paymentFor(
 				target, { diamond: 9, sapphire: 9, emerald: 9, ruby: 9, onyx: 9, gold: 9 },
 				[]
 			)!;
 
-			return yield* engine.purchaseCard( { cardId: target.id, payment }, b ).pipe( Effect.flip );
+			return yield* engine.purchaseCard( {
+				input: { cardId: target.id, payment },
+				playerId: b
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -727,17 +768,17 @@ describe( "the noble visit", () => {
 
 				// Anything but a response is refused outright...
 				otherMove: yield* engine
-					.pickTokens( take( "diamond", "sapphire", "emerald" ), frame.initiator )
+					.pickTokens( { input: take( "diamond", "sapphire", "emerald" ), playerId: frame.initiator } )
 					.pipe( Effect.flip ),
 
 				// ...a response from anyone but the buyer is not their turn to make...
 				otherSeat: yield* engine
-					.claimNoble( { nobleId: offered[ 0 ]! }, other )
+					.claimNoble( { input: { nobleId: offered[ 0 ]! }, playerId: other } )
 					.pipe( Effect.flip ),
 
 				// ...and a noble that is not on offer is refused on the rules.
 				wrongNoble: yield* engine
-					.claimNoble( { nobleId: "no-such-noble" }, frame.initiator )
+					.claimNoble( { input: { nobleId: "no-such-noble" }, playerId: frame.initiator } )
 					.pipe( Effect.flip )
 			};
 		} ) );
@@ -764,7 +805,10 @@ describe( "the noble visit", () => {
 
 			// The second, so a resolution that just took the first would show up.
 			const chosen = offered[ 1 ]!;
-			yield* engine.claimNoble( { nobleId: chosen }, frame.initiator ).pipe( Effect.orDie );
+			yield* engine.claimNoble( {
+				input: { nobleId: chosen },
+				playerId: frame.initiator
+			} ).pipe( Effect.orDie );
 
 			return {
 				chosen,
@@ -813,7 +857,7 @@ describe( "the noble visit", () => {
 
 	test( "refuses a claim with no noble waiting", () => {
 		const { result } = table( engine =>
-			engine.claimNoble( { nobleId: "anything" }, a ).pipe( Effect.flip ) );
+			engine.claimNoble( { input: { nobleId: "anything" }, playerId: a } ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 		expect( ( result as InvalidMove ).reason ).toBe( "No noble is waiting on you!" );
@@ -867,14 +911,20 @@ describe( "passing a turn", () => {
 	} );
 
 	test( "is refused while the seat still has a move to make", () => {
-		const { result } = table( engine => engine.pass( {}, a ).pipe( Effect.flip ) );
+		const { result } = table( engine => engine.pass( {
+			input: {},
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
 		expect( ( result as InvalidMove ).reason ).toBe( "You still have a move to make!" );
 	} );
 
 	test( "is refused out of turn", () => {
-		const { result } = table( engine => engine.pass( {}, b ).pipe( Effect.flip ) );
+		const { result } = table( engine => engine.pass( {
+			input: {},
+			playerId: b
+		} ).pipe( Effect.flip ) );
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
 	} );
 
@@ -922,7 +972,7 @@ describe( "a table played by the policy", () => {
 		winningPoints?: WinningPoints
 	) => table( engine => Effect.gen( function* () {
 		// Both seats to the machine: `b` is a bot outright, `a` hands its seat over.
-		yield* engine.autoPlay( a, true );
+		yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 		const boundaries: Array<number> = [];
 
 		for ( let tick = 0; tick < 800; tick++ ) {
@@ -1009,7 +1059,7 @@ describe( "a table played by the policy", () => {
 
 	test( "plays a seat that hands itself over", () => {
 		const { result } = table( engine => Effect.gen( function* () {
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 			return yield* engine.getView();
 		} ) );
 

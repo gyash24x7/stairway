@@ -337,8 +337,8 @@ describe( "start", () => {
 			yield* engine.initialize( createInput( tallyConfig( { playerCount: 2 } ) ) );
 			yield* seatAll( engine, [ a, b ] );
 			yield* engine.start( a );
-			yield* engine.score( { points: 1 }, a );
-			yield* engine.score( { points: 1 }, b );
+			yield* engine.score( { input: { points: 1 }, playerId: a } );
+			yield* engine.score( { input: { points: 1 }, playerId: b } );
 			return yield* engine.start( a ).pipe( Effect.flip );
 		} ) );
 

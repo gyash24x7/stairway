@@ -38,14 +38,14 @@ const relay = <A, E>(
 const passRound = ( engine: Effect.Success<typeof relayEngine> ) =>
 	Effect.forEach( seats, () => Effect.gen( function* () {
 		const view = yield* engine.getView();
-		yield* engine.pass( {}, view.context.currentPlayer );
+		yield* engine.pass( { input: {}, playerId: view.context.currentPlayer } );
 	} ) );
 
 /** Plays one full `collecting` phase, whoever the turn happens to sit with. */
 const collectRound = ( engine: Effect.Success<typeof relayEngine>, amount = 1 ) =>
 	Effect.forEach( seats, () => Effect.gen( function* () {
 		const view = yield* engine.getView();
-		yield* engine.collect( { amount }, view.context.currentPlayer );
+		yield* engine.collect( { input: { amount }, playerId: view.context.currentPlayer } );
 	} ) );
 
 
@@ -82,7 +82,10 @@ describe( "entering the first phase", () => {
 
 describe( "the moves a phase allows", () => {
 	test( "refuses a move belonging to another phase", () => {
-		const { result } = relay( engine => engine.collect( { amount: 1 }, a ).pipe( Effect.flip ) );
+		const { result } = relay( engine => engine.collect( {
+			input: { amount: 1 },
+			playerId: a
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/MoveNotAllowed" );
 		expect( ( result as { move: string } ).move ).toBe( "collect" );
@@ -90,7 +93,7 @@ describe( "the moves a phase allows", () => {
 
 	test( "allows the move the phase names", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
-			yield* engine.pass( {}, a );
+			yield* engine.pass( { input: {}, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -101,7 +104,7 @@ describe( "the moves a phase allows", () => {
 		const { result } = relay( engine => Effect.gen( function* () {
 			yield* passRound( engine );
 			const view = yield* engine.getView();
-			yield* engine.collect( { amount: 3 }, view.context.currentPlayer );
+			yield* engine.collect( { input: { amount: 3 }, playerId: view.context.currentPlayer } );
 			return yield* engine.getView();
 		} ) );
 
@@ -118,7 +121,7 @@ describe( "who acts next inside a phase", () => {
 			for ( let turn = 0; turn < 3; turn++ ) {
 				const view = yield* engine.getView();
 				order.push( view.context.currentPlayer );
-				yield* engine.pass( {}, view.context.currentPlayer );
+				yield* engine.pass( { input: {}, playerId: view.context.currentPlayer } );
 			}
 			return order;
 		} ) );
@@ -138,7 +141,7 @@ describe( "who acts next inside a phase", () => {
 			for ( let turn = 0; turn < 3; turn++ ) {
 				const view = yield* engine.getView();
 				holders.push( view.context.currentPlayer );
-				yield* engine.collect( { amount: 1 }, view.context.currentPlayer );
+				yield* engine.collect( { input: { amount: 1 }, playerId: view.context.currentPlayer } );
 			}
 
 			return { entered: entered.context.currentPlayer, holders };
@@ -282,7 +285,7 @@ describe( "a phase that does not exist", () => {
 			yield* engine.initialize( createInput( config() ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
-			return yield* engine.pass( {}, a ).pipe( Effect.flip );
+			return yield* engine.pass( { input: {}, playerId: a } ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/PhaseNotFound" );
@@ -293,7 +296,7 @@ describe( "a phase that does not exist", () => {
 			yield* engine.initialize( createInput( config() ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
-			yield* engine.pass( {}, a ).pipe( Effect.flip );
+			yield* engine.pass( { input: {}, playerId: a } ).pipe( Effect.flip );
 			return yield* engine.getView();
 		} ) );
 

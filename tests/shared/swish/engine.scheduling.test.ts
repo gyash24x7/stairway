@@ -151,7 +151,7 @@ describe( "starting a table by itself", () => {
 			yield* engine.initialize( createInput( tallyConfig( { autoStart: true } ) ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			// `autoPlay` rearms the turn's clocks, which must leave this alone.
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 		} ), { now: clock.now } );
 
 		expect( pending.has( "auto-start" ) ).toBe( true );
@@ -213,7 +213,7 @@ describe( "the clocks a turn runs under", () => {
 
 		const { pending } = tally( engine => Effect.gen( function* () {
 			for ( const seat of seats ) {
-				yield* engine.score( { points: 1 }, seat );
+				yield* engine.score( { input: { points: 1 }, playerId: seat } );
 			}
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
@@ -226,7 +226,7 @@ describe( "the clocks a turn runs under", () => {
 		const { result, pending } = tally( engine => Effect.gen( function* () {
 			const first = yield* engine.getView();
 			clock.advance( 1_000 );
-			yield* engine.score( { points: 1 }, a );
+			yield* engine.score( { input: { points: 1 }, playerId: a } );
 			return { first, second: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
@@ -307,7 +307,7 @@ describe( "a move clock that runs out", () => {
 			yield* engine.alarm();
 			const afterPlay = yield* engine.getView();
 
-			yield* engine.autoPlay( a, false );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: false } } );
 			return { afterPlay, restored: yield* engine.getView() };
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
@@ -392,7 +392,7 @@ describe( "the bot delay", () => {
 		const clock = testClock();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
 			return yield* engine.getView();
@@ -435,7 +435,7 @@ describe( "the clock an open frame runs", () => {
 		body: ( built: Effect.Success<typeof parleyEngine> ) => Effect.Effect<A, E>,
 		options: Parameters<typeof parleyOn>[ 2 ] = {}
 	) => parleyOn( engine, built => Effect.gen( function* () {
-		yield* built.open( { kind: "duel" }, a );
+		yield* built.open( { input: { kind: "duel" }, playerId: a } );
 		return yield* body( built );
 	} ), options );
 
@@ -468,7 +468,7 @@ describe( "the clock an open frame runs", () => {
 		const clock = testClock();
 
 		const { pending } = parleyOn( parleyEngine, engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "duel", deadline: 1 }, a );
+			yield* engine.open( { input: { kind: "duel", deadline: 1 }, playerId: a } );
 			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
@@ -479,7 +479,7 @@ describe( "the clock an open frame runs", () => {
 		const clock = testClock();
 
 		const { result } = opened( parleyEngine, engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, b );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
 			const before = yield* engine.getView();
 
 			clock.advance( FRAME_TIMEOUT + 1 );
@@ -517,7 +517,7 @@ describe( "the clock an open frame runs", () => {
 		const clock = testClock();
 
 		const { result, cells } = opened( policylessParleyEngine, engine => Effect.gen( function* () {
-			yield* engine.reply( { value: true }, b );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
 			clock.advance( FRAME_TIMEOUT + 1 );
 			yield* engine.alarm();
 			return yield* engine.getView();
@@ -533,8 +533,8 @@ describe( "the clock an open frame runs", () => {
 		const clock = testClock();
 
 		const { result } = parleyOn( policylessParleyEngine, engine => Effect.gen( function* () {
-			yield* engine.open( { kind: "vote" }, a );
-			yield* engine.reply( { value: true }, b );
+			yield* engine.open( { input: { kind: "vote" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
 			// `vote` overrides the config with a five-second window of its own.
 			clock.advance( 5_001 );
 			yield* engine.alarm();
@@ -551,7 +551,7 @@ describe( "the clock an open frame runs", () => {
 		const { result, pending } = parleyOn(
 			policylessParleyEngine,
 			engine => Effect.gen( function* () {
-				yield* engine.open( { kind: "duel", nest: true }, a );
+				yield* engine.open( { input: { kind: "duel", nest: true }, playerId: a } );
 				clock.advance( FRAME_TIMEOUT + 1 );
 				yield* engine.alarm();
 				return yield* engine.getView();
@@ -602,7 +602,7 @@ describe( "handing a seat to the policy", () => {
 		const { result } = tally( engine => Effect.gen( function* () {
 			const before = yield* engine.getView();
 			const cursor = cells.get( "log:cursor" );
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 			return { before, cursor, after: yield* engine.getView() };
 		} ), { now: clock.now, cells } );
 
@@ -615,7 +615,7 @@ describe( "handing a seat to the policy", () => {
 		const clock = testClock();
 
 		const { result, pending } = tally( engine => Effect.gen( function* () {
-			yield* engine.autoPlay( a, true );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
@@ -627,8 +627,8 @@ describe( "handing a seat to the policy", () => {
 		const clock = testClock();
 
 		const { result, pending } = tally( engine => Effect.gen( function* () {
-			yield* engine.autoPlay( a, true );
-			yield* engine.autoPlay( a, false );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: false } } );
 			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: MOVE_TIMEOUT } } );
 
@@ -640,8 +640,8 @@ describe( "handing a seat to the policy", () => {
 		const clock = testClock();
 
 		const { result } = tally( engine => Effect.gen( function* () {
-			yield* engine.score( { points: 1 }, a );
-			yield* engine.autoPlay( a, true );
+			yield* engine.score( { input: { points: 1 }, playerId: a } );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: true } } );
 			yield* engine.undo( a );
 			return yield* engine.getView();
 		} ), { now: clock.now } );
@@ -650,7 +650,10 @@ describe( "handing a seat to the policy", () => {
 	} );
 
 	test( "refuses a game with no policy to hand it to", () => {
-		const { result } = scribe( engine => engine.autoPlay( a, true ).pipe( Effect.flip ) );
+		const { result } = scribe( engine => engine.autoPlay( {
+			playerId: a,
+			input: { enabled: true }
+		} ).pipe( Effect.flip ) );
 
 		expect( result._tag ).toBe( "swish/AutoPlayUnavailable" );
 		expect( ( result as { game: string } ).game ).toBe( "scribe" );
@@ -658,7 +661,7 @@ describe( "handing a seat to the policy", () => {
 
 	test( "but switching it off there always works", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.autoPlay( a, false );
+			yield* engine.autoPlay( { playerId: a, input: { enabled: false } } );
 			return yield* engine.getView();
 		} ) );
 
@@ -667,7 +670,10 @@ describe( "handing a seat to the policy", () => {
 
 	test( "refuses a caller who holds no seat", () => {
 		const { result } = tally(
-			engine => engine.autoPlay( player( "stranger" ), true ).pipe( Effect.flip )
+			engine => engine.autoPlay( {
+				playerId: player( "stranger" ),
+				input: { enabled: true }
+			} ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/NotAMember" );
@@ -677,7 +683,10 @@ describe( "handing a seat to the policy", () => {
 		const published: Array<unknown> = [];
 		const clock = testClock();
 
-		tally( engine => engine.autoPlay( a, true ), { now: clock.now, published } );
+		tally( engine => engine.autoPlay( {
+			playerId: a,
+			input: { enabled: true }
+		} ), { now: clock.now, published } );
 
 		const push = published.at( -1 ) as { table: { autoPlay: Record<Player, boolean> } };
 
@@ -709,7 +718,7 @@ describe( "an alarm with nothing to do", () => {
 
 		const { result } = tally( engine => Effect.gen( function* () {
 			for ( const seat of seats ) {
-				yield* engine.score( { points: 1 }, seat );
+				yield* engine.score( { input: { points: 1 }, playerId: seat } );
 			}
 			const done = yield* engine.getView();
 

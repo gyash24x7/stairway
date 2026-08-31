@@ -41,7 +41,7 @@ const scribe = <A, E>(
 describe( "undoing a move", () => {
 	test( "rewinds the state, the version and the cursor together", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			const played = yield* engine.getView();
 			yield* engine.undo( a );
 			return { played, rewound: yield* engine.getView() };
@@ -56,7 +56,7 @@ describe( "undoing a move", () => {
 
 	test( "leaves the log itself alone, so the move is still there to replay", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			yield* engine.undo( a );
 			return yield* engine.getView();
 		} ) );
@@ -67,8 +67,8 @@ describe( "undoing a move", () => {
 
 	test( "takes back only one move at a time", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
-			yield* engine.note( { text: "two" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
+			yield* engine.note( { input: { text: "two" }, playerId: a } );
 			yield* engine.undo( a );
 			return yield* engine.getView();
 		} ) );
@@ -82,7 +82,7 @@ describe( "undoing a move", () => {
 		const published: Array<unknown> = [];
 
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			const beforeUndo = published.length;
 			yield* engine.undo( a );
 			return { beforeUndo, afterUndo: published.length };
@@ -93,7 +93,7 @@ describe( "undoing a move", () => {
 
 	test( "refuses a caller who holds no seat", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			return yield* engine.undo( e ).pipe( Effect.flip );
 		} ) );
 
@@ -125,7 +125,7 @@ describe( "what undo refuses", () => {
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
 			for ( const seat of seats ) {
-				yield* engine.score( { points: 1 }, seat );
+				yield* engine.score( { input: { points: 1 }, playerId: seat } );
 			}
 			return yield* engine.undo( d ).pipe( Effect.flip );
 		} ) );
@@ -135,7 +135,7 @@ describe( "what undo refuses", () => {
 
 	test( "another player's move", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			return yield* engine.undo( b ).pipe( Effect.flip );
 		} ) );
 
@@ -145,8 +145,8 @@ describe( "what undo refuses", () => {
 
 	test( "a move somebody has already played on top of", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.finish( {}, a );
-			yield* engine.finish( {}, b );
+			yield* engine.finish( { input: {}, playerId: a } );
+			yield* engine.finish( { input: {}, playerId: b } );
 			// `a` owns the commit below, but `b`'s is what sits at the cursor.
 			return yield* engine.undo( a ).pipe( Effect.flip );
 		} ) );
@@ -160,7 +160,7 @@ describe( "what undo refuses", () => {
 		const clock = testClock();
 
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			clock.advance( 31_000 );
 			yield* engine.alarm();
 			return yield* engine.undo( a ).pipe( Effect.flip );
@@ -174,7 +174,7 @@ describe( "what undo refuses", () => {
 describe( "redoing a move", () => {
 	test( "puts back what undo took", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			const played = yield* engine.getView();
 			yield* engine.undo( a );
 			yield* engine.redo( a );
@@ -188,9 +188,9 @@ describe( "redoing a move", () => {
 
 	test( "a round trip through both rebuilds the record from the log", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
-			yield* engine.note( { text: "two" }, a );
-			yield* engine.finish( {}, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
+			yield* engine.note( { input: { text: "two" }, playerId: a } );
+			yield* engine.finish( { input: {}, playerId: a } );
 			const played = yield* engine.getView();
 			yield* engine.undo( a );
 			yield* engine.redo( a );
@@ -202,7 +202,7 @@ describe( "redoing a move", () => {
 
 	test( "refuses when the cursor is already at the newest commit", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			return yield* engine.redo( a ).pipe( Effect.flip );
 		} ) );
 
@@ -211,7 +211,7 @@ describe( "redoing a move", () => {
 
 	test( "refuses a move that is not the caller's", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			yield* engine.undo( a );
 			return yield* engine.redo( b ).pipe( Effect.flip );
 		} ) );
@@ -221,7 +221,7 @@ describe( "redoing a move", () => {
 
 	test( "refuses a caller who holds no seat", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			yield* engine.undo( a );
 			return yield* engine.redo( e ).pipe( Effect.flip );
 		} ) );
@@ -244,9 +244,9 @@ describe( "redoing a move", () => {
 describe( "committing after an undo", () => {
 	test( "forks the history: the redo is gone", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			yield* engine.undo( a );
-			yield* engine.note( { text: "other" }, a );
+			yield* engine.note( { input: { text: "other" }, playerId: a } );
 			return yield* engine.redo( a ).pipe( Effect.flip );
 		} ) );
 
@@ -255,10 +255,10 @@ describe( "committing after an undo", () => {
 
 	test( "the new move lands where the old one was", () => {
 		const { result, cells } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			const before = yield* engine.getView();
 			yield* engine.undo( a );
-			yield* engine.note( { text: "other" }, a );
+			yield* engine.note( { input: { text: "other" }, playerId: a } );
 			return { before, after: yield* engine.getView() };
 		} ) );
 
@@ -274,11 +274,11 @@ describe( "committing after an undo", () => {
 		// A documented gap: the commits above the count stay in storage until the
 		// log regrows over them.
 		const { cells } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
-			yield* engine.note( { text: "two" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
+			yield* engine.note( { input: { text: "two" }, playerId: a } );
 			yield* engine.undo( a );
 			yield* engine.undo( a );
-			yield* engine.note( { text: "other" }, a );
+			yield* engine.note( { input: { text: "other" }, playerId: a } );
 		} ) );
 
 		const count = cells.get( "log:count" ) as number;
@@ -289,11 +289,11 @@ describe( "committing after an undo", () => {
 
 	test( "a commit at or past the count is never read back", () => {
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
-			yield* engine.note( { text: "two" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
+			yield* engine.note( { input: { text: "two" }, playerId: a } );
 			yield* engine.undo( a );
 			yield* engine.undo( a );
-			yield* engine.note( { text: "other" }, a );
+			yield* engine.note( { input: { text: "other" }, playerId: a } );
 			return yield* engine.getView();
 		} ) );
 
@@ -308,7 +308,7 @@ describe( "undo and the clocks", () => {
 		const clock = testClock();
 
 		const { pending } = scribe( engine => Effect.gen( function* () {
-			yield* engine.finish( {}, a );
+			yield* engine.finish( { input: {}, playerId: a } );
 			yield* engine.undo( a );
 		} ), { now: clock.now, config: { moveTimeoutMillis: 30_000 } } );
 
@@ -320,7 +320,7 @@ describe( "undo and the clocks", () => {
 		const clock = testClock();
 
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.finish( {}, a );
+			yield* engine.finish( { input: {}, playerId: a } );
 			yield* engine.undo( a );
 			return yield* engine.getView();
 		} ), { now: clock.now, config: { moveTimeoutMillis: 30_000 } } );

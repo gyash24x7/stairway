@@ -101,6 +101,12 @@ export const scribeStructure: GameStructure<
 		}
 	},
 
+	defaultConfig: () => ScribeConfig.make( {
+		playerCount: 4,
+		autoStart: false,
+		allowSpecial: false
+	} ),
+
 	setup: ( _config, rng ) => ( {
 		log: [ `setup:${ rng( "deal" ).int( 1000 ) }` ],
 		notes: {},

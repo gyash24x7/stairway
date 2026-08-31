@@ -9,9 +9,9 @@ import type { ParleyConfig } from "@tests/helpers/games/parley.ts";
 import type { ScribeConfig, ScribeView } from "@tests/helpers/games/scribe.ts";
 import type { TallyConfig } from "@tests/helpers/games/tally.ts";
 
-import { GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
+import type { PlayerId as Player, Standings } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -93,7 +93,7 @@ describe( "what a state change publishes", () => {
 	test( "the table's view and one per seated player, as a single payload", () => {
 		const published: Array<unknown> = [];
 
-		scribe( engine => engine.note( { text: "one" }, a ), { published } );
+		scribe( engine => engine.note( { input: { text: "one" }, playerId: a } ), { published } );
 
 		const push = lastPush( published );
 
@@ -104,7 +104,7 @@ describe( "what a state change publishes", () => {
 	test( "each player's own view is built for them", () => {
 		const published: Array<unknown> = [];
 
-		scribe( engine => engine.note( { text: "one" }, a ), { published } );
+		scribe( engine => engine.note( { input: { text: "one" }, playerId: a } ), { published } );
 
 		const push = lastPush( published );
 
@@ -117,7 +117,7 @@ describe( "what a state change publishes", () => {
 		// Half a table cannot end up a turn behind the other half.
 		const published: Array<unknown> = [];
 
-		scribe( engine => engine.note( { text: "one" }, a ), { published } );
+		scribe( engine => engine.note( { input: { text: "one" }, playerId: a } ), { published } );
 
 		const push = lastPush( published );
 		const versions = [ push.table, ...Object.values( push.players ) ].map( view => view.version );
@@ -145,7 +145,7 @@ describe( "what a state change publishes", () => {
 			const before = published.length;
 			yield* engine.getView();
 			yield* engine.getView( a );
-			yield* engine.note( { text: "" }, a ).pipe( Effect.flip );
+			yield* engine.note( { input: { text: "" }, playerId: a } ).pipe( Effect.flip );
 			return { before, after: published.length };
 		} ), { published } );
 
@@ -156,7 +156,7 @@ describe( "what a state change publishes", () => {
 		const published: Array<unknown> = [];
 
 		const { result } = scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
+			yield* engine.note( { input: { text: "one" }, playerId: a } );
 			const played = published.length;
 			yield* engine.undo( a );
 			const undone = published.length;
@@ -194,25 +194,27 @@ describe( "the scheduling facts on the envelope", () => {
 } );
 
 
+/** The scribe archive as the outbox received it, with only the fields tests read. */
+type Archived = {
+	readonly status: string;
+	readonly view: ScribeView;
+	readonly playerViews: Record<Player, ScribeView>;
+	readonly results?: Standings;
+	readonly context: { readonly players: ReadonlyArray<Player> };
+};
+
+const archivedIn = ( saved: Map<string, unknown> ) =>
+	saved.get( "scribe:game-1" ) as Archived | undefined;
+
+
 describe( "the archive", () => {
 	const finished = () => scribe( engine => Effect.gen( function* () {
-		yield* engine.note( { text: "one" }, a );
+		yield* engine.note( { input: { text: "one" }, playerId: a } );
 		for ( const seat of seats ) {
-			yield* engine.finish( {}, seat );
+			yield* engine.finish( { input: {}, playerId: seat } );
 		}
 		return yield* engine.getView();
 	} ) );
-
-	type Archived = {
-		readonly status: string;
-		readonly view: ScribeView;
-		readonly playerViews: Record<Player, ScribeView>;
-		readonly results?: { readonly ranking: ReadonlyArray<unknown> };
-		readonly context: { readonly players: ReadonlyArray<Player> };
-	};
-
-	const archivedIn = ( saved: Map<string, unknown> ) =>
-		saved.get( "scribe:game-1" ) as Archived | undefined;
 
 	test( "a finished game is filed under its game and id", () => {
 		const { saved } = finished();
@@ -245,7 +247,7 @@ describe( "the archive", () => {
 	} );
 
 	test( "nothing is filed while the game is still on", () => {
-		const { saved } = scribe( engine => engine.note( { text: "one" }, a ) );
+		const { saved } = scribe( engine => engine.note( { input: { text: "one" }, playerId: a } ) );
 
 		expect( saved.size ).toBe( 0 );
 	} );
@@ -258,71 +260,47 @@ describe( "the archive", () => {
 } );
 
 
-describe( "the ledger", () => {
-	const finished = ( options: Parameters<typeof runGame>[ 2 ] = {} ) =>
-		scribe( engine => Effect.gen( function* () {
-			yield* engine.note( { text: "one" }, a );
-			for ( const seat of seats ) {
-				yield* engine.finish( {}, seat );
-			}
-		} ), options );
-
-	test( "a finished game is posted under its game and id", () => {
-		const { posted } = finished();
-
-		expect( posted ).toHaveLength( 1 );
-		expect( posted[ 0 ]?.address ).toEqual( { game: "scribe", id: GameId.make( "game-1" ) } );
-	} );
+describe( "the standings the archive carries", () => {
+	const finished = () => scribe( engine => Effect.gen( function* () {
+		yield* engine.note( { input: { text: "one" }, playerId: a } );
+		for ( const seat of seats ) {
+			yield* engine.finish( { input: {}, playerId: seat } );
+		}
+	} ) );
 
 	test( "one line per seat, carrying the rank and score it finished on", () => {
-		const { posted } = finished();
-		const entries = posted[ 0 ]?.entries ?? [];
+		const ranking = archivedIn( finished().saved )?.results?.ranking ?? [];
 
-		expect( entries.map( entry => entry.playerId ) ).toEqual( seats );
-		expect( entries.every( entry => entry.rank === 1 ) ).toBe( true );
-		expect( entries.find( entry => entry.playerId === a )?.score ).toBe( 1 );
+		expect( ranking.map( standing => standing.playerId ) ).toEqual( seats );
+		expect( ranking.every( standing => standing.rank === 1 ) ).toBe( true );
+		expect( ranking.find( standing => standing.playerId === a )?.score ).toBe( 1 );
 	} );
 
-	test( "a game that names nobody leaves every line unwon", () => {
-		const { posted } = finished();
+	test( "a game that names nobody leaves the verdict unset", () => {
+		const results = archivedIn( finished().saved )?.results;
 
-		expect( posted[ 0 ]?.entries.every( entry => !entry.winner ) ).toBe( true );
+		expect( results?.winner ).toBeUndefined();
+		expect( results?.winningTeam ).toBeUndefined();
 	} );
 
-	test( "the completion is stamped from the engine's clock", () => {
-		const { posted } = finished( { now: () => 1_700_000_000_000 } );
-
-		expect( posted[ 0 ]?.completedAt ).toBe( 1_700_000_000_000 );
-	} );
-
-	test( "nothing is posted while the game is still on", () => {
-		const { posted } = scribe( engine => engine.note( { text: "one" }, a ) );
-
-		expect( posted ).toHaveLength( 0 );
-	} );
-
-	test( "it is posted once, on the commit that completed the game", () => {
-		const { posted } = finished();
-
-		expect( posted ).toHaveLength( 1 );
-	} );
-
-	test( "a game that ranks nobody still posts its completion, with no lines", () => {
+	test( "a game that ranks nobody is still filed, with no standings on it", () => {
 		const config: ParleyConfig = { playerCount: 4, autoStart: false, target: 1 };
 
-		const { posted } = runGame( parleyEngine, engine => Effect.gen( function* () {
+		const { saved } = runGame( parleyEngine, engine => Effect.gen( function* () {
 			yield* engine.initialize( createInput( config ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
 
-			yield* engine.open( { kind: "duel" }, a );
+			yield* engine.open( { input: { kind: "duel" }, playerId: a } );
 			for ( const seat of [ b, c, d ] ) {
-				yield* engine.reply( { value: true }, seat );
+				yield* engine.reply( { input: { value: true }, playerId: seat } );
 			}
 		} ) );
 
-		expect( posted ).toHaveLength( 1 );
-		expect( posted[ 0 ]?.entries ).toEqual( [] );
+		const archived = saved.get( "parley:game-1" ) as { readonly results?: Standings };
+
+		expect( saved.size ).toBe( 1 );
+		expect( archived.results ).toBeUndefined();
 	} );
 } );
 
@@ -333,10 +311,10 @@ describe( "the standings", () => {
 			yield* engine.initialize( createInput( tallyConfig ) );
 			yield* Effect.forEach( seats, id => engine.join( info( id ) ) );
 			yield* engine.start( a );
-			yield* engine.score( { points: 1 }, a );
-			yield* engine.score( { points: 9 }, b );
-			yield* engine.score( { points: 5 }, c );
-			yield* engine.score( { points: 3 }, d );
+			yield* engine.score( { input: { points: 1 }, playerId: a } );
+			yield* engine.score( { input: { points: 9 }, playerId: b } );
+			yield* engine.score( { input: { points: 5 }, playerId: c } );
+			yield* engine.score( { input: { points: 3 }, playerId: d } );
 			return yield* engine.getView();
 		} ) );
 
@@ -350,7 +328,7 @@ describe( "the standings", () => {
 		// structure without `resolveResults` simply never emits the event.
 		const { result } = scribe( engine => Effect.gen( function* () {
 			for ( const seat of seats ) {
-				yield* engine.finish( {}, seat );
+				yield* engine.finish( { input: {}, playerId: seat } );
 			}
 			return yield* engine.getView();
 		} ) );

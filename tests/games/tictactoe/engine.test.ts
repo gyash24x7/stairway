@@ -7,10 +7,10 @@ import {
 	TICTACTOE_MOVE_TIMEOUT_MILLIS,
 	TICTACTOE_PLAYER_COUNT
 } from "@/games/tictactoe/shared/schema.ts";
-import { GameId, PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
+import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 
 import type { PlaceInput, TicTacToeConfig } from "@/games/tictactoe/shared/schema.ts";
-import type { PlayerId as Player } from "@/swish/shared/schema.ts";
+import type { PlayerId as Player, Standings } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -63,7 +63,7 @@ const duel = <A, E>(
 /** Plays a run of cells, alternating seats from X. */
 const playOut = ( engine: Effect.Success<typeof tictactoe>, cells: ReadonlyArray<number> ) =>
 	Effect.forEach( cells, ( position, index ) =>
-		engine.place( { position } as PlaceInput, index % 2 === 0 ? x : o )
+		engine.place( { input: { position } as PlaceInput, playerId: index % 2 === 0 ? x : o } )
 	);
 
 
@@ -122,7 +122,7 @@ describe( "seating a duel", () => {
 describe( "placing a mark", () => {
 	test( "writes the caller's own symbol into the cell", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 4 } as PlaceInput, x );
+			yield* engine.place( { input: { position: 4 } as PlaceInput, playerId: x } );
 			return yield* engine.getView();
 		} ) );
 
@@ -131,7 +131,7 @@ describe( "placing a mark", () => {
 
 	test( "hands the turn to the other seat", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 4 } as PlaceInput, x );
+			yield* engine.place( { input: { position: 4 } as PlaceInput, playerId: x } );
 			return yield* engine.getView();
 		} ) );
 
@@ -140,8 +140,11 @@ describe( "placing a mark", () => {
 
 	test( "refuses a cell that is already taken", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 4 } as PlaceInput, x );
-			return yield* engine.place( { position: 4 } as PlaceInput, o ).pipe( Effect.flip );
+			yield* engine.place( { input: { position: 4 } as PlaceInput, playerId: x } );
+			return yield* engine.place( {
+				input: { position: 4 } as PlaceInput,
+				playerId: o
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -150,7 +153,7 @@ describe( "placing a mark", () => {
 
 	test( "refuses a seat playing out of turn", () => {
 		const { result } = duel( engine =>
-			engine.place( { position: 0 } as PlaceInput, o ).pipe( Effect.flip )
+			engine.place( { input: { position: 0 } as PlaceInput, playerId: o } ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/NotYourTurn" );
@@ -160,7 +163,7 @@ describe( "placing a mark", () => {
 		// The bound lives on the input, so an out-of-range index never reaches
 		// `validate` to be mistaken for an occupied cell.
 		const { result } = duel( engine =>
-			engine.place( { position: 9 } as PlaceInput, x ).pipe( Effect.flip )
+			engine.place( { input: { position: 9 } as PlaceInput, playerId: x } ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -168,7 +171,7 @@ describe( "placing a mark", () => {
 
 	test( "refuses a fractional index the same way", () => {
 		const { result } = duel( engine =>
-			engine.place( { position: 1.5 } as PlaceInput, x ).pipe( Effect.flip )
+			engine.place( { input: { position: 1.5 } as PlaceInput, playerId: x } ).pipe( Effect.flip )
 		);
 
 		expect( result._tag ).toBe( "swish/InvalidMove" );
@@ -216,34 +219,47 @@ describe( "how a duel ends", () => {
 	test( "a finished duel refuses further play", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
 			yield* playOut( engine, [ 0, 3, 1, 4, 2 ] );
-			return yield* engine.place( { position: 8 } as PlaceInput, o ).pipe( Effect.flip );
+			return yield* engine.place( {
+				input: { position: 8 } as PlaceInput,
+				playerId: o
+			} ).pipe( Effect.flip );
 		} ) );
 
 		expect( result._tag ).toBe( "swish/GameNotInProgress" );
 	} );
 
-	test( "the ledger gets a line per seat, with the win on the winner's", () => {
-		const { posted } = duel( engine => playOut( engine, [ 0, 3, 1, 4, 2 ] ) );
-		const entries = posted[ 0 ]?.entries ?? [];
+	/** The archive the outbox received, with only the fields these tests read. */
+	const archivedAfter = ( positions: ReadonlyArray<number> ) => {
+		const { saved } = duel( engine => playOut( engine, positions ) );
 
-		expect( posted[ 0 ]?.address )
-			.toEqual( { game: "tictactoe", id: GameId.make( "game-1" ) } );
-		expect( entries.find( entry => entry.playerId === x ) )
-			.toMatchObject( { rank: 1, winner: true } );
-		expect( entries.find( entry => entry.playerId === o ) )
-			.toMatchObject( { rank: 2, winner: false } );
+		return {
+			saved,
+			archived: saved.get( "tictactoe:game-1" ) as undefined | {
+				readonly playerViews: Record<Player, unknown>;
+				readonly results?: Standings;
+			}
+		};
+	};
+
+	test( "the standings rank both seats, with the winner named", () => {
+		const results = archivedAfter( [ 0, 3, 1, 4, 2 ] ).archived?.results;
+
+		expect( results?.winner ).toBe( x );
+		expect( results?.ranking.find( standing => standing.playerId === x ) )
+			.toMatchObject( { rank: 1 } );
+		expect( results?.ranking.find( standing => standing.playerId === o ) )
+			.toMatchObject( { rank: 2 } );
 	} );
 
-	test( "a draw is posted with nobody winning it", () => {
-		const { posted } = duel( engine => playOut( engine, [ 0, 2, 1, 3, 5, 4, 6, 7, 8 ] ) );
+	test( "a draw is filed with nobody winning it", () => {
+		const results = archivedAfter( [ 0, 2, 1, 3, 5, 4, 6, 7, 8 ] ).archived?.results;
 
-		expect( posted[ 0 ]?.entries.every( entry => !entry.winner ) ).toBe( true );
+		expect( results?.winner ).toBeUndefined();
+		expect( results?.ranking.every( standing => standing.rank === 1 ) ).toBe( true );
 	} );
 
 	test( "the finished duel is archived with both seats' views", () => {
-		const { saved } = duel( engine => playOut( engine, [ 0, 3, 1, 4, 2 ] ) );
-		const archived = saved.get( "tictactoe:game-1" ) as
-			undefined | { readonly playerViews: Record<Player, unknown> };
+		const { saved, archived } = archivedAfter( [ 0, 3, 1, 4, 2 ] );
 
 		expect( [ ...saved.keys() ] ).toEqual( [ "tictactoe:game-1" ] );
 		expect( Object.keys( archived?.playerViews ?? {} ) ).toEqual( [ x, o ] );
@@ -256,7 +272,7 @@ describe( "the bot", () => {
 		const clock = testClock();
 
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 0 } as PlaceInput, x );
+			yield* engine.place( { input: { position: 0 } as PlaceInput, playerId: x } );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
 			return yield* engine.getView();
@@ -270,7 +286,7 @@ describe( "the bot", () => {
 		const clock = testClock();
 
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 0 } as PlaceInput, x );
+			yield* engine.place( { input: { position: 0 } as PlaceInput, playerId: x } );
 			clock.advance( BOT_DELAY_MS + 1 );
 			yield* engine.alarm();
 			return yield* engine.getView();
@@ -326,7 +342,7 @@ describe( "the bot", () => {
 describe( "taking a move back", () => {
 	test( "a seat may take back its own last mark", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 4 } as PlaceInput, x );
+			yield* engine.place( { input: { position: 4 } as PlaceInput, playerId: x } );
 			yield* engine.undo( x );
 			return yield* engine.getView();
 		} ) );
@@ -337,7 +353,7 @@ describe( "taking a move back", () => {
 
 	test( "but not the other seat's", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 4 } as PlaceInput, x );
+			yield* engine.place( { input: { position: 4 } as PlaceInput, playerId: x } );
 			return yield* engine.undo( o ).pipe( Effect.flip );
 		} ) );
 
@@ -346,7 +362,7 @@ describe( "taking a move back", () => {
 
 	test( "and a redo puts it back exactly", () => {
 		const { result } = duel( engine => Effect.gen( function* () {
-			yield* engine.place( { position: 4 } as PlaceInput, x );
+			yield* engine.place( { input: { position: 4 } as PlaceInput, playerId: x } );
 			const played = yield* engine.getView();
 			yield* engine.undo( x );
 			yield* engine.redo( x );

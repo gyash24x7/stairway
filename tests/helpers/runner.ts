@@ -2,14 +2,11 @@ import { TestHost } from "@tests/helpers/host.ts";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 
-import type { PostedResult } from "@tests/helpers/host.ts";
-
 import { GameCode, GameId } from "@/swish/shared/schema.ts";
 
 import type { UserId } from "@/auth/shared/schema.ts";
 import type {
-	SwishArchive,
-	SwishLedger,
+	SwishOutbox,
 	SwishStorage,
 	SwishSync,
 	SwishTimers
@@ -24,8 +21,7 @@ import type {
 /** Everything an engine asks of its host, which `TestHost` provides in memory. */
 export type HostServices =
 	| SwishStorage
-	| SwishArchive
-	| SwishLedger
+	| SwishOutbox
 	| SwishSync
 	| SwishTimers;
 
@@ -53,20 +49,19 @@ const clockReading = ( now: () => number ) => {
 };
 
 /**
- * What a test may reach into after a run: the store, the archive, the ledger and
- * the fan-out.
+ * What a test may reach into after a run: the store, the archives the outbox
+ * received and the fan-out.
  */
 export type RunCollectors = {
 	readonly cells: Map<string, unknown>;
 	readonly saved: Map<string, unknown>;
-	readonly posted: Array<PostedResult>;
 	readonly published: Array<unknown>;
 };
 
 /**
  * Drives one engine against in-memory host services and hands back both the
- * body's result and the four collectors, so a test can assert on what was
- * stored, archived, posted and broadcast alongside what it read.
+ * body's result and the collectors, so a test can assert on what was stored,
+ * archived and broadcast alongside what it read.
  *
  * The clock is a parameter rather than the wall clock because nothing in the
  * fake schedule fires on its own: a test moves `now` past a timer's due time and
@@ -85,14 +80,12 @@ export const runGame = <Engine, A, E>(
 		readonly now?: () => number;
 		readonly cells?: Map<string, unknown>;
 		readonly saved?: Map<string, unknown>;
-		readonly posted?: Array<PostedResult>;
 		readonly published?: Array<unknown>;
 		readonly pending?: Map<string, number>;
 	} = {}
 ) => {
 	const cells = options.cells ?? new Map<string, unknown>();
 	const saved = options.saved ?? new Map<string, unknown>();
-	const posted = options.posted ?? [];
 	const published = options.published ?? [];
 	const pending = options.pending ?? new Map<string, number>();
 	const now = options.now ?? ( () => Date.now() );
@@ -100,11 +93,11 @@ export const runGame = <Engine, A, E>(
 	const program = Effect.gen( function* () {
 		return yield* body( yield* engine );
 	} ).pipe(
-		Effect.provide( TestHost( { cells, saved, posted, published, pending, now } ) ),
+		Effect.provide( TestHost( { cells, saved, published, pending, now } ) ),
 		Effect.provideService( Clock.Clock, clockReading( now ) )
 	);
 
-	return { result: Effect.runSync( program ), cells, saved, posted, published, pending };
+	return { result: Effect.runSync( program ), cells, saved, published, pending };
 };
 
 /**
