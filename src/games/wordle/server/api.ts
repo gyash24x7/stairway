@@ -4,10 +4,9 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
 import { wordle } from "@/games/wordle/server/engine.ts";
-import { WORDLE_MOVE_TIMEOUT_MILLIS, WordleConfig } from "@/games/wordle/shared/schema.ts";
-import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
+import { makeApiHandlers, SwishDurableObject } from "@/swish/server/api.ts";
 
-import type { WordleCreateInput } from "@/games/wordle/shared/schema.ts";
+import type { WordleConfig, WordleMoves, WordleView } from "@/games/wordle/shared/schema.ts";
 
 
 // --- Durable Object ----------------------------------------------------------
@@ -22,27 +21,21 @@ export class WordleGame extends Cloudflare.DurableObject<WordleGame>()(
 
 export const WordleApiLive = HttpApiBuilder.group( StairwayAPI, "wordle", handlers =>
 	Effect.gen( function* () {
-		const api = yield* makeGameApi( { game: "wordle", ns: yield* WordleGame } );
+		const ns = yield* WordleGame;
+		const api = yield* makeApiHandlers<WordleView, WordleMoves, WordleConfig>(
+			"wordle",
+			[ "guess", "forfeit" ],
+			gameId => ns.getByName( gameId )
+		);
 
 		return handlers
-			.handle( "createGame", api.createGame(
-				client => client.initialize,
-				( payload: WordleCreateInput ) =>
-					Effect.succeed( WordleConfig.make( {
-						...payload,
-						autoStart: true,
-						moveTimeoutMillis: WORDLE_MOVE_TIMEOUT_MILLIS
-					} ) )
-			) )
-			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getView ) )
-			.handle( "addBots", api.addBots )
-			.handle( "guess", api.move( client => client.guess ) )
-			.handle( "forfeit", api.move( client => client.forfeit ) )
-			.handle( "setAutoPlay", api.autoPlay )
-			.handle( "rematch", api.rematch(
-				client => client.initialize,
-				client => client.getView
-			) );
+			.handle( "createGame", () => api.createGame() )
+			.handle( "join", ( { payload } ) => api.joinGame( payload ) )
+			.handle( "getView", ( { params } ) => api.getView( params ) )
+			.handle( "addBots", ( { params } ) => api.addBots( params ) )
+			.handle( "guess", ( { params, payload } ) => api.guess( params, payload ) )
+			.handle( "forfeit", ( { params, payload } ) => api.forfeit( params, payload ) )
+			.handle( "setAutoPlay", ( { params, payload } ) => api.autoPlay( params, payload ) )
+			.handle( "rematch", ( { params, payload } ) => api.rematch( params, payload ) );
 	} )
 );

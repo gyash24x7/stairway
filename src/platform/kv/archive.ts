@@ -11,18 +11,23 @@ import type { GameAddress } from "@/swish/shared/schema.ts";
 
 export const ArchiveKV = Cloudflare.KV.Namespace( "ArchiveKV" );
 
-export const SwishArchiveLive = ( kv: Cloudflare.KV.ReadWriteNamespaceClient ) =>
-	Layer.succeed( SwishArchive, SwishArchive.of( {
-		save: ( address, encoded ) => withRuntime(
-			kv.put( `${ address.game }:${ address.id }`, JSON.stringify( encoded ) ).pipe(
-				Effect.orDie
-			)
-		),
+export const SwishArchiveLive = Layer.effect(
+	SwishArchive,
+	Effect.gen( function* () {
+		const kv = yield* Cloudflare.KV.ReadWriteNamespace( ArchiveKV );
+		return SwishArchive.of( {
+			save: ( address, encoded ) => withRuntime(
+				kv.put( `${ address.game }:${ address.id }`, JSON.stringify( encoded ) ).pipe(
+					Effect.orDie
+				)
+			),
 
-		load: <T>( address: GameAddress ) => withRuntime(
-			kv.get<T>( `${ address.game }:${ address.id }`, "json" ).pipe(
-				Effect.map( Option.fromNullishOr ),
-				Effect.orDie
+			load: <T>( address: GameAddress ) => withRuntime(
+				kv.get<T>( `${ address.game }:${ address.id }`, "json" ).pipe(
+					Effect.map( Option.fromNullishOr ),
+					Effect.orDie
+				)
 			)
-		)
-	} ) );
+		} );
+	} )
+);

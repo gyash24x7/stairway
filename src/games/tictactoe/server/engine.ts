@@ -12,6 +12,8 @@ import {
 	PlaceInput,
 	SymbolAssigned,
 	TICTACTOE_BOARD_SIZE,
+	TICTACTOE_MOVE_TIMEOUT_MILLIS,
+	TICTACTOE_PLAYER_COUNT,
 	TicTacToeConfig,
 	TicTacToeEvent,
 	TicTacToeState,
@@ -34,6 +36,12 @@ export const tictactoe = makeEngine( {
 			place: PlaceInput
 		}
 	},
+
+	defaultConfig: () => TicTacToeConfig.make( {
+		playerCount: TICTACTOE_PLAYER_COUNT,
+		autoStart: false,
+		moveTimeoutMillis: TICTACTOE_MOVE_TIMEOUT_MILLIS
+	} ),
 
 	setup: () => TicTacToeState.make( {
 		board: Array.from( { length: TICTACTOE_BOARD_SIZE }, () => null ),

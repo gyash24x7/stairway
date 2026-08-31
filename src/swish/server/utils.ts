@@ -5,7 +5,6 @@ import type * as Types from "effect/Types";
 
 import { PlayerId, PlayerInfo } from "@/swish/shared/schema.ts";
 
-import type { AuthInfo } from "@/auth/shared/schema.ts";
 import type {
 	Audience,
 	BaseGameConfig,
@@ -148,7 +147,7 @@ export class Accumulator<State, Config extends BaseGameConfig, Events extends Ba
 	}
 }
 
-export const toPlayerInfo = ( user: AuthInfo ) =>
+export const toPlayerInfo = ( user: { id: string; name: string; avatar: string } ) =>
 	PlayerInfo.make( {
 		id: PlayerId.make( user.id ),
 		name: user.name,

@@ -2,7 +2,12 @@ import * as Match from "effect/Match";
 import { castDraft, produce } from "immer";
 
 import { decideFishMove } from "@/games/fish/server/bot/policy.ts";
-import { getClaimedBooks, getMetrics, isGameComplete } from "@/games/fish/server/utils.ts";
+import {
+	buildConfig,
+	getClaimedBooks,
+	getMetrics,
+	isGameComplete
+} from "@/games/fish/server/utils.ts";
 import {
 	Ask,
 	AskCardInput,
@@ -52,6 +57,8 @@ export const fish = makeEngine( {
 			transferTurn: TransferTurnInput
 		}
 	},
+
+	defaultConfig: () => buildConfig( 6, "CANADIAN", 2 ),
 
 	setup: () => FishState.make( { hands: {}, cardCounts: {}, moves: [] } ),
 

@@ -4,12 +4,13 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
 import { tictactoe } from "@/games/tictactoe/server/engine.ts";
-import {
-	TICTACTOE_MOVE_TIMEOUT_MILLIS,
-	TICTACTOE_PLAYER_COUNT,
-	TicTacToeConfig
+import { makeApiHandlers, SwishDurableObject } from "@/swish/server/api.ts";
+
+import type {
+	PlaceInput,
+	TicTacToeConfig,
+	TicTacToeView
 } from "@/games/tictactoe/shared/schema.ts";
-import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
 
 
 // --- Durable Object ----------------------------------------------------------
@@ -24,27 +25,23 @@ export class TicTacToeGame extends Cloudflare.DurableObject<TicTacToeGame>()(
 
 export const TicTacToeApiLive = HttpApiBuilder.group( StairwayAPI, "tictactoe", handlers =>
 	Effect.gen( function* () {
-		const api = yield* makeGameApi( { game: "tictactoe", ns: yield* TicTacToeGame } );
+		const ns = yield* TicTacToeGame;
+		const api = yield* makeApiHandlers<TicTacToeView, { place: PlaceInput }, TicTacToeConfig>(
+			"tictactoe",
+			[ "place" ],
+			gameId => ns.getByName( gameId )
+		);
 
 		return handlers
-			.handle( "createGame", api.createGame( client => client.initialize, () => Effect.succeed(
-				TicTacToeConfig.make( {
-					playerCount: TICTACTOE_PLAYER_COUNT,
-					autoStart: false,
-					moveTimeoutMillis: TICTACTOE_MOVE_TIMEOUT_MILLIS
-				} )
-			) ) )
-			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getView ) )
-			.handle( "addBots", api.addBots )
-			.handle( "start", api.start )
-			.handle( "place", api.move( client => client.place ) )
-			.handle( "setAutoPlay", api.autoPlay )
-			.handle( "rematch", api.rematch(
-				client => client.initialize,
-				client => client.getView
-			) )
-			.handle( "undo", api.undo )
-			.handle( "redo", api.redo );
+			.handle( "createGame", () => api.createGame() )
+			.handle( "join", ( { payload } ) => api.joinGame( payload ) )
+			.handle( "getView", ( { params } ) => api.getView( params ) )
+			.handle( "addBots", ( { params } ) => api.addBots( params ) )
+			.handle( "start", ( { params } ) => api.startGame( params ) )
+			.handle( "place", ( { params, payload } ) => api.place( params, payload ) )
+			.handle( "setAutoPlay", ( { params, payload } ) => api.autoPlay( params, payload ) )
+			.handle( "rematch", ( { params, payload } ) => api.rematch( params, payload ) )
+			.handle( "undo", ( { params } ) => api.undo( params ) )
+			.handle( "redo", ( { params } ) => api.redo( params ) );
 	} )
 );

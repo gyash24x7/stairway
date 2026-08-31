@@ -70,6 +70,8 @@ export type GameStructure<
 		};
 	};
 
+	readonly defaultConfig: () => Config;
+
 	/**
 	 * Builds the initial state for a fresh game from its config.
 	 * Any generation/shuffle etc should use the provided RNG factory

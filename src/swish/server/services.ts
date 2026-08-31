@@ -3,15 +3,22 @@ import * as Context from "effect/Context";
 import type * as Effect from "effect/Effect";
 import type * as Option from "effect/Option";
 
+import type { games } from "@/platform/database/schema.ts";
 import type {
 	AlarmKind,
+	ArchivedGame,
 	AudienceViews,
+	BaseGameConfig,
 	Checkpoint,
 	CommitWrite,
 	GameAddress,
+	GameCode,
+	GameId,
+	GameNotFound,
 	GameRef,
 	LedgerEntry,
 	PlayerId,
+	PlayerInfo,
 	TurnTimers
 } from "@/swish/shared/schema.ts";
 
@@ -144,61 +151,6 @@ export class SwishStorage extends Context.Service<SwishStorage, {
 
 
 /**
- * The cold store for finished games. Once a game completes the engine writes the
- * archived game here, addressed by game and id — what that becomes as a key is
- * the store's business. Game-agnostic: values crossing this boundary are already
- * schema-*encoded* (plain JSON).
- */
-export class SwishArchive extends Context.Service<SwishArchive, {
-
-	/**
-	 * Files a finished game.
-	 * @param address - The game being archived.
-	 * @param encoded - The archived game, already schema-encoded.
-	 */
-	readonly save: ( address: GameAddress, encoded: unknown ) => Effect.Effect<void>;
-
-	/**
-	 * Reads a game back out of cold storage.
-	 * @param address - The game being read.
-	 * @returns The encoded archive, if one was ever filed.
-	 */
-	readonly load: <T>( address: GameAddress ) => Effect.Effect<Option.Option<T>>;
-
-}>()( "swish/Archive" ) {}
-
-/**
- * The warm record of an outcome. When a game completes the engine files the full
- * game with {@link SwishArchive} and posts the result here — one line per seat,
- * plus the fact that the game is over — so a leaderboard, a profile or a
- * head-to-head is a query rather than a scan of cold storage.
- *
- * Game-agnostic: an entry is ranks and scores, never game state, so the store
- * never touches a game's schemas.
- *
- * `record` is the whole service because a completion is one fact: the lines and
- * the game's own "finished" flag have to land together, or a game reads as still
- * in play while its results sit beside it. It is also expected to be idempotent
- * — a Durable Object call may be retried after its write landed — so posting the
- * same completion twice must leave the same rows rather than a second set.
- */
-export class SwishLedger extends Context.Service<SwishLedger, {
-
-	/**
-	 * Posts a finished game's result.
-	 * @param address - The game that completed.
-	 * @param entries - One line per ranked seat. Empty when the game ranks nobody.
-	 * @param completedAt - When it finished, as read from the engine's clock.
-	 */
-	readonly record: (
-		address: GameAddress,
-		entries: ReadonlyArray<LedgerEntry>,
-		completedAt: number
-	) => Effect.Effect<void>;
-
-}>()( "swish/Ledger" ) {}
-
-/**
  * Realtime fan-out. After every state-changing command the engine hands the host
  * a fresh `GameView` per audience; the host pushes each connected client the view
  * for its own audience, and any spectator the table's. Every view carries the
@@ -264,3 +216,128 @@ export class SwishTimers extends Context.Service<SwishTimers, {
 	readonly due: () => Effect.Effect<ReadonlyArray<AlarmKind>>;
 
 }>()( "swish/Timers" ) {}
+
+export class SwishOutbox extends Context.Service<SwishOutbox, {
+	readonly publishArchive: <V, C extends BaseGameConfig>(
+		address: GameAddress,
+		data: ArchivedGame<V, C>
+	) => Effect.Effect<void>;
+}>()( "swish/Outbox" ) {}
+
+/**
+ * Every question and every write swish puts to the relational store: the games
+ * table, the people seated at them, their chat channels, and the results a
+ * finished game leaves behind.
+ *
+ * It exists as one service rather than as raw queries spread through the API
+ * handlers so that the two callers — the HTTP handlers, which create and find
+ * games, and whatever consumes a {@link SwishOutbox} completion, which records
+ * results — reach the database the same way, and so that neither has to know
+ * which tables a game touches.
+ *
+ * A game is always looked up *by its kind as well as its id*: a game of another
+ * kind is not this one, and answering with it would let a callbreak id address a
+ * fish table. Every read answers `undefined` rather than failing, because what a
+ * miss means belongs to the caller — `GameNotFound` to a handler, a no-op to a
+ * consumer.
+ *
+ * Rows come back as {@link GameRef} rather than as table rows: `id` and `code`
+ * are all any caller reads, and returning them keeps the ORM out of this
+ * boundary entirely.
+ */
+export class SwishDatabase extends Context.Service<SwishDatabase, {
+
+	/**
+	 * Finds one game of a kind by id, and says whether it is over — which is the
+	 * one fact about a game that decides where its state should be read from.
+	 *
+	 * @param game - Which game this is a table of.
+	 * @param id - The table.
+	 */
+	readonly findGame: ( address: GameAddress ) => Effect.Effect<typeof games.$inferSelect, GameNotFound>;
+
+	/**
+	 * Finds one game of a kind by the code people type to join it.
+	 * @param game - Which game this is a table of.
+	 * @param code - The join code.
+	 */
+	readonly findGameByCode: ( game: string, code: GameCode ) => Effect.Effect<GameRef, GameNotFound>;
+
+	/**
+	 * Finds the game a finished one was rematched into, if somebody called it.
+	 * @param game - Which game this is a table of.
+	 * @param sourceId - The finished game.
+	 */
+	readonly findRematch: ( game: string, sourceId: GameId ) => Effect.Effect<GameRef | undefined>;
+
+	/**
+	 * Opens a new table, generating its id and its code.
+	 * @param game - Which game this is a table of.
+	 */
+	readonly createGame: ( game: string ) => Effect.Effect<GameRef>;
+
+	/**
+	 * Opens the one table that follows a finished one, and *only* one: `rematch_of`
+	 * is unique, so the insert that has to happen anyway is what settles a race
+	 * between everybody at the table pressing the button at once. A caller who
+	 * loses gets `undefined` and is expected to read the winner's row back.
+	 *
+	 * @param game - Which game this is a table of.
+	 * @param sourceId - The finished game being rematched.
+	 * @returns The new table, or `undefined` if somebody else already claimed it.
+	 */
+	readonly claimRematch: ( game: string, sourceId: GameId ) => Effect.Effect<GameRef | undefined>;
+
+	/**
+	 * Seats people at a table. Idempotent — a re-join is a silent no-op for the
+	 * engine and has to be one here too, or the second attempt collides with the
+	 * key the player and the game share.
+	 *
+	 * @param gameId - The table.
+	 * @param players - The people to seat. Empty is a no-op.
+	 */
+	readonly seatPlayers: (
+		gameId: GameId,
+		players: ReadonlyArray<Omit<PlayerInfo, "isBot">>
+	) => Effect.Effect<void>;
+
+	/**
+	 * Posts a finished game's result: one line per ranked seat, and the game
+	 * itself marked over. Idempotent, so posting the same completion twice leaves
+	 * the same rows rather than a second set.
+	 *
+	 * @param address - The game that completed.
+	 * @param entries - One line per ranked seat. Empty when the game ranks nobody.
+	 * @param completedAt - When it finished, as read from the engine's clock.
+	 */
+	readonly recordResults: (
+		address: GameAddress,
+		entries: ReadonlyArray<LedgerEntry>,
+		completedAt: number
+	) => Effect.Effect<void>;
+
+}>()( "swish/Database" ) {}
+
+/**
+ * The cold store for finished games. Once a game completes the engine writes the
+ * archived game here, addressed by game and id — what that becomes as a key is
+ * the store's business. Game-agnostic: values crossing this boundary are already
+ * schema-*encoded* (plain JSON).
+ */
+export class SwishArchive extends Context.Service<SwishArchive, {
+
+	/**
+	 * Files a finished game.
+	 * @param address - The game being archived.
+	 * @param encoded - The archived game, already schema-encoded.
+	 */
+	readonly save: ( address: GameAddress, encoded: unknown ) => Effect.Effect<void>;
+
+	/**
+	 * Reads a game back out of cold storage.
+	 * @param address - The game being read.
+	 * @returns The encoded archive, if one was ever filed.
+	 */
+	readonly load: <T>( address: GameAddress ) => Effect.Effect<Option.Option<T>>;
+
+}>()( "swish/Archive" ) {}

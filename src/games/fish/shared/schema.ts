@@ -289,6 +289,12 @@ export const FishCreateInput = Schema.Struct( {
 	teamCount: TeamCount
 } );
 
+export type FishMoves = {
+	askCard: AskCardInput;
+	claimBook: ClaimBookInput;
+	transferTurn: TransferTurnInput;
+};
+
 // --- Domain Events ----------------------------------------------------------
 
 export type HandsDealt = typeof HandsDealt.Type;

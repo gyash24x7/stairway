@@ -170,6 +170,10 @@ export const PlayCardInput = Schema.Struct( {
 export type CallbreakInitializeInput = typeof CallbreakInitializeInput.Type;
 export const CallbreakInitializeInput = InitializeInput( CallbreakConfig );
 
+export type CallbreakMoves = {
+	declareWins: DeclareWinsInput;
+	playCard: PlayCardInput;
+};
 
 // --- Domain Events ---------------------------------------------------------
 

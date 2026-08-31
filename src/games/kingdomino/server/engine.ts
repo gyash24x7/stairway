@@ -18,6 +18,7 @@ import {
 	DominoSelected,
 	DraftDrawn,
 	DraftPruned,
+	KINGDOMINO_MOVE_TIMEOUT_MILLIS,
 	KingdominoConfig,
 	KingdominoEvent,
 	KingdominoState,
@@ -59,6 +60,13 @@ export const kingdomino = makeEngine( {
 			discardDomino: DiscardDominoInput
 		}
 	},
+
+	defaultConfig: () => KingdominoConfig.make( {
+		autoStart: true,
+		boardSize: 5,
+		moveTimeoutMillis: KINGDOMINO_MOVE_TIMEOUT_MILLIS,
+		playerCount: 4
+	} ),
 
 	/**
 	 * Nothing is dealt here: `setup` runs at `initialize`, when the table is still

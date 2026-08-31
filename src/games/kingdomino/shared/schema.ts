@@ -300,6 +300,12 @@ export const KingdominoCreateInput = Schema.Union( [
 export type KingdominoInitializeInput = typeof KingdominoInitializeInput.Type;
 export const KingdominoInitializeInput = InitializeInput( KingdominoConfig );
 
+export type KingdominoMoves = {
+	selectDomino: SelectDominoInput;
+	placeDomino: PlaceDominoInput;
+	discardDomino: DiscardDominoInput;
+};
+
 
 // --- Domain Events ---------------------------------------------------------
 

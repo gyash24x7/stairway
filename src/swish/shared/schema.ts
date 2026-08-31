@@ -1,5 +1,7 @@
 import * as Schema from "effect/Schema";
 
+import type * as Effect from "effect/Effect";
+
 import { UserId } from "@/auth/shared/schema.ts";
 
 export const PositiveInt = Schema.Int.check( Schema.isGreaterThanOrEqualTo( 0 ) );
@@ -601,7 +603,7 @@ export const InitializeInput = <Config extends Schema.Top>( config: Config ) =>
 	Schema.Struct( { ...BaseInitializeInput.fields, config } );
 
 export type InitializeInput<Config extends BaseGameConfig> = BaseInitializeInput & {
-	config: Config;
+	config?: Partial<Config>;
 };
 
 /**
@@ -1256,4 +1258,25 @@ export const LeaveTeamError = Schema.Union( [
  * that has not finished.
  */
 export type RematchError = typeof RematchError.Type;
-export const RematchError = Schema.Union( [ RematchUnavailable, GetViewError ] );
+export const RematchError = Schema.Union( [ RematchUnavailable, GetViewError, InvalidTeamConfig ] );
+
+export type BaseMoveClientShape = Record<string, unknown>;
+
+export type MoveClient<Moves extends BaseMoveClientShape> = {
+	readonly [K in keyof Moves]: ( payload: WithPlayerId<Moves[K]> ) => Effect.Effect<void, MoveError>;
+};
+
+export type EngineClient<View, Moves extends BaseMoveClientShape, Config extends BaseGameConfig> = {
+	readonly initialize: ( payload: InitializeInput<Config> ) => Effect.Effect<GameRef, InvalidTeamConfig>;
+	readonly getView: ( playerId?: PlayerId ) => Effect.Effect<GameView<View, Config>, GetViewError>;
+	readonly join: ( player: PlayerInfo ) => Effect.Effect<GameRef, JoinError>;
+	readonly addBots: ( playerId: PlayerId ) => Effect.Effect<void, AddBotsError>;
+	readonly start: ( playerId: PlayerId ) => Effect.Effect<void, StartError>;
+	readonly joinTeam: ( payload: WithPlayerId<JoinTeamInput> ) => Effect.Effect<void, JoinTeamError>;
+	readonly nameTeam: ( payload: WithPlayerId<NameTeamInput> ) => Effect.Effect<void, NameTeamError>;
+	readonly autoPlay: ( payload: WithPlayerId<AutoPlayInput> ) => Effect.Effect<void, AutoPlayError>;
+	readonly leaveTeam: ( playerId: PlayerId ) => Effect.Effect<void, LeaveTeamError>;
+	readonly setRematch: ( payload: WithPlayerId<GameRef> ) => Effect.Effect<GameRef, RematchError>;
+	readonly undo: ( playerId: PlayerId ) => Effect.Effect<void, UndoError>;
+	readonly redo: ( playerId: PlayerId ) => Effect.Effect<void, RedoError>;
+} & MoveClient<Moves>;

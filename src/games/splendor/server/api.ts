@@ -4,14 +4,13 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
 import { splendor } from "@/games/splendor/server/engine.ts";
-import {
-	SPLENDOR_DEFAULT_WINNING_POINTS,
-	SPLENDOR_MOVE_TIMEOUT_MILLIS,
-	SplendorConfig
-} from "@/games/splendor/shared/schema.ts";
-import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
+import { makeApiHandlers, SwishDurableObject } from "@/swish/server/api.ts";
 
-import type { SplendorCreateInput } from "@/games/splendor/shared/schema.ts";
+import type {
+	SplendorConfig,
+	SplendorMoves,
+	SplendorView
+} from "@/games/splendor/shared/schema.ts";
 
 
 // --- Durable Object ----------------------------------------------------------
@@ -26,33 +25,27 @@ export class SplendorGame extends Cloudflare.DurableObject<SplendorGame>()(
 
 export const SplendorApiLive = HttpApiBuilder.group( StairwayAPI, "splendor", handlers =>
 	Effect.gen( function* () {
-		const api = yield* makeGameApi( { game: "splendor", ns: yield* SplendorGame } );
+		const ns = yield* SplendorGame;
+		const api = yield* makeApiHandlers<SplendorView, SplendorMoves, SplendorConfig>(
+			"splendor",
+			[ "pickTokens", "reserveCard", "purchaseCard", "pass", "claimNoble" ],
+			gameId => ns.getByName( gameId )
+		);
 
 		return handlers
-			.handle( "createGame", api.createGame(
-				client => client.initialize,
-				( payload: SplendorCreateInput ) => Effect.succeed( SplendorConfig.make( {
-					playerCount: payload.playerCount,
-					winningPoints: payload.winningPoints ?? SPLENDOR_DEFAULT_WINNING_POINTS,
-					autoStart: false,
-					moveTimeoutMillis: SPLENDOR_MOVE_TIMEOUT_MILLIS
-				} ) )
-			) )
-			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getView ) )
-			.handle( "addBots", api.addBots )
-			.handle( "start", api.start )
-			.handle( "pickTokens", api.move( client => client.pickTokens ) )
-			.handle( "reserveCard", api.move( client => client.reserveCard ) )
-			.handle( "purchaseCard", api.move( client => client.purchaseCard ) )
-			.handle( "pass", api.move( client => client.pass ) )
-			.handle( "claimNoble", api.move( client => client.claimNoble ) )
-			.handle( "setAutoPlay", api.autoPlay )
-			.handle( "rematch", api.rematch(
-				client => client.initialize,
-				client => client.getView
-			) )
-			.handle( "undo", api.undo )
-			.handle( "redo", api.redo );
+			.handle( "createGame", ( { payload } ) => api.createGame( payload ) )
+			.handle( "join", ( { payload } ) => api.joinGame( payload ) )
+			.handle( "getView", ( { params } ) => api.getView( params ) )
+			.handle( "addBots", ( { params } ) => api.addBots( params ) )
+			.handle( "start", ( { params } ) => api.startGame( params ) )
+			.handle( "setAutoPlay", ( { params, payload } ) => api.autoPlay( params, payload ) )
+			.handle( "rematch", ( { params, payload } ) => api.rematch( params, payload ) )
+			.handle( "pickTokens", ( { params, payload } ) => api.pickTokens( params, payload ) )
+			.handle( "reserveCard", ( { params, payload } ) => api.reserveCard( params, payload ) )
+			.handle( "purchaseCard", ( { params, payload } ) => api.purchaseCard( params, payload ) )
+			.handle( "pass", ( { params, payload } ) => api.pass( params, payload ) )
+			.handle( "claimNoble", ( { params, payload } ) => api.claimNoble( params, payload ) )
+			.handle( "undo", ( { params } ) => api.undo( params ) )
+			.handle( "redo", ( { params } ) => api.redo( params ) );
 	} )
 );

@@ -13,8 +13,10 @@ export const StairwayDatabase = Effect.gen( function* () {
 	} );
 
 	return yield* Cloudflare.D1.Database( "StairwayDB", {
-		migrationsDir: schema.out,
-		migrationsTable: "drizzle_migrations"
+		migrations: {
+			dir: schema.out,
+			table: "drizzle_migrations"
+		}
 	} );
 } );
 

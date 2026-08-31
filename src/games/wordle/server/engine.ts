@@ -19,6 +19,7 @@ import {
 	ForfeitInput,
 	GuessedEvent,
 	GuessInput,
+	WORDLE_MOVE_TIMEOUT_MILLIS,
 	WordleConfig,
 	WordleEvents,
 	WordleState,
@@ -43,6 +44,14 @@ export const wordle = makeEngine( {
 			forfeit: ForfeitInput
 		}
 	},
+
+	defaultConfig: () => WordleConfig.make( {
+		playerCount: 1,
+		wordCount: 1,
+		wordLength: 5,
+		autoStart: true,
+		moveTimeoutMillis: WORDLE_MOVE_TIMEOUT_MILLIS
+	} ),
 
 	setup: ( config, rng ) => {
 		const dictionary = dictionaries[ config.wordLength ];

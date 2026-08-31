@@ -296,6 +296,14 @@ export const SplendorCreateInput = Schema.Struct( {
 export type SplendorInitializeInput = typeof SplendorInitializeInput.Type;
 export const SplendorInitializeInput = InitializeInput( SplendorConfig );
 
+export type SplendorMoves = {
+	pickTokens: PickTokensInput;
+	reserveCard: ReserveCardInput;
+	purchaseCard: PurchaseCardInput;
+	pass: PassInput;
+	claimNoble: ClaimNobleInput;
+};
+
 // --- Domain Events -----------------------------------------------
 
 export type PlayerDataInitializedEvent = typeof PlayerDataInitializedEvent.Type;

@@ -18,9 +18,11 @@ import {
 	PlayerDataInitializedEvent,
 	PurchaseCardInput,
 	ReserveCardInput,
+	SPLENDOR_DEFAULT_WINNING_POINTS,
 	SPLENDOR_GOLD_SUPPLY,
 	SPLENDOR_MAX_RESERVED,
 	SPLENDOR_MAX_TOKENS,
+	SPLENDOR_MOVE_TIMEOUT_MILLIS,
 	SPLENDOR_NOBLE_TIMEOUT_MILLIS,
 	SPLENDOR_NOBLE_VISIT,
 	SPLENDOR_OPEN_CARDS,
@@ -86,6 +88,14 @@ export const splendor = makeEngine( {
 			claimNoble: ClaimNobleInput
 		}
 	},
+
+	defaultConfig: () => SplendorConfig.make( {
+		playerCount: 2,
+		winningPoints: SPLENDOR_DEFAULT_WINNING_POINTS,
+		autoStart: false,
+		moveTimeoutMillis: SPLENDOR_MOVE_TIMEOUT_MILLIS
+	} ),
+
 	apply,
 
 	// The decks are the whole of `setup`: the table is empty at `initialize`, so

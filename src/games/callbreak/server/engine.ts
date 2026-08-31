@@ -7,6 +7,7 @@ import {
 	standingsFor
 } from "@/games/callbreak/server/utils.ts";
 import {
+	CALLBREAK_MOVE_TIMEOUT_MILLIS,
 	CALLBREAK_PLAYER_COUNT,
 	CALLBREAK_TRICKS_PER_DEAL,
 	CallbreakConfig,
@@ -80,6 +81,14 @@ export const callbreak = makeEngine( {
 			playCard: PlayCardInput
 		}
 	},
+
+	defaultConfig: () => CallbreakConfig.make( {
+		playerCount: CALLBREAK_PLAYER_COUNT,
+		dealCount: 5,
+		trumpSuit: "S",
+		autoStart: false,
+		moveTimeoutMillis: CALLBREAK_MOVE_TIMEOUT_MILLIS
+	} ),
 
 	apply,
 

@@ -4,14 +4,13 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
 import { callbreak } from "@/games/callbreak/server/engine.ts";
-import {
-	CALLBREAK_MOVE_TIMEOUT_MILLIS,
-	CALLBREAK_PLAYER_COUNT,
-	CallbreakConfig
-} from "@/games/callbreak/shared/schema.ts";
-import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
+import { makeApiHandlers, SwishDurableObject } from "@/swish/server/api.ts";
 
-import type { CallbreakCreateInput } from "@/games/callbreak/shared/schema.ts";
+import type {
+	CallbreakConfig,
+	CallbreakMoves,
+	CallbreakView
+} from "@/games/callbreak/shared/schema.ts";
 
 
 // --- Durable Object ----------------------------------------------------------
@@ -26,31 +25,24 @@ export class CallbreakGame extends Cloudflare.DurableObject<CallbreakGame>()(
 
 export const CallbreakApiLive = HttpApiBuilder.group( StairwayAPI, "callbreak", handlers =>
 	Effect.gen( function* () {
-		const api = yield* makeGameApi( { game: "callbreak", ns: yield* CallbreakGame } );
+		const ns = yield* CallbreakGame;
+		const api = yield* makeApiHandlers<CallbreakView, CallbreakMoves, CallbreakConfig>(
+			"callbreak",
+			[ "declareWins", "playCard" ],
+			gameId => ns.getByName( gameId )
+		);
 
 		return handlers
-			.handle( "createGame", api.createGame(
-				client => client.initialize,
-				( payload: CallbreakCreateInput ) => Effect.succeed( CallbreakConfig.make( {
-					playerCount: CALLBREAK_PLAYER_COUNT,
-					dealCount: payload.dealCount,
-					trumpSuit: payload.trumpSuit,
-					autoStart: false,
-					moveTimeoutMillis: CALLBREAK_MOVE_TIMEOUT_MILLIS
-				} ) )
-			) )
-			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getView ) )
-			.handle( "addBots", api.addBots )
-			.handle( "start", api.start )
-			.handle( "declareWins", api.move( client => client.declareWins ) )
-			.handle( "playCard", api.move( client => client.playCard ) )
-			.handle( "setAutoPlay", api.autoPlay )
-			.handle( "rematch", api.rematch(
-				client => client.initialize,
-				client => client.getView
-			) )
-			.handle( "undo", api.undo )
-			.handle( "redo", api.redo );
+			.handle( "createGame", ( { payload } ) => api.createGame( payload ) )
+			.handle( "join", ( { payload } ) => api.joinGame( payload ) )
+			.handle( "getView", ( { params } ) => api.getView( params ) )
+			.handle( "addBots", ( { params } ) => api.addBots( params ) )
+			.handle( "start", ( { params } ) => api.startGame( params ) )
+			.handle( "setAutoPlay", ( { params, payload } ) => api.autoPlay( params, payload ) )
+			.handle( "rematch", ( { params, payload } ) => api.rematch( params, payload ) )
+			.handle( "declareWins", ( { params, payload } ) => api.declareWins( params, payload ) )
+			.handle( "playCard", ( { params, payload } ) => api.playCard( params, payload ) )
+			.handle( "undo", ( { params } ) => api.undo( params ) )
+			.handle( "redo", ( { params } ) => api.redo( params ) );
 	} )
 );

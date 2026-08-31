@@ -259,6 +259,10 @@ export const WordleCreateInput = Schema.Struct( {
 	wordLength: WordLength
 } );
 
+export type WordleMoves = {
+	guess: GuessInput;
+	forfeit: ForfeitInput;
+};
 
 // --- Domain Events ---------------------------------------------------------
 

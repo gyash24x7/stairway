@@ -4,14 +4,13 @@ import { HttpApiBuilder } from "effect/unstable/httpapi";
 
 import { StairwayAPI } from "@/api.ts";
 import { kingdomino } from "@/games/kingdomino/server/engine.ts";
-import {
-	KINGDOMINO_DEFAULT_BOARD_SIZE,
-	KINGDOMINO_MOVE_TIMEOUT_MILLIS,
-	KingdominoConfig
-} from "@/games/kingdomino/shared/schema.ts";
-import { makeGameApi, SwishDurableObject } from "@/swish/server/api.ts";
+import { makeApiHandlers, SwishDurableObject } from "@/swish/server/api.ts";
 
-import type { KingdominoCreateInput } from "@/games/kingdomino/shared/schema.ts";
+import type {
+	KingdominoConfig,
+	KingdominoMoves,
+	KingdominoView
+} from "@/games/kingdomino/shared/schema.ts";
 
 
 // --- Durable Object ----------------------------------------------------------
@@ -26,31 +25,25 @@ export class KingdominoGame extends Cloudflare.DurableObject<KingdominoGame>()(
 
 export const KingdominoApiLive = HttpApiBuilder.group( StairwayAPI, "kingdomino", handlers =>
 	Effect.gen( function* () {
-		const api = yield* makeGameApi( { game: "kingdomino", ns: yield* KingdominoGame } );
+		const ns = yield* KingdominoGame;
+		const api = yield* makeApiHandlers<KingdominoView, KingdominoMoves, KingdominoConfig>(
+			"kingdomino",
+			[ "selectDomino", "placeDomino", "discardDomino" ],
+			gameId => ns.getByName( gameId )
+		);
 
 		return handlers
-			.handle( "createGame", api.createGame(
-				client => client.initialize,
-				( payload: KingdominoCreateInput ) => Effect.succeed( KingdominoConfig.make( {
-					playerCount: payload.playerCount,
-					boardSize: payload.boardSize ?? KINGDOMINO_DEFAULT_BOARD_SIZE,
-					autoStart: false,
-					moveTimeoutMillis: KINGDOMINO_MOVE_TIMEOUT_MILLIS
-				} ) )
-			) )
-			.handle( "join", api.join )
-			.handle( "getView", api.getView( client => client.getView ) )
-			.handle( "addBots", api.addBots )
-			.handle( "start", api.start )
-			.handle( "selectDomino", api.move( client => client.selectDomino ) )
-			.handle( "placeDomino", api.move( client => client.placeDomino ) )
-			.handle( "discardDomino", api.move( client => client.discardDomino ) )
-			.handle( "setAutoPlay", api.autoPlay )
-			.handle( "rematch", api.rematch(
-				client => client.initialize,
-				client => client.getView
-			) )
-			.handle( "undo", api.undo )
-			.handle( "redo", api.redo );
+			.handle( "createGame", ( { payload } ) => api.createGame( payload ) )
+			.handle( "join", ( { payload } ) => api.joinGame( payload ) )
+			.handle( "getView", ( { params } ) => api.getView( params ) )
+			.handle( "addBots", ( { params } ) => api.addBots( params ) )
+			.handle( "start", ( { params } ) => api.startGame( params ) )
+			.handle( "setAutoPlay", ( { params, payload } ) => api.autoPlay( params, payload ) )
+			.handle( "rematch", ( { params, payload } ) => api.rematch( params, payload ) )
+			.handle( "selectDomino", ( { params, payload } ) => api.selectDomino( params, payload ) )
+			.handle( "placeDomino", ( { params, payload } ) => api.placeDomino( params, payload ) )
+			.handle( "discardDomino", ( { params, payload } ) => api.discardDomino( params, payload ) )
+			.handle( "undo", ( { params } ) => api.undo( params ) )
+			.handle( "redo", ( { params } ) => api.redo( params ) );
 	} )
 );

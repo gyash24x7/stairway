@@ -4,16 +4,11 @@ import * as Schema from "effect/Schema";
 
 import { generateBotInfo, generateId, generateTeamName } from "@/shared/utils/generator.ts";
 import { hashSeed, makeRng } from "@/shared/utils/rng.ts";
-import {
-	SwishArchive,
-	SwishLedger,
-	SwishStorage,
-	SwishSync,
-	SwishTimers
-} from "@/swish/server/services.ts";
+import { SwishOutbox, SwishStorage, SwishSync, SwishTimers } from "@/swish/server/services.ts";
 import { Accumulator } from "@/swish/server/utils.ts";
 import {
 	ArchivedGame,
+
 	AutoPlayUnavailable,
 	CannotStart,
 	CorruptState,
@@ -35,6 +30,7 @@ import {
 	InvalidMove,
 	InvalidTeamName,
 	MoveNotAllowed,
+
 	NotAMember,
 	NothingToRedo,
 	NothingToUndo,
@@ -72,13 +68,15 @@ import {
 } from "@/swish/shared/teams.ts";
 
 import type { GameStructure } from "@/swish/server/structure.ts";
+import type { AutoPlayInput, NameTeamInput } from "@/swish/shared/schema.ts";
 import type {
 	Audience,
 	BaseGameConfig,
 	BaseGameEvent,
 	CommitMeta,
 	InitializeInput,
-	TeamId
+	JoinTeamInput,
+	WithPlayerId
 } from "@/swish/shared/schema.ts";
 
 const BOT_DELAY_MS = 5000;
@@ -273,10 +271,9 @@ export const makeEngine = <
 
 	return Effect.gen( function* () {
 		const storage = yield* SwishStorage;
-		const archive = yield* SwishArchive;
-		const ledger = yield* SwishLedger;
 		const sync = yield* SwishSync;
 		const timers = yield* SwishTimers;
+		const outbox = yield* SwishOutbox;
 
 		/**
 		 * Rebuilds the record by folding the commit log up to a cursor. This is how
@@ -521,48 +518,6 @@ export const makeEngine = <
 		} );
 
 		/**
-		 * Writes a finished game to cold storage, keeping the table view and every
-		 * player's final view alongside the game data.
-		 *
-		 * @param data - The completed game's record.
-		 */
-		const archiveGame = Effect.fn( function* ( data: GameRecord<State, Config> ) {
-			const { tableView, playerViews } = buildViews( data );
-			const { state, seed, ...header } = data;
-			const completed = ArchiveSchema.make( { ...header, view: tableView, playerViews } );
-			yield* archive.save( addressOf( data ), completed );
-		} );
-
-		/**
-		 * Posts a finished game's result to the ledger: one line per ranked seat,
-		 * and the game itself marked over.
-		 *
-		 * Whether a seat *won* is decided here rather than by the store, because
-		 * the answer depends on how the game was played — a team game's verdict is
-		 * its `winningTeam` and leaves `winner` unset, so asking after `winner`
-		 * alone would report a partnership game as having nobody win it. A game
-		 * that declares no `resolveResults` ranks nobody: it posts no lines, and
-		 * the ledger records only that the game finished.
-		 *
-		 * @param data - The completed game's record.
-		 */
-		const postResults = Effect.fn( function* ( data: GameRecord<State, Config> ) {
-			const results = data.results;
-
-			const entries = results?.ranking.map( standing => ( {
-				playerId: standing.playerId,
-				rank: standing.rank,
-				score: standing.score,
-				team: standing.team,
-				winner: results.winningTeam !== undefined
-					? standing.team === results.winningTeam
-					: results.winner === standing.playerId
-			} ) ) ?? [];
-
-			yield* ledger.record( addressOf( data ), entries, yield* Clock.currentTimeMillis );
-		} );
-
-		/**
 		 * Closes out a game the moment it completes: the whole game goes to cold
 		 * storage, and its result to the ledger.
 		 *
@@ -574,8 +529,10 @@ export const makeEngine = <
 		 * @param data - The completed game's record.
 		 */
 		const completeGame = Effect.fn( function* ( data: GameRecord<State, Config> ) {
-			yield* archiveGame( data );
-			yield* postResults( data );
+			const { tableView, playerViews } = buildViews( data );
+			const { state, seed, ...header } = data;
+			const completed = ArchiveSchema.make( { ...header, view: tableView, playerViews } );
+			yield* outbox.publishArchive( addressOf( data ), completed );
 		} );
 
 		/**
@@ -621,14 +578,15 @@ export const makeEngine = <
 		 * @returns The new game's id.
 		 */
 		const initialize = Effect.fn( function* ( payload: InitializeInput<Config> ) {
-			const badTeams = validateTeamConfig( payload.config );
+			const config = { ...structure.defaultConfig(), ...( payload.config ?? {} ) };
+			const badTeams = validateTeamConfig( config );
 			if ( badTeams ) {
 				return yield* badTeams;
 			}
 
 			const seed = generateId();
 			const initialState = structure.setup(
-				payload.config,
+				config,
 				( salt = "" ) => makeRng( hashSeed( seed, 0, "setup", salt ) )
 			);
 
@@ -738,7 +696,7 @@ export const makeEngine = <
 		 * @param playerId - The member taking the side.
 		 * @param team - The side being taken.
 		 */
-		const joinTeam = Effect.fn( function* ( playerId: PlayerId, team: TeamId ) {
+		const joinTeam = Effect.fn( function* ( { input, playerId }: WithPlayerId<JoinTeamInput> ) {
 			const data = yield* load();
 			yield* assertMember( data, playerId );
 
@@ -746,17 +704,17 @@ export const makeEngine = <
 				return yield* new GameNotJoinable( { status: data.status } );
 			}
 
-			if ( teamOf( data.context, playerId ) === team ) {
+			if ( teamOf( data.context, playerId ) === input.team ) {
 				return;
 			}
 
-			const refusal = refuseTeam( structure.name, data.config, data.context, playerId, team );
+			const refusal = refuseTeam( structure.name, data.config, data.context, playerId, input.team );
 			if ( refusal ) {
 				return yield* refusal;
 			}
 
 			const acc = new Accumulator( data, structure.apply );
-			acc.accumulate( TeamAssigned.make( { playerId, team } ) );
+			acc.accumulate( TeamAssigned.make( { playerId, team: input.team } ) );
 
 			yield* commitAndSave( acc, { command: "joinTeam", actor: playerId } );
 		} );
@@ -813,7 +771,7 @@ export const makeEngine = <
 		 * @param team - The side being named.
 		 * @param name - What it calls itself.
 		 */
-		const nameTeam = Effect.fn( function* ( playerId: PlayerId, team: TeamId, name: string ) {
+		const nameTeam = Effect.fn( function* ( { playerId, input }: WithPlayerId<NameTeamInput> ) {
 			const data = yield* load();
 			yield* assertMember( data, playerId );
 
@@ -821,17 +779,17 @@ export const makeEngine = <
 				return yield* new GameNotJoinable( { status: data.status } );
 			}
 
-			const refusal = refuseName( structure.name, data.config, data.context, playerId, team );
+			const refusal = refuseName( structure.name, data.config, data.context, playerId, input.team );
 			if ( refusal ) {
 				return yield* refusal;
 			}
 
-			const chosen = yield* Schema.decodeUnknownEffect( TeamName )( name ).pipe(
-				Effect.mapError( () => new InvalidTeamName( { name } ) )
+			const chosen = yield* Schema.decodeUnknownEffect( TeamName )( input.name ).pipe(
+				Effect.mapError( () => new InvalidTeamName( { name: input.name } ) )
 			);
 
 			const acc = new Accumulator( data, structure.apply );
-			acc.accumulate( TeamNamed.make( { team, name: chosen } ) );
+			acc.accumulate( TeamNamed.make( { team: input.team, name: chosen } ) );
 
 			yield* commitAndSave( acc, { command: "nameTeam", actor: playerId } );
 		} );
@@ -1122,8 +1080,7 @@ export const makeEngine = <
 		 */
 		const submitMove = <MoveType extends keyof MoveInputs>(
 			moveType: MoveType,
-			raw: MoveInputs[MoveType][ "Type" ],
-			playerId: PlayerId
+			{ playerId, input: raw }: WithPlayerId<MoveInputs[MoveType]["Type"]>
 		) => Effect.gen( function* () {
 			const move = String( moveType );
 			const now = yield* Clock.currentTimeMillis;
@@ -1260,14 +1217,12 @@ export const makeEngine = <
 			.map( m => m as keyof MoveInputs )
 			.reduce(
 				( acc, name ) => {
-					acc[ name ] = ( input, playerId ) => submitMove( name, input, playerId );
+					acc[ name ] = ( payload ) => submitMove( name, payload );
 					return acc;
 				},
 				{} as {
-					[K in keyof MoveInputs]: (
-						input: MoveInputs[K][ "Type" ],
-						playerId: PlayerId
-					) => ReturnType<typeof submitMove<K>>;
+					[K in keyof MoveInputs]: ( payload: WithPlayerId<MoveInputs[K][ "Type" ]> ) =>
+						ReturnType<typeof submitMove<K>>;
 				}
 			);
 
@@ -1405,15 +1360,15 @@ export const makeEngine = <
 		 * @param playerId - The member switching their own seat.
 		 * @param enabled - `true` to let the policy play for them.
 		 */
-		const autoPlay = Effect.fn( function* ( playerId: PlayerId, enabled: boolean ) {
+		const autoPlay = Effect.fn( function* ( { playerId, input }: WithPlayerId<AutoPlayInput> ) {
 			const data = yield* load();
 			yield* assertMember( data, playerId );
 
-			if ( enabled && !structure.botMove ) {
+			if ( input.enabled && !structure.botMove ) {
 				return yield* new AutoPlayUnavailable( { game: structure.name } );
 			}
 
-			yield* storage.writeAutoPlay( playerId, enabled );
+			yield* storage.writeAutoPlay( playerId, input.enabled );
 			yield* armTimers( data );
 			yield* broadcastState( data );
 		} );
@@ -1441,7 +1396,7 @@ export const makeEngine = <
 		 * @param ref - The game they built.
 		 * @returns The game this table plays next — theirs, or whoever got there first.
 		 */
-		const setRematch = Effect.fn( function* ( playerId: PlayerId, ref: GameRef ) {
+		const setRematch = Effect.fn( function* ( { playerId, input: ref }: WithPlayerId<GameRef> ) {
 			const data = yield* load();
 			yield* assertMember( data, playerId );
 
@@ -1525,7 +1480,8 @@ export const makeEngine = <
 				} );
 
 				if ( move ) {
-					return yield* submitMove( move.moveType, move.input, actorId ).pipe( Effect.orDie );
+					return yield* submitMove( move.moveType, { input: move.input, playerId: actorId } )
+						.pipe( Effect.orDie );
 				}
 			}
 
@@ -1572,7 +1528,8 @@ export const makeEngine = <
 				}, actorId );
 
 				if ( move ) {
-					return yield* submitMove( move.moveType, move.input, actorId ).pipe( Effect.orDie );
+					return yield* submitMove( move.moveType, { input: move.input, playerId: actorId } )
+						.pipe( Effect.orDie );
 				}
 			}
 
