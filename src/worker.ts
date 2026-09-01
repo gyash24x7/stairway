@@ -32,6 +32,9 @@ import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { WebAuthnStoreLive } from "@/platform/kv/webauthn.ts";
 import { OutboxQueue } from "@/platform/queue/outbox.ts";
 import { OutboxConsumerLive } from "@/swish/server/outbox.ts";
+import { GameSweeper } from "@/swish/server/sweeper.ts";
+
+import type { GameId } from "@/swish/shared/schema.ts";
 
 
 const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
@@ -83,8 +86,7 @@ export default Cloudflare.Worker(
 			stream => Stream.runForEach( stream, message => closeOutGame( message.body ) )
 		);
 
-		const channels = {
-			chat: yield* ChatChannel,
+		const gameChannels = {
 			callbreak: yield* CallbreakGame,
 			fish: yield* FishGame,
 			kingdomino: yield* KingdominoGame,
@@ -92,6 +94,25 @@ export default Cloudflare.Worker(
 			wordle: yield* WordleGame,
 			tictactoe: yield* TicTacToeGame
 		};
+
+		const getCleaner = ( game: string ) => {
+			const channel = gameChannels[ game as keyof typeof gameChannels ];
+			if ( !channel ) {
+				return;
+			}
+
+			return ( id: GameId ) => channel.getByName( id ).cleanup();
+		};
+
+		yield* Cloudflare.Workers.cron(
+			"0 0 */2 * *",
+			() => GameSweeper( getCleaner ).pipe(
+				Effect.provide( SwishDatabaseLive ),
+				Effect.provide( Cloudflare.D1.QueryDatabaseBinding )
+			)
+		);
+
+		const channels = { chat: yield* ChatChannel, ...gameChannels };
 
 		const ApiFetch = yield* HttpRouter.toHttpEffect(
 			ApiLive.pipe(
@@ -136,5 +157,8 @@ export default Cloudflare.Worker(
 				return yield* ApiFetch;
 			} )
 		};
-	} ).pipe( Effect.provide( Cloudflare.Queues.EventSourceLive ) )
+	} ).pipe(
+		Effect.provide( Cloudflare.Queues.EventSourceLive ),
+		Effect.provide( Cloudflare.Workers.CronEventSourceLive )
+	)
 );

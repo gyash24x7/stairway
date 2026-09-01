@@ -64,6 +64,17 @@ export const passkeys = sqliteTable(
  * owns the rematch, and everyone else reads it back and joins that game instead
  * of starting a second one. NULLs are distinct under SQLite's UNIQUE, so every
  * game that is nobody's rematch coexists happily.
+ *
+ * `cleanedUp` is the sweeper's mark, not a fact about the game: a finished game
+ * is filed in the archive and its Durable Object holds nothing anyone reads
+ * again, so a periodic pass erases that storage and ticks this flag so the next
+ * pass skips the row. It is separate from `completed` because the two say
+ * different things — `completed` is where a reader should look for the game,
+ * `cleanedUp` is whether its object has already been emptied — and because
+ * ticking `completed` for a second purpose would send readers to an archive
+ * before it was written. `idx_games_sweep` is the index the pass reads through:
+ * the pair is the whole of its query, and the table is mostly rows it has
+ * already dealt with.
  */
 export const games = sqliteTable(
 	"games",
@@ -72,12 +83,14 @@ export const games = sqliteTable(
 		code: text( "code" ).notNull().unique().$default( () => generateGameCode() ),
 		game: text( "game" ).notNull(),
 		completed: integer( "completed", { mode: "boolean" } ).notNull().default( false ),
+		cleanedUp: integer( "cleaned_up", { mode: "boolean" } ).notNull().default( false ),
 		rematchOf: text( "rematch_of" ),
 		createdAt: integer( "created_at", { mode: "timestamp" } ).notNull().$default( now )
 	},
 	table => [
 		index( "idx_games_code" ).on( table.code ),
-		uniqueIndex( "idx_games_rematch_of" ).on( table.rematchOf )
+		uniqueIndex( "idx_games_rematch_of" ).on( table.rematchOf ),
+		index( "idx_games_sweep" ).on( table.completed, table.cleanedUp )
 	]
 );
 

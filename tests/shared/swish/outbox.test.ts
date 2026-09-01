@@ -52,6 +52,8 @@ const stores = () => {
 		createGame: unreachable,
 		claimRematch: unreachable,
 		seatPlayers: unreachable,
+		findCleanableGames: unreachable,
+		markCleanedUp: unreachable,
 		recordResults: ( at, entries, completedAt ) => Effect.sync( () => {
 			writes.push( "ledger" );
 			recorded.push( { address: at, entries, completedAt } );

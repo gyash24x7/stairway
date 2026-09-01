@@ -340,6 +340,36 @@ export class SwishDatabase extends Context.Service<SwishDatabase, {
 		completedAt: number
 	) => Effect.Effect<void>;
 
+	/**
+	 * The finished games whose Durable Object still holds the game it played —
+	 * over, filed, and not yet swept. Addresses rather than ids, because a sweeper
+	 * has to know *which* object namespace a game lives in before it can reach it.
+	 *
+	 * Bounded because the caller is a scheduled pass with a wall-clock budget and
+	 * the backlog is unbounded: a sweep clears what it can and the next one picks
+	 * up where it left off, which is only true because the rows it cleared no
+	 * longer answer this query.
+	 *
+	 * @param limit - The most games to return.
+	 * @returns The games to sweep, oldest first.
+	 */
+	readonly findCleanableGames: ( limit: number ) => Effect.Effect<ReadonlyArray<GameAddress>>;
+
+	/**
+	 * Marks games as swept, so the next pass leaves them alone.
+	 *
+	 * Keyed on the id alone rather than on the address, unlike every read here:
+	 * the ids come from {@link findCleanableGames}, so they already name rows of
+	 * the kind they were read as, and there is no second game a primary key could
+	 * answer with.
+	 *
+	 * Called *after* the objects were emptied, never before — see the sweeper for
+	 * why that order is the repairable one.
+	 *
+	 * @param ids - The games swept. Empty is a no-op.
+	 */
+	readonly markCleanedUp: ( ids: ReadonlyArray<GameId> ) => Effect.Effect<void>;
+
 }>()( "swish/Database" ) {}
 
 /**

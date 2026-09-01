@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
@@ -6,7 +6,7 @@ import { gameResults, games, players } from "@/platform/database/schema.ts";
 import { Database } from "@/platform/database/service.ts";
 import { withRuntime } from "@/platform/utils/runtime.ts";
 import { SwishDatabase } from "@/swish/server/services.ts";
-import { GameCode, GameId, GameNotFound, GameRef } from "@/swish/shared/schema.ts";
+import { GameAddress, GameCode, GameId, GameNotFound, GameRef } from "@/swish/shared/schema.ts";
 
 /**
  * The `games` row as a {@link GameRef}. Both fields are branded on the way out,
@@ -133,6 +133,36 @@ export const SwishDatabaseLive = Layer.effect( SwishDatabase, Effect.gen( functi
 			yield* db.update( games )
 				.set( { completed: true } )
 				.where( eq( games.id, address.id ) )
+				.pipe( Effect.orDie );
+		} ) ),
+
+		/**
+		 * Oldest first, so a backlog drains in the order it accumulated rather than
+		 * having the same recent rows re-read by every pass while the old ones sit.
+		 */
+		findCleanableGames: limit => withRuntime(
+			db.select( { id: games.id, game: games.game } )
+				.from( games )
+				.where( and( eq( games.completed, true ), eq( games.cleanedUp, false ) ) )
+				.orderBy( asc( games.createdAt ) )
+				.limit( limit )
+				.pipe(
+					Effect.map( rows => rows.map( row => GameAddress.make( {
+						game: row.game,
+						id: GameId.make( row.id )
+					} ) ) ),
+					Effect.orDie
+				)
+		),
+
+		markCleanedUp: ids => withRuntime( Effect.gen( function* () {
+			if ( ids.length === 0 ) {
+				return;
+			}
+
+			yield* db.update( games )
+				.set( { cleanedUp: true } )
+				.where( inArray( games.id, ids ) )
 				.pipe( Effect.orDie );
 		} ) )
 	} );
