@@ -347,12 +347,16 @@ export type GameStructure<
 			 *
 			 * @param data - The read-only snapshot at expiry.
 			 * @param frame - The frame that timed out, holding the partial responses.
+			 * @param rng - RNG factory for this settlement, salted per call. Safe for the
+			 * 		same reason it is in `execute`: the *outcome* rides the emitted events,
+			 * 		and replay folds those events rather than re-running this.
 			 * @returns The events to accumulate (optionally a nested `openInteraction`).
 			 */
 			readonly onTimeout?: (
 				data: GameData<State, Config>,
-				frame: InteractionFrame
-			) => ReadonlyArray<Events | InteractionOpened>;
+				frame: InteractionFrame,
+				rng: ( salt?: string ) => Rng
+			) => ReadonlyArray<Events | InteractionOpened | SeatStatusChanged>;
 
 			/**
 			 * Resolves the window: emits the game effects the responses dictate, and may
@@ -366,12 +370,18 @@ export type GameStructure<
 			 *
 			 * @param data - The read-only snapshot at resolution.
 			 * @param frame - The frame being resolved.
+			 * @param rng - RNG factory for this resolution, salted per call. Safe for the
+			 * 		same reason it is in `execute`: the *outcome* rides the emitted events,
+			 * 		and replay folds those events rather than re-running this. Each frame
+			 * 		settled within one command draws its own stream, so two resolutions in
+			 * 		the same commit never collide.
 			 * @returns The events to accumulate (optionally a nested `openInteraction`).
 			 */
 			readonly resolve: (
 				data: GameData<State, Config>,
-				frame: InteractionFrame
-			) => ReadonlyArray<Events | InteractionOpened>;
+				frame: InteractionFrame,
+				rng: ( salt?: string ) => Rng
+			) => ReadonlyArray<Events | InteractionOpened | SeatStatusChanged>;
 		};
 	};
 

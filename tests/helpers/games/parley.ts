@@ -7,7 +7,8 @@ import {
 	InteractionFrame,
 	InteractionOpened,
 	InvalidMove,
-	PlayerId
+	PlayerId,
+	SeatStatusChanged
 } from "@/swish/shared/schema.ts";
 
 import type { GameStructure } from "@/swish/server/structure.ts";
@@ -18,12 +19,17 @@ import type { InteractionFrame as Frame, GameData } from "@/swish/shared/schema.
  * frame of the requested kind, one move answers whatever frame is open, and one
  * move does neither — which is what makes it the move a frame must refuse.
  *
- * The three kinds cover the three ways a frame differs:
+ * The kinds cover the ways a frame differs:
  * - `duel` — sequential, every default in place.
  * - `vote` — simultaneous, with its own `isComplete`, `timeoutMillis` and
  * 		`onTimeout`, so it settles on a partial answer and expires on its own clock.
  * - `audit` — sequential, with a `canRespond` that hands the frame to the one
  * 		player it names rather than to the next responder in order.
+ * - `draw` — settles the instant it opens and records a number off the RNG its
+ * 		resolution is handed, so a test can see that two frames settled in one
+ * 		command draw different streams and that a replay draws the same ones.
+ * - `purge` — settles immediately and eliminates the seat it names, which is the
+ * 		resolution emitting a `SeatStatusChanged` rather than a game event.
  *
  * Everything that happens is appended to `log`, so a test reads the sequence
  * back rather than inferring it.
@@ -61,7 +67,14 @@ export const ParleyEvent = Schema.Union( [ Logged ] );
  * `interactions`, which is what makes it the frame the engine cannot resolve.
  */
 export type FrameKind = typeof FrameKind.Type;
-export const FrameKind = Schema.Literals( [ "duel", "vote", "audit", "ghost" ] );
+export const FrameKind = Schema.Literals( [
+	"duel",
+	"vote",
+	"audit",
+	"ghost",
+	"draw",
+	"purge"
+] );
 
 export type OpenInput = typeof OpenInput.Type;
 export const OpenInput = Schema.Struct( {
@@ -118,6 +131,7 @@ const frameFor = (
 		mode: input.kind === "vote" ? "simultaneous" : "sequential",
 		responses: {},
 		...( input.kind === "audit" ? { target: responders[ 1 ] ?? responders[ 0 ] } : {} ),
+		...( input.kind === "purge" ? { target: responders[ 0 ] } : {} ),
 		...( input.nest ? { payload: "nest" } : {} ),
 		...( input.deadline === undefined ? {} : { deadline: input.deadline } )
 	} );
@@ -237,6 +251,50 @@ export const parleyStructure: GameStructure<
 			canRespond: ( _data, frame, playerId ) => playerId === frame.target,
 			isComplete: ( _data, frame ) => Object.keys( frame.responses ).length >= 1,
 			resolve: ( _data, frame ) => [ note( `resolved:audit:${ acceptedIn( frame ) }` ) ]
+		},
+
+		// Records a number off the RNG its resolution is handed. A frame marked
+		// `nest` opens a second one as it closes, and that one is `auto` — complete
+		// with nobody's answer — so the settling loop takes it in the same pass.
+		// Two settlements, one commit, and so two draws off a version that cannot
+		// tell them apart on its own.
+		draw: {
+			responseMoves: [ "reply" ],
+
+			isComplete: ( _data, frame ) =>
+				frame.payload === "auto" || Object.keys( frame.responses ).length >= 1,
+
+			resolve: ( _data, frame, rng ) => [
+				note( `resolved:draw:${ rng().int( 1_000_000 ) }` ),
+				...( frame.payload === "nest"
+					? [
+						InteractionOpened.make( {
+							frame: InteractionFrame.make( {
+								kind: "draw",
+								initiator: frame.initiator,
+								responders: frame.responders,
+								mode: "sequential",
+								responses: {},
+								payload: "auto"
+							} )
+						} )
+					]
+					: [] )
+			]
+		},
+
+		// Knocks out the seat it names. The engine routes a `SeatStatusChanged` by
+		// its tag wherever it came from, so a resolution may emit one exactly as a
+		// move's `execute` may.
+		purge: {
+			responseMoves: [ "reply" ],
+			isComplete: ( _data, frame ) => Object.keys( frame.responses ).length >= 1,
+			resolve: ( _data, frame ) => frame.target
+				? [
+					note( `resolved:purge:${ frame.target }` ),
+					SeatStatusChanged.make( { playerId: frame.target, status: "eliminated" } )
+				]
+				: [ note( "resolved:purge:none" ) ]
 		}
 	},
 

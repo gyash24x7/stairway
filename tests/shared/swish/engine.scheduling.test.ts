@@ -494,6 +494,24 @@ describe( "the clock an open frame runs", () => {
 		expect( result.after.version ).toBe( result.before.version );
 	} );
 
+	test( "unless the kind says what silence means, and then nobody is handed over", () => {
+		const clock = testClock();
+
+		// `vote` declares an `onTimeout`, which is the game stating that a quiet
+		// window is an answer in itself. Playing the policy instead would take a
+		// risk on the responders' behalf and keep their seats for sitting one out.
+		const { result } = parleyOn( parleyEngine, engine => Effect.gen( function* () {
+			yield* engine.open( { input: { kind: "vote" }, playerId: a } );
+			clock.advance( 5_001 );
+			yield* engine.alarm();
+			return yield* engine.getView();
+		} ), { now: clock.now, config: { interactionTimeoutMillis: FRAME_TIMEOUT } } );
+
+		expect( result.view.log ).toContain( "resolved:vote:timeout:0" );
+		expect( result.context.interactions ).toEqual( [] );
+		expect( result.autoPlay ).toEqual( {} );
+	} );
+
 	test( "and the policy then answers for them", () => {
 		const clock = testClock();
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="a" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+	<!--
+		Two influence cards held face down, and the coins they are played for.
+		Drawn as solid shapes with no interior detail: the app renders a logo
+		through a CSS mask, so only the silhouette survives and it is tinted by
+		whatever `bg-*` the surrounding component sets.
+	-->
+	<g style="fill:#010101;">
+		<rect
+			x="118" y="96" width="168" height="244" rx="20"
+			transform="rotate(-17 202 218)"/>
+		<rect
+			x="226" y="96" width="168" height="244" rx="20"
+			transform="rotate(17 310 218)"/>
+		<circle cx="176" cy="404" r="58"/>
+		<circle cx="300" cy="424" r="42"/>
+		<circle cx="392" cy="398" r="30"/>
+	</g>
+</svg>

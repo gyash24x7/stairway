@@ -136,7 +136,7 @@ export function TurnBanner( props: TurnBannerProps ) {
 								</Avatar>
 							</motion.span>
 						) }
-						<p className={ "text-status truncate" }>{ text }</p>
+						<p className={ "text-status truncate uppercase" }>{ text }</p>
 					</div>
 				</motion.div>
 			</AnimatePresence>

@@ -76,6 +76,7 @@ import type {
 	InitializeInput,
 	JoinTeamInput,
 	NameTeamInput,
+	SeatStatusChanged,
 	WithPlayerId
 } from "@/swish/shared/schema.ts";
 
@@ -268,6 +269,35 @@ export const makeEngine = <
 			? event
 			: InteractionOpened.make( { frame: { ...event.frame, deadline: now + timeout } } );
 	} );
+
+	/**
+	 * The RNG a frame's settlement draws from, salted so that no two settlements
+	 * share a stream.
+	 *
+	 * A resolution needs randomness for the same kind of reason a move does — a
+	 * game that returns a revealed card to the deck and deals a replacement is
+	 * deciding the replacement here, not in `execute`. It is safe here for the same
+	 * reason too: the *outcome* rides the emitted events, and replay folds those
+	 * events rather than re-running the resolution.
+	 *
+	 * The salt chain is what keeps the streams apart. `version` is fixed for the
+	 * whole command, so the frame's `kind` and its position in the settling order
+	 * are what separate two frames settled in the same commit.
+	 *
+	 * @param work - The record as the settlement sees it, holding seed and version.
+	 * @param label - Which path is settling: `resolve` or `timeout`.
+	 * @param kind - The interaction kind being settled.
+	 * @param nth - How many frames this command has already settled.
+	 * @returns The `(salt?) => Rng` factory handed to the game.
+	 */
+	const frameRng = (
+		work: GameRecord<State, Config>,
+		label: string,
+		kind: string,
+		nth: number
+	) => ( salt = "" ) => makeRng(
+		hashSeed( work.seed, work.version, label, kind, nth, salt )
+	);
 
 	return Effect.gen( function* () {
 		const storage = yield* SwishStorage;
@@ -949,7 +979,7 @@ export const makeEngine = <
 		 */
 		const settleFrame = (
 			acc: Accumulator<State, Config, Events>,
-			events: ReadonlyArray<Events | InteractionOpened>
+			events: ReadonlyArray<Events | InteractionOpened | SeatStatusChanged>
 		) => {
 			acc.accumulate( ...events.filter( event => !isInteractionOpened( event ) ) );
 			acc.accumulate( InteractionResolved.make( {} ) );
@@ -969,6 +999,12 @@ export const makeEngine = <
 			acc: Accumulator<State, Config, Events>,
 			now: number
 		) => {
+			// Counts the frames this loop has settled, and salts each resolution's RNG
+			// with it. The accumulator's version is fixed for the whole command, so two
+			// frames settled in the same commit would otherwise draw the identical
+			// stream — a chained reveal-and-replace would keep dealing the same card.
+			let settled = 0;
+
 			while ( true ) {
 				if ( acc.work.context.interactions.length === 0 ) {
 					break;
@@ -988,7 +1024,13 @@ export const makeEngine = <
 					break;
 				}
 
-				const resolveEvents = def.resolve( acc.getGameData(), top );
+				const resolveEvents = def.resolve(
+					acc.getGameData(),
+					top,
+					frameRng( acc.work, "resolve", top.kind, settled )
+				);
+
+				settled = settled + 1;
 				settleFrame( acc, stampDeadlines( resolveEvents, acc.work.config, now ) );
 			}
 		};
@@ -1478,7 +1520,11 @@ export const makeEngine = <
 			const now = yield* Clock.currentTimeMillis;
 			const acc = new Accumulator( data, structure.apply );
 			const settle = def.onTimeout ?? def.resolve;
-			const settledEvents = settle( acc.getGameData(), frame );
+			const settledEvents = settle(
+				acc.getGameData(),
+				frame,
+				frameRng( acc.work, def.onTimeout ? "timeout" : "resolve", frame.kind, 0 )
+			);
 
 			settleFrame( acc, stampDeadlines( settledEvents, acc.work.config, now ) );
 			resolveInteractionIfComplete( acc, now );
@@ -1607,7 +1653,13 @@ export const makeEngine = <
 				return;
 			}
 
-			if ( !structure.botMove ) {
+			// A kind that declares `onTimeout` has said what silence means, and that
+			// is played rather than handing the seat over — the same rule
+			// `timeoutMove` states for an ordinary turn, for the same reason. In a
+			// game where the honest reading of a quiet reaction window is "no
+			// objection", answering it from the policy would take a risk on the
+			// player's behalf and then keep their seat for having sat one out.
+			if ( !structure.botMove || structure.interactions?.[ frame.kind ]?.onTimeout ) {
 				return yield* forceSettleFrame( data );
 			}
 

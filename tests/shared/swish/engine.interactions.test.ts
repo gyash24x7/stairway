@@ -520,3 +520,92 @@ describe( "a resolution that opens another frame", () => {
 		expect( deadline ).toBeLessThan( Date.now() + 10_000 );
 	} );
 } );
+
+describe( "randomness at resolution", () => {
+	/** The numbers a run's `draw` frames recorded, in the order they settled. */
+	const drawsIn = ( log: ReadonlyArray<string> ) => log
+		.filter( entry => entry.startsWith( "resolved:draw:" ) )
+		.map( entry => Number( entry.slice( "resolved:draw:".length ) ) );
+
+	test( "a resolution is handed a working rng", () => {
+		const { result } = parley( engine => Effect.gen( function* () {
+			yield* engine.open( { input: { kind: "draw" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			return yield* engine.getView();
+		} ) );
+
+		const draws = drawsIn( result.view.log );
+
+		expect( draws ).toHaveLength( 1 );
+		expect( draws[ 0 ] ).toBeGreaterThanOrEqual( 0 );
+		expect( draws[ 0 ] ).toBeLessThan( 1_000_000 );
+	} );
+
+	test( "two frames settled in one command draw different streams", () => {
+		// Both settle inside the commit the reply lands in: the first hands off to
+		// an `auto` frame the loop takes in the same pass. The command's version is
+		// fixed across the pair, so only the per-settlement salt keeps them apart.
+		const { result } = parley( engine => Effect.gen( function* () {
+			yield* engine.open( { input: { kind: "draw", nest: true }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			return yield* engine.getView();
+		} ) );
+
+		const draws = drawsIn( result.view.log );
+
+		expect( draws ).toHaveLength( 2 );
+		expect( draws[ 0 ] ).not.toBe( draws[ 1 ] );
+	} );
+
+	test( "the drawn value rides the events, so a replay folds the same one", () => {
+		const { result } = parley( engine => Effect.gen( function* () {
+			yield* engine.open( { input: { kind: "draw", nest: true }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			const played = yield* engine.getView();
+			yield* engine.undo( b );
+			yield* engine.redo( b );
+			return { played, rebuilt: yield* engine.getView() };
+		} ) );
+
+		expect( drawsIn( result.rebuilt.view.log ) ).toEqual( drawsIn( result.played.view.log ) );
+	} );
+} );
+
+describe( "seating changes at resolution", () => {
+	test( "a resolution may eliminate a seat", () => {
+		const { result } = parley( engine => Effect.gen( function* () {
+			yield* engine.open( { input: { kind: "purge" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			return yield* engine.getView();
+		} ) );
+
+		// `purge` names its first responder, which is the seat after the initiator.
+		expect( result.context.seats[ b ] ).toBe( "eliminated" );
+		expect( result.view.log ).toContain( `resolved:purge:${ b }` );
+	} );
+
+	test( "the eliminated seat is skipped once the stack empties", () => {
+		const { result } = parley( engine => Effect.gen( function* () {
+			yield* engine.open( { input: { kind: "purge" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			return yield* engine.getView();
+		} ) );
+
+		// The stack emptied, so the turn advanced from the frame's initiator — over
+		// the seat the resolution had just knocked out.
+		expect( result.context.currentPlayer ).toBe( c );
+	} );
+
+	test( "the elimination survives a replay", () => {
+		const { result } = parley( engine => Effect.gen( function* () {
+			yield* engine.open( { input: { kind: "purge" }, playerId: a } );
+			yield* engine.reply( { input: { value: true }, playerId: b } );
+			const played = yield* engine.getView();
+			yield* engine.undo( b );
+			yield* engine.redo( b );
+			return { played, rebuilt: yield* engine.getView() };
+		} ) );
+
+		expect( result.rebuilt.context.seats ).toEqual( result.played.context.seats );
+	} );
+} );

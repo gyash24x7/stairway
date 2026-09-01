@@ -20,6 +20,7 @@ import { SessionServiceLive } from "@/auth/server/session.ts";
 import { RpConfig, WebAuthnServiceLive } from "@/auth/server/webauthn.ts";
 import { ChatApiLive } from "@/chat/server/api.ts";
 import { CallbreakApiLive, CallbreakGame } from "@/games/callbreak/server/api.ts";
+import { CoupApiLive, CoupGame } from "@/games/coup/server/api.ts";
 import { FishApiLive, FishGame } from "@/games/fish/server/api.ts";
 import { KingdominoApiLive, KingdominoGame } from "@/games/kingdomino/server/api.ts";
 import { SplendorApiLive, SplendorGame } from "@/games/splendor/server/api.ts";
@@ -43,6 +44,7 @@ const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
 	Layer.provide( ChatApiLive ),
 	Layer.provide( LobbyApiLive ),
 	Layer.provide( CallbreakApiLive ),
+	Layer.provide( CoupApiLive ),
 	Layer.provide( FishApiLive ),
 	Layer.provide( KingdominoApiLive ),
 	Layer.provide( SplendorApiLive ),
@@ -90,6 +92,7 @@ export default Cloudflare.Worker(
 
 		const gameChannels = {
 			callbreak: yield* CallbreakGame,
+			coup: yield* CoupGame,
 			fish: yield* FishGame,
 			kingdomino: yield* KingdominoGame,
 			splendor: yield* SplendorGame,

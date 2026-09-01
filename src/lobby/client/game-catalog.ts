@@ -1,4 +1,5 @@
 import { callbreakApi } from "@/games/callbreak/client/client.ts";
+import { coupApi } from "@/games/coup/client/client.ts";
 import { fishApi } from "@/games/fish/client/client.ts";
 import { kingdominoApi } from "@/games/kingdomino/client/client.ts";
 import { splendorApi } from "@/games/splendor/client/client.ts";
@@ -31,6 +32,7 @@ type CatalogEntry = {
  */
 export const GAME_CATALOG: Record<string, CatalogEntry | undefined> = {
 	callbreak: { label: "CALLBREAK", join: callbreakApi.join },
+	coup: { label: "COUP", join: coupApi.join },
 	fish: { label: "FISH", join: fishApi.join },
 	kingdomino: { label: "KINGDOMINO", join: kingdominoApi.join },
 	splendor: { label: "SPLENDOR", join: splendorApi.join },

@@ -121,7 +121,7 @@ export function CouchShell( {
 										/>
 									</Avatar>
 								) }
-								<span className={ "truncate" }>{ turn }</span>
+								<span className={ "truncate uppercase" }>{ turn }</span>
 							</motion.div>
 						</AnimatePresence>
 						<TurnTimer deadline={ deadline } large className={ "text-neutral-dark" }/>

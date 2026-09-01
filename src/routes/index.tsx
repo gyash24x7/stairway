@@ -9,7 +9,8 @@ const GAME_NAMES = [
 	"wordle",
 	"tictactoe",
 	"splendor",
-	"kingdomino"
+	"kingdomino",
+	"coup"
 ] as const;
 
 export const Route = createFileRoute( "/" )( {
