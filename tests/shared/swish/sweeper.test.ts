@@ -37,6 +37,7 @@ const stores = ( pending: ReadonlyArray<GameAddress> ) => {
 		claimRematch: unreachable,
 		seatPlayers: unreachable,
 		recordResults: unreachable,
+		syncStatus: unreachable,
 		findCleanableGames: limit => Effect.sync( () => {
 			asked.push( limit );
 			return pending.slice( 0, limit );

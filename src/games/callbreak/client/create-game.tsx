@@ -11,14 +11,17 @@ import { CreateGame } from "@/swish/client/create-game.tsx";
 
 import type { DealCount } from "@/games/callbreak/shared/schema.ts";
 import type { CardSuit } from "@/shared/cards/schema.ts";
+import type { TableVisibility } from "@/swish/shared/schema.ts";
 
 export function CallbreakCreateGame() {
 	const [ trumpSuit, setTrumpSuit ] = useState<CardSuit>();
 	const [ dealCount, setDealCount ] = useState<DealCount>();
 
 	// Four seats, the move clock and the manual start are fixed server-side.
-	const createCallbreakGame = () =>
-		callbreakApi.createGame( { dealCount: dealCount!, trumpSuit: trumpSuit! } );
+	const createCallbreakGame = ( visibility: TableVisibility ) => callbreakApi.createGame( {
+		config: { dealCount: dealCount!, trumpSuit: trumpSuit! },
+		...visibility
+	} );
 
 	return (
 		<CreateGame

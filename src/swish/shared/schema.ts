@@ -382,6 +382,29 @@ export type GameRef = typeof GameRef.Type;
 export const GameRef = Schema.Struct( { id: GameId, code: GameCode } );
 
 /**
+ * Whether a new table is offered to anybody, or only to whoever is given its
+ * code.
+ *
+ * Every game creates a table the same way, so this rides the shared half of the
+ * create payload rather than being added to each game's own create input —
+ * privacy is a fact about the table, not about the game being played at it.
+ *
+ * Optional, and absent means public: a client written before this existed still
+ * creates the table it always did, and a table is only ever hidden because
+ * somebody asked for it to be.
+ *
+ * It is deliberately *not* part of the game's config, and so never reaches the
+ * engine. Visibility is settled once, when the table is opened, and changes
+ * nothing about how the game is played; keeping it out of the config is what
+ * stops it from being folded into a commit log that would then have to replay
+ * it.
+ */
+export type TableVisibility = typeof TableVisibility.Type;
+export const TableVisibility = Schema.Struct( {
+	isPrivate: Schema.optionalKey( Schema.Boolean )
+} );
+
+/**
  * Every view one state change produced: the table's, and one per seated player.
  * They always travel together — a push that delivered one without the other
  * would leave half the table a turn behind — so they are one payload rather than
@@ -556,6 +579,54 @@ export const GameAddress = Schema.Struct( {
 } );
 
 /**
+ * A table as everything outside its Durable Object sees it: what it is doing,
+ * and how full it is.
+ *
+ * These four fields are the whole of what a lobby needs, and all four are read
+ * off the engine's own record before the message leaves. The seat count in
+ * particular cannot be recovered downstream: bots hold seats but never reach the
+ * relational store, so a table filled by one person and three machines counts as
+ * one there. Settling it here is what makes the projection true.
+ *
+ * - version: The log position this projection was taken at — see
+ *   {@link TableStatusChanged} for why that is the ordering.
+ * - status: The lifecycle status the record carried.
+ * - seatsTaken: How many seats are held, bots included.
+ * - playerCount: How many the game seats in total, from its config.
+ */
+export type TableProjection = typeof TableProjection.Type;
+export const TableProjection = Schema.Struct( {
+	version: PositiveInt,
+	status: GameStatus,
+	seatsTaken: PositiveInt,
+	playerCount: PositiveInt
+} );
+
+/**
+ * A table's projection changed — a seat was taken, or the game went into play.
+ *
+ * The queue is at-least-once and unordered, so this message carries the log
+ * version it was taken at and the store keeps only the newest it has seen. That
+ * works because the engine publishes on exactly two commits — a join and a start
+ * — and undo cannot reach either: it refuses unless the game is `IN_PROGRESS`
+ * and the cursor sits strictly between the starting and completing commits, so
+ * the one interval in which a version can rewind is the interval this message is
+ * never sent from. Across the messages actually sent, the version only rises.
+ *
+ * That invariant is load-bearing. Publishing this from any other commit would
+ * open the rewind window and silently break the guard downstream.
+ *
+ * A completion is never announced here — it travels with {@link GameCompletion},
+ * so that the flag sending a reader to cold storage cannot land before the
+ * archive it points at.
+ */
+export type TableStatusChanged = typeof TableStatusChanged.Type;
+export const TableStatusChanged = Schema.TaggedStruct( "swish/msg/TableStatusChanged", {
+	address: GameAddress,
+	...TableProjection.fields
+} );
+
+/**
  * A finished game, as it leaves the table.
  *
  * This is the message the outbox carries: everything closing out a game needs,
@@ -565,6 +636,11 @@ export const GameAddress = Schema.Struct( {
  * both are stamped here, and a redelivery therefore writes exactly what the
  * first attempt would have.
  *
+ * It carries the table's projection too, rather than leaving the consumer to
+ * infer one: the status flip is the last of the three writes closing a game out,
+ * and giving it the same shape and the same version guard as every other status
+ * write is what keeps the store's rule — newest version wins — a single rule.
+ *
  * - address: Which game, and which table.
  * - completedAt: When it ended, read from the engine's clock.
  * - entries: One line per ranked seat. Empty when the game ranks nobody.
@@ -573,12 +649,22 @@ export const GameAddress = Schema.Struct( {
  *   game-agnostic rather than needing a shape per game.
  */
 export type GameCompletion = typeof GameCompletion.Type;
-export const GameCompletion = Schema.Struct( {
+export const GameCompletion = Schema.TaggedStruct( "swish/msg/GameCompleted", {
 	address: GameAddress,
 	completedAt: PositiveInt,
 	entries: Schema.Array( LedgerEntry ),
-	archive: Schema.Unknown
+	archive: Schema.Unknown,
+	...TableProjection.fields
 } );
+
+/**
+ * Everything the outbox queue carries. One queue rather than one per kind of
+ * news, for the reason the queue itself gives: nothing about either message is
+ * game-specific, and a second queue would duplicate the whole consumer to route
+ * two structs.
+ */
+export type SwishOutboxMessage = typeof SwishOutboxMessage.Type;
+export const SwishOutboxMessage = Schema.Union( [ TableStatusChanged, GameCompletion ] );
 
 /**
  * A rebuild shortcut the store found for the engine: the record as of one

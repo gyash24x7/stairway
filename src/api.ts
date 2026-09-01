@@ -8,10 +8,12 @@ import { KingdominoApiGroup } from "@/games/kingdomino/shared/contract.ts";
 import { SplendorApiGroup } from "@/games/splendor/shared/contract.ts";
 import { TicTacToeApiGroup } from "@/games/tictactoe/shared/contract.ts";
 import { WordleApiGroup } from "@/games/wordle/shared/contract.ts";
+import { LobbyApiGroup } from "@/lobby/shared/contract.ts";
 
 export const StairwayAPI = HttpApi.make( "api" )
 	.add( AuthApiGroup )
 	.add( ChatApiGroup )
+	.add( LobbyApiGroup )
 	.add( CallbreakApiGroup )
 	.add( FishApiGroup )
 	.add( KingdominoApiGroup )

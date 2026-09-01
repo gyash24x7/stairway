@@ -12,6 +12,7 @@ import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
 import { CreateGame } from "@/swish/client/create-game.tsx";
 
 import type { BoardSize } from "@/games/kingdomino/shared/schema.ts";
+import type { TableVisibility } from "@/swish/shared/schema.ts";
 
 type PlayerCount = typeof KINGDOMINO_PLAYER_COUNTS[number];
 
@@ -25,11 +26,12 @@ export function KingdominoCreateGame() {
 	const [ playerCount, setPlayerCount ] = useState<PlayerCount>();
 	const [ boardSize, setBoardSize ] = useState<BoardSize>( KINGDOMINO_DEFAULT_BOARD_SIZE );
 
-	const createKingdominoGame = () => kingdominoApi.createGame(
-		playerCount === 2
+	const createKingdominoGame = ( visibility: TableVisibility ) => kingdominoApi.createGame( {
+		config: playerCount === 2
 			? { playerCount: 2, boardSize }
-			: { playerCount: playerCount as 3 | 4, boardSize: KINGDOMINO_DEFAULT_BOARD_SIZE }
-	);
+			: { playerCount: playerCount as 3 | 4, boardSize: KINGDOMINO_DEFAULT_BOARD_SIZE },
+		...visibility
+	} );
 
 	const handlePlayerCount = ( count: PlayerCount | undefined ) => {
 		setPlayerCount( count );

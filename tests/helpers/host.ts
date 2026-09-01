@@ -7,7 +7,13 @@ import { SwishStorageLive, SwishTimersLive } from "@/platform/do/swish.ts";
 import { SwishOutbox, SwishSync } from "@/swish/server/services.ts";
 
 import type { DurableTransaction } from "@/platform/do/storage.ts";
-import type { GameAddress } from "@/swish/shared/schema.ts";
+import type { GameAddress, TableProjection } from "@/swish/shared/schema.ts";
+
+/** One `publishStatus` call, as the outbox received it. */
+export type PublishedStatus = {
+	readonly address: GameAddress;
+	readonly projection: TableProjection;
+};
 
 /**
  * `DurableStorage` over a plain `Map`. The commit log's key layout, its
@@ -72,17 +78,28 @@ export const InMemoryDurableSchedule = (
 };
 
 /**
- * `SwishOutbox` over a `Map`, keyed by game and id, so a test can read back the
- * archive a completed game published.
+ * `SwishOutbox` over a `Map` and a list: the archive a completed game published,
+ * keyed by game and id, and every projection a table announced, in order.
  *
- * The outbox is the engine's only exit for a finished game — the whole archive,
- * standings included, goes through this one call — so recording what it receives
- * is all a test needs to assert on what completion produced.
+ * The two are kept apart rather than pooled, because they are asserted on for
+ * opposite reasons — the archive for what a completion produced, the projections
+ * for the sequence a table went through and the versions it went through it at.
+ * Pooling them would also mean a status push landing in the map a completion
+ * test reads by key.
+ *
+ * @param [saved] - Archives by `game:id`.
+ * @param [statuses] - Projections, in the order they were published.
  */
-export const InMemorySwishOutbox = ( saved: Map<string, unknown> = new Map() ) =>
+export const InMemorySwishOutbox = (
+	saved: Map<string, unknown> = new Map(),
+	statuses: Array<PublishedStatus> = []
+) =>
 	Layer.succeed( SwishOutbox, SwishOutbox.of( {
 		publishArchive: ( address: GameAddress, data: unknown ) =>
-			Effect.sync( () => void saved.set( `${ address.game }:${ address.id }`, data ) )
+			Effect.sync( () => void saved.set( `${ address.game }:${ address.id }`, data ) ),
+
+		publishStatus: ( address: GameAddress, projection: TableProjection ) =>
+			Effect.sync( () => void statuses.push( { address, projection } ) )
 	} ) );
 
 /** `SwishSync` that keeps every push, so a test can assert on what was broadcast. */
@@ -102,6 +119,7 @@ export const InMemorySwishSync = ( published: Array<unknown> = [] ) =>
 export const TestHost = ( options: {
 	readonly cells?: Map<string, unknown>;
 	readonly saved?: Map<string, unknown>;
+	readonly statuses?: Array<PublishedStatus>;
 	readonly published?: Array<unknown>;
 	readonly pending?: Map<string, number>;
 	readonly now?: () => number;
@@ -110,6 +128,6 @@ export const TestHost = ( options: {
 	SwishTimersLive.pipe(
 		Layer.provide( InMemoryDurableSchedule( options.now, options.pending ) )
 	),
-	InMemorySwishOutbox( options.saved ),
+	InMemorySwishOutbox( options.saved, options.statuses ),
 	InMemorySwishSync( options.published )
 );

@@ -12,6 +12,7 @@ import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
 import { CreateGame } from "@/swish/client/create-game.tsx";
 
 import type { SplendorCreateInput } from "@/games/splendor/shared/schema.ts";
+import type { TableVisibility } from "@/swish/shared/schema.ts";
 
 type PlayerCount = SplendorCreateInput[ "playerCount" ];
 type WinningPoints = typeof SPLENDOR_WINNING_POINTS[number];
@@ -23,8 +24,10 @@ export function SplendorCreateGame() {
 	);
 
 	// The move clock and the manual start stay the server's to fix.
-	const createSplendorGame = () =>
-		splendorApi.createGame( { playerCount: playerCount!, winningPoints } );
+	const createSplendorGame = ( visibility: TableVisibility ) => splendorApi.createGame( {
+		config: { playerCount: playerCount!, winningPoints },
+		...visibility
+	} );
 
 	return (
 		<CreateGame

@@ -6,7 +6,7 @@ import * as Layer from "effect/Layer";
 import { withRuntime } from "@/platform/utils/runtime.ts";
 import { SwishOutbox } from "@/swish/server/services.ts";
 import { toLedgerEntries } from "@/swish/server/utils.ts";
-import { GameCompletion } from "@/swish/shared/schema.ts";
+import { GameCompletion, TableStatusChanged } from "@/swish/shared/schema.ts";
 
 
 /**
@@ -38,6 +38,12 @@ export const OutboxQueue = Cloudflare.Queues.Queue( "OutboxQueue" );
  * completed it has already landed in the log, so what a failed send costs is
  * the table's record of the game, not the game.
  *
+ * The second exit, `publishStatus`, carries the same kind of fact about a table
+ * that is still being played: which seats are taken, and whether it has started.
+ * It fails the same way and costs less — a send that dies leaves a lobby row
+ * stale until the table's next move, which for a table waiting on players is the
+ * next person to sit down.
+ *
  * This is an effect rather than a `Layer` because of where it has to be built.
  * The WebSocket base pins its domain to the Durable Object's *own* services, so
  * a layer reaching for a Cloudflare binding cannot be provided alongside the
@@ -46,14 +52,24 @@ export const OutboxQueue = Cloudflare.Queues.Queue( "OutboxQueue" );
  */
 export const SwishOutboxLive = ( queue: Cloudflare.Queues.WriteQueueClient ) =>
 	Layer.succeed( SwishOutbox, SwishOutbox.of( {
-		publishArchive: ( address, data ) => Effect.gen( function* () {
+		publishArchive: ( address, data, projection ) => Effect.gen( function* () {
 			const completion = GameCompletion.make( {
 				address,
 				completedAt: yield* Clock.currentTimeMillis,
 				entries: toLedgerEntries( data.results ),
-				archive: data
+				archive: data,
+				...projection
 			} );
 
 			yield* withRuntime( queue.send( completion ).pipe( Effect.orDie ) );
-		} )
+		} ),
+
+		/**
+		 * No clock reading here, unlike a completion: the version *is* the ordering,
+		 * and stamping a time beside it would only invite somebody downstream to
+		 * order by the wrong one.
+		 */
+		publishStatus: ( address, projection ) => withRuntime(
+			queue.send( TableStatusChanged.make( { address, ...projection } ) ).pipe( Effect.orDie )
+		)
 	} ) );

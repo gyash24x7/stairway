@@ -8,15 +8,12 @@ import { SwishStorageLive, SwishSyncLive, SwishTimersLive } from "@/platform/do/
 import { WebSocketDurableObject } from "@/platform/do/ws.ts";
 import { SessionStoreLive } from "@/platform/kv/session.ts";
 import { OutboxQueue, SwishOutboxLive } from "@/platform/queue/outbox.ts";
-import { generateGameCode } from "@/shared/utils/generator.ts";
 import { SwishArchive, SwishDatabase } from "@/swish/server/services.ts";
 import { toPlayerInfo } from "@/swish/server/utils.ts";
 import {
 	GameAddress,
-	GameCode,
 	GameId,
 	GameNotFound,
-	GameRef,
 	RematchUnavailable
 } from "@/swish/shared/schema.ts";
 import { planRematch } from "@/swish/shared/teams.ts";
@@ -90,22 +87,31 @@ export const makeApiHandlers = <View, Moves extends BaseMoveClientShape, Config 
 	const database = yield* SwishDatabase;
 	const archive = yield* SwishArchive;
 
-	const createGame = ( payload?: Partial<Config> ) =>
+	const createGame = (
+		payload?: { readonly config?: Partial<Config>; readonly isPrivate?: boolean }
+	) =>
 		Effect.gen( function* () {
 			const { user } = yield* AuthContext;
 			const playerInfo = toPlayerInfo( user );
 
-			const table = yield* database.createGame( game );
-			yield* database.seatPlayers( table.id, [ playerInfo ] );
+			// Visibility is settled on the insert rather than replicated afterwards.
+			// Everything else the lobby reads about a table arrives over a queue and is
+			// briefly unknown, which is safe because an unknown table is hidden — but a
+			// table that is meant to be hidden cannot afford that window at all, and a
+			// row is the one place the answer can be true from the very first moment.
+			const ref = yield* database.createGame( game, payload?.isPrivate ?? false );
+			yield* database.seatPlayers( ref.id, [ playerInfo ] );
 
-			const code = GameCode.make( generateGameCode() );
-			const gameId = GameId.make( table.id );
-			const client = getClient( gameId );
+			// The code is the one the row was created with, never a fresh one. A join
+			// resolves it against that column, so a second code minted here would be
+			// a code nobody could ever join by — which is what `rematch` gets right
+			// by reusing its ref, and what this used to get wrong.
+			const client = getClient( ref.id );
 
-			yield* client.initialize( { id: gameId, code, creator: playerInfo.id, config: payload } );
+			yield* client.initialize( { ...ref, creator: playerInfo.id, config: payload?.config } );
 			yield* client.join( playerInfo );
 
-			return GameRef.make( { id: gameId, code } );
+			return ref;
 		} );
 
 	const getView = ( { gameId }: GameIdParams ) =>
@@ -115,7 +121,7 @@ export const makeApiHandlers = <View, Moves extends BaseMoveClientShape, Config 
 
 			const address = GameAddress.make( { game, id: gameId } );
 			const row = yield* database.findGame( address );
-			if ( row.completed ) {
+			if ( row.status === "COMPLETED" ) {
 				const filed = yield* archive.load<ArchivedGame<View, Config>>( address );
 
 				if ( Option.isSome( filed ) ) {
@@ -241,7 +247,7 @@ export const makeApiHandlers = <View, Moves extends BaseMoveClientShape, Config 
 			const playerInfo = toPlayerInfo( user );
 
 			const address = GameAddress.make( { game, id: gameId } );
-			yield* database.findGame( address );
+			const row = yield* database.findGame( address );
 
 			const previous = getClient( address.id );
 			const source = yield* previous.getView( playerInfo.id );
@@ -250,7 +256,11 @@ export const makeApiHandlers = <View, Moves extends BaseMoveClientShape, Config 
 			}
 
 			const plan = planRematch( source, input.keepTeams );
-			const ref = yield* database.claimRematch( game, address.id );
+
+			// The next game inherits this one's visibility: the same people are being
+			// seated again, so a private table cannot quietly become a public one by
+			// pressing "play again".
+			const ref = yield* database.claimRematch( game, address.id, row.isPrivate );
 
 			if ( !ref ) {
 				const existing = yield* database.findRematch( game, address.id );

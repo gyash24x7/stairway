@@ -7,7 +7,7 @@ import { OutboxConsumerLive } from "@/swish/server/outbox.ts";
 import { SwishArchive, SwishDatabase } from "@/swish/server/services.ts";
 import { GameId, PlayerId, TeamId } from "@/swish/shared/schema.ts";
 
-import type { GameAddress, LedgerEntry } from "@/swish/shared/schema.ts";
+import type { GameAddress, LedgerEntry, TableProjection } from "@/swish/shared/schema.ts";
 
 const player = ( id: string ) => PlayerId.make( id );
 
@@ -22,6 +22,12 @@ type Recorded = {
 	readonly completedAt: number;
 };
 
+/** One `syncStatus` call, as the database received it. */
+type Synced = {
+	readonly address: GameAddress;
+	readonly projection: TableProjection;
+};
+
 /**
  * The two stores the consumer writes to, each recording what it was handed and
  * the order it was handed it in. `writes` is shared between them on purpose:
@@ -31,7 +37,8 @@ type Recorded = {
 const stores = () => {
 	const filed = new Map<string, unknown>();
 	const recorded: Array<Recorded> = [];
-	const writes: Array<"archive" | "ledger"> = [];
+	const synced: Array<Synced> = [];
+	const writes: Array<"archive" | "ledger" | "status"> = [];
 
 	const archive = Layer.succeed( SwishArchive, SwishArchive.of( {
 		save: ( at, encoded ) => Effect.sync( () => {
@@ -57,10 +64,14 @@ const stores = () => {
 		recordResults: ( at, entries, completedAt ) => Effect.sync( () => {
 			writes.push( "ledger" );
 			recorded.push( { address: at, entries, completedAt } );
+		} ),
+		syncStatus: ( at, projection ) => Effect.sync( () => {
+			writes.push( "status" );
+			synced.push( { address: at, projection } );
 		} )
 	} ) );
 
-	return { filed, recorded, writes, layer: Layer.mergeAll( archive, database ) };
+	return { filed, recorded, synced, writes, layer: Layer.mergeAll( archive, database ) };
 };
 
 /**
@@ -86,10 +97,25 @@ const entry = ( playerId: PlayerId, rank: number, winner: boolean ) =>
 	( { playerId, rank, score: rank === 1 ? 9 : 4, winner } );
 
 const completion = ( overrides: Record<string, unknown> = {} ) => ( {
+	_tag: "swish/msg/GameCompleted",
 	address,
 	completedAt: 1_700_000_000_000,
 	entries: [ entry( b, 1, true ), entry( a, 2, false ) ],
 	archive: { id: "game-1", status: "COMPLETED", view: { points: {} } },
+	version: 12,
+	status: "COMPLETED",
+	seatsTaken: 2,
+	playerCount: 2,
+	...overrides
+} );
+
+const statusChange = ( overrides: Record<string, unknown> = {} ) => ( {
+	_tag: "swish/msg/TableStatusChanged",
+	address,
+	version: 3,
+	status: "CREATED",
+	seatsTaken: 1,
+	playerCount: 4,
 	...overrides
 } );
 
@@ -120,19 +146,23 @@ describe( "the outbox consumer", () => {
 		expect( recorded[ 0 ]?.completedAt ).toBe( 1_600_000_000_000 );
 	} );
 
-	test( "files the archive before it records the result", () => {
-		// The ledger write is what flips `games.completed`, which is what sends a
-		// reader to the archive — so the archive has to be there first.
+	test( "files the archive, then the lines, then the status", () => {
+		// The status write is what sends a reader to the archive, so it goes last:
+		// flipping it first would point readers at an archive that is not there yet.
 		const { writes } = consume( completion() );
 
-		expect( writes ).toEqual( [ "archive", "ledger" ] );
+		expect( writes ).toEqual( [ "archive", "ledger", "status" ] );
 	} );
 
 	test( "a game that ranked nobody is still filed, and still marked over", () => {
-		const { filed, recorded } = consume( completion( { entries: [] } ) );
+		// No lines to write, so the ledger is skipped entirely — but the game is
+		// still over, and the status write is what says so.
+		const { filed, recorded, synced, writes } = consume( completion( { entries: [] } ) );
 
 		expect( filed.size ).toBe( 1 );
 		expect( recorded[ 0 ]?.entries ).toEqual( [] );
+		expect( synced[ 0 ]?.projection.status ).toBe( "COMPLETED" );
+		expect( writes ).toEqual( [ "archive", "ledger", "status" ] );
 	} );
 
 	test( "carries a line's side through to the store", () => {
@@ -144,12 +174,53 @@ describe( "the outbox consumer", () => {
 		expect( recorded[ 0 ]?.entries[ 0 ] ).toMatchObject( { team: red, winner: true } );
 	} );
 
-	test( "a message that is not a completion is refused, and nothing is written", () => {
-		const { filed, recorded, exit } = consume( { address, archive: {} } );
+	test( "a message of neither kind is refused, and nothing is written", () => {
+		const { filed, recorded, synced, exit } = consume( { address, archive: {} } );
 
 		expect( exit._tag ).toBe( "Failure" );
 		expect( filed.size ).toBe( 0 );
 		expect( recorded ).toHaveLength( 0 );
+		expect( synced ).toHaveLength( 0 );
+	} );
+
+	test( "an untagged completion is refused — the tag is what routes it", () => {
+		const { _tag, ...untagged } = completion();
+		const { filed, exit } = consume( untagged );
+
+		expect( exit._tag ).toBe( "Failure" );
+		expect( filed.size ).toBe( 0 );
+	} );
+
+	test( "a status change writes the status alone, filing nothing", () => {
+		const { filed, recorded, synced, writes } = consume( statusChange() );
+
+		expect( writes ).toEqual( [ "status" ] );
+		expect( filed.size ).toBe( 0 );
+		expect( recorded ).toHaveLength( 0 );
+		expect( synced[ 0 ]?.address ).toEqual( address );
+		expect( synced[ 0 ]?.projection ).toEqual( {
+			version: 3,
+			status: "CREATED",
+			seatsTaken: 1,
+			playerCount: 4
+		} );
+	} );
+
+	test( "a status change carries the version the store guards on", () => {
+		const { synced } = consume( statusChange( { version: 41, status: "IN_PROGRESS" } ) );
+
+		expect( synced[ 0 ]?.projection.version ).toBe( 41 );
+		expect( synced[ 0 ]?.projection.status ).toBe( "IN_PROGRESS" );
+	} );
+
+	test( "a status change missing its version is refused", () => {
+		// The version is the whole ordering guarantee; a message without one could
+		// only be applied blind.
+		const { version, ...noVersion } = statusChange();
+		const { synced, exit } = consume( noVersion );
+
+		expect( exit._tag ).toBe( "Failure" );
+		expect( synced ).toHaveLength( 0 );
 	} );
 
 	test( "a completion naming no game is refused rather than filed under an empty key", () => {

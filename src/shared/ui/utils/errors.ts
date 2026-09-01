@@ -31,6 +31,8 @@ export function errorMessage( error: unknown ) {
 			return "This game can't start yet.";
 		case "swish/GameFull":
 			return "This game is already full.";
+		case "swish/GameNotJoinable":
+			return "This table has already started.";
 		case "swish/AlreadyJoined":
 			return "You've already joined this game.";
 		case "swish/NotAMember":

@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { HomeIcon } from "lucide-react";
+import { HomeIcon, UsersIcon } from "lucide-react";
 
 import type { ReactNode } from "react";
 
@@ -28,6 +28,9 @@ export function Navbar( props: { children: ReactNode } ) {
 				<div className={ "flex flex-1 justify-end gap-3 items-center" }>
 					<Button size={ "icon" } onClick={ () => navigate( { to: "/" } ) }>
 						<HomeIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
+					</Button>
+					<Button size={ "icon" } onClick={ () => navigate( { to: "/tables" } ) } title={ "Open tables" }>
+						<UsersIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 					</Button>
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
 					{ props.children }

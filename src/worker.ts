@@ -25,6 +25,7 @@ import { KingdominoApiLive, KingdominoGame } from "@/games/kingdomino/server/api
 import { SplendorApiLive, SplendorGame } from "@/games/splendor/server/api.ts";
 import { TicTacToeApiLive, TicTacToeGame } from "@/games/tictactoe/server/api.ts";
 import { WordleApiLive, WordleGame } from "@/games/wordle/server/api.ts";
+import { LobbyApiLive } from "@/lobby/server/api.ts";
 import { SwishDatabaseLive } from "@/platform/database/swish.ts";
 import { ChatChannel } from "@/platform/do/chat.ts";
 import { SwishArchiveLive } from "@/platform/kv/archive.ts";
@@ -40,6 +41,7 @@ import type { GameId } from "@/swish/shared/schema.ts";
 const ApiLive = HttpApiBuilder.layer( StairwayAPI ).pipe(
 	Layer.provide( AuthApiLive ),
 	Layer.provide( ChatApiLive ),
+	Layer.provide( LobbyApiLive ),
 	Layer.provide( CallbreakApiLive ),
 	Layer.provide( FishApiLive ),
 	Layer.provide( KingdominoApiLive ),

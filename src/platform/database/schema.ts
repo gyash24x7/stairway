@@ -12,6 +12,7 @@ import {
 import { generateAvatar, generateGameCode, generateId } from "@/shared/utils/generator.ts";
 
 import type { ChatPolicy } from "@/chat/shared/schema.ts";
+import type { GameStatus } from "@/swish/shared/schema.ts";
 
 const now = () => new Date();
 
@@ -65,16 +66,47 @@ export const passkeys = sqliteTable(
  * of starting a second one. NULLs are distinct under SQLite's UNIQUE, so every
  * game that is nobody's rematch coexists happily.
  *
+ * `status`, `seatsTaken` and `playerCount` are a *replica*, not a source. The
+ * lifecycle is folded from a commit log inside the game's Durable Object, and
+ * this row is what that object publishes about itself so the outside world can
+ * ask questions the object cannot answer at scale — above all "which tables can
+ * I still join?", which is a query over every game at once and so cannot be a
+ * fan-out of calls to each of them.
+ *
+ * The seat counts are replicated rather than joined from `players` because they
+ * would be wrong if they were: a bot holds a seat but never gets a row there, so
+ * a table filled by one person and three machines would count as one and be
+ * advertised as having three seats free. `playerCount` defaults to `0` rather
+ * than being nullable for the same reason, but pointing the other way — the
+ * `seatsTaken < playerCount` test a listing runs then fails closed, so a table
+ * stays invisible until its object has actually said how big it is.
+ *
+ * `statusVersion` is the log position the replica was taken at, and the only
+ * thing that makes it safe. The messages carrying these updates are delivered at
+ * least once and in no particular order, so a write keeps only what is newer
+ * than the row already holds; a redelivery and a message overtaken by a later
+ * one are then the same harmless case.
+ *
  * `cleanedUp` is the sweeper's mark, not a fact about the game: a finished game
  * is filed in the archive and its Durable Object holds nothing anyone reads
  * again, so a periodic pass erases that storage and ticks this flag so the next
- * pass skips the row. It is separate from `completed` because the two say
- * different things — `completed` is where a reader should look for the game,
- * `cleanedUp` is whether its object has already been emptied — and because
- * ticking `completed` for a second purpose would send readers to an archive
- * before it was written. `idx_games_sweep` is the index the pass reads through:
- * the pair is the whole of its query, and the table is mostly rows it has
- * already dealt with.
+ * pass skips the row. It is separate from `status` because the two say different
+ * things — `status` is where a reader should look for the game, `cleanedUp` is
+ * whether its object has already been emptied — and because moving `status` for
+ * a second purpose would send readers to an archive before it was written.
+ * `idx_games_sweep` is the index the pass reads through: the pair is the whole
+ * of its query, and the table is mostly rows it has already dealt with.
+ *
+ * `isPrivate` is the one column here that is neither a replica nor a mark: it is
+ * a choice the creator made, written on the insert, and never revised. It sits
+ * beside the replicated columns rather than among them because it must be right
+ * from the first moment the row exists — the others may be briefly unknown, and
+ * an unknown table is hidden anyway, but a table meant to be hidden cannot be
+ * public even for the length of a queue hop.
+ *
+ * `idx_games_open` serves the other direction — the lobby's "open, public tables
+ * of this kind, newest first": equality on the first three columns and ordering
+ * on the fourth.
  */
 export const games = sqliteTable(
 	"games",
@@ -82,7 +114,11 @@ export const games = sqliteTable(
 		id: text( "id" ).primaryKey().$default( () => generateId() ),
 		code: text( "code" ).notNull().unique().$default( () => generateGameCode() ),
 		game: text( "game" ).notNull(),
-		completed: integer( "completed", { mode: "boolean" } ).notNull().default( false ),
+		isPrivate: integer( "is_private", { mode: "boolean" } ).notNull().default( false ),
+		status: text( "status" ).$type<GameStatus>().notNull().default( "CREATED" ),
+		statusVersion: integer( "status_version" ).notNull().default( 0 ),
+		seatsTaken: integer( "seats_taken" ).notNull().default( 0 ),
+		playerCount: integer( "player_count" ).notNull().default( 0 ),
 		cleanedUp: integer( "cleaned_up", { mode: "boolean" } ).notNull().default( false ),
 		rematchOf: text( "rematch_of" ),
 		createdAt: integer( "created_at", { mode: "timestamp" } ).notNull().$default( now )
@@ -90,7 +126,8 @@ export const games = sqliteTable(
 	table => [
 		index( "idx_games_code" ).on( table.code ),
 		uniqueIndex( "idx_games_rematch_of" ).on( table.rematchOf ),
-		index( "idx_games_sweep" ).on( table.completed, table.cleanedUp )
+		index( "idx_games_sweep" ).on( table.status, table.cleanedUp ),
+		index( "idx_games_open" ).on( table.status, table.isPrivate, table.game, table.createdAt )
 	]
 );
 

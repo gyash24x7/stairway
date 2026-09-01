@@ -46,6 +46,7 @@ import {
 	SeatOrderSet,
 	StatusChanged,
 	TableAudience,
+	TableProjection,
 	TeamAssigned,
 	TeamLeft,
 	TeamName,
@@ -376,6 +377,23 @@ export const makeEngine = <
 			( { game: structure.name, id: data.id } );
 
 		/**
+		 * The table as everything outside this object sees it.
+		 *
+		 * Seats are counted off the roster rather than the seating order, because a
+		 * bot occupies a seat exactly as a person does and the roster is the one
+		 * place that is true — the relational store never learns of a bot at all,
+		 * which is why this count has to travel rather than be re-derived there.
+		 *
+		 * @param data - The record to project.
+		 */
+		const projectionOf = ( data: GameRecord<State, Config> ) => TableProjection.make( {
+			version: data.version,
+			status: data.status,
+			seatsTaken: Object.keys( data.players ).length,
+			playerCount: data.config.playerCount
+		} );
+
+		/**
 		 * Pushes fresh state to everyone watching: the table's view and each
 		 * player's own, as one payload. All of them go out as the same `GameView`
 		 * envelope a read returns, so a client decodes one shape however it
@@ -491,15 +509,31 @@ export const makeEngine = <
 				events: acc.events
 			} );
 
+			const marksStart = meta.command === "start";
+			const marksComplete = acc.work.status === "COMPLETED";
+
 			const data = yield* storage.writeCommit( {
 				commit,
 				stamp: version => ( { ...acc.work, version } ),
-				marksStart: meta.command === "start",
-				marksComplete: acc.work.status === "COMPLETED"
+				marksStart,
+				marksComplete
 			} );
 
 			yield* armTimers( data );
 			yield* broadcastState( data );
+
+			// A table's projection is (status, seats), and only these two commits move
+			// it: somebody taking a seat, and the game going into play. Completion is
+			// deliberately absent — it travels with the archive, so the status that
+			// sends a reader to cold storage can never land before the archive does.
+			//
+			// Publishing from any other commit would also break the guard downstream.
+			// Undo rewinds `version`, but only strictly between the starting and
+			// completing commits; keeping the publish out of that interval is what
+			// keeps every version actually sent strictly above the last.
+			if ( meta.command === "join" || marksStart ) {
+				yield* outbox.publishStatus( addressOf( data ), projectionOf( data ) );
+			}
 		} );
 
 		/**
@@ -531,7 +565,7 @@ export const makeEngine = <
 			const { tableView, playerViews } = buildViews( data );
 			const { state, seed, ...header } = data;
 			const completed = ArchiveSchema.make( { ...header, view: tableView, playerViews } );
-			yield* outbox.publishArchive( addressOf( data ), completed );
+			yield* outbox.publishArchive( addressOf( data ), completed, projectionOf( data ) );
 		} );
 
 		/**
@@ -610,6 +644,12 @@ export const makeEngine = <
 			} );
 
 			yield* storage.writeGenesis( genesis );
+
+			// Not a commit, and the only moment `playerCount` becomes knowable from
+			// outside: it is merged from the structure's defaults here and then lives
+			// only on the record. A table that never announced itself would sit in the
+			// store with no shape, which is why this publish is not optional.
+			yield* outbox.publishStatus( addressOf( genesis ), projectionOf( genesis ) );
 
 			return GameRef.make( { id: payload.id, code: payload.code } );
 		} );

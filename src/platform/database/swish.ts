@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, lt } from "drizzle-orm";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
@@ -69,9 +69,9 @@ export const SwishDatabaseLive = Layer.effect( SwishDatabase, Effect.gen( functi
 				.pipe( Effect.map( row => row && toRef( row ) ), Effect.orDie )
 		),
 
-		createGame: game => withRuntime(
+		createGame: ( game, isPrivate ) => withRuntime(
 			db.insert( games )
-				.values( { game } )
+				.values( { game, isPrivate } )
 				.returning()
 				.pipe( Effect.map( ( [ row ] ) => toRef( row! ) ), Effect.orDie )
 		),
@@ -81,9 +81,9 @@ export const SwishDatabaseLive = Layer.effect( SwishDatabase, Effect.gen( functi
 		 * collision cannot be misread as a lost race — a collision is a broken
 		 * generator and should surface, while losing the race is the ordinary case.
 		 */
-		claimRematch: ( game, sourceId ) => withRuntime(
+		claimRematch: ( game, sourceId, isPrivate ) => withRuntime(
 			db.insert( games )
-				.values( { game, rematchOf: sourceId } )
+				.values( { game, rematchOf: sourceId, isPrivate } )
 				.onConflictDoNothing( { target: games.rematchOf } )
 				.returning()
 				.pipe( Effect.map( ( [ row ] ) => row && toRef( row ) ), Effect.orDie )
@@ -101,40 +101,68 @@ export const SwishDatabaseLive = Layer.effect( SwishDatabase, Effect.gen( functi
 		} ) ),
 
 		/**
-		 * **The two writes are ordered, not atomic.** D1 has no interactive
-		 * transaction, so a completion is two statements — and which one goes first
-		 * decides what a failure between them leaves behind. Rows first: a game whose
-		 * flag never landed still reads as in progress, and re-running the completion
-		 * re-files the same rows (the composite key absorbs them) and then flips it.
-		 * The other order strands a game marked finished with nothing to show for it,
-		 * which nothing later would think to repair.
+		 * Only the rows — marking the game over belongs to {@link syncStatus}, which
+		 * owns that column. Keeping the two apart is what lets the caller order the
+		 * three writes a completion needs, and D1 has no interactive transaction, so
+		 * that order is the only thing standing between a crash and a completion
+		 * nothing later would think to repair.
+		 *
+		 * Re-running is free: the composite key absorbs the same rows rather than
+		 * filing a second set beside them.
 		 *
 		 * The row for a seat scoring `undefined` keeps a null `score` rather than a
 		 * zero: a game that ranks without scoring has no score to report, and a zero
 		 * would read as one it earned.
 		 */
 		recordResults: ( address, entries, completedAt ) => withRuntime( Effect.gen( function* () {
-			if ( entries.length > 0 ) {
-				yield* db.insert( gameResults )
-					.values( entries.map( entry => ( {
-						gameId: address.id,
-						game: address.game,
-						playerId: entry.playerId,
-						rank: entry.rank,
-						score: entry.score ?? null,
-						team: entry.team ?? null,
-						winner: entry.winner,
-						completedAt: new Date( completedAt )
-					} ) ) )
-					.onConflictDoNothing()
-					.pipe( Effect.orDie );
+			if ( entries.length === 0 ) {
+				return;
 			}
 
-			yield* db.update( games )
-				.set( { completed: true } )
-				.where( eq( games.id, address.id ) )
+			yield* db.insert( gameResults )
+				.values( entries.map( entry => ( {
+					gameId: address.id,
+					game: address.game,
+					playerId: entry.playerId,
+					rank: entry.rank,
+					score: entry.score ?? null,
+					team: entry.team ?? null,
+					winner: entry.winner,
+					completedAt: new Date( completedAt )
+				} ) ) )
+				.onConflictDoNothing()
 				.pipe( Effect.orDie );
 		} ) ),
+
+		/**
+		 * The one writer of the replica a table keeps outside its Durable Object.
+		 *
+		 * `statusVersion` is the whole of the concurrency story. These updates arrive
+		 * over an at-least-once queue in no guaranteed order, so the row keeps only
+		 * what is strictly newer than it already holds: a redelivery compares equal
+		 * and a message overtaken by a later one compares lower, and both fall out as
+		 * a zero-row update rather than as an error or a regression. That is sound
+		 * only because the engine publishes from commits a rewind can never reach —
+		 * see the message's own doc comment.
+		 *
+		 * Scoped by kind as well as id, like every read here: a game of another kind
+		 * is not this one, and a primary key alone would let one answer for the other.
+		 */
+		syncStatus: ( address, projection ) => withRuntime(
+			db.update( games )
+				.set( {
+					status: projection.status,
+					statusVersion: projection.version,
+					seatsTaken: projection.seatsTaken,
+					playerCount: projection.playerCount
+				} )
+				.where( and(
+					eq( games.id, address.id ),
+					eq( games.game, address.game ),
+					lt( games.statusVersion, projection.version )
+				) )
+				.pipe( Effect.orDie )
+		),
 
 		/**
 		 * Oldest first, so a backlog drains in the order it accumulated rather than
@@ -143,7 +171,7 @@ export const SwishDatabaseLive = Layer.effect( SwishDatabase, Effect.gen( functi
 		findCleanableGames: limit => withRuntime(
 			db.select( { id: games.id, game: games.game } )
 				.from( games )
-				.where( and( eq( games.completed, true ), eq( games.cleanedUp, false ) ) )
+				.where( and( eq( games.status, "COMPLETED" ), eq( games.cleanedUp, false ) ) )
 				.orderBy( asc( games.createdAt ) )
 				.limit( limit )
 				.pipe(

@@ -8,7 +8,12 @@ export function TicTacToeHomePage( props: { isLoggedIn?: boolean } ) {
 			game={ "tictactoe" }
 			title={ "TIC TAC TOE" }
 			isLoggedIn={ props.isLoggedIn }
-			createGame={ <CreateGame game={ "tictactoe" } createGame={ tictactoeApi.createGame }/> }
+			createGame={ (
+				<CreateGame
+					game={ "tictactoe" }
+					createGame={ visibility => tictactoeApi.createGame( { config: {}, ...visibility } ) }
+				/>
+			) }
 			joinGame={ tictactoeApi.join }
 			blurb={
 				<>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Login } from "@/auth/client/login.tsx";
+import { OpenTables } from "@/lobby/client/open-tables.tsx";
 import { Separator } from "@/shared/ui/primitives/separator.tsx";
 import { cn } from "@/shared/ui/utils/cn.ts";
 import { JoinGame } from "@/swish/client/join-game.tsx";
@@ -38,10 +39,18 @@ export function GameHomePage( props: GameHomePageProps ) {
 			<Separator/>
 			{ props.isLoggedIn
 				? (
-					<div className={ "grid grid-cols-1 md:grid-cols-2 gap-5 w-full" }>
-						{ props.createGame }
-						<JoinGame game={ props.game } joinGame={ props.joinGame }/>
-					</div>
+					<>
+						<div className={ "grid grid-cols-1 md:grid-cols-2 gap-5 w-full" }>
+							{ props.createGame }
+							<JoinGame game={ props.game } joinGame={ props.joinGame }/>
+						</div>
+						<Separator/>
+						<OpenTables
+							game={ props.game }
+							joinGame={ props.joinGame }
+							isLoggedIn={ props.isLoggedIn }
+						/>
+					</>
 				)
 				: (
 					<div

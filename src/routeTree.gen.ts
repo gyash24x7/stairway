@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TablesRouteImport } from './routes/tables'
 import { Route as CallbreakIndexRouteImport } from './routes/callbreak/index'
 import { Route as FishIndexRouteImport } from './routes/fish/index'
 import { Route as FishGameIdRouteImport } from './routes/fish/$gameId'
@@ -32,6 +33,11 @@ import { Route as SplendorGameIdCouchRouteImport } from './routes/splendor/$game
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TablesRoute = TablesRouteImport.update({
+  id: '/tables',
+  path: '/tables',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CallbreakIndexRoute = CallbreakIndexRouteImport.update({
@@ -130,6 +136,7 @@ const SplendorGameIdCouchRoute = SplendorGameIdCouchRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/tables': typeof TablesRoute
   '/fish/$gameId': typeof FishGameIdRoute
   '/tictactoe/$gameId': typeof TictactoeGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/tables': typeof TablesRoute
   '/fish/$gameId': typeof FishGameIdRoute
   '/tictactoe/$gameId': typeof TictactoeGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
@@ -173,6 +181,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/tables': typeof TablesRoute
   '/fish/$gameId': typeof FishGameIdRoute
   '/tictactoe/$gameId': typeof TictactoeGameIdRoute
   '/wordle/$gameId': typeof WordleGameIdRoute
@@ -196,6 +205,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/tables'
     | '/fish/$gameId'
     | '/tictactoe/$gameId'
     | '/wordle/$gameId'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/tables'
     | '/fish/$gameId'
     | '/tictactoe/$gameId'
     | '/wordle/$gameId'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/tables'
     | '/fish/$gameId'
     | '/tictactoe/$gameId'
     | '/wordle/$gameId'
@@ -260,6 +272,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  TablesRoute: typeof TablesRoute
   FishGameIdRoute: typeof FishGameIdRoute
   TictactoeGameIdRoute: typeof TictactoeGameIdRoute
   WordleGameIdRoute: typeof WordleGameIdRoute
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tables': {
+      id: '/tables'
+      path: '/tables'
+      fullPath: '/tables'
+      preLoaderRoute: typeof TablesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/callbreak/': {
@@ -420,6 +440,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  TablesRoute: TablesRoute,
   FishGameIdRoute: FishGameIdRoute,
   TictactoeGameIdRoute: TictactoeGameIdRoute,
   WordleGameIdRoute: WordleGameIdRoute,

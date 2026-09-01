@@ -19,6 +19,7 @@ import type {
 	LedgerEntry,
 	PlayerId,
 	PlayerInfo,
+	TableProjection,
 	TurnTimers
 } from "@/swish/shared/schema.ts";
 
@@ -238,12 +239,38 @@ export class SwishOutbox extends Context.Service<SwishOutbox, {
 
 	/**
 	 * Hands over a finished game.
+	 *
+	 * The projection travels beside the archive rather than being derived from it
+	 * downstream, so that closing a game out writes the table's status through the
+	 * same guarded path every other status write takes.
+	 *
 	 * @param address - The game that completed.
 	 * @param data - The archived game, with its standings on it.
+	 * @param projection - The table as it stood when it finished.
 	 */
 	readonly publishArchive: <V, C extends BaseGameConfig>(
 		address: GameAddress,
-		data: ArchivedGame<V, C>
+		data: ArchivedGame<V, C>,
+		projection: TableProjection
+	) => Effect.Effect<void>;
+
+	/**
+	 * Announces a table whose projection moved — a seat taken, or play beginning.
+	 *
+	 * Separate from {@link publishArchive} because the two carry different things
+	 * and fail differently: losing an archive costs a finished game its record,
+	 * while losing one of these costs a lobby row its freshness until the table's
+	 * next move. Neither is worth holding a command open for.
+	 *
+	 * Never called with a `COMPLETED` projection — that one rides the archive, so
+	 * the status cannot be flipped before the archive it points at has landed.
+	 *
+	 * @param address - The table.
+	 * @param projection - The table as it now stands.
+	 */
+	readonly publishStatus: (
+		address: GameAddress,
+		projection: TableProjection
 	) => Effect.Effect<void>;
 
 }>()( "swish/Outbox" ) {}
@@ -296,9 +323,17 @@ export class SwishDatabase extends Context.Service<SwishDatabase, {
 
 	/**
 	 * Opens a new table, generating its id and its code.
+	 *
+	 * Visibility is set on the insert rather than reported later, because it is
+	 * the one fact about a table that must be true before anybody can read the
+	 * row: everything else arrives over a queue, and a table waiting to be
+	 * described is safely invisible — but a table meant to stay invisible cannot
+	 * be public for even that long.
+	 *
 	 * @param game - Which game this is a table of.
+	 * @param isPrivate - Whether to keep it out of the open-table listing.
 	 */
-	readonly createGame: ( game: string ) => Effect.Effect<GameRef>;
+	readonly createGame: ( game: string, isPrivate: boolean ) => Effect.Effect<GameRef>;
 
 	/**
 	 * Opens the one table that follows a finished one, and *only* one: `rematch_of`
@@ -308,9 +343,14 @@ export class SwishDatabase extends Context.Service<SwishDatabase, {
 	 *
 	 * @param game - Which game this is a table of.
 	 * @param sourceId - The finished game being rematched.
+	 * @param isPrivate - The visibility the finished game had, which the next one keeps.
 	 * @returns The new table, or `undefined` if somebody else already claimed it.
 	 */
-	readonly claimRematch: ( game: string, sourceId: GameId ) => Effect.Effect<GameRef | undefined>;
+	readonly claimRematch: (
+		game: string,
+		sourceId: GameId,
+		isPrivate: boolean
+	) => Effect.Effect<GameRef | undefined>;
 
 	/**
 	 * Seats people at a table. Idempotent — a re-join is a silent no-op for the
@@ -326,9 +366,15 @@ export class SwishDatabase extends Context.Service<SwishDatabase, {
 	) => Effect.Effect<void>;
 
 	/**
-	 * Posts a finished game's result: one line per ranked seat, and the game
-	 * itself marked over. Idempotent, so posting the same completion twice leaves
-	 * the same rows rather than a second set.
+	 * Posts a finished game's result: one line per ranked seat. Idempotent, so
+	 * posting the same completion twice leaves the same rows rather than a second
+	 * set.
+	 *
+	 * Marking the game over is deliberately *not* part of this. That is a status
+	 * write like any other and belongs to {@link syncStatus}, which owns the
+	 * column and the guard protecting it; splitting them is what lets a consumer
+	 * order the three writes a completion needs — archive, then rows, then the
+	 * flag that sends readers to the archive.
 	 *
 	 * @param address - The game that completed.
 	 * @param entries - One line per ranked seat. Empty when the game ranks nobody.
@@ -338,6 +384,23 @@ export class SwishDatabase extends Context.Service<SwishDatabase, {
 		address: GameAddress,
 		entries: ReadonlyArray<LedgerEntry>,
 		completedAt: number
+	) => Effect.Effect<void>;
+
+	/**
+	 * Writes a table's projection — the sole writer of the status column.
+	 *
+	 * The queue delivers at least once and in no particular order, so this keeps
+	 * only what is newer than the row already holds: a redelivery and a message
+	 * overtaken by a later one are the same case, and both are a no-op rather than
+	 * an error. The engine's version is what makes that comparable — see
+	 * {@link TableProjection}.
+	 *
+	 * @param address - The table.
+	 * @param projection - The table as of that version.
+	 */
+	readonly syncStatus: (
+		address: GameAddress,
+		projection: TableProjection
 	) => Effect.Effect<void>;
 
 	/**

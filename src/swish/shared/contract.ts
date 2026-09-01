@@ -1,6 +1,5 @@
+import * as Schema from "effect/Schema";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-
-import type * as Schema from "effect/Schema";
 
 import {
 	AddBotsError,
@@ -23,6 +22,7 @@ import {
 	RematchError,
 	RematchInput,
 	StartError,
+	TableVisibility,
 	UndoError
 } from "@/swish/shared/schema.ts";
 
@@ -51,12 +51,22 @@ export const MoveApiEndpoint =
  * sees a fresh config, so it is the only one that can refuse a set of teams it
  * could never seat.
  *
+ * The payload carries the game's own input under `config`, beside
+ * {@link TableVisibility}. Nesting rather than merging is partly principle and
+ * partly necessity: visibility is a fact about the table and not about the game
+ * played at it, and a create input is not always a struct to merge into —
+ * kingdomino's is a union, because which board sizes are legal depends on how
+ * many are playing.
+ *
+ * Asking here rather than in each game's own input also means no game can
+ * forget: one that omitted the field would silently list every table it created.
+ *
  * @param input - The schema for input required to create this game.
  * @returns The typed create-game endpoint.
  */
 export const CreateGameApiEndpoint = <Input extends Schema.Top>( input: Input ) =>
 	HttpApiEndpoint.post( "createGame", "/create", {
-		payload: input,
+		payload: Schema.Struct( { config: input, ...TableVisibility.fields } ),
 		success: GameRef,
 		error: InitializeError
 	} );

@@ -30,7 +30,7 @@ export const SWEEP_BATCH_SIZE = 100;
  * The periodic pass that gives a finished game's Durable Object back.
  *
  * A completed game is already somewhere else: the outbox filed the whole thing
- * in the archive, and only then flipped `games.completed` — which is what sends
+ * in the archive, and only then moved `games.status` to `COMPLETED` — which is what sends
  * a reader to the archive rather than to the object. So from that flip onward
  * the object's commit log, checkpoints and materialized record are a second copy
  * nobody reads, and the storage they occupy is the only thing they cost. This

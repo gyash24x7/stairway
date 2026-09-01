@@ -9,6 +9,7 @@ import { RadioSelect } from "@/shared/ui/primitives/radio-select.tsx";
 import { CreateGame } from "@/swish/client/create-game.tsx";
 
 import type { BookType, TeamCount } from "@/games/fish/shared/schema.ts";
+import type { TableVisibility } from "@/swish/shared/schema.ts";
 
 /**
  * The lobby. Only three things are the client's say — seats, variant and how many
@@ -34,8 +35,10 @@ export function FishCreateGame() {
 		}
 	};
 
-	const createFishGame = () =>
-		fishApi.createGame( { playerCount: playerCount!, type: bookType, teamCount: teamCount! } );
+	const createFishGame = ( visibility: TableVisibility ) => fishApi.createGame( {
+		config: { playerCount: playerCount!, type: bookType, teamCount: teamCount! },
+		...visibility
+	} );
 
 	return (
 		<CreateGame

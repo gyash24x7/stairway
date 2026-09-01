@@ -14,6 +14,7 @@ import { cn } from "@/shared/ui/utils/cn.ts";
 import { CreateGame } from "@/swish/client/create-game.tsx";
 
 import type { WordLength } from "@/games/wordle/shared/schema.ts";
+import type { TableVisibility } from "@/swish/shared/schema.ts";
 
 /** The seat counts the lobby offers. One is solitaire; the rest are duels. */
 const PLAYER_COUNTS = [ 1, 2, 3, 4, 6, WORDLE_MAX_PLAYER_COUNT ] as const;
@@ -60,7 +61,10 @@ export function WordleCreateGame() {
 	const [ wordLength, setWordLength ] = useState<WordLength>( 5 );
 	const [ wordCount, setWordCount ] = useState( 1 );
 
-	const createWordleGame = () => wordleApi.createGame( { playerCount, wordCount, wordLength } );
+	const createWordleGame = ( visibility: TableVisibility ) => wordleApi.createGame( {
+		config: { playerCount, wordCount, wordLength },
+		...visibility
+	} );
 
 	return (
 		<CreateGame game={ "wordle" } createGame={ createWordleGame }>

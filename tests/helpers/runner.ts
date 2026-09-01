@@ -2,6 +2,8 @@ import { TestHost } from "@tests/helpers/host.ts";
 import * as Clock from "effect/Clock";
 import * as Effect from "effect/Effect";
 
+import type { PublishedStatus } from "@tests/helpers/host.ts";
+
 import { GameCode, GameId } from "@/swish/shared/schema.ts";
 
 import type { UserId } from "@/auth/shared/schema.ts";
@@ -49,12 +51,13 @@ const clockReading = ( now: () => number ) => {
 };
 
 /**
- * What a test may reach into after a run: the store, the archives the outbox
- * received and the fan-out.
+ * What a test may reach into after a run: the store, the archives and status
+ * projections the outbox received, and the fan-out.
  */
 export type RunCollectors = {
 	readonly cells: Map<string, unknown>;
 	readonly saved: Map<string, unknown>;
+	readonly statuses: Array<PublishedStatus>;
 	readonly published: Array<unknown>;
 };
 
@@ -80,12 +83,14 @@ export const runGame = <Engine, A, E>(
 		readonly now?: () => number;
 		readonly cells?: Map<string, unknown>;
 		readonly saved?: Map<string, unknown>;
+		readonly statuses?: Array<PublishedStatus>;
 		readonly published?: Array<unknown>;
 		readonly pending?: Map<string, number>;
 	} = {}
 ) => {
 	const cells = options.cells ?? new Map<string, unknown>();
 	const saved = options.saved ?? new Map<string, unknown>();
+	const statuses = options.statuses ?? [];
 	const published = options.published ?? [];
 	const pending = options.pending ?? new Map<string, number>();
 	const now = options.now ?? ( () => Date.now() );
@@ -93,11 +98,11 @@ export const runGame = <Engine, A, E>(
 	const program = Effect.gen( function* () {
 		return yield* body( yield* engine );
 	} ).pipe(
-		Effect.provide( TestHost( { cells, saved, published, pending, now } ) ),
+		Effect.provide( TestHost( { cells, saved, statuses, published, pending, now } ) ),
 		Effect.provideService( Clock.Clock, clockReading( now ) )
 	);
 
-	return { result: Effect.runSync( program ), cells, saved, published, pending };
+	return { result: Effect.runSync( program ), cells, saved, statuses, published, pending };
 };
 
 /**
