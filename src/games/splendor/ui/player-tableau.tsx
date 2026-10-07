@@ -1,0 +1,89 @@
+import { cn } from "cn";
+import { motion } from "framer-motion";
+
+import type { Card, Noble as NobleType } from "@/games/splendor/schema";
+import { RNoble } from "@/games/splendor/ui/noble";
+import { gemLightColors } from "@/games/splendor/ui/utils";
+import { GEMS } from "@/games/splendor/utils";
+import type { PlayerInfo as PlayerInfoType } from "@/swish/schema";
+import { RPlayerInfoStrip } from "@/swish/ui/player-info";
+
+
+export type PlayerTableauProps = {
+	player: PlayerInfoType;
+	cards: ReadonlyArray<Card>;
+	nobles: ReadonlyArray<NobleType>;
+	large?: boolean;
+};
+
+/**
+ * One player's development-card tableau, laid out face-up beneath a strip naming
+ * whose it is. The gem counters on `PlayerInfo` only report *how many* of each
+ * colour a player holds; this is the end-of-game reveal of exactly which cards
+ * built that engine.
+ *
+ * Cards are grouped by the bonus gem they discount and then ordered cheapest
+ * level first, so every seat's tableau reads the same way regardless of the order
+ * the cards were actually bought.
+ */
+export function PlayerTableau( { player, cards, nobles, large }: PlayerTableauProps ) {
+	return (
+		<div className={ cn( "flex flex-col bg-background rounded-md overflow-hidden" ) }>
+			<div className={ "flex items-center justify-between gap-2 p-2 bg-accent" }>
+				<RPlayerInfoStrip player={ player }/>
+				<span className={ "text-sm md:text-base font-heading text-neutral-dark pr-1" }>
+					{ cards.length } { cards.length === 1 ? "CARD" : "CARDS" }
+				</span>
+			</div>
+			{ cards.length > 0 ? (
+				<div className={ "flex flex-wrap gap-2 md:gap-3 justify-center p-4" }>
+					{ GEMS.map( gem => {
+						const count = cards.filter( c => c.bonus === gem ).length;
+
+						return (
+							<motion.div
+								key={ `${ gem }-${ count }` }
+								animate={ { scale: [ 1, 1.2, 1 ] } }
+								transition={ { duration: 0.45 } }
+								className={ cn(
+									// Bigger than the old 8x12 chip: this is the end-of-game
+									// reveal of a seat's engine, not a status dot.
+									"w-14 h-20 md:w-16 md:h-24 p-1.5 shrink-0",
+									"flex flex-col rounded-md items-center justify-center gap-1",
+									"border-2 border-outline",
+									"text-2xl md:text-3xl font-heading text-neutral-dark",
+									large && "w-20 h-30 md:w-20 md:h-30 text-5xl gap-2 rounded-lg",
+									gemLightColors[ gem ]
+								) }
+							>
+								<img
+									src={ `/splendor/tokens/${ gem }.svg` }
+									alt={ gem }
+									className={
+										cn(
+											"w-8 h-8 md:w-10 md:h-10",
+											large && "md:w-14 md:h-14"
+										) }
+								/>
+								<span>{ count }</span>
+							</motion.div>
+						);
+					} ) }
+				</div>
+			) : (
+				<div className={ "p-4 text-xs md:text-sm text-center text-muted-foreground" }>
+					NO CARDS PURCHASED
+				</div>
+			) }
+			{ nobles.length > 0 ? (
+				<div className={ "flex flex-wrap gap-2 md:gap-3 justify-center p-4" }>
+					{ nobles.map( noble => <RNoble noble={ noble } key={ noble.id } large={ large }/> ) }
+				</div>
+			) : (
+				<div className={ "p-4 text-xs md:text-sm text-center text-muted-foreground" }>
+					NO NOBLES VISITED
+				</div>
+			) }
+		</div>
+	);
+}

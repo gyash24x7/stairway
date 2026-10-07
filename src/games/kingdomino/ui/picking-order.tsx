@@ -1,0 +1,113 @@
+import { cn } from "cn";
+import { ChevronRightIcon } from "lucide-react";
+import { Fragment } from "react";
+
+import type { KingdominoConfig, KingdominoView } from "@/games/kingdomino/schema";
+import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
+import type { GameView } from "@/swish/schema";
+
+type Game = GameView<KingdominoView, KingdominoConfig>;
+
+export type PickingOrderProps = {
+	data: Game;
+	/** Television sizing — readable from across a room. Used by the couch rail. */
+	large?: boolean;
+	className?: string;
+};
+
+/**
+ * Who picks from the draft, and in what order.
+ *
+ * `selectionOrder` holds one slot per pick rather than one per seat — a two-player
+ * round gives each seat two of the four slots — so this renders the raw sequence
+ * and a seat legitimately appears more than once. The seat currently on the clock
+ * is the slot at `consumed`, exactly how the engine's `resolveNextPlayer` resolves
+ * it, so the highlight can't drift from whose turn it actually is.
+ *
+ * Reads the *board* context, so the same component serves the game page, the
+ * controller and the television — the order is public in Kingdomino.
+ */
+export function PickingOrder( { data, large, className }: PickingOrderProps ) {
+	const order = data.view.selectionOrder;
+	if ( order.length === 0 ) {
+		return null;
+	}
+
+	// The engine advances the picker by counting claimed draft entries. Once the
+	// round's picks are all in, this runs past the end and nothing is highlighted —
+	// which is correct: during PLACE nobody is picking.
+	const consumed = data.view.draft.filter( entry => !!entry.selectedBy ).length;
+
+	return (
+		<div
+			className={ cn(
+				"flex items-center gap-3 bg-background rounded-md p-2 overflow-hidden",
+				large && "gap-5 p-5 rounded-xl",
+				className
+			) }
+		>
+			<p
+				className={ cn(
+					"text-xs tracking-widest text-muted-foreground shrink-0",
+					large && "text-2xl"
+				) }
+			>
+				PICKING<br/>ORDER
+			</p>
+			<div
+				className={ cn(
+					"flex items-center gap-1 flex-1 min-w-0 justify-around",
+					large && "gap-2"
+				) }
+			>
+				{ order.map( ( playerId, index ) => {
+					const player = data.players[ playerId ];
+					const isDone = index < consumed;
+					const isCurrent = index === consumed;
+
+					return (
+						<Fragment key={ `${ playerId }-${ index }` }>
+							{ index > 0 && (
+								<ChevronRightIcon
+									className={ cn(
+										"w-3 h-3 shrink-0 text-foreground/40",
+										large && "w-7 h-7"
+									) }
+								/>
+							) }
+							<div className={ cn( "flex flex-col items-center gap-1 shrink-0" ) }>
+								<div
+									className={ cn(
+										"rounded-full transition-shadow",
+										isCurrent && "ring-4 ring-accent"
+									) }
+								>
+									<Avatar
+										className={ cn(
+											"rounded-full w-8 h-8 border-2 border-transparent",
+											isDone && "opacity-40",
+											isCurrent && "border-accent",
+											large && "w-16 h-16 border-4"
+										) }
+									>
+										<AvatarImage src={ player?.avatar } alt={ "" } className={ "bg-accent" }/>
+									</Avatar>
+								</div>
+								{ large && (
+									<span
+										className={ cn(
+											"text-lg font-heading truncate max-w-24",
+											isDone && "opacity-40"
+										) }
+									>
+										{ player?.name?.split( " " )[ 0 ] }
+									</span>
+								) }
+							</div>
+						</Fragment>
+					);
+				} ) }
+			</div>
+		</div>
+	);
+}

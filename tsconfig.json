@@ -1,0 +1,27 @@
+{
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"extends": [ "@tsconfig/bun", "@tsconfig/strictest" ],
+	"compilerOptions": {
+		"exactOptionalPropertyTypes": false,
+		"allowImportingTsExtensions": true,
+		"moduleResolution": "bundler",
+		"module": "esnext",
+		"target": "esnext",
+		"jsx": "react-jsx",
+		"lib": [ "dom", "dom.iterable", "esnext" ],
+		"types": [ "bun", "vite/client" ],
+		"paths": {
+			"@/*": [ "./src/*.ts", "./src/*.tsx" ],
+			"@tests/*": [ "./tests/*.ts" ]
+		}
+	},
+	"include": [
+		"src",
+		"tests",
+		"vite.config.ts",
+		"vitest.config.ts",
+		"oxlint.config.ts",
+		"drizzle.config.ts"
+	],
+	"exclude": [ "node_modules" ]
+}

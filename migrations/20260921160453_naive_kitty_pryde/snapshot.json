@@ -1,0 +1,1021 @@
+{
+	"version": "8",
+	"dialect": "postgres",
+	"id": "4d23e5fe-cd11-4fab-b449-b0899ea7fe19",
+	"prevIds": [
+		"c1c50a99-4f87-45ee-981b-975e60966f8e"
+	],
+	"ddl": [
+		{
+			"isRlsEnabled": false,
+			"name": "passkeys",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"isRlsEnabled": false,
+			"name": "users",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"isRlsEnabled": false,
+			"name": "game_commits",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"isRlsEnabled": false,
+			"name": "game_players",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"isRlsEnabled": false,
+			"name": "game_spectators",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"isRlsEnabled": false,
+			"name": "games",
+			"entityType": "tables",
+			"schema": "public"
+		},
+		{
+			"type": "uuid",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "uuidv7()",
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "name",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "public_key",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"type": "uuid",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "user_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "credential_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"type": "integer",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "counter",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"type": "uuid",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "uuidv7()",
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "users"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "name",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "users"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "username",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "users"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "avatar",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "users"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "uuidv7()",
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "game_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"type": "timestamp",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "command",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "actor",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "move_type",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"type": "jsonb",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "events",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "uuidv7()",
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "game_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "player_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "name",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "avatar",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "boolean",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "false",
+			"generated": null,
+			"identity": null,
+			"name": "is_bot",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "team",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "team_name",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "integer",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "rank",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "double precision",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "score",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "boolean",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "false",
+			"generated": null,
+			"identity": null,
+			"name": "is_winner",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "uuidv7()",
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "game_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "player_id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "name",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "avatar",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"type": "timestamp",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "now()",
+			"generated": null,
+			"identity": null,
+			"name": "joined_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "uuidv7()",
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "game",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "'CREATED'",
+			"generated": null,
+			"identity": null,
+			"name": "status",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "boolean",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "false",
+			"generated": null,
+			"identity": null,
+			"name": "is_private",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "jsonb",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "config",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "jsonb",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "initial_state",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "rematch_of",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "timestamp",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "completed_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"type": "timestamp",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "now()",
+			"generated": null,
+			"identity": null,
+			"name": "created_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "user_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "passkey_user_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "credential_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "passkey_credential_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "game_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_commits_game_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "game_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_players_game_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "player_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_players_player_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "game_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				},
+				{
+					"value": "player_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_players_game_and_player_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "game_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_spectators_game_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "player_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_spectators_player_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "game_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				},
+				{
+					"value": "player_id",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_spectators_game_and_player_id_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "game",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "game_name_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"nameExplicit": true,
+			"columns": [
+				{
+					"value": "game",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				},
+				{
+					"value": "status",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				},
+				{
+					"value": "created_at",
+					"isExpression": false,
+					"asc": true,
+					"nullsFirst": false,
+					"opclass": null
+				}
+			],
+			"isUnique": false,
+			"where": null,
+			"with": "",
+			"method": "btree",
+			"concurrently": false,
+			"name": "games_open_idx",
+			"entityType": "indexes",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"nameExplicit": false,
+			"columns": [
+				"user_id"
+			],
+			"schemaTo": "public",
+			"tableTo": "users",
+			"columnsTo": [
+				"id"
+			],
+			"onUpdate": "NO ACTION",
+			"onDelete": "CASCADE",
+			"name": "passkeys_user_id_users_id_fkey",
+			"entityType": "fks",
+			"schema": "public",
+			"table": "passkeys"
+		},
+		{
+			"nameExplicit": false,
+			"columns": [
+				"game_id"
+			],
+			"schemaTo": "public",
+			"tableTo": "games",
+			"columnsTo": [
+				"id"
+			],
+			"onUpdate": "NO ACTION",
+			"onDelete": "NO ACTION",
+			"name": "game_commits_game_id_games_id_fkey",
+			"entityType": "fks",
+			"schema": "public",
+			"table": "game_commits"
+		},
+		{
+			"nameExplicit": false,
+			"columns": [
+				"game_id"
+			],
+			"schemaTo": "public",
+			"tableTo": "games",
+			"columnsTo": [
+				"id"
+			],
+			"onUpdate": "NO ACTION",
+			"onDelete": "NO ACTION",
+			"name": "game_players_game_id_games_id_fkey",
+			"entityType": "fks",
+			"schema": "public",
+			"table": "game_players"
+		},
+		{
+			"nameExplicit": false,
+			"columns": [
+				"game_id"
+			],
+			"schemaTo": "public",
+			"tableTo": "games",
+			"columnsTo": [
+				"id"
+			],
+			"onUpdate": "NO ACTION",
+			"onDelete": "NO ACTION",
+			"name": "game_spectators_game_id_games_id_fkey",
+			"entityType": "fks",
+			"schema": "public",
+			"table": "game_spectators"
+		},
+		{
+			"nameExplicit": false,
+			"columns": [
+				"rematch_of"
+			],
+			"schemaTo": "public",
+			"tableTo": "games",
+			"columnsTo": [
+				"id"
+			],
+			"onUpdate": "NO ACTION",
+			"onDelete": "NO ACTION",
+			"name": "games_rematch_of_games_id_fkey",
+			"entityType": "fks",
+			"schema": "public",
+			"table": "games"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "passkeys_pkey",
+			"schema": "public",
+			"table": "passkeys",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "users_pkey",
+			"schema": "public",
+			"table": "users",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "game_commits_pkey",
+			"schema": "public",
+			"table": "game_commits",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "game_players_pkey",
+			"schema": "public",
+			"table": "game_players",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "game_spectators_pkey",
+			"schema": "public",
+			"table": "game_spectators",
+			"entityType": "pks"
+		},
+		{
+			"columns": [
+				"id"
+			],
+			"nameExplicit": false,
+			"name": "games_pkey",
+			"schema": "public",
+			"table": "games",
+			"entityType": "pks"
+		},
+		{
+			"nameExplicit": false,
+			"columns": [
+				"username"
+			],
+			"nullsNotDistinct": false,
+			"name": "users_username_key",
+			"schema": "public",
+			"table": "users",
+			"entityType": "uniques"
+		}
+	],
+	"renames": [ ]
+}
