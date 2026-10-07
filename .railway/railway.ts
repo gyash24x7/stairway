@@ -30,7 +30,8 @@ export default defineRailway( () => {
 			REDIS_URL: cache.env.REDIS_URL,
 			WEBAUTHN_RP_ID: "${{RAILWAY_PUBLIC_DOMAIN}}",
 			WEBAUTHN_RP_ORIGIN: "https://${{RAILWAY_PUBLIC_DOMAIN}}"
-		}
+		},
+		domains: [ { domain: "stairway.yashgupta.me", port: 8080 } ]
 	} );
 
 	return project( "stairway", { resources: [ app, db, cache ] } );
