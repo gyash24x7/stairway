@@ -58,6 +58,7 @@ dist
 
 # Coverage directory used by tools like istanbul
 coverage
+*.lcov
 
 # Temporary files
 *.tmp
@@ -80,3 +81,6 @@ README.md
 
 # Alchemy
 .alchemy
+
+# Scratch drivers (local only)
+scratch
