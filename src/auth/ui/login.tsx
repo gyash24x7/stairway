@@ -98,9 +98,9 @@ export function Login() {
 								onChange={ ( e ) => setName( e.target.value ) }
 								placeholder={ "Enter your name" }
 							/>
-							<label>Email</label>
+							<label>Username</label>
 							<Input
-								type={ "email" }
+								type={ "text" }
 								autoComplete={ "username webauthn" }
 								value={ username }
 								onChange={ ( e ) => setUsername( e.target.value ) }

@@ -13,11 +13,6 @@ import { defineRailway, github, postgres, project, redis, service } from "railwa
  * resolve against it.
  */
 export default defineRailway( () => {
-
-	/**
-	 * Railway's Postgres template is Postgres 18, which the migrations need:
-	 * `uuidv7()` is a built-in from 18 on.
-	 */
 	const db = postgres( "postgres" );
 	const cache = redis( "redis" );
 
@@ -25,31 +20,14 @@ export default defineRailway( () => {
 		source: github( "gyash24x7/stairway", { branch: "main", checkSuites: true } ),
 		build: "bun run build",
 		start: "bun run start",
-
-		/**
-		 * drizzle-kit is a dev dependency. Railpack keeps those unless
-		 * RAILPACK_PRUNE_DEPS is set, and under Bun it migrates over Bun's own
-		 * SQL client, so no separate driver is installed.
-		 */
 		preDeploy: "bun run db:migrate",
 		healthcheck: "/api/health/check",
 		healthcheckTimeout: 120,
-
-		/**
-		 * One, always. The engine runs on `SingleRunner`, so a second replica
-		 * would be a second owner of the same game entities.
-		 */
 		replicas: 1,
 		env: {
 			PORT: "8080",
 			DATABASE_URL: db.env.DATABASE_URL,
 			REDIS_URL: cache.env.REDIS_URL,
-
-			/**
-			 * Passkeys are bound to the domain they were registered on. Moving to a
-			 * custom domain means setting both of these to it, and the passkeys made
-			 * on the old one stop working.
-			 */
 			WEBAUTHN_RP_ID: "${{RAILWAY_PUBLIC_DOMAIN}}",
 			WEBAUTHN_RP_ORIGIN: "https://${{RAILWAY_PUBLIC_DOMAIN}}"
 		}
