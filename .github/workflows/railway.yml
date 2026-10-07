@@ -1,0 +1,61 @@
+name: Railway config
+
+# Plans .railway/ on every pull request that touches it, and applies exactly
+# that reviewed plan when the pull request merges. Merge does not re-plan: if
+# the environment drifted or .railway/ changed since the plan, apply fails and
+# the pull request needs a fresh plan (push to it, or close and reopen it).
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, closed ]
+    paths: [ ".railway/**" ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  # Lets the plan comment post as the Railway bot rather than github-actions.
+  id-token: write
+
+jobs:
+  plan:
+    name: Plan
+    if: github.event.action != 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: railway-plan-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v4
+
+      # The action installs dependencies with `npm install`, which cannot resolve
+      # this Bun project's tree (typescript 7 against @typescript-eslint's peer
+      # range). The authoring file imports nothing but the Railway SDK, so hand
+      # the action a package.json declaring only that, at the version pinned in
+      # the real one. Never committed; it lives only in this job's checkout.
+      - name: Reduce package.json to the Railway SDK
+        run: |
+          jq '{ private, type, devDependencies: { railway: .devDependencies.railway } }' package.json > package.railway.json
+          mv package.railway.json package.json
+
+      - uses: railwayapp/config@v1
+        with:
+          command: plan
+          railway-token: ${{ secrets.RAILWAY_TOKEN }}
+
+  apply:
+    name: Apply
+    if: github.event.action == 'closed' && github.event.pull_request.merged && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    # Applies run one at a time and are never cancelled midway.
+    concurrency:
+      group: railway-apply
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - uses: railwayapp/config@v1
+        with:
+          command: apply
+          railway-token: ${{ secrets.RAILWAY_TOKEN }}
