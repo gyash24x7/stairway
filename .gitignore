@@ -58,6 +58,7 @@ dist
 
 # Coverage directory used by tools like istanbul
 coverage
+*.lcov
 
 # Temporary files
 *.tmp
@@ -75,3 +76,11 @@ coverage
 # Claude
 .claude
 CLAUDE.md
+IMPROVEMENTS.md
+README.md
+
+# Alchemy
+.alchemy
+
+# Scratch drivers (local only)
+scratch

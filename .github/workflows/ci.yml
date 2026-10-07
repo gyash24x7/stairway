@@ -2,36 +2,54 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    types: [ opened, synchronize ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build and Test
-    timeout-minutes: 15
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          fetch-depth: 2
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
 
-      - uses: pnpm/action-setup@v3
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          version: 11
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
 
-      - name: Setup Node.js environment
-        uses: actions/setup-node@v4
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 24
-          cache: 'pnpm'
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - run: bun run test
 
-      - name: Install dependencies
-        run: pnpm i
-
-      - name: Build
-        run: pnpm build
-
-      - name: Test
-        run: pnpm test
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+      - run: bun run build
