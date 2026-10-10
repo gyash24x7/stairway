@@ -12,10 +12,12 @@ import { callbreakLiveViewAtom, joinGameAtom, spectateGameAtom } from "@/games/c
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { GameId, PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 import { JoinGame } from "@/swish/ui/join-game";
 
 
 function CallbreakJoinInvite( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = callbreakLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -31,7 +33,7 @@ function CallbreakJoinInvite( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this invite" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO CALLBREAK", to: "/callbreak" } }
+				action={ { label: "BACK TO CALLBREAK", to: path( "callbreak" ) } }
 			/>
 		);
 	}
@@ -64,6 +66,7 @@ function CallbreakJoinInvite( { gameId }: { gameId: string } ) {
  * client is in `JoinGame`.
  */
 export function CallbreakJoinPage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -73,7 +76,7 @@ export function CallbreakJoinPage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/callbreak" } }
+						action={ { label: "BACK", to: path( "callbreak" ) } }
 					/>
 				) }
 		</RequireSession>

@@ -13,9 +13,11 @@ import { FishGameView } from "@/games/fish/ui/game-view";
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 
 
 function FishBoard( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = fishLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -34,7 +36,7 @@ function FishBoard( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this table" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO FISH", to: "/fish" } }
+				action={ { label: "BACK TO FISH", to: path( "fish" ) } }
 			/>
 		);
 	}
@@ -52,7 +54,7 @@ function FishBoard( { gameId }: { gameId: string } ) {
 			<ErrorState
 				title={ "You don't have a seat in this game" }
 				message={ "This game is already under way, but you can still watch it." }
-				action={ { label: "WATCH THIS GAME", to: `/fish/${ gameId }/join` } }
+				action={ { label: "WATCH THIS GAME", to: path( "fish", gameId, "join" ) } }
 			/>
 		);
 	}
@@ -61,6 +63,7 @@ function FishBoard( { gameId }: { gameId: string } ) {
 }
 
 export function FishGamePage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -68,7 +71,7 @@ export function FishGamePage() {
 			{ gameId
 				? <FishBoard gameId={ gameId }/>
 				: <ErrorState message={ "No game was named." }
-											action={ { label: "BACK", to: "/fish" } }/> }
+											action={ { label: "BACK", to: path( "fish" ) } }/> }
 		</RequireSession>
 	);
 }

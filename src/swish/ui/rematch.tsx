@@ -14,6 +14,7 @@ import { Spinner } from "@/shared/primitives/spinner";
 import { causeMessage } from "@/shared/shell/errors";
 import type { GameId, GameRef, GameStatus } from "@/swish/schema";
 import { RematchInput } from "@/swish/schema";
+import { useGameBasePath } from "@/swish/ui/game-path";
 
 
 /**
@@ -25,8 +26,8 @@ import { RematchInput } from "@/swish/schema";
  */
 export type RematchSurface = "page" | "controller" | "couch";
 
-export const rematchPath = ( game: string, gameId: GameId, surface: RematchSurface ) =>
-	surface === "page" ? `/${ game }/${ gameId }` : `/${ game }/${ gameId }/${ surface }`;
+export const rematchPath = ( game: string, gameId: GameId, surface: RematchSurface, base = "" ) =>
+	surface === "page" ? `${ base }/${ game }/${ gameId }` : `/${ game }/${ gameId }/${ surface }`;
 
 /**
  * What every rematch atom is asked for: the finished table, and whether the
@@ -85,13 +86,14 @@ const useFollowRematch = (
 	enabled = true
 ) => {
 	const navigate = useNavigate();
+	const base = useGameBasePath();
 	const nextId = rematch?.gameId;
 
 	useEffect( () => {
 		if ( enabled && nextId ) {
-			void navigate( rematchPath( game, nextId, surface ), { replace: true } );
+			void navigate( rematchPath( game, nextId, surface, base ), { replace: true } );
 		}
-	}, [ enabled, game, navigate, nextId, surface ] );
+	}, [ base, enabled, game, navigate, nextId, surface ] );
 };
 
 /**
@@ -118,6 +120,7 @@ export function RematchPanel<E>( props: RematchPanelProps<E> ) {
 	const surface = props.surface ?? "page";
 
 	const navigate = useNavigate();
+	const base = useGameBasePath();
 	const ask = useAtomSet( rematchAtom, { mode: "promiseExit" } );
 	const asking = useAtomValue( rematchAtom ).waiting;
 
@@ -144,7 +147,7 @@ export function RematchPanel<E>( props: RematchPanelProps<E> ) {
 			return;
 		}
 
-		void navigate( rematchPath( game, exit.value.gameId, surface ), { replace: true } );
+		void navigate( rematchPath( game, exit.value.gameId, surface, base ), { replace: true } );
 	} );
 
 	return (
@@ -172,7 +175,7 @@ export function RematchPanel<E>( props: RematchPanelProps<E> ) {
 							   * for — the table itself turns away anybody who is neither seated
 							   * nor watching.
 							   */ }
-							<Link to={ `/${ game }/${ rematch.gameId }/join` }>
+							<Link to={ `${ base }/${ game }/${ rematch.gameId }/join` }>
 								<Button>WATCH THE REMATCH</Button>
 							</Link>
 						</>

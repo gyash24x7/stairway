@@ -52,6 +52,8 @@ import { LobbyApi } from "@/lobby/contract";
 import { LobbyApiLive } from "@/lobby/server/handlers";
 import { DatabaseLive } from "@/shared/utils/database";
 import { GeneratorLive } from "@/shared/utils/generator";
+import { WorldPresenceLive } from "@/world/server/presence";
+import { WorldSocketRoute } from "@/world/server/socket";
 
 
 const HealthCheckEndpoint = HttpApiEndpoint.get( "healthCheck", "/check", {
@@ -127,6 +129,20 @@ const HttpApiLive = StairwayApiLive.pipe(
 	Layer.provide( BunServices.layer )
 );
 
+/**
+ * The world's WebSocket sits on the router beside the `HttpApi` rather than
+ * inside it — see `WorldSocketRoute`. It is given the same `PersistenceLive`
+ * and `RedisLive` values as the API, and layers are memoised by reference, so
+ * both share one Redis connection and read the same sessions.
+ */
+const WorldSocketLive = WorldSocketRoute.pipe(
+	Layer.provide( WorldPresenceLive ),
+	Layer.provide( SessionServiceLive ),
+	Layer.provide( PersistenceLive ),
+	Layer.provide( RedisLive ),
+	Layer.provide( BunServices.layer )
+);
+
 const DIST = fileURLToPath( new URL( "../dist", import.meta.url ) );
 
 const SpaLive = HttpStaticServer.layer( {
@@ -146,8 +162,7 @@ const BunServerLive = BunHttpServer.layerConfig( {
 	idleTimeout: Config.succeed( 60 )
 } );
 
-const ServerLive = HttpRouter.serve( Layer.mergeAll( HttpApiLive, SpaLive, AssetsLive ) ).pipe(
-	Layer.provide( BunServerLive )
-);
+const ApiLive = Layer.mergeAll( HttpApiLive, WorldSocketLive, SpaLive, AssetsLive );
+const ServerLive = HttpRouter.serve( ApiLive ).pipe( Layer.provide( BunServerLive ) );
 
 Layer.launch( ServerLive ).pipe( BunRuntime.runMain );

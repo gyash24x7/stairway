@@ -13,9 +13,11 @@ import { CoupGameView } from "@/games/coup/ui/game-view";
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 
 
 function CoupBoard( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = coupLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -33,7 +35,7 @@ function CoupBoard( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this table" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO COUP", to: "/coup" } }
+				action={ { label: "BACK TO COUP", to: path( "coup" ) } }
 			/>
 		);
 	}
@@ -51,7 +53,7 @@ function CoupBoard( { gameId }: { gameId: string } ) {
 			<ErrorState
 				title={ "You don't have a seat in this game" }
 				message={ "This game is already under way, but you can still watch it." }
-				action={ { label: "WATCH THIS GAME", to: `/coup/${ gameId }/join` } }
+				action={ { label: "WATCH THIS GAME", to: path( "coup", gameId, "join" ) } }
 			/>
 		);
 	}
@@ -60,6 +62,7 @@ function CoupBoard( { gameId }: { gameId: string } ) {
 }
 
 export function CoupGamePage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -69,7 +72,7 @@ export function CoupGamePage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/coup" } }
+						action={ { label: "BACK", to: path( "coup" ) } }
 					/>
 				) }
 		</RequireSession>

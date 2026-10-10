@@ -12,10 +12,12 @@ import { coupLiveViewAtom, joinGameAtom, spectateGameAtom } from "@/games/coup/u
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { GameId, PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 import { JoinGame } from "@/swish/ui/join-game";
 
 
 function CoupJoinInvite( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = coupLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -31,7 +33,7 @@ function CoupJoinInvite( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this invite" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO COUP", to: "/coup" } }
+				action={ { label: "BACK TO COUP", to: path( "coup" ) } }
 			/>
 		);
 	}
@@ -64,6 +66,7 @@ function CoupJoinInvite( { gameId }: { gameId: string } ) {
  * client is in `JoinGame`.
  */
 export function CoupJoinPage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -73,7 +76,7 @@ export function CoupJoinPage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/coup" } }
+						action={ { label: "BACK", to: path( "coup" ) } }
 					/>
 				) }
 		</RequireSession>

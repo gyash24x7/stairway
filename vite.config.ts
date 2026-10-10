@@ -19,7 +19,8 @@ export default defineConfig( ( { mode } ) => ( {
 		proxy: {
 			"/api": {
 				target: `http://localhost:${ loadEnv( mode, process.cwd(), "" )[ "PORT" ] }`,
-				changeOrigin: true
+				changeOrigin: true,
+				ws: true
 			}
 		}
 	}

@@ -16,10 +16,12 @@ import {
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { GameId, PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 import { JoinGame } from "@/swish/ui/join-game";
 
 
 function KingdominoJoinInvite( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = kingdominoLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -35,7 +37,7 @@ function KingdominoJoinInvite( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this invite" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO KINGDOMINO", to: "/kingdomino" } }
+				action={ { label: "BACK TO KINGDOMINO", to: path( "kingdomino" ) } }
 			/>
 		);
 	}
@@ -68,6 +70,7 @@ function KingdominoJoinInvite( { gameId }: { gameId: string } ) {
  * client is in `JoinGame`.
  */
 export function KingdominoJoinPage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -77,7 +80,7 @@ export function KingdominoJoinPage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/kingdomino" } }
+						action={ { label: "BACK", to: path( "kingdomino" ) } }
 					/>
 				) }
 		</RequireSession>

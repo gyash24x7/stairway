@@ -13,9 +13,11 @@ import { CallbreakGameView } from "@/games/callbreak/ui/game-view";
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 
 
 function CallbreakBoard( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = callbreakLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -34,7 +36,7 @@ function CallbreakBoard( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this table" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO CALLBREAK", to: "/callbreak" } }
+				action={ { label: "BACK TO CALLBREAK", to: path( "callbreak" ) } }
 			/>
 		);
 	}
@@ -49,6 +51,7 @@ function CallbreakBoard( { gameId }: { gameId: string } ) {
 }
 
 export function CallbreakGamePage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -56,7 +59,7 @@ export function CallbreakGamePage() {
 			{ gameId
 				? <CallbreakBoard gameId={ gameId }/>
 				: <ErrorState message={ "No game was named." }
-											action={ { label: "BACK", to: "/callbreak" } }/> }
+											action={ { label: "BACK", to: path( "callbreak" ) } }/> }
 		</RequireSession>
 	);
 }

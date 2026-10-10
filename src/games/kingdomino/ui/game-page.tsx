@@ -11,8 +11,10 @@ import { kingdominoLiveViewAtom } from "@/games/kingdomino/ui/client";
 import { KingdominoGameView } from "@/games/kingdomino/ui/game-view";
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
+import { useGamePath } from "@/swish/ui/game-path";
 
 function KingdominoBoard( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = kingdominoLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -30,7 +32,7 @@ function KingdominoBoard( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this table" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO KINGDOMINO", to: "/kingdomino" } }
+				action={ { label: "BACK TO KINGDOMINO", to: path( "kingdomino" ) } }
 			/>
 		);
 	}
@@ -43,6 +45,7 @@ function KingdominoBoard( { gameId }: { gameId: string } ) {
 }
 
 export function KingdominoGamePage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -50,7 +53,7 @@ export function KingdominoGamePage() {
 			{ gameId
 				? <KingdominoBoard gameId={ gameId }/>
 				: <ErrorState message={ "No game was named." }
-											action={ { label: "BACK", to: "/kingdomino" } }/> }
+											action={ { label: "BACK", to: path( "kingdomino" ) } }/> }
 		</RequireSession>
 	);
 }
