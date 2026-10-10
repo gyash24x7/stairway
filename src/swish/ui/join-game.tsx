@@ -15,6 +15,7 @@ import {
 import { toast } from "@/shared/primitives/sonner";
 import { causeMessage } from "@/shared/shell/errors";
 import type { GameId, GameStatus, PlayerInfo } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 import { PlayerLobbyGrid } from "@/swish/ui/player-lobby";
 
 
@@ -73,11 +74,12 @@ export function JoinGame( props: JoinGameProps ) {
 	const { game, gameId, seated, playerCount, status, isMember, onJoin, onSpectate } = props;
 
 	const navigate = useNavigate();
+	const path = useGamePath();
 	const [ isPending, startTransition ] = useTransition();
 	const [ open, setOpen ] = useState( true );
 
-	const table = `/${ game }/${ gameId }`;
-	const home = `/${ game }`;
+	const table = path( game, gameId );
+	const home = path( game );
 	const joinable = status === "CREATED";
 
 	// Watching outlives joining by the whole length of the game, which is the

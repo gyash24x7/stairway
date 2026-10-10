@@ -13,9 +13,11 @@ import { SplendorGameView } from "@/games/splendor/ui/game-view";
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 
 
 function SplendorBoard( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = splendorLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -34,7 +36,7 @@ function SplendorBoard( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this table" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO SPLENDOR", to: "/splendor" } }
+				action={ { label: "BACK TO SPLENDOR", to: path( "splendor" ) } }
 			/>
 		);
 	}
@@ -52,7 +54,7 @@ function SplendorBoard( { gameId }: { gameId: string } ) {
 			<ErrorState
 				title={ "You don't have a seat in this game" }
 				message={ "This game is already under way, but you can still watch it." }
-				action={ { label: "WATCH THIS GAME", to: `/splendor/${ gameId }/join` } }
+				action={ { label: "WATCH THIS GAME", to: path( "splendor", gameId, "join" ) } }
 			/>
 		);
 	}
@@ -61,6 +63,7 @@ function SplendorBoard( { gameId }: { gameId: string } ) {
 }
 
 export function SplendorGamePage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -70,7 +73,7 @@ export function SplendorGamePage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/splendor" } }
+						action={ { label: "BACK", to: path( "splendor" ) } }
 					/>
 				) }
 		</RequireSession>

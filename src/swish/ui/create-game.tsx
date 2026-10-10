@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import { Button } from "@/shared/primitives/button";
 import { RadioSelect } from "@/shared/primitives/radio-select";
 import type { GameRef } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 
 
 const VISIBILITIES = [ "OPEN", "PRIVATE" ] as const;
@@ -38,19 +39,15 @@ type CreateGameProps = {
  * does not know which game it is opening: each game builds its own payload, and
  * this is the one field all seven share.
  */
-export function CreateGame( {
-	game,
-	disabled,
-	createGame,
-	children
-}: CreateGameProps ) {
+export function CreateGame( { game, disabled, createGame, children }: CreateGameProps ) {
 	const navigate = useNavigate();
+	const path = useGamePath();
 	const [ isPending, startTransition ] = useTransition();
 	const [ visibility, setVisibility ] = useState<Visibility>( "OPEN" );
 
 	const handleCreate = () => startTransition( async () => {
 		const ref = await createGame( { isPrivate: visibility === "PRIVATE" } );
-		void navigate( `/${ game }/${ ref.gameId }` );
+		void navigate( path( game, ref.gameId ) );
 	} );
 
 

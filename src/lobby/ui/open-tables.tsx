@@ -15,6 +15,7 @@ import { Button } from "@/shared/primitives/button";
 import { Spinner } from "@/shared/primitives/spinner";
 import { errorMessage } from "@/shared/shell/errors";
 import { PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 import { RPlayerInfoSmall } from "@/swish/ui/player-info";
 
 
@@ -25,8 +26,6 @@ export type OpenTablesProps = {
 };
 
 /** The link that both the shared invite and this button point at. */
-const joinLink = ( game: string, gameId: string ) => `/${ game }/${ gameId }/join`;
-const tableLink = ( game: string, gameId: string ) => `/${ game }/${ gameId }`;
 
 type OpenTableRowProps = {
 	table: OpenTable;
@@ -49,6 +48,7 @@ type OpenTableRowProps = {
  * page would only bounce them off its "you are already here" redirect.
  */
 function OpenTableRow( { table, showGame, mine }: OpenTableRowProps ) {
+	const path = useGamePath();
 	return (
 		<li
 			className={ cn(
@@ -74,8 +74,8 @@ function OpenTableRow( { table, showGame, mine }: OpenTableRowProps ) {
 			</div>
 			<Link
 				to={ mine
-					? tableLink( table.game, table.gameId )
-					: joinLink( table.game, table.gameId ) }
+					? path( table.game, table.gameId )
+					: path( table.game, table.gameId, "join" ) }
 				className={ "ml-auto" }
 			>
 				<Button size={ "sm" } variant={ mine ? "neutral" : "default" }>

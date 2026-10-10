@@ -12,10 +12,12 @@ import { fishLiveViewAtom, joinGameAtom, spectateGameAtom } from "@/games/fish/u
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { GameId, PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 import { JoinGame } from "@/swish/ui/join-game";
 
 
 function FishJoinInvite( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = fishLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -31,7 +33,7 @@ function FishJoinInvite( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this invite" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO FISH", to: "/fish" } }
+				action={ { label: "BACK TO FISH", to: path( "fish" ) } }
 			/>
 		);
 	}
@@ -64,6 +66,7 @@ function FishJoinInvite( { gameId }: { gameId: string } ) {
  * client is in `JoinGame`.
  */
 export function FishJoinPage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -73,7 +76,7 @@ export function FishJoinPage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/fish" } }
+						action={ { label: "BACK", to: path( "fish" ) } }
 					/>
 				) }
 		</RequireSession>

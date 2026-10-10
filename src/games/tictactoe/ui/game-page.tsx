@@ -13,9 +13,11 @@ import { TicTacToeGameView } from "@/games/tictactoe/ui/game-view";
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 
 
 function TicTacToeBoard( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = tictactoeLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -37,7 +39,7 @@ function TicTacToeBoard( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this table" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO TICTACTOE", to: "/tictactoe" } }
+				action={ { label: "BACK TO TICTACTOE", to: path( "tictactoe" ) } }
 			/>
 		);
 	}
@@ -55,7 +57,7 @@ function TicTacToeBoard( { gameId }: { gameId: string } ) {
 			<ErrorState
 				title={ "You don't have a seat in this game" }
 				message={ "This game is already under way, but you can still watch it." }
-				action={ { label: "WATCH THIS GAME", to: `/tictactoe/${ gameId }/join` } }
+				action={ { label: "WATCH THIS GAME", to: path( "tictactoe", gameId, "join" ) } }
 			/>
 		);
 	}
@@ -64,6 +66,7 @@ function TicTacToeBoard( { gameId }: { gameId: string } ) {
 }
 
 export function TicTacToeGamePage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -73,7 +76,7 @@ export function TicTacToeGamePage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/tictactoe" } }
+						action={ { label: "BACK", to: path( "tictactoe" ) } }
 					/>
 				) }
 		</RequireSession>

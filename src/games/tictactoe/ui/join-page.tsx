@@ -12,10 +12,12 @@ import { joinGameAtom, spectateGameAtom, tictactoeLiveViewAtom } from "@/games/t
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { GameId, PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 import { JoinGame } from "@/swish/ui/join-game";
 
 
 function TicTacToeJoinInvite( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = tictactoeLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -31,7 +33,7 @@ function TicTacToeJoinInvite( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this invite" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO TICTACTOE", to: "/tictactoe" } }
+				action={ { label: "BACK TO TICTACTOE", to: path( "tictactoe" ) } }
 			/>
 		);
 	}
@@ -64,6 +66,7 @@ function TicTacToeJoinInvite( { gameId }: { gameId: string } ) {
  * client is in `JoinGame`.
  */
 export function TicTacToeJoinPage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -73,7 +76,7 @@ export function TicTacToeJoinPage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/tictactoe" } }
+						action={ { label: "BACK", to: path( "tictactoe" ) } }
 					/>
 				) }
 		</RequireSession>

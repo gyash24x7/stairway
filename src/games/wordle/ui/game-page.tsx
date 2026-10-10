@@ -13,9 +13,11 @@ import { WordleGameView } from "@/games/wordle/ui/game-view";
 import { Spinner } from "@/shared/primitives/spinner";
 import { ErrorState } from "@/shared/shell/error-state";
 import { PlayerId } from "@/swish/schema";
+import { useGamePath } from "@/swish/ui/game-path";
 
 
 function WordleBoard( { gameId }: { gameId: string } ) {
+	const path = useGamePath();
 	const viewAtom = wordleLiveViewAtom( gameId );
 	const result = useAtomValue( viewAtom );
 	const refresh = useAtomRefresh( viewAtom );
@@ -33,7 +35,7 @@ function WordleBoard( { gameId }: { gameId: string } ) {
 				title={ "Couldn't open this table" }
 				error={ Option.getOrUndefined( AsyncResult.error( result ) ) }
 				onRetry={ refresh }
-				action={ { label: "BACK TO WORDLE", to: "/wordle" } }
+				action={ { label: "BACK TO WORDLE", to: path( "wordle" ) } }
 			/>
 		);
 	}
@@ -57,7 +59,7 @@ function WordleBoard( { gameId }: { gameId: string } ) {
 			<ErrorState
 				title={ "You don't have a seat in this game" }
 				message={ "This game is already under way, but you can still watch it." }
-				action={ { label: "WATCH THIS GAME", to: `/wordle/${ gameId }/join` } }
+				action={ { label: "WATCH THIS GAME", to: path( "wordle", gameId, "join" ) } }
 			/>
 		);
 	}
@@ -66,6 +68,7 @@ function WordleBoard( { gameId }: { gameId: string } ) {
 }
 
 export function WordleGamePage() {
+	const path = useGamePath();
 	const { gameId } = useParams();
 
 	return (
@@ -75,7 +78,7 @@ export function WordleGamePage() {
 				: (
 					<ErrorState
 						message={ "No game was named." }
-						action={ { label: "BACK", to: "/wordle" } }
+						action={ { label: "BACK", to: path( "wordle" ) } }
 					/>
 				) }
 		</RequireSession>

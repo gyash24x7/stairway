@@ -37,6 +37,7 @@ import { ErrorState } from "@/shared/shell/error-state";
 import { LandingPage } from "@/shared/shell/landing-page";
 import { AppLayout, CouchLayout } from "@/shared/shell/layout";
 import { TablesPage } from "@/shared/shell/tables-page";
+import { WorldGamePage } from "@/world/ui/game-pages";
 
 /**
  * Three games play across two screens, so they carry two extra routes each: a
@@ -53,6 +54,11 @@ import { TablesPage } from "@/shared/shell/tables-page";
  * has no pointer, so the navbar is controls nobody can reach, and its padding
  * fights a canvas that wants the whole viewport. The controller stays under the
  * app shell — a phone does want log-out, theme and a way home.
+ *
+ * `/world` is the walkable arena. Every game's pages are nested under it again,
+ * so a table opened from inside the world shows as an overlay with the world
+ * still running underneath (see `WorldPage`). These are the same components the
+ * classic routes use. `GamePathProvider` keeps their in-app links under `/world`.
  */
 const router = createBrowserRouter( [
 	{
@@ -61,6 +67,17 @@ const router = createBrowserRouter( [
 		children: [
 			{ path: "/", element: <LandingPage/> },
 			{ path: "/tables", element: <TablesPage/> },
+			{
+				path: "/world",
+				// Loaded on demand: Pixi is most of its weight, and nobody who stays on
+				// the classic pages should have to download it.
+				lazy: async () => ( { Component: ( await import( "@/world/ui/world-page" ) ).WorldPage } ),
+				children: [
+					{ path: ":game", element: <WorldGamePage page={ "home" }/> },
+					{ path: ":game/:gameId", element: <WorldGamePage page={ "game" }/> },
+					{ path: ":game/:gameId/join", element: <WorldGamePage page={ "join" }/> }
+				]
+			},
 
 			{ path: "/tictactoe", element: <TicTacToeHomePage/> },
 			{ path: "/tictactoe/:gameId", element: <TicTacToeGamePage/> },
