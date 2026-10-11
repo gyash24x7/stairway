@@ -171,7 +171,7 @@ function parsePayload( data: PushMessageData | null ): Notice {
 		url: "/",
 		tag: "stairway"
 	};
-	
+
 	try {
 		const payload = data?.json() as Partial<Notice> | undefined;
 		return typeof payload?.title === "string" ? { ...fallback, ...payload } : fallback;
