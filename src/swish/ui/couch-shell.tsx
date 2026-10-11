@@ -8,6 +8,7 @@ import { Logo } from "@/shared/shell/logo";
 import type { PlayerId, Roster } from "@/swish/schema";
 import { CouchCanvas } from "@/swish/ui/couch-canvas";
 import { TurnTimer } from "@/swish/ui/turn-timer";
+import { useWakeLock } from "@/swish/ui/wake-lock";
 
 
 export type CouchShellProps = {
@@ -52,6 +53,7 @@ export function CouchShell( {
 	players,
 	notice
 }: CouchShellProps ) {
+	useWakeLock();
 
 	return (
 		<CouchCanvas>

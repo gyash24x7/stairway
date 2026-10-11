@@ -3,6 +3,7 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as FiberHandle from "effect/FiberHandle";
+import * as HashMap from "effect/HashMap";
 import * as HashSet from "effect/HashSet";
 import * as Option from "effect/Option";
 import * as PubSub from "effect/PubSub";
@@ -100,6 +101,7 @@ import {
 } from "@/swish/schema";
 import { Accumulator, foldEvents } from "@/swish/server/events";
 import { makeGameLedger } from "@/swish/server/ledger";
+import { Notifier, pushesFor } from "@/swish/server/notifier";
 import { makeSwishRpcs } from "@/swish/server/rpc";
 import { makeGameStore } from "@/swish/server/store";
 import type { GameStructure } from "@/swish/server/structure";
@@ -335,6 +337,28 @@ export const makeEngine = <
 			const resident = yield* Ref.make( Option.none<LiveGameResident<State, Config, Events>>() );
 
 			/**
+			 * Where the notices a write produces go — see `pushesFor`.
+			 */
+			const notifier = yield* Notifier;
+
+			/**
+			 * How many live subscriptions each player holds to this game.
+			 *
+			 * A push is for somebody who is not looking, and an open subscription is
+			 * the one thing the engine knows about who is: it is what a game page
+			 * holds while it is on screen. A player counted here is left out of every
+			 * notice, which is what keeps a person mid-game from being pinged about the
+			 * move they are looking at. A phone puts a backgrounded page's connection
+			 * to sleep, so the count falls and the push still reaches the person who
+			 * walked away.
+			 *
+			 * In memory, and so per entity per process. Correct under `SingleRunner`,
+			 * where a game lives in exactly one place; a multi-runner deployment would
+			 * still send to the right people, only sometimes to somebody watching too.
+			 */
+			const watchers = yield* Ref.make( HashMap.empty<PlayerId, number>() );
+
+			/**
 			 * The turn clock: at most one fiber, sleeping until the pending seat's
 			 * deadline and then sending this game a `tick`.
 			 *
@@ -500,6 +524,11 @@ export const makeEngine = <
 			 * The clock is armed after the publish, so a subscriber sees the position
 			 * before the next tick can land on it.
 			 *
+			 * The notices are worked out here too (`pushesFor`), from the position
+			 * before and after, for the same reason as the clock: every way a turn can
+			 * reach somebody — a move, a closing window, a timeout, an undo — is a
+			 * write, so diffing the write is the one place none of them can skip.
+			 *
 			 * @param live - The game to write.
 			 * @returns The game as written, stamps and all.
 			 */
@@ -565,6 +594,25 @@ export const makeEngine = <
 				} ) );
 
 				yield* armTimer( next );
+
+				// Forked and detached: a push service being slow, or down, is no reason
+				// for a move to be, and a notice is never worth failing a commit over.
+				const pushes = pushesFor(
+					structure.name,
+					before,
+					next.record,
+					next.document.runtime,
+					Option.getOrUndefined( previous )?.document.runtime
+				);
+				if ( pushes.length > 0 ) {
+					const watching = yield* Ref.get( watchers );
+					const away = pushes.filter(
+						push => Option.getOrElse( HashMap.get( watching, push.playerId ), () => 0 ) === 0
+					);
+					if ( away.length > 0 ) {
+						yield* Effect.forkDetach( notifier.notify( away ) );
+					}
+				}
 
 				if ( next.record.status === "COMPLETED" && before?.status !== "COMPLETED" ) {
 					yield* archiveGame( next ).pipe(
@@ -2172,6 +2220,16 @@ export const makeEngine = <
 				 */
 				subscribe: ( { payload: { playerInfo } } ) => Rpc.fork(
 					Stream.unwrap( Effect.gen( function* () {
+						// Counted for as long as the stream is open — see `watchers`.
+						const adjust = ( delta: number ) => Ref.update( watchers, HashMap.modifyAt(
+							playerInfo.id,
+							count => {
+								const next = Option.getOrElse( count, () => 0 ) + delta;
+								return next > 0 ? Option.some( next ) : Option.none();
+							}
+						) );
+						yield* Effect.acquireRelease( adjust( 1 ), () => adjust( -1 ) );
+
 						const changes = yield* PubSub.subscribe( hub );
 						const opening = yield* viewFor( playerInfo.id );
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { User } from "@/auth/schema";
 import { LogoutButton } from "@/auth/ui/logout-button";
+import { NotificationsToggle } from "@/notifications/ui/toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/primitives/avatar";
 import { Dialog, DialogContent, DialogTrigger } from "@/shared/primitives/dialog";
 
@@ -43,7 +44,8 @@ export function RUser( { user }: { user: User } ) {
 								{ user.name }
 							</h2>
 						</div>
-						<div className={ "flex justify-end" }>
+						<div className={ "flex flex-wrap justify-end items-center gap-2" }>
+							<NotificationsToggle/>
 							<LogoutButton/>
 						</div>
 					</div>

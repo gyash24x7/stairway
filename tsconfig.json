@@ -9,7 +9,7 @@
 		"target": "esnext",
 		"jsx": "react-jsx",
 		"lib": [ "dom", "dom.iterable", "esnext" ],
-		"types": [ "bun", "vite/client" ],
+		"types": [ "bun", "vite/client", "vite-plugin-pwa/react" ],
 		"paths": {
 			"@/*": [ "./src/*.ts", "./src/*.tsx" ],
 			"@tests/*": [ "./tests/*.ts" ]

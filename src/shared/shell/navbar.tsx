@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { Button } from "@/shared/primitives/button";
 import { Separator } from "@/shared/primitives/separator";
 import { Logo } from "@/shared/shell/logo";
+import { InstallButton } from "@/shared/shell/pwa";
 import { ThemeSwitcher } from "@/shared/shell/theme-switcher";
 
 
@@ -43,6 +44,7 @@ export function Navbar( props: { children: ReactNode } ) {
 					>
 						<UsersIcon className={ "w-4 h-4 md:h-6 md:w-6" }/>
 					</Button>
+					<InstallButton/>
 					<Separator orientation={ "vertical" } className={ "h-12" }/>
 					{ props.children }
 					<Separator orientation={ "vertical" } className={ "h-12" }/>

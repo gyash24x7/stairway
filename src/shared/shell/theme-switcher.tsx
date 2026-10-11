@@ -1,5 +1,5 @@
 import { MoonIcon, SunIcon } from "lucide-react";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 
 import { Button } from "@/shared/primitives/button";
 import {
@@ -49,17 +49,40 @@ function readTheme() {
 }
 
 /**
+ * Points the `theme-color` meta at the navbar's background, which is what the
+ * installed app's title bar (and a phone's status bar) sits against. Measured
+ * off a probe rather than read from a token, because the token is a chain of
+ * `var()`s only the browser resolves.
+ */
+function applyThemeColor() {
+	const meta = document.querySelector<HTMLMetaElement>( "meta[name=theme-color]" );
+	if ( !meta ) {
+		return;
+	}
+	const probe = document.createElement( "div" );
+	probe.className = "bg-background";
+	document.body.append( probe );
+	meta.content = getComputedStyle( probe ).backgroundColor;
+	probe.remove();
+}
+
+/**
  * Persists the theme/mode and applies them as body classes.
  */
 function applyTheme( theme: Theme, mode: ThemeMode ) {
 	localStorage.setItem( STORAGE_KEY, `${ theme }-${ mode }` );
 	document.body.classList.remove( ...themes, ...themeModes );
 	document.body.classList.add( theme, mode );
+	applyThemeColor();
 }
 
 
 export function ThemeSwitcher() {
 	const [ { theme, mode }, setState ] = useState( () => readTheme() );
+
+	// The inline script in `index.html` applied the saved theme before React
+	// existed; the title bar is brought in line with it once, here.
+	useEffect( () => applyThemeColor(), [] );
 
 	const handleThemeChange = ( nextTheme: Theme, nextMode: ThemeMode ) => {
 		applyTheme( nextTheme, nextMode );

@@ -8,6 +8,7 @@ import { Fragment } from "react";
 import { useNavigate } from "react-router";
 
 import { logoutAtom } from "@/auth/ui/client";
+import { useForgetDevice } from "@/notifications/ui/use-push";
 import { Button } from "@/shared/primitives/button";
 import { toast } from "@/shared/primitives/sonner";
 import { Spinner } from "@/shared/primitives/spinner";
@@ -18,10 +19,16 @@ export function LogoutButton() {
 
 	const logout = useAtomSet( logoutAtom, { mode: "promiseExit" } );
 	const result = useAtomValue( logoutAtom );
+	const forgetDevice = useForgetDevice();
 
 	// The atom's "me" reactivity key refetches the session once the cookie is
 	// cleared, which swaps this button's own dialog back to the login button.
+	//
+	// The device is unsubscribed first, while the session that owns its
+	// subscription still exists: a shared device should stop hearing about the
+	// previous player's games the moment they leave.
 	const handleLogout = async () => {
+		await forgetDevice();
 		const exit = await logout();
 
 		if ( Exit.isFailure( exit ) ) {
