@@ -2,7 +2,11 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig( {
 	dialect: "postgresql",
-	schema: [ "./src/auth/server/tables.ts", "./src/swish/server/tables.ts" ],
+	schema: [
+		"./src/auth/server/tables.ts",
+		"./src/notifications/server/tables.ts",
+		"./src/swish/server/tables.ts"
+	],
 	out: "./migrations",
 	dbCredentials: { url: process.env[ "DATABASE_URL" ]! },
 	tablesFilter: [
@@ -11,6 +15,7 @@ export default defineConfig( {
 		"games",
 		"game_players",
 		"game_spectators",
-		"game_commits"
+		"game_commits",
+		"push_subscriptions"
 	]
 } );

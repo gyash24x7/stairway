@@ -4,6 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
 import type * as Schema from "effect/Schema";
+import type * as Stream from "effect/Stream";
 
 import type * as Sharding from "effect/cluster/Sharding";
 import type * as Persistence from "effect/persistence/Persistence";
@@ -37,6 +38,7 @@ import {
 	RematchInput as Rematch,
 	TeamId as Team
 } from "@/swish/schema";
+import type { Notifier } from "@/swish/server/notifier";
 import { activeFrame } from "@/swish/utils";
 
 
@@ -97,6 +99,9 @@ type EngineApi<Config extends BaseGameConfig, Moves, View> = {
 	readonly getView: (
 		params: GameRef
 	) => ( user: SwishUser ) => Effect.Effect<GameView<View, Config>, unknown>;
+	readonly subscribe: (
+		params: GameRef
+	) => ( user: SwishUser ) => Stream.Stream<GameView<View, Config>, unknown>;
 	readonly hint: (
 		params: GameRef
 	) => ( user: SwishUser ) => Effect.Effect<Hint<Moves>, unknown>;
@@ -118,7 +123,7 @@ export type GameModule<Structure> = {
 	readonly EngineLive: Layer.Layer<
 		never,
 		never,
-		Database | Generator | Persistence.Persistence | Sharding.Sharding
+		Database | Generator | Notifier | Persistence.Persistence | Sharding.Sharding
 	>;
 };
 
@@ -250,6 +255,9 @@ export const makeTable = <Structure extends { readonly name: string }>(
 
 		/** Every id the stubbed generator handed out, in order. */
 		ids: env.ids,
+
+		/** Every push the engine handed the notifier, in order. */
+		pushes: env.pushes,
 
 		// --- Lobby ---------------------------------------------------------
 

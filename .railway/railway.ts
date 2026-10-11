@@ -1,4 +1,4 @@
-import { defineRailway, github, postgres, project, redis, service } from "railway/iac";
+import { defineRailway, github, postgres, preserve, project, redis, service } from "railway/iac";
 
 
 /**
@@ -11,6 +11,11 @@ import { defineRailway, github, postgres, project, redis, service } from "railwa
  * `*.up.railway.app` domain. Generate it once on the service's Networking tab,
  * targeting port 8080, before the first deploy — the passkey variables below
  * resolve against it.
+ *
+ * The VAPID variables are `preserve()`d: their values are set once on the
+ * service by hand (`bunx web-push generate-vapid-keys`, plus a `mailto:` subject)
+ * and never live in this file. Left unset, the app boots with push disabled.
+ * Changing the pair later orphans every device already subscribed.
  */
 export default defineRailway( () => {
 	const db = postgres( "postgres" );
@@ -29,7 +34,10 @@ export default defineRailway( () => {
 			DATABASE_URL: db.env.DATABASE_URL,
 			REDIS_URL: cache.env.REDIS_URL,
 			WEBAUTHN_RP_ID: "${{RAILWAY_PUBLIC_DOMAIN}}",
-			WEBAUTHN_RP_ORIGIN: "https://${{RAILWAY_PUBLIC_DOMAIN}}"
+			WEBAUTHN_RP_ORIGIN: "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+			VAPID_PUBLIC_KEY: preserve(),
+			VAPID_PRIVATE_KEY: preserve(),
+			VAPID_SUBJECT: preserve()
 		},
 		domains: [ { domain: "stairway.yashgupta.me", port: 8080 } ]
 	} );

@@ -1,10 +1,11 @@
 import { cn } from "cn";
-import { CheckIcon, CopyIcon, MenuIcon, MonitorIcon, SmartphoneIcon } from "lucide-react";
+import { CheckIcon, CopyIcon, MenuIcon, MonitorIcon, Share2Icon, SmartphoneIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Fragment, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { useCopyToClipboard } from "usehooks-ts";
 
+import { NotifyMeButton } from "@/notifications/ui/toggle";
 import { Avatar, AvatarImage } from "@/shared/primitives/avatar";
 import { Button } from "@/shared/primitives/button";
 import {
@@ -82,12 +83,25 @@ function WatchingStrip( { spectators }: { spectators: Roster } ) {
 	);
 }
 
+/**
+ * Whether the invite goes to the share sheet rather than the clipboard.
+ *
+ * On a touch device only. A phone's share sheet is how an invite actually
+ * reaches somebody — straight into a chat — while on a desktop it is a detour
+ * from the paste the player was about to do anyway, and several desktop
+ * browsers offer it.
+ */
+const canShare = () => typeof navigator !== "undefined"
+	&& typeof navigator.share === "function"
+	&& window.matchMedia( "(pointer: coarse)" ).matches;
+
 export function GameInfo( props: GameInfoProps ) {
 	const [ _, copy ] = useCopyToClipboard();
 	const [ infoOpen, setInfoOpen ] = useState( false );
 	const [ copied, setCopied ] = useState( false );
 
-	const Icon = copied ? CheckIcon : CopyIcon;
+	const shareable = canShare();
+	const Icon = copied ? CheckIcon : shareable ? Share2Icon : CopyIcon;
 
 	// The bar hides everything but the buttons below `md`, so the drawer is the
 	// only way at any of it on a phone. It has to open for an audience too, not
@@ -105,7 +119,8 @@ export function GameInfo( props: GameInfoProps ) {
 	}, [ copied ] );
 
 	/**
-	 * Puts the invite on the clipboard.
+	 * Hands the invite on: to the share sheet on a phone, onto the clipboard
+	 * everywhere else (see `canShare`).
 	 *
 	 * The join link and not the game id, because the id on its own is only half
 	 * an invitation — there is nowhere to type it — and not the current URL
@@ -114,7 +129,7 @@ export function GameInfo( props: GameInfoProps ) {
 	 * knows how to ask. Absolute, because this is going into a message to
 	 * somebody else.
 	 *
-	 * Copied whatever state the game is in. A link to a table that has since
+	 * Offered whatever state the game is in. A link to a table that has since
 	 * filled up is not worth suppressing a button over — the join page explains
 	 * itself — and a control that vanishes mid-game reads as a fault.
 	 */
@@ -123,6 +138,17 @@ export function GameInfo( props: GameInfoProps ) {
 			joinLink( props.name.toLowerCase(), props.id ),
 			window.location.origin
 		).href;
+
+		if ( shareable ) {
+			navigator.share( { title: `Join my ${ props.name } game on Stairway`, url: link } )
+				.catch( ( error: unknown ) => {
+					// Closing the share sheet is a choice, not a failure.
+					if ( !( error instanceof DOMException && error.name === "AbortError" ) ) {
+						console.error( "Failed to share!", error );
+					}
+				} );
+			return;
+		}
 
 		copy( link )
 			.then( () => setCopied( true ) )
@@ -186,10 +212,11 @@ export function GameInfo( props: GameInfoProps ) {
 							</Link>
 						</div>
 					) }
+					<NotifyMeButton className={ "w-8 h-8 md:h-10 md:w-10" }/>
 					<Button
 						onClick={ handleCopy }
 						size={ "icon" }
-						title={ copied ? "Invite link copied" : "Copy the invite link" }
+						title={ copied ? "Invite link copied" : shareable ? "Share the invite link" : "Copy the invite link" }
 						className={ "w-8 h-8 md:h-10 md:w-10" }
 					>
 						<Icon className={ "w-4 h-4 md:h-6 md:w-6" }/>

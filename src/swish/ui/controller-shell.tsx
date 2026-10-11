@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Logo } from "@/shared/shell/logo";
 import { ActionBar } from "@/swish/ui/action-bar";
 import { TurnTimer } from "@/swish/ui/turn-timer";
+import { useWakeLock } from "@/swish/ui/wake-lock";
 
 export type ControllerShellProps = {
 	game: string;
@@ -33,6 +34,7 @@ export function ControllerShell( {
 	actions,
 	persistentActions
 }: ControllerShellProps ) {
+	useWakeLock();
 	return (
 		<div className={ "flex flex-col gap-3 items-center max-w-lg w-full" }>
 			<div className={ "flex gap-2 items-center w-full rounded-md bg-background p-2" }>

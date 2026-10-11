@@ -4,6 +4,7 @@ import { Outlet } from "react-router";
 
 import { Toaster } from "@/shared/primitives/sonner";
 import { Navbar } from "@/shared/shell/navbar";
+import { OfflineBanner, PwaUpdates } from "@/shared/shell/pwa";
 
 export function AppLayout( props: { children: ReactNode } ) {
 	return (
@@ -18,6 +19,8 @@ export function AppLayout( props: { children: ReactNode } ) {
 				<Outlet/>
 			</div>
 			<Toaster position={ "bottom-right" } duration={ 4000 }/>
+			<PwaUpdates/>
+			<OfflineBanner/>
 		</main>
 	);
 }
@@ -27,6 +30,8 @@ export function CouchLayout() {
 		<main className={ "min-h-screen bg-surface" }>
 			<Outlet/>
 			<Toaster position={ "bottom-right" } duration={ 4000 }/>
+			<PwaUpdates/>
+			<OfflineBanner/>
 		</main>
 	);
 }

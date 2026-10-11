@@ -50,6 +50,9 @@ import { WordleEngineLive } from "@/games/wordle/server/engine";
 import { WordleApiLive } from "@/games/wordle/server/handlers";
 import { LobbyApi } from "@/lobby/contract";
 import { LobbyApiLive } from "@/lobby/server/handlers";
+import { NotificationsApi } from "@/notifications/contract";
+import { NotificationsApiLive } from "@/notifications/server/handlers";
+import { PushNotifierLive, PushRepositoryLive, VapidLive } from "@/notifications/server/push";
 import { DatabaseLive } from "@/shared/utils/database";
 import { GeneratorLive } from "@/shared/utils/generator";
 import { WorldPresenceLive } from "@/world/server/presence";
@@ -82,6 +85,7 @@ const StairwayApi = HttpApi.make( "api" )
 	.addHttpApi( HealthApi )
 	.addHttpApi( AuthApi )
 	.addHttpApi( LobbyApi )
+	.addHttpApi( NotificationsApi )
 	.addHttpApi( TicTacToeApi )
 	.addHttpApi( SplendorApi )
 	.addHttpApi( KingdominoApi )
@@ -89,6 +93,11 @@ const StairwayApi = HttpApi.make( "api" )
 	.addHttpApi( WordleApi )
 	.addHttpApi( CallbreakApi )
 	.addHttpApi( CoupApi );
+
+const PushLive = PushNotifierLive.pipe(
+	Layer.provideMerge( PushRepositoryLive ),
+	Layer.provideMerge( VapidLive )
+);
 
 const StairwayEnginesLive = Layer.mergeAll(
 	CallbreakEngineLive,
@@ -104,6 +113,7 @@ const StairwayApiLive = HttpApiBuilder.layer( StairwayApi ).pipe(
 	Layer.provide( HealthApiLive ),
 	Layer.provide( AuthApiLive ),
 	Layer.provide( LobbyApiLive ),
+	Layer.provide( NotificationsApiLive ),
 	Layer.provide( CallbreakApiLive ),
 	Layer.provide( CoupApiLive ),
 	Layer.provide( FishApiLive ),
@@ -116,6 +126,7 @@ const StairwayApiLive = HttpApiBuilder.layer( StairwayApi ).pipe(
 	Layer.provide( SessionServiceLive ),
 	Layer.provide( WebAuthnServiceLive ),
 	Layer.provide( AuthRepositoryLive ),
+	Layer.provide( PushLive ),
 	Layer.provide( GeneratorLive ),
 	Layer.provide( DatabaseLive )
 );
