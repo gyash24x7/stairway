@@ -5,6 +5,7 @@ import * as HttpApiBuilder from "effect/http-api/HttpApiBuilder";
 import { AuthContext } from "@/auth/contract";
 import { FishApi } from "@/games/fish/contract";
 import { FishEngine } from "@/games/fish/server/engine";
+import { fishConfigFor } from "@/games/fish/utils";
 import { withAuth } from "@/swish/utils";
 
 
@@ -14,7 +15,12 @@ export const FishApiLive = HttpApiBuilder.group(
 	Effect.fn( function* ( handlers ) {
 		const engine = yield* FishEngine;
 		return handlers
-			.handle( "createGame", ( { payload } ) => withAuth( engine.createGame( payload ) ) )
+			.handle( "createGame", ( { payload } ) => withAuth(
+				engine.createGame( {
+					isPrivate: payload.isPrivate,
+					...fishConfigFor( payload.playerCount, payload.type, payload.teamCount )
+				} )
+			) )
 			.handle( "joinGame", ( { params } ) => withAuth( engine.joinGame( params ) ) )
 			.handle( "spectate", ( { params } ) => withAuth( engine.spectate( params ) ) )
 			.handle( "addBots", ( { params } ) => withAuth( engine.addBots( params ) ) )
