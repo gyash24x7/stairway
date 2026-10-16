@@ -16,6 +16,15 @@ import { defineRailway, github, postgres, preserve, project, redis, service } fr
  * service by hand (`bunx web-push generate-vapid-keys`, plus a `mailto:` subject)
  * and never live in this file. Left unset, the app boots with push disabled.
  * Changing the pair later orphans every device already subscribed.
+ *
+ * The TURN variables are `preserve()`d the same way: a Cloudflare Realtime TURN
+ * key (its id and API token), set by hand on the service. They are what relays
+ * a table's video call between players whose networks cannot reach each other.
+ * Left unset, the app boots with calls on public STUN only.
+ *
+ * `replicas` must stay at 1. Game entities run on one process (`SingleRunner`),
+ * and so do the world's presence and the table chat's rooms, which are kept in
+ * memory: a second replica would split a table's chat between two servers.
  */
 export default defineRailway( () => {
 	const db = postgres( "postgres" );
@@ -37,7 +46,9 @@ export default defineRailway( () => {
 			WEBAUTHN_RP_ORIGIN: "https://${{RAILWAY_PUBLIC_DOMAIN}}",
 			VAPID_PUBLIC_KEY: preserve(),
 			VAPID_PRIVATE_KEY: preserve(),
-			VAPID_SUBJECT: preserve()
+			VAPID_SUBJECT: preserve(),
+			TURN_KEY_ID: preserve(),
+			TURN_KEY_API_TOKEN: preserve()
 		},
 		domains: [ { domain: "stairway.yashgupta.me", port: 8080 } ]
 	} );
