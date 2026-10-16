@@ -29,6 +29,7 @@ import {
 	Hint,
 	InitializeInput,
 	JoinTeamInput,
+	Membership,
 	NameTeamInput,
 	PassInteractionInput,
 	PlayerInfo,
@@ -134,6 +135,21 @@ export const makeSwishRpcs =
 				payload: { playerInfo: PlayerInfo },
 				error: HintError,
 				success: Hint( moves )
+			} ),
+			/**
+			 * Who the caller is to this table: seated, watching, or neither.
+			 *
+			 * A read, like `getView` and `hint`, that writes nothing. It exists for the
+			 * services beside a game — the table chat — which need to know who may
+			 * speak and who may join a call without being handed a view they would
+			 * only throw away. Asked of the entity rather than read out of Redis
+			 * because the roster is folded from the log, and the entity is the one
+			 * place that has already folded it.
+			 */
+			Rpc.make( "membership", {
+				payload: { playerInfo: PlayerInfo },
+				error: GetViewError,
+				success: Membership
 			} ),
 			/**
 			 * A move, whether it is a turn action or an answer to an open window.

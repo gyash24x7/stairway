@@ -27,6 +27,11 @@ import { AuthMiddlewareLive } from "@/auth/server/middleware";
 import { AuthRepositoryLive } from "@/auth/server/repository";
 import { SessionServiceLive } from "@/auth/server/sessions";
 import { WebAuthnServiceLive } from "@/auth/server/webauthn";
+import { ChatAccessLive } from "@/chat/server/access";
+import { ChatHistoryLive } from "@/chat/server/history";
+import { IceServersLive } from "@/chat/server/ice";
+import { ChatRoomsLive } from "@/chat/server/rooms";
+import { ChatSocketRoute } from "@/chat/server/socket";
 import { CallbreakApi } from "@/games/callbreak/contract";
 import { CallbreakEngineLive } from "@/games/callbreak/server/engine";
 import { CallbreakApiLive } from "@/games/callbreak/server/handlers";
@@ -81,6 +86,15 @@ const PgClientLive = PgClient.layerConfig( {
 	url: Config.Redacted( "DATABASE_URL" )
 } );
 
+/**
+ * Named once because two layers need the same one: the API, whose engines
+ * register their entities with it, and the chat socket, whose `ChatAccess`
+ * sends those entities `membership` reads. `SingleRunner.layer()` builds a new
+ * layer on every call, and layers are memoised by reference, so two calls
+ * would be two runners with nothing registered on the second.
+ */
+const RunnerLive = SingleRunner.layer();
+
 const StairwayApi = HttpApi.make( "api" )
 	.addHttpApi( HealthApi )
 	.addHttpApi( AuthApi )
@@ -132,7 +146,7 @@ const StairwayApiLive = HttpApiBuilder.layer( StairwayApi ).pipe(
 );
 
 const HttpApiLive = StairwayApiLive.pipe(
-	Layer.provide( SingleRunner.layer() ),
+	Layer.provide( RunnerLive ),
 	Layer.provide( PersistenceLive ),
 	Layer.provide( RedisLive ),
 	Layer.provide( PgClientLive ),
@@ -151,6 +165,26 @@ const WorldSocketLive = WorldSocketRoute.pipe(
 	Layer.provide( SessionServiceLive ),
 	Layer.provide( PersistenceLive ),
 	Layer.provide( RedisLive ),
+	Layer.provide( BunServices.layer )
+);
+
+/**
+ * Each table's chat socket, beside the world's. `ChatAccess` asks the game
+ * entities who a caller is, so it is built over the same engines, generator
+ * and runner as the API — the same layer values, memoised, so one cluster.
+ */
+const ChatSocketLive = ChatSocketRoute.pipe(
+	Layer.provide( ChatRoomsLive ),
+	Layer.provide( ChatAccessLive ),
+	Layer.provide( Layer.mergeAll( ChatHistoryLive, IceServersLive, SessionServiceLive ) ),
+	Layer.provide( StairwayEnginesLive ),
+	Layer.provide( PushLive ),
+	Layer.provide( GeneratorLive ),
+	Layer.provide( DatabaseLive ),
+	Layer.provide( RunnerLive ),
+	Layer.provide( PersistenceLive ),
+	Layer.provide( RedisLive ),
+	Layer.provide( PgClientLive ),
 	Layer.provide( BunServices.layer )
 );
 
@@ -173,7 +207,7 @@ const BunServerLive = BunHttpServer.layerConfig( {
 	idleTimeout: Config.succeed( 60 )
 } );
 
-const ApiLive = Layer.mergeAll( HttpApiLive, WorldSocketLive, SpaLive, AssetsLive );
+const ApiLive = Layer.mergeAll( HttpApiLive, WorldSocketLive, ChatSocketLive, SpaLive, AssetsLive );
 const ServerLive = HttpRouter.serve( ApiLive ).pipe( Layer.provide( BunServerLive ) );
 
 Layer.launch( ServerLive ).pipe( BunRuntime.runMain );

@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { useParams } from "react-router";
 
+import { TableChat } from "@/chat/ui/table-chat";
 import { CallbreakGamePage } from "@/games/callbreak/ui/game-page";
 import { CallbreakHomePage } from "@/games/callbreak/ui/home-page";
 import { CallbreakJoinPage } from "@/games/callbreak/ui/join-page";
@@ -59,5 +60,8 @@ export function WorldGamePage( { page }: { page: keyof GamePages } ) {
 											 action={ { label: "BACK TO THE ARENA", to: "/world" } }/>;
 	}
 	const Page = PAGES[ game ][ page ];
+	if ( page === "game" ) {
+		return <><Page/><TableChat game={ game }/></>;
+	}
 	return <Page/>;
 }
