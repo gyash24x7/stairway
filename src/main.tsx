@@ -6,6 +6,7 @@ import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 
 import { AuthControl } from "@/auth/ui/control";
+import { TableChat } from "@/chat/ui/table-chat";
 import { CallbreakControllerPage } from "@/games/callbreak/ui/controller-page";
 import { CallbreakCouchPage } from "@/games/callbreak/ui/couch-page";
 import { CallbreakGamePage } from "@/games/callbreak/ui/game-page";
@@ -80,33 +81,33 @@ const router = createBrowserRouter( [
 			},
 
 			{ path: "/tictactoe", element: <TicTacToeHomePage/> },
-			{ path: "/tictactoe/:gameId", element: <TicTacToeGamePage/> },
+			{ path: "/tictactoe/:gameId", element: <><TicTacToeGamePage/><TableChat game={ "tictactoe" }/></> },
 			{ path: "/tictactoe/:gameId/join", element: <TicTacToeJoinPage/> },
 
 			{ path: "/wordle", element: <WordleHomePage/> },
-			{ path: "/wordle/:gameId", element: <WordleGamePage/> },
+			{ path: "/wordle/:gameId", element: <><WordleGamePage/><TableChat game={ "wordle" }/></> },
 			{ path: "/wordle/:gameId/join", element: <WordleJoinPage/> },
 
 			{ path: "/coup", element: <CoupHomePage/> },
-			{ path: "/coup/:gameId", element: <CoupGamePage/> },
+			{ path: "/coup/:gameId", element: <><CoupGamePage/><TableChat game={ "coup" }/></> },
 			{ path: "/coup/:gameId/join", element: <CoupJoinPage/> },
 
 			{ path: "/fish", element: <FishHomePage/> },
-			{ path: "/fish/:gameId", element: <FishGamePage/> },
+			{ path: "/fish/:gameId", element: <><FishGamePage/><TableChat game={ "fish" }/></> },
 			{ path: "/fish/:gameId/join", element: <FishJoinPage/> },
 
 			{ path: "/callbreak", element: <CallbreakHomePage/> },
-			{ path: "/callbreak/:gameId", element: <CallbreakGamePage/> },
+			{ path: "/callbreak/:gameId", element: <><CallbreakGamePage/><TableChat game={ "callbreak" }/></> },
 			{ path: "/callbreak/:gameId/join", element: <CallbreakJoinPage/> },
 			{ path: "/callbreak/:gameId/controller", element: <CallbreakControllerPage/> },
 
 			{ path: "/kingdomino", element: <KingdominoHomePage/> },
-			{ path: "/kingdomino/:gameId", element: <KingdominoGamePage/> },
+			{ path: "/kingdomino/:gameId", element: <><KingdominoGamePage/><TableChat game={ "kingdomino" }/></> },
 			{ path: "/kingdomino/:gameId/join", element: <KingdominoJoinPage/> },
 			{ path: "/kingdomino/:gameId/controller", element: <KingdominoControllerPage/> },
 
 			{ path: "/splendor", element: <SplendorHomePage/> },
-			{ path: "/splendor/:gameId", element: <SplendorGamePage/> },
+			{ path: "/splendor/:gameId", element: <><SplendorGamePage/><TableChat game={ "splendor" }/></> },
 			{ path: "/splendor/:gameId/join", element: <SplendorJoinPage/> },
 			{ path: "/splendor/:gameId/controller", element: <SplendorControllerPage/> }
 		]

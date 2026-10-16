@@ -24,6 +24,7 @@ import type {
 	Hint,
 	InteractionFrame,
 	JoinTeamInput,
+	Membership,
 	NameTeamInput,
 	PassInteractionInput,
 	PlayerId,
@@ -105,6 +106,9 @@ type EngineApi<Config extends BaseGameConfig, Moves, View> = {
 	readonly hint: (
 		params: GameRef
 	) => ( user: SwishUser ) => Effect.Effect<Hint<Moves>, unknown>;
+	readonly membership: (
+		params: GameRef
+	) => ( user: SwishUser ) => Effect.Effect<Membership, unknown>;
 	readonly submitMove: <K extends keyof Moves>(
 		move: K,
 		params: GameRef,
@@ -355,6 +359,9 @@ export const makeTable = <Structure extends { readonly name: string }>(
 		hint: ( seat: TestUser | string ) => run(
 			engine.hint( ref )( seatOf( seat, roster ) )
 		) as Effect.Effect<Hint<Moves>, unknown>,
+
+		/** Who `user` is to this table: seated, watching, or neither. */
+		membership: ( user: SwishUser ) => run( engine.membership( ref )( user ) ),
 
 		/** Just the game-owned part of that view. */
 		state: ( seat?: TestUser | string ) => Effect.map( view( seat ), got => got.view ),

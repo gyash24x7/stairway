@@ -80,6 +80,7 @@ import {
 	InteractionOption,
 	InteractionPassed,
 	InteractionResponded,
+	Membership,
 	PhaseEntered,
 	PhaseExited,
 	PlayerAudience,
@@ -156,7 +157,7 @@ const MAX_INTERACTION_CASCADE = 64;
  * - Lifecycle: init, joinGame, addBots, joinTeam, leaveTeam, nameTeam, startGame
  * - Play: submitMove
  * - History: undo, redo
- * - Reads: getView
+ * - Reads: getView, hint, membership
  *
  * @typeParam Name - The game's unique name; half of the `GameAddress` the host services take.
  * @typeParam State - The game-owned state shape (opaque to the engine).
@@ -2202,6 +2203,21 @@ export const makeEngine = <
 				hint: ( { payload: { playerInfo } } ) => hintFor( playerInfo.id ),
 
 				/**
+				 * Whether the caller holds a seat, is watching, or is neither. A seat
+				 * handed to a machine is not a player here even if somebody asks with
+				 * its id — the answer is about who may join the table's call, and a
+				 * bot has nobody behind it to join.
+				 */
+				membership: ( { payload: { playerInfo } } ) => Effect.gen( function* () {
+					const { record, document: { runtime } } = yield* requireLive();
+					const seated = record.players[ playerInfo.id ];
+					const role = seated && !seated.isBot
+						? "player" as const
+						: runtime.spectators[ playerInfo.id ] ? "spectator" as const : "none" as const;
+					return Membership.make( { role, status: record.status } );
+				} ),
+
+				/**
 				 * The player's view now, and again after every commit that changes it.
 				 *
 				 * Each change is answered by re-reading the live record rather than by
@@ -2365,6 +2381,13 @@ export const makeEngine = <
 					const playerInfo = toPlayerInfo( user );
 					const client = getClient( params.gameId );
 					return yield* dieOnClusterError( client.hint( { playerInfo } ) );
+				} ),
+
+			membership: ( params: GameRef ) =>
+				Effect.fn( function* ( user: SwishUser ) {
+					const playerInfo = toPlayerInfo( user );
+					const client = getClient( params.gameId );
+					return yield* dieOnClusterError( client.membership( { playerInfo } ) );
 				} ),
 
 			subscribe: ( params: GameRef ) =>

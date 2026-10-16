@@ -144,6 +144,12 @@ export function WordleGameView( { game, gameId, me }: WordleGameViewProps ) {
 				return;
 			}
 
+			// Typing somewhere else on the page — the table chat — is not a guess.
+			const target = e.target;
+			if ( target instanceof HTMLElement && [ "INPUT", "TEXTAREA" ].includes( target.tagName ) ) {
+				return;
+			}
+
 			if ( e.key === "Enter" ) {
 				handleSubmit();
 			} else if ( e.key === "Backspace" ) {

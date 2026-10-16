@@ -570,6 +570,24 @@ export const Hint = <Moves extends Schema.Struct.Fields>( moves: Moves ) =>
 
 
 /**
+ * Who somebody is to one table, for the services that sit beside a game rather
+ * than inside it — the table chat, which lets players talk and spectators
+ * listen, and refuses everybody else.
+ * - role: `player` for a human holding a seat, `spectator` for somebody who chose
+ * 		to watch, `none` for everybody else. A machine-played seat is never a
+ * 		`player` here: nobody is behind it to be let into a call.
+ * - status: Where the game is in its lifecycle.
+ */
+export type MembershipRole = typeof MembershipRole.Type;
+export const MembershipRole = Schema.Literals( [ "player", "spectator", "none" ] );
+
+export type Membership = typeof Membership.Type;
+export const Membership = Schema.TaggedStruct( "swish/Membership", {
+	role: MembershipRole,
+	status: GameStatus
+} );
+
+/**
  * Builds the schema of a game's genesis — everything about a table that is fixed
  * the moment it is created and is never folded from an event. The commit log is
  * the truth about what happened; this is the truth about what it happened *to*.
